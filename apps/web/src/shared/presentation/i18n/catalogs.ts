@@ -1155,7 +1155,66 @@ const es = {
   "pages.competition.bracket.subtitle": "Cuadro de eliminatorias, de la primera ronda a la final.",
   "pages.competition.rankings.title": "Rankings",
   "pages.competition.rankings.subtitle":
-    "Mejores jugadores y equipos según estadísticas oficiales.",
+    "Mejores jugadores según las estadísticas de partidos oficiales aprobados.",
+  "competition.rankings.kinds": "Tipo de ranking",
+  "competition.rankings.kind.scorer": "Goleadores",
+  "competition.rankings.kind.assister": "Asistencias",
+  "competition.rankings.kind.rating": "Rating",
+  "competition.rankings.kind.mvp": "MVP",
+  "competition.rankings.kind.goalkeeper": "Porteros",
+  "competition.rankings.table.scorer": "Ranking de goleadores",
+  "competition.rankings.table.assister": "Ranking de asistencias",
+  "competition.rankings.table.rating": "Ranking de rating medio",
+  "competition.rankings.table.mvp": "Ranking de premios MVP",
+  "competition.rankings.table.goalkeeper": "Ranking de porteros",
+  "competition.rankings.metric.scorer": "Goles",
+  "competition.rankings.metric.assister": "Asistencias",
+  "competition.rankings.metric.rating": "Rating medio",
+  "competition.rankings.metric.mvp": "Premios MVP",
+  "competition.rankings.metric.goalkeeper": "Paradas",
+  "competition.rankings.criterion.scorer": "Más goles en partidos oficiales aprobados.",
+  "competition.rankings.criterion.assister": "Más asistencias en partidos oficiales aprobados.",
+  "competition.rankings.criterion.rating":
+    "Mejor rating medio de EA en partidos oficiales aprobados.",
+  "competition.rankings.criterion.mvp": "Más premios MVP en partidos oficiales aprobados.",
+  "competition.rankings.criterion.goalkeeper":
+    "Más paradas jugando de portero; si empatan, menos goles encajados.",
+  "competition.rankings.meta.criterion": "Criterio",
+  "competition.rankings.meta.eligibility": "Elegibilidad",
+  "competition.rankings.meta.updated": "Actualizado",
+  "competition.rankings.eligibility": ({ matches, percent }) =>
+    `Al menos ${matches} ${Number(matches) === 1 ? "partido" : "partidos"} o el ${percent} de los minutos de su equipo.`,
+  "competition.rankings.column.position": "Pos.",
+  "competition.rankings.column.positionTitle": "Posición",
+  "competition.rankings.column.player": "Jugador",
+  "competition.rankings.column.matches": "PJ",
+  "competition.rankings.column.matchesTitle": "Partidos jugados",
+  "competition.rankings.column.minutes": "Min",
+  "competition.rankings.column.minutesTitle": "Minutos jugados",
+  "competition.rankings.player.unnamed": "Jugador sin nombre visible",
+  "competition.rankings.team.none": "Sin equipo",
+  "competition.rankings.team.unnamed": "Equipo sin nombre visible",
+  "competition.rankings.names.loading": "Cargando nombre",
+  "competition.rankings.names.error": "No pudimos cargar los nombres de jugadores y equipos.",
+  "competition.rankings.names.restricted":
+    "Tu acceso no incluye las plantillas, así que no mostramos nombres de jugadores ni equipos.",
+  "competition.rankings.loading": "Cargando rankings…",
+  "competition.rankings.error": "No pudimos cargar los rankings.",
+  "competition.rankings.refreshError":
+    "No pudimos actualizar los rankings. Mostramos los últimos datos cargados.",
+  "competition.rankings.notComputed.title": "Aún no hay rankings",
+  "competition.rankings.notComputed.description":
+    "Se calculan a partir de los resultados oficiales aprobados de la competición.",
+  "competition.rankings.empty.title": "Nadie entra todavía en este ranking",
+  "competition.rankings.empty.description":
+    "Aparecerán los jugadores que cumplan la elegibilidad y sumen en esta métrica.",
+  "competition.rankings.forbidden.title": "No tienes acceso a los rankings",
+  "competition.rankings.forbidden.description":
+    "Tu rol en esta competición no incluye las estadísticas de jugadores.",
+  "competition.rankings.forbidden.back": "Volver a la competición",
+  "competition.rankings.notFound.title": "Competición no disponible",
+  "competition.rankings.notFound.description":
+    "No encontramos esta competición o ya no tienes acceso.",
   "pages.competition.disputes.title": "Disputas",
   "pages.competition.disputes.subtitle":
     "Desacuerdos sobre partidos o resultados que esperan tu decisión.",
@@ -1687,6 +1746,10 @@ export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "competition.rankings.eligibility": {
+    readonly matches: number;
+    readonly percent: string;
+  };
   readonly "organizations.members.actionsFor": { readonly name: string };
   readonly "organizations.members.list.noMatchesFor": { readonly query: string };
   "reschedule.scope.slot": { slot: number };
@@ -3028,7 +3091,66 @@ const en: Catalog = {
   "pages.competition.bracket.title": "Bracket",
   "pages.competition.bracket.subtitle": "Knockout draw, from the first round to the final.",
   "pages.competition.rankings.title": "Rankings",
-  "pages.competition.rankings.subtitle": "Top players and teams by official statistics.",
+  "pages.competition.rankings.subtitle":
+    "Top players by statistics from approved official matches.",
+  "competition.rankings.kinds": "Ranking type",
+  "competition.rankings.kind.scorer": "Top scorers",
+  "competition.rankings.kind.assister": "Assists",
+  "competition.rankings.kind.rating": "Rating",
+  "competition.rankings.kind.mvp": "MVP",
+  "competition.rankings.kind.goalkeeper": "Goalkeepers",
+  "competition.rankings.table.scorer": "Top scorers ranking",
+  "competition.rankings.table.assister": "Assists ranking",
+  "competition.rankings.table.rating": "Average rating ranking",
+  "competition.rankings.table.mvp": "MVP awards ranking",
+  "competition.rankings.table.goalkeeper": "Goalkeepers ranking",
+  "competition.rankings.metric.scorer": "Goals",
+  "competition.rankings.metric.assister": "Assists",
+  "competition.rankings.metric.rating": "Avg. rating",
+  "competition.rankings.metric.mvp": "MVP awards",
+  "competition.rankings.metric.goalkeeper": "Saves",
+  "competition.rankings.criterion.scorer": "Most goals in approved official matches.",
+  "competition.rankings.criterion.assister": "Most assists in approved official matches.",
+  "competition.rankings.criterion.rating": "Best average EA rating in approved official matches.",
+  "competition.rankings.criterion.mvp": "Most MVP awards in approved official matches.",
+  "competition.rankings.criterion.goalkeeper":
+    "Most saves playing in goal; ties go to fewer goals conceded.",
+  "competition.rankings.meta.criterion": "Criterion",
+  "competition.rankings.meta.eligibility": "Eligibility",
+  "competition.rankings.meta.updated": "Updated",
+  "competition.rankings.eligibility": ({ matches, percent }) =>
+    `At least ${matches} ${Number(matches) === 1 ? "match" : "matches"} or ${percent} of their team's minutes.`,
+  "competition.rankings.column.position": "Pos.",
+  "competition.rankings.column.positionTitle": "Position",
+  "competition.rankings.column.player": "Player",
+  "competition.rankings.column.matches": "MP",
+  "competition.rankings.column.matchesTitle": "Matches played",
+  "competition.rankings.column.minutes": "Min",
+  "competition.rankings.column.minutesTitle": "Minutes played",
+  "competition.rankings.player.unnamed": "Player name not visible",
+  "competition.rankings.team.none": "No team",
+  "competition.rankings.team.unnamed": "Team name not visible",
+  "competition.rankings.names.loading": "Loading name",
+  "competition.rankings.names.error": "We couldn't load player and team names.",
+  "competition.rankings.names.restricted":
+    "Your access doesn't include rosters, so player and team names aren't shown.",
+  "competition.rankings.loading": "Loading rankings…",
+  "competition.rankings.error": "We couldn't load the rankings.",
+  "competition.rankings.refreshError":
+    "We couldn't refresh the rankings. Showing the last loaded data.",
+  "competition.rankings.notComputed.title": "No rankings yet",
+  "competition.rankings.notComputed.description":
+    "They're built from the competition's approved official results.",
+  "competition.rankings.empty.title": "Nobody qualifies for this ranking yet",
+  "competition.rankings.empty.description":
+    "Players appear once they meet eligibility and record this metric.",
+  "competition.rankings.forbidden.title": "You don't have access to rankings",
+  "competition.rankings.forbidden.description":
+    "Your role in this competition doesn't include player statistics.",
+  "competition.rankings.forbidden.back": "Back to the competition",
+  "competition.rankings.notFound.title": "Competition unavailable",
+  "competition.rankings.notFound.description":
+    "We couldn't find this competition, or you no longer have access.",
   "pages.competition.disputes.title": "Disputes",
   "pages.competition.disputes.subtitle":
     "Disagreements over matches or results waiting for your decision.",
