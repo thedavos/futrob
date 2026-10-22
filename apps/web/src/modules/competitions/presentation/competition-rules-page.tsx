@@ -29,7 +29,6 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
-import { CompetitionsClientError } from "./competitions-browser-client.ts";
 import { useCompetitionDraftQuery } from "./competition-queries.ts";
 import {
   rulesAreEditable,
@@ -39,6 +38,7 @@ import {
 } from "./competition-rules-model.ts";
 import { PlatformRules, RetryAlert, Section, Fact } from "./competition-rules-parts.tsx";
 import { styles } from "./competition-rules-page.styles.ts";
+import { useRulesRefusal } from "./use-rules-refusal.ts";
 
 export type CompetitionRulesState =
   | { readonly kind: "loading" }
@@ -50,7 +50,7 @@ export type CompetitionRulesState =
       readonly draft: CompetitionDraftDto;
       readonly canEdit: boolean;
       /** Set when a refresh failed transiently and the shown rules may be stale. */
-      readonly refreshFailed?: () => void;
+      readonly refreshFailed?: (() => void) | undefined;
     };
 
 type Scope = { readonly organizationId: string; readonly competitionId: string };
@@ -58,26 +58,18 @@ type Scope = { readonly organizationId: string; readonly competitionId: string }
 export function CompetitionRulesRoute(scope: Scope) {
   const query = useCompetitionDraftQuery(scope.organizationId, scope.competitionId);
   const update = useCan(scope, COMPETITION_PERMISSION.update);
+  const refusal = useRulesRefusal(`${scope.organizationId}/${scope.competitionId}`, query);
   const state: CompetitionRulesState = (() => {
     const retry = () => void query.refetch();
-    if (query.isError) {
-      // A refusal always wins over cached rules: never show data the server now denies.
-      const status = query.error instanceof CompetitionsClientError ? query.error.status : null;
-      if (status === 401 || status === 403) return { kind: "forbidden" };
-      if (status === 404) return { kind: "not_found" };
-      if (!query.data) return { kind: "error", retry };
-      return {
-        kind: "ready",
-        draft: query.data,
-        canEdit: rulesAreEditable(query.data, update.allowed),
-        refreshFailed: retry,
-      };
-    }
+    // A refusal always wins over cached rules, even after a later transient error.
+    if (refusal) return { kind: refusal };
+    if (query.isError && !query.data) return { kind: "error", retry };
     if (query.data) {
       return {
         kind: "ready",
         draft: query.data,
         canEdit: rulesAreEditable(query.data, update.allowed),
+        refreshFailed: query.isError ? retry : undefined,
       };
     }
     return { kind: "loading" };
@@ -189,7 +181,7 @@ function ReadyRules({
   t,
 }: {
   readonly draft: CompetitionDraftDto;
-  readonly refreshFailed?: () => void;
+  readonly refreshFailed?: (() => void) | undefined;
   readonly t: Translator;
 }) {
   const { competition, rules } = draft;
@@ -256,7 +248,7 @@ function StageRules({ stage, t }: { readonly stage: RulesStage; readonly t: Tran
         description={t("competitionRules.stage.description")}
         title={t(`competitionRules.stage.${stage.label}`)}
       >
-        <Heading as="h4" {...applyStyles(styles.heading)}>
+        <Heading as="h3" {...applyStyles(styles.heading)}>
           {t("competitionRules.scoring.title")}
         </Heading>
         <MetaList columns={2}>
@@ -264,7 +256,7 @@ function StageRules({ stage, t }: { readonly stage: RulesStage; readonly t: Tran
           <Fact label={t("competitionRules.scoring.draw")}>{rules.drawPoints}</Fact>
           <Fact label={t("competitionRules.scoring.loss")}>{rules.lossPoints}</Fact>
         </MetaList>
-        <Heading as="h4" {...applyStyles(styles.heading)}>
+        <Heading as="h3" {...applyStyles(styles.heading)}>
           {t("competitionRules.encounter.title")}
         </Heading>
         <MetaList columns={2}>
@@ -281,7 +273,7 @@ function StageRules({ stage, t }: { readonly stage: RulesStage; readonly t: Tran
             </Fact>
           ) : null}
         </MetaList>
-        <Heading as="h4" {...applyStyles(styles.heading)}>
+        <Heading as="h3" {...applyStyles(styles.heading)}>
           {t("competitionRules.reschedule.title")}
         </Heading>
         {rules.allowRescheduling ? (

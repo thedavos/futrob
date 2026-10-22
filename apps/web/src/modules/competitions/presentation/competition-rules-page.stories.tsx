@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   Outlet,
@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -62,19 +62,28 @@ type StoryArgs = {
   readonly narrow?: boolean;
 };
 
+function RulesScenario({ scenario }: { readonly scenario: Scenario }) {
+  const [recovered, setRecovered] = useState(false);
+  const base = STATES[scenario];
+  // The static retry callbacks recover like a real refetch: the next fetch succeeds.
+  let state: CompetitionRulesState = base;
+  if (recovered) state = { kind: "ready", draft: leaguePlayoffsDraft, canEdit: true };
+  else if (base.kind === "error") state = { ...base, retry: () => setRecovered(true) };
+  else if (base.kind === "ready" && base.refreshFailed) {
+    state = { ...base, refreshFailed: () => setRecovered(true) };
+  }
+  return (
+    <CompetitionRulesPageView competitionId="competition-1" organizationId="org-1" state={state} />
+  );
+}
+
 function RulesStory({ locale, narrow = false, scenario }: StoryArgs) {
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
     const rulesRoute = createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId/rules",
-      component: () => (
-        <CompetitionRulesPageView
-          competitionId="competition-1"
-          organizationId="org-1"
-          state={STATES[scenario]}
-        />
-      ),
+      component: () => <RulesScenario scenario={scenario} />,
     });
     const setupRoute = createRoute({
       getParentRoute: () => rootRoute,
@@ -167,5 +176,21 @@ export const LeagueWithoutRescheduling: Story = {
 export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
 export const Forbidden: Story = { name: "Sin acceso", args: { scenario: "forbidden" } };
 export const NotFound: Story = { name: "No encontrada", args: { scenario: "notFound" } };
-export const LoadError: Story = { name: "Error", args: { scenario: "error" } };
-export const RefreshFailed: Story = { name: "Error al actualizar", args: { scenario: "stale" } };
+export const LoadError: Story = {
+  name: "Error",
+  args: { scenario: "error" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Reintentar" }));
+    await expect(await canvas.findByText("Liga + playoffs")).toBeVisible();
+  },
+};
+export const RefreshFailed: Story = {
+  name: "Error al actualizar",
+  args: { scenario: "stale" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Reintentar" }));
+    await expect(canvas.queryByText(/No pudimos actualizar/)).toBeNull();
+  },
+};

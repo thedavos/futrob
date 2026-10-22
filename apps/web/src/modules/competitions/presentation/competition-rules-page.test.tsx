@@ -189,4 +189,84 @@ describe("Competition rules page", () => {
     await waitFor(() => expect(screen.queryByText(/No pudimos actualizar/)).toBeNull());
     expect(screen.getByText("Desde 4")).toBeTruthy();
   });
+
+  it("keeps a refusal authoritative through later transient errors until a fresh success", async () => {
+    for (const status of [401, 403, 404]) {
+      cleanup();
+      serve(
+        draft(leaguePlayoffsDraft),
+        () => failure(status, "authorization.forbidden"),
+        () => failure(500, "api.unexpected"),
+        () => failure(500, "api.unexpected"),
+        draft(leagueDraft),
+      );
+      const queryClient = renderRoute();
+      expect(await screen.findByText("Liga + playoffs")).toBeTruthy();
+      await queryClient.refetchQueries();
+      await waitFor(() => expect(screen.queryByText("Liga + playoffs")).toBeNull());
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        await queryClient.refetchQueries();
+        await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+        expect(screen.queryByText("Liga + playoffs")).toBeNull();
+        expect(screen.queryByText("Puntuación")).toBeNull();
+        expect(screen.queryByRole("button", { name: "Editar reglas" })).toBeNull();
+      }
+      await queryClient.refetchQueries();
+      expect(await screen.findByText("Desde 4")).toBeTruthy();
+      expect(screen.queryByText(/No pudimos actualizar/)).toBeNull();
+    }
+  });
+
+  it("isolates a refusal to its own scope", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const other = "/api/v1/organizations/org-1/competitions/competition-2";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = new URL(String(input), "https://web.test").pathname;
+        return path === other ? failure(403, "authorization.forbidden") : draft(leagueDraft)();
+      }),
+    );
+    const view = (competitionId: string) => (
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider initialLocale="es">
+          <CompetitionRulesRoute competitionId={competitionId} organizationId="org-1" />
+        </I18nProvider>
+      </QueryClientProvider>
+    );
+    const { rerender } = render(view("competition-2"));
+    expect(await screen.findByText("No tienes acceso al reglamento")).toBeTruthy();
+    rerender(view("competition-1"));
+    expect(await screen.findByText("Desde 4")).toBeTruthy();
+    expect(screen.queryByText("No tienes acceso al reglamento")).toBeNull();
+  });
+
+  it("shows a retryable notice, not rules, for a first load that fails and no refusal", async () => {
+    serve(() => failure(500, "api.unexpected"));
+    renderRoute();
+
+    expect(await screen.findByText("No pudimos cargar el reglamento.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reintentar" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Editar reglas" })).toBeNull();
+  });
+
+  it("gates editing after a transient refresh error on cached published rules", async () => {
+    serve(draft(publishedDraft), () => failure(500, "api.unexpected"));
+    const queryClient = renderRoute();
+    expect(await screen.findByText(/solo lectura/)).toBeTruthy();
+    await queryClient.refetchQueries();
+
+    expect(await screen.findByText(/No pudimos actualizar el reglamento/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Editar reglas" })).toBeNull();
+  });
+
+  it("keeps the edit action for cached draft rules after a transient refresh error", async () => {
+    serve(draft(leaguePlayoffsDraft), () => failure(500, "api.unexpected"));
+    const queryClient = renderRoute();
+    expect(await screen.findByText("Liga + playoffs")).toBeTruthy();
+    await queryClient.refetchQueries();
+
+    expect(await screen.findByText(/No pudimos actualizar el reglamento/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Editar reglas" })).toBeTruthy();
+  });
 });

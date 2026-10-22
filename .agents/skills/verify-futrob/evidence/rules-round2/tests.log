@@ -1,0 +1,16 @@
+
+> futrob@0.1.0 test
+> vp test --run --project web competition-rules --maxWorkers=1
+
+
+ RUN  v4.1.11 /home/user/.t3/worktrees/futrob/t3-2c737abc
+
+
+ Test Files  2 passed (2)
+      Tests  20 passed (20)
+   Start at  20:06:09
+   Duration  5.63s (transform 1.66s, setup 401ms, import 3.64s, tests 659ms, environment 702ms)
+
+close timed out after 10000ms
+Tests closed successfully but something prevents the main process from exiting
+You can try to identify the cause by enabling "hanging-process" reporter. See https://vitest.dev/guide/reporters.html#hanging-process-reporter

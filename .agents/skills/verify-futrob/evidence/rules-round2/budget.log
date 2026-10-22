@@ -1,0 +1,18 @@
+
+> futrob@0.1.0 bundle:budget
+> node apps/web/scripts/check-client-bundle-budget.mjs
+
+Product client JavaScript budget (gzip)
+  Scope: apps/web/dist/client/assets (SSR and Storybook excluded)
+  Entry limit: 250 KiB
+  Lazy/shared limit: 120 KiB
+  lazy/shared  112.81 / 120 KiB  assets/player-profile-charts-DMMGKI4B.js
+  lazy/shared   79.65 / 120 KiB  assets/base-ui-BSrVKE-R.js
+  lazy/shared   65.87 / 120 KiB  assets/react-D4yVoAWj.js
+  lazy/shared   61.82 / 120 KiB  assets/src-rsMZMUR8.js
+  lazy/shared   44.44 / 120 KiB  assets/i18n-provider-DZNlJbGy.js
+  lazy/shared   25.72 / 120 KiB  assets/browser-api-error-CHryGN8I.js
+  lazy/shared   24.11 / 120 KiB  assets/zod-BLzXNS_s.js
+  entry         23.30 / 250 KiB  assets/index-zp19HC1g.js
+  lazy/shared   21.68 / 120 KiB  assets/encounters_._encounterId-DKnTQ-0f.js
+  lazy/shared   20.92 / 120 KiB  assets/setup.lazy-4wOQlvOP.js

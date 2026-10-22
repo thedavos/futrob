@@ -53,7 +53,7 @@ export function PlatformRules({ t }: { readonly t: Translator }) {
           description={t("competitionRules.platform.description")}
           title={t("competitionRules.platform.title")}
         >
-          <Heading as="h4" {...applyStyles(styles.heading)}>
+          <Heading as="h3" {...applyStyles(styles.heading)}>
             {t("competitionRules.tiebreaks.title")}
           </Heading>
           <Caption {...applyStyles(styles.help)}>

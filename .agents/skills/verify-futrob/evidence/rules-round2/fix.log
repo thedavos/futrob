@@ -1,0 +1,20 @@
+note: You are running `vp check` as a Vite+ built-in command. If you meant to run the check npm script, use `vpr check` instead.
+error: Lint or type issues found
+x anti-slop(no-unknown-parameters): Parameter `error` leaves input unparsed. Accept a named domain type; run the expected schema or parser at the I/O boundary before calling this function.
+    ,-[apps/web/src/modules/competitions/presentation/use-rules-refusal.ts:9:27]
+  8 | 
+  9 | function refusalOf(error: unknown): RulesRefusal | null {
+    :                           ^^^^^^^
+ 10 |   if (!(error instanceof CompetitionsClientError)) return null;
+    `----
+
+  x anti-slop(no-conditional-empty-object-spread): This conditional spread hides property omission behind an empty object. Build the object in separate statements and add the property only when present.
+    ,-[apps/web/src/modules/competitions/presentation/competition-rules-page.tsx:72:9]
+ 71 |         canEdit: rulesAreEditable(query.data, update.allowed),
+ 72 |         ...(query.isError ? { refreshFailed: retry } : {}),
+    :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 73 |       };
+    `----
+
+Found 2 errors and 0 warnings in 1591 files (19.5s, 4 threads)
+pass: Formatting completed for checked files (22.8s)
