@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from "react";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import type { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type {
   CompetitionTeamManagementListResponse,
@@ -9,7 +10,11 @@ import type {
 } from "@futrob/api-contracts";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
+import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import {
+  createTestQueryClient,
+  QueryTestProvider,
+} from "@/shared/presentation/query/query-test-utils.tsx";
 import {
   DEFAULT_TEAM_STATS_SORT,
   DEFAULT_TEAM_STATS_VIEW,
@@ -86,9 +91,9 @@ function serve(routes: Partial<Record<string, () => Response>>) {
 const paths = (fetch: ReturnType<typeof serve>) =>
   fetch.mock.calls.map(([input]) => new URL(String(input), "https://web.test").pathname);
 
-function renderPage() {
+function renderPage(client?: QueryClient) {
   return render(
-    <QueryTestProvider>
+    <QueryTestProvider client={client}>
       <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
         <CompetitionTeamStatsRoute
           competitionId="competition-1"
@@ -167,5 +172,127 @@ describe("CompetitionTeamStatsRoute", () => {
       ),
     ).toBeTruthy();
     expect(screen.getAllByRole("rowheader")).toHaveLength(completeTeamStatsFixture.length);
+  });
+
+  describe("refetch after cached success", () => {
+    const REFRESH_FAILED =
+      "No pudimos actualizar las estadísticas. Se muestran los últimos datos cargados.";
+    const NAMES_ERROR =
+      "No pudimos cargar los nombres de los equipos. Las cifras siguen disponibles.";
+    const FORBIDDEN = "No tienes acceso a estas estadísticas";
+    const statsKey = queryKeys.statistics.competitionTeams("org-1", "competition-1");
+    const namesKey = queryKeys.teams.competitionManagementTeamNames("org-1", "competition-1");
+
+    /** Serves a mutable response per path so a test can change the server's answer. */
+    function switchable(initial: Record<string, () => Response>) {
+      const current = { ...initial };
+      serve(Object.fromEntries(Object.keys(current).map((path) => [path, () => current[path]!()])));
+      return current;
+    }
+
+    async function renderLoaded(routes: Record<string, () => Response>) {
+      const client = createTestQueryClient();
+      const current = switchable(routes);
+      renderPage(client);
+      await screen.findByRole("rowheader", { name: "Cuervos FC" });
+      return { client, current };
+    }
+
+    const loaded = () => ({
+      [ACCESS_PATH]: () => Response.json(access(true)),
+      [STATS_PATH]: () => Response.json({ teams: completeTeamStatsFixture }),
+      [TEAMS_PATH]: () => Response.json(teamList),
+    });
+
+    it.each([
+      [403, "statistics.read_forbidden"],
+      [401, "auth.unauthenticated"],
+    ])("hides cached figures when the statistics read is refused with %i", async (status, code) => {
+      const { client, current } = await renderLoaded(loaded());
+
+      current[STATS_PATH] = () => failure(status, code);
+      await client.refetchQueries({ queryKey: statsKey });
+
+      expect(await screen.findByText(FORBIDDEN)).toBeTruthy();
+      expect(screen.queryByRole("table")).toBeNull();
+      expect(screen.queryByText("Cuervos FC")).toBeNull();
+      expect(screen.queryByText(REFRESH_FAILED)).toBeNull();
+      expect(client.getQueryData(statsKey)).toEqual({ kind: "refused", refusal: "forbidden" });
+    });
+
+    it("keeps cached figures with a warning when a refresh fails for a recoverable reason", async () => {
+      const { client, current } = await renderLoaded(loaded());
+
+      current[STATS_PATH] = () => failure(503, "product_api.unreachable");
+      await client.refetchQueries({ queryKey: statsKey });
+
+      expect(await screen.findByText(REFRESH_FAILED)).toBeTruthy();
+      expect(screen.getByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
+    });
+
+    it("shows the figures again once the statistics read is allowed again", async () => {
+      const { client, current } = await renderLoaded(loaded());
+
+      current[STATS_PATH] = () => failure(403, "statistics.read_forbidden");
+      await client.refetchQueries({ queryKey: statsKey });
+      expect(await screen.findByText(FORBIDDEN)).toBeTruthy();
+
+      current[STATS_PATH] = () => Response.json({ teams: completeTeamStatsFixture });
+      await client.refetchQueries({ queryKey: statsKey });
+      expect(await screen.findByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
+      expect(screen.queryByText(FORBIDDEN)).toBeNull();
+    });
+
+    it("hides cached figures when EffectiveAccess stops allowing statistics.read", async () => {
+      const { client, current } = await renderLoaded(loaded());
+
+      current[ACCESS_PATH] = () => Response.json(access(false));
+      await client.refetchQueries({ queryKey: queryKeys.authorization.all });
+
+      expect(await screen.findByText(FORBIDDEN)).toBeTruthy();
+      expect(screen.queryByRole("table")).toBeNull();
+    });
+
+    it.each([
+      [403, "competitions.participants_read_forbidden"],
+      [401, "auth.unauthenticated"],
+    ])(
+      "drops cached names but keeps the figures when the names read is refused with %i",
+      async (status, code) => {
+        const { client, current } = await renderLoaded(loaded());
+
+        current[TEAMS_PATH] = () => failure(status, code);
+        await client.refetchQueries({ queryKey: namesKey });
+
+        expect(await screen.findByText(NAMES_ERROR)).toBeTruthy();
+        await waitFor(() => expect(screen.queryByText("Cuervos FC")).toBeNull());
+        expect(screen.getByRole("table")).toBeTruthy();
+        expect(screen.getAllByRole("rowheader")).toHaveLength(completeTeamStatsFixture.length);
+        expect(client.getQueryData(namesKey)).toEqual({ kind: "denied" });
+      },
+    );
+
+    it("keeps cached names when the names refresh fails for a recoverable reason", async () => {
+      const { client, current } = await renderLoaded(loaded());
+
+      current[TEAMS_PATH] = () => failure(503, "product_api.unreachable");
+      await client.refetchQueries({ queryKey: namesKey });
+
+      await waitFor(() => expect(client.getQueryState(namesKey)?.status).toBe("error"));
+      expect(screen.getByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
+    });
+
+    it("shows the names again once the names read is allowed again", async () => {
+      const { client, current } = await renderLoaded(loaded());
+
+      current[TEAMS_PATH] = () => failure(403, "competitions.participants_read_forbidden");
+      await client.refetchQueries({ queryKey: namesKey });
+      expect(await screen.findByText(NAMES_ERROR)).toBeTruthy();
+
+      current[TEAMS_PATH] = () => Response.json(teamList);
+      await client.refetchQueries({ queryKey: namesKey });
+      expect(await screen.findByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
+      expect(screen.queryByText(NAMES_ERROR)).toBeNull();
+    });
   });
 });

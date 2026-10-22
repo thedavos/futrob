@@ -33,7 +33,6 @@ import {
   type TeamStatsView,
 } from "./competition-team-stats-model.ts";
 import {
-  teamStatisticsRefusal,
   useCompetitionTeamNamesQuery,
   useCompetitionTeamStatisticsQuery,
 } from "./competition-team-stats-queries.ts";
@@ -120,38 +119,43 @@ export function CompetitionTeamStatsRoute(props: Scope & TableControls) {
   const access = useEffectivePermissions({ organizationId, competitionId }, READ_PERMISSIONS);
   const allowed = access.allowed.has(STATISTICS_PERMISSION.read);
   const stats = useCompetitionTeamStatisticsQuery(organizationId, competitionId, allowed);
+  const figures = stats.data?.kind === "ok" ? stats.data.response : undefined;
   const teamNames = useCompetitionTeamNamesQuery(
     organizationId,
     competitionId,
-    allowed && (stats.data?.teams.length ?? 0) > 0,
+    allowed && (figures?.teams.length ?? 0) > 0,
   );
 
+  // Refusals come first: access decisions and stored server refusals win over cached figures.
   const state: CompetitionTeamStatsState = (() => {
     if (access.capability.status === "loading") return { kind: "loading" };
     if (access.capability.status === "unavailable") {
       return { kind: "error", reason: "access", retry: () => void access.query.refetch() };
     }
     if (!allowed) return { kind: "forbidden" };
-    if (stats.data) {
+    if (stats.data?.kind === "refused") return { kind: stats.data.refusal };
+    if (figures) {
       return {
         kind: "ready",
-        teams: stats.data.teams,
+        teams: figures.teams,
         refreshFailed: stats.isError ? { retry: () => void stats.refetch() } : null,
       };
     }
     if (stats.isError) {
-      const refusal = teamStatisticsRefusal(stats.error);
-      if (refusal) return { kind: refusal };
       return { kind: "error", reason: "load", retry: () => void stats.refetch() };
     }
     return { kind: "loading" };
   })();
 
-  const names: TeamNamesState = teamNames.data
-    ? { kind: "ready", names: teamNames.data }
-    : teamNames.isError
+  // A names refusal falls back to team ids; the figures stay authorized by their own endpoint.
+  const names: TeamNamesState =
+    teamNames.data?.kind === "denied"
       ? { kind: "error", retry: () => void teamNames.refetch() }
-      : { kind: "loading" };
+      : teamNames.data
+        ? { kind: "ready", names: teamNames.data.names }
+        : teamNames.isError
+          ? { kind: "error", retry: () => void teamNames.refetch() }
+          : { kind: "loading" };
 
   return <CompetitionTeamStatsPageView {...props} names={names} state={state} />;
 }
