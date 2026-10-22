@@ -4,6 +4,7 @@ import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
+  Caption,
   ChoiceGroup,
   ChoiceGroupItem,
   Skeleton,
@@ -49,6 +50,7 @@ const styles = stylex.create({
     backgroundColor: colors.surface,
     minWidth: { default: "9rem", [media.sm]: "12rem" },
     maxWidth: "16rem",
+    paddingInline: "0.75rem",
     textAlign: "start",
     fontWeight: 600,
     color: colors.foreground,
@@ -57,7 +59,8 @@ const styles = stylex.create({
     position: "sticky",
     left: 0,
     zIndex: 2,
-    backgroundColor: colors.muted,
+    // Opaque equivalent of the header row tint so scrolled cells do not show through.
+    backgroundColor: "color-mix(in oklab, var(--muted) 60%, var(--background))",
   },
   sortButton: {
     display: "inline-flex",
@@ -77,8 +80,10 @@ const styles = stylex.create({
     cursor: "pointer",
     borderRadius: "var(--corner-sm)",
   },
+  // The caret leads in numeric columns so the label shares the right edge with the figures.
   sortEnd: {
-    justifyContent: "flex-end",
+    flexDirection: "row-reverse",
+    justifyContent: "flex-start",
   },
   sortActive: {
     color: colors.foreground,
@@ -97,6 +102,13 @@ const styles = stylex.create({
   partialMark: {
     color: colors.warning,
     marginInlineStart: "0.125rem",
+  },
+  unnamed: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.125rem",
+    fontWeight: 500,
+    overflowWrap: "anywhere",
   },
   nameSkeleton: {
     display: "inline-block",
@@ -306,35 +318,23 @@ function TeamName({
   readonly t: Translator;
   readonly teamId: string;
 }) {
-  switch (names.kind) {
-    case "loading":
-      return (
-        <Skeleton
-          aria-label={t("competition.teamStats.teamName.loading")}
-          {...applyStyles(styles.nameSkeleton)}
-        />
-      );
-    case "ready": {
-      const name = names.names[teamId];
-      return name === undefined ? (
-        <span {...applyStyles(styles.muted)}>
-          {t("competition.teamStats.teamName.unavailable")}
-        </span>
-      ) : (
-        name
-      );
-    }
-    case "error":
-      return (
-        <span {...applyStyles(styles.muted)}>
-          {t("competition.teamStats.teamName.unavailable")}
-        </span>
-      );
-    default: {
-      const exhaustive: never = names;
-      return exhaustive;
-    }
+  if (names.kind === "loading") {
+    return (
+      <Skeleton
+        aria-label={t("competition.teamStats.teamName.loading")}
+        {...applyStyles(styles.nameSkeleton)}
+      />
+    );
   }
+  const name = names.kind === "ready" ? names.names[teamId] : undefined;
+  if (name !== undefined) return name;
+  // Without a name the id is the only way to tell rows apart.
+  return (
+    <span {...applyStyles(styles.unnamed)}>
+      <span {...applyStyles(styles.muted)}>{t("competition.teamStats.teamName.unavailable")}</span>
+      <Caption as="span">{teamId}</Caption>
+    </span>
+  );
 }
 
 function MetricCell({
