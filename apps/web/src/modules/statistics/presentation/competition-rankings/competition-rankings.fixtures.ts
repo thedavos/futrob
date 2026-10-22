@@ -4,7 +4,7 @@ import type {
   RankingRowDto,
   RankingSnapshotDto,
 } from "@futrob/api-contracts";
-import type { RankingNames } from "./competition-rankings-view.ts";
+import { rankingNamesFromTeams, type RankingNames } from "./competition-rankings-view.ts";
 
 const snapshot = (
   kind: RankingSnapshotDto["kind"],
@@ -161,3 +161,8 @@ export const rankingNamesFixture: RankingNames = {
   players: new Map([...MEMBERS.values()].flat().map((member) => [member.id, member.name])),
   teams: new Map(TEAM_NAMES),
 };
+
+/** Only Cuervos' roster resolved: Halcones refused its roster read. */
+export const rankingNamesCuervosOnlyFixture: RankingNames = rankingNamesFromTeams([
+  teamDetailFixture("team-cuervos"),
+]);

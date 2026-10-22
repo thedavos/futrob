@@ -20,7 +20,12 @@ import {
   CompetitionRankingsPageView,
   type CompetitionRankingsState,
 } from "./competition-rankings-page.tsx";
-import { rankingNamesFixture, rankingsFixture } from "./competition-rankings.fixtures.ts";
+import {
+  rankingNamesCuervosOnlyFixture,
+  rankingNamesFixture,
+  rankingsFixture,
+} from "./competition-rankings.fixtures.ts";
+import { NO_RANKING_NAMES } from "./competition-rankings-view.ts";
 
 const styles = stylex.create({
   frame: {
@@ -39,6 +44,7 @@ type Scenario =
   | "ready"
   | "namesLoading"
   | "namesRestricted"
+  | "namesPartiallyRestricted"
   | "namesFailed"
   | "notComputed"
   | "loading"
@@ -52,14 +58,24 @@ const ready = (names: Extract<CompetitionRankingsState, { kind: "ready" }>["name
   ({ kind: "ready", data: rankingsFixture, names, refreshRetry: null }) as const;
 
 const STATES: Record<Scenario, CompetitionRankingsState> = {
-  ready: ready({ status: "ready", names: rankingNamesFixture }),
+  ready: ready({ status: "ready", names: rankingNamesFixture, restricted: "none" }),
   namesLoading: ready({ status: "loading" }),
-  namesRestricted: ready({ status: "restricted" }),
-  namesFailed: ready({ status: "failed", names: rankingNamesFixture, retry: noop }),
+  namesRestricted: ready({ status: "ready", names: NO_RANKING_NAMES, restricted: "all" }),
+  namesPartiallyRestricted: ready({
+    status: "ready",
+    names: rankingNamesCuervosOnlyFixture,
+    restricted: "some",
+  }),
+  namesFailed: ready({
+    status: "failed",
+    names: rankingNamesFixture,
+    restricted: "none",
+    retry: noop,
+  }),
   notComputed: {
     kind: "ready",
     data: { rankings: [] },
-    names: { status: "ready", names: rankingNamesFixture },
+    names: { status: "ready", names: rankingNamesFixture, restricted: "none" },
     refreshRetry: null,
   },
   loading: { kind: "loading" },
@@ -67,7 +83,7 @@ const STATES: Record<Scenario, CompetitionRankingsState> = {
   notFound: { kind: "not_found" },
   error: { kind: "error", retry: noop },
   refreshFailed: {
-    ...ready({ status: "ready", names: rankingNamesFixture }),
+    ...ready({ status: "ready", names: rankingNamesFixture, restricted: "none" }),
     refreshRetry: noop,
   },
 };
@@ -125,6 +141,7 @@ const SCENARIOS = [
   "ready",
   "namesLoading",
   "namesRestricted",
+  "namesPartiallyRestricted",
   "namesFailed",
   "notComputed",
   "loading",
@@ -175,6 +192,16 @@ export const RatingEnglishNarrow: Story = {
   name: "Rating · EN 360",
   args: { locale: "en", narrow: true, initialKind: "rating" },
   parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("table", { name: "Average rating ranking" });
+    // Every kind tab, including the short "Rating" and "MVP", keeps a 44×44 target at 360px.
+    for (const tab of canvas.getAllByRole("tab")) {
+      const { height, width } = tab.getBoundingClientRect();
+      await expect(Math.round(width)).toBeGreaterThanOrEqual(44);
+      await expect(Math.round(height)).toBeGreaterThanOrEqual(44);
+    }
+  },
 };
 
 export const NobodyQualifies: Story = {
@@ -189,6 +216,17 @@ export const NamesLoading: Story = { name: "Nombres cargando", args: { scenario:
 export const NamesRestricted: Story = {
   name: "Sin acceso a plantillas",
   args: { scenario: "namesRestricted" },
+};
+
+export const NamesPartiallyRestricted: Story = {
+  name: "Sin acceso a una plantilla",
+  args: { scenario: "namesPartiallyRestricted" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const table = await canvas.findByRole("table", { name: "Ranking de goleadores" });
+    await expect(within(table).getByText("Lucía Pérez")).toBeVisible();
+    await expect(within(table).getAllByText("Equipo sin nombre visible")).toHaveLength(1);
+  },
 };
 
 export const NamesFailed: Story = { name: "Nombres con error", args: { scenario: "namesFailed" } };

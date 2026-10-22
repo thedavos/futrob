@@ -94,18 +94,38 @@ export function rankingNamesFromTeams(
   return { players, teams };
 }
 
+/** Teams whose roster read was refused: their rows stay unnamed. */
+export type RankingNamesRestriction = "none" | "some" | "all";
+
 /**
- * Names of the visible rows: `loading` while rosters resolve, `restricted` when the actor
- * cannot read rosters, `failed` when a roster read failed and can be retried.
+ * Names of the visible rows: `loading` while rosters resolve, `failed` when a roster read
+ * failed and can be retried. Each Team's roster read is authorized on its own, so
+ * `restricted` tells how many Teams refused it.
  */
 export type RankingNamesState =
   | { readonly status: "loading" }
-  | { readonly status: "restricted" }
-  | { readonly status: "failed"; readonly names: RankingNames; readonly retry: () => void }
-  | { readonly status: "ready"; readonly names: RankingNames };
+  | {
+      readonly status: "failed";
+      readonly names: RankingNames;
+      readonly restricted: RankingNamesRestriction;
+      readonly retry: () => void;
+    }
+  | {
+      readonly status: "ready";
+      readonly names: RankingNames;
+      readonly restricted: RankingNamesRestriction;
+    };
+
+export function rankingNamesRestriction(
+  refusedTeams: number,
+  totalTeams: number,
+): RankingNamesRestriction {
+  if (refusedTeams === 0) return "none";
+  return refusedTeams === totalTeams ? "all" : "some";
+}
 
 export function rankingNamesOf(state: RankingNamesState): RankingNames {
-  return state.status === "ready" || state.status === "failed" ? state.names : NO_RANKING_NAMES;
+  return state.status === "loading" ? NO_RANKING_NAMES : state.names;
 }
 
 export type RankingFormatters = {

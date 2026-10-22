@@ -4,6 +4,7 @@ import {
   formatRankingValue,
   rankingFormatters,
   rankingNamesFromTeams,
+  rankingNamesRestriction,
   rankingTeamIds,
   selectRankingSnapshot,
 } from "./competition-rankings-view.ts";
@@ -27,6 +28,12 @@ describe("competition rankings view model", () => {
     expect(names.players.get("profile-lucia")).toBe("Lucía Pérez");
     expect(names.teams.get("team-cuervos")).toBe("Cuervos FC");
     expect(names.players.has("profile-unknown")).toBe(false);
+  });
+
+  it("tells whether no, some or every Team refused its roster", () => {
+    expect(rankingNamesRestriction(0, 2)).toBe("none");
+    expect(rankingNamesRestriction(1, 2)).toBe("some");
+    expect(rankingNamesRestriction(2, 2)).toBe("all");
   });
 
   it("formats rating as an average and every other kind as a count", () => {

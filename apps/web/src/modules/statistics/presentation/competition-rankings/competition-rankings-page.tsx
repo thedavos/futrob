@@ -7,7 +7,6 @@ import type {
   RankingSnapshotDto,
 } from "@futrob/api-contracts";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
-import { TEAM_PERMISSION } from "@futrob/teams";
 import {
   applyStyles,
   EmptyState,
@@ -58,7 +57,7 @@ export type CompetitionRankingsState =
       readonly refreshRetry: (() => void) | null;
     };
 
-const RANKINGS_PERMISSIONS = [STATISTICS_PERMISSION.read, TEAM_PERMISSION.rosterRead] as const;
+const RANKINGS_PERMISSIONS = [STATISTICS_PERMISSION.read] as const;
 
 type KindSelection = {
   readonly rankingKind: RankingKindDto;
@@ -70,12 +69,12 @@ export function CompetitionRankingsRoute(props: Scope & KindSelection) {
   const access = useEffectivePermissions({ organizationId, competitionId }, RANKINGS_PERMISSIONS);
   const ready = access.capability.status === "ready";
   const canRead = ready && access.allowed.has(STATISTICS_PERMISSION.read);
-  const canReadRosters = ready ? access.allowed.has(TEAM_PERMISSION.rosterRead) : null;
 
   const query = useCompetitionRankingsQuery(organizationId, competitionId, canRead);
   const loaded = query.data?.kind === "loaded" ? query.data.data : null;
   const teamIds = loaded ? rankingTeamIds(selectRankingSnapshot(loaded, rankingKind)) : [];
-  const names = useRankingNames(organizationId, competitionId, teamIds, canReadRosters);
+  // Roster access is decided per Team by the roster endpoint, not at competition scope.
+  const names = useRankingNames(organizationId, competitionId, teamIds, canRead);
 
   const state: CompetitionRankingsState = (() => {
     if (access.capability.status === "unavailable") {

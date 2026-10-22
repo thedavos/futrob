@@ -1198,6 +1198,8 @@ const es = {
   "competition.rankings.names.error": "No pudimos cargar los nombres de jugadores y equipos.",
   "competition.rankings.names.restricted":
     "Tu acceso no incluye las plantillas, así que no mostramos nombres de jugadores ni equipos.",
+  "competition.rankings.names.partiallyRestricted":
+    "Tu acceso no incluye algunas plantillas, así que no mostramos los nombres de esos equipos ni de sus jugadores.",
   "competition.rankings.loading": "Cargando rankings…",
   "competition.rankings.error": "No pudimos cargar los rankings.",
   "competition.rankings.refreshError":
@@ -3134,6 +3136,8 @@ const en: Catalog = {
   "competition.rankings.names.error": "We couldn't load player and team names.",
   "competition.rankings.names.restricted":
     "Your access doesn't include rosters, so player and team names aren't shown.",
+  "competition.rankings.names.partiallyRestricted":
+    "Your access doesn't include some rosters, so those teams and their players aren't named.",
   "competition.rankings.loading": "Loading rankings…",
   "competition.rankings.error": "We couldn't load the rankings.",
   "competition.rankings.refreshError":

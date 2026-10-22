@@ -12,7 +12,11 @@ import {
   CompetitionRankingsClientError,
   competitionRankingsBrowserClient,
 } from "./competition-rankings-browser-client.ts";
-import { rankingNamesFromTeams, type RankingNamesState } from "./competition-rankings-view.ts";
+import {
+  rankingNamesFromTeams,
+  rankingNamesRestriction,
+  type RankingNamesState,
+} from "./competition-rankings-view.ts";
 
 export const competitionRankingsQueryKey = (organizationId: string, competitionId: string) =>
   [...queryKeys.statistics.all, "competition-rankings", organizationId, competitionId] as const;
@@ -89,34 +93,37 @@ async function readRoster(
 
 /**
  * Resolves player and Team names through each Team's roster read.
- * Ranking rows only carry ids; names are never inferred from them.
+ * Ranking rows only carry ids; names are never inferred from them. The roster endpoint
+ * authorizes every Team on its own, so each row's Team is read and a refusal only hides
+ * that Team's names.
  */
 export function useRankingNames(
   organizationId: string,
   competitionId: string,
   teamIds: readonly string[],
-  canReadRosters: boolean | null,
+  enabled: boolean,
 ): RankingNamesState {
   const results = useQueries({
     queries: teamIds.map((teamId) => ({
       queryKey: rankingRosterQueryKey(organizationId, competitionId, teamId),
       queryFn: () => readRoster(organizationId, competitionId, teamId),
-      enabled: canReadRosters === true,
+      enabled,
     })),
   });
-  if (canReadRosters === null) return { status: "loading" };
-  if (!canReadRosters) return { status: "restricted" };
-  if (results.some((result) => result.isPending && result.fetchStatus !== "idle")) {
-    return { status: "loading" };
-  }
+  if (results.some((result) => result.isPending)) return { status: "loading" };
   const names = rankingNamesFromTeams(
     results.flatMap((result) => (result.data?.kind === "loaded" ? [result.data.detail] : [])),
   );
+  const restricted = rankingNamesRestriction(
+    results.filter((result) => result.data?.kind === "refused").length,
+    results.length,
+  );
   const failed = results.filter((result) => result.isError);
-  if (failed.length === 0) return { status: "ready", names };
+  if (failed.length === 0) return { status: "ready", names, restricted };
   return {
     status: "failed",
     names,
+    restricted,
     retry: () => {
       for (const result of failed) void result.refetch();
     },

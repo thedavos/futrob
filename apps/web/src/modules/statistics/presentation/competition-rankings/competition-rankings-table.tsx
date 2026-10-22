@@ -192,21 +192,23 @@ function RankingRow({
 }
 
 function NamesNotice({ names, t }: { readonly names: RankingNamesState; readonly t: Translator }) {
-  switch (names.status) {
-    case "restricted":
-      return <Caption as="p">{t("competition.rankings.names.restricted")}</Caption>;
-    case "failed":
-      return (
+  if (names.status === "loading") return null;
+  return (
+    <>
+      {names.restricted === "none" ? null : (
+        <Caption as="p">
+          {t(
+            names.restricted === "all"
+              ? "competition.rankings.names.restricted"
+              : "competition.rankings.names.partiallyRestricted",
+          )}
+        </Caption>
+      )}
+      {names.status === "failed" ? (
         <RetryAlert message={t("competition.rankings.names.error")} retry={names.retry} t={t} />
-      );
-    case "loading":
-    case "ready":
-      return null;
-    default: {
-      const exhaustive: never = names;
-      return exhaustive;
-    }
-  }
+      ) : null}
+    </>
+  );
 }
 
 export function RetryAlert({

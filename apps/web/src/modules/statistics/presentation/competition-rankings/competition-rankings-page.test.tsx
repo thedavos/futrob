@@ -171,8 +171,65 @@ describe("Competition player rankings", () => {
     expect(screen.queryByText("Aún no hay rankings")).toBeNull();
   });
 
-  it("keeps rows without names when rosters are not readable", async () => {
+  it("asks each row's Team for its roster, without a competition-wide roster gate", async () => {
+    // Roster access is decided per Team: competition scope grants statistics only.
     const fetch = serve({ allowed: ["statistics.read"] });
+    renderRoute();
+
+    expect(await screen.findByText("Lucía Pérez")).toBeTruthy();
+    expect(screen.getByText("Club Atlético Halcones del Pacífico")).toBeTruthy();
+    const rosterPaths = fetch.mock.calls
+      .map(([input]) => new URL(String(input), "https://web.test").pathname)
+      .filter((path) => path.includes("team-management"))
+      .sort();
+    expect(rosterPaths).toEqual([
+      `${BASE}/team-management/team-cuervos`,
+      `${BASE}/team-management/team-halcones`,
+    ]);
+    const accessCalls = fetch.mock.calls.filter(([input]) =>
+      String(input).includes("effective-access"),
+    );
+    expect(accessCalls.some(([input]) => String(input).includes("teams.roster.read"))).toBe(false);
+  });
+
+  it("hides only the names of a Team whose roster is refused", async () => {
+    serve({
+      allowed: ["statistics.read"],
+      roster: (teamId) =>
+        teamId === "team-halcones"
+          ? failure(403, "teams.roster_forbidden")
+          : Response.json(teamDetailFixture(teamId)),
+    });
+    const queryClient = renderRoute();
+
+    expect(await screen.findByText("Lucía Pérez")).toBeTruthy();
+    expect(screen.getByText("Cuervos FC")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Tu acceso no incluye algunas plantillas, así que no mostramos los nombres de esos equipos ni de sus jugadores.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("Club Atlético Halcones del Pacífico")).toBeNull();
+    expect(screen.queryByText("Mateo Fernández de la Torre")).toBeNull();
+    expect(screen.getAllByText("Equipo sin nombre visible")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull();
+
+    // Per-Team reads live under the rankings scope, apart from Team management's cache.
+    const rosterKeys = queryClient
+      .getQueryCache()
+      .getAll()
+      .map((query) => query.queryKey)
+      .filter((key) => key.includes("roster"));
+    expect(rosterKeys).toEqual(
+      expect.arrayContaining([
+        ["statistics", "competition-rankings", "org-1", "competition-1", "roster", "team-cuervos"],
+        ["statistics", "competition-rankings", "org-1", "competition-1", "roster", "team-halcones"],
+      ]),
+    );
+  });
+
+  it("keeps rows without names when every roster is refused", async () => {
+    serve({ allowed: ["statistics.read"], roster: () => failure(403, "teams.roster_forbidden") });
     renderRoute();
 
     expect(
@@ -181,9 +238,7 @@ describe("Competition player rankings", () => {
       ),
     ).toBeTruthy();
     expect(screen.getAllByText("Jugador sin nombre visible")).toHaveLength(3);
-    expect(fetch.mock.calls.some(([input]) => String(input).includes("team-management"))).toBe(
-      false,
-    );
+    expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull();
   });
 
   it("offers a retry for names and for a failed load", async () => {
