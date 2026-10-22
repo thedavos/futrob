@@ -49,9 +49,12 @@ const SCENARIOS = [
   "partial",
   "namesLoading",
   "namesError",
+  "namesDenied",
+  "namesRefreshFailed",
   "refreshFailed",
   "loading",
   "empty",
+  "emptyRefreshFailed",
   "forbidden",
   "notFound",
   "error",
@@ -59,7 +62,7 @@ const SCENARIOS = [
 ] as const;
 type Scenario = (typeof SCENARIOS)[number];
 
-const READY_NAMES: TeamNamesState = { kind: "ready", names: TEAM_NAMES };
+const READY_NAMES: TeamNamesState = { kind: "ready", names: TEAM_NAMES, refreshFailed: null };
 
 function scenario(id: Scenario): { state: CompetitionTeamStatsState; names: TeamNamesState } {
   const ready = (teams = competitionTeamStatsFixture): CompetitionTeamStatsState => ({
@@ -75,7 +78,14 @@ function scenario(id: Scenario): { state: CompetitionTeamStatsState; names: Team
     case "namesLoading":
       return { state: ready(), names: { kind: "loading" } };
     case "namesError":
-      return { state: ready(), names: { kind: "error", retry: noop } };
+      return { state: ready(), names: { kind: "error", reason: "load", retry: noop } };
+    case "namesDenied":
+      return { state: ready(), names: { kind: "error", reason: "denied", retry: noop } };
+    case "namesRefreshFailed":
+      return {
+        state: ready(),
+        names: { kind: "ready", names: TEAM_NAMES, refreshFailed: { retry: noop } },
+      };
     case "refreshFailed":
       return {
         state: {
@@ -89,6 +99,11 @@ function scenario(id: Scenario): { state: CompetitionTeamStatsState; names: Team
       return { state: { kind: "loading" }, names: { kind: "loading" } };
     case "empty":
       return { state: ready([]), names: READY_NAMES };
+    case "emptyRefreshFailed":
+      return {
+        state: { kind: "ready", teams: [], refreshFailed: { retry: noop } },
+        names: { kind: "loading" },
+      };
     case "forbidden":
       return { state: { kind: "forbidden" }, names: { kind: "loading" } };
     case "notFound":
@@ -230,6 +245,37 @@ export const NamesError: StoryObject = {
   args: { scenario: "namesError" },
 };
 
+export const NamesDenied: StoryObject = {
+  name: "Nombres sin permiso",
+  args: { scenario: "namesDenied" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(
+        "No tienes acceso a los nombres de los equipos. Las cifras siguen disponibles.",
+      ),
+    ).toBeVisible();
+    await expect(canvas.queryByText("Cuervos FC")).toBeNull();
+    await expect(canvas.getByRole("table")).toBeVisible();
+  },
+};
+
+export const NamesRefreshFailed: StoryObject = {
+  name: "Error al actualizar nombres (nombres en caché)",
+  args: { scenario: "namesRefreshFailed" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(
+        "No pudimos actualizar los nombres de los equipos. Se muestran los últimos cargados.",
+      ),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Reintentar" })).toBeVisible();
+    await expect(canvas.getAllByText("Cuervos FC").length).toBeGreaterThan(0);
+  },
+};
+
 export const RefreshFailed: StoryObject = {
   name: "Error al actualizar (datos en caché)",
   args: { scenario: "refreshFailed" },
@@ -243,6 +289,22 @@ export const Empty: StoryObject = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("link", { name: "Ver enfrentamientos" })).toBeVisible();
+  },
+};
+
+export const EmptyRefreshFailed: StoryObject = {
+  name: "Sin resultados aprobados · error al actualizar",
+  args: { scenario: "emptyRefreshFailed" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(
+        "No pudimos actualizar las estadísticas. Se muestran los últimos datos cargados.",
+      ),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Reintentar" })).toBeVisible();
+    await expect(canvas.getByText("Aún no hay estadísticas oficiales")).toBeVisible();
   },
 };
 

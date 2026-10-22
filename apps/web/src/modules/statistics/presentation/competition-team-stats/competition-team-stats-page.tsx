@@ -1,13 +1,9 @@
 "use client";
 
-import { useId } from "react";
 import { Link } from "@tanstack/react-router";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import * as stylex from "@stylexjs/stylex";
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
   applyStyles,
   Button,
   Caption,
@@ -17,7 +13,6 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  SectionTitle,
   Skeleton,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
@@ -28,21 +23,12 @@ import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
 import {
-  hasPartialTeamStats,
-  type TeamStatsSort,
-  type TeamStatsView,
-} from "./competition-team-stats-model.ts";
-import {
   useCompetitionTeamNamesQuery,
   useCompetitionTeamStatisticsQuery,
 } from "./competition-team-stats-queries.ts";
 import type { CompetitionTeamStatsState, TeamNamesState } from "./competition-team-stats-state.ts";
-import { CompetitionTeamStatsSummary } from "./competition-team-stats-summary.tsx";
-import {
-  CompetitionTeamStatsTable,
-  TeamStatsViewSelector,
-  type TeamStatsFormats,
-} from "./competition-team-stats-table.tsx";
+import { RetryAlert, StatsReady, type TableControls } from "./competition-team-stats-ready.tsx";
+import type { TeamStatsFormats } from "./competition-team-stats-table.tsx";
 
 const styles = stylex.create({
   ready: {
@@ -50,32 +36,6 @@ const styles = stylex.create({
     flexDirection: "column",
     gap: "2rem",
     minWidth: 0,
-  },
-  section: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-    minWidth: 0,
-  },
-  sectionHead: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: { default: "flex-start", [media.md]: "flex-end" },
-    justifyContent: "space-between",
-    gap: "0.75rem",
-  },
-  sectionCopy: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.25rem",
-    minWidth: 0,
-  },
-  alertRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.75rem",
   },
   loading: {
     display: "flex",
@@ -100,13 +60,6 @@ const styles = stylex.create({
 });
 
 type Scope = { readonly organizationId: string; readonly competitionId: string };
-
-type TableControls = {
-  readonly view: TeamStatsView;
-  readonly sort: TeamStatsSort;
-  readonly onViewChange: (view: TeamStatsView) => void;
-  readonly onSortChange: (sort: TeamStatsSort) => void;
-};
 
 const READ_PERMISSIONS = [STATISTICS_PERMISSION.read] as const;
 
@@ -147,15 +100,21 @@ export function CompetitionTeamStatsRoute(props: Scope & TableControls) {
     return { kind: "loading" };
   })();
 
-  // A names refusal falls back to team ids; the figures stay authorized by their own endpoint.
-  const names: TeamNamesState =
-    teamNames.data?.kind === "denied"
-      ? { kind: "error", retry: () => void teamNames.refetch() }
-      : teamNames.data
-        ? { kind: "ready", names: teamNames.data.names }
-        : teamNames.isError
-          ? { kind: "error", retry: () => void teamNames.refetch() }
-          : { kind: "loading" };
+  // A names refusal falls back to team ids until a fresh success; the figures stay authorized by
+  // their own endpoint. A recoverable failure keeps the last names and says the refresh failed.
+  const names: TeamNamesState = (() => {
+    const retry = () => void teamNames.refetch();
+    if (teamNames.data?.kind === "denied") return { kind: "error", reason: "denied", retry };
+    if (teamNames.data) {
+      return {
+        kind: "ready",
+        names: teamNames.data.names,
+        refreshFailed: teamNames.isError ? { retry } : null,
+      };
+    }
+    if (teamNames.isError) return { kind: "error", reason: "load", retry };
+    return { kind: "loading" };
+  })();
 
   return <CompetitionTeamStatsPageView {...props} names={names} state={state} />;
 }
@@ -202,77 +161,50 @@ export function CompetitionTeamStatsPageView({
               />
             );
           case "forbidden":
-            return (
-              <EmptyState>
-                <EmptyStateIcon>
-                  <img alt="" data-outline="none" src={accessUrl} />
-                </EmptyStateIcon>
-                <EmptyStateCopy>
-                  <EmptyStateTitle>{t("competition.teamStats.forbidden.title")}</EmptyStateTitle>
-                  <EmptyStateDescription>
-                    {t("competition.teamStats.forbidden.description")}
-                  </EmptyStateDescription>
-                </EmptyStateCopy>
-                <EmptyStateActions>
-                  <Button
-                    render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId" />}
-                    role="link"
-                    variant="outline"
-                  >
-                    {t("competition.teamStats.forbidden.back")}
-                  </Button>
-                </EmptyStateActions>
-              </EmptyState>
-            );
           case "not_found":
             return (
-              <EmptyState>
-                <EmptyStateIcon>
-                  <img alt="" data-outline="none" src={accessUrl} />
-                </EmptyStateIcon>
-                <EmptyStateCopy>
-                  <EmptyStateTitle>{t("competition.teamStats.notFound.title")}</EmptyStateTitle>
-                  <EmptyStateDescription>
-                    {t("competition.teamStats.notFound.description")}
-                  </EmptyStateDescription>
-                </EmptyStateCopy>
-                <EmptyStateActions>
-                  <Button
-                    render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId" />}
-                    role="link"
-                    variant="outline"
-                  >
-                    {t("competition.teamStats.forbidden.back")}
-                  </Button>
-                </EmptyStateActions>
-              </EmptyState>
+              <RefusedEmptyState
+                organizationId={organizationId}
+                refusal={state.kind === "forbidden" ? "forbidden" : "notFound"}
+                t={t}
+              />
             );
           case "ready":
             return state.teams.length === 0 ? (
-              <EmptyState>
-                <EmptyStateIcon>
-                  <img alt="" data-outline="none" src={emptyStatsUrl} />
-                </EmptyStateIcon>
-                <EmptyStateCopy>
-                  <EmptyStateTitle>{t("competition.teamStats.empty.title")}</EmptyStateTitle>
-                  <EmptyStateDescription>
-                    {t("competition.teamStats.empty.description")}
-                  </EmptyStateDescription>
-                </EmptyStateCopy>
-                <EmptyStateActions>
-                  <Button
-                    render={
-                      <Link
-                        params={{ orgId: organizationId, competitionId }}
-                        to="/orgs/$orgId/competitions/$competitionId/encounters"
-                      />
-                    }
-                    role="link"
-                  >
-                    {t("competition.teamStats.empty.action")}
-                  </Button>
-                </EmptyStateActions>
-              </EmptyState>
+              <div {...applyStyles(styles.ready)}>
+                {state.refreshFailed ? (
+                  <RetryAlert
+                    message={t("competition.teamStats.refreshFailed")}
+                    retry={state.refreshFailed.retry}
+                    t={t}
+                    variant="warning"
+                  />
+                ) : null}
+                <EmptyState>
+                  <EmptyStateIcon>
+                    <img alt="" data-outline="none" src={emptyStatsUrl} />
+                  </EmptyStateIcon>
+                  <EmptyStateCopy>
+                    <EmptyStateTitle>{t("competition.teamStats.empty.title")}</EmptyStateTitle>
+                    <EmptyStateDescription>
+                      {t("competition.teamStats.empty.description")}
+                    </EmptyStateDescription>
+                  </EmptyStateCopy>
+                  <EmptyStateActions>
+                    <Button
+                      render={
+                        <Link
+                          params={{ orgId: organizationId, competitionId }}
+                          to="/orgs/$orgId/competitions/$competitionId/encounters"
+                        />
+                      }
+                      role="link"
+                    >
+                      {t("competition.teamStats.empty.action")}
+                    </Button>
+                  </EmptyStateActions>
+                </EmptyState>
+              </div>
             ) : (
               <StatsReady
                 compareText={(a, b) => collator.compare(a, b)}
@@ -294,94 +226,36 @@ export function CompetitionTeamStatsPageView({
   );
 }
 
-function StatsReady({
-  compareText,
-  controls,
-  dateFormat,
-  formats,
-  names,
-  state,
+function RefusedEmptyState({
+  organizationId,
+  refusal,
   t,
 }: {
-  readonly compareText: (a: string, b: string) => number;
-  readonly controls: TableControls;
-  readonly dateFormat: Intl.DateTimeFormat;
-  readonly formats: TeamStatsFormats;
-  readonly names: TeamNamesState;
-  readonly state: Extract<CompetitionTeamStatsState, { kind: "ready" }>;
+  readonly organizationId: string;
+  readonly refusal: "forbidden" | "notFound";
   readonly t: Translator;
 }) {
-  const titleId = useId();
   return (
-    <div {...applyStyles(styles.ready)}>
-      {state.refreshFailed ? (
-        <RetryAlert
-          message={t("competition.teamStats.refreshFailed")}
-          retry={state.refreshFailed.retry}
-          t={t}
-          variant="warning"
-        />
-      ) : null}
-      <CompetitionTeamStatsSummary
-        dateFormat={dateFormat}
-        formats={formats}
-        names={names}
-        t={t}
-        teams={state.teams}
-      />
-      {hasPartialTeamStats(state.teams) ? (
-        <Alert variant="warning">
-          <AlertTitle>{t("competition.teamStats.partial.title")}</AlertTitle>
-          <AlertDescription>{t("competition.teamStats.partial.description")}</AlertDescription>
-        </Alert>
-      ) : null}
-      {names.kind === "error" ? (
-        <RetryAlert message={t("competition.teamStats.teamName.error")} retry={names.retry} t={t} />
-      ) : null}
-      <section aria-labelledby={titleId} {...applyStyles(styles.section)}>
-        <div {...applyStyles(styles.sectionHead)}>
-          <div {...applyStyles(styles.sectionCopy)}>
-            <SectionTitle id={titleId}>{t("competition.teamStats.comparison.title")}</SectionTitle>
-            <Caption as="p">{t("competition.teamStats.comparison.description")}</Caption>
-          </div>
-          <TeamStatsViewSelector onViewChange={controls.onViewChange} t={t} view={controls.view} />
-        </div>
-        <CompetitionTeamStatsTable
-          compareText={compareText}
-          formats={formats}
-          labelledBy={titleId}
-          names={names}
-          onSortChange={controls.onSortChange}
-          sort={controls.sort}
-          t={t}
-          teams={state.teams}
-          view={controls.view}
-        />
-      </section>
-    </div>
-  );
-}
-
-function RetryAlert({
-  message,
-  retry,
-  t,
-  variant = "destructive",
-}: {
-  readonly message: string;
-  readonly retry: () => void;
-  readonly t: Translator;
-  readonly variant?: "destructive" | "warning";
-}) {
-  return (
-    <Alert variant={variant}>
-      <AlertDescription {...applyStyles(styles.alertRow)}>
-        <span>{message}</span>
-        <Button onClick={retry} variant="secondary">
-          {t("common.retry")}
+    <EmptyState>
+      <EmptyStateIcon>
+        <img alt="" data-outline="none" src={accessUrl} />
+      </EmptyStateIcon>
+      <EmptyStateCopy>
+        <EmptyStateTitle>{t(`competition.teamStats.${refusal}.title`)}</EmptyStateTitle>
+        <EmptyStateDescription>
+          {t(`competition.teamStats.${refusal}.description`)}
+        </EmptyStateDescription>
+      </EmptyStateCopy>
+      <EmptyStateActions>
+        <Button
+          render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId" />}
+          role="link"
+          variant="outline"
+        >
+          {t("competition.teamStats.forbidden.back")}
         </Button>
-      </AlertDescription>
-    </Alert>
+      </EmptyStateActions>
+    </EmptyState>
   );
 }
 

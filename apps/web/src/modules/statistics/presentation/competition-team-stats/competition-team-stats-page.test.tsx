@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from "react";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type {
@@ -158,7 +158,7 @@ describe("CompetitionTeamStatsRoute", () => {
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeTruthy();
   });
 
-  it("keeps the figures when team names fail to load", async () => {
+  it("keeps the figures when the team names read is refused", async () => {
     serve({
       [ACCESS_PATH]: () => Response.json(access(true)),
       [STATS_PATH]: () => Response.json({ teams: completeTeamStatsFixture }),
@@ -168,17 +168,44 @@ describe("CompetitionTeamStatsRoute", () => {
 
     expect(
       await screen.findByText(
+        "No tienes acceso a los nombres de los equipos. Las cifras siguen disponibles.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getAllByRole("rowheader")).toHaveLength(completeTeamStatsFixture.length);
+  });
+
+  it("tells a failed names load apart from a refused one", async () => {
+    serve({
+      [ACCESS_PATH]: () => Response.json(access(true)),
+      [STATS_PATH]: () => Response.json({ teams: completeTeamStatsFixture }),
+      [TEAMS_PATH]: () => failure(503, "product_api.unreachable"),
+    });
+    renderPage();
+
+    expect(
+      await screen.findByText(
         "No pudimos cargar los nombres de los equipos. Las cifras siguen disponibles.",
       ),
     ).toBeTruthy();
+    expect(
+      screen.queryByText(
+        "No tienes acceso a los nombres de los equipos. Las cifras siguen disponibles.",
+      ),
+    ).toBeNull();
     expect(screen.getAllByRole("rowheader")).toHaveLength(completeTeamStatsFixture.length);
   });
 
   describe("refetch after cached success", () => {
     const REFRESH_FAILED =
       "No pudimos actualizar las estadísticas. Se muestran los últimos datos cargados.";
-    const NAMES_ERROR =
-      "No pudimos cargar los nombres de los equipos. Las cifras siguen disponibles.";
+    const NAMES_DENIED =
+      "No tienes acceso a los nombres de los equipos. Las cifras siguen disponibles.";
+    const NAMES_REFRESH_FAILED =
+      "No pudimos actualizar los nombres de los equipos. Se muestran los últimos cargados.";
+    const EMPTY = "Aún no hay estadísticas oficiales";
+    const INITIAL_ERROR = "No pudimos cargar las estadísticas de equipos.";
+    const UNAVAILABLE = () => failure(503, "product_api.unreachable");
+    const retryButton = () => screen.getByRole("button", { name: "Reintentar" });
     const FORBIDDEN = "No tienes acceso a estas estadísticas";
     const statsKey = queryKeys.statistics.competitionTeams("org-1", "competition-1");
     const namesKey = queryKeys.teams.competitionManagementTeamNames("org-1", "competition-1");
@@ -190,11 +217,15 @@ describe("CompetitionTeamStatsRoute", () => {
       return current;
     }
 
-    async function renderLoaded(routes: Record<string, () => Response>) {
+    async function renderLoaded(
+      routes: Record<string, () => Response>,
+      settled: () => Promise<unknown> = () =>
+        screen.findByRole("rowheader", { name: "Cuervos FC" }),
+    ) {
       const client = createTestQueryClient();
       const current = switchable(routes);
       renderPage(client);
-      await screen.findByRole("rowheader", { name: "Cuervos FC" });
+      await settled();
       return { client, current };
     }
 
@@ -264,7 +295,7 @@ describe("CompetitionTeamStatsRoute", () => {
         current[TEAMS_PATH] = () => failure(status, code);
         await client.refetchQueries({ queryKey: namesKey });
 
-        expect(await screen.findByText(NAMES_ERROR)).toBeTruthy();
+        expect(await screen.findByText(NAMES_DENIED)).toBeTruthy();
         await waitFor(() => expect(screen.queryByText("Cuervos FC")).toBeNull());
         expect(screen.getByRole("table")).toBeTruthy();
         expect(screen.getAllByRole("rowheader")).toHaveLength(completeTeamStatsFixture.length);
@@ -272,27 +303,142 @@ describe("CompetitionTeamStatsRoute", () => {
       },
     );
 
-    it("keeps cached names when the names refresh fails for a recoverable reason", async () => {
-      const { client, current } = await renderLoaded(loaded());
-
-      current[TEAMS_PATH] = () => failure(503, "product_api.unreachable");
-      await client.refetchQueries({ queryKey: namesKey });
-
-      await waitFor(() => expect(client.getQueryState(namesKey)?.status).toBe("error"));
-      expect(screen.getByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
-    });
-
     it("shows the names again once the names read is allowed again", async () => {
       const { client, current } = await renderLoaded(loaded());
 
       current[TEAMS_PATH] = () => failure(403, "competitions.participants_read_forbidden");
       await client.refetchQueries({ queryKey: namesKey });
-      expect(await screen.findByText(NAMES_ERROR)).toBeTruthy();
+      expect(await screen.findByText(NAMES_DENIED)).toBeTruthy();
 
       current[TEAMS_PATH] = () => Response.json(teamList);
       await client.refetchQueries({ queryKey: namesKey });
       expect(await screen.findByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
-      expect(screen.queryByText(NAMES_ERROR)).toBeNull();
+      expect(screen.queryByText(NAMES_DENIED)).toBeNull();
+    });
+
+    describe("cached successful empty statistics", () => {
+      const loadedEmpty = () => ({
+        ...loaded(),
+        [STATS_PATH]: () => Response.json({ teams: [] }),
+      });
+      const renderEmpty = () => renderLoaded(loadedEmpty(), () => screen.findByText(EMPTY));
+
+      it("keeps the empty state and warns with a working retry when a refresh fails", async () => {
+        const { client, current } = await renderEmpty();
+
+        current[STATS_PATH] = () => UNAVAILABLE();
+        await client.refetchQueries({ queryKey: statsKey });
+
+        expect(await screen.findByText(REFRESH_FAILED)).toBeTruthy();
+        expect(screen.getByText(EMPTY)).toBeTruthy();
+        expect(screen.queryByText(INITIAL_ERROR)).toBeNull();
+        expect(client.getQueryState(statsKey)?.status).toBe("error");
+
+        current[STATS_PATH] = () => Response.json({ teams: [] });
+        fireEvent.click(retryButton());
+        await waitFor(() => expect(screen.queryByText(REFRESH_FAILED)).toBeNull());
+        expect(screen.getByText(EMPTY)).toBeTruthy();
+      });
+
+      it("renders the recovered rows when the retry returns figures", async () => {
+        const { client, current } = await renderEmpty();
+
+        current[STATS_PATH] = () => UNAVAILABLE();
+        await client.refetchQueries({ queryKey: statsKey });
+        await screen.findByText(REFRESH_FAILED);
+
+        current[STATS_PATH] = () => Response.json({ teams: completeTeamStatsFixture });
+        fireEvent.click(retryButton());
+
+        expect(await screen.findByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
+        expect(screen.queryByText(REFRESH_FAILED)).toBeNull();
+        expect(screen.queryByText(EMPTY)).toBeNull();
+      });
+
+      it("lets a later refusal win over the cached empty state and its warning", async () => {
+        const { client, current } = await renderEmpty();
+
+        current[STATS_PATH] = () => UNAVAILABLE();
+        await client.refetchQueries({ queryKey: statsKey });
+        await screen.findByText(REFRESH_FAILED);
+
+        current[STATS_PATH] = () => failure(403, "statistics.read_forbidden");
+        await client.refetchQueries({ queryKey: statsKey });
+        expect(await screen.findByText(FORBIDDEN)).toBeTruthy();
+        expect(screen.queryByText(EMPTY)).toBeNull();
+
+        current[STATS_PATH] = () => UNAVAILABLE();
+        await client.refetchQueries({ queryKey: statsKey });
+        expect(screen.getByText(FORBIDDEN)).toBeTruthy();
+        expect(screen.queryByText(REFRESH_FAILED)).toBeNull();
+        expect(screen.queryByText(EMPTY)).toBeNull();
+      });
+    });
+
+    describe("cached team names", () => {
+      it("keeps cached names and offers a working retry when a refresh fails", async () => {
+        const { client, current } = await renderLoaded(loaded());
+
+        current[TEAMS_PATH] = () => UNAVAILABLE();
+        await client.refetchQueries({ queryKey: namesKey });
+
+        expect(await screen.findByText(NAMES_REFRESH_FAILED)).toBeTruthy();
+        expect(client.getQueryState(namesKey)?.status).toBe("error");
+        expect(screen.getByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
+        expect(screen.queryByText(NAMES_DENIED)).toBeNull();
+        expect(screen.queryByText(REFRESH_FAILED)).toBeNull();
+
+        current[TEAMS_PATH] = () => Response.json(teamList);
+        fireEvent.click(retryButton());
+        await waitFor(() => expect(screen.queryByText(NAMES_REFRESH_FAILED)).toBeNull());
+        expect(screen.getByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
+      });
+
+      it("warns about a failed refresh of a successful empty names list", async () => {
+        const { client, current } = await renderLoaded(
+          { ...loaded(), [TEAMS_PATH]: () => Response.json({ items: [], nextCursor: null }) },
+          () => screen.findAllByText("Equipo sin nombre disponible"),
+        );
+
+        current[TEAMS_PATH] = () => UNAVAILABLE();
+        await client.refetchQueries({ queryKey: namesKey });
+
+        expect(await screen.findByText(NAMES_REFRESH_FAILED)).toBeTruthy();
+        expect(screen.getAllByRole("rowheader")).toHaveLength(completeTeamStatsFixture.length);
+
+        current[TEAMS_PATH] = () => Response.json(teamList);
+        fireEvent.click(retryButton());
+        expect(await screen.findByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
+        expect(screen.queryByText(NAMES_REFRESH_FAILED)).toBeNull();
+      });
+
+      it.each([
+        [401, "auth.unauthenticated"],
+        [403, "competitions.participants_read_forbidden"],
+        [404, "api.not_found"],
+      ])(
+        "keeps names hidden after a %i refusal through a later 503 until a fresh success",
+        async (status, code) => {
+          const { client, current } = await renderLoaded(loaded());
+
+          current[TEAMS_PATH] = () => failure(status, code);
+          await client.refetchQueries({ queryKey: namesKey });
+          expect(await screen.findByText(NAMES_DENIED)).toBeTruthy();
+
+          current[TEAMS_PATH] = () => UNAVAILABLE();
+          await client.refetchQueries({ queryKey: namesKey });
+          await waitFor(() => expect(client.getQueryState(namesKey)?.status).toBe("error"));
+          expect(screen.getByText(NAMES_DENIED)).toBeTruthy();
+          expect(screen.queryByText(NAMES_REFRESH_FAILED)).toBeNull();
+          expect(screen.queryByText("Cuervos FC")).toBeNull();
+          expect(screen.getAllByRole("rowheader")).toHaveLength(completeTeamStatsFixture.length);
+
+          current[TEAMS_PATH] = () => Response.json(teamList);
+          fireEvent.click(retryButton());
+          expect(await screen.findByRole("rowheader", { name: "Cuervos FC" })).toBeTruthy();
+          expect(screen.queryByText(NAMES_DENIED)).toBeNull();
+        },
+      );
     });
   });
 });

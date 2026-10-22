@@ -1731,6 +1731,10 @@ const es = {
   "competition.teamStats.teamName.loading": "Cargando nombre del equipo",
   "competition.teamStats.teamName.error":
     "No pudimos cargar los nombres de los equipos. Las cifras siguen disponibles.",
+  "competition.teamStats.teamName.denied":
+    "No tienes acceso a los nombres de los equipos. Las cifras siguen disponibles.",
+  "competition.teamStats.teamName.refreshFailed":
+    "No pudimos actualizar los nombres de los equipos. Se muestran los últimos cargados.",
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
@@ -3644,6 +3648,10 @@ const en: Catalog = {
   "competition.teamStats.teamName.loading": "Loading team name",
   "competition.teamStats.teamName.error":
     "We couldn't load the team names. The figures are still available.",
+  "competition.teamStats.teamName.denied":
+    "You don't have access to the team names. The figures are still available.",
+  "competition.teamStats.teamName.refreshFailed":
+    "We couldn't refresh the team names. Showing the last ones loaded.",
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;
