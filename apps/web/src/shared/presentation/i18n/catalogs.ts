@@ -1681,6 +1681,45 @@ const es = {
   "encounter.documentTitle": "Enfrentamiento",
   "encounters.list.documentTitle": "Enfrentamientos",
   "matches.list.documentTitle": "Partidos",
+  "standings.documentTitle": "Clasificación",
+  "standings.loading": "Cargando la clasificación",
+  "standings.error": "No pudimos cargar la clasificación.",
+  "standings.accessError": "No pudimos comprobar tu acceso a la clasificación.",
+  "standings.forbidden.title": "No tienes acceso a la clasificación",
+  "standings.forbidden.description":
+    "Tu cuenta no tiene permiso para ver la tabla oficial de esta competición.",
+  "standings.forbidden.back": "Volver a la organización",
+  "standings.empty.title": "Aún no hay clasificación oficial",
+  "standings.empty.description":
+    "La tabla se calcula solo con resultados oficiales aprobados y aparecerá cuando se apruebe el primero. Los partidos de EA sin aprobar no cuentan.",
+  "standings.table.label": "Clasificación oficial",
+  "standings.table.updated": ({ time }) => `Actualizada ${time}`,
+  "standings.table.formula": ({ version }) => `Fórmula ${version}`,
+  "standings.teamNames.error":
+    "No pudimos cargar los nombres de los equipos. La tabla muestra las cifras con un nombre genérico.",
+  "standings.team.loading": "Cargando nombre del equipo",
+  "standings.team.unresolved": "Equipo sin nombre disponible",
+  "standings.col.position": "Pos.",
+  "standings.col.position.full": "Posición",
+  "standings.col.team": "Equipo",
+  "standings.col.played": "PJ",
+  "standings.col.played.full": "Partidos jugados",
+  "standings.col.wins": "G",
+  "standings.col.wins.full": "Partidos ganados",
+  "standings.col.draws": "E",
+  "standings.col.draws.full": "Partidos empatados",
+  "standings.col.losses": "P",
+  "standings.col.losses.full": "Partidos perdidos",
+  "standings.col.goalsFor": "GF",
+  "standings.col.goalsFor.full": "Goles a favor",
+  "standings.col.goalsAgainst": "GC",
+  "standings.col.goalsAgainst.full": "Goles en contra",
+  "standings.col.goalDifference": "DG",
+  "standings.col.goalDifference.full": "Diferencia de goles",
+  "standings.col.points": "Pts",
+  "standings.col.points.full": "Puntos",
+  "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
+    `${wins} G · ${draws} E · ${losses} P · GF ${goalsFor} · GC ${goalsAgainst}`,
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
@@ -1885,6 +1924,15 @@ export interface MessageParamsByKey {
   readonly "org.home.activity.team": { readonly time: string };
   readonly "org.home.activity.competition": { readonly status: string; readonly time: string };
   readonly "org.home.actions.menu": { readonly name: string };
+  readonly "standings.table.updated": { readonly time: string };
+  readonly "standings.table.formula": { readonly version: string };
+  readonly "standings.row.record": {
+    readonly wins: string;
+    readonly draws: string;
+    readonly losses: string;
+    readonly goalsFor: string;
+    readonly goalsAgainst: string;
+  };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -3540,6 +3588,45 @@ const en: Catalog = {
   "encounter.documentTitle": "Encounter",
   "encounters.list.documentTitle": "Encounters",
   "matches.list.documentTitle": "Matches",
+  "standings.documentTitle": "Standings",
+  "standings.loading": "Loading the standings",
+  "standings.error": "We couldn't load the standings.",
+  "standings.accessError": "We couldn't check your access to the standings.",
+  "standings.forbidden.title": "You can't view the standings",
+  "standings.forbidden.description":
+    "Your account doesn't have permission to see this competition's official table.",
+  "standings.forbidden.back": "Back to the organization",
+  "standings.empty.title": "No official standings yet",
+  "standings.empty.description":
+    "The table is built only from approved official results and will appear once the first one is approved. EA matches that aren't approved don't count.",
+  "standings.table.label": "Official standings",
+  "standings.table.updated": ({ time }) => `Updated ${time}`,
+  "standings.table.formula": ({ version }) => `Formula ${version}`,
+  "standings.teamNames.error":
+    "We couldn't load the team names. The table shows the figures with a generic name.",
+  "standings.team.loading": "Loading team name",
+  "standings.team.unresolved": "Team name unavailable",
+  "standings.col.position": "Pos.",
+  "standings.col.position.full": "Position",
+  "standings.col.team": "Team",
+  "standings.col.played": "P",
+  "standings.col.played.full": "Matches played",
+  "standings.col.wins": "W",
+  "standings.col.wins.full": "Matches won",
+  "standings.col.draws": "D",
+  "standings.col.draws.full": "Matches drawn",
+  "standings.col.losses": "L",
+  "standings.col.losses.full": "Matches lost",
+  "standings.col.goalsFor": "GF",
+  "standings.col.goalsFor.full": "Goals for",
+  "standings.col.goalsAgainst": "GA",
+  "standings.col.goalsAgainst.full": "Goals against",
+  "standings.col.goalDifference": "GD",
+  "standings.col.goalDifference.full": "Goal difference",
+  "standings.col.points": "Pts",
+  "standings.col.points.full": "Points",
+  "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
+    `${wins} W · ${draws} D · ${losses} L · GF ${goalsFor} · GA ${goalsAgainst}`,
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;
