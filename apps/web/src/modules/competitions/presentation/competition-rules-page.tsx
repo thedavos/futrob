@@ -29,7 +29,7 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
-import { useCompetitionDraftQuery } from "./competition-queries.ts";
+import { useCompetitionRulesQuery } from "./competition-queries.ts";
 import {
   rulesAreEditable,
   rulesStages,
@@ -38,7 +38,6 @@ import {
 } from "./competition-rules-model.ts";
 import { PlatformRules, RetryAlert, Section, Fact } from "./competition-rules-parts.tsx";
 import { styles } from "./competition-rules-page.styles.ts";
-import { useRulesRefusal } from "./use-rules-refusal.ts";
 
 export type CompetitionRulesState =
   | { readonly kind: "loading" }
@@ -56,22 +55,22 @@ export type CompetitionRulesState =
 type Scope = { readonly organizationId: string; readonly competitionId: string };
 
 export function CompetitionRulesRoute(scope: Scope) {
-  const query = useCompetitionDraftQuery(scope.organizationId, scope.competitionId);
+  const query = useCompetitionRulesQuery(scope.organizationId, scope.competitionId);
   const update = useCan(scope, COMPETITION_PERMISSION.update);
-  const refusal = useRulesRefusal(`${scope.organizationId}/${scope.competitionId}`, query);
   const state: CompetitionRulesState = (() => {
     const retry = () => void query.refetch();
-    // A refusal always wins over cached rules, even after a later transient error.
-    if (refusal) return { kind: refusal };
-    if (query.isError && !query.data) return { kind: "error", retry };
-    if (query.data) {
+    const read = query.data;
+    // A refusal is the last successful read, so it wins over any later transient error.
+    if (read?.kind === "refused") return { kind: read.refusal };
+    if (read) {
       return {
         kind: "ready",
-        draft: query.data,
-        canEdit: rulesAreEditable(query.data, update.allowed),
+        draft: read.draft,
+        canEdit: rulesAreEditable(read.draft, update.allowed),
         refreshFailed: query.isError ? retry : undefined,
       };
     }
+    if (query.isError) return { kind: "error", retry };
     return { kind: "loading" };
   })();
   return <CompetitionRulesPageView {...scope} state={state} />;

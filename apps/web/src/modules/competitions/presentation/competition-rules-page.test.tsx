@@ -217,6 +217,69 @@ describe("Competition rules page", () => {
     }
   });
 
+  it("keeps a refusal through a transient error and a remount within the cache lifetime", async () => {
+    const refusals = [
+      { status: 401, title: "No tienes acceso al reglamento" },
+      { status: 403, title: "No tienes acceso al reglamento" },
+      { status: 404, title: "No encontramos esta competición" },
+    ];
+    for (const { status, title } of refusals) {
+      cleanup();
+      serve(
+        draft(leaguePlayoffsDraft),
+        () => failure(status, "authorization.forbidden"),
+        () => failure(500, "api.unexpected"),
+      );
+      const queryClient = renderRoute();
+      expect(await screen.findByText("Liga + playoffs")).toBeTruthy();
+      await queryClient.refetchQueries();
+      expect(await screen.findByText(title)).toBeTruthy();
+      await queryClient.refetchQueries();
+      await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+      expect(screen.getByText(title)).toBeTruthy();
+
+      cleanup();
+      render(
+        <QueryClientProvider client={queryClient}>
+          <I18nProvider initialLocale="es">
+            <CompetitionRulesRoute competitionId="competition-1" organizationId="org-1" />
+          </I18nProvider>
+        </QueryClientProvider>,
+      );
+      await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+      expect(screen.getByText(title)).toBeTruthy();
+      expect(screen.queryByText("Liga + playoffs")).toBeNull();
+      expect(screen.queryByText("Puntuación")).toBeNull();
+      expect(screen.queryByText(/No pudimos actualizar/)).toBeNull();
+      expect(screen.queryByRole("button", { name: "Editar reglas" })).toBeNull();
+    }
+  });
+
+  it("isolates a refusal to its own organization", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = new URL(String(input), "https://web.test").pathname;
+        return path.startsWith("/api/v1/organizations/org-2/")
+          ? failure(403, "authorization.forbidden")
+          : draft(leagueDraft)();
+      }),
+    );
+    const view = (organizationId: string) => (
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider initialLocale="es">
+          <CompetitionRulesRoute competitionId="competition-1" organizationId={organizationId} />
+        </I18nProvider>
+      </QueryClientProvider>
+    );
+    const { rerender } = render(view("org-2"));
+    expect(await screen.findByText("No tienes acceso al reglamento")).toBeTruthy();
+    rerender(view("org-1"));
+    expect(await screen.findByText("Desde 4")).toBeTruthy();
+    expect(screen.queryByText("No tienes acceso al reglamento")).toBeNull();
+  });
+
   it("isolates a refusal to its own scope", async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const other = "/api/v1/organizations/org-1/competitions/competition-2";
