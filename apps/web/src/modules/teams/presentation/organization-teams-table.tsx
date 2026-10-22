@@ -16,6 +16,9 @@ import {
   TextLink,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { TEAM_PERMISSION } from "@futrob/teams";
+import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   formatTeamCreatedAt,
@@ -54,11 +57,14 @@ const styles = stylex.create({
   skeleton: { height: "1rem", width: "8rem", maxWidth: "100%" },
 });
 
+const DESTINATION_PARTICIPANTS = {
+  readParticipants: COMPETITION_PERMISSION.participantsRead,
+} as const;
+const DESTINATION_ROSTER = { readRoster: TEAM_PERMISSION.rosterRead } as const;
+
 export type TeamsTableParticipation = {
   readonly index: TeamParticipationIndex;
   readonly loading: boolean;
-  /** Entries open the competition's team management only for actors allowed to read them. */
-  readonly linksAllowed: boolean;
 };
 
 export function OrganizationTeamsTable({
@@ -130,7 +136,6 @@ function TeamCompetitions({
           <li key={entry.competitionId} {...applyStyles(styles.item)}>
             <CompetitionEntry
               entry={entry}
-              linked={participation.linksAllowed}
               organizationId={organizationId}
               teamId={team.id}
               teamName={team.name}
@@ -155,18 +160,33 @@ function TeamCompetitions({
 
 function CompetitionEntry({
   entry,
-  linked,
   organizationId,
   teamId,
   teamName,
 }: {
   readonly entry: TeamParticipation;
-  readonly linked: boolean;
   readonly organizationId: string;
   readonly teamId: string;
   readonly teamName: string;
 }) {
   const { t } = useI18n();
+  // The destination lists participants (competition scope) and reads one roster (team scope);
+  // each is resolved in its own scope because a narrower grant or deny overrides the organization's.
+  const participants = useCapabilities(
+    { organizationId, competitionId: entry.competitionId },
+    DESTINATION_PARTICIPANTS,
+  );
+  const roster = useCapabilities(
+    { organizationId, competitionId: entry.competitionId, teamId },
+    DESTINATION_ROSTER,
+  );
+  const linked =
+    !participants.loading &&
+    !participants.unavailable &&
+    !roster.loading &&
+    !roster.unavailable &&
+    participants.readParticipants &&
+    roster.readRoster;
   if (!linked) {
     return <span {...applyStyles(styles.plainName)}>{entry.competitionName}</span>;
   }

@@ -75,6 +75,19 @@ describe("buildTeamParticipationIndex", () => {
     expect(loading.byTeam.get("t1")).toHaveLength(1);
     expect(failed.complete).toBe(false);
   });
+
+  it("is incomplete when a competition's participants were refused", () => {
+    const refused = buildTeamParticipationIndex(competitions, [
+      { kind: "forbidden" },
+      { kind: "data", participants: [] },
+    ]);
+    expect(refused.complete).toBe(false);
+  });
+
+  it("is incomplete when the competition list itself is unknown, even though it is empty", () => {
+    expect(buildTeamParticipationIndex([], [], false).complete).toBe(false);
+    expect(buildTeamParticipationIndex([], [], true).complete).toBe(true);
+  });
 });
 
 describe("formatTeamCreatedAt", () => {

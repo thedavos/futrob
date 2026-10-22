@@ -45,6 +45,7 @@ const SCENARIO_IDS = [
   "participationError",
   "forbidden",
   "linksDenied",
+  "competitionsError",
 ] as const;
 
 type ScenarioId = (typeof SCENARIO_IDS)[number];
@@ -115,20 +116,105 @@ const PARTICIPANTS: Record<"liga" | "copa", ListCompetitionParticipantsResponse>
   },
 };
 
-const PERMISSIONS = [
-  TEAM_PERMISSION.read,
-  TEAM_PERMISSION.rosterRead,
-  COMPETITION_PERMISSION.participantsRead,
-] as const;
+type AccessScope = {
+  readonly organizationId: string;
+  readonly competitionId?: string;
+  readonly teamId?: string;
+};
 
-function OrganizationTeamsStoryShell({
-  scenario,
-  initialQuery = "",
-}: {
-  readonly scenario: ScenarioId;
-  readonly initialQuery?: string;
-}) {
-  const [query, setQuery] = useState(initialQuery);
+function seedAccess(
+  queryClient: QueryClient,
+  scope: AccessScope,
+  permission: string,
+  allowed: boolean,
+) {
+  queryClient.setQueryData(queryKeys.authorization.effectiveAccess(scope, [permission]), {
+    actorId: "actor-story",
+    scope,
+    roles: [],
+    permissions: [
+      {
+        permission,
+        allowed,
+        decidedAt: scope.teamId ? "team" : scope.competitionId ? "competition" : "organization",
+      },
+    ],
+  });
+}
+
+/**
+ * Every destination is resolved in its own scope. `linksDenied` keeps the organization-level
+ * participant/roster grants allowed (a broad grant must not expose anything) while denying
+ * Liga's participants outright and Cuervos' roster in Copa; Lobos in Copa stays allowed.
+ */
+function seedScenarioAccess(queryClient: QueryClient, scenario: ScenarioId) {
+  seedAccess(
+    queryClient,
+    { organizationId: ORG_ID },
+    TEAM_PERMISSION.read,
+    scenario !== "forbidden",
+  );
+  seedAccess(
+    queryClient,
+    { organizationId: ORG_ID },
+    COMPETITION_PERMISSION.participantsRead,
+    true,
+  );
+  seedAccess(queryClient, { organizationId: ORG_ID }, TEAM_PERMISSION.rosterRead, true);
+  for (const { id: competitionId } of COMPETITIONS) {
+    const participantsAllowed = !(scenario === "linksDenied" && competitionId === "liga");
+    seedAccess(
+      queryClient,
+      { organizationId: ORG_ID, competitionId },
+      COMPETITION_PERMISSION.participantsRead,
+      participantsAllowed,
+    );
+    for (const { id: teamId } of TEAMS) {
+      const rosterAllowed = !(
+        scenario === "linksDenied" &&
+        competitionId === "copa" &&
+        teamId === "cuervos"
+      );
+      seedAccess(
+        queryClient,
+        { organizationId: ORG_ID, competitionId, teamId },
+        TEAM_PERMISSION.rosterRead,
+        rosterAllowed,
+      );
+    }
+  }
+}
+
+function OrganizationTeamsRoute() {
+  const [query, setQuery] = useState("");
+  return <OrganizationTeamsPage onQueryChange={setQuery} organizationId={ORG_ID} query={query} />;
+}
+
+function createStoryRouter() {
+  const rootRoute = createRootRoute({ component: Outlet });
+  const teamsRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/orgs/$orgId/teams",
+    component: OrganizationTeamsRoute,
+  });
+  const destination = (path: string, label: string) =>
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path,
+      component: () => <p>{label}</p>,
+    });
+  return createRouter({
+    routeTree: rootRoute.addChildren([
+      teamsRoute,
+      destination("/orgs/$orgId", "Inicio de la organización"),
+      destination("/orgs/$orgId/competitions", "Listado de competiciones"),
+      destination("/orgs/$orgId/competitions/$competitionId/teams", "Equipos de la competición"),
+    ]),
+    history: createMemoryHistory({ initialEntries: [`/orgs/${ORG_ID}/teams`] }),
+  });
+}
+
+function OrganizationTeamsStoryShell({ scenario }: { readonly scenario: ScenarioId }) {
   const client = useMemo(() => {
     configureCompetitionsStory({
       organizationTeams:
@@ -139,7 +225,8 @@ function OrganizationTeamsStoryShell({
             : scenario === "empty"
               ? { teams: [] }
               : { teams: TEAMS },
-      organizationCompetitions: { competitions: COMPETITIONS },
+      organizationCompetitions:
+        scenario === "competitionsError" ? "error" : { competitions: COMPETITIONS },
       organizationParticipants: {
         liga: scenario === "participationError" ? "error" : PARTICIPANTS.liga,
         copa: PARTICIPANTS.copa,
@@ -151,54 +238,12 @@ function OrganizationTeamsStoryShell({
         mutations: { retry: false },
       },
     });
-    queryClient.setQueryData(
-      queryKeys.authorization.effectiveAccess({ organizationId: ORG_ID }, PERMISSIONS),
-      {
-        actorId: "actor-story",
-        scope: { organizationId: ORG_ID },
-        roles: [],
-        permissions: PERMISSIONS.map((permission) => ({
-          permission,
-          allowed:
-            scenario === "forbidden"
-              ? false
-              : scenario === "linksDenied"
-                ? permission === TEAM_PERMISSION.read
-                : true,
-          decidedAt: "organization" as const,
-        })),
-      },
-    );
+    seedScenarioAccess(queryClient, scenario);
     return queryClient;
   }, [scenario]);
 
-  const router = useMemo(() => {
-    const rootRoute = createRootRoute({ component: Outlet });
-    const teamsRoute = createRoute({
-      getParentRoute: () => rootRoute,
-      path: "/orgs/$orgId/teams",
-      component: () => (
-        <OrganizationTeamsPage onQueryChange={setQuery} organizationId={ORG_ID} query={query} />
-      ),
-    });
-    const destination = (path: string, label: string) =>
-      createRoute({
-        getParentRoute: () => rootRoute,
-        path,
-        component: () => <p>{label}</p>,
-      });
-    return createRouter({
-      routeTree: rootRoute.addChildren([
-        teamsRoute,
-        destination("/orgs/$orgId", "Inicio de la organización"),
-        destination("/orgs/$orgId/competitions", "Listado de competiciones"),
-        destination("/orgs/$orgId/competitions/$competitionId/teams", "Equipos de la competición"),
-      ]),
-      history: createMemoryHistory({ initialEntries: [`/orgs/${ORG_ID}/teams`] }),
-    });
-    // The query is controlled from the page; the router only hosts the route.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  // Built once per scenario: the search query lives inside the route, so typing never rebuilds it.
+  const router = useMemo(createStoryRouter, [scenario]);
 
   return (
     <QueryClientProvider client={client}>
@@ -281,7 +326,8 @@ export const Empty = story("Sin equipos", "empty", async ({ canvasElement }) => 
   await expect(
     await canvas.findByRole("heading", { name: "Todavía no hay equipos" }),
   ).toBeVisible();
-  await expect(canvas.getByRole("link", { name: "Ver competiciones" })).toHaveAttribute(
+  // Button rendered as a router link keeps the button role; the href proves the destination.
+  await expect(canvas.getByRole("button", { name: "Ver competiciones" })).toHaveAttribute(
     "href",
     "/orgs/org-story/competitions",
   );
@@ -326,16 +372,52 @@ export const Forbidden = story("Sin permiso", "forbidden", async ({ canvasElemen
     await canvas.findByRole("heading", { name: "No tienes acceso a los equipos" }),
   ).toBeVisible();
   await expect(canvas.queryByRole("table")).toBeNull();
-  await userEvent.click(canvas.getByRole("link", { name: "Volver al inicio de la organización" }));
+  const back = canvas.getByRole("button", { name: "Volver al inicio de la organización" });
+  await expect(back).toHaveAttribute("href", "/orgs/org-story");
+  await userEvent.click(back);
   await expect(await canvas.findByText("Inicio de la organización")).toBeVisible();
 });
 
 export const LinksDenied = story("Sin enlaces", "linksDenied", async ({ canvasElement }) => {
   const canvas = within(canvasElement);
   const cuervos = await canvas.findByRole("row", { name: /Cuervos FC/ });
+  // Liga: participants denied in the competition scope. Copa: roster denied in the team scope.
   await expect(within(cuervos).getByText("Liga Metropolitana")).toBeVisible();
+  await expect(within(cuervos).getByText("Copa de otoño")).toBeVisible();
   await expect(within(cuervos).queryByRole("link")).toBeNull();
+  const lobos = canvas.getByRole("row", { name: /Lobos de la Costa/ });
+  await expect(within(lobos).queryByRole("link", { name: /Liga Metropolitana/ })).toBeNull();
+  await expect(
+    within(lobos).getByRole("link", {
+      name: "Copa de otoño: ver Lobos de la Costa Atlántica Unidos",
+    }),
+  ).toHaveAttribute("href", "/orgs/org-story/competitions/copa/teams?teamId=lobos");
 });
+
+export const CompetitionsError = story(
+  "Error de competiciones",
+  "competitionsError",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(
+        "No pudimos cargar las competiciones de todos los equipos. Algunas filas pueden estar incompletas.",
+      ),
+    ).toBeVisible();
+    // An unknown competition list is never reported as "no competitions".
+    await expect(canvas.queryByText("Sin competiciones")).toBeNull();
+    await expect(canvas.getAllByText("No disponible")).toHaveLength(TEAMS.length);
+    configureCompetitionsStory({ organizationCompetitions: { competitions: COMPETITIONS } });
+    await userEvent.click(canvas.getByRole("button", { name: "Reintentar" }));
+    const cuervos = await canvas.findByRole("row", { name: /Cuervos FC/ });
+    await expect(
+      await within(cuervos).findByRole("link", { name: "Liga Metropolitana: ver Cuervos FC" }),
+    ).toBeVisible();
+    await expect(
+      within(canvas.getByRole("row", { name: /Sin Liga CF/ })).getByText("Sin competiciones"),
+    ).toBeVisible();
+  },
+);
 
 export const Mobile: Story = {
   name: "Mobile",

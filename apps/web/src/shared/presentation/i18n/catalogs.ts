@@ -1042,6 +1042,8 @@ const es = {
   "org.teams.refreshFailed": "No pudimos actualizar los equipos. Se muestran los datos anteriores.",
   "org.teams.partial":
     "No pudimos cargar las competiciones de todos los equipos. Algunas filas pueden estar incompletas.",
+  "org.teams.partialForbidden":
+    "No tienes acceso a las competiciones de algunos equipos, por eso esas filas no están disponibles.",
   "org.teams.forbidden.title": "No tienes acceso a los equipos",
   "org.teams.forbidden.description":
     "Tu rol en esta organización no incluye consultar su directorio de equipos.",
@@ -2954,6 +2956,8 @@ const en: Catalog = {
   "org.teams.refreshFailed": "We couldn't refresh the teams. Showing the previous data.",
   "org.teams.partial":
     "We couldn't load the competitions for every team. Some rows may be incomplete.",
+  "org.teams.partialForbidden":
+    "You don't have access to the competitions of some teams, so those rows are unavailable.",
   "org.teams.forbidden.title": "You don't have access to teams",
   "org.teams.forbidden.description":
     "Your role in this organization doesn't include viewing its team directory.",

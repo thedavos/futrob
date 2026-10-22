@@ -28,7 +28,6 @@ import {
   PageHeaderTitle,
   Skeleton,
 } from "@futrob/ui";
-import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import {
   CompetitionsClientError,
@@ -73,11 +72,7 @@ const styles = stylex.create({
   noMatches: { display: "flex", justifyContent: "center", paddingBlock: "1.5rem" },
 });
 
-const CAPABILITIES = {
-  readTeams: TEAM_PERMISSION.read,
-  readRosters: TEAM_PERMISSION.rosterRead,
-  readParticipants: COMPETITION_PERMISSION.participantsRead,
-} as const;
+const CAPABILITIES = { readTeams: TEAM_PERMISSION.read } as const;
 
 function isForbidden(error: Error | null): boolean {
   return error instanceof CompetitionsClientError && error.status === 403;
@@ -105,7 +100,10 @@ export function OrganizationTeamsPage({
   const teamsQuery = useOrganizationTeamsQuery(organizationId);
   const teams = teamsQuery.data?.teams ?? [];
   const competitionsQuery = useOrganizationCompetitionsQuery(organizationId);
-  const competitions = competitionsQuery.data?.competitions ?? [];
+  // A 403 is authoritative: cached competitions from before the refusal must not be shown.
+  const competitionsForbidden = isForbidden(competitionsQuery.error);
+  const competitions = competitionsForbidden ? [] : (competitionsQuery.data?.competitions ?? []);
+  const competitionsKnown = !competitionsForbidden && competitionsQuery.data !== undefined;
   const showParticipation = teamsQuery.isSuccess && teams.length > 0;
   const participantQueries = useQueries({
     queries: competitions.map((competition) => ({
@@ -116,17 +114,23 @@ export function OrganizationTeamsPage({
   });
 
   const participantResults: CompetitionParticipantsResult[] = participantQueries.map((result) =>
-    result.isSuccess
-      ? { kind: "data", participants: result.data.participants }
-      : result.isError
-        ? { kind: "error" }
-        : { kind: "loading" },
+    isForbidden(result.error)
+      ? { kind: "forbidden" }
+      : result.isSuccess
+        ? { kind: "data", participants: result.data.participants }
+        : result.isError
+          ? { kind: "error" }
+          : { kind: "loading" },
   );
-  const index = buildTeamParticipationIndex(competitions, participantResults);
+  const index = buildTeamParticipationIndex(competitions, participantResults, competitionsKnown);
   const participationLoading =
-    competitionsQuery.isPending || participantResults.some((result) => result.kind === "loading");
+    (competitionsQuery.isPending && !competitionsForbidden) ||
+    participantResults.some((result) => result.kind === "loading");
+  const participationRefused =
+    competitionsForbidden || participantResults.some((result) => result.kind === "forbidden");
   const participationFailed =
-    competitionsQuery.isError || participantResults.some((result) => result.kind === "error");
+    (competitionsQuery.isError && !competitionsForbidden) ||
+    participantResults.some((result) => result.kind === "error");
 
   function retryParticipation() {
     if (competitionsQuery.isError) void competitionsQuery.refetch();
@@ -243,6 +247,11 @@ export function OrganizationTeamsPage({
           <AlertDescription>{t("org.teams.refreshFailed")}</AlertDescription>
         </Alert>
       ) : null}
+      {participationRefused && !participationFailed && !participationLoading ? (
+        <Alert variant="warning">
+          <AlertDescription>{t("org.teams.partialForbidden")}</AlertDescription>
+        </Alert>
+      ) : null}
       {participationFailed && !participationLoading ? (
         <div {...applyStyles(styles.feedback)}>
           <Alert variant="warning">
@@ -299,11 +308,7 @@ export function OrganizationTeamsPage({
             <OrganizationTeamsTable
               labelledBy={headingId}
               organizationId={organizationId}
-              participation={{
-                index,
-                loading: participationLoading,
-                linksAllowed: caps.readRosters && caps.readParticipants,
-              }}
+              participation={{ index, loading: participationLoading }}
               teams={visible}
             />
           )}

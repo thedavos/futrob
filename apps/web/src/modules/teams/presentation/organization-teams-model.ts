@@ -24,6 +24,7 @@ export type TeamParticipationIndex = {
 export type CompetitionParticipantsResult =
   | { readonly kind: "loading" }
   | { readonly kind: "error" }
+  | { readonly kind: "forbidden" }
   | { readonly kind: "data"; readonly participants: readonly CompetitionEntryDto[] };
 
 const STATUS_ORDER = {
@@ -50,9 +51,11 @@ export function filterTeamsByName(teams: readonly TeamDto[], query: string): rea
 export function buildTeamParticipationIndex(
   competitions: readonly CompetitionDto[],
   results: readonly CompetitionParticipantsResult[],
+  /** False while the competition list itself is unknown (loading, failed or refused). */
+  competitionsKnown = true,
 ): TeamParticipationIndex {
   const byTeam = new Map<string, TeamParticipation[]>();
-  let complete = true;
+  let complete = competitionsKnown;
   competitions.forEach((competition, index) => {
     const result = results[index];
     if (result?.kind !== "data") {
