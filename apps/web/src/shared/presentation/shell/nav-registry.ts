@@ -1,6 +1,7 @@
 import type { Permission } from "@futrob/shared-kernel";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
+import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { createTranslator, type Translator } from "@/shared/presentation/i18n/translate.ts";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
@@ -230,6 +231,14 @@ function organizationCompetitionContext(
       href: `${base}/rankings`,
       icon: "rankings",
       requiredPermission: COMPETITION_PERMISSION.read,
+    },
+    {
+      // Separate from the official standings table.
+      id: "team-performance",
+      label: t("pages.competition.teamPerformance.title"),
+      href: `${base}/team-performance`,
+      icon: "statistics",
+      requiredPermission: STATISTICS_PERMISSION.read,
     },
     {
       id: "teams",

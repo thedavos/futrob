@@ -1161,6 +1161,80 @@ const es = {
     "Desacuerdos sobre partidos o resultados que esperan tu decisión.",
   "pages.competition.analytics.title": "Analíticas",
   "pages.competition.analytics.subtitle": "Participación y actividad de la competición.",
+  "pages.competition.teamPerformance.title": "Rendimiento de equipos",
+  "pages.competition.teamPerformance.subtitle":
+    "Puntuación de 0 a 100 calculada solo con resultados oficiales aprobados. No sustituye a la clasificación.",
+  "teamPerformance.loading": "Cargando ranking de rendimiento",
+  "teamPerformance.error": "No pudimos cargar el ranking de rendimiento.",
+  "teamPerformance.refreshError":
+    "No pudimos actualizar el ranking. Se muestran los últimos datos cargados.",
+  "teamPerformance.accessError": "No pudimos comprobar tu acceso a las estadísticas.",
+  "teamPerformance.forbidden.title": "No tienes acceso a este ranking",
+  "teamPerformance.forbidden.description":
+    "Tu rol no permite consultar las estadísticas de esta competición.",
+  "teamPerformance.backToCompetition": "Volver a la competición",
+  "teamPerformance.notBuilt.title": "Aún no hay ranking de rendimiento",
+  "teamPerformance.notBuilt.description":
+    "Se calcula al aprobar resultados oficiales. Los partidos EA sin aprobar no cuentan.",
+  "teamPerformance.notBuilt.action": "Ver enfrentamientos",
+  "teamPerformance.empty.title": "Sin equipos en el ranking",
+  "teamPerformance.empty.description":
+    "Aparecerán los equipos aprobados en la competición y los que tengan resultados oficiales.",
+  "teamPerformance.projectionIncomplete.title": "Ranking pendiente de reconstrucción",
+  "teamPerformance.projectionIncomplete.description":
+    "Hay resultados oficiales que aún no están proyectados por completo. Ningún equipo recibe puntuación hasta reconstruir el ranking.",
+  "teamPerformance.unmatched": ({ count }) =>
+    count === 1
+      ? "1 aportación estadística no coincide con el resultado oficial vigente y no cuenta."
+      : `${count} aportaciones estadísticas no coinciden con el resultado oficial vigente y no cuentan.`,
+  "teamPerformance.criteria.title": "Criterio",
+  "teamPerformance.criteria.description":
+    "La puntuación es la suma ponderada de cinco componentes de 0 a 100. Si falta alguno, el equipo queda sin puntuación: no se rellena con cero ni se reparten los pesos.",
+  "teamPerformance.criteria.window": "Ventana",
+  "teamPerformance.criteria.windowValue": ({ recent }) =>
+    `Toda la competición · forma de los últimos ${recent} enfrentamientos`,
+  "teamPerformance.criteria.eligibility": "Elegibilidad",
+  "teamPerformance.criteria.eligibilityValue": ({ minimum }) =>
+    `Al menos ${minimum} enfrentamientos oficiales y los cinco componentes disponibles`,
+  "teamPerformance.criteria.period": "Periodo",
+  "teamPerformance.criteria.noPeriod": "Sin resultados oficiales",
+  "teamPerformance.criteria.updated": "Actualizado",
+  "teamPerformance.criteria.sources": "Resultados oficiales",
+  "teamPerformance.criteria.sourcesValue": ({ approved, voided }) =>
+    voided === 0
+      ? `${approved} aprobados`
+      : `${approved} aprobados · ${voided} anulados (no cuentan)`,
+  "teamPerformance.criteria.versions": ({ formula, normalization, window }) =>
+    `Versiones: ${formula} · ${normalization} · ${window}`,
+  "teamPerformance.weights.label": "Pesos de la fórmula",
+  "teamPerformance.weight": ({ weight }) => `${weight} %`,
+  "teamPerformance.table.title": "Ranking",
+  "teamPerformance.table.summary": ({ scored, incomplete }) =>
+    `${scored} con puntuación · ${incomplete} sin puntuación`,
+  "teamPerformance.table.position": "Pos.",
+  "teamPerformance.table.team": "Equipo",
+  "teamPerformance.table.score": "Puntuación",
+  "teamPerformance.table.encounters": "Enfrentamientos",
+  "teamPerformance.table.coverage": "Cobertura",
+  "teamPerformance.table.noValue": "Sin dato",
+  "teamPerformance.table.unranked": "Sin puntuación",
+  "teamPerformance.table.scrollHint": "Desliza la tabla para ver todos los componentes.",
+  "teamPerformance.team.unknown": "Equipo no disponible",
+  "teamPerformance.teamsUnavailable":
+    "No pudimos cargar los nombres de los equipos. El ranking sigue siendo válido.",
+  "teamPerformance.metric.results": "Resultados",
+  "teamPerformance.metric.goalDifference": "Diferencia de goles",
+  "teamPerformance.metric.recentForm": "Forma reciente",
+  "teamPerformance.metric.offensiveEfficiency": "Eficiencia ofensiva",
+  "teamPerformance.metric.defensiveEfficiency": "Eficiencia defensiva",
+  "teamPerformance.reason.complete": "Completo",
+  "teamPerformance.reason.no_data": "Sin partidos oficiales",
+  "teamPerformance.reason.insufficient_sample": ({ count, minimum }) =>
+    `Muestra insuficiente: ${count} de ${minimum} enfrentamientos`,
+  "teamPerformance.reason.missing_components": "Faltan componentes",
+  "teamPerformance.reason.projection_incomplete": "Proyección incompleta",
+  "teamPerformance.missing": ({ metrics }) => `Falta: ${metrics}`,
+  "teamPerformance.standingsLink": "Ver clasificación oficial",
   "pages.competition.rules.title": "Reglamento",
   "pages.competition.rules.subtitle":
     "Formato, criterios de desempate y reglas de reprogramación vigentes.",
@@ -1715,6 +1789,28 @@ export interface MessageParamsByKey {
   readonly "encounters.list.timeZone": { readonly zone: string };
   readonly "encounters.list.open": { readonly home: string; readonly away: string };
   readonly "encounters.list.slots": { readonly count: number };
+  readonly "teamPerformance.unmatched": { readonly count: number };
+  readonly "teamPerformance.criteria.windowValue": { readonly recent: number };
+  readonly "teamPerformance.criteria.eligibilityValue": { readonly minimum: number };
+  readonly "teamPerformance.criteria.sourcesValue": {
+    readonly approved: number;
+    readonly voided: number;
+  };
+  readonly "teamPerformance.criteria.versions": {
+    readonly formula: string;
+    readonly normalization: string;
+    readonly window: string;
+  };
+  readonly "teamPerformance.weight": { readonly weight: number };
+  readonly "teamPerformance.table.summary": {
+    readonly scored: number;
+    readonly incomplete: number;
+  };
+  readonly "teamPerformance.reason.insufficient_sample": {
+    readonly count: number;
+    readonly minimum: number;
+  };
+  readonly "teamPerformance.missing": { readonly metrics: string };
   readonly "encounter.slot.label": { readonly slot: number };
   readonly "encounter.slot.clear": { readonly slot: number };
   readonly "encounter.outcome.win": { readonly team: string };
@@ -3034,6 +3130,76 @@ const en: Catalog = {
     "Disagreements over matches or results waiting for your decision.",
   "pages.competition.analytics.title": "Analytics",
   "pages.competition.analytics.subtitle": "Participation and activity in the competition.",
+  "pages.competition.teamPerformance.title": "Team performance",
+  "pages.competition.teamPerformance.subtitle":
+    "A 0–100 score built only from approved official results. It does not replace the standings.",
+  "teamPerformance.loading": "Loading the performance ranking",
+  "teamPerformance.error": "We couldn't load the performance ranking.",
+  "teamPerformance.refreshError": "We couldn't refresh the ranking. Showing the last data loaded.",
+  "teamPerformance.accessError": "We couldn't check your access to statistics.",
+  "teamPerformance.forbidden.title": "You don't have access to this ranking",
+  "teamPerformance.forbidden.description":
+    "Your role doesn't allow reading statistics for this competition.",
+  "teamPerformance.backToCompetition": "Back to the competition",
+  "teamPerformance.notBuilt.title": "No performance ranking yet",
+  "teamPerformance.notBuilt.description":
+    "It is built when official results are approved. Unapproved EA matches don't count.",
+  "teamPerformance.notBuilt.action": "View encounters",
+  "teamPerformance.empty.title": "No teams in the ranking",
+  "teamPerformance.empty.description":
+    "Teams approved for the competition and teams with official results will appear here.",
+  "teamPerformance.projectionIncomplete.title": "Ranking awaiting rebuild",
+  "teamPerformance.projectionIncomplete.description":
+    "Some official results are not fully projected yet. No team gets a score until the ranking is rebuilt.",
+  "teamPerformance.unmatched": ({ count }) =>
+    count === 1
+      ? "1 statistics contribution doesn't match the current official result and doesn't count."
+      : `${count} statistics contributions don't match the current official result and don't count.`,
+  "teamPerformance.criteria.title": "Criteria",
+  "teamPerformance.criteria.description":
+    "The score is the weighted sum of five 0–100 components. If any is missing, the team has no score: it isn't filled with zero and weights aren't redistributed.",
+  "teamPerformance.criteria.window": "Window",
+  "teamPerformance.criteria.windowValue": ({ recent }) =>
+    `Whole competition · form over the last ${recent} encounters`,
+  "teamPerformance.criteria.eligibility": "Eligibility",
+  "teamPerformance.criteria.eligibilityValue": ({ minimum }) =>
+    `At least ${minimum} official encounters and all five components available`,
+  "teamPerformance.criteria.period": "Period",
+  "teamPerformance.criteria.noPeriod": "No official results",
+  "teamPerformance.criteria.updated": "Updated",
+  "teamPerformance.criteria.sources": "Official results",
+  "teamPerformance.criteria.sourcesValue": ({ approved, voided }) =>
+    voided === 0 ? `${approved} approved` : `${approved} approved · ${voided} voided (don't count)`,
+  "teamPerformance.criteria.versions": ({ formula, normalization, window }) =>
+    `Versions: ${formula} · ${normalization} · ${window}`,
+  "teamPerformance.weights.label": "Formula weights",
+  "teamPerformance.weight": ({ weight }) => `${weight}%`,
+  "teamPerformance.table.title": "Ranking",
+  "teamPerformance.table.summary": ({ scored, incomplete }) =>
+    `${scored} scored · ${incomplete} without a score`,
+  "teamPerformance.table.position": "Pos.",
+  "teamPerformance.table.team": "Team",
+  "teamPerformance.table.score": "Score",
+  "teamPerformance.table.encounters": "Encounters",
+  "teamPerformance.table.coverage": "Coverage",
+  "teamPerformance.table.noValue": "No data",
+  "teamPerformance.table.unranked": "No score",
+  "teamPerformance.table.scrollHint": "Scroll the table to see every component.",
+  "teamPerformance.team.unknown": "Team unavailable",
+  "teamPerformance.teamsUnavailable": "We couldn't load team names. The ranking is still valid.",
+  "teamPerformance.metric.results": "Results",
+  "teamPerformance.metric.goalDifference": "Goal difference",
+  "teamPerformance.metric.recentForm": "Recent form",
+  "teamPerformance.metric.offensiveEfficiency": "Attacking efficiency",
+  "teamPerformance.metric.defensiveEfficiency": "Defensive efficiency",
+  "teamPerformance.reason.complete": "Complete",
+  "teamPerformance.reason.no_data": "No official matches",
+  "teamPerformance.reason.insufficient_sample": ({ count, minimum }) =>
+    `Sample too small: ${count} of ${minimum} encounters`,
+  "teamPerformance.reason.missing_components": "Missing components",
+  "teamPerformance.reason.projection_incomplete": "Projection incomplete",
+  "teamPerformance.missing": ({ metrics }) => `Missing: ${metrics}`,
+  "teamPerformance.standingsLink": "View official standings",
   "pages.competition.rules.title": "Rules",
   "pages.competition.rules.subtitle": "Format, tiebreakers, and rescheduling rules in effect.",
   "pages.competitionPlayer.matches.title": "Matches",
