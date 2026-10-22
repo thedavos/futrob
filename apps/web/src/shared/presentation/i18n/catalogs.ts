@@ -1022,7 +1022,38 @@ const es = {
     "Invitaciones de clubes y competiciones pendientes de respuesta.",
   "player.gameData.invitations.cta": "Ver mis invitaciones",
   "pages.organization.teams.title": "Equipos",
-  "pages.organization.teams.subtitle": "Equipos inscritos en las competiciones de tu organización.",
+  "pages.organization.teams.subtitle":
+    "Consulta los equipos de tu organización y las competiciones en las que participan.",
+  "org.teams.directory.title": "Directorio de equipos",
+  "org.teams.count": ({ count }) => (Number(count) === 1 ? "1 equipo" : `${count} equipos`),
+  "org.teams.countFiltered": ({ shown, total }) => `${shown} de ${total} equipos`,
+  "org.teams.search": "Buscar equipo por nombre",
+  "org.teams.table.team": "Equipo",
+  "org.teams.table.competitions": "Competiciones",
+  "org.teams.created": "Creado el {date}",
+  "org.teams.entry.approved": "Aprobado",
+  "org.teams.entry.pending": "Pendiente",
+  "org.teams.entry.rejected": "Rechazado",
+  "org.teams.link": "{competition}: ver {team}",
+  "org.teams.noCompetitions": "Sin competiciones",
+  "org.teams.competitionsUnavailable": "No disponible",
+  "org.teams.loading": "Cargando equipos…",
+  "org.teams.error": "No pudimos cargar los equipos de la organización.",
+  "org.teams.refreshFailed": "No pudimos actualizar los equipos. Se muestran los datos anteriores.",
+  "org.teams.partial":
+    "No pudimos cargar las competiciones de todos los equipos. Algunas filas pueden estar incompletas.",
+  "org.teams.forbidden.title": "No tienes acceso a los equipos",
+  "org.teams.forbidden.description":
+    "Tu rol en esta organización no incluye consultar su directorio de equipos.",
+  "org.teams.forbidden.cta": "Volver al inicio de la organización",
+  "org.teams.empty.title": "Todavía no hay equipos",
+  "org.teams.empty.description":
+    "Los equipos aparecen aquí cuando se inscriben en una competición de tu organización.",
+  "org.teams.empty.cta": "Ver competiciones",
+  "org.teams.noMatches.title": "Ningún equipo coincide",
+  "org.teams.noMatches.description":
+    "No encontramos equipos con «{query}». Prueba con otro nombre.",
+  "org.teams.noMatches.clear": "Limpiar búsqueda",
   "pages.organization.players.title": "Jugadores",
   "pages.organization.players.subtitle": "Quién juega en cada plantilla de tu organización.",
   "pages.organization.invitations.title": "Invitaciones",
@@ -1689,6 +1720,11 @@ export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 export interface MessageParamsByKey {
   readonly "organizations.members.actionsFor": { readonly name: string };
   readonly "organizations.members.list.noMatchesFor": { readonly query: string };
+  readonly "org.teams.count": { readonly count: number };
+  readonly "org.teams.countFiltered": { readonly shown: number; readonly total: number };
+  readonly "org.teams.created": { readonly date: string };
+  readonly "org.teams.link": { readonly competition: string; readonly team: string };
+  readonly "org.teams.noMatches.description": { readonly query: string };
   "reschedule.scope.slot": { slot: number };
   "reschedule.requestedBy": { team: string };
   "reschedule.proposedBy": { team: string };
@@ -2898,7 +2934,37 @@ const en: Catalog = {
     "Club and competition invitations waiting for your reply.",
   "player.gameData.invitations.cta": "View my invitations",
   "pages.organization.teams.title": "Teams",
-  "pages.organization.teams.subtitle": "Teams registered in your organization's competitions.",
+  "pages.organization.teams.subtitle":
+    "Browse your organization's teams and the competitions they take part in.",
+  "org.teams.directory.title": "Team directory",
+  "org.teams.count": ({ count }) => (Number(count) === 1 ? "1 team" : `${count} teams`),
+  "org.teams.countFiltered": ({ shown, total }) => `${shown} of ${total} teams`,
+  "org.teams.search": "Search teams by name",
+  "org.teams.table.team": "Team",
+  "org.teams.table.competitions": "Competitions",
+  "org.teams.created": "Created {date}",
+  "org.teams.entry.approved": "Approved",
+  "org.teams.entry.pending": "Pending",
+  "org.teams.entry.rejected": "Rejected",
+  "org.teams.link": "{competition}: view {team}",
+  "org.teams.noCompetitions": "No competitions",
+  "org.teams.competitionsUnavailable": "Unavailable",
+  "org.teams.loading": "Loading teams…",
+  "org.teams.error": "We couldn't load the organization's teams.",
+  "org.teams.refreshFailed": "We couldn't refresh the teams. Showing the previous data.",
+  "org.teams.partial":
+    "We couldn't load the competitions for every team. Some rows may be incomplete.",
+  "org.teams.forbidden.title": "You don't have access to teams",
+  "org.teams.forbidden.description":
+    "Your role in this organization doesn't include viewing its team directory.",
+  "org.teams.forbidden.cta": "Back to organization home",
+  "org.teams.empty.title": "No teams yet",
+  "org.teams.empty.description":
+    "Teams appear here once they register in one of your organization's competitions.",
+  "org.teams.empty.cta": "View competitions",
+  "org.teams.noMatches.title": "No teams match",
+  "org.teams.noMatches.description": "We found no teams matching “{query}”. Try another name.",
+  "org.teams.noMatches.clear": "Clear search",
   "pages.organization.players.title": "Players",
   "pages.organization.players.subtitle": "Who plays on each roster in your organization.",
   "pages.organization.invitations.title": "Invitations",
