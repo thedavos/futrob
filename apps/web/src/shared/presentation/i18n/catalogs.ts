@@ -1681,6 +1681,56 @@ const es = {
   "encounter.documentTitle": "Enfrentamiento",
   "encounters.list.documentTitle": "Enfrentamientos",
   "matches.list.documentTitle": "Partidos",
+  "pages.competition.stats.title": "Estadísticas de equipos",
+  "pages.competition.stats.subtitle":
+    "Totales y promedios oficiales de cada equipo, calculados con resultados aprobados.",
+  "competition.teamStats.documentTitle": "Estadísticas de equipos",
+  "competition.teamStats.loading": "Cargando estadísticas de equipos…",
+  "competition.teamStats.error": "No pudimos cargar las estadísticas de equipos.",
+  "competition.teamStats.accessError": "No pudimos comprobar tu acceso a estas estadísticas.",
+  "competition.teamStats.refreshFailed":
+    "No pudimos actualizar las estadísticas. Se muestran los últimos datos cargados.",
+  "competition.teamStats.forbidden.title": "No tienes acceso a estas estadísticas",
+  "competition.teamStats.forbidden.description":
+    "Las estadísticas de equipos de esta competición están disponibles para quien la organiza.",
+  "competition.teamStats.forbidden.back": "Volver a la organización",
+  "competition.teamStats.notFound.title": "Competición no disponible",
+  "competition.teamStats.notFound.description":
+    "No encontramos esta competición en la organización o ya no está disponible.",
+  "competition.teamStats.empty.title": "Aún no hay estadísticas oficiales",
+  "competition.teamStats.empty.description":
+    "Las estadísticas de cada equipo aparecen cuando se aprueba su primer resultado oficial.",
+  "competition.teamStats.empty.action": "Ver enfrentamientos",
+  "competition.teamStats.summary.label": "Resumen de estadísticas de equipos",
+  "competition.teamStats.summary.teams": "Equipos con estadísticas",
+  "competition.teamStats.summary.updated": "Actualizado: {date}",
+  "competition.teamStats.summary.goals": "Más goles",
+  "competition.teamStats.summary.assists": "Más asistencias",
+  "competition.teamStats.summary.rating": "Mejor rating promedio",
+  "competition.teamStats.leader.tied": "{team} y {count} más",
+  "competition.teamStats.leader.partial": "{teams} · dato parcial",
+  "competition.teamStats.comparison.title": "Comparación de equipos",
+  "competition.teamStats.comparison.description":
+    "Ordena por cualquier columna. «—» indica un dato que no se registró.",
+  "competition.teamStats.view.label": "Mostrar cifras",
+  "competition.teamStats.view.totals": "Totales",
+  "competition.teamStats.view.averages": "Por partido",
+  "competition.teamStats.view.per90": "Por 90 min",
+  "competition.teamStats.table.label": "Estadísticas oficiales por equipo: {view}",
+  "competition.teamStats.column.team": "Equipo",
+  "competition.teamStats.column.mvpAwards": "MVP",
+  "competition.teamStats.column.rating": "Rating promedio",
+  "competition.teamStats.sort.ascending": "orden ascendente",
+  "competition.teamStats.sort.descending": "orden descendente",
+  "competition.teamStats.partial.marker": "dato parcial",
+  "competition.teamStats.partial.title": "Datos parciales",
+  "competition.teamStats.partial.description":
+    "Algunos partidos aprobados no registraron todas las métricas. Las cifras con * solo cuentan los partidos que tienen el dato.",
+  "competition.teamStats.unavailable": "Sin datos",
+  "competition.teamStats.teamName.unavailable": "Equipo sin nombre disponible",
+  "competition.teamStats.teamName.loading": "Cargando nombre del equipo",
+  "competition.teamStats.teamName.error":
+    "No pudimos cargar los nombres de los equipos. Las cifras siguen disponibles.",
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
@@ -1885,6 +1935,10 @@ export interface MessageParamsByKey {
   readonly "org.home.activity.team": { readonly time: string };
   readonly "org.home.activity.competition": { readonly status: string; readonly time: string };
   readonly "org.home.actions.menu": { readonly name: string };
+  readonly "competition.teamStats.summary.updated": { readonly date: string };
+  readonly "competition.teamStats.leader.tied": { readonly team: string; readonly count: number };
+  readonly "competition.teamStats.leader.partial": { readonly teams: string };
+  readonly "competition.teamStats.table.label": { readonly view: string };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -3540,6 +3594,56 @@ const en: Catalog = {
   "encounter.documentTitle": "Encounter",
   "encounters.list.documentTitle": "Encounters",
   "matches.list.documentTitle": "Matches",
+  "pages.competition.stats.title": "Team statistics",
+  "pages.competition.stats.subtitle":
+    "Official totals and averages for each team, calculated from approved results.",
+  "competition.teamStats.documentTitle": "Team statistics",
+  "competition.teamStats.loading": "Loading team statistics…",
+  "competition.teamStats.error": "We couldn't load the team statistics.",
+  "competition.teamStats.accessError": "We couldn't check your access to these statistics.",
+  "competition.teamStats.refreshFailed":
+    "We couldn't refresh the statistics. Showing the last data loaded.",
+  "competition.teamStats.forbidden.title": "You don't have access to these statistics",
+  "competition.teamStats.forbidden.description":
+    "Team statistics for this competition are available to its organizers.",
+  "competition.teamStats.forbidden.back": "Back to the organization",
+  "competition.teamStats.notFound.title": "Competition unavailable",
+  "competition.teamStats.notFound.description":
+    "We couldn't find this competition in the organization, or it's no longer available.",
+  "competition.teamStats.empty.title": "No official statistics yet",
+  "competition.teamStats.empty.description":
+    "Each team's statistics appear once its first official result is approved.",
+  "competition.teamStats.empty.action": "View encounters",
+  "competition.teamStats.summary.label": "Team statistics summary",
+  "competition.teamStats.summary.teams": "Teams with statistics",
+  "competition.teamStats.summary.updated": "Updated: {date}",
+  "competition.teamStats.summary.goals": "Most goals",
+  "competition.teamStats.summary.assists": "Most assists",
+  "competition.teamStats.summary.rating": "Best average rating",
+  "competition.teamStats.leader.tied": "{team} and {count} more",
+  "competition.teamStats.leader.partial": "{teams} · partial data",
+  "competition.teamStats.comparison.title": "Team comparison",
+  "competition.teamStats.comparison.description":
+    "Sort by any column. “—” marks a value that wasn't recorded.",
+  "competition.teamStats.view.label": "Show figures",
+  "competition.teamStats.view.totals": "Totals",
+  "competition.teamStats.view.averages": "Per match",
+  "competition.teamStats.view.per90": "Per 90 min",
+  "competition.teamStats.table.label": "Official statistics per team: {view}",
+  "competition.teamStats.column.team": "Team",
+  "competition.teamStats.column.mvpAwards": "MVP",
+  "competition.teamStats.column.rating": "Average rating",
+  "competition.teamStats.sort.ascending": "ascending order",
+  "competition.teamStats.sort.descending": "descending order",
+  "competition.teamStats.partial.marker": "partial data",
+  "competition.teamStats.partial.title": "Partial data",
+  "competition.teamStats.partial.description":
+    "Some approved matches didn't record every metric. Figures marked * only count the matches that have the value.",
+  "competition.teamStats.unavailable": "No data",
+  "competition.teamStats.teamName.unavailable": "Team name unavailable",
+  "competition.teamStats.teamName.loading": "Loading team name",
+  "competition.teamStats.teamName.error":
+    "We couldn't load the team names. The figures are still available.",
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;

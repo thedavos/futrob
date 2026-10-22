@@ -111,6 +111,11 @@ export const queryKeys = {
         ...queryKeys.teams.competitionManagement(organizationId, competitionId),
         "club-names",
       ] as const,
+    competitionManagementTeamNames: (organizationId: string, competitionId: string) =>
+      [
+        ...queryKeys.teams.competitionManagement(organizationId, competitionId),
+        "team-names",
+      ] as const,
     competitionManagementDetail: (organizationId: string, competitionId: string, teamId: string) =>
       [
         ...queryKeys.teams.competitionManagement(organizationId, competitionId),
@@ -124,6 +129,8 @@ export const queryKeys = {
       [...queryKeys.statistics.all, "me", "summary", query] as const,
     meMatches: (query: GetMyMatchesQuery) =>
       [...queryKeys.statistics.all, "me", "matches", query] as const,
+    competitionTeams: (organizationId: string, competitionId: string) =>
+      [...queryKeys.statistics.all, "competition-teams", organizationId, competitionId] as const,
   },
   gameData: {
     all: ["game-data"] as const,
