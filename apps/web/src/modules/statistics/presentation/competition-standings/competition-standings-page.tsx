@@ -35,7 +35,12 @@ export type CompetitionStandingsState =
   | { readonly kind: "access_error"; readonly retry: () => void }
   | { readonly kind: "forbidden" }
   | { readonly kind: "error"; readonly retry: () => void }
-  | { readonly kind: "empty" }
+  | {
+      readonly kind: "empty";
+      /** The last refresh failed; the empty result is the last known one, not a confirmed current one. */
+      readonly refreshFailed: boolean;
+      readonly retry: () => void;
+    }
   | {
       readonly kind: "ready";
       readonly snapshot: CompetitionStandingSnapshotDto;
@@ -75,7 +80,13 @@ export function CompetitionStandingsRoute({
     if (refusal?.refused === "permission") return { kind: "forbidden" };
     if (refusal) return { kind: "access_error", retry: () => void standings.refetch() };
     if (standingsValue) {
-      if (!snapshot || snapshot.rows.length === 0) return { kind: "empty" };
+      if (!snapshot || snapshot.rows.length === 0) {
+        return {
+          kind: "empty",
+          refreshFailed: standings.isError,
+          retry: () => void standings.refetch(),
+        };
+      }
       return {
         kind: "ready",
         snapshot,
@@ -150,15 +161,22 @@ export function CompetitionStandingsPageView({
             );
           case "empty":
             return (
-              <EmptyState>
-                <EmptyStateIcon>
-                  <img alt="" data-outline="none" src={emptyStandingsUrl} />
-                </EmptyStateIcon>
-                <EmptyStateCopy>
-                  <EmptyStateTitle>{t("standings.empty.title")}</EmptyStateTitle>
-                  <EmptyStateDescription>{t("standings.empty.description")}</EmptyStateDescription>
-                </EmptyStateCopy>
-              </EmptyState>
+              <div {...applyStyles(styles.stack)}>
+                {state.refreshFailed ? (
+                  <RetryAlert message={t("standings.refreshError")} retry={state.retry} t={t} />
+                ) : null}
+                <EmptyState>
+                  <EmptyStateIcon>
+                    <img alt="" data-outline="none" src={emptyStandingsUrl} />
+                  </EmptyStateIcon>
+                  <EmptyStateCopy>
+                    <EmptyStateTitle>{t("standings.empty.title")}</EmptyStateTitle>
+                    <EmptyStateDescription>
+                      {t("standings.empty.description")}
+                    </EmptyStateDescription>
+                  </EmptyStateCopy>
+                </EmptyState>
+              </div>
             );
           case "ready":
             return (

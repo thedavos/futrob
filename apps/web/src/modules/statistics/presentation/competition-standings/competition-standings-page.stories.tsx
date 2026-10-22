@@ -79,6 +79,7 @@ type Scenario =
   | "namesError"
   | "refreshFailed"
   | "empty"
+  | "emptyRefreshFailed"
   | "loading"
   | "forbidden"
   | "accessError"
@@ -109,7 +110,8 @@ const STATES: Record<Scenario, CompetitionStandingsState> = {
     retry: noop,
     retryNames: noop,
   },
-  empty: { kind: "empty" },
+  empty: { kind: "empty", refreshFailed: false, retry: noop },
+  emptyRefreshFailed: { kind: "empty", refreshFailed: true, retry: noop },
   loading: { kind: "loading" },
   forbidden: { kind: "forbidden" },
   accessError: { kind: "access_error", retry: noop },
@@ -166,6 +168,7 @@ const meta = {
         "namesError",
         "refreshFailed",
         "empty",
+        "emptyRefreshFailed",
         "loading",
         "forbidden",
         "accessError",
@@ -206,6 +209,16 @@ export const RefreshFailed: Story = {
   args: { scenario: "refreshFailed" },
 };
 export const Empty: Story = { name: "Sin resultados aprobados", args: { scenario: "empty" } };
+export const EmptyRefreshFailed: Story = {
+  name: "Sin resultados · actualización fallida",
+  args: { scenario: "emptyRefreshFailed" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("alert")).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Reintentar" })).toBeVisible();
+    await expect(canvas.getByText("Aún no hay clasificación oficial")).toBeVisible();
+  },
+};
 export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
 export const Forbidden: Story = { name: "Sin permiso", args: { scenario: "forbidden" } };
 export const AccessError: Story = { name: "Error de acceso", args: { scenario: "accessError" } };

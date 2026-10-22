@@ -143,6 +143,62 @@ describe("Competition standings page", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
+  it.each([
+    ["a null snapshot", { standings: null }],
+    ["a snapshot with zero rows", { standings: { ...snapshot, rows: [] } }],
+  ])(
+    "keeps the last empty result across a refresh failure for %s and retries",
+    async (_name, empty) => {
+      serve({
+        standings: sequence(() => Response.json(empty), ...transient(() => Response.json(empty))),
+      });
+      const queryClient = renderRoute();
+      expect(await screen.findByText("Aún no hay clasificación oficial")).toBeTruthy();
+      expect(screen.queryByRole("alert")).toBeNull();
+
+      await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+      expect(await screen.findByText(/No pudimos actualizar la clasificación/)).toBeTruthy();
+      expect(screen.getByText("Aún no hay clasificación oficial")).toBeTruthy();
+
+      fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+      await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+      expect(screen.getByText("Aún no hay clasificación oficial")).toBeTruthy();
+    },
+    15_000,
+  );
+
+  it("shows a newly approved table when retrying a failed refresh of an empty result", async () => {
+    serve({
+      standings: sequence(
+        () => Response.json({ standings: null }),
+        ...transient(() => Response.json({ standings: snapshot })),
+      ),
+    });
+    const queryClient = renderRoute();
+    expect(await screen.findByText("Aún no hay clasificación oficial")).toBeTruthy();
+    await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+    fireEvent.click(await screen.findByRole("button", { name: "Reintentar" }));
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+  }, 15_000);
+
+  it("lets a refusal win over a cached empty result after a failed refresh", async () => {
+    serve({
+      standings: sequence(
+        () => Response.json({ standings: null }),
+        fail(403, "refused"),
+        ...transient(() => Response.json({ standings: null })),
+      ),
+    });
+    const queryClient = renderRoute();
+    expect(await screen.findByText("Aún no hay clasificación oficial")).toBeTruthy();
+    await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+    expect(await screen.findByText("No tienes acceso a la clasificación")).toBeTruthy();
+    await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+    expect(screen.getByText("No tienes acceso a la clasificación")).toBeTruthy();
+    expect(screen.queryByText("Aún no hay clasificación oficial")).toBeNull();
+  }, 15_000);
+
   it("reports a load failure with retry, distinct from empty", async () => {
     serve({ standings: fail(500, "api.unexpected") });
     renderRoute();
