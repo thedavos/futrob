@@ -23,6 +23,7 @@ import {
   formatRankingValue,
   RANKING_KIND_COPY,
   rankingNamesOf,
+  rankingPlayerName,
   type RankingFormatters,
   type RankingNames,
   type RankingNamesState,
@@ -153,7 +154,7 @@ function RankingRow({
   readonly row: RankingRowDto;
   readonly t: Translator;
 }) {
-  const player = names.players.get(row.playerProfileId);
+  const player = rankingPlayerName(names, row);
   const team = row.teamId ? names.teams.get(row.teamId) : undefined;
   return (
     <TableRow data-ranking-row="">

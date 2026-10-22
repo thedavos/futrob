@@ -2,6 +2,7 @@ import type {
   CompetitionTeamManagementDetailResponse,
   GetCompetitionRankingsResponse,
   RankingKindDto,
+  RankingRowDto,
   RankingSnapshotDto,
 } from "@futrob/api-contracts";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
@@ -71,27 +72,42 @@ export function rankingTeamIds(snapshot: RankingSnapshotDto | null): string[] {
 }
 
 export type RankingNames = {
-  readonly players: ReadonlyMap<string, string>;
+  /** Player names per Team roster, so a row never borrows a name from another Team's roster. */
+  readonly playersByTeam: ReadonlyMap<string, ReadonlyMap<string, string>>;
   readonly teams: ReadonlyMap<string, string>;
 };
 
-export const NO_RANKING_NAMES: RankingNames = { players: new Map(), teams: new Map() };
+export const NO_RANKING_NAMES: RankingNames = { playersByTeam: new Map(), teams: new Map() };
 
 /** Display names come from each Team's roster presentation; nothing is guessed from ids. */
 export function rankingNamesFromTeams(
   details: readonly CompetitionTeamManagementDetailResponse[],
 ): RankingNames {
-  const players = new Map<string, string>();
+  const playersByTeam = new Map<string, ReadonlyMap<string, string>>();
   const teams = new Map<string, string>();
   for (const detail of details) {
     teams.set(detail.team.id, detail.team.name);
-    for (const member of detail.members) {
-      if (!players.has(member.membership.playerProfileId)) {
-        players.set(member.membership.playerProfileId, member.presentation.displayName);
-      }
-    }
+    playersByTeam.set(
+      detail.team.id,
+      new Map(
+        detail.members.map((member) => [
+          member.membership.playerProfileId,
+          member.presentation.displayName,
+        ]),
+      ),
+    );
   }
-  return { players, teams };
+  return { playersByTeam, teams };
+}
+
+/** A row with a Team is named only by that Team's roster; a row without one by any read roster. */
+export function rankingPlayerName(names: RankingNames, row: RankingRowDto): string | undefined {
+  if (row.teamId !== null) return names.playersByTeam.get(row.teamId)?.get(row.playerProfileId);
+  for (const roster of names.playersByTeam.values()) {
+    const name = roster.get(row.playerProfileId);
+    if (name !== undefined) return name;
+  }
+  return undefined;
 }
 
 /** Teams whose roster read was refused: their rows stay unnamed. */

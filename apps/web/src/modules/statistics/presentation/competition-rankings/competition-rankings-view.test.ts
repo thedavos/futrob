@@ -5,6 +5,7 @@ import {
   rankingFormatters,
   rankingNamesFromTeams,
   rankingNamesRestriction,
+  rankingPlayerName,
   rankingTeamIds,
   selectRankingSnapshot,
 } from "./competition-rankings-view.ts";
@@ -25,9 +26,23 @@ describe("competition rankings view model", () => {
 
   it("takes names only from roster presentation", () => {
     const names = rankingNamesFromTeams([teamDetailFixture("team-cuervos")]);
-    expect(names.players.get("profile-lucia")).toBe("Lucía Pérez");
+    expect(names.playersByTeam.get("team-cuervos")?.get("profile-lucia")).toBe("Lucía Pérez");
     expect(names.teams.get("team-cuervos")).toBe("Cuervos FC");
-    expect(names.players.has("profile-unknown")).toBe(false);
+    expect(names.playersByTeam.get("team-cuervos")?.has("profile-unknown")).toBe(false);
+  });
+
+  it("names a Team's row only from that Team's roster", () => {
+    const names = rankingNamesFromTeams([teamDetailFixture("team-cuervos")]);
+    const row = {
+      playerProfileId: "profile-lucia",
+      position: 1,
+      value: 3,
+      matchesPlayed: 2,
+      minutes: 180,
+    };
+    expect(rankingPlayerName(names, { ...row, teamId: "team-cuervos" })).toBe("Lucía Pérez");
+    expect(rankingPlayerName(names, { ...row, teamId: "team-halcones" })).toBeUndefined();
+    expect(rankingPlayerName(names, { ...row, teamId: null })).toBe("Lucía Pérez");
   });
 
   it("tells whether no, some or every Team refused its roster", () => {

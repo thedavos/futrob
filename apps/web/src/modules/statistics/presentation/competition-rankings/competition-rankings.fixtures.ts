@@ -157,10 +157,9 @@ export function teamDetailFixture(teamId: string): CompetitionTeamManagementDeta
   };
 }
 
-export const rankingNamesFixture: RankingNames = {
-  players: new Map([...MEMBERS.values()].flat().map((member) => [member.id, member.name])),
-  teams: new Map(TEAM_NAMES),
-};
+export const rankingNamesFixture: RankingNames = rankingNamesFromTeams(
+  [...TEAM_NAMES.keys()].map((teamId) => teamDetailFixture(teamId)),
+);
 
 /** Only Cuervos' roster resolved: Halcones refused its roster read. */
 export const rankingNamesCuervosOnlyFixture: RankingNames = rankingNamesFromTeams([
