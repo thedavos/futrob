@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { CompetitionStandingsRoute } from "./competition-standings-page.tsx";
@@ -48,6 +48,11 @@ const allow = (allowed: boolean) => () =>
     roles: [],
     permissions: [{ permission: "statistics.read", allowed, decidedAt: "competition" }],
   });
+// Serves each response in turn, repeating the last.
+const sequence =
+  (...responses: Array<() => Response>) =>
+  () =>
+    (responses.length > 1 ? responses.shift()! : responses[0]!)();
 const fail = (status: number, code: string) => () =>
   Response.json({ code, messageKey: `errors.${code}` }, { status });
 
@@ -93,6 +98,7 @@ function renderRoute(locale: "es" | "en" = "es") {
       </I18nProvider>
     </QueryClientProvider>,
   );
+  return queryClient;
 }
 
 afterEach(() => {
@@ -160,5 +166,110 @@ describe("Competition standings page", () => {
     expect(await screen.findByText(/No pudimos cargar los nombres/)).toBeTruthy();
     expect(screen.getAllByText("Equipo sin nombre disponible")).toHaveLength(2);
     expect(screen.getByRole("table")).toBeTruthy();
+  });
+
+  it("drops cached standings when a refetch is refused with 403, and recovers", async () => {
+    serve({
+      standings: sequence(
+        () => Response.json({ standings: snapshot }),
+        fail(403, "statistics.read_forbidden"),
+        () => Response.json({ standings: snapshot }),
+      ),
+    });
+    const queryClient = renderRoute();
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+
+    await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+    expect(await screen.findByText("No tienes acceso a la clasificación")).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByText("Maderas FC")).toBeNull();
+
+    await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+  });
+
+  it("drops cached standings when a refetch returns 401", async () => {
+    serve({
+      standings: sequence(
+        () => Response.json({ standings: snapshot }),
+        fail(401, "auth.unauthenticated"),
+      ),
+    });
+    const queryClient = renderRoute();
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+
+    await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+    expect(
+      await screen.findByText("No pudimos comprobar tu acceso a la clasificación."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+  });
+
+  it("keeps cached standings across a recoverable refresh failure", async () => {
+    serve({
+      standings: sequence(
+        () => Response.json({ standings: snapshot }),
+        fail(500, "api.unexpected"),
+      ),
+    });
+    const queryClient = renderRoute();
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+
+    await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+    expect(screen.getByText("Maderas FC")).toBeTruthy();
+    expect(screen.queryByText("No tienes acceso a la clasificación")).toBeNull();
+  });
+
+  it("does not show cached team names after the name lookup is refused, and recovers", async () => {
+    serve({
+      teams: sequence(
+        () =>
+          Response.json({
+            teams: [
+              {
+                id: "t1",
+                organizationId: "org-1",
+                name: "Cuervos FC",
+                createdAt: "2026-01-01T00:00:00.000Z",
+              },
+              {
+                id: "t2",
+                organizationId: "org-1",
+                name: "Maderas FC",
+                createdAt: "2026-01-01T00:00:00.000Z",
+              },
+            ],
+          }),
+        fail(403, "teams.read_forbidden"),
+        () =>
+          Response.json({
+            teams: [
+              {
+                id: "t1",
+                organizationId: "org-1",
+                name: "Cuervos FC",
+                createdAt: "2026-01-01T00:00:00.000Z",
+              },
+              {
+                id: "t2",
+                organizationId: "org-1",
+                name: "Maderas FC",
+                createdAt: "2026-01-01T00:00:00.000Z",
+              },
+            ],
+          }),
+      ),
+    });
+    const queryClient = renderRoute();
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+
+    await act(() => queryClient.refetchQueries({ queryKey: ["competitions"] }));
+    expect(await screen.findByText(/No pudimos cargar los nombres/)).toBeTruthy();
+    expect(screen.queryByText("Maderas FC")).toBeNull();
+    expect(screen.queryByText("Cuervos FC")).toBeNull();
+    expect(screen.getByRole("table")).toBeTruthy();
+
+    await act(() => queryClient.refetchQueries({ queryKey: ["competitions"] }));
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
   });
 });

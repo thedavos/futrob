@@ -22,6 +22,8 @@ import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { teamNamesFrom, type TeamNames } from "./competition-standings-model.ts";
 import {
+  isAuthoritativeRefusal,
+  isSessionRefusal,
   isStandingsRefusal,
   useCompetitionStandings,
   useStandingsTeamNames,
@@ -51,7 +53,9 @@ export function CompetitionStandingsRoute({
   readonly organizationId: string;
 }) {
   const { access, allowed, standings } = useCompetitionStandings(organizationId, competitionId);
-  const snapshot = standings.data?.standings;
+  // A refusal on refetch leaves the old data in the query; it must not be displayed.
+  const standingsRefused = standings.isError && isAuthoritativeRefusal(standings.error);
+  const snapshot = standingsRefused ? undefined : standings.data?.standings;
   const teams = useStandingsTeamNames(
     organizationId,
     Boolean(snapshot && snapshot.rows.length > 0),
@@ -63,24 +67,25 @@ export function CompetitionStandingsRoute({
     }
     if (access.capability.status === "loading") return { kind: "loading" };
     if (!allowed) return { kind: "forbidden" };
+    if (standings.isError && isStandingsRefusal(standings.error)) return { kind: "forbidden" };
+    if (standings.isError && isSessionRefusal(standings.error)) {
+      return { kind: "access_error", retry: () => void standings.refetch() };
+    }
     if (standings.data) {
       if (!snapshot || snapshot.rows.length === 0) return { kind: "empty" };
       return {
         kind: "ready",
         snapshot,
-        names: teams.data
-          ? { kind: "ready", byId: teamNamesFrom(teams.data.teams) }
-          : teams.isError
-            ? { kind: "unavailable" }
-            : { kind: "loading" },
+        names:
+          teams.data && !(teams.isError && isAuthoritativeRefusal(teams.error))
+            ? { kind: "ready", byId: teamNamesFrom(teams.data.teams) }
+            : teams.isError
+              ? { kind: "unavailable" }
+              : { kind: "loading" },
         retryNames: () => void teams.refetch(),
       };
     }
-    if (standings.isError) {
-      return isStandingsRefusal(standings.error)
-        ? { kind: "forbidden" }
-        : { kind: "error", retry: () => void standings.refetch() };
-    }
+    if (standings.isError) return { kind: "error", retry: () => void standings.refetch() };
     return { kind: "loading" };
   })();
 
