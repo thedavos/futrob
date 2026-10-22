@@ -1,8 +1,0 @@
-
-> futrob@0.1.0 web:typecheck
-> npm run typecheck -w @futrob/web
-
-
-> @futrob/web@0.1.0 typecheck
-> tsc -p tsconfig.json --noEmit
-

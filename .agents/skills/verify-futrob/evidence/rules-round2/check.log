@@ -1,6 +1,0 @@
-
-> futrob@0.1.0 check
-> vp check
-
-pass: All 2266 files are correctly formatted (2433ms, 4 threads)
-pass: Found no warnings, lint errors, or type errors in 1591 files (18.8s, 4 threads)
