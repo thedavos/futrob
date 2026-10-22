@@ -77,6 +77,7 @@ type Scenario =
   | "ready"
   | "namesLoading"
   | "namesError"
+  | "refreshFailed"
   | "empty"
   | "loading"
   | "forbidden"
@@ -89,6 +90,9 @@ const ready = (teamNames: ReadyState["names"]): CompetitionStandingsState => ({
   kind: "ready",
   snapshot,
   names: teamNames,
+  refreshFailed: false,
+  namesRefreshFailed: false,
+  retry: noop,
   retryNames: noop,
 });
 
@@ -96,6 +100,15 @@ const STATES: Record<Scenario, CompetitionStandingsState> = {
   ready: ready(names),
   namesLoading: ready({ kind: "loading" }),
   namesError: ready({ kind: "unavailable" }),
+  refreshFailed: {
+    kind: "ready",
+    snapshot,
+    names,
+    refreshFailed: true,
+    namesRefreshFailed: true,
+    retry: noop,
+    retryNames: noop,
+  },
   empty: { kind: "empty" },
   loading: { kind: "loading" },
   forbidden: { kind: "forbidden" },
@@ -151,6 +164,7 @@ const meta = {
         "ready",
         "namesLoading",
         "namesError",
+        "refreshFailed",
         "empty",
         "loading",
         "forbidden",
@@ -186,6 +200,10 @@ export const NamesLoading: Story = { name: "Nombres cargando", args: { scenario:
 export const NamesError: Story = {
   name: "Nombres no disponibles",
   args: { scenario: "namesError" },
+};
+export const RefreshFailed: Story = {
+  name: "Actualización fallida con datos previos",
+  args: { scenario: "refreshFailed" },
 };
 export const Empty: Story = { name: "Sin resultados aprobados", args: { scenario: "empty" } };
 export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };

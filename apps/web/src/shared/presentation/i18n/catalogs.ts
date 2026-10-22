@@ -1684,6 +1684,10 @@ const es = {
   "standings.documentTitle": "Clasificación",
   "standings.loading": "Cargando la clasificación",
   "standings.error": "No pudimos cargar la clasificación.",
+  "standings.refreshError":
+    "No pudimos actualizar la clasificación. Ves la última lectura correcta.",
+  "standings.teamNames.refreshError":
+    "No pudimos actualizar los nombres de los equipos. Ves los últimos nombres cargados.",
   "standings.accessError": "No pudimos comprobar tu acceso a la clasificación.",
   "standings.forbidden.title": "No tienes acceso a la clasificación",
   "standings.forbidden.description":
@@ -3591,6 +3595,10 @@ const en: Catalog = {
   "standings.documentTitle": "Standings",
   "standings.loading": "Loading the standings",
   "standings.error": "We couldn't load the standings.",
+  "standings.refreshError":
+    "We couldn't refresh the standings. You're seeing the last successful read.",
+  "standings.teamNames.refreshError":
+    "We couldn't refresh the team names. You're seeing the last names loaded.",
   "standings.accessError": "We couldn't check your access to the standings.",
   "standings.forbidden.title": "You can't view the standings",
   "standings.forbidden.description":

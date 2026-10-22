@@ -13,29 +13,36 @@ import {
 
 /** A refusal is the server's answer, not a transient failure; asking again cannot change it. */
 const retryUnlessRefused = (failureCount: number, error: Error) =>
-  !(error instanceof CompetitionStandingsClientError && [401, 403, 404].includes(error.status)) &&
-  failureCount < 2;
+  !(error instanceof CompetitionStandingsClientError && error.status === 404) && failureCount < 2;
 
-function httpStatus(error: Error | null): number | undefined {
+function httpStatus(error: Error): number | undefined {
   return error instanceof CompetitionStandingsClientError ||
     error instanceof CompetitionsClientError
     ? error.status
     : undefined;
 }
 
-/** The server said no (403): cached protected data must not outlive that answer. */
-export function isStandingsRefusal(error: Error | null): boolean {
-  return httpStatus(error) === 403;
+/**
+ * A refusal is stored as the query's value, not thrown. Query data survives later errors, so a
+ * thrown 403/401 would let an older success reappear after the next transient failure; as a value
+ * it replaces that success and stays until a fresh read for the same key succeeds.
+ */
+export type Refusal = { readonly refused: "permission" | "session" };
+
+export function isRefusal<T extends object>(value: T | Refusal | undefined): value is Refusal {
+  return value !== undefined && "refused" in value;
 }
 
-/** The session is gone (401): protected data cached under it is no longer ours to show. */
-export function isSessionRefusal(error: Error | null): boolean {
-  return httpStatus(error) === 401;
-}
-
-/** Either refusal withdraws the right to display what an earlier success returned. */
-export function isAuthoritativeRefusal(error: Error | null): boolean {
-  return isStandingsRefusal(error) || isSessionRefusal(error);
+async function refusedAsValue<T>(read: () => Promise<T>): Promise<T | Refusal> {
+  try {
+    return await read();
+  } catch (error) {
+    if (!(error instanceof Error)) throw error;
+    const status = httpStatus(error);
+    if (status === 403) return { refused: "permission" };
+    if (status === 401) return { refused: "session" };
+    throw error;
+  }
 }
 
 /**
@@ -55,7 +62,7 @@ export function useCompetitionStandings(organizationId: string, competitionId: s
       competitionId,
       "standings",
     ] as const,
-    queryFn: () => getCompetitionStandings(organizationId, competitionId),
+    queryFn: () => refusedAsValue(() => getCompetitionStandings(organizationId, competitionId)),
     enabled: allowed,
     retry: retryUnlessRefused,
   });
@@ -65,8 +72,9 @@ export function useCompetitionStandings(organizationId: string, competitionId: s
 /** Names for the standings rows; the table stays readable if they do not load. */
 export function useStandingsTeamNames(organizationId: string, enabled: boolean) {
   return useQuery({
-    queryKey: queryKeys.competitions.teams(organizationId),
-    queryFn: () => listOrganizationTeams(organizationId),
+    // Own key: the entry may hold a refusal, which other consumers of the teams list cannot read.
+    queryKey: [...queryKeys.competitions.teams(organizationId), "standings-names"] as const,
+    queryFn: () => refusedAsValue(() => listOrganizationTeams(organizationId)),
     enabled,
   });
 }

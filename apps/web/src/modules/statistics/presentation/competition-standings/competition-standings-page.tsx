@@ -22,9 +22,7 @@ import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { teamNamesFrom, type TeamNames } from "./competition-standings-model.ts";
 import {
-  isAuthoritativeRefusal,
-  isSessionRefusal,
-  isStandingsRefusal,
+  isRefusal,
   useCompetitionStandings,
   useStandingsTeamNames,
 } from "./competition-standings-queries.ts";
@@ -42,6 +40,10 @@ export type CompetitionStandingsState =
       readonly kind: "ready";
       readonly snapshot: CompetitionStandingSnapshotDto;
       readonly names: TeamNames;
+      /** The last refresh failed; the table is the last good read, not a confirmed current one. */
+      readonly refreshFailed: boolean;
+      readonly namesRefreshFailed: boolean;
+      readonly retry: () => void;
       readonly retryNames: () => void;
     };
 
@@ -53,13 +55,16 @@ export function CompetitionStandingsRoute({
   readonly organizationId: string;
 }) {
   const { access, allowed, standings } = useCompetitionStandings(organizationId, competitionId);
-  // A refusal on refetch leaves the old data in the query; it must not be displayed.
-  const standingsRefused = standings.isError && isAuthoritativeRefusal(standings.error);
-  const snapshot = standingsRefused ? undefined : standings.data?.standings;
+  // A refusal is the query's stored value, so no later error can bring older data back.
+  const standingsValue = standings.data;
+  const refusal = isRefusal(standingsValue) ? standingsValue : undefined;
+  const snapshot =
+    standingsValue && !isRefusal(standingsValue) ? standingsValue.standings : undefined;
   const teams = useStandingsTeamNames(
     organizationId,
     Boolean(snapshot && snapshot.rows.length > 0),
   );
+  const teamsValue = teams.data && !isRefusal(teams.data) ? teams.data : undefined;
 
   const state: CompetitionStandingsState = (() => {
     if (access.capability.status === "unavailable") {
@@ -67,21 +72,21 @@ export function CompetitionStandingsRoute({
     }
     if (access.capability.status === "loading") return { kind: "loading" };
     if (!allowed) return { kind: "forbidden" };
-    if (standings.isError && isStandingsRefusal(standings.error)) return { kind: "forbidden" };
-    if (standings.isError && isSessionRefusal(standings.error)) {
-      return { kind: "access_error", retry: () => void standings.refetch() };
-    }
-    if (standings.data) {
+    if (refusal?.refused === "permission") return { kind: "forbidden" };
+    if (refusal) return { kind: "access_error", retry: () => void standings.refetch() };
+    if (standingsValue) {
       if (!snapshot || snapshot.rows.length === 0) return { kind: "empty" };
       return {
         kind: "ready",
         snapshot,
-        names:
-          teams.data && !(teams.isError && isAuthoritativeRefusal(teams.error))
-            ? { kind: "ready", byId: teamNamesFrom(teams.data.teams) }
-            : teams.isError
-              ? { kind: "unavailable" }
-              : { kind: "loading" },
+        names: teamsValue
+          ? { kind: "ready", byId: teamNamesFrom(teamsValue.teams) }
+          : teams.isError || teams.data
+            ? { kind: "unavailable" }
+            : { kind: "loading" },
+        refreshFailed: standings.isError,
+        namesRefreshFailed: Boolean(teamsValue) && teams.isError,
+        retry: () => void standings.refetch(),
         retryNames: () => void teams.refetch(),
       };
     }
@@ -158,9 +163,16 @@ export function CompetitionStandingsPageView({
           case "ready":
             return (
               <div {...applyStyles(styles.stack)}>
-                {state.names.kind === "unavailable" ? (
+                {state.refreshFailed ? (
+                  <RetryAlert message={t("standings.refreshError")} retry={state.retry} t={t} />
+                ) : null}
+                {state.names.kind === "unavailable" || state.namesRefreshFailed ? (
                   <RetryAlert
-                    message={t("standings.teamNames.error")}
+                    message={
+                      state.names.kind === "unavailable"
+                        ? t("standings.teamNames.error")
+                        : t("standings.teamNames.refreshError")
+                    }
                     retry={state.retryNames}
                     t={t}
                   />
