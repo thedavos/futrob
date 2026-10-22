@@ -11,6 +11,89 @@ const es = {
   "competitions.reschedule.expiryHelp":
     "De 1 a 72 horas desde cada propuesta. Al vencer, el organizador resuelve la solicitud.",
   "competitions.reschedule.expiryInvalid": "Introduce horas enteras entre 1 y 72.",
+  "competitionRules.documentTitle": "Reglamento",
+  "competitionRules.loading": "Cargando el reglamento…",
+  "competitionRules.error": "No pudimos cargar el reglamento.",
+  "competitionRules.refreshError":
+    "No pudimos actualizar el reglamento. Puede que lo que ves no esté al día.",
+  "competitionRules.forbidden.title": "No tienes acceso al reglamento",
+  "competitionRules.forbidden.description":
+    "Pide al organizador que te dé acceso a esta competición.",
+  "competitionRules.notFound.title": "No encontramos esta competición",
+  "competitionRules.notFound.description":
+    "Puede que se haya eliminado o que el enlace sea incorrecto.",
+  "competitionRules.edit": "Editar reglas",
+  "competitionRules.status.draft": "Borrador",
+  "competitionRules.status.registration": "Inscripciones abiertas",
+  "competitionRules.status.published": "Publicada",
+  "competitionRules.status.paused": "En pausa",
+  "competitionRules.status.finished": "Finalizada",
+  "competitionRules.status.archived": "Archivada",
+  "competitionRules.notice.draft":
+    "Estas reglas son un borrador y pueden cambiar hasta que se publique la competición.",
+  "competitionRules.notice.locked":
+    "La estructura de la competición ya no admite cambios, por lo que estas reglas son de solo lectura.",
+  "competitionRules.format.title": "Formato",
+  "competitionRules.format.label": "Tipo de competición",
+  "competitionRules.format.league": "Liga",
+  "competitionRules.format.knockout": "Eliminación directa",
+  "competitionRules.format.groups-knockout": "Grupos + eliminación",
+  "competitionRules.format.league-playoffs": "Liga + playoffs",
+  "competitionRules.format.teams": "Equipos",
+  "competitionRules.format.teamsRange": "De {min} a {max}",
+  "competitionRules.format.teamsAtLeast": "Desde {min}",
+  "competitionRules.stage.league": "Liga",
+  "competitionRules.stage.groups": "Grupos",
+  "competitionRules.stage.knockout": "Eliminación",
+  "competitionRules.stage.playoffs": "Playoffs",
+  "competitionRules.stage.description": "Reglas de partido de esta etapa.",
+  "competitionRules.scoring.title": "Puntuación",
+  "competitionRules.scoring.win": "Victoria",
+  "competitionRules.scoring.draw": "Empate",
+  "competitionRules.scoring.loss": "Derrota",
+  "competitionRules.encounter.title": "Enfrentamiento",
+  "competitionRules.encounter.matches": "Partidos por cruce",
+  "competitionRules.encounter.resolution": "Resolución",
+  "competitionRules.encounter.independent": "Cada partido cuenta por separado",
+  "competitionRules.encounter.aggregate": "Marcador agregado",
+  "competitionRules.value.matches": (params) =>
+    count(params) === 1 ? "1 partido" : `${count(params)} partidos`,
+  "competitionRules.value.hours": (params) =>
+    count(params) === 1 ? "1 hora" : `${count(params)} horas`,
+  "competitionRules.value.players": (params) =>
+    count(params) === 1 ? "1 jugador" : `${count(params)} jugadores`,
+  "competitionRules.reschedule.title": "Reprogramación",
+  "competitionRules.reschedule.allowed": "Reprogramaciones",
+  "competitionRules.reschedule.allowedYes": "Permitidas",
+  "competitionRules.reschedule.allowedNo": "No se permiten reprogramaciones",
+  "competitionRules.reschedule.max": "Máximo por equipo",
+  "competitionRules.reschedule.unlimited": "Sin límite",
+  "competitionRules.reschedule.notice": "Aviso mínimo",
+  "competitionRules.reschedule.expiry": "Plazo de respuesta a una propuesta",
+  "competitionRules.reschedule.opponent": "Aprobación del rival",
+  "competitionRules.reschedule.organizer": "Aprobación del organizador",
+  "competitionRules.reschedule.required": "Obligatoria",
+  "competitionRules.reschedule.notRequired": "No requerida",
+  "competitionRules.roster.title": "Plantilla",
+  "competitionRules.roster.max": "Máximo de jugadores",
+  "competitionRules.roster.default": "{count} (tope por defecto)",
+  "competitionRules.platform.title": "Reglas de la plataforma",
+  "competitionRules.platform.description": "Se aplican igual en todas las competiciones.",
+  "competitionRules.tiebreaks.title": "Criterios de desempate",
+  "competitionRules.tiebreaks.description": "Se aplican en este orden.",
+  "competitionRules.tiebreaks.points": "Puntos",
+  "competitionRules.tiebreaks.goalDifference": "Diferencia de goles",
+  "competitionRules.tiebreaks.goalsFor": "Goles a favor",
+  "competitionRules.awayGoals": "Gol de visitante",
+  "competitionRules.awayGoalsOff": "No se aplica",
+  "competitionRules.results.title": "Validación de resultados",
+  "competitionRules.results.confirmation": "Confirmación del rival",
+  "competitionRules.results.window": "Plazo para responder",
+  "competitionRules.results.windowValue": "24 horas",
+  "competitionRules.results.fallback":
+    "Si el rival no responde a tiempo, el resultado pasa a revisión del organizador.",
+  "competitionRules.results.officialOnly":
+    "Solo un resultado oficial aprobado entra en la clasificación y los rankings.",
   "reschedule.title": "Reprogramaciones",
   "reschedule.description":
     "Consulta las propuestas y resuelve las solicitudes escaladas. El silencio no acepta un cambio.",
@@ -1687,6 +1770,12 @@ export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "competitionRules.format.teamsRange": { readonly min: number; readonly max: number };
+  readonly "competitionRules.format.teamsAtLeast": { readonly min: number };
+  readonly "competitionRules.value.matches": { readonly count: number };
+  readonly "competitionRules.value.hours": { readonly count: number };
+  readonly "competitionRules.value.players": { readonly count: number };
+  readonly "competitionRules.roster.default": { readonly count: number };
   readonly "organizations.members.actionsFor": { readonly name: string };
   readonly "organizations.members.list.noMatchesFor": { readonly query: string };
   "reschedule.scope.slot": { slot: number };
@@ -1895,6 +1984,89 @@ const en: Catalog = {
   "competitions.reschedule.expiryHelp":
     "Between 1 and 72 hours from each proposal. Once it expires, the organizer resolves the request.",
   "competitions.reschedule.expiryInvalid": "Enter whole hours between 1 and 72.",
+  "competitionRules.documentTitle": "Rules",
+  "competitionRules.loading": "Loading the rules…",
+  "competitionRules.error": "We couldn't load the rules.",
+  "competitionRules.refreshError":
+    "We couldn't refresh the rules. What you see may be out of date.",
+  "competitionRules.forbidden.title": "You don't have access to the rules",
+  "competitionRules.forbidden.description":
+    "Ask the organizer to give you access to this competition.",
+  "competitionRules.notFound.title": "We couldn't find this competition",
+  "competitionRules.notFound.description":
+    "It may have been removed, or the link may be incorrect.",
+  "competitionRules.edit": "Edit rules",
+  "competitionRules.status.draft": "Draft",
+  "competitionRules.status.registration": "Registration open",
+  "competitionRules.status.published": "Published",
+  "competitionRules.status.paused": "Paused",
+  "competitionRules.status.finished": "Finished",
+  "competitionRules.status.archived": "Archived",
+  "competitionRules.notice.draft":
+    "These rules are a draft and can change until the competition is published.",
+  "competitionRules.notice.locked":
+    "The competition structure no longer accepts changes, so these rules are read-only.",
+  "competitionRules.format.title": "Format",
+  "competitionRules.format.label": "Competition type",
+  "competitionRules.format.league": "League",
+  "competitionRules.format.knockout": "Knockout",
+  "competitionRules.format.groups-knockout": "Groups + knockout",
+  "competitionRules.format.league-playoffs": "League + playoffs",
+  "competitionRules.format.teams": "Teams",
+  "competitionRules.format.teamsRange": "{min} to {max}",
+  "competitionRules.format.teamsAtLeast": "From {min}",
+  "competitionRules.stage.league": "League",
+  "competitionRules.stage.groups": "Groups",
+  "competitionRules.stage.knockout": "Knockout",
+  "competitionRules.stage.playoffs": "Playoffs",
+  "competitionRules.stage.description": "Match rules for this stage.",
+  "competitionRules.scoring.title": "Scoring",
+  "competitionRules.scoring.win": "Win",
+  "competitionRules.scoring.draw": "Draw",
+  "competitionRules.scoring.loss": "Loss",
+  "competitionRules.encounter.title": "Encounter",
+  "competitionRules.encounter.matches": "Matches per tie",
+  "competitionRules.encounter.resolution": "Resolution",
+  "competitionRules.encounter.independent": "Each match counts on its own",
+  "competitionRules.encounter.aggregate": "Aggregate score",
+  "competitionRules.value.matches": (params) =>
+    count(params) === 1 ? "1 match" : `${count(params)} matches`,
+  "competitionRules.value.hours": (params) =>
+    count(params) === 1 ? "1 hour" : `${count(params)} hours`,
+  "competitionRules.value.players": (params) =>
+    count(params) === 1 ? "1 player" : `${count(params)} players`,
+  "competitionRules.reschedule.title": "Rescheduling",
+  "competitionRules.reschedule.allowed": "Rescheduling",
+  "competitionRules.reschedule.allowedYes": "Allowed",
+  "competitionRules.reschedule.allowedNo": "Rescheduling is not allowed",
+  "competitionRules.reschedule.max": "Maximum per team",
+  "competitionRules.reschedule.unlimited": "No limit",
+  "competitionRules.reschedule.notice": "Minimum notice",
+  "competitionRules.reschedule.expiry": "Proposal response window",
+  "competitionRules.reschedule.opponent": "Opponent approval",
+  "competitionRules.reschedule.organizer": "Organizer approval",
+  "competitionRules.reschedule.required": "Required",
+  "competitionRules.reschedule.notRequired": "Not required",
+  "competitionRules.roster.title": "Roster",
+  "competitionRules.roster.max": "Maximum players",
+  "competitionRules.roster.default": "{count} (default limit)",
+  "competitionRules.platform.title": "Platform rules",
+  "competitionRules.platform.description": "They apply the same way in every competition.",
+  "competitionRules.tiebreaks.title": "Tiebreakers",
+  "competitionRules.tiebreaks.description": "Applied in this order.",
+  "competitionRules.tiebreaks.points": "Points",
+  "competitionRules.tiebreaks.goalDifference": "Goal difference",
+  "competitionRules.tiebreaks.goalsFor": "Goals for",
+  "competitionRules.awayGoals": "Away goals",
+  "competitionRules.awayGoalsOff": "Not applied",
+  "competitionRules.results.title": "Result validation",
+  "competitionRules.results.confirmation": "Opponent confirmation",
+  "competitionRules.results.window": "Time to respond",
+  "competitionRules.results.windowValue": "24 hours",
+  "competitionRules.results.fallback":
+    "If the opponent doesn't respond in time, the result goes to organizer review.",
+  "competitionRules.results.officialOnly":
+    "Only an approved official result counts toward standings and rankings.",
   "reschedule.title": "Rescheduling",
   "reschedule.description":
     "Review proposals and resolve escalated requests. Silence never accepts a change.",
