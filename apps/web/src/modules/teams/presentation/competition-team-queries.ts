@@ -8,9 +8,14 @@ import {
 } from "@tanstack/react-query";
 import type {
   ChangeRosterRoleRequest,
+  CompetitionTeamManagementDetailResponse,
+  CompetitionTeamManagementListResponse,
+  CompetitionTeamManagementRosterDto,
   ConnectTeamExternalClubRequest,
   CreateRosterInvitationRequestInput,
+  RosterMembershipRoleDto,
 } from "@futrob/api-contracts";
+import { patchQueryData } from "@/shared/presentation/query/patch-query-data.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { teamsBrowserClient } from "./teams-browser-client.ts";
 
@@ -111,6 +116,12 @@ async function invalidateTeamManagement(
 
 export function useChangeRosterRoleMutation(scope: TeamMutationScope) {
   const queryClient = useQueryClient();
+  const refresh = () =>
+    Promise.all([
+      invalidateTeamManagement(queryClient, scope),
+      queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.authorization.all }),
+    ]);
   return useMutation({
     mutationFn: (input: { readonly membershipId: string } & ChangeRosterRoleRequest) =>
       teamsBrowserClient.changeRosterRole(
@@ -120,25 +131,120 @@ export function useChangeRosterRoleMutation(scope: TeamMutationScope) {
         input.membershipId,
         { role: input.role },
       ),
-    onSuccess: async () => {
-      await Promise.all([
-        invalidateTeamManagement(queryClient, scope),
-        queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.authorization.all }),
-      ]);
+    onMutate: async (input) => ({
+      rollback: await patchQueryData<CompetitionTeamManagementDetailResponse>(
+        queryClient,
+        teamDetailKey(scope),
+        {
+          apply: (detail) => ({
+            ...detail,
+            members: detail.members.map((member) => ({
+              ...member,
+              membership: {
+                ...member.membership,
+                role: roleAfterChange(member.membership, input.membershipId, input.role),
+              },
+            })),
+          }),
+          revert: (detail, previous) => ({
+            ...detail,
+            members: detail.members.map((member) => {
+              const before = previous.members.find(
+                (candidate) => candidate.membership.id === member.membership.id,
+              )?.membership;
+              if (
+                !before ||
+                roleAfterChange(before, input.membershipId, input.role) === before.role
+              ) {
+                return member;
+              }
+              return { ...member, membership: { ...member.membership, role: before.role } };
+            }),
+          }),
+        },
+      ),
+    }),
+    onError: (_error, _input, context) => {
+      context?.rollback();
+      void refresh();
     },
+    onSuccess: refresh,
   });
 }
 
 export function useSetRosterOpenMutation(scope: TeamMutationScope) {
   const queryClient = useQueryClient();
+  const refresh = () => invalidateTeamManagement(queryClient, scope);
   return useMutation({
     mutationFn: (open: boolean) =>
       open
         ? teamsBrowserClient.openRoster(scope.organizationId, scope.competitionId, scope.teamId)
         : teamsBrowserClient.closeRoster(scope.organizationId, scope.competitionId, scope.teamId),
-    onSuccess: () => invalidateTeamManagement(queryClient, scope),
+    onMutate: async (open) => {
+      type ListData = InfiniteData<CompetitionTeamManagementListResponse>;
+      const mapTeamRoster = (
+        list: ListData,
+        roster: (current: CompetitionTeamManagementRosterDto) => CompetitionTeamManagementRosterDto,
+      ): ListData => ({
+        ...list,
+        pages: list.pages.map((page) => ({
+          ...page,
+          items: page.items.map((item) =>
+            item.team.id === scope.teamId ? { ...item, roster: roster(item.roster) } : item,
+          ),
+        })),
+      });
+      const rollbacks = await Promise.all([
+        patchQueryData<CompetitionTeamManagementDetailResponse>(queryClient, teamDetailKey(scope), {
+          apply: (detail) => ({ ...detail, roster: rosterSetOpen(detail.roster, open) }),
+          revert: (detail, previous) => ({ ...detail, roster: previous.roster }),
+        }),
+        patchQueryData<ListData>(
+          queryClient,
+          queryKeys.teams.competitionManagement(scope.organizationId, scope.competitionId),
+          {
+            apply: (list) => mapTeamRoster(list, (roster) => rosterSetOpen(roster, open)),
+            revert: (list, previous) => {
+              const before = previous.pages
+                .flatMap((page) => page.items)
+                .find((item) => item.team.id === scope.teamId)?.roster;
+              return before ? mapTeamRoster(list, () => before) : list;
+            },
+          },
+        ),
+      ]);
+      return { rollback: () => rollbacks.forEach((rollback) => rollback()) };
+    },
+    onError: (_error, _open, context) => {
+      context?.rollback();
+      void refresh();
+    },
+    onSuccess: refresh,
   });
+}
+
+function teamDetailKey({ organizationId, competitionId, teamId }: TeamMutationScope) {
+  return queryKeys.teams.competitionManagementDetail(organizationId, competitionId, teamId);
+}
+
+/** The API reports a roster as closed exactly when it has a lock time. */
+function rosterSetOpen(
+  roster: CompetitionTeamManagementRosterDto,
+  open: boolean,
+): CompetitionTeamManagementRosterDto {
+  if (open) return { ...roster, state: "open", lockedAt: null };
+  return { ...roster, state: "closed", lockedAt: roster.lockedAt ?? new Date().toISOString() };
+}
+
+/** A Team has one captain, so naming a new one demotes the previous captain to player. */
+function roleAfterChange(
+  membership: { readonly id: string; readonly role: RosterMembershipRoleDto },
+  changedId: string,
+  role: RosterMembershipRoleDto,
+): RosterMembershipRoleDto {
+  if (membership.id === changedId) return role;
+  if (role === "captain" && membership.role === "captain") return "player";
+  return membership.role;
 }
 
 export function useConnectExternalClubMutation(scope: TeamMutationScope) {

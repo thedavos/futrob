@@ -12,10 +12,12 @@ import type {
   CompetitionParticipantInput,
   CreateCompetitionDraftRequest,
   ExploreCompetitionsQueryInput,
+  ListCompetitionParticipantsResponse,
   UpdateCompetitionDraftRequest,
 } from "@futrob/api-contracts";
 import { exploreCompetitionsQuerySchema } from "@futrob/api-contracts";
 import type { CoverSelection } from "@/modules/competitions/presentation/competition-profile-fields-value.ts";
+import { patchQueryData } from "@/shared/presentation/query/patch-query-data.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { readKeepingRefusal, refusalLabel } from "@/shared/presentation/query/stored-refusal.ts";
 import {
@@ -162,19 +164,48 @@ export function useRemoveCompetitionParticipantMutation(
   competitionId: string,
 ) {
   const queryClient = useQueryClient();
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.competitions.participants(organizationId, competitionId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
+      }),
+    ]);
   return useMutation({
     mutationFn: (entryId: string) =>
       removeCompetitionParticipant(organizationId, competitionId, entryId),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.competitions.participants(organizationId, competitionId),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
-        }),
-      ]);
+    onMutate: async (entryId) => ({
+      rollback: await patchQueryData<ListCompetitionParticipantsResponse>(
+        queryClient,
+        queryKeys.competitions.participants(organizationId, competitionId),
+        {
+          apply: (list) => ({
+            ...list,
+            participants: list.participants.filter((entry) => entry.id !== entryId),
+          }),
+          revert: (list, previous) => {
+            const index = previous.participants.findIndex((entry) => entry.id === entryId);
+            const removed = previous.participants[index];
+            if (!removed || list.participants.some((entry) => entry.id === entryId)) return list;
+            return {
+              ...list,
+              participants: [
+                ...list.participants.slice(0, index),
+                removed,
+                ...list.participants.slice(index),
+              ],
+            };
+          },
+        },
+      ),
+    }),
+    onError: (_error, _entryId, context) => {
+      context?.rollback();
+      void refresh();
     },
+    onSuccess: refresh,
   });
 }
 

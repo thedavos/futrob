@@ -5,11 +5,13 @@ import type {
   AssociateMyPlayerExternalClubRequest,
   AssociateMyPlayerExternalClubResponse,
   GetMyPlayerProfileResponse,
+  ListMyRosterInvitationsResponse,
   RespondToRosterInvitationRequest,
   SetActiveTeamRequest,
   UpdateMyPlayerGameAccountRequest,
 } from "@futrob/api-contracts";
 import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
+import { patchQueryData } from "@/shared/presentation/query/patch-query-data.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { teamsBrowserClient } from "./teams-browser-client.ts";
 
@@ -115,14 +117,47 @@ export function useMyRosterInvitationsQuery() {
 
 export function useRespondToRosterInvitationMutation() {
   const queryClient = useQueryClient();
+  const refreshInbox = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.players.meRosterInvitations() });
 
   return useMutation({
     mutationFn: (input: RespondToRosterInvitationRequest & { readonly invitationId: string }) =>
       teamsBrowserClient.respondToRosterInvitation(input.invitationId, { action: input.action }),
+    // Only a decline is shown before the server answers: accepting grants Team access.
+    onMutate: async (input) => {
+      if (input.action !== "decline") return { rollback: () => {} };
+      const respondedAt = new Date().toISOString();
+      return {
+        rollback: await patchQueryData<ListMyRosterInvitationsResponse>(
+          queryClient,
+          queryKeys.players.meRosterInvitations(),
+          {
+            apply: (inbox) => ({
+              invitations: inbox.invitations.map((invitation) =>
+                invitation.invitationId === input.invitationId
+                  ? { ...invitation, status: "declined", respondedAt }
+                  : invitation,
+              ),
+            }),
+            revert: (inbox, previous) => ({
+              invitations: inbox.invitations.map((invitation) =>
+                invitation.invitationId === input.invitationId
+                  ? (previous.invitations.find(
+                      (before) => before.invitationId === input.invitationId,
+                    ) ?? invitation)
+                  : invitation,
+              ),
+            }),
+          },
+        ),
+      };
+    },
+    onError: (_error, _input, context) => {
+      context?.rollback();
+      void refreshInbox();
+    },
     onSuccess: async (data) => {
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.players.meRosterInvitations(),
-      });
+      await refreshInbox();
       if (data.status === "accepted") {
         await queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() });
         await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });

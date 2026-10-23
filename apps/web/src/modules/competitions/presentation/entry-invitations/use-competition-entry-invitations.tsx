@@ -105,6 +105,7 @@ export function useCompetitionEntryInvitations(input: {
         disabled={commands.revoke.isPending}
         invitations={sent.data?.invitations ?? []}
         now={new Date()}
+        revokeFailed={commands.revoke.isError}
         onRevoke={(invitationId) => commands.revoke.mutate(invitationId)}
       />
     ),
