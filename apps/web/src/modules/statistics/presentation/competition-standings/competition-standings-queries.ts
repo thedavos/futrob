@@ -1,27 +1,40 @@
 import { useQuery } from "@tanstack/react-query";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { CompetitionsClientError } from "@/modules/competitions/presentation/competitions-browser-client.ts";
-import {
-  TeamsClientError,
-  teamsBrowserClient,
-} from "@/modules/teams/presentation/teams-browser-client.ts";
+import { TeamsClientError } from "@/modules/teams/presentation/teams-browser-client.ts";
+import { listEveryCompetitionManagementPage } from "@/modules/teams/presentation/competition-team-queries.ts";
 import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import {
+  readKeepingRefusal,
+  type AuthoritativeStatus,
+} from "@/shared/presentation/query/stored-refusal.ts";
 import {
   CompetitionStandingsClientError,
   getCompetitionStandings,
 } from "./competition-standings-client.ts";
 
-/** A refusal is the server's answer, not a transient failure; asking again cannot change it. */
-const retryUnlessRefused = (failureCount: number, error: Error) =>
-  !(error instanceof CompetitionStandingsClientError && error.status === 404) && failureCount < 2;
-
-function httpStatus(error: Error): number | undefined {
+function clientStatus(error: Error): number | undefined {
   return error instanceof CompetitionStandingsClientError ||
     error instanceof CompetitionsClientError ||
     error instanceof TeamsClientError
     ? error.status
     : undefined;
+}
+
+function standingsRefusal(status: AuthoritativeStatus): Refusal["refused"] {
+  switch (status) {
+    case 401:
+      return "session";
+    case 403:
+      return "permission";
+    case 404:
+      return "not_found";
+    default: {
+      const unexpected: never = status;
+      return unexpected;
+    }
+  }
 }
 
 /**
@@ -36,16 +49,9 @@ export function isRefusal<T extends object>(value: T | Refusal | undefined): val
 }
 
 async function refusedAsValue<T>(read: () => Promise<T>): Promise<T | Refusal> {
-  try {
-    return await read();
-  } catch (error) {
-    if (!(error instanceof Error)) throw error;
-    const status = httpStatus(error);
-    if (status === 403) return { refused: "permission" };
-    if (status === 401) return { refused: "session" };
-    if (status === 404) return { refused: "not_found" };
-    throw error;
-  }
+  const readResult = await readKeepingRefusal(read, clientStatus);
+  if (readResult.outcome === "refused") return { refused: standingsRefusal(readResult.status) };
+  return readResult.value;
 }
 
 /**
@@ -67,7 +73,7 @@ export function useCompetitionStandings(organizationId: string, competitionId: s
     ] as const,
     queryFn: () => refusedAsValue(() => getCompetitionStandings(organizationId, competitionId)),
     enabled: allowed,
-    retry: retryUnlessRefused,
+    retry: (failureCount) => failureCount < 2,
   });
   return { access, allowed, standings };
 }
@@ -90,18 +96,8 @@ export function useStandingsTeamNames(
     ] as const,
     queryFn: () =>
       refusedAsValue(async () => {
-        const teams: { id: string; name: string }[] = [];
-        let cursor: string | undefined;
-        do {
-          const page = await teamsBrowserClient.listCompetitionManagement(
-            organizationId,
-            competitionId,
-            { cursor, limit: 25 },
-          );
-          for (const item of page.items) teams.push({ id: item.team.id, name: item.team.name });
-          cursor = page.nextCursor ?? undefined;
-        } while (cursor);
-        return { teams };
+        const items = await listEveryCompetitionManagementPage(organizationId, competitionId, 25);
+        return { teams: items.map((item) => ({ id: item.team.id, name: item.team.name })) };
       }),
     enabled,
   });

@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import type { GetCompetitionTeamStatisticsResponse } from "@futrob/api-contracts";
-import {
-  TeamsClientError,
-  teamsBrowserClient,
-} from "@/modules/teams/presentation/teams-browser-client.ts";
+import { listEveryCompetitionManagementPage } from "@/modules/teams/presentation/competition-team-queries.ts";
+import { TeamsClientError } from "@/modules/teams/presentation/teams-browser-client.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import { readKeepingRefusal, refusalLabel } from "@/shared/presentation/query/stored-refusal.ts";
 import { StatisticsClientError, statisticsBrowserClient } from "../statistics-browser-client.ts";
 import type { TeamNames } from "./competition-team-stats-state.ts";
 
@@ -31,18 +30,14 @@ export function useCompetitionTeamStatisticsQuery(
   return useQuery({
     queryKey: queryKeys.statistics.competitionTeams(organizationId, competitionId),
     queryFn: async (): Promise<TeamStatisticsResult> => {
-      try {
-        const response = await statisticsBrowserClient.getCompetitionTeamStatistics(
-          organizationId,
-          competitionId,
-        );
-        return { kind: "ok", response };
-      } catch (error) {
-        const refusal =
-          error instanceof StatisticsClientError ? teamStatisticsRefusal(error.status) : null;
-        if (refusal) return { kind: "refused", refusal };
-        throw error;
+      const readResult = await readKeepingRefusal(
+        () => statisticsBrowserClient.getCompetitionTeamStatistics(organizationId, competitionId),
+        (error) => (error instanceof StatisticsClientError ? error.status : undefined),
+      );
+      if (readResult.outcome === "refused") {
+        return { kind: "refused", refusal: refusalLabel(readResult.status) };
       }
+      return { kind: "ok", response: readResult.value };
     },
     enabled,
     retry: false,
@@ -62,36 +57,19 @@ export function useCompetitionTeamNamesQuery(
   return useQuery({
     queryKey: queryKeys.teams.competitionManagementTeamNames(organizationId, competitionId),
     queryFn: async (): Promise<TeamNamesResult> => {
-      const names: Record<string, string> = {};
-      let cursor: string | undefined;
-      try {
-        do {
-          const page = await teamsBrowserClient.listCompetitionManagement(
-            organizationId,
-            competitionId,
-            { cursor, limit: 50 },
-          );
-          for (const item of page.items) names[item.team.id] = item.team.name;
-          cursor = page.nextCursor ?? undefined;
-        } while (cursor);
-      } catch (error) {
-        if (error instanceof TeamsClientError && isAuthoritativeRefusal(error.status)) {
-          return { kind: "denied" };
-        }
-        throw error;
-      }
-      return { kind: "ok", names };
+      const readResult = await readKeepingRefusal(
+        async () => {
+          const names: Record<string, string> = {};
+          const items = await listEveryCompetitionManagementPage(organizationId, competitionId, 50);
+          for (const item of items) names[item.team.id] = item.team.name;
+          return names;
+        },
+        (error) => (error instanceof TeamsClientError ? error.status : undefined),
+      );
+      if (readResult.outcome === "refused") return { kind: "denied" };
+      return { kind: "ok", names: readResult.value };
     },
     enabled,
     retry: false,
   });
-}
-
-function teamStatisticsRefusal(status: number): TeamStatisticsRefusal | null {
-  if (isAuthoritativeRefusal(status)) return status === 404 ? "not_found" : "forbidden";
-  return null;
-}
-
-function isAuthoritativeRefusal(status: number): boolean {
-  return status === 401 || status === 403 || status === 404;
 }
