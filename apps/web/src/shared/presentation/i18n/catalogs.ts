@@ -2031,7 +2031,8 @@ const es = {
   "standings.col.points": "Pts",
   "standings.col.points.full": "Puntos",
   "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
-    `${wins} G · ${draws} E · ${losses} P · GF ${goalsFor} · GC ${goalsAgainst}`,} satisfies Record<string, Message>;
+    `${wins} G · ${draws} E · ${losses} P · GF ${goalsFor} · GC ${goalsAgainst}`,
+} satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
@@ -2046,7 +2047,8 @@ export interface MessageParamsByKey {
   readonly "competitionRules.value.matches": { readonly count: number };
   readonly "competitionRules.value.hours": { readonly count: number };
   readonly "competitionRules.value.players": { readonly count: number };
-  readonly "competitionRules.roster.default": { readonly count: number };  readonly "organizations.members.actionsFor": { readonly name: string };
+  readonly "competitionRules.roster.default": { readonly count: number };
+  readonly "organizations.members.actionsFor": { readonly name: string };
   readonly "organizations.members.list.noMatchesFor": { readonly query: string };
   readonly "org.teams.count": { readonly count: number };
   readonly "org.teams.countFiltered": { readonly shown: number; readonly total: number };
@@ -2283,7 +2285,8 @@ export interface MessageParamsByKey {
     readonly losses: string;
     readonly goalsFor: string;
     readonly goalsAgainst: string;
-  };}
+  };
+}
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
 export type ParameterlessMessageKey = Exclude<MessageKey, ParameterizedMessageKey>;
@@ -4283,6 +4286,7 @@ const en: Catalog = {
   "standings.col.points": "Pts",
   "standings.col.points.full": "Points",
   "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
-    `${wins} W · ${draws} D · ${losses} L · GF ${goalsFor} · GA ${goalsAgainst}`,};
+    `${wins} W · ${draws} D · ${losses} L · GF ${goalsFor} · GA ${goalsAgainst}`,
+};
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;
