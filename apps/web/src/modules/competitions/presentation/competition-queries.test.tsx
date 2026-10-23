@@ -5,17 +5,27 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type {
+  CompetitionDraftDto,
   CompetitionEntryDto,
   ListCompetitionParticipantsResponse,
 } from "@futrob/api-contracts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
-import { useRemoveCompetitionParticipantMutation } from "./competition-queries.ts";
+import { leagueDraft } from "./competition-rules-fixtures.ts";
+import {
+  usePublishCompetitionMutation,
+  useRemoveCompetitionParticipantMutation,
+  useUpdateCompetitionDraftMutation,
+} from "./competition-queries.ts";
 
 const removeCompetitionParticipant = vi.fn<() => Promise<void>>();
+const updateCompetitionDraft = vi.fn<() => Promise<CompetitionDraftDto>>();
+const publishCompetition = vi.fn<() => Promise<CompetitionDraftDto>>();
 
 vi.mock("./competitions-browser-client.ts", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./competitions-browser-client.ts")>()),
   removeCompetitionParticipant: () => removeCompetitionParticipant(),
+  updateCompetitionDraft: () => updateCompetitionDraft(),
+  publishCompetition: () => publishCompetition(),
 }));
 
 const participantsKey = queryKeys.competitions.participants("org-1", "competition-1");
@@ -71,5 +81,58 @@ describe("removing a competition participant", () => {
     await act(() => result.current.mutateAsync("entry-1").catch(() => undefined));
 
     expect(participantIds()).toEqual(["entry-1", "entry-2"]);
+  });
+});
+
+describe("commands on a competition draft", () => {
+  it("publishes only after an earlier draft save has reached the server", async () => {
+    let finishSave: (draft: CompetitionDraftDto) => void = () => {};
+    updateCompetitionDraft.mockReturnValue(
+      new Promise((resolve) => {
+        finishSave = resolve;
+      }),
+    );
+    publishCompetition.mockResolvedValue(leagueDraft);
+    const queryClient = new QueryClient();
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () => ({
+        update: useUpdateCompetitionDraftMutation("org-1", "competition-1"),
+        publish: usePublishCompetitionMutation("org-1", "competition-1"),
+      }),
+      { wrapper },
+    );
+
+    act(() => result.current.update.mutate({} as never));
+    act(() => result.current.publish.mutate());
+    await waitFor(() => expect(updateCompetitionDraft).toHaveBeenCalled());
+    expect(publishCompetition).not.toHaveBeenCalled();
+
+    finishSave(leagueDraft);
+
+    await waitFor(() => expect(publishCompetition).toHaveBeenCalled());
+  });
+
+  it("shows the saved draft the server returned", async () => {
+    const saved = { ...leagueDraft, competition: { ...leagueDraft.competition, name: "Liga Sur" } };
+    updateCompetitionDraft.mockResolvedValue(saved);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } });
+    const draftKey = queryKeys.competitions.draft("org-1", "competition-1");
+    queryClient.setQueryData(draftKey, leagueDraft);
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () => useUpdateCompetitionDraftMutation("org-1", "competition-1"),
+      { wrapper },
+    );
+
+    await act(() => result.current.mutateAsync({} as never));
+
+    expect(queryClient.getQueryData<CompetitionDraftDto>(draftKey)?.competition.name).toBe(
+      "Liga Sur",
+    );
   });
 });

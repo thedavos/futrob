@@ -124,15 +124,22 @@ export function useOrganizationTeamsQuery(organizationId: string) {
   });
 }
 
+/**
+ * Commands that rewrite the stored draft share one scope, so they reach the server in the order
+ * the organizer sent them: a background save always lands before a later publish or cover change.
+ */
+function draftScope(organizationId: string, competitionId: string) {
+  return { id: `competition-draft:${organizationId}:${competitionId}` };
+}
+
 export function useUpdateCompetitionDraftMutation(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    scope: draftScope(organizationId, competitionId),
     mutationFn: (input: UpdateCompetitionDraftRequest) =>
       updateCompetitionDraft(organizationId, competitionId, input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.competitions.draft(organizationId, competitionId),
-      });
+    onSuccess: (draft) => {
+      queryClient.setQueryData(queryKeys.competitions.draft(organizationId, competitionId), draft);
     },
   });
 }
@@ -212,6 +219,7 @@ export function useRemoveCompetitionParticipantMutation(
 export function usePublishCompetitionMutation(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    scope: draftScope(organizationId, competitionId),
     mutationFn: () => publishCompetition(organizationId, competitionId),
     onSuccess: async () => {
       await Promise.all([
@@ -229,6 +237,7 @@ export function usePublishCompetitionMutation(organizationId: string, competitio
 export function useCompetitionRegistrationMutation(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    scope: draftScope(organizationId, competitionId),
     mutationFn: (action: "open" | "close") =>
       setCompetitionRegistration(organizationId, competitionId, action),
     onSuccess: async () => {
@@ -247,6 +256,7 @@ export function useCompetitionRegistrationMutation(organizationId: string, compe
 export function useUpdateCompetitionCoverMutation(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    scope: draftScope(organizationId, competitionId),
     mutationFn: async (cover: CoverSelection) => {
       const resolved =
         cover.kind === "file"
