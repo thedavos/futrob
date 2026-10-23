@@ -7,6 +7,7 @@ import {
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { RESULT_PERMISSION } from "@futrob/results";
+import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { TEAM_PERMISSION } from "@futrob/teams";
 
 /** Shell bootstrap probes — BC permission constants, not string literals. */
@@ -29,6 +30,7 @@ export const SHELL_PERMISSIONS = [
   TEAM_PERMISSION.externalClubRead,
   TEAM_PERMISSION.externalClubManage,
   RESULT_PERMISSION.resultApprove,
+  STATISTICS_PERMISSION.read,
 ] as const satisfies readonly PermissionDto[];
 
 export class EffectiveAccessHttpError extends Error {
