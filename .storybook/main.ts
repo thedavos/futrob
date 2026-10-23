@@ -1,5 +1,7 @@
 import type { StorybookConfig } from "@storybook/react-vite";
-import { dirname, resolve } from "node:path";
+import type { Plugin } from "vite-plus";
+import { globSync } from "node:fs";
+import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { futrobStylex } from "../tools/stylex/vite-plugin.ts";
 
@@ -72,12 +74,60 @@ function matchesBrowserClient(id: string, mock: BrowserClientMock): boolean {
   );
 }
 
+const storyGlobs = [
+  "../packages/ui/src/**/*.stories.@(ts|tsx)",
+  "../apps/web/src/**/*.stories.@(ts|tsx)",
+];
+
+/**
+ * Vite skips `server.warmup` in middleware mode, which is how Storybook runs it.
+ * Once the preview iframe is first requested (deps optimizer already running),
+ * transform every story graph in the background so opening a story for the
+ * first time does not wait on StyleX/Babel transforms.
+ */
+function warmStoriesAfterFirstPreview(): Plugin {
+  return {
+    name: "storybook-warm-stories",
+    apply: "serve",
+    configureServer(server) {
+      let warmed = false;
+      server.middlewares.use((req, _res, next) => {
+        if (!warmed && req.url?.startsWith("/iframe.html")) {
+          warmed = true;
+          const files = storyGlobs.flatMap((pattern) =>
+            globSync(pattern, { cwd: configDir }).map((file) => resolve(configDir, file)),
+          );
+          for (const file of files) {
+            void server.warmupRequest(`/${relative(server.config.root, file)}`);
+          }
+        }
+        next();
+      });
+    },
+  };
+}
+
 const config: StorybookConfig = {
-  stories: ["../packages/ui/src/**/*.stories.@(ts|tsx)", "../apps/web/src/**/*.stories.@(ts|tsx)"],
+  stories: storyGlobs,
   addons: [
     getAbsolutePath("@storybook/addon-docs"),
     getAbsolutePath("@storybook/addon-a11y"),
     getAbsolutePath("@storybook/addon-vitest"),
+  ],
+  core: {
+    disableWhatsNewNotifications: true,
+  },
+  features: {
+    sidebarOnboardingChecklist: false,
+    menuOnboardingChecklist: false,
+  },
+  staticDirs: [
+    { from: "../apps/web/public/favicon.svg", to: "/favicon.svg" },
+    { from: "../apps/web/public", to: "/brand" },
+    {
+      from: resolve(getAbsolutePath("@fontsource-variable/manrope"), "files"),
+      to: "/fonts/manrope",
+    },
   ],
   framework: {
     name: getAbsolutePath("@storybook/react-vite"),
@@ -103,6 +153,7 @@ const config: StorybookConfig = {
         },
       },
       futrobStylex(),
+      warmStoriesAfterFirstPreview(),
       ...(viteConfig.plugins ?? []),
     ];
     viteConfig.resolve = {
