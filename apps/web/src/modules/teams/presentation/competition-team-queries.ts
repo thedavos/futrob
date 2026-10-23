@@ -116,6 +116,12 @@ async function invalidateTeamManagement(
 
 export function useChangeRosterRoleMutation(scope: TeamMutationScope) {
   const queryClient = useQueryClient();
+  const refresh = () =>
+    Promise.all([
+      invalidateTeamManagement(queryClient, scope),
+      queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.authorization.all }),
+    ]);
   return useMutation({
     mutationFn: (input: { readonly membershipId: string } & ChangeRosterRoleRequest) =>
       teamsBrowserClient.changeRosterRole(
@@ -158,19 +164,17 @@ export function useChangeRosterRoleMutation(scope: TeamMutationScope) {
         },
       ),
     }),
-    onError: (_error, _input, context) => context?.rollback(),
-    onSettled: async () => {
-      await Promise.all([
-        invalidateTeamManagement(queryClient, scope),
-        queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.authorization.all }),
-      ]);
+    onError: (_error, _input, context) => {
+      context?.rollback();
+      void refresh();
     },
+    onSuccess: refresh,
   });
 }
 
 export function useSetRosterOpenMutation(scope: TeamMutationScope) {
   const queryClient = useQueryClient();
+  const refresh = () => invalidateTeamManagement(queryClient, scope);
   return useMutation({
     mutationFn: (open: boolean) =>
       open
@@ -211,8 +215,11 @@ export function useSetRosterOpenMutation(scope: TeamMutationScope) {
       ]);
       return { rollback: () => rollbacks.forEach((rollback) => rollback()) };
     },
-    onError: (_error, _open, context) => context?.rollback(),
-    onSettled: () => invalidateTeamManagement(queryClient, scope),
+    onError: (_error, _open, context) => {
+      context?.rollback();
+      void refresh();
+    },
+    onSuccess: refresh,
   });
 }
 

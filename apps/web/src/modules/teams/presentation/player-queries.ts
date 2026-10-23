@@ -117,6 +117,8 @@ export function useMyRosterInvitationsQuery() {
 
 export function useRespondToRosterInvitationMutation() {
   const queryClient = useQueryClient();
+  const refreshInbox = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.players.meRosterInvitations() });
 
   return useMutation({
     mutationFn: (input: RespondToRosterInvitationRequest & { readonly invitationId: string }) =>
@@ -150,10 +152,12 @@ export function useRespondToRosterInvitationMutation() {
         ),
       };
     },
-    onError: (_error, _input, context) => context?.rollback(),
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.players.meRosterInvitations() }),
+    onError: (_error, _input, context) => {
+      context?.rollback();
+      void refreshInbox();
+    },
     onSuccess: async (data) => {
+      await refreshInbox();
       if (data.status === "accepted") {
         await queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() });
         await queryClient.invalidateQueries({ queryKey: queryKeys.players.me() });

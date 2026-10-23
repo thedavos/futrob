@@ -55,10 +55,11 @@ export function useEntryInvitationLinkQuery(
 export function useEntryInvitationCommands(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   const sentKey = queryKeys.competitions.entryInvitations(organizationId, competitionId);
+  const refreshSent = () => queryClient.invalidateQueries({ queryKey: sentKey, exact: true });
   const invite = useMutation({
     mutationFn: (input: InviteTeamCaptainRequest) =>
       inviteTeamCaptain(organizationId, competitionId, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: sentKey, exact: true }),
+    onSuccess: refreshSent,
   });
   const revoke = useMutation({
     mutationFn: (invitationId: string) =>
@@ -84,8 +85,11 @@ export function useEntryInvitationCommands(organizationId: string, competitionId
         }),
       };
     },
-    onError: (_error, _invitationId, context) => context?.rollback(),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: sentKey, exact: true }),
+    onError: (_error, _invitationId, context) => {
+      context?.rollback();
+      void refreshSent();
+    },
+    onSuccess: refreshSent,
   });
   const regenerateLink = useMutation({
     mutationFn: () => regenerateEntryInvitationLink(organizationId, competitionId),

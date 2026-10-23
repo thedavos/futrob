@@ -75,12 +75,9 @@ describe("PlayerInvitationsPage responses", () => {
   });
 
   it("brings the invitation back with an error when the decline fails", async () => {
-    let refetched: (inbox: ListMyRosterInvitationsResponse) => void = () => {};
-    listMyRosterInvitations.mockResolvedValueOnce(pending).mockReturnValue(
-      new Promise((resolve) => {
-        refetched = resolve;
-      }),
-    );
+    listMyRosterInvitations
+      .mockResolvedValueOnce(pending)
+      .mockReturnValue(new Promise(() => undefined));
     let reject: (error: Error) => void = () => {};
     respondToRosterInvitation.mockReturnValue(
       new Promise((_resolve, rejectRespond) => {
@@ -93,12 +90,13 @@ describe("PlayerInvitationsPage responses", () => {
     await screen.findByText("No tienes invitaciones pendientes");
     reject(new Error("network"));
 
-    expect(await screen.findByRole("button", { name: "Rechazar invitación" })).toBeTruthy();
-    expect(screen.queryByText("No tienes invitaciones pendientes")).toBeNull();
-    refetched(pending);
     expect(
       await screen.findByText("No pudimos registrar tu respuesta. Inténtalo de nuevo."),
     ).toBeTruthy();
+    expect(screen.queryByText("No tienes invitaciones pendientes")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Rechazar invitación" }).hasAttribute("disabled"),
+    ).toBe(false);
   });
 
   it("keeps an accepted invitation pending until the server answers", async () => {

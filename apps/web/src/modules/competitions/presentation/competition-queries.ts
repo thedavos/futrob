@@ -164,6 +164,15 @@ export function useRemoveCompetitionParticipantMutation(
   competitionId: string,
 ) {
   const queryClient = useQueryClient();
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.competitions.participants(organizationId, competitionId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
+      }),
+    ]);
   return useMutation({
     mutationFn: (entryId: string) =>
       removeCompetitionParticipant(organizationId, competitionId, entryId),
@@ -192,17 +201,11 @@ export function useRemoveCompetitionParticipantMutation(
         },
       ),
     }),
-    onError: (_error, _entryId, context) => context?.rollback(),
-    onSettled: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.competitions.participants(organizationId, competitionId),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
-        }),
-      ]);
+    onError: (_error, _entryId, context) => {
+      context?.rollback();
+      void refresh();
     },
+    onSuccess: refresh,
   });
 }
 
