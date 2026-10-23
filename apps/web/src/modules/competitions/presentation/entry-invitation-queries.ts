@@ -1,6 +1,11 @@
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AcceptEntryInvitationRequest, InviteTeamCaptainRequest } from "@futrob/api-contracts";
+import type {
+  AcceptEntryInvitationRequest,
+  InviteTeamCaptainRequest,
+  ListSentEntryInvitationsResponse,
+} from "@futrob/api-contracts";
+import { patchQueryData } from "@/shared/presentation/query/patch-query-data.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
   acceptEntryInvitation,
@@ -58,7 +63,24 @@ export function useEntryInvitationCommands(organizationId: string, competitionId
   const revoke = useMutation({
     mutationFn: (invitationId: string) =>
       revokeEntryInvitation(organizationId, competitionId, invitationId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: sentKey, exact: true }),
+    onMutate: async (invitationId) => {
+      const respondedAt = new Date().toISOString();
+      return {
+        rollback: await patchQueryData<ListSentEntryInvitationsResponse>(
+          queryClient,
+          sentKey,
+          (sent) => ({
+            invitations: sent.invitations.map((invitation) =>
+              invitation.id === invitationId
+                ? { ...invitation, status: "revoked", respondedAt }
+                : invitation,
+            ),
+          }),
+        ),
+      };
+    },
+    onError: (_error, _invitationId, context) => context?.rollback(),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: sentKey, exact: true }),
   });
   const regenerateLink = useMutation({
     mutationFn: () => regenerateEntryInvitationLink(organizationId, competitionId),

@@ -91,6 +91,7 @@ function ParticipantsStory({ scenario, invite, onOpenInvite, onRevoke }: StoryAr
             invitations={sentInvitations}
             now={NOW}
             onRevoke={onRevoke}
+            revokeFailed={false}
           />
         ) : null
       }
