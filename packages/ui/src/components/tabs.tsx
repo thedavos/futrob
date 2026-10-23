@@ -113,6 +113,8 @@ const styles = stylex.create({
     },
   },
   triggerLine: {
+    // Short labels ("MVP") still get a 44px-wide target; the indicator follows the tab width.
+    minWidth: "var(--control-height)",
     minHeight: "var(--control-height)",
     borderBottomWidth: 2,
     borderBottomStyle: "solid",
