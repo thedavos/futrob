@@ -34,6 +34,7 @@ export type CompetitionStandingsState =
   | { readonly kind: "loading" }
   | { readonly kind: "access_error"; readonly retry: () => void }
   | { readonly kind: "forbidden" }
+  | { readonly kind: "not_found" }
   | { readonly kind: "error"; readonly retry: () => void }
   | {
       readonly kind: "empty";
@@ -79,6 +80,7 @@ export function CompetitionStandingsRoute({
     if (access.capability.status === "loading") return { kind: "loading" };
     if (!allowed) return { kind: "forbidden" };
     if (refusal?.refused === "permission") return { kind: "forbidden" };
+    if (refusal?.refused === "not_found") return { kind: "not_found" };
     if (refusal) return { kind: "access_error", retry: () => void standings.refetch() };
     if (standingsValue) {
       if (!snapshot || snapshot.rows.length === 0) {
@@ -148,6 +150,28 @@ export function CompetitionStandingsPageView({
                   <EmptyStateTitle>{t("standings.forbidden.title")}</EmptyStateTitle>
                   <EmptyStateDescription>
                     {t("standings.forbidden.description")}
+                  </EmptyStateDescription>
+                </EmptyStateCopy>
+                <EmptyStateActions>
+                  <Button
+                    render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId" />}
+                    variant="outline"
+                  >
+                    {t("standings.forbidden.back")}
+                  </Button>
+                </EmptyStateActions>
+              </EmptyState>
+            );
+          case "not_found":
+            return (
+              <EmptyState>
+                <EmptyStateIcon>
+                  <img alt="" data-outline="none" src={emptyStandingsUrl} />
+                </EmptyStateIcon>
+                <EmptyStateCopy>
+                  <EmptyStateTitle>{t("standings.notFound.title")}</EmptyStateTitle>
+                  <EmptyStateDescription>
+                    {t("standings.notFound.description")}
                   </EmptyStateDescription>
                 </EmptyStateCopy>
                 <EmptyStateActions>

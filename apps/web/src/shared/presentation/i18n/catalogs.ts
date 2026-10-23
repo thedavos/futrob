@@ -1693,6 +1693,9 @@ const es = {
   "standings.forbidden.description":
     "Tu cuenta no tiene permiso para ver la tabla oficial de esta competición.",
   "standings.forbidden.back": "Volver a la organización",
+  "standings.notFound.title": "No encontramos esta competición",
+  "standings.notFound.description":
+    "La competición ya no existe o el enlace no es correcto. No es un problema de permisos ni un fallo temporal.",
   "standings.empty.title": "Aún no hay clasificación oficial",
   "standings.empty.description":
     "La tabla se calcula solo con resultados oficiales aprobados y aparecerá cuando se apruebe el primero. Los partidos de EA sin aprobar no cuentan.",
@@ -3604,6 +3607,9 @@ const en: Catalog = {
   "standings.forbidden.description":
     "Your account doesn't have permission to see this competition's official table.",
   "standings.forbidden.back": "Back to the organization",
+  "standings.notFound.title": "We couldn't find this competition",
+  "standings.notFound.description":
+    "The competition no longer exists or the link is wrong. This isn't a permissions problem or a temporary failure.",
   "standings.empty.title": "No official standings yet",
   "standings.empty.description":
     "The table is built only from approved official results and will appear once the first one is approved. EA matches that aren't approved don't count.",

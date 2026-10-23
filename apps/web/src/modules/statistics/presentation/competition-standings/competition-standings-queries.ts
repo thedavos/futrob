@@ -25,11 +25,11 @@ function httpStatus(error: Error): number | undefined {
 }
 
 /**
- * A refusal is stored as the query's value, not thrown. Query data survives later errors, so a
- * thrown 403/401 would let an older success reappear after the next transient failure; as a value
+ * A refusal (401, 403, or a 404 for a missing competition) is stored as the query's value, not
+ * thrown. Query data survives later errors, so a thrown refusal would let an older success reappear after the next transient failure; as a value
  * it replaces that success and stays until a fresh read for the same key succeeds.
  */
-export type Refusal = { readonly refused: "permission" | "session" };
+export type Refusal = { readonly refused: "permission" | "session" | "not_found" };
 
 export function isRefusal<T extends object>(value: T | Refusal | undefined): value is Refusal {
   return value !== undefined && "refused" in value;
@@ -43,6 +43,7 @@ async function refusedAsValue<T>(read: () => Promise<T>): Promise<T | Refusal> {
     const status = httpStatus(error);
     if (status === 403) return { refused: "permission" };
     if (status === 401) return { refused: "session" };
+    if (status === 404) return { refused: "not_found" };
     throw error;
   }
 }

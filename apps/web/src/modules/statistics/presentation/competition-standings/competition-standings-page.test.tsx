@@ -95,16 +95,16 @@ function serve(routes: Routes) {
   return fetch;
 }
 
-function renderRoute(locale: "es" | "en" = "es") {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+function renderRoute(locale: "es" | "en" = "es", client?: QueryClient) {
+  const queryClient = client ?? new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const view = render(
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale={locale}>
         <CompetitionStandingsRoute competitionId="competition-1" organizationId="org-1" />
       </I18nProvider>
     </QueryClientProvider>,
   );
-  return queryClient;
+  return Object.assign(queryClient, { unmount: view.unmount });
 }
 
 afterEach(() => {
@@ -336,6 +336,13 @@ describe("Competition standings page", () => {
       expect(screen.queryByRole("table")).toBeNull();
       expect(screen.queryByText("Maderas FC")).toBeNull();
 
+      // A remount inside the cache lifetime still must not bring the old table back.
+      queryClient.unmount();
+      renderRoute("es", queryClient);
+      expect(screen.getByText(message)).toBeTruthy();
+      expect(screen.queryByRole("table")).toBeNull();
+      expect(screen.queryByText("Maderas FC")).toBeNull();
+
       await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
       expect(await screen.findByText("Maderas FC")).toBeTruthy();
     },
@@ -399,6 +406,62 @@ describe("Competition standings page", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  });
+
+  it.each([
+    ["es" as const, "No encontramos esta competición"],
+    ["en" as const, "We couldn't find this competition"],
+  ])(
+    "replaces cached standings with a not-found state on 404, through a 500 and a remount (%s)",
+    async (locale, title) => {
+      serve({
+        standings: sequence(
+          () => Response.json({ standings: snapshot }),
+          fail(404, "api.not_found"),
+          fail(500, "api.unexpected"),
+        ),
+      });
+      const queryClient = renderRoute(locale);
+      expect(await screen.findByText("Maderas FC")).toBeTruthy();
+
+      await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+      expect(await screen.findByText(title)).toBeTruthy();
+      expect(screen.queryByRole("table")).toBeNull();
+      expect(screen.queryByText("Maderas FC")).toBeNull();
+      // Not a permission refusal and not a retryable load failure.
+      expect(screen.queryByRole("alert")).toBeNull();
+      expect(screen.queryByRole("button", { name: /Reintentar|Retry/ })).toBeNull();
+      expect(screen.queryByText(/No tienes acceso|can't view/)).toBeNull();
+
+      await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
+      expect(screen.getByText(title)).toBeTruthy();
+      expect(screen.queryByText("Maderas FC")).toBeNull();
+      expect(screen.queryByRole("alert")).toBeNull();
+
+      queryClient.unmount();
+      renderRoute(locale, queryClient);
+      expect(screen.getByText(title)).toBeTruthy();
+      expect(screen.queryByRole("table")).toBeNull();
+      expect(screen.queryByText("Maderas FC")).toBeNull();
+    },
+    20_000,
+  );
+
+  it("does not bring cached names back when the name lookup returns 404 and then 500", async () => {
+    const teamsOk = () => teamsPage(["t1", "Cuervos FC"], ["t2", "Maderas FC"]);
+    serve({
+      teams: sequence(teamsOk, fail(404, "api.not_found"), fail(500, "api.unexpected")),
+    });
+    const queryClient = renderRoute();
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+
+    await act(() => queryClient.refetchQueries({ queryKey: ["teams"] }));
+    expect(await screen.findByText(/No pudimos cargar los nombres/)).toBeTruthy();
+    await act(() => queryClient.refetchQueries({ queryKey: ["teams"] }));
+    expect(screen.getByText(/No pudimos cargar los nombres/)).toBeTruthy();
+    expect(screen.queryByText("Maderas FC")).toBeNull();
+    expect(screen.queryByText("Cuervos FC")).toBeNull();
+    expect(screen.getByRole("table")).toBeTruthy();
   });
 
   it("does not carry a refusal into another competition scope", async () => {
