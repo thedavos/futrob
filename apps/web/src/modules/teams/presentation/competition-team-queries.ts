@@ -8,9 +8,14 @@ import {
 } from "@tanstack/react-query";
 import type {
   ChangeRosterRoleRequest,
+  CompetitionTeamManagementDetailResponse,
+  CompetitionTeamManagementListResponse,
+  CompetitionTeamManagementRosterDto,
   ConnectTeamExternalClubRequest,
   CreateRosterInvitationRequestInput,
+  RosterMembershipRoleDto,
 } from "@futrob/api-contracts";
+import { patchQueryData } from "@/shared/presentation/query/patch-query-data.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { teamsBrowserClient } from "./teams-browser-client.ts";
 
@@ -120,7 +125,24 @@ export function useChangeRosterRoleMutation(scope: TeamMutationScope) {
         input.membershipId,
         { role: input.role },
       ),
-    onSuccess: async () => {
+    onMutate: async (input) => ({
+      rollback: await patchQueryData<CompetitionTeamManagementDetailResponse>(
+        queryClient,
+        teamDetailKey(scope),
+        (detail) => ({
+          ...detail,
+          members: detail.members.map((member) => ({
+            ...member,
+            membership: {
+              ...member.membership,
+              role: roleAfterChange(member.membership, input.membershipId, input.role),
+            },
+          })),
+        }),
+      ),
+    }),
+    onError: (_error, _input, context) => context?.rollback(),
+    onSettled: async () => {
       await Promise.all([
         invalidateTeamManagement(queryClient, scope),
         queryClient.invalidateQueries({ queryKey: queryKeys.players.meTeams() }),
@@ -137,8 +159,59 @@ export function useSetRosterOpenMutation(scope: TeamMutationScope) {
       open
         ? teamsBrowserClient.openRoster(scope.organizationId, scope.competitionId, scope.teamId)
         : teamsBrowserClient.closeRoster(scope.organizationId, scope.competitionId, scope.teamId),
-    onSuccess: () => invalidateTeamManagement(queryClient, scope),
+    onMutate: async (open) => {
+      const withRoster = <T extends { readonly roster: CompetitionTeamManagementRosterDto }>(
+        item: T,
+      ): T => ({ ...item, roster: rosterSetOpen(item.roster, open) });
+      const rollbacks = await Promise.all([
+        patchQueryData<CompetitionTeamManagementDetailResponse>(
+          queryClient,
+          teamDetailKey(scope),
+          withRoster,
+        ),
+        patchQueryData<InfiniteData<CompetitionTeamManagementListResponse>>(
+          queryClient,
+          queryKeys.teams.competitionManagement(scope.organizationId, scope.competitionId),
+          (list) => ({
+            ...list,
+            pages: list.pages.map((page) => ({
+              ...page,
+              items: page.items.map((item) =>
+                item.team.id === scope.teamId ? withRoster(item) : item,
+              ),
+            })),
+          }),
+        ),
+      ]);
+      return { rollback: () => rollbacks.forEach((rollback) => rollback()) };
+    },
+    onError: (_error, _open, context) => context?.rollback(),
+    onSettled: () => invalidateTeamManagement(queryClient, scope),
   });
+}
+
+function teamDetailKey({ organizationId, competitionId, teamId }: TeamMutationScope) {
+  return queryKeys.teams.competitionManagementDetail(organizationId, competitionId, teamId);
+}
+
+/** The API reports a roster as closed exactly when it has a lock time. */
+function rosterSetOpen(
+  roster: CompetitionTeamManagementRosterDto,
+  open: boolean,
+): CompetitionTeamManagementRosterDto {
+  if (open) return { ...roster, state: "open", lockedAt: null };
+  return { ...roster, state: "closed", lockedAt: roster.lockedAt ?? new Date().toISOString() };
+}
+
+/** A Team has one captain, so naming a new one demotes the previous captain to player. */
+function roleAfterChange(
+  membership: { readonly id: string; readonly role: RosterMembershipRoleDto },
+  changedId: string,
+  role: RosterMembershipRoleDto,
+): RosterMembershipRoleDto {
+  if (membership.id === changedId) return role;
+  if (role === "captain" && membership.role === "captain") return "player";
+  return membership.role;
 }
 
 export function useConnectExternalClubMutation(scope: TeamMutationScope) {
