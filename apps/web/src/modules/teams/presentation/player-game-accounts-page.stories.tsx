@@ -66,7 +66,7 @@ function GameDataStoryShell({ scenario }: { readonly scenario: ScenarioId }) {
 }
 
 const meta = {
-  title: "Product/Player/Game data",
+  title: "Product/Player/Game accounts/Accounts",
   parameters: { layout: "fullscreen" },
   args: {
     scenario: "empty",

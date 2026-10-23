@@ -26,6 +26,7 @@ const styles = stylex.create({
 
 const meta = {
   title: "Patterns/Data table",
+  tags: ["autodocs"],
   parameters: {
     layout: "padded",
   },

@@ -41,7 +41,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Patterns/Typography",
+  title: "Foundations/Typography",
+  tags: ["autodocs"],
   parameters: { layout: "padded" },
 } satisfies Meta;
 

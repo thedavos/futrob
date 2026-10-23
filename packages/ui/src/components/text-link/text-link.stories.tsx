@@ -4,7 +4,8 @@ import { Body } from "../body/body.tsx";
 import { TextLink } from "./text-link.tsx";
 
 const meta = {
-  title: "Primitives/TextLink",
+  title: "Components/Typography/TextLink",
+  tags: ["autodocs"],
   component: TextLink,
   parameters: { layout: "padded" },
   args: {

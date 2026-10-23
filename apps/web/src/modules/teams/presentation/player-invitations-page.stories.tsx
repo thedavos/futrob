@@ -201,7 +201,7 @@ function InvitationsStoryShell({
 }
 
 const meta = {
-  title: "Product/Player/Invitations inbox",
+  title: "Product/Player/Invitations/Team invitations",
   parameters: { layout: "fullscreen" },
   args: {
     scenario: "conInvitaciones",

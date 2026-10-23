@@ -36,7 +36,8 @@ const canvas = applyStyles(styles.canvas);
 const fillCanvas = applyStyles(styles.fillCanvas);
 
 const meta = {
-  title: "Primitives/EmptyState",
+  title: "Components/Feedback/EmptyState",
+  tags: ["autodocs"],
   component: EmptyState,
   parameters: { layout: "padded" },
   args: {

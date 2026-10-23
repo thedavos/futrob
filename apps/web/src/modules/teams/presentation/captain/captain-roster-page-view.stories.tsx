@@ -25,7 +25,7 @@ function CaptainRosterStory({ locale, ...props }: StoryArgs) {
 }
 
 const meta = {
-  title: "Product/Competition/Captain roster",
+  title: "Product/Competition/Captain/Roster",
   component: CaptainRosterStory,
   parameters: { layout: "fullscreen" },
   args: {

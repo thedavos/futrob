@@ -12,7 +12,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Heading",
+  title: "Components/Typography/Heading",
+  tags: ["autodocs"],
   component: Heading,
   parameters: { layout: "padded" },
   args: {

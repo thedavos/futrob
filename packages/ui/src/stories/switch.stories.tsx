@@ -62,7 +62,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Switch",
+  title: "Components/Forms/Switch",
+  tags: ["autodocs"],
   component: Switch,
   parameters: { layout: "centered" },
   args: {

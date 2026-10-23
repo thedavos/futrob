@@ -99,7 +99,7 @@ async function submitInvitationToken(
 }
 
 const meta = {
-  title: "Product/Player/Invitations",
+  title: "Product/Player/Invitations/Organization invitation",
   parameters: { layout: "fullscreen" },
   args: {
     scenario: "success",

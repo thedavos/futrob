@@ -45,7 +45,7 @@ type StoryArgs = CommandBarIdentity & {
 };
 
 const meta = {
-  title: "Product/Shell/CommandBarIdentity",
+  title: "Product/Shell/Command bar identity",
   parameters: { layout: "padded" },
   args: {
     gamertag: "davos282",

@@ -112,7 +112,7 @@ function ResolutionStory({ scenario, locale, narrow }: Args) {
   );
 }
 const meta = {
-  title: "Product/Competition/Encounter Rescheduling/Organizer",
+  title: "Product/Competition/Rescheduling/Organizer",
   parameters: { layout: "fullscreen" },
   args: { scenario: "escalated", locale: "es" },
   argTypes: {

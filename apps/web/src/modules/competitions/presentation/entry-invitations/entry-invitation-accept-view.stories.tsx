@@ -38,7 +38,7 @@ function coded(code: string): CompetitionsClientError {
 }
 
 const meta = {
-  title: "Product/Competitions/Entry invitation/Con sesión",
+  title: "Product/Competition/Entry invitation/Signed in",
   component: EntryInvitationAcceptView,
   decorators: [withEntryInvitationRouter],
   parameters: { layout: "padded" },

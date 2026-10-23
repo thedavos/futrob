@@ -119,7 +119,7 @@ function ListStory({ locale, narrow = false, scenario }: StoryArgs) {
 }
 
 const meta = {
-  title: "Product/Competition/Encounters list",
+  title: "Product/Competition/Encounters",
   parameters: { layout: "fullscreen" },
   args: { scenario: "ready", locale: "es" },
   argTypes: {

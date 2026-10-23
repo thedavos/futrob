@@ -69,6 +69,7 @@ const styles = stylex.create({
 
 const meta = {
   title: "Patterns/Master detail",
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },

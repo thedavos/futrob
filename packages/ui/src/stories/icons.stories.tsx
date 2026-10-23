@@ -143,7 +143,8 @@ const sizeStyles = {
 } as const;
 
 const meta = {
-  title: "Primitives/Icons",
+  title: "Foundations/Icons",
+  tags: ["autodocs"],
   parameters: {
     layout: "padded",
   },

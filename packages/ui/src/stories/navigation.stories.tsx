@@ -35,6 +35,7 @@ const styles = stylex.create({
 
 const meta = {
   title: "Patterns/Navigation",
+  tags: ["autodocs"],
 } satisfies Meta;
 
 export default meta;

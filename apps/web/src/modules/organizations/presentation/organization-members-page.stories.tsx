@@ -105,7 +105,7 @@ function MembersStoryShell(args: StoryArgs) {
 }
 
 const meta = {
-  title: "Product/Organizer/Organizations/Members and roles",
+  title: "Product/Organizer/Organization/Members and roles",
   parameters: { layout: "fullscreen" },
   args: {
     locale: "es",

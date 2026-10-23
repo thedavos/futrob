@@ -45,7 +45,8 @@ const styles = stylex.create({
 const playground = applyStyles(styles.playground);
 
 const meta = {
-  title: "Primitives/ChoiceGroup",
+  title: "Components/Forms/ChoiceGroup",
+  tags: ["autodocs"],
   component: ChoiceGroup,
   parameters: { layout: "centered" },
   args: {

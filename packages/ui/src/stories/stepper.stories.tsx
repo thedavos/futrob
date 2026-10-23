@@ -25,7 +25,8 @@ const styles = stylex.create({
 const playground = applyStyles(styles.playground);
 
 const meta = {
-  title: "Primitives/Stepper",
+  title: "Components/Navigation/Stepper",
+  tags: ["autodocs"],
   component: Stepper,
   parameters: { layout: "centered" },
   args: {

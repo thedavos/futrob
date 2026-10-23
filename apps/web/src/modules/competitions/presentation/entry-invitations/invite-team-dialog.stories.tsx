@@ -110,7 +110,7 @@ function InviteTeamStory({
 }
 
 const meta = {
-  title: "Product/Competitions/Setup/Invite team",
+  title: "Product/Organizer/Competition setup/Invite team",
   component: InviteTeamStory,
   parameters: { layout: "padded" },
   args: {

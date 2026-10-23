@@ -61,7 +61,7 @@ function SetupBar(props: CompetitionSetupActionBarProps) {
 }
 
 const meta = {
-  title: "Product/Organizer/Competition setup action bar",
+  title: "Product/Organizer/Competition setup/Action bar",
   component: CompetitionSetupActionBarStart,
   args: {
     step: 1,

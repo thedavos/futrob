@@ -268,6 +268,7 @@ const styles = stylex.create({
 
 const meta = {
   title: "Patterns/App shell",
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },

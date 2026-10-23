@@ -85,6 +85,7 @@ const styles = stylex.create({
 
 const meta = {
   title: "Patterns/Overlays",
+  tags: ["autodocs"],
 } satisfies Meta;
 
 export default meta;

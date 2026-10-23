@@ -189,7 +189,7 @@ mera existencia del diálogo.
 ## Storybook
 
 `apps/web/src/modules/competitions/presentation/invite-team-dialog.stories.tsx`, con título
-`Product/Competitions/Setup/Invite team`. La vista es pura: recibe los resultados de búsqueda,
+`Product/Organizer/Competition setup/Invite team`. La vista es pura: recibe los resultados de búsqueda,
 el estado del enlace y los callbacks. Por eso las stories no necesitan red. Se usa `fn()` de
 `storybook/test` para capturar las llamadas.
 

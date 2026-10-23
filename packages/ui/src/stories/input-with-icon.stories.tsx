@@ -61,7 +61,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/InputWithIcon",
+  title: "Components/Forms/InputWithIcon",
+  tags: ["autodocs"],
   component: InputWithIcon,
   parameters: {
     layout: "centered",

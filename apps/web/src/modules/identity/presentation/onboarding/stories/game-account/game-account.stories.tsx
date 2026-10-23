@@ -7,7 +7,7 @@ import {
 } from "../../onboarding-story-router.tsx";
 
 const meta = {
-  title: "Product/Onboarding/GameAccount",
+  title: "Product/Onboarding/Game account",
   parameters: { layout: "fullscreen" },
 } satisfies Meta;
 

@@ -23,7 +23,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Badge",
+  title: "Components/Data display/Badge",
+  tags: ["autodocs"],
   component: Badge,
   parameters: { layout: "centered" },
   args: {

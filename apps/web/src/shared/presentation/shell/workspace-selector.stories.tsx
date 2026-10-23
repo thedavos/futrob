@@ -263,7 +263,7 @@ const filledPortfolioModel = buildWorkspaceSelectorModel({
 });
 
 const meta = {
-  title: "Product/Shell/WorkspaceSelector",
+  title: "Product/Shell/Workspace selector",
   parameters: { layout: "centered" },
   args: {
     selectionKind: "competition" satisfies StoryArgs["selectionKind"],

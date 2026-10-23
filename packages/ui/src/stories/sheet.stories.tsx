@@ -42,7 +42,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Sheet",
+  title: "Components/Overlays/Sheet",
+  tags: ["autodocs"],
   component: Sheet,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof Sheet>;
