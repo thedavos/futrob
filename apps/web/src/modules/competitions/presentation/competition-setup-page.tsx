@@ -133,6 +133,7 @@ export function CompetitionSetupPage({
   const [profileError, setProfileError] = useState<CompetitionProfileFieldError | null>(null);
   const caps = useCapabilities({ organizationId, competitionId }, SETUP_CAPABILITIES);
   const [form, setForm] = useState<UpdateCompetitionDraftRequest | null>(null);
+  const [continueInput, setContinueInput] = useState<UpdateCompetitionDraftRequest | null>(null);
   const draft = draftQuery.data ?? null;
 
   if (draft && form === null) {
@@ -180,7 +181,10 @@ export function CompetitionSetupPage({
     if (mode === "none") return move(1);
     const input = savedInput();
     if (!input) return;
-    if (mode === "confirmed") return update.mutate(input, { onSuccess: () => move(1) });
+    if (mode === "confirmed") {
+      setContinueInput(input);
+      return update.mutate(input, { onSuccess: () => move(1) });
+    }
     update.mutate(input);
     move(1);
   }
@@ -337,7 +341,9 @@ export function CompetitionSetupPage({
               }
             : undefined
         }
-        saving={update.isPending}
+        saving={
+          update.isPending ? (update.variables === continueInput ? "continue" : "draft") : null
+        }
         step={steps.findIndex((step) => step.id === currentStep) + 1}
         total={steps.length}
       />

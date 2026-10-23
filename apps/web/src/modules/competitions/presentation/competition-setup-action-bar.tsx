@@ -34,7 +34,8 @@ export type CompetitionSetupActionBarProps = {
   readonly canGoBack: boolean;
   readonly canContinue: boolean;
   readonly canSave: boolean;
-  readonly saving: boolean;
+  /** Which control started the save in flight, so only that one reads "Guardando…". */
+  readonly saving: "draft" | "continue" | null;
   readonly busy: boolean;
   readonly onBack: () => void;
   readonly onSave: () => void;
@@ -89,8 +90,14 @@ export function CompetitionSetupActionBarEnd({
   const { t } = useI18n();
   return (
     <>
-      <Button dense disabled={!canSave || busy} onClick={onSave} type="button" variant="outline">
-        {saving ? t("competitions.setup.saving") : t("competitions.setup.saveDraft")}
+      <Button
+        dense
+        disabled={!canSave || busy || saving === "continue"}
+        onClick={onSave}
+        type="button"
+        variant="outline"
+      >
+        {saving === "draft" ? t("competitions.setup.saving") : t("competitions.setup.saveDraft")}
       </Button>
       {registration ? (
         <Button
@@ -104,8 +111,10 @@ export function CompetitionSetupActionBarEnd({
         </Button>
       ) : null}
       {canContinue ? (
-        <Button dense disabled={busy} onClick={onContinue} type="button">
-          {t("competitions.setup.continue")}
+        <Button dense disabled={busy || saving === "continue"} onClick={onContinue} type="button">
+          {saving === "continue"
+            ? t("competitions.setup.saving")
+            : t("competitions.setup.continue")}
         </Button>
       ) : null}
       {publish ? (
@@ -187,7 +196,7 @@ function actionBarSignature(props: CompetitionSetupActionBarProps): string {
     props.canGoBack,
     props.canContinue,
     props.canSave,
-    props.saving,
+    props.saving ?? "",
     props.busy,
     props.registration?.label ?? "",
     props.publish?.label ?? "",

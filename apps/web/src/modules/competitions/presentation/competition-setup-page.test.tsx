@@ -103,6 +103,7 @@ describe("continuing through the competition setup", () => {
     await continueFromStep();
 
     expect(currentStep()).toContain("Formato");
+    expect(screen.getByRole("button", { name: "Continuar" }).hasAttribute("disabled")).toBe(false);
     expect(updateCompetitionDraft).toHaveBeenCalledWith(
       "org-1",
       "competition-1",
@@ -117,6 +118,8 @@ describe("continuing through the competition setup", () => {
     await continueFromStep();
     await waitFor(() => expect(updateCompetitionDraft).toHaveBeenCalled());
     expect(currentStep()).toContain("Reglas");
+    const waiting = await screen.findByRole("button", { name: "Guardando…" });
+    expect(waiting.hasAttribute("disabled")).toBe(true);
 
     settle().resolve(leagueDraft);
 
