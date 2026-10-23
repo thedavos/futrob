@@ -89,6 +89,7 @@ const styles = stylex.create({
 
 const meta = {
   title: "Patterns/Forms",
+  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },

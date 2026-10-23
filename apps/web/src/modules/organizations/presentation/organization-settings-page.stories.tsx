@@ -98,7 +98,7 @@ function SettingsStoryShell(args: StoryArgs) {
 }
 
 const meta = {
-  title: "Product/Organizer/Organizations/Settings",
+  title: "Product/Organizer/Organization/Settings",
   parameters: { layout: "fullscreen" },
   args: {
     locale: "es",

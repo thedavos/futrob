@@ -3,7 +3,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Score } from "./score.tsx";
 
 const meta = {
-  title: "Primitives/Score",
+  title: "Components/Data display/Score",
+  tags: ["autodocs"],
   component: Score,
   parameters: { layout: "padded" },
   args: {

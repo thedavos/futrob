@@ -25,7 +25,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Dialog",
+  title: "Components/Overlays/Dialog",
+  tags: ["autodocs"],
   component: Dialog,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof Dialog>;

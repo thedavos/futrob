@@ -101,7 +101,7 @@ function ParticipantsStory({ scenario, invite, onOpenInvite, onRevoke }: StoryAr
 }
 
 const meta = {
-  title: "Product/Competitions/Setup/Participants",
+  title: "Product/Organizer/Competition setup/Participants",
   component: ParticipantsStory,
   parameters: { layout: "padded" },
   args: {

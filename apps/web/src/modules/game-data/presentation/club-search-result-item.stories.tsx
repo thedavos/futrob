@@ -51,7 +51,7 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Product/Game data/Club search result",
+  title: "Product/Shared/Club search result",
   component: ClubSearchResultItem,
   parameters: { layout: "centered" },
   args: feraEnjaulada,

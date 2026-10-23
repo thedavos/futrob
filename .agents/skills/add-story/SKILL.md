@@ -35,10 +35,25 @@ For an existing component, document its actual contract without redesigning it.
 
 ## Decide story location and title
 
-| Component location                                                      | Story file                                                                                  | `title` prefix                           |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `packages/ui/src/components/<name>.tsx` or `packages/ui/src/<name>.tsx` | `packages/ui/src/stories/<name>.stories.tsx`                                                | `Primitives/<Name>` or `Patterns/<Name>` |
-| `apps/web/src/modules/<bc>/presentation/<name>.tsx`                     | Colocate: `…/presentation/<name>.stories.tsx` **or** `…/presentation/<feature>.stories.tsx` | `Product/<Area>` (e.g. `Product/Auth`)   |
+| Component location                                                      | Story file                                                                                  | `title`                                                     |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `packages/ui/src/components/<name>.tsx` or `packages/ui/src/<name>.tsx` | `packages/ui/src/stories/<name>.stories.tsx`                                                | `Components/<Category>/<Name>` or `Patterns/<Name>`         |
+| `apps/web/src/modules/<bc>/presentation/<name>.tsx`                     | Colocate: `…/presentation/<name>.stories.tsx` **or** `…/presentation/<feature>.stories.tsx` | `Product/<Area>/<Screen>` (e.g. `Product/Player/Home`)      |
+
+Sidebar taxonomy (order lives in `storySort` in `.storybook/preview.ts`; add new groups there):
+
+- `Foundations/` — Typography, Icons, Logo.
+- `Components/<Category>/` — `Typography`, `Actions`, `Forms`, `Feedback`, `Overlays`,
+  `Data display`, `Navigation`, `Layout`. PascalCase component name as the leaf.
+- `Patterns/` — multi-component compositions (App shell, Forms, Data table…).
+- `Product/<Area>/` by actor and flow: `Shell`, `Shared`, `Auth`, `Onboarding`,
+  `Organizer` (`Organization`, `Competition setup`, …), `Competition` (pages shared by
+  organizer, captains and players), `Player`, `Notifications`. Sentence-case English leaves.
+- A title is either a leaf or a group, never both: use `…/Matches/List` + `…/Matches/Detail`,
+  not `…/Matches` + `…/Matches/Detail`.
+
+Docs pages: `packages/ui` metas set `tags: ["autodocs"]`. Product stories do not — a docs
+page mounts every story of the file at once, which for full screens is slow and unreadable.
 
 Rules:
 
@@ -57,7 +72,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Component } from "../components/component";
 
 const meta = {
-  title: "Primitives/Component",
+  title: "Components/Forms/Component",
+  tags: ["autodocs"],
   component: Component,
   parameters: { layout: "centered" }, // or "fullscreen" / "padded" when the shell needs it
   args: {

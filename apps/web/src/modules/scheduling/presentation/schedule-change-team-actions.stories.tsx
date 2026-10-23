@@ -210,7 +210,7 @@ function TeamActionsStory({ scenario, locale, narrow }: Args) {
 }
 
 const meta = {
-  title: "Product/Competition/Encounter Rescheduling/Team actions",
+  title: "Product/Competition/Rescheduling/Team actions",
   parameters: { layout: "fullscreen" },
   args: { scenario: "captainCreate", locale: "es" },
   argTypes: {

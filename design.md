@@ -255,7 +255,7 @@ Variantes cerradas: `default`, `secondary`, `outline`, `ghost`, `destructive`, `
   sin sufijo están deprecados en Phosphor ≥ 2.1.8.
 - Peso por defecto: `regular`. No mezclar `duotone`/`fill` en UI operativa sin decisión de diseño.
 - Tipar props de icono con `Icon` reexportado desde `@futrob/ui`.
-- Inventario ejecutable: Storybook `Primitives/Icons` (`FUTROB_ICON_CATALOG`).
+- Inventario ejecutable: Storybook `Foundations/Icons` (`FUTROB_ICON_CATALOG`).
 
 ## Composición de producto
 
@@ -1081,7 +1081,7 @@ estrechar el `unknown` de `Field.validate` a string.
 
 Los iconos del producto usan **Phosphor** (`@phosphor-icons/react`) con peso `regular`. Importa
 siempre el export con sufijo `Icon` (p. ej. `MagnifyingGlassIcon`). Tipa props de icono con
-`Icon` reexportado desde `@futrob/ui`. El inventario vive en Storybook (`Primitives/Icons`).
+`Icon` reexportado desde `@futrob/ui`. El inventario vive en Storybook (`Foundations/Icons`).
 
 Para composición polimórfica usa `render` de Base UI; evita envolver un link en un button:
 

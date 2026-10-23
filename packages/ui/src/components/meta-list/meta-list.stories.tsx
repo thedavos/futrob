@@ -4,7 +4,8 @@ import { Score } from "../score/score.tsx";
 import { MetaItem, MetaList, MetaTerm, MetaValue } from "./meta-list.tsx";
 
 const meta = {
-  title: "Primitives/MetaList",
+  title: "Components/Data display/MetaList",
+  tags: ["autodocs"],
   component: MetaList,
   parameters: { layout: "padded" },
   args: {

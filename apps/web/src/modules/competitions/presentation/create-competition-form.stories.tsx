@@ -91,7 +91,7 @@ function CreateStoryShell({
 }
 
 const meta = {
-  title: "Product/Organizer/Competitions/Create",
+  title: "Product/Organizer/Competition setup/Create",
   parameters: { layout: "fullscreen" },
   render: () => <CreateStoryShell />,
 } satisfies Meta;

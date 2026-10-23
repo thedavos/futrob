@@ -93,7 +93,7 @@ const approved: readonly CompetitionEntryDto[] = teams.map((team) => ({
 }));
 
 const meta = {
-  title: "Product/Organizer/Competition review",
+  title: "Product/Organizer/Competition setup/Review step",
   component: ReviewStep,
   parameters: { layout: "padded" },
   decorators: [

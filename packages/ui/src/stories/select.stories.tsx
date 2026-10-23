@@ -16,7 +16,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Select",
+  title: "Components/Forms/Select",
+  tags: ["autodocs"],
   component: Select,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof Select>;

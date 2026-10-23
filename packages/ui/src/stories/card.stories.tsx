@@ -36,7 +36,8 @@ const styles = stylex.create({
 const playground = applyStyles(styles.playground);
 
 const meta = {
-  title: "Primitives/Card",
+  title: "Components/Data display/Card",
+  tags: ["autodocs"],
   component: Card,
   parameters: { layout: "centered" },
   args: {

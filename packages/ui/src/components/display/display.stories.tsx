@@ -3,7 +3,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Display } from "./display.tsx";
 
 const meta = {
-  title: "Primitives/Display",
+  title: "Components/Typography/Display",
+  tags: ["autodocs"],
   component: Display,
   parameters: { layout: "padded" },
   args: {

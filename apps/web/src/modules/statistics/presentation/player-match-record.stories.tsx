@@ -59,7 +59,7 @@ type StoryArgs = {
 };
 
 const meta = {
-  title: "Product/Player/Match record",
+  title: "Product/Player/Matches/Record",
   parameters: { layout: "padded" },
   args: {
     rating: 8.7,

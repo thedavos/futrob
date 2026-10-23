@@ -192,7 +192,7 @@ function PlayerStatisticsStoryShell({ scenario }: { readonly scenario: ScenarioI
 }
 
 const meta = {
-  title: "Product/Player/Statistics",
+  title: "Product/Player/Statistics/Overview",
   parameters: { layout: "fullscreen" },
   args: {
     scenario: "ready",

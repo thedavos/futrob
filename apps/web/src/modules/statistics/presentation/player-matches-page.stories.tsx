@@ -164,7 +164,7 @@ function PlayerMatchesStoryShell({
 }
 
 const meta = {
-  title: "Product/Player/Matches",
+  title: "Product/Player/Matches/List",
   parameters: { layout: "fullscreen" },
   args: {
     scenario: "ready",

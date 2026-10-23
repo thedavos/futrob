@@ -3,7 +3,7 @@ import { expect, within } from "storybook/test";
 import { FormatPlayEstimate } from "./competition-format-estimate-panel.tsx";
 
 const meta = {
-  title: "Product/Organizer/Competition format estimate",
+  title: "Product/Organizer/Competition setup/Format estimate",
   component: FormatPlayEstimate,
   parameters: { layout: "padded" },
   args: {

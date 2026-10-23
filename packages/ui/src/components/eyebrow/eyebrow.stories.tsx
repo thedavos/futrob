@@ -3,7 +3,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Eyebrow } from "./eyebrow.tsx";
 
 const meta = {
-  title: "Primitives/Eyebrow",
+  title: "Components/Typography/Eyebrow",
+  tags: ["autodocs"],
   component: Eyebrow,
   parameters: { layout: "padded" },
   args: {
