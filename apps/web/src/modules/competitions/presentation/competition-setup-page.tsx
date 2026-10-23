@@ -91,6 +91,17 @@ const steps = [
   { id: "participants", label: "Participantes" },
   { id: "review", label: "Revisión" },
 ] as const;
+/**
+ * How "Continuar" leaves each step. Every save sends the whole form, so a failed background save
+ * is repaired by the next one; rules wait for the server because it rejects rules the form allows.
+ */
+const continueSave = {
+  information: "background",
+  format: "background",
+  rules: "confirmed",
+  participants: "none",
+  review: "none",
+} as const satisfies Record<CompetitionSetupStep, "background" | "confirmed" | "none">;
 const SETUP_CAPABILITIES = {
   update: COMPETITION_PERMISSION.update,
   manageParticipants: COMPETITION_PERMISSION.participantsManage,
@@ -140,7 +151,7 @@ export function CompetitionSetupPage({
   const registrationOpen = status === "registration";
   const readOnly = status !== "draft" || !canUpdate;
   const participantsLocked = status !== "draft" && status !== "registration";
-  const busy = update.isPending || remove.isPending || publish.isPending || registration.isPending;
+  const busy = remove.isPending || publish.isPending || registration.isPending;
   const error =
     update.error ?? remove.error ?? publish.error ?? registration.error ?? coverUpdate.error;
   const invitations = useCompetitionEntryInvitations({
@@ -151,17 +162,26 @@ export function CompetitionSetupPage({
     participantsLocked,
   });
 
-  async function save() {
-    if (!form || !profile || readOnly) return;
+  function savedInput(): UpdateCompetitionDraftRequest | null {
+    if (!form || !profile) return null;
     const invalid = validateCompetitionProfileFields(profile);
     if (invalid) {
       setProfileError(invalid);
-      return;
+      return null;
     }
-    await update.mutateAsync({ ...form, ...toTeamsAndSchedule(profile) });
+    return { ...form, ...toTeamsAndSchedule(profile) };
   }
-  async function continueNext() {
-    if (!readOnly && ["information", "format", "rules"].includes(currentStep)) await save();
+  function save() {
+    const input = readOnly ? null : savedInput();
+    if (input) update.mutate(input);
+  }
+  function continueNext() {
+    const mode = readOnly ? "none" : continueSave[currentStep];
+    if (mode === "none") return move(1);
+    const input = savedInput();
+    if (!input) return;
+    if (mode === "confirmed") return update.mutate(input, { onSuccess: () => move(1) });
+    update.mutate(input);
     move(1);
   }
   function move(delta: -1 | 1) {
@@ -295,8 +315,8 @@ export function CompetitionSetupPage({
         canGoBack={currentStep !== "information"}
         canSave={!readOnly}
         onBack={() => move(-1)}
-        onContinue={() => void continueNext()}
-        onSave={() => void save()}
+        onContinue={continueNext}
+        onSave={save}
         publish={
           currentStep === "review" && !participantsLocked && canPublish
             ? {
