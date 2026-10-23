@@ -88,6 +88,9 @@ export const queryKeys = {
       [...queryKeys.competitions.all, "by-organization", organizationId] as const,
     draft: (organizationId: string, competitionId: string) =>
       [...queryKeys.competitions.all, "draft", organizationId, competitionId] as const,
+    /** Read-only rules view; nested under the draft so draft invalidations refresh it too. */
+    rules: (organizationId: string, competitionId: string) =>
+      [...queryKeys.competitions.draft(organizationId, competitionId), "rules"] as const,
     participants: (organizationId: string, competitionId: string) =>
       [...queryKeys.competitions.all, "participants", organizationId, competitionId] as const,
     teams: (organizationId: string) =>
@@ -111,6 +114,11 @@ export const queryKeys = {
         ...queryKeys.teams.competitionManagement(organizationId, competitionId),
         "club-names",
       ] as const,
+    competitionManagementTeamNames: (organizationId: string, competitionId: string) =>
+      [
+        ...queryKeys.teams.competitionManagement(organizationId, competitionId),
+        "team-names",
+      ] as const,
     competitionManagementDetail: (organizationId: string, competitionId: string, teamId: string) =>
       [
         ...queryKeys.teams.competitionManagement(organizationId, competitionId),
@@ -124,6 +132,8 @@ export const queryKeys = {
       [...queryKeys.statistics.all, "me", "summary", query] as const,
     meMatches: (query: GetMyMatchesQuery) =>
       [...queryKeys.statistics.all, "me", "matches", query] as const,
+    competitionTeams: (organizationId: string, competitionId: string) =>
+      [...queryKeys.statistics.all, "competition-teams", organizationId, competitionId] as const,
   },
   gameData: {
     all: ["game-data"] as const,

@@ -6,6 +6,25 @@ afterEach(() => {
 });
 
 describe("statisticsBrowserClient", () => {
+  it("reads organizer team statistics from the same-origin BFF", async () => {
+    let requestedUrl = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        requestedUrl =
+          input instanceof Request ? input.url : input instanceof URL ? input.href : input;
+        return Response.json({ teams: [] });
+      }),
+    );
+
+    await expect(
+      statisticsBrowserClient.getCompetitionTeamStatistics("org/1", "competition 1"),
+    ).resolves.toEqual({ teams: [] });
+    expect(requestedUrl).toBe(
+      "/api/v1/organizations/org%2F1/competitions/competition%201/team-statistics",
+    );
+  });
+
   it("encodes and validates a personal provider match detail request", async () => {
     let requestedUrl = "";
     vi.stubGlobal(

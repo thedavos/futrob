@@ -1,6 +1,7 @@
 import type { Permission } from "@futrob/shared-kernel";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
+import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { createTranslator, type Translator } from "@/shared/presentation/i18n/translate.ts";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
@@ -136,6 +137,17 @@ function organizationGeneralNav(organizationId: string, t: Translator): readonly
   ];
 }
 
+/** Separate from the official standings table; follows statistics access, not competition editing. */
+function teamPerformanceItem(competitionBase: string, t: Translator): ShellNavItem {
+  return {
+    id: "team-performance",
+    label: t("pages.competition.teamPerformance.title"),
+    href: `${competitionBase}/team-performance`,
+    icon: "statistics",
+    requiredPermission: STATISTICS_PERMISSION.read,
+  };
+}
+
 function personalCompetitionContext(
   organizationId: string | null,
   competitionId: string,
@@ -158,6 +170,8 @@ function personalCompetitionContext(
       href: `${base}/stats`,
       icon: "statistics",
     },
+    // The ranking page only exists under the organization route.
+    ...(organizationId ? [teamPerformanceItem(base, t)] : []),
     {
       id: "team",
       label: t("pages.competitionPlayer.team.title"),
@@ -231,6 +245,7 @@ function organizationCompetitionContext(
       icon: "rankings",
       requiredPermission: COMPETITION_PERMISSION.read,
     },
+    teamPerformanceItem(base, t),
     {
       id: "teams",
       label: t("shell.nav.competition.teams"),
