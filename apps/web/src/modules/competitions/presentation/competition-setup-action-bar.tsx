@@ -90,13 +90,7 @@ export function CompetitionSetupActionBarEnd({
   const { t } = useI18n();
   return (
     <>
-      <Button
-        dense
-        disabled={!canSave || busy || saving === "continue"}
-        onClick={onSave}
-        type="button"
-        variant="outline"
-      >
+      <Button dense disabled={!canSave || busy} onClick={onSave} type="button" variant="outline">
         {saving === "draft" ? t("competitions.setup.saving") : t("competitions.setup.saveDraft")}
       </Button>
       {registration ? (
@@ -111,7 +105,7 @@ export function CompetitionSetupActionBarEnd({
         </Button>
       ) : null}
       {canContinue ? (
-        <Button dense disabled={busy || saving === "continue"} onClick={onContinue} type="button">
+        <Button dense disabled={busy} onClick={onContinue} type="button">
           {saving === "continue"
             ? t("competitions.setup.saving")
             : t("competitions.setup.continue")}

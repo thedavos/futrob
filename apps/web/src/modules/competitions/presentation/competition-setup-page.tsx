@@ -152,7 +152,9 @@ export function CompetitionSetupPage({
   const registrationOpen = status === "registration";
   const readOnly = status !== "draft" || !canUpdate;
   const participantsLocked = status !== "draft" && status !== "registration";
-  const busy = remove.isPending || publish.isPending || registration.isPending;
+  const confirmingContinue = update.isPending && update.variables === continueInput;
+  const busy =
+    confirmingContinue || remove.isPending || publish.isPending || registration.isPending;
   const error =
     update.error ?? remove.error ?? publish.error ?? registration.error ?? coverUpdate.error;
   const invitations = useCompetitionEntryInvitations({
@@ -341,9 +343,7 @@ export function CompetitionSetupPage({
               }
             : undefined
         }
-        saving={
-          update.isPending ? (update.variables === continueInput ? "continue" : "draft") : null
-        }
+        saving={update.isPending ? (confirmingContinue ? "continue" : "draft") : null}
         step={steps.findIndex((step) => step.id === currentStep) + 1}
         total={steps.length}
       />

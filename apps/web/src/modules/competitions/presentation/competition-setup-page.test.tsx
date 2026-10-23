@@ -126,6 +126,21 @@ describe("continuing through the competition setup", () => {
     await waitFor(() => expect(currentStep()).toContain("Participantes"));
   });
 
+  it("lands on participants even if back or save is tried while rules are saving", async () => {
+    const settle = deferredSave();
+    renderSetup("rules");
+
+    await continueFromStep();
+    await screen.findByRole("button", { name: "Guardando…" });
+    fireEvent.click(screen.getByRole("button", { name: "Anterior" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    expect(currentStep()).toContain("Reglas");
+    settle().resolve(leagueDraft);
+
+    await waitFor(() => expect(currentStep()).toContain("Participantes"));
+    expect(updateCompetitionDraft).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the organizer on rules with an error when the server rejects them", async () => {
     const settle = deferredSave();
     renderSetup("rules");
