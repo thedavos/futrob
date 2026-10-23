@@ -12,10 +12,12 @@ import type {
   CompetitionParticipantInput,
   CreateCompetitionDraftRequest,
   ExploreCompetitionsQueryInput,
+  ListCompetitionParticipantsResponse,
   UpdateCompetitionDraftRequest,
 } from "@futrob/api-contracts";
 import { exploreCompetitionsQuerySchema } from "@futrob/api-contracts";
 import type { CoverSelection } from "@/modules/competitions/presentation/competition-profile-fields-value.ts";
+import { patchQueryData } from "@/shared/presentation/query/patch-query-data.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { readKeepingRefusal, refusalLabel } from "@/shared/presentation/query/stored-refusal.ts";
 import {
@@ -165,7 +167,18 @@ export function useRemoveCompetitionParticipantMutation(
   return useMutation({
     mutationFn: (entryId: string) =>
       removeCompetitionParticipant(organizationId, competitionId, entryId),
-    onSuccess: async () => {
+    onMutate: async (entryId) => ({
+      rollback: await patchQueryData<ListCompetitionParticipantsResponse>(
+        queryClient,
+        queryKeys.competitions.participants(organizationId, competitionId),
+        (list) => ({
+          ...list,
+          participants: list.participants.filter((entry) => entry.id !== entryId),
+        }),
+      ),
+    }),
+    onError: (_error, _entryId, context) => context?.rollback(),
+    onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: queryKeys.competitions.participants(organizationId, competitionId),
