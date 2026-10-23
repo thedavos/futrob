@@ -20,13 +20,6 @@ export const styles = stylex.create({
     flexDirection: "column",
     gap: "0.25rem",
   },
-  alertBody: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.75rem",
-  },
   table: {
     minWidth: "56rem",
   },

@@ -17,7 +17,7 @@ import {
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { selectionsFor, type EncounterPreview } from "./encounter-preview.ts";
-import { RetryAlert } from "./encounter-parts.tsx";
+
 import { SelectionCommandDialog } from "./selection-command-dialog.tsx";
 import { currentProposalOf, readVersionOf, type SelectionRead } from "./selection-draft.ts";
 import {
@@ -37,6 +37,7 @@ import {
 } from "./selection-record.tsx";
 import { styles } from "./selection.styles.ts";
 import { useCommandAttempt } from "./use-command-attempt.ts";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type TeamSide = "home" | "away";
 

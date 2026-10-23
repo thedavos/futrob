@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import {
-  Alert,
-  AlertDescription,
   applyStyles,
-  Button,
   Caption,
   Card,
   CardContent,
@@ -17,27 +14,6 @@ import {
 } from "@futrob/ui";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { styles } from "./competition-rules-page.styles.ts";
-
-export function RetryAlert({
-  message,
-  onRetry,
-  t,
-}: {
-  readonly message: string;
-  readonly onRetry: () => void;
-  readonly t: Translator;
-}) {
-  return (
-    <Alert variant="destructive">
-      <AlertDescription {...applyStyles(styles.retry)}>
-        <span>{message}</span>
-        <Button onClick={onRetry} variant="secondary">
-          {t("common.retry")}
-        </Button>
-      </AlertDescription>
-    </Alert>
-  );
-}
 
 /** Fixed platform behavior (standings order, 24 h confirmation); not stored per competition. */
 export function PlatformRules({ t }: { readonly t: Translator }) {

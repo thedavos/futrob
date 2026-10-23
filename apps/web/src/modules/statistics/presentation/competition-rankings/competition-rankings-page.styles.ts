@@ -108,11 +108,4 @@ export const styles = stylex.create({
     alignItems: "center",
     minHeight: "var(--control-height)",
   },
-  alertBody: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.75rem",
-  },
 });

@@ -36,10 +36,11 @@ import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-
 import { CandidatesSection } from "./encounter-candidates.tsx";
 import { previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
-import { RetryAlert, type Formats } from "./encounter-parts.tsx";
+import { type Formats } from "./encounter-parts.tsx";
 import { OfficialSlotRow, SeriesPreviewPanel } from "./encounter-slots.tsx";
 import { EMPTY_TEAM_DRAFT, teamDraftReducer } from "./team-selection-draft.ts";
 import { TeamSelectionSection, type TeamSelectionState } from "./team-selection-section.tsx";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type EncounterState =
   | { readonly kind: "loading" }

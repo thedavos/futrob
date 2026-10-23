@@ -28,7 +28,7 @@ import {
   type OperatorDraftEvent,
   type OperatorIntent,
 } from "./dispute-review-draft.ts";
-import { RetryAlert } from "./encounter-parts.tsx";
+
 import { readVersionOf, type SelectionRead } from "./selection-draft.ts";
 import {
   SelectionHistory,
@@ -38,6 +38,7 @@ import {
 } from "./selection-record.tsx";
 import { styles } from "./selection.styles.ts";
 import { useCommandAttempt } from "./use-command-attempt.ts";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 /** `hidden` covers "not an operator" and "not known yet": nothing renders or loads. */
 export type DisputeReviewState =

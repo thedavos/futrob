@@ -27,13 +27,6 @@ export const styles = stylex.create({
     minHeight: "3rem",
     borderRadius: "var(--corner-lg)",
   },
-  alertBody: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.75rem",
-  },
   headPosition: {
     width: "3.5rem",
     paddingInline: { default: "0.5rem", [media.sm]: "0.75rem" },

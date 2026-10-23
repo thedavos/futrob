@@ -200,13 +200,6 @@ export const styles = stylex.create({
     gap: "0.25rem",
     minWidth: 0,
   },
-  error: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.75rem",
-  },
   skeletonHero: {
     minHeight: "12rem",
     width: "100%",
