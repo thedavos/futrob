@@ -225,7 +225,13 @@ export function CompetitionSetupPage({
                     fieldError: profileError,
                     onChange: (patch) => {
                       setProfile({ ...profile, ...patch });
-                      if (patch.cover) coverUpdate.mutate(patch.cover);
+                      if (patch.cover)
+                        coverUpdate.mutate(patch.cover, {
+                          onError: () =>
+                            setProfile((current) =>
+                              current ? { ...current, cover: draft.competition.cover } : current,
+                            ),
+                        });
                     },
                     onClearFieldError: () => setProfileError(null),
                     value: profile,
