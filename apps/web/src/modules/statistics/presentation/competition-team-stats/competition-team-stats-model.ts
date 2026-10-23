@@ -33,7 +33,10 @@ export type TeamStatsSort = {
 export const DEFAULT_TEAM_STATS_VIEW: TeamStatsView = "totals";
 export const DEFAULT_TEAM_STATS_SORT: TeamStatsSort = { column: "goals", direction: "desc" };
 
-/** `null` = the DTO has no observed value; `partial` = some approved matches lacked the metric. */
+/**
+ * `null` = the DTO has no observed value; `partial` = some approved matches lacked the metric
+ * (or, for per-90 rates, their minutes).
+ */
 export type TeamStatsCell = { readonly value: number | null; readonly partial: boolean };
 
 type RateMetric = Exclude<TeamStatsMetricColumn, "matchesPlayed" | "minutes">;
@@ -51,7 +54,17 @@ export function teamStatsCell(
   if (column === "matchesPlayed") return { value: team.matchesPlayed, partial: false };
   if (column === "minutes") return { value: team.minutes, partial: team.partial.minutes };
   const value = rateValue(team, view, column);
-  return { value, partial: value !== null && team.partial[column] };
+  if (value === null) return { value, partial: false };
+  return { value, partial: team.partial[column] || dependsOnMinutes(view, column, team) };
+}
+
+/** Per-90 rates divide by minutes, so an incomplete minutes sample makes the rate partial too. */
+function dependsOnMinutes(
+  view: TeamStatsView,
+  metric: RateMetric,
+  team: TeamCompetitionStatsDto,
+): boolean {
+  return view === "per90" && metric !== "rating" && team.partial.minutes;
 }
 
 function rateValue(

@@ -6,7 +6,11 @@ import {
   teamStatsCell,
   teamStatsLeader,
 } from "./competition-team-stats-model.ts";
-import { competitionTeamStatsFixture, TEAM_NAMES } from "./competition-team-stats.fixtures.ts";
+import {
+  competitionTeamStatsFixture,
+  TEAM_NAMES,
+  teamStatsFixture,
+} from "./competition-team-stats.fixtures.ts";
 
 const [cuervos, , halcones, lobos] = competitionTeamStatsFixture;
 const nameOf = (teamId: string) => TEAM_NAMES[teamId] ?? teamId;
@@ -30,6 +34,26 @@ describe("competition team statistics model", () => {
     expect(teamStatsCell(halcones!, "averages", "goals").partial).toBe(false);
     expect(hasPartialTeamStats(competitionTeamStatsFixture)).toBe(true);
     expect(hasPartialTeamStats([cuervos!])).toBe(false);
+  });
+
+  it("marks per-90 rates partial when the minutes denominator is incomplete", () => {
+    // Domain output for two matches with 2 goals each where only one lasted a known 90 minutes.
+    const base = teamStatsFixture({
+      teamId: "team-minutes",
+      matchesPlayed: 2,
+      totals: { ...cuervos!.totals, goals: 4 },
+      ratingAverage: 7,
+      partial: { minutes: true },
+    });
+    const team = {
+      ...base,
+      minutes: 90,
+      per90: { ...base.per90, goals: 4 },
+    };
+    expect(teamStatsCell(team, "per90", "goals")).toEqual({ value: 4, partial: true });
+    expect(teamStatsCell(team, "totals", "goals")).toEqual({ value: 4, partial: false });
+    expect(teamStatsCell(team, "averages", "goals")).toEqual({ value: 2, partial: false });
+    expect(teamStatsCell(team, "per90", "rating")).toEqual({ value: 7, partial: false });
   });
 
   it("sorts by the shown value, keeps unavailable rows last and breaks ties by name", () => {
