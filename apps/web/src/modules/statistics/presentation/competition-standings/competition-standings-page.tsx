@@ -3,8 +3,6 @@
 import { Link } from "@tanstack/react-router";
 import type { CompetitionStandingSnapshotDto } from "@futrob/api-contracts";
 import {
-  Alert,
-  AlertDescription,
   applyStyles,
   Button,
   EmptyState,
@@ -18,7 +16,6 @@ import {
 import emptyStandingsUrl from "@/assets/illustration-empty-standings.png";
 import accessUrl from "@/assets/illustration-permissions.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { teamNamesFrom, type TeamNames } from "./competition-standings-model.ts";
 import {
@@ -28,6 +25,7 @@ import {
 } from "./competition-standings-queries.ts";
 import { CompetitionStandingsTable } from "./competition-standings-table.tsx";
 import { styles } from "./competition-standings.styles.ts";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 /** Each state is distinct: no approved results is not a failure, and a refusal is not empty. */
 export type CompetitionStandingsState =
@@ -230,26 +228,5 @@ export function CompetitionStandingsPageView({
         }
       })()}
     </PageScaffold>
-  );
-}
-
-function RetryAlert({
-  message,
-  retry,
-  t,
-}: {
-  readonly message: string;
-  readonly retry: () => void;
-  readonly t: Translator;
-}) {
-  return (
-    <Alert variant="destructive">
-      <AlertDescription {...applyStyles(styles.alertBody)}>
-        <span>{message}</span>
-        <Button onClick={retry} variant="secondary">
-          {t("common.retry")}
-        </Button>
-      </AlertDescription>
-    </Alert>
   );
 }

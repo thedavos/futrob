@@ -36,6 +36,7 @@ import { useTeamPerformanceRankingQuery } from "./team-performance-queries.ts";
 import { styles } from "./team-performance-page.styles.ts";
 import { Criteria } from "./team-performance-criteria.tsx";
 import { RankingTable } from "./team-performance-table.tsx";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type { TeamPerformanceNames } from "./team-performance-model.ts";
 
@@ -220,27 +221,6 @@ export function TeamPerformancePageView({
         }
       })()}
     </PageScaffold>
-  );
-}
-
-function RetryAlert({
-  message,
-  retry,
-  t,
-}: {
-  readonly message: string;
-  readonly retry: () => void;
-  readonly t: Translator;
-}) {
-  return (
-    <Alert variant="destructive">
-      <AlertDescription {...applyStyles(styles.alertBody)}>
-        <span>{message}</span>
-        <Button onClick={retry} variant="secondary">
-          {t("common.retry")}
-        </Button>
-      </AlertDescription>
-    </Alert>
   );
 }
 

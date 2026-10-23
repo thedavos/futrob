@@ -1,6 +1,5 @@
 import type { EncounterViewDto } from "@futrob/api-contracts";
-import { Alert, AlertDescription, applyStyles, Button, Score, Text } from "@futrob/ui";
-import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { applyStyles, Score, Text } from "@futrob/ui";
 import type { TeamScore } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 
@@ -28,26 +27,5 @@ export function TeamScoreLine({
         {view.away.name}
       </Text>
     </div>
-  );
-}
-
-export function RetryAlert({
-  message,
-  retry,
-  t,
-}: {
-  readonly message: string;
-  readonly retry: () => void;
-  readonly t: Translator;
-}) {
-  return (
-    <Alert variant="destructive">
-      <AlertDescription {...applyStyles(styles.error)}>
-        <span>{message}</span>
-        <Button onClick={retry} variant="secondary">
-          {t("common.retry")}
-        </Button>
-      </AlertDescription>
-    </Alert>
   );
 }

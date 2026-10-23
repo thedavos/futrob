@@ -84,11 +84,4 @@ export const styles = stylex.create({
     height: "8rem",
     width: "100%",
   },
-  retry: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.75rem",
-  },
 });

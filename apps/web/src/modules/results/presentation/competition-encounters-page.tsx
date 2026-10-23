@@ -27,9 +27,10 @@ import accessUrl from "@/assets/illustration-permissions.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold, type ScaffoldPageId } from "@/shared/presentation/page-scaffold.tsx";
-import { RetryAlert } from "./encounter-parts.tsx";
+
 import { styles } from "./competition-encounters-page.styles.ts";
 import { isRefusal, useCompetitionEncountersQuery } from "./encounter-queries.ts";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type CompetitionEncountersState =
   | { readonly kind: "loading" }

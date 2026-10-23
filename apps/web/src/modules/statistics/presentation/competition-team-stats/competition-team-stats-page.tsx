@@ -27,8 +27,9 @@ import {
   useCompetitionTeamStatisticsQuery,
 } from "./competition-team-stats-queries.ts";
 import type { CompetitionTeamStatsState, TeamNamesState } from "./competition-team-stats-state.ts";
-import { RetryAlert, StatsReady, type TableControls } from "./competition-team-stats-ready.tsx";
+import { StatsReady, type TableControls } from "./competition-team-stats-ready.tsx";
 import type { TeamStatsFormats } from "./competition-team-stats-table.tsx";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 const styles = stylex.create({
   ready: {

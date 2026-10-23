@@ -5,7 +5,6 @@ import {
   AlertDescription,
   AlertTitle,
   applyStyles,
-  Button,
   Caption,
   SectionTitle,
 } from "@futrob/ui";
@@ -23,6 +22,7 @@ import {
   TeamStatsViewSelector,
   type TeamStatsFormats,
 } from "./competition-team-stats-table.tsx";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 const styles = stylex.create({
   ready: {
@@ -49,13 +49,6 @@ const styles = stylex.create({
     flexDirection: "column",
     gap: "0.25rem",
     minWidth: 0,
-  },
-  alertRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.75rem",
   },
 });
 
@@ -147,28 +140,5 @@ export function StatsReady({
         />
       </section>
     </div>
-  );
-}
-
-export function RetryAlert({
-  message,
-  retry,
-  t,
-  variant = "destructive",
-}: {
-  readonly message: string;
-  readonly retry: () => void;
-  readonly t: Translator;
-  readonly variant?: "destructive" | "warning";
-}) {
-  return (
-    <Alert variant={variant}>
-      <AlertDescription {...applyStyles(styles.alertRow)}>
-        <span>{message}</span>
-        <Button onClick={retry} variant="secondary">
-          {t("common.retry")}
-        </Button>
-      </AlertDescription>
-    </Alert>
   );
 }

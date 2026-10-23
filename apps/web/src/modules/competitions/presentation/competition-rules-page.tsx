@@ -36,8 +36,9 @@ import {
   showsResolution,
   type RulesStage,
 } from "./competition-rules-model.ts";
-import { PlatformRules, RetryAlert, Section, Fact } from "./competition-rules-parts.tsx";
+import { PlatformRules, Section, Fact } from "./competition-rules-parts.tsx";
 import { styles } from "./competition-rules-page.styles.ts";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type CompetitionRulesState =
   | { readonly kind: "loading" }
@@ -126,7 +127,7 @@ function RulesBody({
         </div>
       );
     case "error":
-      return <RetryAlert message={t("competitionRules.error")} onRetry={state.retry} t={t} />;
+      return <RetryAlert message={t("competitionRules.error")} retry={state.retry} t={t} />;
     case "forbidden":
       return (
         <Refusal
@@ -195,7 +196,7 @@ function ReadyRules({
         </Badge>
       </div>
       {refreshFailed ? (
-        <RetryAlert message={t("competitionRules.refreshError")} onRetry={refreshFailed} t={t} />
+        <RetryAlert message={t("competitionRules.refreshError")} retry={refreshFailed} t={t} />
       ) : null}
       <Alert>
         <AlertDescription>

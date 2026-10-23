@@ -17,6 +17,7 @@ import type {
 import { exploreCompetitionsQuerySchema } from "@futrob/api-contracts";
 import type { CoverSelection } from "@/modules/competitions/presentation/competition-profile-fields-value.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import { readKeepingRefusal, refusalLabel } from "@/shared/presentation/query/stored-refusal.ts";
 import {
   createCompetitionDraft,
   exploreCompetitions,
@@ -260,16 +261,14 @@ export function useCompetitionRulesQuery(organizationId: string, competitionId: 
   return useQuery({
     queryKey: queryKeys.competitions.rules(organizationId, competitionId),
     queryFn: async (): Promise<CompetitionRulesRead> => {
-      try {
-        return { kind: "rules", draft: await getCompetitionDraft(organizationId, competitionId) };
-      } catch (error) {
-        if (!(error instanceof CompetitionsClientError)) throw error;
-        if (error.status === 401 || error.status === 403) {
-          return { kind: "refused", refusal: "forbidden" };
-        }
-        if (error.status === 404) return { kind: "refused", refusal: "not_found" };
-        throw error;
+      const readResult = await readKeepingRefusal(
+        () => getCompetitionDraft(organizationId, competitionId),
+        (error) => (error instanceof CompetitionsClientError ? error.status : undefined),
+      );
+      if (readResult.outcome === "refused") {
+        return { kind: "refused", refusal: refusalLabel(readResult.status) };
       }
+      return { kind: "rules", draft: readResult.value };
     },
   });
 }

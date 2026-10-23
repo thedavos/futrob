@@ -4,6 +4,7 @@ import type {
   GetCompetitionRankingsResponse,
 } from "@futrob/api-contracts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import { readKeepingRefusal, refusalLabel } from "@/shared/presentation/query/stored-refusal.ts";
 import {
   TeamsClientError,
   teamsBrowserClient,
@@ -24,8 +25,6 @@ export const competitionRankingsQueryKey = (organizationId: string, competitionI
 const rankingRosterQueryKey = (organizationId: string, competitionId: string, teamId: string) =>
   [...competitionRankingsQueryKey(organizationId, competitionId), "roster", teamId] as const;
 
-const isRefusalStatus = (status: number) => status === 401 || status === 403 || status === 404;
-
 /**
  * A refusal is stored as the query's data, not thrown: TanStack Query keeps the last
  * successful data through later errors, so a thrown 403 followed by a 500 would bring
@@ -39,18 +38,14 @@ export async function readCompetitionRankings(
   organizationId: string,
   competitionId: string,
 ): Promise<RankingsRead> {
-  try {
-    const data = await competitionRankingsBrowserClient.getCompetitionRankings(
-      organizationId,
-      competitionId,
-    );
-    return { kind: "loaded", data };
-  } catch (error) {
-    if (error instanceof CompetitionRankingsClientError && isRefusalStatus(error.status)) {
-      return { kind: "refused", reason: error.status === 404 ? "not_found" : "forbidden" };
-    }
-    throw error;
+  const readResult = await readKeepingRefusal(
+    () => competitionRankingsBrowserClient.getCompetitionRankings(organizationId, competitionId),
+    (error) => (error instanceof CompetitionRankingsClientError ? error.status : undefined),
+  );
+  if (readResult.outcome === "refused") {
+    return { kind: "refused", reason: refusalLabel(readResult.status) };
   }
+  return { kind: "loaded", data: readResult.value };
 }
 
 export function useCompetitionRankingsQuery(
@@ -75,20 +70,13 @@ async function readRoster(
   competitionId: string,
   teamId: string,
 ): Promise<RosterRead> {
-  try {
-    const detail = await teamsBrowserClient.getCompetitionTeamManagement(
-      organizationId,
-      competitionId,
-      teamId,
-    );
-    return { kind: "loaded", detail };
-  } catch (error) {
-    // A Team that left the competition or is out of the actor's scope keeps its rows unnamed.
-    if (error instanceof TeamsClientError && isRefusalStatus(error.status)) {
-      return { kind: "refused" };
-    }
-    throw error;
-  }
+  // A Team that left the competition or is out of the actor's scope keeps its rows unnamed.
+  const readResult = await readKeepingRefusal(
+    () => teamsBrowserClient.getCompetitionTeamManagement(organizationId, competitionId, teamId),
+    (error) => (error instanceof TeamsClientError ? error.status : undefined),
+  );
+  if (readResult.outcome === "refused") return { kind: "refused" };
+  return { kind: "loaded", detail: readResult.value };
 }
 
 /**

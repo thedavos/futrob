@@ -1,10 +1,7 @@
 import { useId } from "react";
 import type { RankingKindDto, RankingRowDto, RankingSnapshotDto } from "@futrob/api-contracts";
 import {
-  Alert,
-  AlertDescription,
   applyStyles,
-  Button,
   Caption,
   Skeleton,
   Table,
@@ -28,6 +25,7 @@ import {
   type RankingNames,
   type RankingNamesState,
 } from "./competition-rankings-view.ts";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 /** UX-RNK-001: every ranking states its criterion and eligibility next to the rows. */
 export function RankingMeta({
@@ -209,26 +207,5 @@ function NamesNotice({ names, t }: { readonly names: RankingNamesState; readonly
         <RetryAlert message={t("competition.rankings.names.error")} retry={names.retry} t={t} />
       ) : null}
     </>
-  );
-}
-
-export function RetryAlert({
-  message,
-  retry,
-  t,
-}: {
-  readonly message: string;
-  readonly retry: () => void;
-  readonly t: Translator;
-}) {
-  return (
-    <Alert variant="destructive">
-      <AlertDescription {...applyStyles(styles.alertBody)}>
-        <span>{message}</span>
-        <Button onClick={retry} variant="secondary">
-          {t("common.retry")}
-        </Button>
-      </AlertDescription>
-    </Alert>
   );
 }

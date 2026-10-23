@@ -31,7 +31,7 @@ import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
 import { styles } from "./competition-rankings-page.styles.ts";
 import { useCompetitionRankingsQuery, useRankingNames } from "./competition-rankings-queries.ts";
-import { RankingMeta, RankingTable, RetryAlert } from "./competition-rankings-table.tsx";
+import { RankingMeta, RankingTable } from "./competition-rankings-table.tsx";
 import {
   RANKING_KIND_COPY,
   RANKING_KINDS,
@@ -41,6 +41,7 @@ import {
   type RankingFormatters,
   type RankingNamesState,
 } from "./competition-rankings-view.ts";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 type Scope = { readonly organizationId: string; readonly competitionId: string };
 

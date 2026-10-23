@@ -35,24 +35,37 @@ export function useCompetitionTeamManagementQuery(organizationId: string, compet
   });
 }
 
+type ManagementPage = Awaited<ReturnType<typeof teamsBrowserClient.listCompetitionManagement>>;
+
+/** Walks every cursor page of the competition team list. Callers decide what to keep from each row. */
+export async function listEveryCompetitionManagementPage(
+  organizationId: string,
+  competitionId: string,
+  limit: number,
+): Promise<ManagementPage["items"]> {
+  const items: Array<ManagementPage["items"][number]> = [];
+  let cursor: string | undefined;
+  do {
+    const page = await teamsBrowserClient.listCompetitionManagement(organizationId, competitionId, {
+      cursor,
+      limit,
+    });
+    items.push(...page.items);
+    cursor = page.nextCursor ?? undefined;
+  } while (cursor);
+  return items;
+}
+
 /** Loads every management page so setup can map team ids to club names without fetch-in-effect. */
 export function useCompetitionTeamClubNamesQuery(organizationId: string, competitionId: string) {
   return useQuery({
     queryKey: queryKeys.teams.competitionManagementClubNames(organizationId, competitionId),
     queryFn: async () => {
       const names: Record<string, string> = {};
-      let cursor: string | undefined;
-      do {
-        const page = await teamsBrowserClient.listCompetitionManagement(
-          organizationId,
-          competitionId,
-          { cursor, limit: 25 },
-        );
-        for (const item of page.items) {
-          if (item.externalClub) names[item.team.id] = item.externalClub.externalClubName;
-        }
-        cursor = page.nextCursor ?? undefined;
-      } while (cursor);
+      const items = await listEveryCompetitionManagementPage(organizationId, competitionId, 25);
+      for (const item of items) {
+        if (item.externalClub) names[item.team.id] = item.externalClub.externalClubName;
+      }
       return names;
     },
     enabled: organizationId.length > 0 && competitionId.length > 0,
