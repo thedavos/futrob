@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import type {
   ApplyToCompetitionRequest,
+  CompetitionDraftDto,
   CompetitionParticipantInput,
   CreateCompetitionDraftRequest,
   ExploreCompetitionsQueryInput,
@@ -34,6 +35,7 @@ import {
   updateCompetitionCover,
   getMyCompetitionApplication,
   applyToCompetition,
+  CompetitionsClientError,
 } from "./competitions-browser-client.ts";
 
 export function useExploreCompetitionsInfiniteQuery(query: ExploreCompetitionsQueryInput = {}) {
@@ -242,6 +244,33 @@ export function useCompetitionDraftQuery(organizationId: string, competitionId: 
   return useQuery({
     queryKey: queryKeys.competitions.draft(organizationId, competitionId),
     queryFn: () => getCompetitionDraft(organizationId, competitionId),
+  });
+}
+
+export type CompetitionRulesRead =
+  | { readonly kind: "rules"; readonly draft: CompetitionDraftDto }
+  | { readonly kind: "refused"; readonly refusal: "forbidden" | "not_found" };
+
+/**
+ * The rules page keeps refusals as query values, so the cache's last successful read is the
+ * refusal itself: a later transient error, or a remount, never brings back rules read before it.
+ * Its own key keeps this shape apart from the setup page's draft cache.
+ */
+export function useCompetitionRulesQuery(organizationId: string, competitionId: string) {
+  return useQuery({
+    queryKey: queryKeys.competitions.rules(organizationId, competitionId),
+    queryFn: async (): Promise<CompetitionRulesRead> => {
+      try {
+        return { kind: "rules", draft: await getCompetitionDraft(organizationId, competitionId) };
+      } catch (error) {
+        if (!(error instanceof CompetitionsClientError)) throw error;
+        if (error.status === 401 || error.status === 403) {
+          return { kind: "refused", refusal: "forbidden" };
+        }
+        if (error.status === 404) return { kind: "refused", refusal: "not_found" };
+        throw error;
+      }
+    },
   });
 }
 
