@@ -179,6 +179,56 @@ describe("closing a competition Team roster", () => {
   });
 });
 
+describe("overlapping roster changes", () => {
+  it("keeps another Team's pending close when the first close fails", async () => {
+    let failFirst: (error: Error) => void = () => {};
+    vi.spyOn(teamsBrowserClient, "closeRoster")
+      .mockReturnValueOnce(
+        new Promise((_resolve, reject) => {
+          failFirst = reject;
+        }),
+      )
+      .mockReturnValueOnce(new Promise(() => undefined));
+    vi.spyOn(teamsBrowserClient, "listCompetitionManagement").mockReturnValue(
+      new Promise(() => undefined),
+    );
+    vi.spyOn(teamsBrowserClient, "getCompetitionTeamManagement").mockReturnValue(
+      new Promise(() => undefined),
+    );
+    const { queryClient, wrapper } = seededClient();
+    const { result } = renderHook(
+      () => ({
+        first: useSetRosterOpenMutation(scope),
+        second: useSetRosterOpenMutation({ ...scope, teamId: "team-2" }),
+      }),
+      { wrapper },
+    );
+
+    act(() => result.current.first.mutate(false));
+    await waitFor(() =>
+      expect(rosterStates(queryClient, listKey)).toEqual([
+        ["team-1", "closed"],
+        ["team-2", "open"],
+      ]),
+    );
+    act(() => result.current.second.mutate(false));
+    await waitFor(() =>
+      expect(rosterStates(queryClient, listKey)).toEqual([
+        ["team-1", "closed"],
+        ["team-2", "closed"],
+      ]),
+    );
+    act(() => failFirst(new Error("network")));
+
+    await waitFor(() =>
+      expect(rosterStates(queryClient, listKey)).toEqual([
+        ["team-1", "open"],
+        ["team-2", "closed"],
+      ]),
+    );
+  });
+});
+
 describe("changing a roster role", () => {
   it("shows the new captain and demotes the previous one before the server answers", async () => {
     vi.spyOn(teamsBrowserClient, "changeRosterRole").mockReturnValue(new Promise(() => undefined));

@@ -171,10 +171,25 @@ export function useRemoveCompetitionParticipantMutation(
       rollback: await patchQueryData<ListCompetitionParticipantsResponse>(
         queryClient,
         queryKeys.competitions.participants(organizationId, competitionId),
-        (list) => ({
-          ...list,
-          participants: list.participants.filter((entry) => entry.id !== entryId),
-        }),
+        {
+          apply: (list) => ({
+            ...list,
+            participants: list.participants.filter((entry) => entry.id !== entryId),
+          }),
+          revert: (list, previous) => {
+            const index = previous.participants.findIndex((entry) => entry.id === entryId);
+            const removed = previous.participants[index];
+            if (!removed || list.participants.some((entry) => entry.id === entryId)) return list;
+            return {
+              ...list,
+              participants: [
+                ...list.participants.slice(0, index),
+                removed,
+                ...list.participants.slice(index),
+              ],
+            };
+          },
+        },
       ),
     }),
     onError: (_error, _entryId, context) => context?.rollback(),

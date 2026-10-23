@@ -66,17 +66,22 @@ export function useEntryInvitationCommands(organizationId: string, competitionId
     onMutate: async (invitationId) => {
       const respondedAt = new Date().toISOString();
       return {
-        rollback: await patchQueryData<ListSentEntryInvitationsResponse>(
-          queryClient,
-          sentKey,
-          (sent) => ({
+        rollback: await patchQueryData<ListSentEntryInvitationsResponse>(queryClient, sentKey, {
+          apply: (sent) => ({
             invitations: sent.invitations.map((invitation) =>
               invitation.id === invitationId
                 ? { ...invitation, status: "revoked", respondedAt }
                 : invitation,
             ),
           }),
-        ),
+          revert: (sent, previous) => ({
+            invitations: sent.invitations.map((invitation) =>
+              invitation.id === invitationId
+                ? (previous.invitations.find((before) => before.id === invitationId) ?? invitation)
+                : invitation,
+            ),
+          }),
+        }),
       };
     },
     onError: (_error, _invitationId, context) => context?.rollback(),

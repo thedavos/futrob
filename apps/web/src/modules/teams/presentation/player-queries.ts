@@ -129,13 +129,24 @@ export function useRespondToRosterInvitationMutation() {
         rollback: await patchQueryData<ListMyRosterInvitationsResponse>(
           queryClient,
           queryKeys.players.meRosterInvitations(),
-          (inbox) => ({
-            invitations: inbox.invitations.map((invitation) =>
-              invitation.invitationId === input.invitationId
-                ? { ...invitation, status: "declined", respondedAt }
-                : invitation,
-            ),
-          }),
+          {
+            apply: (inbox) => ({
+              invitations: inbox.invitations.map((invitation) =>
+                invitation.invitationId === input.invitationId
+                  ? { ...invitation, status: "declined", respondedAt }
+                  : invitation,
+              ),
+            }),
+            revert: (inbox, previous) => ({
+              invitations: inbox.invitations.map((invitation) =>
+                invitation.invitationId === input.invitationId
+                  ? (previous.invitations.find(
+                      (before) => before.invitationId === input.invitationId,
+                    ) ?? invitation)
+                  : invitation,
+              ),
+            }),
+          },
         ),
       };
     },

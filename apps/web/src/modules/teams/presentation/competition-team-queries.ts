@@ -129,16 +129,33 @@ export function useChangeRosterRoleMutation(scope: TeamMutationScope) {
       rollback: await patchQueryData<CompetitionTeamManagementDetailResponse>(
         queryClient,
         teamDetailKey(scope),
-        (detail) => ({
-          ...detail,
-          members: detail.members.map((member) => ({
-            ...member,
-            membership: {
-              ...member.membership,
-              role: roleAfterChange(member.membership, input.membershipId, input.role),
-            },
-          })),
-        }),
+        {
+          apply: (detail) => ({
+            ...detail,
+            members: detail.members.map((member) => ({
+              ...member,
+              membership: {
+                ...member.membership,
+                role: roleAfterChange(member.membership, input.membershipId, input.role),
+              },
+            })),
+          }),
+          revert: (detail, previous) => ({
+            ...detail,
+            members: detail.members.map((member) => {
+              const before = previous.members.find(
+                (candidate) => candidate.membership.id === member.membership.id,
+              )?.membership;
+              if (
+                !before ||
+                roleAfterChange(before, input.membershipId, input.role) === before.role
+              ) {
+                return member;
+              }
+              return { ...member, membership: { ...member.membership, role: before.role } };
+            }),
+          }),
+        },
       ),
     }),
     onError: (_error, _input, context) => context?.rollback(),
@@ -160,27 +177,36 @@ export function useSetRosterOpenMutation(scope: TeamMutationScope) {
         ? teamsBrowserClient.openRoster(scope.organizationId, scope.competitionId, scope.teamId)
         : teamsBrowserClient.closeRoster(scope.organizationId, scope.competitionId, scope.teamId),
     onMutate: async (open) => {
-      const withRoster = <T extends { readonly roster: CompetitionTeamManagementRosterDto }>(
-        item: T,
-      ): T => ({ ...item, roster: rosterSetOpen(item.roster, open) });
+      type ListData = InfiniteData<CompetitionTeamManagementListResponse>;
+      const mapTeamRoster = (
+        list: ListData,
+        roster: (current: CompetitionTeamManagementRosterDto) => CompetitionTeamManagementRosterDto,
+      ): ListData => ({
+        ...list,
+        pages: list.pages.map((page) => ({
+          ...page,
+          items: page.items.map((item) =>
+            item.team.id === scope.teamId ? { ...item, roster: roster(item.roster) } : item,
+          ),
+        })),
+      });
       const rollbacks = await Promise.all([
-        patchQueryData<CompetitionTeamManagementDetailResponse>(
-          queryClient,
-          teamDetailKey(scope),
-          withRoster,
-        ),
-        patchQueryData<InfiniteData<CompetitionTeamManagementListResponse>>(
+        patchQueryData<CompetitionTeamManagementDetailResponse>(queryClient, teamDetailKey(scope), {
+          apply: (detail) => ({ ...detail, roster: rosterSetOpen(detail.roster, open) }),
+          revert: (detail, previous) => ({ ...detail, roster: previous.roster }),
+        }),
+        patchQueryData<ListData>(
           queryClient,
           queryKeys.teams.competitionManagement(scope.organizationId, scope.competitionId),
-          (list) => ({
-            ...list,
-            pages: list.pages.map((page) => ({
-              ...page,
-              items: page.items.map((item) =>
-                item.team.id === scope.teamId ? withRoster(item) : item,
-              ),
-            })),
-          }),
+          {
+            apply: (list) => mapTeamRoster(list, (roster) => rosterSetOpen(roster, open)),
+            revert: (list, previous) => {
+              const before = previous.pages
+                .flatMap((page) => page.items)
+                .find((item) => item.team.id === scope.teamId)?.roster;
+              return before ? mapTeamRoster(list, () => before) : list;
+            },
+          },
         ),
       ]);
       return { rollback: () => rollbacks.forEach((rollback) => rollback()) };
