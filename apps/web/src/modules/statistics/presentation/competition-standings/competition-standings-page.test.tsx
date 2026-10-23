@@ -35,6 +35,22 @@ const snapshot = {
   updatedAt: "2026-10-12T01:00:00.000Z",
 };
 
+const managedTeam = ([id, name]: readonly [string, string]) => ({
+  team: { id, organizationId: "org-1", name, createdAt: "2026-01-01T00:00:00.000Z" },
+  entry: {
+    id: `entry-${id}`,
+    organizationId: "org-1",
+    competitionId: "competition-1",
+    teamId: id,
+    status: "approved",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  roster: { state: "open", memberCount: 0, maxSize: 11, lockedAt: null },
+  externalClub: null,
+});
+const teamsPage = (...teams: Array<readonly [string, string]>) =>
+  Response.json({ items: teams.map(managedTeam), nextCursor: null });
+
 type Routes = {
   access?: () => Response;
   standings?: () => Response;
@@ -69,27 +85,10 @@ function serve(routes: Routes) {
     if (path === "/api/v1/authorization/effective-access") return (routes.access ?? allow(true))();
     if (path === `${base}/competitions/competition-1/standings`)
       return (routes.standings ?? (() => Response.json({ standings: snapshot })))();
-    if (path === `${base}/teams`)
-      return (
-        routes.teams ??
-        (() =>
-          Response.json({
-            teams: [
-              {
-                id: "t1",
-                organizationId: "org-1",
-                name: "Cuervos FC",
-                createdAt: "2026-01-01T00:00:00.000Z",
-              },
-              {
-                id: "t2",
-                organizationId: "org-1",
-                name: "Maderas FC",
-                createdAt: "2026-01-01T00:00:00.000Z",
-              },
-            ],
-          }))
-      )();
+    if (path === `${base}/competitions/competition-1/team-management`)
+      return (routes.teams ?? (() => teamsPage(["t1", "Cuervos FC"], ["t2", "Maderas FC"])))();
+    // Organization-wide team read needs teams.read, which competition staff do not hold.
+    if (path === `${base}/teams`) return fail(403, "teams.read_forbidden")();
     return fail(404, "api.not_found")();
   });
   vi.stubGlobal("fetch", fetch);
@@ -126,6 +125,30 @@ describe("Competition standings page", () => {
     expect(within(rows[1]!).getByText("Cuervos FC")).toBeTruthy();
     expect(within(rows[1]!).getByText("-2")).toBeTruthy();
     expect(screen.getByText("Fórmula points-gd-gf-v1")).toBeTruthy();
+  });
+
+  it("names the rows for competition staff who cannot read the organization teams", async () => {
+    const fetch = serve({});
+    renderRoute();
+
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+    expect(screen.getByText("Cuervos FC")).toBeTruthy();
+    expect(screen.queryByText(/No pudimos cargar los nombres/)).toBeNull();
+    expect(screen.queryByText("Equipo sin nombre disponible")).toBeNull();
+    const paths = fetch.mock.calls.map(([u]) => new URL(String(u), "https://web.test").pathname);
+    expect(paths).not.toContain(`${base}/teams`);
+  });
+
+  it("reads every page of the competition teams", async () => {
+    const pages = [
+      () => Response.json({ items: [managedTeam(["t1", "Cuervos FC"])], nextCursor: "page-2" }),
+      () => Response.json({ items: [managedTeam(["t2", "Maderas FC"])], nextCursor: null }),
+    ];
+    serve({ teams: () => pages.shift()!() });
+    renderRoute();
+
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+    expect(screen.getByText("Cuervos FC")).toBeTruthy();
   });
 
   it("speaks English", async () => {
@@ -322,74 +345,26 @@ describe("Competition standings page", () => {
   it("does not show cached team names after the name lookup is refused, and recovers", async () => {
     serve({
       teams: sequence(
-        () =>
-          Response.json({
-            teams: [
-              {
-                id: "t1",
-                organizationId: "org-1",
-                name: "Cuervos FC",
-                createdAt: "2026-01-01T00:00:00.000Z",
-              },
-              {
-                id: "t2",
-                organizationId: "org-1",
-                name: "Maderas FC",
-                createdAt: "2026-01-01T00:00:00.000Z",
-              },
-            ],
-          }),
+        () => teamsPage(["t1", "Cuervos FC"], ["t2", "Maderas FC"]),
         fail(403, "teams.read_forbidden"),
-        () =>
-          Response.json({
-            teams: [
-              {
-                id: "t1",
-                organizationId: "org-1",
-                name: "Cuervos FC",
-                createdAt: "2026-01-01T00:00:00.000Z",
-              },
-              {
-                id: "t2",
-                organizationId: "org-1",
-                name: "Maderas FC",
-                createdAt: "2026-01-01T00:00:00.000Z",
-              },
-            ],
-          }),
+        () => teamsPage(["t1", "Cuervos FC"], ["t2", "Maderas FC"]),
       ),
     });
     const queryClient = renderRoute();
     expect(await screen.findByText("Maderas FC")).toBeTruthy();
 
-    await act(() => queryClient.refetchQueries({ queryKey: ["competitions"] }));
+    await act(() => queryClient.refetchQueries({ queryKey: ["teams"] }));
     expect(await screen.findByText(/No pudimos cargar los nombres/)).toBeTruthy();
     expect(screen.queryByText("Maderas FC")).toBeNull();
     expect(screen.queryByText("Cuervos FC")).toBeNull();
     expect(screen.getByRole("table")).toBeTruthy();
 
-    await act(() => queryClient.refetchQueries({ queryKey: ["competitions"] }));
+    await act(() => queryClient.refetchQueries({ queryKey: ["teams"] }));
     expect(await screen.findByText("Maderas FC")).toBeTruthy();
   });
 
   it("keeps hiding cached names after a refusal followed by a transient error", async () => {
-    const teamsOk = () =>
-      Response.json({
-        teams: [
-          {
-            id: "t1",
-            organizationId: "org-1",
-            name: "Cuervos FC",
-            createdAt: "2026-01-01T00:00:00.000Z",
-          },
-          {
-            id: "t2",
-            organizationId: "org-1",
-            name: "Maderas FC",
-            createdAt: "2026-01-01T00:00:00.000Z",
-          },
-        ],
-      });
+    const teamsOk = () => teamsPage(["t1", "Cuervos FC"], ["t2", "Maderas FC"]);
     serve({
       teams: sequence(
         teamsOk,
@@ -401,40 +376,24 @@ describe("Competition standings page", () => {
     const queryClient = renderRoute();
     expect(await screen.findByText("Maderas FC")).toBeTruthy();
 
-    await act(() => queryClient.refetchQueries({ queryKey: ["competitions"] }));
+    await act(() => queryClient.refetchQueries({ queryKey: ["teams"] }));
     expect(await screen.findByText(/No pudimos cargar los nombres/)).toBeTruthy();
-    await act(() => queryClient.refetchQueries({ queryKey: ["competitions"] }));
+    await act(() => queryClient.refetchQueries({ queryKey: ["teams"] }));
     expect(screen.getByText(/No pudimos cargar los nombres/)).toBeTruthy();
     expect(screen.queryByText("Maderas FC")).toBeNull();
     expect(screen.queryByText("Cuervos FC")).toBeNull();
 
-    await act(() => queryClient.refetchQueries({ queryKey: ["competitions"] }));
+    await act(() => queryClient.refetchQueries({ queryKey: ["teams"] }));
     expect(await screen.findByText("Maderas FC")).toBeTruthy();
   });
 
   it("keeps cached names across a refresh failure and says the refresh failed", async () => {
-    const teamsOk = () =>
-      Response.json({
-        teams: [
-          {
-            id: "t1",
-            organizationId: "org-1",
-            name: "Cuervos FC",
-            createdAt: "2026-01-01T00:00:00.000Z",
-          },
-          {
-            id: "t2",
-            organizationId: "org-1",
-            name: "Maderas FC",
-            createdAt: "2026-01-01T00:00:00.000Z",
-          },
-        ],
-      });
+    const teamsOk = () => teamsPage(["t1", "Cuervos FC"], ["t2", "Maderas FC"]);
     serve({ teams: sequence(teamsOk, fail(500, "api.unexpected"), teamsOk) });
     const queryClient = renderRoute();
     expect(await screen.findByText("Maderas FC")).toBeTruthy();
 
-    await act(() => queryClient.refetchQueries({ queryKey: ["competitions"] }));
+    await act(() => queryClient.refetchQueries({ queryKey: ["teams"] }));
     expect(await screen.findByText(/No pudimos actualizar los nombres/)).toBeTruthy();
     expect(screen.getByText("Maderas FC")).toBeTruthy();
 

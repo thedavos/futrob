@@ -67,6 +67,7 @@ export function CompetitionStandingsRoute({
     standingsValue && !isRefusal(standingsValue) ? standingsValue.standings : undefined;
   const teams = useStandingsTeamNames(
     organizationId,
+    competitionId,
     Boolean(snapshot && snapshot.rows.length > 0),
   );
   const teamsValue = teams.data && !isRefusal(teams.data) ? teams.data : undefined;

@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
+import { CompetitionsClientError } from "@/modules/competitions/presentation/competitions-browser-client.ts";
 import {
-  CompetitionsClientError,
-  listOrganizationTeams,
-} from "@/modules/competitions/presentation/competitions-browser-client.ts";
+  TeamsClientError,
+  teamsBrowserClient,
+} from "@/modules/teams/presentation/teams-browser-client.ts";
 import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
@@ -17,7 +18,8 @@ const retryUnlessRefused = (failureCount: number, error: Error) =>
 
 function httpStatus(error: Error): number | undefined {
   return error instanceof CompetitionStandingsClientError ||
-    error instanceof CompetitionsClientError
+    error instanceof CompetitionsClientError ||
+    error instanceof TeamsClientError
     ? error.status
     : undefined;
 }
@@ -69,12 +71,37 @@ export function useCompetitionStandings(organizationId: string, competitionId: s
   return { access, allowed, standings };
 }
 
-/** Names for the standings rows; the table stays readable if they do not load. */
-export function useStandingsTeamNames(organizationId: string, enabled: boolean) {
+/**
+ * Names for the standings rows. Read from the competition's team list, which staff may read inside
+ * their competition; the organization team list needs `teams.read` at organization scope.
+ * The table stays readable if they do not load.
+ */
+export function useStandingsTeamNames(
+  organizationId: string,
+  competitionId: string,
+  enabled: boolean,
+) {
   return useQuery({
-    // Own key: the entry may hold a refusal, which other consumers of the teams list cannot read.
-    queryKey: [...queryKeys.competitions.teams(organizationId), "standings-names"] as const,
-    queryFn: () => refusedAsValue(() => listOrganizationTeams(organizationId)),
+    // Own key: the entry may hold a refusal, which other consumers of the team list cannot read.
+    queryKey: [
+      ...queryKeys.teams.competitionManagement(organizationId, competitionId),
+      "standings-names",
+    ] as const,
+    queryFn: () =>
+      refusedAsValue(async () => {
+        const teams: { id: string; name: string }[] = [];
+        let cursor: string | undefined;
+        do {
+          const page = await teamsBrowserClient.listCompetitionManagement(
+            organizationId,
+            competitionId,
+            { cursor, limit: 25 },
+          );
+          for (const item of page.items) teams.push({ id: item.team.id, name: item.team.name });
+          cursor = page.nextCursor ?? undefined;
+        } while (cursor);
+        return { teams };
+      }),
     enabled,
   });
 }
