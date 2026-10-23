@@ -88,6 +88,9 @@ export const queryKeys = {
       [...queryKeys.competitions.all, "by-organization", organizationId] as const,
     draft: (organizationId: string, competitionId: string) =>
       [...queryKeys.competitions.all, "draft", organizationId, competitionId] as const,
+    /** Read-only rules view; nested under the draft so draft invalidations refresh it too. */
+    rules: (organizationId: string, competitionId: string) =>
+      [...queryKeys.competitions.draft(organizationId, competitionId), "rules"] as const,
     participants: (organizationId: string, competitionId: string) =>
       [...queryKeys.competitions.all, "participants", organizationId, competitionId] as const,
     teams: (organizationId: string) =>

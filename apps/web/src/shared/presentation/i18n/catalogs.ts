@@ -11,6 +11,89 @@ const es = {
   "competitions.reschedule.expiryHelp":
     "De 1 a 72 horas desde cada propuesta. Al vencer, el organizador resuelve la solicitud.",
   "competitions.reschedule.expiryInvalid": "Introduce horas enteras entre 1 y 72.",
+  "competitionRules.documentTitle": "Reglamento",
+  "competitionRules.loading": "Cargando el reglamento…",
+  "competitionRules.error": "No pudimos cargar el reglamento.",
+  "competitionRules.refreshError":
+    "No pudimos actualizar el reglamento. Puede que lo que ves no esté al día.",
+  "competitionRules.forbidden.title": "No tienes acceso al reglamento",
+  "competitionRules.forbidden.description":
+    "Pide al organizador que te dé acceso a esta competición.",
+  "competitionRules.notFound.title": "No encontramos esta competición",
+  "competitionRules.notFound.description":
+    "Puede que se haya eliminado o que el enlace sea incorrecto.",
+  "competitionRules.edit": "Editar reglas",
+  "competitionRules.status.draft": "Borrador",
+  "competitionRules.status.registration": "Inscripciones abiertas",
+  "competitionRules.status.published": "Publicada",
+  "competitionRules.status.paused": "En pausa",
+  "competitionRules.status.finished": "Finalizada",
+  "competitionRules.status.archived": "Archivada",
+  "competitionRules.notice.draft":
+    "Estas reglas son un borrador y pueden cambiar hasta que se publique la competición.",
+  "competitionRules.notice.locked":
+    "La estructura de la competición ya no admite cambios, por lo que estas reglas son de solo lectura.",
+  "competitionRules.format.title": "Formato",
+  "competitionRules.format.label": "Tipo de competición",
+  "competitionRules.format.league": "Liga",
+  "competitionRules.format.knockout": "Eliminación directa",
+  "competitionRules.format.groups-knockout": "Grupos + eliminación",
+  "competitionRules.format.league-playoffs": "Liga + playoffs",
+  "competitionRules.format.teams": "Equipos",
+  "competitionRules.format.teamsRange": "De {min} a {max}",
+  "competitionRules.format.teamsAtLeast": "Desde {min}",
+  "competitionRules.stage.league": "Liga",
+  "competitionRules.stage.groups": "Grupos",
+  "competitionRules.stage.knockout": "Eliminación",
+  "competitionRules.stage.playoffs": "Playoffs",
+  "competitionRules.stage.description": "Reglas de partido de esta etapa.",
+  "competitionRules.scoring.title": "Puntuación",
+  "competitionRules.scoring.win": "Victoria",
+  "competitionRules.scoring.draw": "Empate",
+  "competitionRules.scoring.loss": "Derrota",
+  "competitionRules.encounter.title": "Enfrentamiento",
+  "competitionRules.encounter.matches": "Partidos por cruce",
+  "competitionRules.encounter.resolution": "Resolución",
+  "competitionRules.encounter.independent": "Cada partido cuenta por separado",
+  "competitionRules.encounter.aggregate": "Marcador agregado",
+  "competitionRules.value.matches": (params) =>
+    count(params) === 1 ? "1 partido" : `${count(params)} partidos`,
+  "competitionRules.value.hours": (params) =>
+    count(params) === 1 ? "1 hora" : `${count(params)} horas`,
+  "competitionRules.value.players": (params) =>
+    count(params) === 1 ? "1 jugador" : `${count(params)} jugadores`,
+  "competitionRules.reschedule.title": "Reprogramación",
+  "competitionRules.reschedule.allowed": "Reprogramaciones",
+  "competitionRules.reschedule.allowedYes": "Permitidas",
+  "competitionRules.reschedule.allowedNo": "No se permiten reprogramaciones",
+  "competitionRules.reschedule.max": "Máximo por equipo",
+  "competitionRules.reschedule.unlimited": "Sin límite",
+  "competitionRules.reschedule.notice": "Aviso mínimo",
+  "competitionRules.reschedule.expiry": "Plazo de respuesta a una propuesta",
+  "competitionRules.reschedule.opponent": "Aprobación del rival",
+  "competitionRules.reschedule.organizer": "Aprobación del organizador",
+  "competitionRules.reschedule.required": "Obligatoria",
+  "competitionRules.reschedule.notRequired": "No requerida",
+  "competitionRules.roster.title": "Plantilla",
+  "competitionRules.roster.max": "Máximo de jugadores",
+  "competitionRules.roster.default": "{count} (tope por defecto)",
+  "competitionRules.platform.title": "Reglas de la plataforma",
+  "competitionRules.platform.description": "Se aplican igual en todas las competiciones.",
+  "competitionRules.tiebreaks.title": "Criterios de desempate",
+  "competitionRules.tiebreaks.description": "Se aplican en este orden.",
+  "competitionRules.tiebreaks.points": "Puntos",
+  "competitionRules.tiebreaks.goalDifference": "Diferencia de goles",
+  "competitionRules.tiebreaks.goalsFor": "Goles a favor",
+  "competitionRules.awayGoals": "Gol de visitante",
+  "competitionRules.awayGoalsOff": "No se aplica",
+  "competitionRules.results.title": "Validación de resultados",
+  "competitionRules.results.confirmation": "Confirmación del rival",
+  "competitionRules.results.window": "Plazo para responder",
+  "competitionRules.results.windowValue": "24 horas",
+  "competitionRules.results.fallback":
+    "Si el rival no responde a tiempo, el resultado pasa a revisión del organizador.",
+  "competitionRules.results.officialOnly":
+    "Solo un resultado oficial aprobado entra en la clasificación y los rankings.",
   "reschedule.title": "Reprogramaciones",
   "reschedule.description":
     "Consulta las propuestas y resuelve las solicitudes escaladas. El silencio no acepta un cambio.",
@@ -1022,7 +1105,40 @@ const es = {
     "Invitaciones de clubes y competiciones pendientes de respuesta.",
   "player.gameData.invitations.cta": "Ver mis invitaciones",
   "pages.organization.teams.title": "Equipos",
-  "pages.organization.teams.subtitle": "Equipos inscritos en las competiciones de tu organización.",
+  "pages.organization.teams.subtitle":
+    "Consulta los equipos de tu organización y las competiciones en las que participan.",
+  "org.teams.directory.title": "Directorio de equipos",
+  "org.teams.count": ({ count }) => (Number(count) === 1 ? "1 equipo" : `${count} equipos`),
+  "org.teams.countFiltered": ({ shown, total }) => `${shown} de ${total} equipos`,
+  "org.teams.search": "Buscar equipo por nombre",
+  "org.teams.table.team": "Equipo",
+  "org.teams.table.competitions": "Competiciones",
+  "org.teams.created": "Creado el {date}",
+  "org.teams.entry.approved": "Aprobado",
+  "org.teams.entry.pending": "Pendiente",
+  "org.teams.entry.rejected": "Rechazado",
+  "org.teams.link": "{competition}: ver {team}",
+  "org.teams.noCompetitions": "Sin competiciones",
+  "org.teams.competitionsUnavailable": "No disponible",
+  "org.teams.loading": "Cargando equipos…",
+  "org.teams.error": "No pudimos cargar los equipos de la organización.",
+  "org.teams.refreshFailed": "No pudimos actualizar los equipos. Se muestran los datos anteriores.",
+  "org.teams.partial":
+    "No pudimos cargar las competiciones de todos los equipos. Algunas filas pueden estar incompletas.",
+  "org.teams.partialForbidden":
+    "No tienes acceso a las competiciones de algunos equipos, por eso esas filas no están disponibles.",
+  "org.teams.forbidden.title": "No tienes acceso a los equipos",
+  "org.teams.forbidden.description":
+    "Tu rol en esta organización no incluye consultar su directorio de equipos.",
+  "org.teams.forbidden.cta": "Volver al inicio de la organización",
+  "org.teams.empty.title": "Todavía no hay equipos",
+  "org.teams.empty.description":
+    "Los equipos aparecen aquí cuando se inscriben en una competición de tu organización.",
+  "org.teams.empty.cta": "Ver competiciones",
+  "org.teams.noMatches.title": "Ningún equipo coincide",
+  "org.teams.noMatches.description":
+    "No encontramos equipos con «{query}». Prueba con otro nombre.",
+  "org.teams.noMatches.clear": "Limpiar búsqueda",
   "pages.organization.players.title": "Jugadores",
   "pages.organization.players.subtitle": "Quién juega en cada plantilla de tu organización.",
   "pages.organization.invitations.title": "Invitaciones",
@@ -1161,6 +1277,80 @@ const es = {
     "Desacuerdos sobre partidos o resultados que esperan tu decisión.",
   "pages.competition.analytics.title": "Analíticas",
   "pages.competition.analytics.subtitle": "Participación y actividad de la competición.",
+  "pages.competition.teamPerformance.title": "Rendimiento de equipos",
+  "pages.competition.teamPerformance.subtitle":
+    "Puntuación de 0 a 100 calculada solo con resultados oficiales aprobados. No sustituye a la clasificación.",
+  "teamPerformance.loading": "Cargando ranking de rendimiento",
+  "teamPerformance.error": "No pudimos cargar el ranking de rendimiento.",
+  "teamPerformance.refreshError":
+    "No pudimos actualizar el ranking. Se muestran los últimos datos cargados.",
+  "teamPerformance.accessError": "No pudimos comprobar tu acceso a las estadísticas.",
+  "teamPerformance.forbidden.title": "No tienes acceso a este ranking",
+  "teamPerformance.forbidden.description":
+    "Tu rol no permite consultar las estadísticas de esta competición.",
+  "teamPerformance.backToCompetition": "Volver a la competición",
+  "teamPerformance.notBuilt.title": "Aún no hay ranking de rendimiento",
+  "teamPerformance.notBuilt.description":
+    "Se calcula al aprobar resultados oficiales. Los partidos EA sin aprobar no cuentan.",
+  "teamPerformance.notBuilt.action": "Ver enfrentamientos",
+  "teamPerformance.empty.title": "Sin equipos en el ranking",
+  "teamPerformance.empty.description":
+    "Aparecerán los equipos aprobados en la competición y los que tengan resultados oficiales.",
+  "teamPerformance.projectionIncomplete.title": "Ranking pendiente de reconstrucción",
+  "teamPerformance.projectionIncomplete.description":
+    "Hay resultados oficiales que aún no están proyectados por completo. Ningún equipo recibe puntuación hasta reconstruir el ranking.",
+  "teamPerformance.unmatched": ({ count }) =>
+    count === 1
+      ? "1 aportación estadística no coincide con el resultado oficial vigente y no cuenta."
+      : `${count} aportaciones estadísticas no coinciden con el resultado oficial vigente y no cuentan.`,
+  "teamPerformance.criteria.title": "Criterio",
+  "teamPerformance.criteria.description":
+    "La puntuación es la suma ponderada de cinco componentes de 0 a 100. Si falta alguno, el equipo queda sin puntuación: no se rellena con cero ni se reparten los pesos.",
+  "teamPerformance.criteria.window": "Ventana",
+  "teamPerformance.criteria.windowValue": ({ recent }) =>
+    `Toda la competición · forma de los últimos ${recent} enfrentamientos`,
+  "teamPerformance.criteria.eligibility": "Elegibilidad",
+  "teamPerformance.criteria.eligibilityValue": ({ minimum }) =>
+    `Al menos ${minimum} enfrentamientos oficiales y los cinco componentes disponibles`,
+  "teamPerformance.criteria.period": "Periodo",
+  "teamPerformance.criteria.noPeriod": "Sin resultados oficiales",
+  "teamPerformance.criteria.updated": "Actualizado",
+  "teamPerformance.criteria.sources": "Resultados oficiales",
+  "teamPerformance.criteria.sourcesValue": ({ approved, voided }) =>
+    voided === 0
+      ? `${approved} aprobados`
+      : `${approved} aprobados · ${voided} anulados (no cuentan)`,
+  "teamPerformance.criteria.versions": ({ formula, normalization, window }) =>
+    `Versiones: ${formula} · ${normalization} · ${window}`,
+  "teamPerformance.weights.label": "Pesos de la fórmula",
+  "teamPerformance.weight": ({ weight }) => `${weight} %`,
+  "teamPerformance.table.title": "Ranking",
+  "teamPerformance.table.summary": ({ scored, incomplete }) =>
+    `${scored} con puntuación · ${incomplete} sin puntuación`,
+  "teamPerformance.table.position": "Pos.",
+  "teamPerformance.table.team": "Equipo",
+  "teamPerformance.table.score": "Puntuación",
+  "teamPerformance.table.encounters": "Enfrentamientos",
+  "teamPerformance.table.coverage": "Cobertura",
+  "teamPerformance.table.noValue": "Sin dato",
+  "teamPerformance.table.unranked": "Sin puntuación",
+  "teamPerformance.table.scrollHint": "Desliza la tabla para ver todos los componentes.",
+  "teamPerformance.team.unknown": "Equipo no disponible",
+  "teamPerformance.teamsUnavailable":
+    "No pudimos cargar los nombres de los equipos. El ranking sigue siendo válido.",
+  "teamPerformance.metric.results": "Resultados",
+  "teamPerformance.metric.goalDifference": "Diferencia de goles",
+  "teamPerformance.metric.recentForm": "Forma reciente",
+  "teamPerformance.metric.offensiveEfficiency": "Eficiencia ofensiva",
+  "teamPerformance.metric.defensiveEfficiency": "Eficiencia defensiva",
+  "teamPerformance.reason.complete": "Completo",
+  "teamPerformance.reason.no_data": "Sin partidos oficiales",
+  "teamPerformance.reason.insufficient_sample": ({ count, minimum }) =>
+    `Muestra insuficiente: ${count} de ${minimum} enfrentamientos`,
+  "teamPerformance.reason.missing_components": "Faltan componentes",
+  "teamPerformance.reason.projection_incomplete": "Proyección incompleta",
+  "teamPerformance.missing": ({ metrics }) => `Falta: ${metrics}`,
+  "teamPerformance.standingsLink": "Ver clasificación oficial",
   "pages.competition.rules.title": "Reglamento",
   "pages.competition.rules.subtitle":
     "Formato, criterios de desempate y reglas de reprogramación vigentes.",
@@ -1735,14 +1925,70 @@ const es = {
     "No tienes acceso a los nombres de los equipos. Las cifras siguen disponibles.",
   "competition.teamStats.teamName.refreshFailed":
     "No pudimos actualizar los nombres de los equipos. Se muestran los últimos cargados.",
-} satisfies Record<string, Message>;
+  "standings.documentTitle": "Clasificación",
+  "standings.loading": "Cargando la clasificación",
+  "standings.error": "No pudimos cargar la clasificación.",
+  "standings.refreshError":
+    "No pudimos actualizar la clasificación. Ves la última lectura correcta.",
+  "standings.teamNames.refreshError":
+    "No pudimos actualizar los nombres de los equipos. Ves los últimos nombres cargados.",
+  "standings.accessError": "No pudimos comprobar tu acceso a la clasificación.",
+  "standings.forbidden.title": "No tienes acceso a la clasificación",
+  "standings.forbidden.description":
+    "Tu cuenta no tiene permiso para ver la tabla oficial de esta competición.",
+  "standings.forbidden.back": "Volver a la organización",
+  "standings.notFound.title": "No encontramos esta competición",
+  "standings.notFound.description":
+    "La competición ya no existe o el enlace no es correcto. No es un problema de permisos ni un fallo temporal.",
+  "standings.empty.title": "Aún no hay clasificación oficial",
+  "standings.empty.description":
+    "La tabla se calcula solo con resultados oficiales aprobados y aparecerá cuando se apruebe el primero. Los partidos de EA sin aprobar no cuentan.",
+  "standings.table.label": "Clasificación oficial",
+  "standings.table.updated": ({ time }) => `Actualizada ${time}`,
+  "standings.table.formula": ({ version }) => `Fórmula ${version}`,
+  "standings.teamNames.error":
+    "No pudimos cargar los nombres de los equipos. La tabla muestra las cifras con un nombre genérico.",
+  "standings.team.loading": "Cargando nombre del equipo",
+  "standings.team.unresolved": "Equipo sin nombre disponible",
+  "standings.col.position": "Pos.",
+  "standings.col.position.full": "Posición",
+  "standings.col.team": "Equipo",
+  "standings.col.played": "PJ",
+  "standings.col.played.full": "Partidos jugados",
+  "standings.col.wins": "G",
+  "standings.col.wins.full": "Partidos ganados",
+  "standings.col.draws": "E",
+  "standings.col.draws.full": "Partidos empatados",
+  "standings.col.losses": "P",
+  "standings.col.losses.full": "Partidos perdidos",
+  "standings.col.goalsFor": "GF",
+  "standings.col.goalsFor.full": "Goles a favor",
+  "standings.col.goalsAgainst": "GC",
+  "standings.col.goalsAgainst.full": "Goles en contra",
+  "standings.col.goalDifference": "DG",
+  "standings.col.goalDifference.full": "Diferencia de goles",
+  "standings.col.points": "Pts",
+  "standings.col.points.full": "Puntos",
+  "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
+    `${wins} G · ${draws} E · ${losses} P · GF ${goalsFor} · GC ${goalsAgainst}`,} satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "competitionRules.format.teamsRange": { readonly min: number; readonly max: number };
+  readonly "competitionRules.format.teamsAtLeast": { readonly min: number };
+  readonly "competitionRules.value.matches": { readonly count: number };
+  readonly "competitionRules.value.hours": { readonly count: number };
+  readonly "competitionRules.value.players": { readonly count: number };
+  readonly "competitionRules.roster.default": { readonly count: number };
   readonly "organizations.members.actionsFor": { readonly name: string };
   readonly "organizations.members.list.noMatchesFor": { readonly query: string };
+  readonly "org.teams.count": { readonly count: number };
+  readonly "org.teams.countFiltered": { readonly shown: number; readonly total: number };
+  readonly "org.teams.created": { readonly date: string };
+  readonly "org.teams.link": { readonly competition: string; readonly team: string };
+  readonly "org.teams.noMatches.description": { readonly query: string };
   "reschedule.scope.slot": { slot: number };
   "reschedule.requestedBy": { team: string };
   "reschedule.proposedBy": { team: string };
@@ -1769,6 +2015,28 @@ export interface MessageParamsByKey {
   readonly "encounters.list.timeZone": { readonly zone: string };
   readonly "encounters.list.open": { readonly home: string; readonly away: string };
   readonly "encounters.list.slots": { readonly count: number };
+  readonly "teamPerformance.unmatched": { readonly count: number };
+  readonly "teamPerformance.criteria.windowValue": { readonly recent: number };
+  readonly "teamPerformance.criteria.eligibilityValue": { readonly minimum: number };
+  readonly "teamPerformance.criteria.sourcesValue": {
+    readonly approved: number;
+    readonly voided: number;
+  };
+  readonly "teamPerformance.criteria.versions": {
+    readonly formula: string;
+    readonly normalization: string;
+    readonly window: string;
+  };
+  readonly "teamPerformance.weight": { readonly weight: number };
+  readonly "teamPerformance.table.summary": {
+    readonly scored: number;
+    readonly incomplete: number;
+  };
+  readonly "teamPerformance.reason.insufficient_sample": {
+    readonly count: number;
+    readonly minimum: number;
+  };
+  readonly "teamPerformance.missing": { readonly metrics: string };
   readonly "encounter.slot.label": { readonly slot: number };
   readonly "encounter.slot.clear": { readonly slot: number };
   readonly "encounter.outcome.win": { readonly team: string };
@@ -1943,7 +2211,15 @@ export interface MessageParamsByKey {
   readonly "competition.teamStats.leader.tied": { readonly team: string; readonly count: number };
   readonly "competition.teamStats.leader.partial": { readonly teams: string };
   readonly "competition.teamStats.table.label": { readonly view: string };
-}
+  readonly "standings.table.updated": { readonly time: string };
+  readonly "standings.table.formula": { readonly version: string };
+  readonly "standings.row.record": {
+    readonly wins: string;
+    readonly draws: string;
+    readonly losses: string;
+    readonly goalsFor: string;
+    readonly goalsAgainst: string;
+  };}
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
 export type ParameterlessMessageKey = Exclude<MessageKey, ParameterizedMessageKey>;
@@ -1953,6 +2229,89 @@ const en: Catalog = {
   "competitions.reschedule.expiryHelp":
     "Between 1 and 72 hours from each proposal. Once it expires, the organizer resolves the request.",
   "competitions.reschedule.expiryInvalid": "Enter whole hours between 1 and 72.",
+  "competitionRules.documentTitle": "Rules",
+  "competitionRules.loading": "Loading the rules…",
+  "competitionRules.error": "We couldn't load the rules.",
+  "competitionRules.refreshError":
+    "We couldn't refresh the rules. What you see may be out of date.",
+  "competitionRules.forbidden.title": "You don't have access to the rules",
+  "competitionRules.forbidden.description":
+    "Ask the organizer to give you access to this competition.",
+  "competitionRules.notFound.title": "We couldn't find this competition",
+  "competitionRules.notFound.description":
+    "It may have been removed, or the link may be incorrect.",
+  "competitionRules.edit": "Edit rules",
+  "competitionRules.status.draft": "Draft",
+  "competitionRules.status.registration": "Registration open",
+  "competitionRules.status.published": "Published",
+  "competitionRules.status.paused": "Paused",
+  "competitionRules.status.finished": "Finished",
+  "competitionRules.status.archived": "Archived",
+  "competitionRules.notice.draft":
+    "These rules are a draft and can change until the competition is published.",
+  "competitionRules.notice.locked":
+    "The competition structure no longer accepts changes, so these rules are read-only.",
+  "competitionRules.format.title": "Format",
+  "competitionRules.format.label": "Competition type",
+  "competitionRules.format.league": "League",
+  "competitionRules.format.knockout": "Knockout",
+  "competitionRules.format.groups-knockout": "Groups + knockout",
+  "competitionRules.format.league-playoffs": "League + playoffs",
+  "competitionRules.format.teams": "Teams",
+  "competitionRules.format.teamsRange": "{min} to {max}",
+  "competitionRules.format.teamsAtLeast": "From {min}",
+  "competitionRules.stage.league": "League",
+  "competitionRules.stage.groups": "Groups",
+  "competitionRules.stage.knockout": "Knockout",
+  "competitionRules.stage.playoffs": "Playoffs",
+  "competitionRules.stage.description": "Match rules for this stage.",
+  "competitionRules.scoring.title": "Scoring",
+  "competitionRules.scoring.win": "Win",
+  "competitionRules.scoring.draw": "Draw",
+  "competitionRules.scoring.loss": "Loss",
+  "competitionRules.encounter.title": "Encounter",
+  "competitionRules.encounter.matches": "Matches per tie",
+  "competitionRules.encounter.resolution": "Resolution",
+  "competitionRules.encounter.independent": "Each match counts on its own",
+  "competitionRules.encounter.aggregate": "Aggregate score",
+  "competitionRules.value.matches": (params) =>
+    count(params) === 1 ? "1 match" : `${count(params)} matches`,
+  "competitionRules.value.hours": (params) =>
+    count(params) === 1 ? "1 hour" : `${count(params)} hours`,
+  "competitionRules.value.players": (params) =>
+    count(params) === 1 ? "1 player" : `${count(params)} players`,
+  "competitionRules.reschedule.title": "Rescheduling",
+  "competitionRules.reschedule.allowed": "Rescheduling",
+  "competitionRules.reschedule.allowedYes": "Allowed",
+  "competitionRules.reschedule.allowedNo": "Rescheduling is not allowed",
+  "competitionRules.reschedule.max": "Maximum per team",
+  "competitionRules.reschedule.unlimited": "No limit",
+  "competitionRules.reschedule.notice": "Minimum notice",
+  "competitionRules.reschedule.expiry": "Proposal response window",
+  "competitionRules.reschedule.opponent": "Opponent approval",
+  "competitionRules.reschedule.organizer": "Organizer approval",
+  "competitionRules.reschedule.required": "Required",
+  "competitionRules.reschedule.notRequired": "Not required",
+  "competitionRules.roster.title": "Roster",
+  "competitionRules.roster.max": "Maximum players",
+  "competitionRules.roster.default": "{count} (default limit)",
+  "competitionRules.platform.title": "Platform rules",
+  "competitionRules.platform.description": "They apply the same way in every competition.",
+  "competitionRules.tiebreaks.title": "Tiebreakers",
+  "competitionRules.tiebreaks.description": "Applied in this order.",
+  "competitionRules.tiebreaks.points": "Points",
+  "competitionRules.tiebreaks.goalDifference": "Goal difference",
+  "competitionRules.tiebreaks.goalsFor": "Goals for",
+  "competitionRules.awayGoals": "Away goals",
+  "competitionRules.awayGoalsOff": "Not applied",
+  "competitionRules.results.title": "Result validation",
+  "competitionRules.results.confirmation": "Opponent confirmation",
+  "competitionRules.results.window": "Time to respond",
+  "competitionRules.results.windowValue": "24 hours",
+  "competitionRules.results.fallback":
+    "If the opponent doesn't respond in time, the result goes to organizer review.",
+  "competitionRules.results.officialOnly":
+    "Only an approved official result counts toward standings and rankings.",
   "reschedule.title": "Rescheduling",
   "reschedule.description":
     "Review proposals and resolve escalated requests. Silence never accepts a change.",
@@ -2956,7 +3315,39 @@ const en: Catalog = {
     "Club and competition invitations waiting for your reply.",
   "player.gameData.invitations.cta": "View my invitations",
   "pages.organization.teams.title": "Teams",
-  "pages.organization.teams.subtitle": "Teams registered in your organization's competitions.",
+  "pages.organization.teams.subtitle":
+    "Browse your organization's teams and the competitions they take part in.",
+  "org.teams.directory.title": "Team directory",
+  "org.teams.count": ({ count }) => (Number(count) === 1 ? "1 team" : `${count} teams`),
+  "org.teams.countFiltered": ({ shown, total }) => `${shown} of ${total} teams`,
+  "org.teams.search": "Search teams by name",
+  "org.teams.table.team": "Team",
+  "org.teams.table.competitions": "Competitions",
+  "org.teams.created": "Created {date}",
+  "org.teams.entry.approved": "Approved",
+  "org.teams.entry.pending": "Pending",
+  "org.teams.entry.rejected": "Rejected",
+  "org.teams.link": "{competition}: view {team}",
+  "org.teams.noCompetitions": "No competitions",
+  "org.teams.competitionsUnavailable": "Unavailable",
+  "org.teams.loading": "Loading teams…",
+  "org.teams.error": "We couldn't load the organization's teams.",
+  "org.teams.refreshFailed": "We couldn't refresh the teams. Showing the previous data.",
+  "org.teams.partial":
+    "We couldn't load the competitions for every team. Some rows may be incomplete.",
+  "org.teams.partialForbidden":
+    "You don't have access to the competitions of some teams, so those rows are unavailable.",
+  "org.teams.forbidden.title": "You don't have access to teams",
+  "org.teams.forbidden.description":
+    "Your role in this organization doesn't include viewing its team directory.",
+  "org.teams.forbidden.cta": "Back to organization home",
+  "org.teams.empty.title": "No teams yet",
+  "org.teams.empty.description":
+    "Teams appear here once they register in one of your organization's competitions.",
+  "org.teams.empty.cta": "View competitions",
+  "org.teams.noMatches.title": "No teams match",
+  "org.teams.noMatches.description": "We found no teams matching “{query}”. Try another name.",
+  "org.teams.noMatches.clear": "Clear search",
   "pages.organization.players.title": "Players",
   "pages.organization.players.subtitle": "Who plays on each roster in your organization.",
   "pages.organization.invitations.title": "Invitations",
@@ -3092,6 +3483,76 @@ const en: Catalog = {
     "Disagreements over matches or results waiting for your decision.",
   "pages.competition.analytics.title": "Analytics",
   "pages.competition.analytics.subtitle": "Participation and activity in the competition.",
+  "pages.competition.teamPerformance.title": "Team performance",
+  "pages.competition.teamPerformance.subtitle":
+    "A 0–100 score built only from approved official results. It does not replace the standings.",
+  "teamPerformance.loading": "Loading the performance ranking",
+  "teamPerformance.error": "We couldn't load the performance ranking.",
+  "teamPerformance.refreshError": "We couldn't refresh the ranking. Showing the last data loaded.",
+  "teamPerformance.accessError": "We couldn't check your access to statistics.",
+  "teamPerformance.forbidden.title": "You don't have access to this ranking",
+  "teamPerformance.forbidden.description":
+    "Your role doesn't allow reading statistics for this competition.",
+  "teamPerformance.backToCompetition": "Back to the competition",
+  "teamPerformance.notBuilt.title": "No performance ranking yet",
+  "teamPerformance.notBuilt.description":
+    "It is built when official results are approved. Unapproved EA matches don't count.",
+  "teamPerformance.notBuilt.action": "View encounters",
+  "teamPerformance.empty.title": "No teams in the ranking",
+  "teamPerformance.empty.description":
+    "Teams approved for the competition and teams with official results will appear here.",
+  "teamPerformance.projectionIncomplete.title": "Ranking awaiting rebuild",
+  "teamPerformance.projectionIncomplete.description":
+    "Some official results are not fully projected yet. No team gets a score until the ranking is rebuilt.",
+  "teamPerformance.unmatched": ({ count }) =>
+    count === 1
+      ? "1 statistics contribution doesn't match the current official result and doesn't count."
+      : `${count} statistics contributions don't match the current official result and don't count.`,
+  "teamPerformance.criteria.title": "Criteria",
+  "teamPerformance.criteria.description":
+    "The score is the weighted sum of five 0–100 components. If any is missing, the team has no score: it isn't filled with zero and weights aren't redistributed.",
+  "teamPerformance.criteria.window": "Window",
+  "teamPerformance.criteria.windowValue": ({ recent }) =>
+    `Whole competition · form over the last ${recent} encounters`,
+  "teamPerformance.criteria.eligibility": "Eligibility",
+  "teamPerformance.criteria.eligibilityValue": ({ minimum }) =>
+    `At least ${minimum} official encounters and all five components available`,
+  "teamPerformance.criteria.period": "Period",
+  "teamPerformance.criteria.noPeriod": "No official results",
+  "teamPerformance.criteria.updated": "Updated",
+  "teamPerformance.criteria.sources": "Official results",
+  "teamPerformance.criteria.sourcesValue": ({ approved, voided }) =>
+    voided === 0 ? `${approved} approved` : `${approved} approved · ${voided} voided (don't count)`,
+  "teamPerformance.criteria.versions": ({ formula, normalization, window }) =>
+    `Versions: ${formula} · ${normalization} · ${window}`,
+  "teamPerformance.weights.label": "Formula weights",
+  "teamPerformance.weight": ({ weight }) => `${weight}%`,
+  "teamPerformance.table.title": "Ranking",
+  "teamPerformance.table.summary": ({ scored, incomplete }) =>
+    `${scored} scored · ${incomplete} without a score`,
+  "teamPerformance.table.position": "Pos.",
+  "teamPerformance.table.team": "Team",
+  "teamPerformance.table.score": "Score",
+  "teamPerformance.table.encounters": "Encounters",
+  "teamPerformance.table.coverage": "Coverage",
+  "teamPerformance.table.noValue": "No data",
+  "teamPerformance.table.unranked": "No score",
+  "teamPerformance.table.scrollHint": "Scroll the table to see every component.",
+  "teamPerformance.team.unknown": "Team unavailable",
+  "teamPerformance.teamsUnavailable": "We couldn't load team names. The ranking is still valid.",
+  "teamPerformance.metric.results": "Results",
+  "teamPerformance.metric.goalDifference": "Goal difference",
+  "teamPerformance.metric.recentForm": "Recent form",
+  "teamPerformance.metric.offensiveEfficiency": "Attacking efficiency",
+  "teamPerformance.metric.defensiveEfficiency": "Defensive efficiency",
+  "teamPerformance.reason.complete": "Complete",
+  "teamPerformance.reason.no_data": "No official matches",
+  "teamPerformance.reason.insufficient_sample": ({ count, minimum }) =>
+    `Sample too small: ${count} of ${minimum} encounters`,
+  "teamPerformance.reason.missing_components": "Missing components",
+  "teamPerformance.reason.projection_incomplete": "Projection incomplete",
+  "teamPerformance.missing": ({ metrics }) => `Missing: ${metrics}`,
+  "teamPerformance.standingsLink": "View official standings",
   "pages.competition.rules.title": "Rules",
   "pages.competition.rules.subtitle": "Format, tiebreakers, and rescheduling rules in effect.",
   "pages.competitionPlayer.matches.title": "Matches",
@@ -3652,6 +4113,51 @@ const en: Catalog = {
     "You don't have access to the team names. The figures are still available.",
   "competition.teamStats.teamName.refreshFailed":
     "We couldn't refresh the team names. Showing the last ones loaded.",
-};
+  "standings.documentTitle": "Standings",
+  "standings.loading": "Loading the standings",
+  "standings.error": "We couldn't load the standings.",
+  "standings.refreshError":
+    "We couldn't refresh the standings. You're seeing the last successful read.",
+  "standings.teamNames.refreshError":
+    "We couldn't refresh the team names. You're seeing the last names loaded.",
+  "standings.accessError": "We couldn't check your access to the standings.",
+  "standings.forbidden.title": "You can't view the standings",
+  "standings.forbidden.description":
+    "Your account doesn't have permission to see this competition's official table.",
+  "standings.forbidden.back": "Back to the organization",
+  "standings.notFound.title": "We couldn't find this competition",
+  "standings.notFound.description":
+    "The competition no longer exists or the link is wrong. This isn't a permissions problem or a temporary failure.",
+  "standings.empty.title": "No official standings yet",
+  "standings.empty.description":
+    "The table is built only from approved official results and will appear once the first one is approved. EA matches that aren't approved don't count.",
+  "standings.table.label": "Official standings",
+  "standings.table.updated": ({ time }) => `Updated ${time}`,
+  "standings.table.formula": ({ version }) => `Formula ${version}`,
+  "standings.teamNames.error":
+    "We couldn't load the team names. The table shows the figures with a generic name.",
+  "standings.team.loading": "Loading team name",
+  "standings.team.unresolved": "Team name unavailable",
+  "standings.col.position": "Pos.",
+  "standings.col.position.full": "Position",
+  "standings.col.team": "Team",
+  "standings.col.played": "P",
+  "standings.col.played.full": "Matches played",
+  "standings.col.wins": "W",
+  "standings.col.wins.full": "Matches won",
+  "standings.col.draws": "D",
+  "standings.col.draws.full": "Matches drawn",
+  "standings.col.losses": "L",
+  "standings.col.losses.full": "Matches lost",
+  "standings.col.goalsFor": "GF",
+  "standings.col.goalsFor.full": "Goals for",
+  "standings.col.goalsAgainst": "GA",
+  "standings.col.goalsAgainst.full": "Goals against",
+  "standings.col.goalDifference": "GD",
+  "standings.col.goalDifference.full": "Goal difference",
+  "standings.col.points": "Pts",
+  "standings.col.points.full": "Points",
+  "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
+    `${wins} W · ${draws} D · ${losses} L · GF ${goalsFor} · GA ${goalsAgainst}`,};
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;
