@@ -1,7 +1,7 @@
 import { createFutrobClient, type FutrobClient } from "@futrob/sdk";
 import { randomUUID } from "expo-crypto";
 import { API_BASE_URL } from "@/config/env";
-import { clearSession, getSession } from "@/modules/identity/session-store";
+import { clearSessionIfCurrent, getSession } from "@/modules/identity/session-store";
 import { clearOnboardingDraft } from "@/modules/identity/onboarding-draft";
 
 export { FutrobApiError } from "@futrob/sdk";
@@ -13,7 +13,8 @@ export { FutrobApiError } from "@futrob/sdk";
  *
  * Token source is SecureStore only. Do not call Better Auth `get-session`
  * to mint a bearer; silent refresh is blocked until a refresh contract exists.
- * Product 401s drop the local session at this boundary for every resource.
+ * Product 401s drop the local session at this boundary for every resource,
+ * but only when the rejected bearer is still the stored one.
  */
 export function getFutrobClient(): FutrobClient {
   return createFutrobClient({
@@ -29,8 +30,8 @@ async function fetchAndClearSessionOnUnauthorized(
   init?: RequestInit,
 ): Promise<Response> {
   const response = await fetch(input, init);
-  if (response.status === 401) {
-    await clearSession();
+  const bearer = new Headers(init?.headers).get("Authorization")?.replace(/^Bearer /, "");
+  if (response.status === 401 && bearer && (await clearSessionIfCurrent(bearer))) {
     await clearOnboardingDraft();
   }
   return response;
