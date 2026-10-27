@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 import {
   SESSION_STORE_KEYS,
   clearSession,
+  clearSessionIfCurrent,
   getSession,
   resetSessionCredentialStore,
   saveSession,
@@ -82,5 +83,54 @@ describe("session-store", () => {
     expect(store.records.has(SESSION_STORE_KEYS.token)).toBe(false);
     expect(store.records.has(SESSION_STORE_KEYS.user)).toBe(false);
     await expect(getSession()).resolves.toBeNull();
+  });
+
+  it("a pending conditional clear for an earlier token keeps the session saved after it", async () => {
+    let tokenReads = 0;
+    const clearing = Promise.withResolvers<void>();
+    const paused = Promise.withResolvers<void>();
+    setSessionCredentialStore({
+      ...store,
+      getItemAsync: async (key) => {
+        if (key === SESSION_STORE_KEYS.token && ++tokenReads === 2) {
+          clearing.resolve();
+          await paused.promise;
+        }
+        return store.getItemAsync(key);
+      },
+    });
+    await saveSession({ token: "token-ana", user: { id: "ana", name: "Ana", email: "a@x.mx" } });
+
+    const rejectedAna = clearSessionIfCurrent("token-ana");
+    await clearing.promise;
+    const beto = { token: "token-beto", user: { id: "beto", name: "Beto", email: "b@x.mx" } };
+    const logoutThenBeto = clearSession().then(() => saveSession(beto));
+    await new Promise<void>((resolve) => setTimeout(resolve));
+    paused.resolve();
+    await Promise.all([rejectedAna, logoutThenBeto]);
+
+    await expect(getSession()).resolves.toEqual(beto);
+  });
+
+  it("rejects a failed save while allowing the next queued session to persist", async () => {
+    let failNextUserWrite = true;
+    setSessionCredentialStore({
+      ...store,
+      setItemAsync: async (key, value) => {
+        if (key === SESSION_STORE_KEYS.user && failNextUserWrite) {
+          failNextUserWrite = false;
+          throw new Error("secure store full");
+        }
+        await store.setItemAsync(key, value);
+      },
+    });
+    const ana = { token: "token-ana", user: { id: "ana", name: "Ana", email: "a@x.mx" } };
+    const beto = { token: "token-beto", user: { id: "beto", name: "Beto", email: "b@x.mx" } };
+
+    const failed = expect(saveSession(ana)).rejects.toThrow("secure store full");
+    const recovered = saveSession(beto);
+    await Promise.all([failed, recovered]);
+
+    await expect(getSession()).resolves.toEqual(beto);
   });
 });

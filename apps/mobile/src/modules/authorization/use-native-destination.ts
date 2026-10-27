@@ -3,6 +3,7 @@ import type { CompetitionDto, MembershipSummaryDto } from "@futrob/api-contracts
 import { FutrobApiError } from "@futrob/sdk";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { mobileQueryKeys } from "@/modules/query/query-keys";
+import { useSessionGeneration } from "@/modules/query/session-query-client-provider";
 import { allowedPermissionSet, SHELL_PERMISSIONS, scopeForDestination } from "./permissions.ts";
 
 export type Destination =
@@ -47,8 +48,9 @@ async function loadDestination(destination: Destination): Promise<DestinationDat
 export function useNativeDestination(destination: Destination) {
   const orgId = "organizationId" in destination ? destination.organizationId : undefined;
   const competitionId = "competitionId" in destination ? destination.competitionId : undefined;
+  const generation = useSessionGeneration();
   return useQuery({
-    queryKey: mobileQueryKeys.destination({
+    queryKey: mobileQueryKeys.destination(generation, {
       kind: destination.kind,
       organizationId: orgId,
       competitionId,
