@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { OnboardingStepDto } from "@futrob/api-contracts";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { mobileQueryKeys } from "@/modules/query/query-keys";
+import { useSessionGeneration } from "@/modules/query/session-query-client-provider";
 import { NativeOnboardingFlow } from "./onboarding-flow.ts";
 import { clearPendingInvitation, peekPendingInvitation } from "./onboarding-draft.ts";
 import { getSession } from "./session-store.ts";
@@ -14,12 +15,13 @@ export type NativeOnboardingLoad =
 
 export function useNativeOnboardingFlow(step: OnboardingStepDto) {
   const queryClient = useQueryClient();
+  const generation = useSessionGeneration();
   const gate = useSessionGateQuery();
   return useQuery({
-    queryKey: mobileQueryKeys.onboardingFlow(step),
+    queryKey: mobileQueryKeys.onboardingFlow(generation, step),
     enabled: gate.data?.kind === "onboarding",
     queryFn: async (): Promise<NativeOnboardingLoad> => {
-      const result = queryClient.getQueryData<GateResult>(mobileQueryKeys.sessionGate());
+      const result = queryClient.getQueryData<GateResult>(mobileQueryKeys.sessionGate(generation));
       if (result?.kind !== "onboarding") throw new Error("not onboarding");
       const session = await getSession();
       if (!session) throw new Error("no session");

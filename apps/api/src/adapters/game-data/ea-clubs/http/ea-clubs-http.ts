@@ -185,10 +185,17 @@ export class EaClubsHttpClient {
         );
       }
 
-      const raw: unknown = await response.json().catch(() => null);
+      const text = await response.text();
+      let raw: unknown;
+      try {
+        raw = JSON.parse(text);
+      } catch {
+        return ok(null);
+      }
       return ok(raw);
     } catch (cause) {
-      const aborted = cause instanceof Error && cause.name === "AbortError";
+      const aborted =
+        controller.signal.aborted || (cause instanceof Error && cause.name === "AbortError");
       const causeText = cause instanceof Error ? cause.message : String(cause);
       logCorrelatedError("provider.request.failed", {
         provider: "ea-clubs",

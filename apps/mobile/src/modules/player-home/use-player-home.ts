@@ -3,6 +3,7 @@ import { FutrobApiError } from "@futrob/sdk";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { onProductUnauthorized } from "@/modules/identity/session-lifecycle";
 import { mobileQueryKeys } from "@/modules/query/query-keys";
+import { useSessionGeneration } from "@/modules/query/session-query-client-provider";
 import { loadPlayerHome } from "./load-player-home";
 import type { PlayerHomeSnapshot } from "./player-home-model";
 
@@ -22,8 +23,9 @@ type PlayerHomeLoad = {
  * change never presents the previous club's data.
  */
 export function usePlayerHome(externalClubId: string | undefined): PlayerHomeLoad {
+  const generation = useSessionGeneration();
   const profileQuery = useQuery({
-    queryKey: mobileQueryKeys.playerProfile(),
+    queryKey: mobileQueryKeys.playerProfile(generation),
     queryFn: async ({ signal }) => {
       try {
         return await getFutrobClient().players.getProfile({ signal });
@@ -39,7 +41,7 @@ export function usePlayerHome(externalClubId: string | undefined): PlayerHomeLoa
   });
   const firstClub = profileQuery.data?.externalClubs[0]?.externalClubId;
   const homeQuery = useQuery({
-    queryKey: mobileQueryKeys.playerHome(externalClubId),
+    queryKey: mobileQueryKeys.playerHome(generation, externalClubId),
     queryFn: async ({ signal }) => {
       try {
         return await loadPlayerHome({ externalClubId, signal });

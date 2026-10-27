@@ -2,6 +2,7 @@ import { getFutrobClient } from "@/modules/api/futrob-client";
 import { createRunOnceByKey } from "@/modules/query/run-once-by-key";
 import { clearPendingInvitation, savePendingInvitation } from "./onboarding-draft";
 import { resolveSessionGate } from "./session-gate";
+import { getSessionGeneration } from "./session-store";
 
 export type InvitationLinkAcceptState =
   | { readonly status: "idle" }
@@ -9,9 +10,15 @@ export type InvitationLinkAcceptState =
   | { readonly status: "ready"; readonly route: string }
   | { readonly status: "error" };
 
+const IDLE: InvitationLinkAcceptState = { status: "idle" };
 const once = createRunOnceByKey<{ readonly route: string }>();
+/** Keyed by session generation and token: one account's outcome never answers another's link. */
 const snapshots = new Map<string, InvitationLinkAcceptState>();
 const listeners = new Map<string, Set<() => void>>();
+
+function sessionKey(token: string): string {
+  return `${getSessionGeneration()}:${token}`;
+}
 
 function emit(token: string): void {
   const tokenListeners = listeners.get(token);
@@ -40,36 +47,38 @@ export async function acceptInvitationLink(token: string): Promise<{ readonly ro
 }
 
 export function getInvitationLinkAccept(token: string): InvitationLinkAcceptState {
-  return snapshots.get(token) ?? { status: "idle" };
+  return snapshots.get(sessionKey(token)) ?? IDLE;
 }
 
 export function startInvitationLinkAccept(token: string): void {
+  const key = sessionKey(token);
   if (token.length === 0) {
-    snapshots.set(token, { status: "error" });
+    snapshots.set(key, { status: "error" });
     emit(token);
     return;
   }
-  const current = snapshots.get(token);
+  const current = snapshots.get(key);
   if (current && current.status !== "idle") return;
-  snapshots.set(token, { status: "pending" });
+  snapshots.set(key, { status: "pending" });
   emit(token);
   void once
-    .run(token, () => acceptInvitationLink(token))
+    .run(key, () => acceptInvitationLink(token))
     .then(
       (result) => {
-        snapshots.set(token, { status: "ready", route: result.route });
+        snapshots.set(key, { status: "ready", route: result.route });
         emit(token);
       },
       () => {
-        snapshots.set(token, { status: "error" });
+        snapshots.set(key, { status: "error" });
         emit(token);
       },
     );
 }
 
 export function retryInvitationLinkAccept(token: string): void {
-  once.forget(token);
-  snapshots.delete(token);
+  const key = sessionKey(token);
+  once.forget(key);
+  snapshots.delete(key);
   startInvitationLinkAccept(token);
 }
 
