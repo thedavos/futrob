@@ -69,15 +69,32 @@ export function resetSessionCredentialStore(): void {
   credentials = SecureStore;
 }
 
-export async function saveSession(session: Session): Promise<void> {
-  try {
-    await credentials.setItemAsync(TOKEN_KEY, session.token);
-    await credentials.setItemAsync(USER_KEY, JSON.stringify(session.user));
-  } catch (cause) {
-    await clearSession();
-    throw cause;
-  }
-  startGeneration();
+let pendingWrites: Promise<void> = Promise.resolve();
+
+/**
+ * Runs credential writes one at a time. A conditional clear reads, then deletes; without a
+ * single writer, a later sign-in could land between those steps and be deleted.
+ */
+function serializeWrite<T>(write: () => Promise<T>): Promise<T> {
+  const result = pendingWrites.then(write);
+  pendingWrites = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
+
+export function saveSession(session: Session): Promise<void> {
+  return serializeWrite(async () => {
+    try {
+      await credentials.setItemAsync(TOKEN_KEY, session.token);
+      await credentials.setItemAsync(USER_KEY, JSON.stringify(session.user));
+    } catch (cause) {
+      await removeCredentials();
+      throw cause;
+    }
+    startGeneration();
+  });
 }
 
 export async function getSession(): Promise<Session | null> {
@@ -103,21 +120,27 @@ export async function getSession(): Promise<Session | null> {
   return { token, user: user.data };
 }
 
-export async function clearSession(): Promise<void> {
+async function removeCredentials(): Promise<void> {
   const hadToken = (await credentials.getItemAsync(TOKEN_KEY)) !== null;
   await credentials.deleteItemAsync(TOKEN_KEY);
   await credentials.deleteItemAsync(USER_KEY);
   if (hadToken) startGeneration();
 }
 
+export function clearSession(): Promise<void> {
+  return serializeWrite(removeCredentials);
+}
+
 /**
  * Ends the stored session only if it still holds `token`. A rejection of an earlier
  * session's token must not sign out whoever signed in since.
  */
-export async function clearSessionIfCurrent(token: string): Promise<boolean> {
-  if ((await credentials.getItemAsync(TOKEN_KEY)) !== token) return false;
-  await clearSession();
-  return true;
+export function clearSessionIfCurrent(token: string): Promise<boolean> {
+  return serializeWrite(async () => {
+    if ((await credentials.getItemAsync(TOKEN_KEY)) !== token) return false;
+    await removeCredentials();
+    return true;
+  });
 }
 
 export const SESSION_STORE_KEYS = {
