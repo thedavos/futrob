@@ -233,7 +233,7 @@ describe("Team negotiation in the Match Center", () => {
     ]);
   });
 
-  it("B rejects with a reason and the case is disputed, not official; an alternative m-1/m-3 sends both proposals to the organizer", async () => {
+  it("B rejects with a reason and the case is disputed, not official", async () => {
     const user = userEvent.setup();
     const views: Partial<Record<Team, OfficialSelectionViewDto>> = {
       "team-away": pendingSelection([...ANSWERS]),
@@ -248,14 +248,15 @@ describe("Team negotiation in the Match Center", () => {
         },
       },
     });
-    const rejecting = renderEncounter();
+    renderEncounter();
 
     await user.click(await screen.findByRole("button", { name: "Rechazar" }));
     const reject = dialog("Rechazar la propuesta");
     await user.click(reject.getByRole("button", { name: "Rechazar propuesta" }));
     expect(reject.getByText("Escribe un motivo para continuar.")).toBeTruthy();
     expect(posts).toEqual([]);
-    await user.type(reject.getByRole("textbox", { name: "Motivo" }), rejectionReason);
+    await user.click(reject.getByRole("textbox", { name: "Motivo" }));
+    await user.paste(rejectionReason);
     await user.click(reject.getByRole("button", { name: "Rechazar propuesta" }));
 
     expect(await panel().findByText("En disputa")).toBeTruthy();
@@ -267,9 +268,10 @@ describe("Team negotiation in the Match Center", () => {
       panel().getByText("Todavía no es un resultado oficial y no genera estadísticas."),
     ).toBeTruthy();
     expect(panel().queryByText("Resultado oficial aprobado")).toBeNull();
-    rejecting.unmount();
+  });
 
-    posts = [];
+  it("an alternative m-1/m-3 sends both proposals to the organizer", async () => {
+    const user = userEvent.setup();
     const alternative: Partial<Record<Team, OfficialSelectionViewDto>> = {
       "team-away": pendingSelection([...ANSWERS]),
     };
@@ -289,7 +291,8 @@ describe("Team negotiation in the Match Center", () => {
     await user.click(await screen.findByRole("button", { name: "Proponer alternativa" }));
     const counter = dialog("Proponer otros partidos EA");
     expect(counter.getByText(ALTERNATIVE_DESCRIPTION)).toBeTruthy();
-    await user.type(counter.getByRole("textbox", { name: "Motivo" }), alternativeReason);
+    await user.click(counter.getByRole("textbox", { name: "Motivo" }));
+    await user.paste(alternativeReason);
     await user.click(counter.getByRole("button", { name: "Enviar alternativa" }));
 
     expect(await screen.findByText(ALTERNATIVE_SENT)).toBeTruthy();
