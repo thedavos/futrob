@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { asOrganizationId } from "@futrob/shared-kernel";
+import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
+import type { OfficialResult } from "@futrob/results";
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { InMemoryCompetitionEntryRepository } from "@/adapters/competitions/competition-entry.repositories.ts";
 import { InMemoryOfficialResultRepository } from "@/adapters/results/official-result.repository.ts";
@@ -12,6 +13,8 @@ import {
   RebuildTeamPerformanceRankingUseCase,
   GetTeamPerformanceRankingUseCase,
   STATISTICS_PERMISSION,
+  buildTeamPerformanceRanking,
+  type TeamMatchContribution,
 } from "@futrob/statistics";
 import {
   performanceCompetition,
@@ -58,6 +61,226 @@ async function setup() {
   });
   return { competitions, entries, results, contributions, sources, rankings, lock, rebuild };
 }
+
+async function readSources(results: OfficialResult[], stored: TeamMatchContribution[]) {
+  const context = await setup();
+  context.results.rows.splice(0, context.results.rows.length, ...results);
+  context.contributions.listByCompetition = async () => stored;
+  return context.sources.read(performanceScope);
+}
+
+describe("official team performance source matching", () => {
+  it.each([10, 20, 40])("bounds matching work for %s two-slot results", async (size) => {
+    const pairs = Array.from({ length: size }, (_, i) => [
+      ...performancePair(i + 1, { occurredAt: new Date("2026-08-01T19:00:00Z") }),
+      ...performancePair(i + 1, {
+        id: `second-${i}`,
+        officialSlot: 2,
+        occurredAt: new Date("2026-08-02T19:00:00Z"),
+      }),
+    ]);
+    let reads = 0;
+    const rows = pairs.flat().map((row) => ({
+      ...row,
+      get officialResultId() {
+        reads++;
+        return row.officialResultId;
+      },
+    }));
+    const output = await readSources(pairs.map(officialPerformanceResult), rows);
+    expect(output.projectionComplete).toBe(true);
+    expect(output.contributions).toHaveLength(rows.length);
+    expect(reads).toBeLessThanOrEqual(4 * rows.length);
+  });
+
+  it("preserves canonical sources and the fingerprint for shuffled revisions, slots and voids", async () => {
+    const original = performancePair(1);
+    const corrected = performancePair(1, {
+      id: "corrected",
+      officialResultId: "revision-2",
+      revision: 2,
+    });
+    const secondSlot = performancePair(1, {
+      id: "second",
+      officialResultId: "revision-2",
+      revision: 2,
+      officialSlot: 2,
+    });
+    const voided = performancePair(2);
+    const unmatched = performancePair(3, { teamId: null, correlationStatus: "unmatched" });
+    const current = [...corrected, ...secondSlot, ...unmatched];
+    const results = [
+      officialPerformanceResult(original),
+      officialPerformanceResult([...corrected, ...secondSlot]),
+      { ...officialPerformanceResult(voided), status: "voided" as const },
+      officialPerformanceResult(unmatched),
+    ];
+    const stored = [...original, ...current, ...voided];
+    const before = await readSources(results, stored);
+    expect(before).toEqual({
+      ...performanceScope,
+      teamIds: ["team-a", "team-b", "team-c"].map(asTeamId),
+      contributions: [...current].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
+      revisions: [
+        {
+          officialResultId: "revision-2",
+          encounterId: "encounter-1",
+          revision: 2,
+          status: "approved",
+        },
+        { officialResultId: "result-2", encounterId: "encounter-2", revision: 1, status: "voided" },
+        {
+          officialResultId: "result-3",
+          encounterId: "encounter-3",
+          revision: 1,
+          status: "approved",
+        },
+      ],
+      revisionFingerprint: before.revisionFingerprint,
+      projectionComplete: true,
+      unmatchedContributions: 2,
+    });
+    expect(before.revisionFingerprint).toMatchInlineSnapshot(
+      `"2d47bd627d3463613fa03bb08e5a358933ecce24dd118a00c007bf0fc48fb1ae"`,
+    );
+    const after = await readSources(
+      [results[3]!, results[1]!, results[0]!, results[2]!],
+      [...stored].sort((a, b) => (a.id > b.id ? -1 : a.id < b.id ? 1 : 0)),
+    );
+    expect(after).toEqual(before);
+    const now = new Date("2026-09-01T00:00:00Z");
+    expect(buildTeamPerformanceRanking(after, now)).toEqual(
+      buildTeamPerformanceRanking(before, now),
+    );
+  });
+
+  it("keeps compound identities distinct when IDs contain separators and JSON characters", async () => {
+    const pairs = [
+      performancePair(1, { officialResultId: "r|1|1", encounterId: asEncounterId("e") }),
+      performancePair(2, { officialResultId: "r", encounterId: asEncounterId("1|1|e") }),
+      performancePair(3, { officialResultId: 'r["\\\u0000', encounterId: asEncounterId('e,\"\\') }),
+    ];
+    const output = await readSources(pairs.map(officialPerformanceResult), pairs.flat().reverse());
+    expect(output.projectionComplete).toBe(true);
+    expect(output.contributions).toEqual(pairs.flat());
+  });
+
+  it.each([
+    { name: "missing away", change: (rows: TeamMatchContribution[]) => rows.slice(0, 1) },
+    { name: "duplicate row", change: (rows: TeamMatchContribution[]) => [...rows, rows[0]!] },
+    {
+      name: "two home sides",
+      change: (rows: TeamMatchContribution[]) =>
+        rows.map((row) => ({ ...row, side: "home" as const })),
+    },
+    {
+      name: "two away sides",
+      change: (rows: TeamMatchContribution[]) =>
+        rows.map((row) => ({ ...row, side: "away" as const })),
+    },
+    {
+      name: "wrong result",
+      change: (rows: TeamMatchContribution[]) =>
+        rows.map((row) => ({ ...row, officialResultId: "other" })),
+    },
+    {
+      name: "wrong revision",
+      change: (rows: TeamMatchContribution[]) => rows.map((row) => ({ ...row, revision: 2 })),
+    },
+    {
+      name: "wrong slot",
+      change: (rows: TeamMatchContribution[]) =>
+        rows.map((row) => ({ ...row, officialSlot: 2 as const })),
+    },
+    {
+      name: "wrong encounter",
+      change: (rows: TeamMatchContribution[]) =>
+        rows.map((row) => ({ ...row, encounterId: asEncounterId("other") })),
+    },
+    {
+      name: "foreign organization",
+      change: (rows: TeamMatchContribution[]) =>
+        rows.map((row) => ({ ...row, organizationId: asOrganizationId("other") })),
+    },
+    {
+      name: "foreign competition",
+      change: (rows: TeamMatchContribution[]) =>
+        rows.map((row) => ({ ...row, competitionId: asCompetitionId("other") })),
+    },
+    {
+      name: "wrong scoreboard",
+      change: (rows: TeamMatchContribution[]) => rows.map((row) => ({ ...row, goalsFor: 99 })),
+    },
+  ])("fails closed for $name", async ({ change }) => {
+    const pair = performancePair(1);
+    const output = await readSources([officialPerformanceResult(pair)], change(pair));
+    expect(output.projectionComplete).toBe(false);
+    expect(output.contributions).toEqual([]);
+    expect(
+      buildTeamPerformanceRanking(output, new Date("2026-09-01T00:00:00Z")).rows.every(
+        (row) => row.score === null && row.coverage.reason === "projection_incomplete",
+      ),
+    ).toBe(true);
+  });
+
+  it.each([-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+    "rejects invalid official goals %s even when projected goals agree",
+    async (goals) => {
+      const pair = performancePair(1, { goalsFor: goals });
+      const output = await readSources([officialPerformanceResult(pair)], pair);
+      expect(output.projectionComplete).toBe(false);
+      expect(output.contributions).toEqual([]);
+    },
+  );
+
+  it("rejects invalid official timestamps and uses official time over projected time", async () => {
+    const pair = performancePair(1);
+    const result = officialPerformanceResult(pair);
+    const valid = await readSources(
+      [result],
+      pair.map((row) => ({ ...row, occurredAt: new Date(0) })),
+    );
+    expect(valid.contributions).toEqual(pair);
+    const invalid = await readSources(
+      [
+        {
+          ...result,
+          slots: result.slots.map((slot) => ({ ...slot, occurredAt: new Date(Number.NaN) })),
+        },
+      ],
+      pair,
+    );
+    expect(invalid.projectionComplete).toBe(false);
+    expect(invalid.contributions).toEqual([]);
+  });
+
+  it("does not match a NaN revision or confuse opposite infinite revisions", async () => {
+    const nonComparable = performancePair(1, { revision: Number.NaN });
+    const nan = await readSources([officialPerformanceResult(nonComparable)], nonComparable);
+    expect(nan.projectionComplete).toBe(false);
+    expect(nan.contributions).toEqual([]);
+    const positive = performancePair(1, { revision: Number.POSITIVE_INFINITY });
+    const negative = positive.map((row) => ({ ...row, revision: Number.NEGATIVE_INFINITY }));
+    const infinity = await readSources([officialPerformanceResult(positive)], negative);
+    expect(infinity.projectionComplete).toBe(false);
+    expect(infinity.contributions).toEqual([]);
+  });
+
+  it("keeps the valid side as evidence while refusing scores for an inconsistent pair", async () => {
+    const pair = performancePair(1);
+    const output = await readSources(
+      [officialPerformanceResult(pair)],
+      pair.map((row) => (row.side === "home" ? { ...row, goalsAgainst: 99 } : row)),
+    );
+    expect(output.projectionComplete).toBe(false);
+    expect(output.contributions).toEqual(pair.filter((row) => row.side === "away"));
+    expect(
+      buildTeamPerformanceRanking(output, new Date("2026-09-01T00:00:00Z")).rows.every(
+        (row) => row.score === null,
+      ),
+    ).toBe(true);
+  });
+});
 
 describe("official team performance sources and rebuild", () => {
   it("reads authoritative time, persists scores and includes approved teams without data", async () => {
