@@ -50,4 +50,9 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 - Onboarding invitation and organizer paths — real, but not in this seed; do not claim them via the player path.
 - Player club / game-account / invitations — live routes (`/player/ea-clubs`, `/player/game-accounts`, `/invitations/accept/*`, `/roster-invitations/accept/*`). Visible from `/player` (`Añadir club`, `Vincular cuenta`, sidebar). Not in this seed. `/player/competitions/explore` is mapped.
 - Org picker `/orgs` (`Tus organizaciones`) and teams console `/orgs/$orgId/competitions/$competitionId/teams` — shipped operator screens. `competition-setup` covers create + wizard, including the competitions-index empty CTA `Nueva competición`; do not treat the full index, org home, or teams console as proven through setup.
+- Organization team directory `/orgs/$orgId/teams` (`Equipos`) and members `/orgs/$orgId/settings/members` (`Miembros y roles`) — shipped; visible in the org shell.
+- Official competition reads after publish: standings `/orgs/$orgId/competitions/$competitionId/standings` (`Clasificación`), rankings `.../rankings`, team performance `.../team-performance` (`Rendimiento de equipos`), rules `.../rules` (`Reglamento`). Sidebar entries on a competition; not this seed.
+- Encounter reschedule (`Solicitar reprogramación` on the Encounter). Visible from `results-match-center`; driving it is not that feature's seed.
+- Public entry-invitation link `/entry-invitations/link/$code` (`apps/web/src/routes/entry-invitations/link.$code.tsx`). Signed-out preview; not the authenticated accept routes already listed above.
+- Player competition matches `/player/competitions/$competitionId/matches` — `PageScaffold` only. The working Team list is `/orgs/$orgId/competitions/$competitionId/matches` (`results-match-center`).
 - Team invitations from setup participants (`Invitar equipo`) — visible on the mapped wizard; driving invitations is not this seed.

@@ -13,8 +13,8 @@ Two Team representatives agree on the EA matches that count for an Encounter, an
 
 ## How to get to it (user POV)
 
-- Organizer: org home → competition link → sidebar `Enfrentamientos` → row `Abrir … vs …` → Encounter.
-- Team representative: sidebar `Competiciones` (`/player/competitions`, `Mis competiciones`) → competition row → sidebar `Partidos` list → row → Encounter.
+- Organizer: org home → competition link → sidebar `Enfrentamientos` (`/orgs/$orgId/competitions/$competitionId/encounters`) → row `Abrir … vs …` → Encounter.
+- Team representative: sidebar `Competiciones` (`/player/competitions`, `Mis competiciones`) → competition row, which links to `/orgs/$orgId/competitions/$competitionId/matches` (heading `Partidos`, only Encounters the actor can read) → row → Encounter. Do not open `/player/competitions/$competitionId/matches` — that route is a `PageScaffold` placeholder, not the list.
 - Pending sidebar items and activity rows also link to these routes. A deep link to the Encounter does not prove the navigation entries above.
 
 ## Driving it with verify-futrob
@@ -26,8 +26,8 @@ Preconditions:
 - Data through the product API (`npm run cli --` or `@futrob/sdk` as the organizer): organization, published competition with rules (`officialMatchesPerEncounter`, `resolutionMode`), two approved Teams with captains, EA club connections, fixture generated at a time that matches real EA matches. Then run real sync jobs (`sync-job-enqueue <org> <club> --platform common-gen5 --edition fc27 --match-type friendlyMatch|leagueMatch|playoffMatch`, `sync-job-run`) so candidates come from persisted observations.
 - Find a usable EA sample first: `GET /api/v1/game-data/clubs/<club>/matches?matchType=…` through the API (live egress) and look for a pair of clubs with several matches inside the ±6 h candidate window. X/Y vs X/Z needs three matches of one pair; flags need a match with `wasDisconnected` or partial data.
 
-- **List.** As organizer, click the competition and `Enfrentamientos`; assert one link per paired Encounter and the status text. Open it by clicking the row.
-- **Team flow.** As A, assign candidates, read `Vista previa`, `Proponer selección` → `Enviar propuesta`. As B, answer. Read back from the other captain's view and Postgres (`official_match_selections`, `official_selection_proposals`, `official_selection_actions`, `official_results`, contributions).
+- **List.** As organizer, click the competition and `Enfrentamientos`; assert one link per paired Encounter and the status text (`Programado` after `e2e-golden-path` with no official result). Open it by clicking the row. Heading is `Enfrentamientos`. The team twin `/matches` uses heading `Partidos` and the same rows the actor may read. Without EA observations, stop here and mark `res-team` / `res-review` / `res-recovery` `verified-unreachable` (need four isolated sessions plus synced candidates).
+- **Team flow.** As A, assign candidates, read `Vista previa`, `Proponer selección` → `Enviar propuesta`. As B, answer. Read back from the other captain's view and Postgres (`official_match_selections`, `official_selection_proposals`, `official_selection_actions`, `official_results`, contributions). The organizer sees region `Selección oficial` with `Actúas por` and copy `No puedes ver ni operar la selección oficial de este enfrentamiento.` — that panel is not the Team path.
 - **Review.** As organizer, `Tomar el caso` with a reason, then `Aprobar una propuesta` (choose the proposal, reason, acknowledgement if flags) or `Devolver a selección`. Verify exact references in `official_results.slots`, approval basis, audit actions and contributions, plus `npm run cli -- standings`.
 - **Conflict.** Open the same command dialog in two organizer sessions; submit in one, then the other. Expect 409 `results.selection_version_conflict`, the explanation, kept text and no resend.
 - **Recovery.** Fail the command transport only (for example CDP `Fetch.failRequest` at request stage, then at response stage after the real server answered). Retry from the dialog and confirm the same `commandKey` and payload and identical row counts.
@@ -39,5 +39,7 @@ Preconditions:
 - Playwright `route.fetch` resolves `localhost` to IPv4 while Vite listens on `[::1]`; use CDP `Fetch` instead to drop a real response.
 - `Hubo desconexión` / `Datos parciales` candidates route a confirmed selection to `organizer_review`; approving needs the acknowledgement, and an approval without it is 409 `results.integrity_flags_not_acknowledged`.
 - A reference held by a live selection cannot be proposed elsewhere (`reference_already_claimed`); returning to selection releases it.
-- The organizer sees region `Selección oficial` with `Actúas por` but the server denies the Team read; that panel is not an organizer path.
+- The organizer sees region `Selección oficial` with `Actúas por` but the server denies the Team read (`No puedes ver ni operar la selección oficial de este enfrentamiento.`); that panel is not an organizer path.
+- Encounter chrome also exposes `Solicitar reprogramación` / `Actualizar reprogramaciones` and empty `Sin solicitudes de reprogramación`. Driving reschedule is not this seed (see the map README).
+- `/player/competitions/$competitionId/matches` is a scaffold (`PageScaffold`). The working Team list is `/orgs/$orgId/competitions/$competitionId/matches`.
 - Do not inject selection or result rows by SQL; read Postgres only.

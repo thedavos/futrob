@@ -90,6 +90,8 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Competition name | textbox `Nombre de la competición` |
 | Create competition | form submit `Crear competición` (not the empty-index CTA) |
 | Setup header | `Configurar competición` (not `Configurar <name>`) |
+| Setup save | button `Guardar borrador` (with `Continuar` on steps 1–4; with registration/publish on review) |
+| Review edit | `Editar {title}` on `Información general`, `Formato`, `Reglas`, `Participantes` only — not on `Vista previa` / `Lista para publicar` |
 
 Do not drive by coordinates or tab order. After each mutation, snapshot the resulting URL and a visible heading — not only the click.
 
@@ -167,6 +169,8 @@ These are real product destinations. Do not claim them verified through a differ
 - Superuser / provider-health admin
 - Player club / game-account / invitations (`/player/ea-clubs`, `/player/game-accounts`, invitation accept routes). The player competitions **index** (`/player/competitions`, Mis competiciones) is not this seed; `/player/competitions/explore` is mapped.
 - Organizer and invitation onboarding (do not claim them via the player path)
+- Official competition reads (standings, rankings, team performance, rules), org Equipos / Miembros y roles, Encounter reschedule, public invitation link `/entry-invitations/link/$code`. See `features/README.md`.
+- `/player/competitions/$competitionId/matches` is a scaffold; the Team list is org-scoped (see `results-match-center`)
 
 ## Maintenance
 
