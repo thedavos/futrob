@@ -182,7 +182,7 @@ export function createStatisticsModule(deps: {
       projectOfficialResult,
       rebuildCompetitionStatistics: new RebuildCompetitionStatisticsUseCase({
         officialResults: deps.resultReader,
-        projectOfficialResult,
+        identities,
         contributions,
         competitionStats,
         personalStats,

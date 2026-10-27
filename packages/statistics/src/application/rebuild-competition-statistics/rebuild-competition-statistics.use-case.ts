@@ -4,7 +4,6 @@ import type {
   OfficialResultReaderPort,
 } from "@futrob/results";
 import {
-  assertNever,
   ok,
   type ClockPort,
   type CompetitionId,
@@ -23,6 +22,7 @@ import type { ProjectOfficialResultError } from "../../domain/errors/project-off
 import type { CompetitionMatchRulesReaderPort } from "../../domain/ports/competition-match-rules-reader.port.ts";
 import type { CompetitionStandingSnapshotRepository } from "../../domain/ports/competition-standing-snapshot.repository.ts";
 import type { PlayerCompetitionStatsRepository } from "../../domain/ports/player-competition-stats.repository.ts";
+import type { PlayerIdentityResolverPort } from "../../domain/ports/player-identity-resolver.port.ts";
 import type { PlayerMatchContributionRepository } from "../../domain/ports/player-match-contribution.repository.ts";
 import type { PlayerPersonalStatsRepository } from "../../domain/ports/player-personal-stats.repository.ts";
 import type { TeamCompetitionStatsRepository } from "../../domain/ports/team-competition-stats.repository.ts";
@@ -33,7 +33,7 @@ import {
   buildCompetitionStandings,
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
-import type { ProjectOfficialResultUseCase } from "../project-official-result/project-official-result.use-case.ts";
+import { projectOfficialResultContributions } from "../project-official-result/project-official-result-projection.ts";
 import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type {
@@ -56,7 +56,7 @@ export interface RebuildCompetitionStatisticsOutput {
 
 export interface RebuildCompetitionStatisticsDependencies {
   readonly officialResults: OfficialResultReaderPort;
-  readonly projectOfficialResult: Pick<ProjectOfficialResultUseCase, "execute">;
+  readonly identities: PlayerIdentityResolverPort;
   readonly contributions: PlayerMatchContributionRepository;
   readonly competitionStats: PlayerCompetitionStatsRepository;
   readonly personalStats: PlayerPersonalStatsRepository;
@@ -118,24 +118,17 @@ export class RebuildCompetitionStatisticsUseCase {
       let officialResultsProjected = 0;
       let contributionsProjected = 0;
 
+      // Aggregates and standings are rebuilt once below from the full set, not per result.
       for (const officialResult of latestResults) {
-        switch (officialResult.status) {
-          case "approved": {
-            const projected = await this.deps.projectOfficialResult.execute({
-              officialResultId: officialResult.id,
-              rebuildRankings: false,
-              resolutionMode: frozenByEncounter.get(officialResult.encounterId),
-            });
-            if (!projected.isOk()) throw projected.error;
-            officialResultsProjected += 1;
-            contributionsProjected += projected.value.contributionsProjected;
-            break;
-          }
-          case "voided":
-            break;
-          default:
-            assertNever(officialResult.status, "Unsupported official result status");
-        }
+        const projected = await projectOfficialResultContributions(
+          this.deps,
+          officialResult,
+          frozenByEncounter.get(officialResult.encounterId),
+        );
+        await this.deps.contributions.saveMany(projected.players);
+        await this.deps.teamContributions.saveMany(projected.teams);
+        if (officialResult.status === "approved") officialResultsProjected += 1;
+        contributionsProjected += projected.players.length;
       }
 
       const currentPlayers = await this.deps.contributions.listByCompetition(input.competitionId);

@@ -5,6 +5,8 @@ import {
   asEncounterId,
   asOrganizationId,
   asTeamId,
+  type EventPublisherPort,
+  type TransactionPort,
 } from "@futrob/shared-kernel";
 import {
   asEncounterStageId,
@@ -38,7 +40,10 @@ import type {
 } from "../../index.ts";
 import { ProjectOfficialResultUseCase } from "./project-official-result.use-case.ts";
 import { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
-import { RebuildCompetitionStatisticsUseCase } from "../rebuild-competition-statistics/rebuild-competition-statistics.use-case.ts";
+import {
+  RebuildCompetitionStatisticsUseCase,
+  type RebuildCompetitionStatisticsDependencies,
+} from "../rebuild-competition-statistics/rebuild-competition-statistics.use-case.ts";
 
 class ContributionRepository implements PlayerMatchContributionRepository {
   readonly rows = new Map<string, PlayerMatchContribution>();
@@ -247,8 +252,10 @@ class TeamCompetitionStatsRepo implements TeamCompetitionStatsRepository {
 
 class StandingSnapshotRepository implements CompetitionStandingSnapshotRepository {
   readonly rows = new Map<string, CompetitionStandingSnapshot>();
+  writes = 0;
 
   async upsert(snapshot: CompetitionStandingSnapshot): Promise<void> {
+    this.writes += 1;
     this.rows.set(snapshot.competitionId, snapshot);
   }
 
@@ -342,18 +349,23 @@ function makeHarness(input: {
   const teamContributions = new TeamContributionRepository();
   const teamCompetitionStats = new TeamCompetitionStatsRepo();
   const standings = new StandingSnapshotRepository();
+  const reads = { encounters: 0, pointsRules: 0 };
+  const getPointsRules: CompetitionMatchRulesReaderPort["getPointsRules"] =
+    input.getPointsRules ??
+    (async () =>
+      input.pointsRules === undefined
+        ? {
+            winPoints: 3,
+            drawPoints: 1,
+            lossPoints: 0,
+            resolutionMode: "independent_matches",
+          }
+        : input.pointsRules);
   const matchRules: CompetitionMatchRulesReaderPort = {
-    getPointsRules:
-      input.getPointsRules ??
-      (async () =>
-        input.pointsRules === undefined
-          ? {
-              winPoints: 3,
-              drawPoints: 1,
-              lossPoints: 0,
-              resolutionMode: "independent_matches",
-            }
-          : input.pointsRules),
+    async getPointsRules(query) {
+      reads.pointsRules += 1;
+      return getPointsRules(query);
+    },
   };
   const encountersById = new Map(
     (input.encounters ?? (input.encounter ? [input.encounter] : [])).map((snapshot) => [
@@ -364,10 +376,32 @@ function makeHarness(input: {
   const encounterReader =
     encountersById.size > 0
       ? {
-          getById: async (encounterId: EncounterScheduleSnapshot["encounterId"]) =>
-            encountersById.get(encounterId) ?? null,
+          getById: async (encounterId: EncounterScheduleSnapshot["encounterId"]) => {
+            reads.encounters += 1;
+            return encountersById.get(encounterId) ?? null;
+          },
         }
       : undefined;
+  const clock = { now: () => new Date("2026-08-11T07:00:00.000Z") };
+  const transaction: TransactionPort = { runInTransaction: async (operation) => operation() };
+  const events: string[] = [];
+  const eventPublisher: EventPublisherPort = {
+    async publish(event) {
+      events.push(event.eventName);
+    },
+    async publishMany(batch) {
+      events.push(...batch.map((event) => event.eventName));
+    },
+  };
+  const rankings = new RankingSnapshotRepository();
+  const rebuildRankings = new RebuildCompetitionRankingsUseCase({
+    contributions,
+    teamContributions,
+    rankings,
+    eventPublisher,
+    transaction,
+    clock,
+  });
   const project = new ProjectOfficialResultUseCase({
     officialResults,
     identities,
@@ -378,13 +412,23 @@ function makeHarness(input: {
     teamCompetitionStats,
     standings,
     matchRules,
-    transaction: { runInTransaction: async (operation) => operation() },
-    clock: { now: () => new Date("2026-08-11T07:00:00.000Z") },
+    rebuildRankings,
+    transaction,
+    clock,
     encounterReader,
   });
   return {
     byId,
     officialResults,
+    identities,
+    matchRules,
+    clock,
+    reads,
+    transaction,
+    events,
+    eventPublisher,
+    rankings,
+    rebuildRankings,
     project,
     contributions,
     competitionStats,
@@ -746,7 +790,7 @@ describe("ProjectOfficialResultUseCase", () => {
     });
     const rebuild = new RebuildCompetitionStatisticsUseCase({
       officialResults: harness.officialResults,
-      projectOfficialResult: harness.project,
+      identities: harness.identities,
       contributions: harness.contributions,
       competitionStats: harness.competitionStats,
       personalStats: harness.personalStats,
@@ -1372,7 +1416,7 @@ describe("ProjectOfficialResultUseCase", () => {
     const rankings = new RankingSnapshotRepository();
     const rebuild = new RebuildCompetitionStatisticsUseCase({
       officialResults: harness.officialResults,
-      projectOfficialResult: harness.project,
+      identities: harness.identities,
       contributions: harness.contributions,
       competitionStats: harness.competitionStats,
       personalStats: harness.personalStats,
@@ -1380,6 +1424,7 @@ describe("ProjectOfficialResultUseCase", () => {
       teamCompetitionStats: harness.teamCompetitionStats,
       standings: harness.standings,
       matchRules: { getPointsRules: async () => points() },
+      encounterReader: harness.encounterReader,
       rebuildRankings: new RebuildCompetitionRankingsUseCase({
         contributions: harness.contributions,
         teamContributions: harness.teamContributions,
@@ -1467,7 +1512,7 @@ describe("ProjectOfficialResultUseCase", () => {
     const rankings = new RankingSnapshotRepository();
     const rebuild = new RebuildCompetitionStatisticsUseCase({
       officialResults: harness.officialResults,
-      projectOfficialResult: harness.project,
+      identities: harness.identities,
       contributions: harness.contributions,
       competitionStats: harness.competitionStats,
       personalStats: harness.personalStats,
@@ -1502,6 +1547,370 @@ describe("ProjectOfficialResultUseCase", () => {
     });
   });
 });
+
+describe("RebuildCompetitionStatisticsUseCase", () => {
+  const competitionId = asCompetitionId("competition-1");
+  const matched = (playerProfileId: string): PlayerIdentityResolution => ({
+    status: "matched",
+    playerProfileId,
+    gameAccountId: `account-${playerProfileId}`,
+  });
+
+  it.each([10, 20, 40])(
+    "rebuilds %i results with one standings write and reads linear in the result count",
+    async (size) => {
+      const results = Array.from({ length: size }, (_, index) =>
+        officialResult({
+          id: `result-${index}`,
+          encounterId: `encounter-${index}`,
+          players: [player({ externalPlayerId: "scorer" })],
+        }),
+      );
+      const harness = makeHarness({
+        results,
+        resolutions: { scorer: matched("profile-1") },
+        encounters: results.map(defaultEncounter),
+      });
+      const { rebuild, rankingRebuilds } = makeRebuild(harness);
+
+      const rebuilt = await rebuild.execute({ competitionId });
+
+      expect(rebuilt.isOk() && rebuilt.value).toEqual({
+        competitionId,
+        officialResultsProjected: size,
+        contributionsProjected: size,
+      });
+      expect(harness.standings.writes).toBe(1);
+      expect(rankingRebuilds()).toBe(1);
+      expect(harness.reads.encounters).toBeLessThanOrEqual(2 * size);
+      expect(harness.reads.pointsRules).toBeLessThanOrEqual(2 * size);
+      expect(
+        (await harness.standings.findByCompetition(competitionId))?.rows.find(
+          (row) => row.teamId === asTeamId("home-team"),
+        ),
+      ).toMatchObject({ played: size, wins: size, points: 3 * size });
+      expect(
+        await harness.competitionStats.findByPlayerAndCompetition("profile-1", competitionId),
+      ).toMatchObject({ matchesPlayed: size, totals: { goals: size } });
+    },
+  );
+
+  it("rebuilds the same state that projecting each official result produced", async () => {
+    const knockoutStageId = asEncounterStageId("stage-knockout");
+    const lineup = (goals: number) => [
+      player({ externalPlayerId: "home-player", externalClubId: "club-1", goals }),
+      player({ externalPlayerId: "away-player", externalClubId: "club-2", goals: 1 }),
+      player({ externalPlayerId: "ghost", externalClubId: "club-2", goals: 0 }),
+    ];
+    const single = officialResult({
+      id: "result-single",
+      encounterId: "encounter-single",
+      homeGoals: 2,
+      awayGoals: 1,
+      players: lineup(2),
+    });
+    const twoLeg = twoLegResult({
+      id: "result-two-leg",
+      encounterId: "encounter-two-leg",
+      homeGoalsFirst: 1,
+      awayGoalsFirst: 0,
+      homeGoalsSecond: 0,
+      awayGoalsSecond: 2,
+    });
+    const aggregate: OfficialResult = {
+      ...twoLeg,
+      slots: twoLeg.slots.map((slot) => ({ ...slot, players: lineup(slot.homeGoals) })),
+    };
+    const corrected = officialResult({
+      id: "result-corrected-1",
+      encounterId: "encounter-corrected",
+      homeGoals: 5,
+      awayGoals: 0,
+      players: lineup(5),
+    });
+    const correction = {
+      ...officialResult({
+        id: "result-corrected-2",
+        encounterId: "encounter-corrected",
+        homeGoals: 1,
+        awayGoals: 1,
+        players: lineup(1),
+      }),
+      revision: 2,
+    };
+    const voidable = officialResult({
+      id: "result-voided-1",
+      encounterId: "encounter-voided",
+      homeGoals: 4,
+      awayGoals: 0,
+      players: lineup(4),
+    });
+    const voided: OfficialResult = {
+      ...voidable,
+      id: "result-voided-2",
+      revision: 2,
+      status: "voided",
+    };
+    let liveMode: StandingResolutionMode = "aggregate_score";
+    const harness = makeHarness({
+      results: [single, aggregate, corrected, correction, voidable, voided],
+      resolutions: { "home-player": matched("profile-1"), "away-player": matched("profile-2") },
+      encounters: [
+        defaultEncounter(single),
+        {
+          ...defaultEncounter(aggregate),
+          stageId: knockoutStageId,
+          officialMatchCount: 2,
+        },
+        defaultEncounter(corrected),
+        defaultEncounter(voidable),
+      ],
+      getPointsRules: async (query) => ({
+        winPoints: 3,
+        drawPoints: 1,
+        lossPoints: 0,
+        resolutionMode: query.stageId === knockoutStageId ? liveMode : "independent_matches",
+      }),
+    });
+    harness.byId.delete(correction.id);
+    harness.byId.delete(voided.id);
+    for (const result of [single, aggregate, corrected, voidable]) {
+      expect((await harness.project.execute({ officialResultId: result.id })).isOk()).toBe(true);
+    }
+    for (const revision of [correction, voided]) {
+      harness.byId.set(revision.id, revision);
+      expect((await harness.project.execute({ officialResultId: revision.id })).isOk()).toBe(true);
+    }
+    const projected = statisticsState(harness, competitionId);
+    expect(projected.teams.filter((row) => row.encounterId === aggregate.encounterId)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ resolutionMode: "aggregate_score" })]),
+    );
+    expect(projected.players.map((row) => row.officialResultId)).not.toContain(corrected.id);
+    expect(projected.players.map((row) => row.encounterId)).not.toContain(voided.encounterId);
+    expect(projected.personalStats["profile-1"]).toMatchObject({
+      matchesPlayed: 4,
+      totals: { goals: 2 + 1 + 0 + 1 },
+    });
+
+    liveMode = "independent_matches";
+    const { rebuild } = makeRebuild(harness);
+    const rebuilt = await rebuild.execute({ competitionId });
+
+    expect(rebuilt.isOk() && rebuilt.value).toEqual({
+      competitionId,
+      officialResultsProjected: 3,
+      contributionsProjected: 12,
+    });
+    expect(statisticsState(harness, competitionId)).toEqual(projected);
+  });
+
+  it("keeps personal stats from other competitions and zeros players left without contributions", async () => {
+    const otherCompetition = officialResult({
+      id: "result-other",
+      encounterId: "encounter-other",
+      competitionId: "competition-2",
+      players: [player({ externalPlayerId: "veteran", goals: 2, minutesPlayed: 90 })],
+    });
+    const kept = officialResult({
+      id: "result-kept",
+      encounterId: "encounter-kept",
+      players: [player({ externalPlayerId: "veteran", goals: 1, minutesPlayed: 45 })],
+    });
+    const dropped = officialResult({
+      id: "result-dropped",
+      encounterId: "encounter-dropped",
+      players: [player({ externalPlayerId: "rookie", goals: 3 })],
+    });
+    const harness = makeHarness({
+      results: [otherCompetition, kept, dropped],
+      resolutions: { veteran: matched("profile-veteran"), rookie: matched("profile-rookie") },
+    });
+    for (const result of [otherCompetition, kept, dropped]) {
+      await harness.project.execute({ officialResultId: result.id });
+    }
+    harness.byId.set(dropped.id, { ...dropped, status: "voided" });
+    const { rebuild } = makeRebuild(harness);
+
+    expect((await rebuild.execute({ competitionId })).isOk()).toBe(true);
+
+    expect(await harness.personalStats.findByPlayerProfile("profile-veteran")).toMatchObject({
+      matchesPlayed: 2,
+      minutes: 135,
+      totals: { goals: 3 },
+    });
+    expect(
+      await harness.competitionStats.findByPlayerAndCompetition("profile-veteran", competitionId),
+    ).toMatchObject({ matchesPlayed: 1, totals: { goals: 1 } });
+    expect(
+      await harness.competitionStats.findByPlayerAndCompetition(
+        "profile-veteran",
+        asCompetitionId("competition-2"),
+      ),
+    ).toMatchObject({ matchesPlayed: 1, totals: { goals: 2 } });
+    expect(
+      await harness.competitionStats.findByPlayerAndCompetition("profile-rookie", competitionId),
+    ).toMatchObject({ matchesPlayed: 0, totals: { goals: 0 } });
+    expect(await harness.personalStats.findByPlayerProfile("profile-rookie")).toMatchObject({
+      matchesPlayed: 0,
+      totals: { goals: 0 },
+    });
+  });
+
+  it("clears every projection when the competition has no approved results left", async () => {
+    const only = officialResult({ players: [player({ externalPlayerId: "solo" })] });
+    const harness = makeHarness({
+      results: [only],
+      resolutions: { solo: matched("profile-solo") },
+    });
+    await harness.project.execute({ officialResultId: only.id });
+    harness.byId.set(only.id, { ...only, status: "voided" });
+    const { rebuild } = makeRebuild(harness);
+
+    const rebuilt = await rebuild.execute({ competitionId });
+
+    expect(rebuilt.isOk() && rebuilt.value).toEqual({
+      competitionId,
+      officialResultsProjected: 0,
+      contributionsProjected: 0,
+    });
+    expect(await harness.contributions.listByCompetition(competitionId)).toEqual([]);
+    expect(await harness.teamContributions.listByCompetition(competitionId)).toEqual([]);
+    expect(await harness.standings.findByCompetition(competitionId)).toMatchObject({ rows: [] });
+    expect(await harness.rankings.listByCompetition(competitionId)).toEqual([]);
+    expect(
+      await harness.competitionStats.findByPlayerAndCompetition("profile-solo", competitionId),
+    ).toMatchObject({ matchesPlayed: 0 });
+  });
+
+  it("throws out of the rebuild transaction when projecting a result fails", async () => {
+    const first = officialResult({
+      id: "result-1",
+      encounterId: "encounter-1",
+      players: [player({ externalPlayerId: "fine" })],
+    });
+    const second = officialResult({
+      id: "result-2",
+      encounterId: "encounter-2",
+      players: [player({ externalPlayerId: "broken" })],
+    });
+    const harness = makeHarness({ results: [first, second], resolutions: {} });
+    const failure = new Error("identity resolver unavailable");
+    const outcomes: string[] = [];
+    const { rebuild, rankingRebuilds } = makeRebuild(harness, {
+      identities: {
+        async resolve(correlation) {
+          if (correlation.externalPlayerId === "broken") throw failure;
+          return { status: "unmatched" };
+        },
+      },
+      transaction: {
+        async runInTransaction(operation) {
+          try {
+            const value = await operation();
+            outcomes.push("commit");
+            return value;
+          } catch (error) {
+            outcomes.push("rollback");
+            throw error;
+          }
+        },
+      },
+    });
+
+    await expect(rebuild.execute({ competitionId })).rejects.toBe(failure);
+    expect(outcomes).toEqual(["rollback"]);
+    expect(harness.standings.writes).toBe(0);
+    expect(rankingRebuilds()).toBe(0);
+    expect(harness.events).not.toContain("statistics.competition-stats-rebuilt");
+  });
+
+  it("still updates aggregates, standings and rankings when one result is approved then voided", async () => {
+    const result = officialResult({
+      players: [player({ externalPlayerId: "scorer", goals: 2 })],
+    });
+    const harness = makeHarness({
+      results: [result],
+      resolutions: { scorer: matched("profile-1") },
+      encounters: [defaultEncounter(result)],
+    });
+
+    expect((await harness.project.execute({ officialResultId: result.id })).isOk()).toBe(true);
+    expect(
+      await harness.competitionStats.findByPlayerAndCompetition("profile-1", competitionId),
+    ).toMatchObject({ matchesPlayed: 1, totals: { goals: 2 } });
+    expect(
+      (await harness.standings.findByCompetition(competitionId))?.rows.find(
+        (row) => row.teamId === asTeamId("home-team"),
+      ),
+    ).toMatchObject({ played: 1, points: 3 });
+    expect(await harness.rankings.findByCompetitionAndKind(competitionId, "scorer")).toMatchObject({
+      rows: [expect.objectContaining({ playerProfileId: "profile-1", value: 2 })],
+    });
+
+    harness.byId.set(result.id, { ...result, status: "voided" });
+    expect((await harness.project.execute({ officialResultId: result.id })).isOk()).toBe(true);
+
+    expect(
+      await harness.competitionStats.findByPlayerAndCompetition("profile-1", competitionId),
+    ).toMatchObject({ matchesPlayed: 0, totals: { goals: 0 } });
+    expect(
+      (await harness.standings.findByCompetition(competitionId))?.rows.every(
+        (row) => row.played === 0,
+      ),
+    ).toBe(true);
+    expect(await harness.rankings.listByCompetition(competitionId)).toEqual([]);
+    expect(harness.events.filter((event) => event === "statistics.rankings-updated")).toHaveLength(
+      2,
+    );
+  });
+});
+
+function makeRebuild(
+  harness: ReturnType<typeof makeHarness>,
+  overrides: Partial<RebuildCompetitionStatisticsDependencies> = {},
+) {
+  let rankingRuns = 0;
+  const rebuild = new RebuildCompetitionStatisticsUseCase({
+    officialResults: harness.officialResults,
+    identities: harness.identities,
+    contributions: harness.contributions,
+    competitionStats: harness.competitionStats,
+    personalStats: harness.personalStats,
+    teamContributions: harness.teamContributions,
+    teamCompetitionStats: harness.teamCompetitionStats,
+    standings: harness.standings,
+    matchRules: harness.matchRules,
+    encounterReader: harness.encounterReader,
+    rebuildRankings: {
+      execute(input) {
+        rankingRuns += 1;
+        return harness.rebuildRankings.execute(input);
+      },
+    },
+    eventPublisher: harness.eventPublisher,
+    transaction: harness.transaction,
+    clock: harness.clock,
+    ...overrides,
+  });
+  return { rebuild, rankingRebuilds: () => rankingRuns };
+}
+
+function statisticsState(
+  harness: ReturnType<typeof makeHarness>,
+  competitionId: OfficialResult["competitionId"],
+) {
+  const byId = <Row extends { readonly id: string }>(rows: Iterable<Row>) =>
+    [...rows].sort((left, right) => left.id.localeCompare(right.id));
+  return {
+    players: byId(harness.contributions.rows.values()),
+    teams: byId(harness.teamContributions.rows.values()),
+    competitionStats: Object.fromEntries(harness.competitionStats.rows),
+    personalStats: Object.fromEntries(harness.personalStats.rows),
+    teamCompetitionStats: Object.fromEntries(harness.teamCompetitionStats.rows),
+    standings: harness.standings.rows.get(competitionId) ?? null,
+    rankings: Object.fromEntries(harness.rankings.rows),
+  };
+}
 
 function defaultEncounter(result: OfficialResult): EncounterScheduleSnapshot {
   return {
