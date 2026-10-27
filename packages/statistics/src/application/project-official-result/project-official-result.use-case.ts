@@ -4,7 +4,6 @@ import type {
   OfficialResultReaderPort,
 } from "@futrob/results";
 import {
-  assertNever,
   err,
   ok,
   type ClockPort,
@@ -12,11 +11,6 @@ import {
   type TeamId,
   type TransactionPort,
 } from "@futrob/shared-kernel";
-import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
-import type {
-  StandingResolutionMode,
-  TeamMatchContribution,
-} from "../../domain/entities/team-match-contribution.ts";
 import {
   OfficialResultNotFound,
   type ProjectOfficialResultError,
@@ -40,23 +34,11 @@ import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contributi
 import type { TeamPerformanceRankingLockPort } from "../../domain/ports/team-performance-ranking.repository.ts";
 import type { RebuildTeamPerformanceRankingUseCase } from "../rebuild-team-performance-ranking/rebuild-team-performance-ranking.use-case.ts";
 import type { RebuildCompetitionRankingsUseCase } from "../rebuild-competition-rankings/rebuild-competition-rankings.use-case.ts";
-import {
-  buildPlayerContributions as projectPlayerContributions,
-  buildTeamContributions as projectTeamContributions,
-  type PlayerProjectionDependencies,
-} from "./project-official-result-projection.ts";
+import { projectOfficialResultContributions } from "./project-official-result-projection.ts";
 
 export type ProjectOfficialResultInput =
-  | {
-      readonly officialResultId: string;
-      readonly rebuildRankings?: boolean;
-      readonly resolutionMode?: StandingResolutionMode;
-    }
-  | {
-      readonly encounterId: OfficialResult["encounterId"];
-      readonly rebuildRankings?: boolean;
-      readonly resolutionMode?: StandingResolutionMode;
-    };
+  | { readonly officialResultId: string }
+  | { readonly encounterId: OfficialResult["encounterId"] };
 
 export interface ProjectOfficialResultOutput {
   readonly officialResultId: string;
@@ -156,10 +138,10 @@ export class ProjectOfficialResultUseCase {
       });
     }
 
-    const nextPlayers = await this.playerContributionsForStatus(officialResult);
-    const nextTeams = await this.teamContributionsForStatus(
+    const { players: nextPlayers, teams: nextTeams } = await projectOfficialResultContributions(
+      this.deps,
       officialResult,
-      input.resolutionMode ?? previousTeams[0]?.resolutionMode,
+      previousTeams[0]?.resolutionMode,
     );
     const affectedPlayerProfiles = new Set<string>();
     addMatchedPlayerProfiles(affectedPlayerProfiles, previousPlayers);
@@ -184,13 +166,13 @@ export class ProjectOfficialResultUseCase {
       await this.rebuildStandings(officialResult);
     });
 
-    if (input.rebuildRankings !== false && this.deps.rebuildRankings) {
+    if (this.deps.rebuildRankings) {
       await this.deps.rebuildRankings.execute({
         competitionId: officialResult.competitionId,
       });
     }
 
-    if (input.rebuildRankings !== false && this.deps.rebuildTeamPerformance) {
+    if (this.deps.rebuildTeamPerformance) {
       await this.deps.rebuildTeamPerformance.execute({
         organizationId: officialResult.organizationId,
         competitionId: officialResult.competitionId,
@@ -203,55 +185,6 @@ export class ProjectOfficialResultUseCase {
       contributionsProjected: nextPlayers.length,
       matchedPlayerProfiles: affectedPlayerProfiles.size,
     });
-  }
-
-  private async playerContributionsForStatus(
-    officialResult: OfficialResult,
-  ): Promise<PlayerMatchContribution[]> {
-    switch (officialResult.status) {
-      case "approved":
-        return projectPlayerContributions(this.projectionDeps(), officialResult);
-      case "voided":
-        return [];
-      default:
-        return assertNever(officialResult.status, "Unsupported official result status");
-    }
-  }
-
-  private async teamContributionsForStatus(
-    officialResult: OfficialResult,
-    frozenResolutionMode: StandingResolutionMode | undefined,
-  ): Promise<TeamMatchContribution[]> {
-    switch (officialResult.status) {
-      case "approved": {
-        const encounter =
-          (await this.deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
-        const resolutionMode =
-          frozenResolutionMode ??
-          (
-            (await this.deps.matchRules.getPointsRules({
-              competitionId: officialResult.competitionId,
-              stageId: encounter?.stageId,
-            })) ?? DEFAULT_COMPETITION_MATCH_POINTS
-          ).resolutionMode;
-        return projectTeamContributions(
-          { encounterReader: this.deps.encounterReader },
-          officialResult,
-          resolutionMode,
-        );
-      }
-      case "voided":
-        return [];
-      default:
-        return assertNever(officialResult.status, "Unsupported official result status");
-    }
-  }
-
-  private projectionDeps(): PlayerProjectionDependencies {
-    return {
-      encounterReader: this.deps.encounterReader,
-      identities: this.deps.identities,
-    };
   }
 
   private async rebuildPlayerAggregates(
