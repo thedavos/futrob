@@ -33,6 +33,14 @@ class SingleJobRepository implements ProviderSyncJobRepository {
     return Promise.resolve(this.job);
   }
 
+  findLatest(input: { readonly organizationId: string; readonly dedupeKey: string }) {
+    return Promise.resolve(
+      this.job.organizationId === input.organizationId && this.job.dedupeKey === input.dedupeKey
+        ? this.job
+        : null,
+    );
+  }
+
   recordIngestion(input: Parameters<ProviderSyncJobRepository["recordIngestion"]>[0]) {
     this.job = { ...this.job, ingestedMatches: input.matches };
     return Promise.resolve(true);

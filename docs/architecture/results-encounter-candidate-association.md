@@ -60,7 +60,13 @@ Wired in `apps/api/src/di/results.module.ts`:
 The productive provider-sync job completes through
 `AssociateSyncedProviderMatches` in `apps/api`. The internal enqueue route
 `POST /internal/game-data/sync-jobs` persists the job; its `/:jobId/run` and
-`/run-next` consumers call the composed `executeProviderSyncJob`. After game-data commits the raw
+`/run-next` consumers call the composed `executeProviderSyncJob`. A one-minute
+Cron also calls `POST /internal/game-data/sync-jobs/enqueue-due`. That call
+lists connected EA clubs on `scheduled` or `awaiting_selection` slots whose
+start falls inside the candidate window and persists one recent-matches job per
+club and EA match type. An active job, or a finished job newer than the
+15-minute cooldown, is left untouched. The worker publishes only the ids created
+in that tick. After game-data commits the raw
 observations, normalized matches and the job's `ingested_matches_json` checkpoint
 in one transaction, the completion resolves connected Teams in the
 job's organization, finds Scheduling encounters for both clubs inside the candidate

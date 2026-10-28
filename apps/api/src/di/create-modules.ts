@@ -63,6 +63,7 @@ import { RecalculateRescheduledCandidates } from "@/application/results/recalcul
 import { ListCompetitionDisputesQuery } from "@/application/results/list-competition-disputes.query.ts";
 import { findProvisionedSystemActor } from "@/adapters/identity/configured-system-actor.ts";
 import { AssociateSyncedProviderMatches } from "@/application/game-data/associate-synced-provider-matches.ts";
+import { createDueProviderSyncTargetFeed } from "./due-provider-sync-target.feed.ts";
 
 /**
  * Composition root for apps/api — the only place that wires adapters to use
@@ -247,6 +248,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     providerMatches,
     rawObservations,
     jobs: providerSyncJobs,
+    dueSyncTargets: createDueProviderSyncTargetFeed({
+      pool: input.pool,
+      encounters: scheduling.encounters,
+      matches: scheduling.officialMatches,
+      connections: teams.externalClubConnections,
+    }),
     completion: new AssociateSyncedProviderMatches({
       externalClubTeams: teams.externalClubTeams,
       encounterWindow: scheduling.encounterWindow,

@@ -5,6 +5,7 @@ import {
   ExternalClub,
   GetClubMatchesResponse,
   ProviderHealthResponse,
+  EnqueueDueProviderSyncsResponse,
   ProviderSyncJobResponse,
   SearchClubsResponse,
 } from "@/http/openapi/components.ts";
@@ -94,6 +95,22 @@ export const runProviderSyncJobRoute = defineRoute({
     schema: ProviderSyncJobResponse,
   },
   errors: [401, 409],
+});
+
+export const enqueueDueProviderSyncsRoute = defineRoute({
+  method: "post",
+  path: "/internal/game-data/sync-jobs/enqueue-due",
+  operationId: "enqueueDueProviderSyncs",
+  tags: ["game-data"],
+  summary: "Enqueue provider syncs for official slots inside the candidate window",
+  description:
+    "Service-only Cron target authenticated with the internal bearer secret. Selects connected EA clubs on scheduled or awaiting-selection slots whose start is inside the candidate window, and persists one recent-matches job per club and match type. An active job or a finished job inside the cooldown is not duplicated. The response lists only jobs created by this call so the caller can publish them. Retry converges.",
+  success: {
+    status: 200,
+    description: "Jobs created in this tick, plus counts of covered and deferred targets",
+    schema: EnqueueDueProviderSyncsResponse,
+  },
+  errors: [401],
 });
 
 export const recoverNextProviderSyncJobRoute = defineRoute({

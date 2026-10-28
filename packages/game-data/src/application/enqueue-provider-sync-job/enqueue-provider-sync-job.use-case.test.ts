@@ -27,6 +27,10 @@ class MemoryJobs implements ProviderSyncJobRepository {
     return Promise.resolve(null);
   }
 
+  findLatest(): Promise<ProviderSyncJob | null> {
+    return Promise.resolve(null);
+  }
+
   succeed(): Promise<boolean> {
     return Promise.resolve(false);
   }

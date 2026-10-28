@@ -1,11 +1,15 @@
 import type { Hono } from "hono";
-import { providerSyncJobResponseSchema } from "@futrob/api-contracts";
+import {
+  enqueueDueProviderSyncsResponseSchema,
+  providerSyncJobResponseSchema,
+} from "@futrob/api-contracts";
 import type { ProviderSyncJob } from "@futrob/game-data";
 import type { AppDeps } from "@/app.ts";
 import { currentRequestCorrelation, logCorrelatedInfo } from "@/context/request-correlation.ts";
 import { apiErrorResponse } from "@/http/errors.ts";
 import { createInternalOpenApiRouter } from "@/http/openapi/router.ts";
 import {
+  enqueueDueProviderSyncsRoute,
   persistProviderSyncJobRoute,
   recoverNextProviderSyncJobRoute,
   runProviderSyncJobRoute,
@@ -30,6 +34,11 @@ export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
       },
     });
     return jsonResponse(toSyncJobDto(job), 202);
+  });
+
+  internal.openapi(enqueueDueProviderSyncsRoute, async () => {
+    const result = await deps.modules.gameData.enqueueDueProviderSyncs.execute();
+    return jsonResponse(enqueueDueProviderSyncsResponseSchema.parse(result));
   });
 
   internal.openapi(recoverNextProviderSyncJobRoute, async () => {

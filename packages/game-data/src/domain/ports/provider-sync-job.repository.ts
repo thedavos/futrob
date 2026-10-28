@@ -14,6 +14,11 @@ export interface ProviderSyncJobRepository {
     readonly jobId?: string;
   }): Promise<RunningProviderSyncJob | null>;
   findById(id: string): Promise<ProviderSyncJob | null>;
+  /** Latest row for a dedupe key, including finished jobs the active unique index ignores. */
+  findLatest(input: {
+    readonly organizationId: string;
+    readonly dedupeKey: string;
+  }): Promise<ProviderSyncJob | null>;
   /** Must commit in the same transaction as the ingested ProviderMatches. */
   recordIngestion(input: {
     readonly id: string;

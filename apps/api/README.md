@@ -44,9 +44,12 @@ part of this Railway API's OpenAPI document. It uses the Better Auth session and
 `organizations.read` access for the submitted tenant before it persists through the internal API and
 publishes only `jobId` and `requestId` to `JOB_QUEUE`. Queue deliveries use the
 durable `availableAt` value for delayed retries, stop after the configured attempts, and fall through
-to `futrob-job-dlq`. A one-minute Cron calls the service-only `run-next` recovery endpoint so a job
-survives an interrupted publication or Queue delivery. Replaying a message is safe because claim and
-completion are lease-token guarded.
+to `futrob-job-dlq`. A one-minute Cron calls `POST /internal/game-data/sync-jobs/enqueue-due`
+to persist recent-matches jobs for connected EA clubs that have a scheduled or
+awaiting-selection slot inside the candidate window. Active jobs and finished jobs inside a
+15-minute cooldown are not duplicated. The same Cron still calls `run-next` so a job survives an
+interrupted publication or Queue delivery. The worker publishes only the jobs that tick created.
+Replaying a message is safe because claim and completion are lease-token guarded.
 
 The API caches successful club searches for 30 seconds and club details for five minutes. A
 five-minute stale window is used only after transient provider failures. Recent matches are not

@@ -4,7 +4,7 @@ import type {
   QueuedProviderSyncJob,
   RunningProviderSyncJob,
 } from "@futrob/game-data";
-import { compareByTime } from "@futrob/shared-kernel";
+import { compareByTime, TIME_SORT_DIRECTION } from "@futrob/shared-kernel";
 
 const activeStatuses = new Set<ProviderSyncJob["status"]>(["queued", "running", "retry_scheduled"]);
 
@@ -49,6 +49,18 @@ export class InMemoryProviderSyncJobRepository implements ProviderSyncJobReposit
 
   findById(id: string): Promise<ProviderSyncJob | null> {
     return Promise.resolve(this.jobs.get(id) ?? null);
+  }
+
+  findLatest(input: {
+    readonly organizationId: string;
+    readonly dedupeKey: string;
+  }): Promise<ProviderSyncJob | null> {
+    const latest = [...this.jobs.values()]
+      .filter(
+        (job) => job.organizationId === input.organizationId && job.dedupeKey === input.dedupeKey,
+      )
+      .sort(compareByTime((job) => job.createdAt, TIME_SORT_DIRECTION.desc))[0];
+    return Promise.resolve(latest ?? null);
   }
 
   recordIngestion(input: Parameters<ProviderSyncJobRepository["recordIngestion"]>[0]) {
