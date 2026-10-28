@@ -222,3 +222,9 @@ export const getCompetitionRankingsResponseSchema = z.object({
 });
 
 export type GetCompetitionRankingsResponse = z.infer<typeof getCompetitionRankingsResponseSchema>;
+
+export const rebuildCompetitionStatisticsResponseSchema = z.object({
+  competitionId: z.string().min(1),
+  officialResultsProjected: z.number().int().nonnegative(),
+  contributionsProjected: z.number().int().nonnegative(),
+});

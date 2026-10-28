@@ -195,3 +195,5 @@ npm run typecheck -w @futrob/cli
 # or from root:
 npm run typecheck
 ```
+
+Reconstrucción oficial (requiere superusuario): `npm run cli -- statistics-rebuild <orgId> <compId> --actor <actorId>`. Reconstruye estadísticas, tabla y rankings desde resultados oficiales; devuelve los contadores de proyección.
