@@ -2032,6 +2032,38 @@ const es = {
   "standings.col.points.full": "Puntos",
   "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
     `${wins} G · ${draws} E · ${losses} P · GF ${goalsFor} · GC ${goalsAgainst}`,
+  "fixture.documentTitle": "Calendario",
+  "fixture.loading": "Cargando el calendario",
+  "fixture.error": "No pudimos cargar el calendario.",
+  "fixture.refreshError": "No pudimos actualizar el calendario. Ves la última lectura correcta.",
+  "fixture.notFound.title": "Competición no disponible",
+  "fixture.notFound.description":
+    "Puede que se haya eliminado o que no tengas acceso a su calendario.",
+  "fixture.empty.title": "Aún no hay calendario",
+  "fixture.empty.description": "Cuando se genere el fixture, verás aquí cada etapa y sus rondas.",
+  "fixture.timeZone": ({ zone }) => `Horarios en ${zone}`,
+  "fixture.round.matchday": ({ number }) => `Jornada ${number}`,
+  "fixture.round.final": "Final",
+  "fixture.round.semifinal": "Semifinales",
+  "fixture.round.quarterfinal": "Cuartos de final",
+  "fixture.round.roundOf16": "Octavos de final",
+  "fixture.round.number": ({ number }) => `Ronda ${number}`,
+  "fixture.side.unknownTeam": "Equipo no disponible",
+  "fixture.side.bye": "Descansa",
+  "fixture.side.winner.unknown": "Ganador por definir",
+  "fixture.side.winner.final": "Ganador de la final",
+  "fixture.side.winner.semifinal": ({ order }) => `Ganador de la semifinal ${order}`,
+  "fixture.side.winner.quarterfinal": ({ order }) => `Ganador de cuartos ${order}`,
+  "fixture.side.winner.roundOf16": ({ order }) => `Ganador de octavos ${order}`,
+  "fixture.side.winner.matchday": ({ number, order }) =>
+    `Ganador del cruce ${order} de la jornada ${number}`,
+  "fixture.side.winner.round": ({ number, order }) =>
+    `Ganador del cruce ${order} de la ronda ${number}`,
+  "fixture.side.groupRank": ({ place, group }) => `${place} del grupo ${group}`,
+  "fixture.side.stageRank": ({ place, stage }) => `${place} de ${stage}`,
+  "fixture.slots": ({ count }) => (Number(count) === 1 ? "1 partido" : `${count} partidos`),
+  "fixture.group": ({ group }) => `Grupo ${group}`,
+  "fixture.open": ({ home, away }) => `Abrir ${home} vs ${away}`,
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
@@ -2286,6 +2318,19 @@ export interface MessageParamsByKey {
     readonly goalsFor: string;
     readonly goalsAgainst: string;
   };
+  readonly "fixture.timeZone": { readonly zone: string };
+  readonly "fixture.round.matchday": { readonly number: number };
+  readonly "fixture.round.number": { readonly number: number };
+  readonly "fixture.side.winner.semifinal": { readonly order: number };
+  readonly "fixture.side.winner.quarterfinal": { readonly order: number };
+  readonly "fixture.side.winner.roundOf16": { readonly order: number };
+  readonly "fixture.side.winner.matchday": { readonly number: number; readonly order: number };
+  readonly "fixture.side.winner.round": { readonly number: number; readonly order: number };
+  readonly "fixture.side.groupRank": { readonly place: string; readonly group: string };
+  readonly "fixture.side.stageRank": { readonly place: string; readonly stage: string };
+  readonly "fixture.slots": { readonly count: number };
+  readonly "fixture.group": { readonly group: string };
+  readonly "fixture.open": { readonly home: string; readonly away: string };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -4287,6 +4332,39 @@ const en: Catalog = {
   "standings.col.points.full": "Points",
   "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
     `${wins} W · ${draws} D · ${losses} L · GF ${goalsFor} · GA ${goalsAgainst}`,
+  "fixture.documentTitle": "Schedule",
+  "fixture.loading": "Loading the schedule",
+  "fixture.error": "We couldn't load the schedule.",
+  "fixture.refreshError":
+    "We couldn't refresh the schedule. You're seeing the last successful read.",
+  "fixture.notFound.title": "Competition unavailable",
+  "fixture.notFound.description":
+    "It may have been removed, or you may not have access to its schedule.",
+  "fixture.empty.title": "No schedule yet",
+  "fixture.empty.description":
+    "Once the fixture is generated, each stage and its rounds will show up here.",
+  "fixture.timeZone": ({ zone }) => `Times in ${zone}`,
+  "fixture.round.matchday": ({ number }) => `Matchday ${number}`,
+  "fixture.round.final": "Final",
+  "fixture.round.semifinal": "Semifinals",
+  "fixture.round.quarterfinal": "Quarterfinals",
+  "fixture.round.roundOf16": "Round of 16",
+  "fixture.round.number": ({ number }) => `Round ${number}`,
+  "fixture.side.unknownTeam": "Team unavailable",
+  "fixture.side.bye": "Bye",
+  "fixture.side.winner.unknown": "Winner to be decided",
+  "fixture.side.winner.final": "Winner of the final",
+  "fixture.side.winner.semifinal": ({ order }) => `Winner of semifinal ${order}`,
+  "fixture.side.winner.quarterfinal": ({ order }) => `Winner of quarterfinal ${order}`,
+  "fixture.side.winner.roundOf16": ({ order }) => `Winner of round of 16 match ${order}`,
+  "fixture.side.winner.matchday": ({ number, order }) =>
+    `Winner of match ${order} on matchday ${number}`,
+  "fixture.side.winner.round": ({ number, order }) => `Winner of match ${order} in round ${number}`,
+  "fixture.side.groupRank": ({ place, group }) => `${place} in group ${group}`,
+  "fixture.side.stageRank": ({ place, stage }) => `${place} in ${stage}`,
+  "fixture.slots": ({ count }) => (Number(count) === 1 ? "1 match" : `${count} matches`),
+  "fixture.group": ({ group }) => `Group ${group}`,
+  "fixture.open": ({ home, away }) => `Open ${home} vs ${away}`,
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;
