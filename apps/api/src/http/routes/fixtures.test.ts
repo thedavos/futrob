@@ -119,14 +119,12 @@ describe("apps/api http fixtures", () => {
       await readCurrent(organizer),
     );
     expect(current.fixture).toEqual(fixture);
-    expect(current.teams.map((team) => team.name).toSorted()).toEqual([
+    expect(current.teams.map((team) => team.name).sort()).toEqual([
       "Alpha Fixture",
       "Beta Fixture",
       "Gamma Fixture",
     ]);
-    expect(current.teams.map((team) => team.teamId).toSorted()).toEqual(
-      [...fixture.seed].toSorted(),
-    );
+    expect(current.teams.map((team) => team.teamId).sort()).toEqual([...fixture.seed].sort());
     expect((await readCurrent("fixture-outsider")).status).toBe(404);
 
     const readableEncounter = fixture.stages[0]?.rounds[0]?.encounters.find(
