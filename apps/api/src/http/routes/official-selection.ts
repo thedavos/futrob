@@ -1,16 +1,24 @@
 import { failureToHttp } from "@/http/errors.ts";
 import type { OfficialSelectionCommandOutput } from "@futrob/results";
-import { asEncounterId, asOrganizationId, asTeamId, type Result } from "@futrob/shared-kernel";
+import {
+  asCompetitionId,
+  asEncounterId,
+  asOrganizationId,
+  asTeamId,
+  type Result,
+} from "@futrob/shared-kernel";
 import { type Context, type Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
 import {
   teamOfficialSelectionFailureToHttp,
   operatorOfficialSelectionFailureToHttp,
+  toCompetitionDisputesDto,
   toOfficialSelectionCommandResponse,
   toOfficialSelectionViewDto,
   type TeamOfficialSelectionError,
   type OperatorOfficialSelectionError,
 } from "@/http/mappers/official-selection.ts";
+import { apiErrorResponse } from "@/http/errors.ts";
 import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
@@ -18,6 +26,7 @@ import {
   confirmOfficialSelectionRoute,
   getOperatorOfficialSelectionRoute,
   getTeamOfficialSelectionRoute,
+  listCompetitionDisputesRoute,
   openMatchDisputeRoute,
   proposeAlternativeOfficialSelectionRoute,
   proposeOfficialSelectionRoute,
@@ -84,6 +93,22 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
     });
     if (outcome.isErr()) return operatorOfficialSelectionFailureToHttp(outcome.error);
     return jsonResponse(toOfficialSelectionViewDto(outcome.value));
+  });
+
+  secured.openapi(listCompetitionDisputesRoute, async (c) => {
+    const params = c.req.valid("param");
+    const list = await deps.modules.listCompetitionDisputes.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+    });
+    if (!list) {
+      return apiErrorResponse(404, {
+        code: "competitions.not_found",
+        messageKey: "errors.competitions.not_found",
+      });
+    }
+    return jsonResponse(toCompetitionDisputesDto(list));
   });
 
   secured.openapi(reviewMatchDisputeRoute, async (c) => {
