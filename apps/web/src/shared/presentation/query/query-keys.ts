@@ -154,6 +154,8 @@ export const queryKeys = {
         readonly externalClubId?: string;
       },
     ) => [...queryKeys.gameData.meRecentMatches(), "detail", input] as const,
+    providerHealth: (providerKey: string) =>
+      [...queryKeys.gameData.all, "providers", providerKey, "health"] as const,
     club: (input: {
       readonly externalClubId: string;
       readonly platform: string;

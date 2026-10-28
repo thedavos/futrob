@@ -18,6 +18,7 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
+import { useIsSuperuser } from "@/shared/presentation/permissions/index.ts";
 import { announceIdentityChange } from "@/shared/presentation/query/identity-change.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { accountNavItems } from "@/shared/presentation/shell/nav-registry.ts";
@@ -92,6 +93,7 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
   const name = user?.name?.trim() || user?.email || fallbackName;
   const shortName = abbreviatedDisplayName(name, fallbackName);
   const items = accountNavItems(t);
+  const superuser = useIsSuperuser();
   const trigger = applyStyles(compact ? styles.triggerCompact : styles.triggerExpanded);
   const triggerStyle = compact
     ? trigger.style
@@ -155,6 +157,11 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
             {item.label}
           </DropdownMenuItem>
         ))}
+        {superuser.allowed ? (
+          <DropdownMenuItem onClick={() => void navigate({ to: "/admin/provider-health" })}>
+            {t("shell.account.providerHealth")}
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => {

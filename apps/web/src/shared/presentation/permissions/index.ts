@@ -4,3 +4,4 @@
  */
 export { can, canAll, canAny } from "./can.ts";
 export { useCan, useCapabilities, type CanQuery, type CapabilitiesQuery } from "./use-can.ts";
+export { useIsSuperuser } from "./use-is-superuser.ts";
