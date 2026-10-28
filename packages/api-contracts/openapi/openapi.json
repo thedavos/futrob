@@ -8451,11 +8451,21 @@
         "responses": {
           "200": {
             "description": "Updated role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationRoleAssignment"
+                }
+              }
+            },
             "headers": {
               "X-Request-ID": {
                 "$ref": "#/components/headers/RequestId"
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -26588,6 +26598,37 @@
           "slug",
           "timeZone",
           "logo"
+        ]
+      },
+      "OrganizationRoleAssignment": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actorId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "organizer",
+              "staff",
+              "member"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "organizationId",
+          "actorId",
+          "role",
+          "createdAt"
         ]
       },
       "PingResponse": {
