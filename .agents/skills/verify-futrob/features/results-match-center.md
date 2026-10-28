@@ -14,7 +14,7 @@ Two Team representatives agree on the EA matches that count for an Encounter, an
 ## How to get to it (user POV)
 
 - Organizer: org home → competition link → sidebar `Enfrentamientos` (`/orgs/$orgId/competitions/$competitionId/encounters`) → row `Abrir … vs …` → Encounter.
-- Team representative: sidebar `Competiciones` (`/player/competitions`, `Mis competiciones`) → competition row, which links to `/orgs/$orgId/competitions/$competitionId/matches` (heading `Partidos`, only Encounters the actor can read) → row → Encounter. Do not open `/player/competitions/$competitionId/matches` — that route is a `PageScaffold` placeholder, not the list.
+- Team representative: sidebar `Competiciones` (`/player/competitions`, `Mis competiciones`) → competition row, which links to `/orgs/$orgId/competitions/$competitionId/matches` (heading `Partidos`, only Encounters the actor can read) → row → Encounter. The personal shell and team activity open the same list at `/player/competitions/$competitionId/matches`. That route resolves the organization from the competitions the viewer can access, then renders the Encounter list. A competition outside that list shows `Competición no disponible` and does not request Encounters.
 - Pending sidebar items and activity rows also link to these routes. A deep link to the Encounter does not prove the navigation entries above.
 
 ## Driving it with verify-futrob
@@ -41,5 +41,5 @@ Preconditions:
 - A reference held by a live selection cannot be proposed elsewhere (`reference_already_claimed`); returning to selection releases it.
 - The organizer sees region `Selección oficial` with `Actúas por` but the server denies the Team read (`No puedes ver ni operar la selección oficial de este enfrentamiento.`); that panel is not an organizer path.
 - Encounter chrome also exposes `Solicitar reprogramación` / `Actualizar reprogramaciones` and empty `Sin solicitudes de reprogramación`. Driving reschedule is not this seed (see the map README).
-- `/player/competitions/$competitionId/matches` is a scaffold (`PageScaffold`). The working Team list is `/orgs/$orgId/competitions/$competitionId/matches`.
+- `/player/competitions/$competitionId/matches` is the personal-context twin of the Team list. It uses the same rows, states and Encounter links as `/orgs/$orgId/competitions/$competitionId/matches` after it learns the organization from `GET /api/v1/competitions/mine`. The competitions index still links to the organization URL.
 - Do not inject selection or result rows by SQL; read Postgres only.
