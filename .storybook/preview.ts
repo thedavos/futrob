@@ -76,6 +76,7 @@ const preview: Preview = {
             ],
             "Competition",
             [
+              "Overview",
               "Rules",
               "Teams console",
               "Entry invitation",
