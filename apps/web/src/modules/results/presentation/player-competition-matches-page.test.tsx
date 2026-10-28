@@ -90,7 +90,9 @@ function serve(handlers: { readonly mine: () => Response; readonly list?: () => 
 }
 
 function renderRoute() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryDelay: 0 } },
+  });
   render(
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale="es">
@@ -143,6 +145,24 @@ describe("Player competition matches", () => {
     renderRoute();
 
     expect(await screen.findByText("Aún no hay enfrentamientos")).toBeTruthy();
+  });
+
+  it("retries the encounters request after resolving the competition's organization", async () => {
+    const user = userEvent.setup();
+    let calls = 0;
+    serve({
+      mine: () => Response.json(accessible("competition-1")),
+      list: () => (calls++ < 3 ? failure(503, "api.unavailable") : Response.json(encounters)),
+    });
+    renderRoute();
+
+    expect(await screen.findByText("No pudimos cargar los enfrentamientos.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Partidos" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+    expect(
+      await screen.findByRole("link", { name: "Abrir Pijadores FC vs Sobrenaturales" }),
+    ).toBeTruthy();
   });
 
   it("reports a competition the viewer cannot access as unavailable without reading the list", async () => {
