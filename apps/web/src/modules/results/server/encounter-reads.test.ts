@@ -3,6 +3,7 @@ import { asActorId } from "@futrob/shared-kernel";
 import { createProductApiClient } from "@/context/product-api-client.ts";
 import {
   handleGetEncounterView,
+  handleListCompetitionDisputes,
   handleListEncounterCandidates,
   type ConnectProductApi,
 } from "./encounter-reads.ts";
@@ -49,6 +50,39 @@ function sessionOf(actorId: string, respond: (url: string) => Response) {
 const browserGet = () => new Request("https://app.futrob.test/api/v1/whatever");
 
 describe("Encounter page BFF reads", () => {
+  it("reads the dispute queue as the session actor and preserves a hidden competition", async () => {
+    const queue = {
+      competition: { id: "competition-1", name: "Liga Futrob", timeZone: "America/Lima" },
+      disputes: [],
+    };
+    const operator = sessionOf("actor-operator", () => Response.json(queue));
+    const outsider = sessionOf("actor-outsider", () =>
+      Response.json(
+        { code: "competitions.not_found", messageKey: "errors.competitions.not_found" },
+        { status: 404 },
+      ),
+    );
+    const scope = { organizationId: "org-1", competitionId: "competition-1" };
+
+    const read = await handleListCompetitionDisputes(browserGet(), scope, operator.connect);
+    const hidden = await handleListCompetitionDisputes(browserGet(), scope, outsider.connect);
+
+    expect({ status: read.status, body: await read.json(), sent: operator.sent }).toEqual({
+      status: 200,
+      body: queue,
+      sent: [
+        {
+          url: `${API}/organizations/org-1/competitions/competition-1/disputes`,
+          actor: "actor-operator",
+        },
+      ],
+    });
+    expect({ status: hidden.status, body: await hidden.json() }).toMatchObject({
+      status: 404,
+      body: { code: "competitions.not_found" },
+    });
+  });
+
   it("reads the Encounter as the session actor; a hidden Encounter stays not found", async () => {
     const reader = sessionOf("actor-captain", () => Response.json(view));
     const outsider = sessionOf("actor-outsider", () =>
