@@ -46,7 +46,8 @@ export interface UpdateCompetitionDraftInput extends CompetitionProfileInput {
   readonly region: CompetitionRegion;
   readonly timeZone: string;
   readonly format: CompetitionFormat;
-  readonly rules: Pick<CompetitionRules, "regularStage" | "knockoutStage" | "maxRosterSize">;
+  readonly rules: Pick<CompetitionRules, "regularStage" | "knockoutStage" | "maxRosterSize"> &
+    Partial<Pick<CompetitionRules, "rankingEligibility">>;
 }
 
 export class UpdateCompetitionDraftUseCase {

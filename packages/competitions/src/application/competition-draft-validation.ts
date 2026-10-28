@@ -1,5 +1,8 @@
 import type { CompetitionFormat } from "../domain/entities/competition.ts";
-import type { CompetitionRules } from "../domain/entities/competition-rules.ts";
+import type {
+  CompetitionRankingEligibility,
+  CompetitionRules,
+} from "../domain/entities/competition-rules.ts";
 import type { CompetitionMatchRules } from "../domain/value-objects/resolution-mode.ts";
 
 export function isValidCompetitionRules(
@@ -16,6 +19,8 @@ export function isValidCompetitionRules(
   ) {
     return false;
   }
+  if (rules.rankingEligibility && !isValidRankingEligibility(rules.rankingEligibility))
+    return false;
   return [rules.regularStage, rules.knockoutStage]
     .filter((value): value is CompetitionMatchRules => value != null)
     .every(isValidMatchRules);
@@ -53,5 +58,15 @@ function isValidMatchRules(rules: CompetitionMatchRules): boolean {
   return (
     rules.maxReschedulesPerTeam == null ||
     (Number.isInteger(rules.maxReschedulesPerTeam) && rules.maxReschedulesPerTeam >= 0)
+  );
+}
+
+function isValidRankingEligibility(eligibility: CompetitionRankingEligibility): boolean {
+  return (
+    Number.isInteger(eligibility.minimumMatches) &&
+    eligibility.minimumMatches >= 0 &&
+    Number.isFinite(eligibility.minimumTeamMinutesRatio) &&
+    eligibility.minimumTeamMinutesRatio >= 0 &&
+    eligibility.minimumTeamMinutesRatio <= 1
   );
 }

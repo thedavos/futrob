@@ -9,7 +9,10 @@ export type {
   CompetitionRegion,
   CompetitionStatus,
 } from "./domain/entities/competition.ts";
-export type { CompetitionRules } from "./domain/entities/competition-rules.ts";
+export type {
+  CompetitionRankingEligibility,
+  CompetitionRules,
+} from "./domain/entities/competition-rules.ts";
 export type {
   CompetitionMembership,
   CompetitionMembershipRole,

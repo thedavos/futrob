@@ -533,6 +533,7 @@ function competitionDraft(approvals: {
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: at,
     },
   };
