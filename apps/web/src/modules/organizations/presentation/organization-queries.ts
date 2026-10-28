@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  ChangeOrganizationRoleRequest,
   AcceptInvitationRequest,
   CreateInvitationRequest,
   CreateOrganizationInvitationRequest,
@@ -129,4 +130,32 @@ export function organizationMembersQueryOptions(organizationId: string) {
 
 export function useOrganizationMembersQuery(organizationId: string, enabled: boolean) {
   return useQuery({ ...organizationMembersQueryOptions(organizationId), enabled });
+}
+
+export function useChangeMemberRoleMutation(organizationId: string, actorId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: ChangeOrganizationRoleRequest) =>
+      organizationsBrowserClient.changeMemberRole(organizationId, actorId, input),
+    onSuccess: async () => {
+      // A role change can alter the manager's own capabilities and workspace list.
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.organizations.members(organizationId),
+        }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.organizations.mine() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.authorization.all }),
+      ]);
+    },
+  });
+}
+
+export function useMemberGrantsQuery(organizationId: string, actorId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.organizations.memberGrants(organizationId, actorId),
+    queryFn: ({ signal }) =>
+      organizationsBrowserClient.listMemberGrants(organizationId, actorId, { signal }),
+    enabled,
+  });
 }

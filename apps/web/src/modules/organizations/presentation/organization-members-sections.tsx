@@ -5,6 +5,7 @@ import { OrganizationMemberDetail } from "./organization-member-detail.tsx";
 import { OrganizationMembersList } from "./organization-members-list.tsx";
 import {
   filterOrganizationMembers,
+  type MemberAccessManagement,
   type MemberRoleFilter,
   type MembersSectionState,
   type OrganizationMemberChange,
@@ -15,9 +16,11 @@ import { styles } from "./organization-members-sections.styles.ts";
 export function OrganizationMembersSections({
   members,
   changes,
+  manage,
 }: {
   readonly members: MembersSectionState<OrganizationMemberView>;
   readonly changes: MembersSectionState<OrganizationMemberChange>;
+  readonly manage?: MemberAccessManagement;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -52,7 +55,7 @@ export function OrganizationMembersSections({
         visibleMembers={visible}
         onFiltersChange={changeFilters}
       />
-      <OrganizationMemberDetail id={detailId} member={selectedMember} />
+      <OrganizationMemberDetail id={detailId} manage={manage} member={selectedMember} />
       <OrganizationMemberChanges state={changes} />
     </div>
   );

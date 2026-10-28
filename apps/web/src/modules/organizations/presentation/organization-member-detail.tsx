@@ -17,16 +17,26 @@ import {
 } from "@futrob/ui";
 import memberAccessUrl from "@/assets/illustration-permissions.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import {
+  OrganizationMemberGrants,
+  OrganizationMemberRoleEditor,
+} from "./organization-member-access-controls.tsx";
 import { MembersEmptyState } from "./organization-members-feedback.tsx";
-import { formatMemberDate, type OrganizationMemberView } from "./organization-members-model.ts";
+import {
+  formatMemberDate,
+  type MemberAccessManagement,
+  type OrganizationMemberView,
+} from "./organization-members-model.ts";
 import { styles } from "./organization-members-sections.styles.ts";
 
 export function OrganizationMemberDetail({
   member,
   id,
+  manage,
 }: {
   readonly member: OrganizationMemberView | null;
   readonly id: string;
+  readonly manage?: MemberAccessManagement;
 }) {
   const { t, locale } = useI18n();
   const headingId = `${id}-title`;
@@ -84,6 +94,20 @@ export function OrganizationMemberDetail({
                 </MetaValue>
               </MetaItem>
             </MetaList>
+            {manage?.roles ? (
+              <OrganizationMemberRoleEditor
+                actorId={member.id}
+                key={`${member.id}:${member.role}`}
+                organizationId={manage.organizationId}
+                role={member.role}
+              />
+            ) : null}
+            {manage?.grants ? (
+              <OrganizationMemberGrants
+                actorId={member.id}
+                organizationId={manage.organizationId}
+              />
+            ) : null}
             <div {...applyStyles(styles.copy)}>
               <SectionTitle as="h3">{t("organizations.members.competitionAccess")}</SectionTitle>
               {member.access.kind === "inherited" ? (

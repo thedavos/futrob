@@ -44,6 +44,21 @@ function sectionState<T>(
 }
 
 const ORG = "org-story";
+const STORY_GRANTS = [
+  {
+    id: "grant-story",
+    organizationId: ORG,
+    actorId: "member-lucia",
+    permission: "organizations.update",
+    effect: "allow" as const,
+    scopeType: "organization" as const,
+    scopeId: ORG,
+    grantedByActorId: "member-ana",
+    reason: "Cubre la edición del perfil durante la pretemporada",
+    createdAt: "2026-09-18T12:00:00.000Z",
+    updatedAt: "2026-09-18T12:00:00.000Z",
+  },
+];
 const styles = stylex.create({
   frame: { padding: "1.5rem", backgroundColor: colors.background, minWidth: 0 },
   narrow: { maxWidth: "22.5rem" },
@@ -58,13 +73,20 @@ type StoryArgs = {
   readonly restrictedAccess: boolean;
   readonly membersState: SectionScenario;
   readonly changesState: SectionScenario;
+  readonly canManageRoles: boolean;
+  readonly canManageGrants: boolean;
+  readonly roleChange: "success" | "pending" | "lastOrganizer";
 };
 
 function MembersStoryShell(args: StoryArgs) {
   const [membersRecovered, setMembersRecovered] = useState(false);
   const [changesRecovered, setChangesRecovered] = useState(false);
   const client = useMemo(() => {
-    configureOrganizationsStory({ createInvitation: args.creation });
+    configureOrganizationsStory({
+      createInvitation: args.creation,
+      changeRole: args.roleChange,
+      grants: STORY_GRANTS,
+    });
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -75,7 +97,7 @@ function MembersStoryShell(args: StoryArgs) {
       },
     });
     return queryClient;
-  }, [args.accessLoading, args.canInvite, args.creation]);
+  }, [args.accessLoading, args.canInvite, args.creation, args.roleChange]);
   return (
     <QueryClientProvider client={client}>
       <I18nProvider initialLocale={args.locale} persistLocale={async () => undefined}>
@@ -90,6 +112,11 @@ function MembersStoryShell(args: StoryArgs) {
               allowed: args.canInvite && !args.accessLoading,
               loading: args.accessLoading,
               unavailable: false,
+            }}
+            manage={{
+              organizationId: ORG,
+              roles: args.canManageRoles,
+              grants: args.canManageGrants,
             }}
             organizationId={ORG}
             members={sectionState(
@@ -116,6 +143,9 @@ const meta = {
     restrictedAccess: false,
     membersState: "data",
     changesState: "data",
+    canManageRoles: false,
+    canManageGrants: false,
+    roleChange: "success",
   },
   render: (args) => <MembersStoryShell key={JSON.stringify(args)} {...args} />,
 } satisfies Meta<StoryArgs>;
@@ -157,6 +187,42 @@ export const Narrow: Story = {
     );
     const main = canvas.getByRole("main");
     await expect(main.scrollWidth).toBeLessThanOrEqual(main.clientWidth);
+  },
+};
+
+async function selectMember(canvasElement: HTMLElement, name: RegExp) {
+  const canvas = within(canvasElement);
+  await userEvent.click(await canvas.findByRole("row", { name }));
+  return within(canvas.getByRole("region", { name: "Detalle del miembro" }));
+}
+
+export const ManageRoles: Story = {
+  args: { canManageRoles: true, canManageGrants: true },
+  play: async ({ canvasElement }) => {
+    const detail = await selectMember(canvasElement, /Lucía Pérez/);
+    await expect(await detail.findByText("organizations.update")).toBeVisible();
+    await expect(detail.getByText("Permitido")).toBeVisible();
+    await userEvent.click(detail.getByRole("combobox", { name: "Cambiar rol" }));
+    await userEvent.click(
+      await within(canvasElement.ownerDocument.body).findByRole("option", { name: "Staff" }),
+    );
+    await userEvent.click(detail.getByRole("button", { name: "Guardar rol" }));
+    await expect(await detail.findByText("Rol actualizado")).toBeVisible();
+  },
+};
+
+export const LastOrganizerProtected: Story = {
+  args: { canManageRoles: true, roleChange: "lastOrganizer" },
+  play: async ({ canvasElement }) => {
+    const detail = await selectMember(canvasElement, /Ana Torres/);
+    await userEvent.click(detail.getByRole("combobox", { name: "Cambiar rol" }));
+    await userEvent.click(
+      await within(canvasElement.ownerDocument.body).findByRole("option", { name: "Miembro" }),
+    );
+    await userEvent.click(detail.getByRole("button", { name: "Guardar rol" }));
+    await expect(
+      await detail.findByText(/La organización necesita al menos un organizador/),
+    ).toBeVisible();
   },
 };
 
