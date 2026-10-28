@@ -95,6 +95,7 @@ suite("migration runner", () => {
           "0055_competition_entry_invitations.sql",
           "0055_schedule_change_expiry_resolution.sql",
           "0056_actor_contact_profiles.sql",
+          "0057_competition_ranking_eligibility.sql",
         ]);
         expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
         expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
@@ -136,6 +137,7 @@ suite("migration runner", () => {
           "0055_competition_entry_invitations.sql",
           "0055_schedule_change_expiry_resolution.sql",
           "0056_actor_contact_profiles.sql",
+          "0057_competition_ranking_eligibility.sql",
         ]);
         expect(
           (
