@@ -178,5 +178,53 @@ export function defineOfficialSelectionAuditContract(
         second,
       ]);
     });
+
+    it("lists the competition's live selections under dispute with their active dispute", async () => {
+      const harness = await create();
+      const [tenant, otherTenant] = harness.tenants;
+      const actorId = newActorId();
+      await harness.seedActors(actorId);
+      const open = async (
+        scope: typeof tenant,
+        status: "disputed" | "organizer_review" | null,
+        options: { readonly updatedAt?: Date; readonly dispute?: boolean } = {},
+      ) => {
+        const encounterId = newEncounterId();
+        const created = createTransition(scope, encounterId, actorId, [newRef()]);
+        await harness.selections.commitTransition(created);
+        if (!status) return { encounterId, selection: created.selection, dispute: null };
+        const selection = advance(created.selection, {
+          status,
+          updatedAt: options.updatedAt ?? at(10),
+        });
+        const dispute = options.dispute ? buildDispute(created.selection, actorId) : null;
+        await harness.selections.commitTransition({
+          expectedVersion: 1,
+          selection,
+          newProposals: [],
+          actions: [],
+          dispute: dispute ? { kind: "open", dispute } : null,
+          references: { acquire: [], release: "none" },
+        });
+        return { encounterId, selection, dispute };
+      };
+
+      const disputed = await open(tenant, "disputed", { updatedAt: at(12), dispute: true });
+      const review = await open(tenant, "organizer_review", { updatedAt: at(11) });
+      const negotiating = await open(tenant, null);
+      const otherOrganization = await open(otherTenant, "disputed", { dispute: true });
+      const mine = new Set(
+        [disputed, review, negotiating, otherOrganization].map((row) => row.encounterId),
+      );
+
+      const listed = (await harness.selections.listUnderDispute(tenant)).filter((row) =>
+        mine.has(row.selection.encounterId),
+      );
+
+      expect(listed).toEqual([
+        { selection: review.selection, activeDispute: null },
+        { selection: disputed.selection, activeDispute: disputed.dispute },
+      ]);
+    });
   });
 }
