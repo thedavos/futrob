@@ -192,7 +192,8 @@ export const Narrow: Story = {
 
 async function selectMember(canvasElement: HTMLElement, name: RegExp) {
   const canvas = within(canvasElement);
-  await userEvent.click(await canvas.findByRole("row", { name }));
+  const members = within(canvas.getByRole("region", { name: "Miembros" }));
+  await userEvent.click(await members.findByRole("row", { name }));
   return within(canvas.getByRole("region", { name: "Detalle del miembro" }));
 }
 
