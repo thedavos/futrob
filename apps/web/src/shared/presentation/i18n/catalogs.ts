@@ -978,6 +978,11 @@ const es = {
     "Tú como jugador: rating, atributos y estadísticas de tus partidos recientes.",
   "player.statistics.loading": "Cargando tus estadísticas…",
   "player.statistics.error": "No pudimos cargar tus estadísticas.",
+  "player.competitionStats.emptyTitle": "Aún no hay estadísticas oficiales",
+  "player.competitionStats.emptyDescription":
+    "Aquí aparecerán tus estadísticas cuando se aprueben resultados oficiales en esta competición.",
+  "player.competitionStats.refreshFailed":
+    "No pudimos actualizar tus estadísticas. Se muestran las últimas que cargamos.",
   "player.statistics.emptyTitle": "Aún no hay apariciones tuyas",
   "player.statistics.emptyDescription":
     "Solo vemos los últimos 50 partidos que EA tiene ahora. Si no hay apariciones en el rango, prueba otras fechas.",
@@ -3257,6 +3262,11 @@ const en: Catalog = {
     "You as a player: rating, attributes and statistics from your recent matches.",
   "player.statistics.loading": "Loading your statistics…",
   "player.statistics.error": "We could not load your statistics.",
+  "player.competitionStats.emptyTitle": "No official statistics yet",
+  "player.competitionStats.emptyDescription":
+    "Your statistics will appear here when official results are approved in this competition.",
+  "player.competitionStats.refreshFailed":
+    "We could not refresh your statistics. The last ones we loaded are still shown.",
   "player.statistics.emptyTitle": "No appearances of yours yet",
   "player.statistics.emptyDescription":
     "We can only see the last 50 matches EA has available. If there are no appearances in the range, try other dates.",
