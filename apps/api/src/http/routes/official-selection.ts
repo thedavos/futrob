@@ -1,3 +1,4 @@
+import { failureToHttp } from "@/http/errors.ts";
 import type { OfficialSelectionCommandOutput } from "@futrob/results";
 import { asEncounterId, asOrganizationId, asTeamId, type Result } from "@futrob/shared-kernel";
 import { type Context, type Hono } from "hono";
@@ -13,6 +14,7 @@ import {
 import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
+  voidOfficialResultRoute,
   confirmOfficialSelectionRoute,
   getOperatorOfficialSelectionRoute,
   getTeamOfficialSelectionRoute,
@@ -178,5 +180,28 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
     );
   });
 
+  secured.openapi(voidOfficialResultRoute, async (c) => {
+    const { officialResultId } = c.req.valid("param");
+    const body = c.req.valid("json");
+    const outcome = await deps.modules.voidOfficialResultAndUnproject.execute({
+      actorId: c.get("actorId"),
+      officialResultId,
+      reason: body.reason,
+    });
+    if (outcome.isErr())
+      return failureToHttp(
+        outcome.error,
+        outcome.error.code === "results.official_result_forbidden" ? 403 : 404,
+      );
+    const result = outcome.value;
+    return jsonResponse({
+      id: result.id,
+      revision: result.revision,
+      status: result.status,
+      approvalBasis: result.approvalBasis ?? null,
+      proposalId: result.proposalId ?? null,
+      approvedAt: result.approvedAt.toISOString(),
+    });
+  });
   app.route("/", secured);
 }

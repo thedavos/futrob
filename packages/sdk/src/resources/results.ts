@@ -1,4 +1,8 @@
 import {
+  voidOfficialResultRequestSchema,
+  voidOfficialResultResponseSchema,
+  type VoidOfficialResultRequest,
+  type VoidOfficialResultResponse,
   reviewMatchDisputeRequestSchema,
   resolveMatchDisputeRequestSchema,
   type ReviewMatchDisputeRequest,
@@ -27,6 +31,19 @@ import { apiPath } from "../internal/path.ts";
 
 export function createResultsResource(http: HttpClient) {
   return {
+    async voidOfficialResult(
+      officialResultId: string,
+      input: VoidOfficialResultRequest = {},
+      options: RequestOptions = {},
+    ): Promise<VoidOfficialResultResponse> {
+      return http.request({
+        path: apiPath("official-results", officialResultId, "void"),
+        method: "POST",
+        body: voidOfficialResultRequestSchema.parse(input),
+        options,
+        parse: (data) => voidOfficialResultResponseSchema.parse(data),
+      });
+    },
     async getOperatorOfficialSelection(
       organizationId: string,
       encounterId: string,

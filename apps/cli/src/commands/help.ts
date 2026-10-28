@@ -19,6 +19,7 @@ Comandos base:
   domain-smoke            Smoke de shared-kernel + tipos de scheduling/results
   domain-smoke-game-data  Smoke de @futrob/game-data (pure helpers + use case con fake)
   statistics-smoke        Smoke de GetMyPersonalStatisticsUseCase con fakes
+  result-void <officialResultId> [--reason <text>] [--actor <id>] — Anular resultado aprobado
   results-smoke           Select → Confirm con fakes en memoria (@futrob/results)
 
 Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor):

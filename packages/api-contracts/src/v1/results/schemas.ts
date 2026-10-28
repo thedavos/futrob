@@ -236,3 +236,10 @@ export type ProposeAlternativeOfficialSelectionRequest = z.infer<
 export type OpenMatchDisputeRequest = z.infer<typeof openMatchDisputeRequestSchema>;
 export type ReviewMatchDisputeRequest = z.infer<typeof reviewMatchDisputeRequestSchema>;
 export type ResolveMatchDisputeRequest = z.infer<typeof resolveMatchDisputeRequestSchema>;
+
+export const voidOfficialResultRequestSchema = z.object({
+  reason: z.string().trim().min(1).optional(),
+});
+export type VoidOfficialResultRequest = z.infer<typeof voidOfficialResultRequestSchema>;
+export const voidOfficialResultResponseSchema = approvedOfficialResultSchema;
+export type VoidOfficialResultResponse = z.infer<typeof voidOfficialResultResponseSchema>;

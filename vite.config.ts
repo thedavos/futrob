@@ -358,6 +358,9 @@ export default defineConfig({
     projects: [
       "apps/web",
       "apps/api",
+      {
+        test: { name: "cli", root: "apps/cli", environment: "node", include: ["src/**/*.test.ts"] },
+      },
       "apps/auth",
       "packages/api-contracts",
       "packages/sdk",

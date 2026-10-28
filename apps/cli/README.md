@@ -72,14 +72,15 @@ npm run cli -- e2e-golden-path --actor <actorId>
 
 ### Base y dominio (offline)
 
-| Comando                  | Descripción                                                                            |
-| ------------------------ | -------------------------------------------------------------------------------------- |
-| `help`                   | Lista comandos                                                                         |
-| `ping`                   | Comprueba que el CLI arranca                                                           |
-| `domain-smoke`           | Smoke de shared-kernel + tipos de scheduling/results                                   |
-| `domain-smoke-game-data` | Helpers puros + `SearchExternalClubsUseCase` con provider fake                         |
-| `statistics-smoke`       | `GetMyPersonalStatisticsUseCase` con fakes en memoria                                  |
-| `results-smoke`          | Propuesta → confirmación rival, y rechazo → revisión → resolución, con fakes + eventos |
+| Comando                                                           | Descripción                                                                                 |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `help`                                                            | Lista comandos                                                                              |
+| `ping`                                                            | Comprueba que el CLI arranca                                                                |
+| `domain-smoke`                                                    | Smoke de shared-kernel + tipos de scheduling/results                                        |
+| `domain-smoke-game-data`                                          | Helpers puros + `SearchExternalClubsUseCase` con provider fake                              |
+| `statistics-smoke`                                                | `GetMyPersonalStatisticsUseCase` con fakes en memoria                                       |
+| `result-void <officialResultId> [--reason <text>] [--actor <id>]` | Anula un resultado con permiso contextual de aprobación y retira sus estadísticas oficiales |
+| `results-smoke`                                                   | Propuesta → confirmación rival, y rechazo → revisión → resolución, con fakes + eventos      |
 
 ### Integración (requieren `npm run dev`)
 
