@@ -23,9 +23,10 @@ Implemented surfaces in the repository (deployment and end-to-end acceptance req
 - Game-data club search against EA Clubs through `apps/api`
 - Hexagonal BCs in `packages/<bc>` (domain/application); adapters only in apps
 - Competition drafts/setup, participants, teams/rosters and fixture generation have API implementations
-- Official selection/confirmation and statistics projection are wired in the API; standings and player-ranking endpoints exist
+- Official selection and confirmation, statistics projection, standings, and player-ranking endpoints are wired in the API
+- The [team-performance ranking page](apps/web/src/modules/statistics/presentation/team-performance/team-performance-page.tsx) reads the competition ranking through the BFF
 
-Still ahead for MVP: completion and acceptance of all competition/scheduling/results flows, durable cross-module event delivery, premium analytics and team-performance ranking integration, the public portal, and authenticated feature parity in the native mobile app. Product documents describe the target scope, not a completion checklist.
+Still ahead for MVP: completion and acceptance of all competition/scheduling/results flows, durable cross-module event delivery, premium analytics, the public portal, and authenticated feature parity in the native mobile app. Product documents describe the target scope, not a completion checklist.
 
 ## Deployable split
 
