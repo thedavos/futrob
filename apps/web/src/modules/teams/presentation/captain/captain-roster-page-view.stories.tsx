@@ -207,3 +207,74 @@ export const English: Story = {
 export const Mobile: Story = {
   parameters: { viewport: { defaultViewport: "mobile1" } },
 };
+
+export const MyTeamPlayer: Story = {
+  args: {
+    page: "competitionPlayer.team",
+    links: captainLinks(null, "competition-1"),
+    capabilities: {
+      manageRoster: false,
+      manageRoles: false,
+      manageInvitations: false,
+      manageExternalClub: false,
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Mi equipo" })).toBeVisible();
+    await expect(
+      canvas.getByText("Consulta la plantilla y el club de tu equipo en esta competición."),
+    ).toBeVisible();
+    await expect(canvas.queryByRole("link", { name: "Invitar jugador" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Cerrar plantilla" })).toBeNull();
+    await expect(canvas.queryByLabelText("Rol de Vale Nueve")).toBeNull();
+    await expect(canvas.getByText("PlayStation · FC 26")).toBeVisible();
+    await expect(canvas.getByText("Cuervos EA")).toBeVisible();
+  },
+};
+
+export const MyTeamOrganization: Story = {
+  args: { page: "competitionPlayer.team" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Mi equipo" })).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Invitar jugador" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Cerrar plantilla" })).toBeVisible();
+    await expect(canvas.getByLabelText("Rol de Vale Nueve")).toBeVisible();
+  },
+};
+
+export const MyTeamLoading: Story = {
+  args: { page: "competitionPlayer.team", access: captainStoryAccess.loading, detail: null },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Mi equipo" })).toBeVisible();
+    await expect(canvas.getByRole("status")).toBeVisible();
+  },
+};
+
+export const MyTeamWithoutMembership: Story = {
+  args: { page: "competitionPlayer.team", access: { kind: "no-team" }, detail: null },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Mi equipo" })).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Revisar mis invitaciones" })).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
+  },
+};
+
+export const MyTeamForbidden: Story = {
+  args: {
+    page: "competitionPlayer.team",
+    access: captainStoryAccess.forbidden,
+    detail: null,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText("No puedes consultar la plantilla de este equipo."),
+    ).toBeVisible();
+    await expect(canvas.queryByRole("link", { name: "Ir a Mi equipo" })).toBeNull();
+    await expect(canvas.queryByRole("table")).toBeNull();
+  },
+};
