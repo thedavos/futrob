@@ -26,6 +26,7 @@ import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 import { styles } from "./competition-encounters-page.styles.ts";
+import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
 import { isRefusal, useCompetitionDisputesQuery } from "./encounter-queries.ts";
 
 export type CompetitionDisputesState =
@@ -196,7 +197,7 @@ function DisputeRow({
     <Link
       aria-describedby={`${detailsId}-status ${detailsId}-when`}
       aria-label={t("disputes.list.open", { home, away })}
-      hash="encounter-review"
+      hash={DISPUTE_REVIEW_ANCHOR}
       params={{ orgId: organizationId, competitionId, encounterId: dispute.encounterId }}
       to="/orgs/$orgId/competitions/$competitionId/encounters/$encounterId"
       {...applyStyles(styles.row)}

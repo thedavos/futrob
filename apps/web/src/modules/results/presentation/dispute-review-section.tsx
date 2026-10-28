@@ -14,9 +14,11 @@ import {
   TabsList,
   TabsTrigger,
   Text,
+  useExternalSync,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { DisputeCommandDialog } from "./dispute-command-dialog.tsx";
+import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
 import {
   buildOperatorIntent,
   EMPTY_OPERATOR_DRAFT,
@@ -61,6 +63,12 @@ export function DisputeReviewSection({
   const { locale, t } = useI18n();
   const heading = useRef<HTMLHeadingElement>(null);
   const [draft, dispatch] = useReducer(operatorDraftReducer, EMPTY_OPERATOR_DRAFT);
+  // The section mounts after its reads, too late for the router's hash scroll.
+  useExternalSync(() => {
+    if (state.kind === "hidden" || window.location.hash !== `#${DISPUTE_REVIEW_ANCHOR}`) return;
+    heading.current?.scrollIntoView({ block: "start" });
+    heading.current?.focus({ preventScroll: true });
+  }, [state.kind]);
   if (state.kind === "hidden") return null;
   const read = draft.submission.status === "refused" ? { kind: "forbidden" as const } : state.read;
   const format = new Intl.DateTimeFormat(locale, {
@@ -70,10 +78,10 @@ export function DisputeReviewSection({
   });
 
   return (
-    <section aria-labelledby="encounter-review" {...applyStyles(styles.section)}>
+    <section aria-labelledby={DISPUTE_REVIEW_ANCHOR} {...applyStyles(styles.section)}>
       <div {...applyStyles(styles.header)}>
         <div {...applyStyles(styles.copy)}>
-          <SectionTitle id="encounter-review" ref={heading} tabIndex={-1}>
+          <SectionTitle id={DISPUTE_REVIEW_ANCHOR} ref={heading} tabIndex={-1}>
             {t("encounter.review.title")}
           </SectionTitle>
           <Caption>{t("encounter.review.description")}</Caption>
