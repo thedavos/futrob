@@ -134,6 +134,7 @@ export type {
   ScheduleChangeCommandOutput,
 } from "./application/schedule-change-command.ts";
 export { GetCompetitionFixtureUseCase } from "./application/get-competition-fixture.use-case.ts";
+export { GetCurrentCompetitionFixtureUseCase } from "./application/get-current-competition-fixture.use-case.ts";
 export {
   EncounterScheduleAuthorizationForbidden,
   InvalidEncounterSchedule,

@@ -5,6 +5,7 @@ import type { RecalculateRescheduledCandidates } from "@/application/results/rec
 import type { GetEncounterViewUseCase } from "@/application/scheduling/get-encounter-view.use-case.ts";
 import type { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
 import type { ListCompetitionEncountersUseCase } from "@/application/scheduling/list-competition-encounters.use-case.ts";
+import type { GetCurrentCompetitionFixtureViewUseCase } from "@/application/scheduling/get-current-competition-fixture-view.use-case.ts";
 import type {
   GetTeamRosterManagementUseCase,
   ListTeamRosterManagementUseCase,
@@ -45,6 +46,7 @@ export interface AppModules {
   readonly getMyNextEncounter: GetMyNextEncounterUseCase;
   readonly getEncounterView: GetEncounterViewUseCase;
   readonly listCompetitionEncounters: ListCompetitionEncountersUseCase;
+  readonly getCurrentCompetitionFixture: GetCurrentCompetitionFixtureViewUseCase;
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
   readonly notifications: NotificationsModule;

@@ -7,6 +7,7 @@ import {
   fixturePlanSchema,
   generateCompetitionFixtureRequestSchema,
   editFixtureEncounterRequestSchema,
+  getCurrentCompetitionFixtureResponseSchema,
 } from "@futrob/api-contracts";
 import { namedSchema } from "@/http/openapi/named-schema.ts";
 
@@ -26,4 +27,8 @@ export const GenerateCompetitionFixtureRequest = namedSchema(
 export const EditFixtureEncounterRequest = namedSchema(
   "EditFixtureEncounterRequest",
   editFixtureEncounterRequestSchema,
+);
+export const GetCurrentCompetitionFixtureResponse = namedSchema(
+  "GetCurrentCompetitionFixtureResponse",
+  getCurrentCompetitionFixtureResponseSchema,
 );

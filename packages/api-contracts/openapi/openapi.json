@@ -5287,6 +5287,57 @@
             }
           }
         }
+      },
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current fixture, or null before one is generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCurrentCompetitionFixtureResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "getCurrentCompetitionFixture",
+        "tags": [
+          "fixtures"
+        ],
+        "summary": "Get the competition's current fixture with the names of its Teams"
       }
     },
     "/organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}": {
@@ -18106,6 +18157,515 @@
           }
         },
         "required": [
+          "teams"
+        ]
+      },
+      "GetCurrentCompetitionFixtureResponse": {
+        "type": "object",
+        "properties": {
+          "fixture": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "revision": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "superseded"
+                ]
+              },
+              "generationKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "organizationId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "competitionId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rulesVersion": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "generationVersion": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "format": {
+                "type": "string",
+                "enum": [
+                  "league",
+                  "knockout",
+                  "groups-knockout",
+                  "league-playoffs"
+                ]
+              },
+              "timeZone": {
+                "type": "string",
+                "minLength": 1
+              },
+              "homeAndAway": {
+                "type": "boolean"
+              },
+              "seed": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 2
+              },
+              "stages": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "league",
+                        "groups",
+                        "knockout",
+                        "playoffs"
+                      ]
+                    },
+                    "order": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "rounds": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "stageId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "number": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0
+                          },
+                          "scheduledStartAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "encounters": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "stageId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "roundId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "order": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                },
+                                "groupId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "home": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "team"
+                                          ]
+                                        },
+                                        "teamId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "teamId"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "bye"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "winner"
+                                          ]
+                                        },
+                                        "encounterId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "encounterId"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "group-rank"
+                                          ]
+                                        },
+                                        "stageId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "groupId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "stageId",
+                                        "groupId",
+                                        "rank"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "stage-rank"
+                                          ]
+                                        },
+                                        "stageId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "stageId",
+                                        "rank"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "away": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "team"
+                                          ]
+                                        },
+                                        "teamId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "teamId"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "bye"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "winner"
+                                          ]
+                                        },
+                                        "encounterId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "encounterId"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "group-rank"
+                                          ]
+                                        },
+                                        "stageId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "groupId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "stageId",
+                                        "groupId",
+                                        "rank"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "stage-rank"
+                                          ]
+                                        },
+                                        "stageId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "stageId",
+                                        "rank"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "scheduledStartAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "officialMatchCount": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "enum": [
+                                        1
+                                      ]
+                                    },
+                                    {
+                                      "type": "number",
+                                      "enum": [
+                                        2
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "series": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "resolutionMode": {
+                                      "type": "string",
+                                      "enum": [
+                                        "independent_matches",
+                                        "aggregate_score"
+                                      ]
+                                    },
+                                    "officialMatches": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {
+                                            "type": "string",
+                                            "minLength": 1
+                                          },
+                                          "slot": {
+                                            "anyOf": [
+                                              {
+                                                "type": "number",
+                                                "enum": [
+                                                  1
+                                                ]
+                                              },
+                                              {
+                                                "type": "number",
+                                                "enum": [
+                                                  2
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "id",
+                                          "slot"
+                                        ]
+                                      },
+                                      "minItems": 1,
+                                      "maxItems": 2
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "resolutionMode",
+                                    "officialMatches"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "stageId",
+                                "roundId",
+                                "order",
+                                "home",
+                                "away",
+                                "scheduledStartAt",
+                                "officialMatchCount",
+                                "series"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "stageId",
+                          "number",
+                          "scheduledStartAt",
+                          "encounters"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "order",
+                    "rounds"
+                  ]
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "id",
+              "revision",
+              "status",
+              "generationKey",
+              "organizationId",
+              "competitionId",
+              "rulesVersion",
+              "generationVersion",
+              "format",
+              "timeZone",
+              "homeAndAway",
+              "seed",
+              "stages"
+            ]
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "teamId",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "fixture",
           "teams"
         ]
       },

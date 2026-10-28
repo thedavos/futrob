@@ -315,7 +315,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     activity: activityFeed.selection,
   });
 
-  const { getMyNextEncounter, getEncounterView, listCompetitionEncounters } = createEncounterReads({
+  const {
+    getMyNextEncounter,
+    getEncounterView,
+    listCompetitionEncounters,
+    getCurrentCompetitionFixture,
+  } = createEncounterReads({
     authorization: deferredAuthorization,
     clock,
     competitions,
@@ -389,6 +394,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     getMyNextEncounter,
     getEncounterView,
     listCompetitionEncounters,
+    getCurrentCompetitionFixture,
     identity,
     notifications: activityFeed.notifications,
     organizations: {

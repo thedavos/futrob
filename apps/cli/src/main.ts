@@ -44,7 +44,12 @@ import {
   teamCreate,
   teamList,
 } from "./commands/teams.ts";
-import { fixtureGenerate, fixtureShow, snapshotSet } from "./commands/scheduling.ts";
+import {
+  fixtureCurrent,
+  fixtureGenerate,
+  fixtureShow,
+  snapshotSet,
+} from "./commands/scheduling.ts";
 import {
   clubGet,
   clubMatches,
@@ -110,6 +115,7 @@ const commands = {
   "club-link": (args) => clubLink(args),
 
   "fixture-generate": (args) => fixtureGenerate(args),
+  "fixture-current": (args) => fixtureCurrent(args),
   "fixture-show": (args) => fixtureShow(args),
   "snapshot-set": (args) => snapshotSet(args),
 

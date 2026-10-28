@@ -4,6 +4,7 @@ import {
   EditFixtureEncounterRequest,
   FixturePlan,
   GenerateCompetitionFixtureRequest,
+  GetCurrentCompetitionFixtureResponse,
 } from "@/http/openapi/components.ts";
 
 export const generateCompetitionFixtureRoute = defineRoute({
@@ -20,6 +21,21 @@ export const generateCompetitionFixtureRoute = defineRoute({
     schema: FixturePlan,
   },
   errors: [400, 401, 403, 409],
+});
+
+export const getCurrentCompetitionFixtureRoute = defineRoute({
+  method: "get",
+  path: "/organizations/{organizationId}/competitions/{competitionId}/fixture",
+  operationId: "getCurrentCompetitionFixture",
+  tags: ["fixtures"],
+  summary: "Get the competition's current fixture with the names of its Teams",
+  params: pathParams(["organizationId", "competitionId"]),
+  success: {
+    status: 200,
+    description: "Current fixture, or null before one is generated",
+    schema: GetCurrentCompetitionFixtureResponse,
+  },
+  errors: [401, 404],
 });
 
 export const getCompetitionFixtureRoute = defineRoute({

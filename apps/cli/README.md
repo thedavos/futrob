@@ -110,7 +110,7 @@ npm run cli -- e2e-golden-path --actor <actorId>
 | `team-create/team-list`                                    | Equipos de la organización                                                  |
 | `roster-list/add/close/open`                               | Roster por competición                                                      |
 | `club-link <orgId> <compId> <teamId> <clubId> <clubName>`  | Vincula club EA al equipo                                                   |
-| `fixture-generate/show`                                    | Genera y consulta el fixture                                                |
+| `fixture-generate/current/show`                            | Genera y consulta el fixture actual o uno por id                            |
 | `snapshot-set <encounterId ...>`                           | Upsert de schedule snapshot                                                 |
 | `club-search/get/matches`                                  | Clubes EA vía game-data                                                     |
 | `sync-job-enqueue/run/run-next`                            | Jobs de sincronización EA (endpoints internos)                              |
