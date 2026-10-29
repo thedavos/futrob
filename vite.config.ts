@@ -371,6 +371,7 @@ export default defineConfig({
       "packages/results",
       "packages/scheduling",
       "packages/statistics",
+      "packages/public-portal",
       "packages/teams",
       "packages/notifications",
       "apps/mobile",
