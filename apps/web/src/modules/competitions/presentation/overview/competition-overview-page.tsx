@@ -98,6 +98,13 @@ export interface CompetitionOverviewViewProps {
   readonly now?: Date;
 }
 
+function mapSlice<Data, Shown>(
+  slice: OverviewSlice<Data>,
+  pick: (data: Data) => Shown,
+): OverviewSlice<Shown> {
+  return slice.status === "ready" ? { status: "ready", data: pick(slice.data) } : slice;
+}
+
 function metricOf<T>(slice: OverviewSlice<T>, count: (data: T) => number): OverviewMetric {
   return slice.status === "ready"
     ? count(slice.data)
@@ -118,10 +125,6 @@ export function CompetitionOverviewView({
 }: CompetitionOverviewViewProps) {
   const { t } = useI18n();
   const entryCounts = entries.status === "ready" ? countEntries(entries.data) : null;
-  const awaiting =
-    encounters.status === "ready"
-      ? awaitingResultEncounters(encounters.data.encounters).length
-      : null;
 
   return (
     <main {...applyStyles(styles.main)}>
@@ -173,9 +176,12 @@ export function CompetitionOverviewView({
       <div {...applyStyles(styles.columns)}>
         <PendingSection
           activities={activities}
-          awaitingCount={awaiting}
+          awaitingCount={mapSlice(
+            encounters,
+            (data) => awaitingResultEncounters(data.encounters).length,
+          )}
           competitionId={competitionId}
-          entriesPending={entryCounts?.pending ?? null}
+          entriesPending={mapSlice(entries, (data) => countEntries(data).pending)}
           now={now}
           organizationId={organizationId}
         />

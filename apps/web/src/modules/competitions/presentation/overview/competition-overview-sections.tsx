@@ -110,11 +110,9 @@ export function PendingSection({
   organizationId,
 }: {
   readonly activities: OverviewSlice<readonly ActivityEntryDto[]>;
-  /** `null` while encounters are loading or failed: the row is then left out, not shown as zero. */
-  readonly awaitingCount: number | null;
+  readonly awaitingCount: OverviewSlice<number>;
   readonly competitionId: string;
-  /** `null` while entries are loading or failed. */
-  readonly entriesPending: number | null;
+  readonly entriesPending: OverviewSlice<number>;
   readonly now: Date;
   readonly organizationId: string;
 }) {
@@ -127,18 +125,20 @@ export function PendingSection({
           .filter((entry) => entry.status === "open" && entry.requiresAction)
           .slice(0, OVERVIEW_PENDING_LIMIT)
       : [];
-  const hasSummaryRows = (entriesPending ?? 0) > 0 || (awaitingCount ?? 0) > 0;
-  const countsUnknown = entriesPending === null || awaitingCount === null;
-  const allKnown = activities.status === "ready" && !countsUnknown;
+  const pendingEntries = entriesPending.status === "ready" ? entriesPending.data : null;
+  const awaiting = awaitingCount.status === "ready" ? awaitingCount.data : null;
+  const sources = [activities, entriesPending, awaitingCount];
+  const failedSources = sources.filter((source) => source.status === "error");
+  const hasSummaryRows = (pendingEntries ?? 0) > 0 || (awaiting ?? 0) > 0;
+  const allKnown = sources.every((source) => source.status === "ready");
   const nothingPending = allKnown && !hasSummaryRows && openTasks.length === 0;
-  const showSkeleton =
-    activities.status === "loading" || (countsUnknown && openTasks.length === 0 && !hasSummaryRows);
+  const showSkeleton = sources.some((source) => source.status === "loading");
 
   return (
     <OverviewCard title={t("competition.overview.pending.title")} titleId={titleId}>
       {hasSummaryRows ? (
         <ul aria-label={t("competition.overview.pending.title")} {...applyStyles(styles.list)}>
-          {(entriesPending ?? 0) > 0 ? (
+          {(pendingEntries ?? 0) > 0 ? (
             <li>
               <Link
                 params={params}
@@ -147,12 +147,12 @@ export function PendingSection({
               >
                 <ClipboardTextIcon aria-hidden {...applyStyles(styles.rowIcon)} />
                 <Text className={styles.copy} weight="semibold">
-                  {t("competition.overview.pending.applications", { count: entriesPending ?? 0 })}
+                  {t("competition.overview.pending.applications", { count: pendingEntries ?? 0 })}
                 </Text>
               </Link>
             </li>
           ) : null}
-          {(awaitingCount ?? 0) > 0 ? (
+          {(awaiting ?? 0) > 0 ? (
             <li>
               <Link
                 params={params}
@@ -161,7 +161,7 @@ export function PendingSection({
               >
                 <ClockIcon aria-hidden {...applyStyles(styles.rowIcon)} />
                 <Text className={styles.copy} weight="semibold">
-                  {t("competition.overview.pending.awaiting", { count: awaitingCount ?? 0 })}
+                  {t("competition.overview.pending.awaiting", { count: awaiting ?? 0 })}
                 </Text>
               </Link>
             </li>
@@ -175,10 +175,10 @@ export function PendingSection({
           now={now}
         />
       ) : null}
-      {activities.status === "error" ? (
+      {failedSources.length > 0 ? (
         <RetryAlert
           message={t("competition.overview.pending.error")}
-          retry={activities.retry}
+          retry={() => failedSources.forEach((source) => source.retry())}
           t={t}
           variant="warning"
         />

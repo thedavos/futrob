@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   Outlet,
@@ -52,6 +52,9 @@ type Scenario =
   | "countsLoading"
   | "competitionError"
   | "sectionsError"
+  | "entriesError"
+  | "encountersError"
+  | "entriesErrorWithData"
   | "draft"
   | "member"
   | "accessError";
@@ -127,6 +130,7 @@ function OverviewStory({
 }
 
 function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
+  const [recovered, setRecovered] = useState(false);
   if (scenario === "member") return <CompetitionOverviewMember />;
   if (scenario === "accessError") {
     return (
@@ -142,6 +146,9 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
   const countsLoading = scenario === "countsLoading";
   const sectionsFailed = scenario === "sectionsError";
   const isEmpty = scenario === "empty";
+  const entriesFailed =
+    !recovered && (scenario === "entriesError" || scenario === "entriesErrorWithData");
+  const encountersFailed = !recovered && scenario === "encountersError";
   const competition = isLoading
     ? loading
     : scenario === "competitionError"
@@ -156,14 +163,18 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
   const encounters =
     isLoading || countsLoading
       ? loading
-      : sectionsFailed
-        ? failed(() => undefined)
-        : ready(isEmpty ? { ...overviewEncounters, encounters: [] } : overviewEncounters);
+      : sectionsFailed || encountersFailed
+        ? failed(() => setRecovered(true))
+        : ready(
+            isEmpty || scenario === "entriesError"
+              ? { ...overviewEncounters, encounters: [] }
+              : overviewEncounters,
+          );
   const entries =
     isLoading || countsLoading
       ? loading
-      : sectionsFailed
-        ? failed(() => undefined)
+      : sectionsFailed || entriesFailed
+        ? failed(() => setRecovered(true))
         : ready(isEmpty ? [] : overviewEntries);
   const teams = isLoading
     ? loading
@@ -174,7 +185,11 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
     ? loading
     : sectionsFailed
       ? failed(() => undefined)
-      : ready(isEmpty || countsLoading ? [] : overviewActivities);
+      : ready(
+          isEmpty || countsLoading || scenario === "entriesError" || scenario === "encountersError"
+            ? []
+            : overviewActivities,
+        );
 
   return (
     <CompetitionOverviewView
@@ -204,6 +219,9 @@ const meta = {
         "countsLoading",
         "competitionError",
         "sectionsError",
+        "entriesError",
+        "encountersError",
+        "entriesErrorWithData",
         "draft",
         "member",
         "accessError",
@@ -337,6 +355,7 @@ export const SectionsError: Story = {
       canvas.findByText("No pudimos cargar todas las tareas pendientes."),
     ).resolves.toBeVisible();
     await expect(canvas.findAllByText("Sin datos")).resolves.toHaveLength(4);
+    await expect(canvas.queryByRole("status")).toBeNull();
     await expect(canvas.queryByText("Todo al día")).toBeNull();
     await expect(canvas.queryByText("0")).toBeNull();
   },
@@ -376,5 +395,58 @@ export const AccessError: Story = {
     ).resolves.toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Reintentar" }));
     await expect(retryCalls.access).toBe(1);
+  },
+};
+
+export const EntriesError: Story = {
+  name: "Inscripciones fallidas con recuperación",
+  args: { scenario: "entriesError" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pending = within(await canvas.findByRole("region", { name: "Pendientes" }));
+    await expect(
+      pending.findByText("No pudimos cargar todas las tareas pendientes."),
+    ).resolves.toBeVisible();
+    await expect(pending.queryByRole("status")).toBeNull();
+    await expect(pending.queryByText("Todo al día")).toBeNull();
+    await userEvent.click(pending.getByRole("button", { name: "Reintentar" }));
+    await expect(pending.findByText("1 inscripción de equipo por revisar")).resolves.toBeVisible();
+    await expect(pending.queryByText("No pudimos cargar todas las tareas pendientes.")).toBeNull();
+  },
+};
+
+export const EncountersError: Story = {
+  name: "Enfrentamientos fallidos con recuperación",
+  args: { scenario: "encountersError" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pending = within(await canvas.findByRole("region", { name: "Pendientes" }));
+    await expect(
+      pending.findByText("No pudimos cargar todas las tareas pendientes."),
+    ).resolves.toBeVisible();
+    await expect(pending.findByText("1 inscripción de equipo por revisar")).resolves.toBeVisible();
+    await expect(pending.queryByRole("status")).toBeNull();
+    await userEvent.click(pending.getByRole("button", { name: "Reintentar" }));
+    await expect(
+      pending.findByText("1 enfrentamiento sin resultado oficial"),
+    ).resolves.toBeVisible();
+    await expect(pending.queryByText("No pudimos cargar todas las tareas pendientes.")).toBeNull();
+  },
+};
+
+export const EntriesErrorWithData: Story = {
+  name: "Inscripciones fallidas conservan otros pendientes",
+  args: { scenario: "entriesErrorWithData" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pending = within(await canvas.findByRole("region", { name: "Pendientes" }));
+    await expect(
+      pending.findByText("No pudimos cargar todas las tareas pendientes."),
+    ).resolves.toBeVisible();
+    await expect(pending.findByText("Resolver disputa")).resolves.toBeVisible();
+    await expect(
+      pending.findByText("1 enfrentamiento sin resultado oficial"),
+    ).resolves.toBeVisible();
+    await expect(pending.queryByRole("status")).toBeNull();
   },
 };
