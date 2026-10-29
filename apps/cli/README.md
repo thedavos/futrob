@@ -116,6 +116,9 @@ npm run cli -- e2e-golden-path --actor <actorId>
 | `club-search/get/matches`                                  | Clubes EA vía game-data                                                     |
 | `sync-job-enqueue/run/run-next`                            | Jobs de sincronización EA (endpoints internos)                              |
 | `provider-health [providerKey]`                            | Salud del proveedor (circuit breaker)                                       |
+| `plans`, `org-plan`, `org-entitlements <orgId>`            | Catálogo, plan efectivo con uso y entitlements (ADR-0025)                   |
+| `org-plan-assign <orgId> <plan> --reason "..."`            | Asignación manual de plan por superusuario, auditada                        |
+| `billing-smoke --actor <org> --superuser <su>`             | Gratis: cupo de sync, dedupe sin consumo, 2.ª competición; luego Pro        |
 | `player-me`, `my-stats`, `my-matches`, `my-next-encounter` | Perfil, estadísticas personales y próximo enfrentamiento                    |
 | `e2e-golden-path`                                          | Flujo completo: ping → org → draft → team ×2 → entry ×2 → publish → fixture |
 

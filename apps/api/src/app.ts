@@ -21,6 +21,7 @@ import { registerMetaRoutes } from "@/http/routes/meta.ts";
 import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
 import { registerOrganizationRoutes } from "@/http/routes/organizations.ts";
+import { registerBillingRoutes, registerPublicBillingRoutes } from "@/http/routes/billing.ts";
 import { registerPublicPortalRoutes } from "@/http/routes/public-portal.ts";
 import { registerPlayerRoutes } from "@/http/routes/players.ts";
 import { registerTeamRoutes } from "@/http/routes/teams.ts";
@@ -90,6 +91,7 @@ export function createApp(deps: AppDeps): Hono {
 
   registerMetaRoutes(v1, deps);
   registerPublicPortalRoutes(v1, deps);
+  registerPublicBillingRoutes(v1, deps);
   registerOpenApiRoutes(v1);
   registerProviderSyncJobRoutes(v1, deps);
   registerConfirmationExpiryRoutes(v1, deps);
@@ -104,6 +106,7 @@ export function createApp(deps: AppDeps): Hono {
   registerEntryInvitationRoutes(v1, deps);
   registerOnboardingRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);
+  registerBillingRoutes(v1, deps);
   registerPlayerRoutes(v1, deps);
   registerTeamRoutes(v1, deps);
   registerAuthorizationRoutes(v1, deps);

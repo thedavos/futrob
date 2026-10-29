@@ -1,4 +1,4 @@
-import { defineRoute } from "@/http/openapi/define-route.ts";
+import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
 import {
   GetCompetitionRankingsResponse,
@@ -24,7 +24,8 @@ export const getTeamPerformanceRankingRoute = defineRoute({
       "Ranking with component coverage, or null before the first rebuild. Incomplete rows have no score or position.",
     schema: GetTeamPerformanceRankingResponse,
   },
-  errors: [401, 403],
+  errors: [401, 402, 403],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const getCompetitionStandingsRoute = defineRoute({

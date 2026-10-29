@@ -69,6 +69,11 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   sync-job-run <jobId>
   sync-job-run-next
   provider-health [providerKey]
+  plans                   Catálogo público de planes
+  org-plan <orgId>        Plan efectivo, uso y cupo de sync del mes
+  org-entitlements <orgId>
+  org-plan-assign <orgId> <free|pro|league> --reason "..." [--status s] [--trial-ends ISO]
+  billing-smoke --superuser ID   Gratis → cupo agotado, dedupe, 2.ª competición → Pro
   player-me
   my-stats
   my-matches

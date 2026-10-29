@@ -1,4 +1,4 @@
-import { defineRoute } from "@/http/openapi/define-route.ts";
+import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import { pathParams, providerKeyPathParams } from "@/http/openapi/path-params.ts";
 import {
   EnqueueProviderSyncJobRequest,
@@ -78,7 +78,8 @@ export const persistProviderSyncJobRoute = defineRoute({
     description: "Job persisted or active duplicate returned",
     schema: ProviderSyncJobResponse,
   },
-  errors: [400, 401],
+  errors: [400, 401, 402],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const runProviderSyncJobRoute = defineRoute({

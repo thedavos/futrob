@@ -9,7 +9,7 @@ export class ProviderSyncIngestionLeaseLost extends TaggedError("ProviderSyncIng
 export class ProviderSyncQuotaExhausted extends TaggedError("ProviderSyncQuotaExhausted")<{
   readonly code: "game_data.sync_quota_exhausted";
   readonly message: string;
-  readonly limit: number;
+  readonly max: number;
   readonly used: number;
   readonly resetsAt: Date;
 }> {}

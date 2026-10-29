@@ -64,7 +64,7 @@ export class BillingProviderSyncQuota implements ProviderSyncQuotaPort {
       new ProviderSyncQuotaExhausted({
         code: "game_data.sync_quota_exhausted",
         message: "The organization has used this month's provider sync quota",
-        limit: consumed.error.limit,
+        max: consumed.error.limit,
         used: consumed.error.used,
         resetsAt: consumed.error.resetsAt,
       }),

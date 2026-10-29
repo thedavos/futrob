@@ -85,7 +85,7 @@ describe("billing plan limits composition", () => {
 
     expect(!exhausted.isOk() && exhausted.error).toMatchObject({
       code: "game_data.sync_quota_exhausted",
-      limit: 60,
+      max: 60,
       used: 60,
     });
     expect(duplicate.isOk() && first.isOk() && duplicate.value.id === first.value.id).toBe(true);

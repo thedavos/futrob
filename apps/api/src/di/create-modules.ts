@@ -26,7 +26,7 @@ import {
   PostgresOfficialResultRepository,
 } from "@/adapters/results/official-result.repository.ts";
 import type { Pool } from "pg";
-import { createBillingModule } from "./billing.module.ts";
+import { createBillingModule, withPlanUsage } from "./billing.module.ts";
 import { createGameDataModule } from "./game-data.module.ts";
 import { createGameDataPersistence } from "./game-data-persistence.composition.ts";
 import { createIdentityModule } from "./identity.module.ts";
@@ -370,7 +370,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   return {
     activityCommands: activityFeed.commands,
     authorization,
-    billing,
+    billing: withPlanUsage(billing, competitionRepository, organizations.repositories.memberships),
     competitionApplications,
     competitions,
     entryInvitations,

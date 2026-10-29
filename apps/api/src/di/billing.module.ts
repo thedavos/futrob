@@ -16,7 +16,10 @@ import type {
   IdGeneratorPort,
   TransactionPort,
 } from "@futrob/shared-kernel";
+import type { CompetitionRepository } from "@futrob/competitions";
+import type { MembershipRepository } from "@futrob/organizations";
 import type { Pool } from "pg";
+import { OrganizationPlanUsageQuery } from "@/application/billing/organization-plan-usage.query.ts";
 import {
   BillingCompetitionPlanLimits,
   BillingPerformanceRankingAccess,
@@ -115,3 +118,19 @@ export function createBillingModule(
 }
 
 export type BillingModule = ReturnType<typeof createBillingModule>;
+
+/** Adds the plan page query, whose counts come from contexts created after billing. */
+export function withPlanUsage(
+  billing: BillingModule,
+  competitions: Pick<CompetitionRepository, "listByOrganization">,
+  memberships: Pick<MembershipRepository, "countByRole">,
+) {
+  return {
+    ...billing,
+    planUsage: new OrganizationPlanUsageQuery({
+      plan: billing.useCases.getOrganizationPlan,
+      competitions,
+      memberships,
+    }),
+  };
+}

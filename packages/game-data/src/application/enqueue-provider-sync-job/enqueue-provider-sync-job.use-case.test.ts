@@ -81,7 +81,7 @@ function quotaOf(limit: number) {
           new ProviderSyncQuotaExhausted({
             code: "game_data.sync_quota_exhausted",
             message: "Monthly sync quota used",
-            limit,
+            max: limit,
             used: reserved.size,
             resetsAt: new Date("2026-09-01T00:00:00.000Z"),
           }),
@@ -147,7 +147,7 @@ describe("EnqueueProviderSyncJobUseCase", () => {
 
     expect(!rejected.isOk() && rejected.error).toMatchObject({
       code: "game_data.sync_quota_exhausted",
-      limit: 1,
+      max: 1,
       used: 1,
     });
     expect(duplicate.isOk() && duplicate.value.id).toBe("job-1");
