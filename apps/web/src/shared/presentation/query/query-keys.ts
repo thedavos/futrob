@@ -32,6 +32,9 @@ export const queryKeys = {
       [...queryKeys.encounters.all, "competition", organizationId, competitionId] as const,
     candidates: (encounterId: string) =>
       [...queryKeys.encounters.all, "candidates", encounterId] as const,
+    /** Operator dispute queue; under `encounters` so selection commands refresh it. */
+    disputes: (organizationId: string, competitionId: string) =>
+      [...queryKeys.encounters.all, "disputes", organizationId, competitionId] as const,
     officialSelection: (organizationId: string, encounterId: string, actingTeamId: string) =>
       [
         ...queryKeys.encounters.all,

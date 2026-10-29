@@ -1,6 +1,7 @@
 import type { Permission } from "@futrob/shared-kernel";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
+import { RESULT_PERMISSION } from "@futrob/results";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { createTranslator, type Translator } from "@/shared/presentation/i18n/translate.ts";
@@ -258,7 +259,7 @@ function organizationCompetitionContext(
       label: t("pages.competition.disputes.title"),
       href: `${base}/disputes`,
       icon: "disputes",
-      requiredPermission: COMPETITION_PERMISSION.read,
+      requiredPermission: RESULT_PERMISSION.resultApprove,
     },
     {
       id: "analytics",

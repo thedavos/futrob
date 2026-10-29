@@ -4740,6 +4740,60 @@
         }
       }
     },
+    "/organizations/{organizationId}/competitions/{competitionId}/disputes": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operator dispute queue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCompetitionDisputesResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listCompetitionDisputes",
+        "tags": [
+          "results"
+        ],
+        "summary": "List the competition's selections waiting on an operator decision",
+        "description": "Selections in `disputed` or `organizer_review`, longest waiting first. Each Encounter is decided on `encounters.results.approve` at its own scope, so a specific deny hides it. A missing competition and an actor without the capability anywhere in it both answer 404 `competitions.not_found`. Dispute reasons are not included; read them from the Encounter's operator selection view."
+      }
+    },
     "/organizations/{organizationId}/competitions/{competitionId}/encounters": {
       "get": {
         "parameters": [
@@ -23408,6 +23462,154 @@
         "required": [
           "activities",
           "nextCursor"
+        ]
+      },
+      "ListCompetitionDisputesResponse": {
+        "type": "object",
+        "properties": {
+          "competition": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timeZone": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "timeZone"
+            ]
+          },
+          "disputes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "encounterId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "disputed",
+                    "organizer_review"
+                  ]
+                },
+                "home": {
+                  "type": "object",
+                  "properties": {
+                    "teamId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "teamId",
+                    "name"
+                  ]
+                },
+                "away": {
+                  "type": "object",
+                  "properties": {
+                    "teamId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "teamId",
+                    "name"
+                  ]
+                },
+                "scheduledStartAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "since": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispute": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "open",
+                        "under_review"
+                      ]
+                    },
+                    "openedByTeamId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "openedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "reviewStartedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "openedByTeamId",
+                    "openedAt",
+                    "reviewStartedAt"
+                  ]
+                }
+              },
+              "required": [
+                "encounterId",
+                "status",
+                "home",
+                "away",
+                "scheduledStartAt",
+                "since",
+                "dispute"
+              ]
+            }
+          }
+        },
+        "required": [
+          "competition",
+          "disputes"
         ]
       },
       "ListCompetitionEncountersResponse": {
