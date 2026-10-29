@@ -4,6 +4,7 @@ import {
   completeOrganizationOnboardingResponseSchema,
   encounterScheduleSnapshotSchema,
   fixturePlanSchema,
+  listActivitiesResponseSchema,
   listScheduleChangeRequestsResponseSchema,
   scheduleChangeCommandResponseSchema,
   scheduleChangeRequestSchema,
@@ -933,6 +934,139 @@ describe.each([
         scheduledStartAt: D1,
         officialMatches: [{ officialSlot: 1, scheduledStartAt: D1 }],
       });
+    },
+  );
+  it.skipIf(skip)(
+    "projects the negotiation onto the activity feed: counter, escalation and the organizer decision",
+    async () => {
+      const { actors, away, home, modules, send, create, command, setTime } = await seed();
+      const feedOf = async (path: string, actorId: string) =>
+        parseResponse(listActivitiesResponseSchema, await send(actorId, "GET", path));
+      const negotiation = async (actorId: string, organizationId: string, scope: "org" | "me") => {
+        const path =
+          scope === "org"
+            ? `/organizations/${organizationId}/activities`
+            : "/players/me/activities";
+        const { activities } = await feedOf(path, actorId);
+        return activities
+          .filter((row) => row.kind === "schedule_change" || row.kind === "organizer_decision")
+          .map((row) => ({
+            kind: row.kind,
+            audience: row.audience,
+            status: row.status,
+            requiresAction: row.requiresAction,
+            outcome: row.subject.outcome,
+          }));
+      };
+
+      const created = await create(15);
+      const orgId = created.organizationId;
+      expect(await negotiation(actors.awayCaptain, orgId, "me")).toEqual([
+        {
+          kind: "schedule_change",
+          audience: "team",
+          status: "open",
+          requiresAction: true,
+          outcome: null,
+        },
+      ]);
+      expect(await negotiation(actors.homeCaptain, orgId, "me")).toEqual([]);
+      expect(await negotiation(actors.organizer, orgId, "org")).toEqual([
+        {
+          kind: "schedule_change",
+          audience: "organization",
+          status: "open",
+          requiresAction: false,
+          outcome: null,
+        },
+      ]);
+
+      // A counter moves the question to the other Team and closes the first proposal.
+      const countered = await command(
+        actors.awayCaptain,
+        created,
+        created.currentProposalId,
+        "counter",
+        {
+          expectedVersion: 1,
+          commandKey: "feed-counter",
+          teamId: away,
+          proposedWallTime: limaSix(16),
+          reason: "Away travel conflict",
+        },
+      );
+      expect(countered.status).toBe(200);
+      const proposalId = (await commandOf(countered)).request.currentProposalId;
+      expect(await negotiation(actors.awayCaptain, orgId, "me")).toMatchObject([
+        { status: "closed", requiresAction: true },
+      ]);
+      expect(await negotiation(actors.homeCaptain, orgId, "me")).toMatchObject([
+        { status: "open", requiresAction: true },
+      ]);
+
+      // Nobody answered in time: the organizer must decide, and the Teams are told.
+      setTime("2026-10-02T12:00:01.000Z");
+      const expired = await modules.activityCommands.expireScheduleChangeProposal.execute({
+        actorId: asActorId(actors.organizer),
+        organizationId: asOrganizationId(orgId),
+        encounterId: asEncounterId(created.encounterId),
+        requestId: created.id,
+      });
+      expect(expired.isOk() && expired.value.status).toBe("escalated");
+      expect(await negotiation(actors.homeCaptain, orgId, "me")).toMatchObject([
+        { status: "closed" },
+      ]);
+      const escalated = await negotiation(actors.organizer, orgId, "org");
+      expect(escalated.filter((row) => row.status === "open")).toEqual([
+        {
+          kind: "schedule_change",
+          audience: "organization",
+          status: "open",
+          requiresAction: true,
+          outcome: null,
+        },
+      ]);
+      const pendingForOrganizer = await feedOf(
+        `/organizations/${orgId}/activities?status=open&requiresAction=true`,
+        actors.organizer,
+      );
+      expect(pendingForOrganizer.activities.map((row) => row.kind)).toEqual(["schedule_change"]);
+
+      const resolve = (commandKey: string) =>
+        send(
+          actors.organizer,
+          "POST",
+          `/encounters/${created.encounterId}/schedule-change-requests/${created.id}/resolve`,
+          {
+            proposalId,
+            expectedVersion: 3,
+            commandKey,
+            resolution: { outcome: "schedule_kept", reason: "Keep the agreed fixture" },
+          },
+        );
+      expect((await resolve("feed-resolve")).status).toBe(200);
+      expect((await resolve("feed-resolve")).status).toBe(200);
+
+      const decided = {
+        kind: "organizer_decision",
+        status: "closed",
+        requiresAction: false,
+        outcome: "schedule_kept",
+      };
+      expect(await negotiation(actors.homeCaptain, orgId, "me")).toContainEqual({
+        ...decided,
+        audience: "team",
+      });
+      expect(await negotiation(actors.awayCaptain, orgId, "me")).toContainEqual({
+        ...decided,
+        audience: "team",
+      });
+      const closed = await negotiation(actors.organizer, orgId, "org");
+      expect(closed.filter((row) => row.kind === "organizer_decision")).toEqual([
+        { ...decided, audience: "organization" },
+      ]);
+      expect(closed.filter((row) => row.status === "open")).toEqual([]);
+      expect(home).not.toBe(away);
     },
   );
 });

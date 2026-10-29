@@ -112,9 +112,28 @@ describe.skipIf(!databaseUrl)("competition application Postgres atomicity", () =
         ])
       ).rows,
     ).toEqual([]);
+    // The activity written with the entry rolls back with it.
+    expect(
+      (await pool.query("SELECT id FROM activity_entries WHERE kind = 'competition_entry'")).rows,
+    ).toEqual([]);
     claim.mockRestore();
     const retried = await apply();
     expect(retried.status).toBe(201);
     expect(await retried.json()).toMatchObject({ teamName: "Rollback team", status: "pending" });
+    expect(
+      (
+        await pool.query(
+          `SELECT audience, status, requires_action, subject->>'teamName' AS team_name
+           FROM activity_entries WHERE kind = 'competition_entry'`,
+        )
+      ).rows,
+    ).toEqual([
+      {
+        audience: "organization",
+        status: "open",
+        requires_action: true,
+        team_name: "Rollback team",
+      },
+    ]);
   });
 });

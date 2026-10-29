@@ -71,7 +71,12 @@ function entry(
     requiresAction: true,
     resourceType: "encounter",
     resourceId: "enc-1",
-    subject: { competitionName: "Liga A", encounterLabel: "Cuervos vs Halcones", teamName: null },
+    subject: {
+      competitionName: "Liga A",
+      encounterLabel: "Cuervos vs Halcones",
+      teamName: null,
+      outcome: null,
+    },
     openedAt: "2026-10-07T10:00:00.000Z",
     closedAt: null,
     expiresAt: null,
@@ -94,7 +99,7 @@ const publication = entry({
   requiresAction: false,
   resourceType: "competition",
   resourceId: "cmp-a",
-  subject: { competitionName: "Liga A", encounterLabel: null, teamName: null },
+  subject: { competitionName: "Liga A", encounterLabel: null, teamName: null, outcome: null },
   openedAt: "2026-10-07T11:00:00.000Z",
   closedAt: "2026-10-07T11:00:00.000Z",
   lastEventAt: "2026-10-07T11:00:00.000Z",
@@ -177,6 +182,73 @@ describe("activity screens", () => {
     expect(await within(recent).findByText("Disputa resuelta")).toBeTruthy();
   });
 
+  it("lists a schedule change, an entry and the organizer's decision, and queues what awaits the organizer", async () => {
+    const reschedule = entry({
+      id: "reschedule",
+      kind: "schedule_change",
+      openedAt: "2026-10-07T09:00:00.000Z",
+      lastEventAt: "2026-10-07T09:00:00.000Z",
+    });
+    const application = entry({
+      id: "application",
+      kind: "competition_entry",
+      resourceType: "competition",
+      resourceId: "cmp-a",
+      subject: {
+        competitionName: "Liga A",
+        encounterLabel: null,
+        teamName: "Cuervos",
+        outcome: null,
+      },
+      openedAt: "2026-10-07T10:00:00.000Z",
+      lastEventAt: "2026-10-07T10:00:00.000Z",
+    });
+    const decision = entry({
+      id: "decision",
+      kind: "organizer_decision",
+      status: "closed",
+      requiresAction: false,
+      resourceType: "competition",
+      resourceId: "cmp-a",
+      subject: {
+        competitionName: "Liga A",
+        encounterLabel: null,
+        teamName: "Halcones",
+        outcome: "entry_rejected",
+      },
+      openedAt: "2026-10-07T11:00:00.000Z",
+      closedAt: "2026-10-07T11:00:00.000Z",
+      lastEventAt: "2026-10-07T11:00:00.000Z",
+    });
+    listForOrganization.mockImplementation(async (_organizationId, query) =>
+      query?.requiresAction
+        ? page([application, reschedule])
+        : page([decision, application, reschedule]),
+    );
+    renderWith(operatorQueue());
+
+    const pending = screen.getByRole("navigation", { name: "Pendientes" });
+    expect(await within(pending).findByText("Revisar inscripción")).toBeTruthy();
+    expect(within(pending).getByText("Decidir reprogramación")).toBeTruthy();
+    expect(within(pending).queryByText("Inscripción rechazada")).toBeNull();
+
+    const recent = await screen.findByRole("list", { name: "Actividad reciente" });
+    const titles = within(recent)
+      .getAllByRole("listitem")
+      .map((item) => item.querySelector("span span")?.textContent);
+    expect(titles).toEqual([
+      "Inscripción rechazada",
+      "Revisar inscripción",
+      "Decidir reprogramación",
+    ]);
+    expect(
+      within(recent).getByText("Inscripción rechazada").closest("a")?.getAttribute("href"),
+    ).toBe("/orgs/org-a/competitions/cmp-a/teams");
+    expect(
+      within(recent).getByText("Decidir reprogramación").closest("a")?.getAttribute("href"),
+    ).toBe("/orgs/org-a/competitions/cmp-a/encounters");
+  });
+
   it("shows at most ten rows with a link to the full feed, and no link when empty", async () => {
     listForOrganization.mockResolvedValue(page(many(12, "row"), "cursor"));
     renderWith(<OrganizationRecentActivity organizationId={ORG} />);
@@ -256,7 +328,12 @@ describe("activity screens", () => {
           kind: "roster_invitation",
           resourceType: "roster_invitation",
           resourceId: "inv-1",
-          subject: { competitionName: "Liga A", encounterLabel: null, teamName: "Cuervos" },
+          subject: {
+            competitionName: "Liga A",
+            encounterLabel: null,
+            teamName: "Cuervos",
+            outcome: null,
+          },
         }),
       ]),
     );
