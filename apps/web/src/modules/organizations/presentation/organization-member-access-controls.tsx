@@ -57,7 +57,12 @@ export function OrganizationMemberRoleEditor({
   readonly role: OrgMembershipRoleDto;
 }) {
   const { t } = useI18n();
-  const [selected, setSelected] = useState<OrgMembershipRoleDto>(role);
+  // A draft only applies to the role it was picked against, so a confirmed or refreshed role wins.
+  const [draft, setDraft] = useState<{
+    readonly role: OrgMembershipRoleDto;
+    readonly basis: OrgMembershipRoleDto;
+  } | null>(null);
+  const selected = draft?.basis === role ? draft.role : role;
   const change = useChangeMemberRoleMutation(organizationId, actorId);
   const medium = applyStyles(memberStyles.mediumText);
   const items = ROLES.map((value) => ({ value, label: t(`shell.workspace.role.${value}`) }));
@@ -77,7 +82,7 @@ export function OrganizationMemberRoleEditor({
           onValueChange={(value) => {
             const parsed = orgMembershipRoleSchema.safeParse(value);
             if (!parsed.success) return;
-            setSelected(parsed.data);
+            setDraft({ role: parsed.data, basis: role });
             change.reset();
           }}
           value={selected}

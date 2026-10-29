@@ -1,15 +1,17 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type {
   ChangeOrganizationRoleRequest,
   ListAccessGrantsResponse,
+  ListOrganizationMembersResponse,
   OrganizationRoleAssignmentDto,
 } from "@futrob/api-contracts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { OrganizationsClientError } from "./organizations-browser-client.ts";
+import { OrganizationMembersPage } from "./organization-members-page.tsx";
 import { OrganizationMembersSections } from "./organization-members-sections.tsx";
 import { MEMBERS_FIXTURE } from "./organization-members-page.fixtures.ts";
 import type { MemberAccessManagement } from "./organization-members-model.ts";
@@ -25,6 +27,15 @@ const mocks = vi.hoisted(() => ({
     >(),
   listMemberGrants:
     vi.fn<(organizationId: string, actorId: string) => Promise<ListAccessGrantsResponse>>(),
+  listMembers: vi.fn<(organizationId: string) => Promise<ListOrganizationMembersResponse>>(),
+}));
+
+vi.mock("@/shared/presentation/permissions/index.ts", () => ({
+  useCapabilities: (_scope: unknown, capabilities: Record<string, unknown>) => ({
+    ...Object.fromEntries(Object.keys(capabilities).map((key) => [key, key !== "grants"])),
+    loading: false,
+    unavailable: false,
+  }),
 }));
 
 vi.mock("./organizations-browser-client.ts", async (importOriginal) => {
@@ -40,6 +51,7 @@ vi.mock("./organizations-browser-client.ts", async (importOriginal) => {
       ) => mocks.changeMemberRole(organizationId, actorId, input),
       listMemberGrants: (organizationId: string, actorId: string) =>
         mocks.listMemberGrants(organizationId, actorId),
+      listMembers: (organizationId: string) => mocks.listMembers(organizationId),
     },
   };
 });
@@ -174,5 +186,60 @@ describe("member role management", () => {
     expect(detail.getByText("Permitido")).toBeVisible();
     expect(detail.getByText("Cubre la edición del perfil")).toBeVisible();
     expect(mocks.listMemberGrants).toHaveBeenCalledWith("org-1", "member-lucia");
+  });
+
+  it("keeps the confirmed role as reference when the members refresh fails", async () => {
+    const user = userEvent.setup();
+    mocks.listMembers.mockResolvedValueOnce({
+      members: [
+        {
+          actorId: "member-lucia",
+          displayName: "Lucía Pérez",
+          email: "lucia@example.com",
+          role: "member",
+          joinedAt: "2026-09-18T12:00:00.000Z",
+          access: { kind: "none" },
+        },
+      ],
+    });
+    mocks.listMembers.mockRejectedValue(
+      new OrganizationsClientError({ status: 503, code: "api.unavailable", message: "down" }),
+    );
+    mocks.changeMemberRole.mockImplementation(async (organizationId, actorId, input) => ({
+      organizationId,
+      actorId,
+      role: input.role,
+      createdAt: "2026-09-18T12:00:00.000Z",
+    }));
+    render(
+      <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+        <QueryTestProvider>
+          <OrganizationMembersPage organizationId="org-1" />
+        </QueryTestProvider>
+      </I18nProvider>,
+    );
+    await user.click(await screen.findByRole("row", { name: /Lucía Pérez/ }));
+    const detail = within(screen.getByRole("region", { name: "Detalle del miembro" }));
+    const role = detail.getByRole("combobox", { name: "Cambiar rol" });
+
+    await user.click(role);
+    await user.click(await screen.findByRole("option", { name: "Staff" }));
+    await user.click(detail.getByRole("button", { name: "Guardar rol" }));
+
+    expect(await detail.findByText("Rol actualizado")).toBeVisible();
+    await waitFor(() => expect(mocks.listMembers).toHaveBeenCalledTimes(2));
+    expect(role).toHaveTextContent("Staff");
+
+    await user.click(role);
+    await user.click(await screen.findByRole("option", { name: "Miembro" }));
+    const save = detail.getByRole("button", { name: "Guardar rol" });
+    expect(save).toBeEnabled();
+    await user.click(save);
+
+    await waitFor(() =>
+      expect(mocks.changeMemberRole).toHaveBeenLastCalledWith("org-1", "member-lucia", {
+        role: "member",
+      }),
+    );
   });
 });

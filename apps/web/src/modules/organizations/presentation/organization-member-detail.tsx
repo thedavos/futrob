@@ -97,7 +97,7 @@ export function OrganizationMemberDetail({
             {manage?.roles ? (
               <OrganizationMemberRoleEditor
                 actorId={member.id}
-                key={`${member.id}:${member.role}`}
+                key={member.id}
                 organizationId={manage.organizationId}
                 role={member.role}
               />
