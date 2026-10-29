@@ -4,9 +4,9 @@
 disputas y su auditoría. La API compone la atomicidad con statistics ([ADR-0016](/docs/adr/0016-official-results-transactional-projection.md));
 la autorización es contextual ([ADR-0017](/docs/adr/0017-contextual-capability-authorization.md)).
 El contrato HTTP publica las operaciones Team y la lectura/toma/resolución del operador.
-`@futrob/sdk` y el BFF autenticado consumen ambas superficies mediante
-[#115](https://github.com/thedavos/futrob/issues/115), implementado en este checkout sin despliegue.
-Las pantallas de este flujo permanecen fuera de este corte.
+`@futrob/sdk` y el BFF autenticado consumen ambas superficies mediante [#115](https://github.com/thedavos/futrob/issues/115). El
+[Match Center](/apps/web/src/modules/results/presentation/encounter-page.tsx) incluye la selección,
+la previsualización y la revisión de disputas.
 
 ## HTTP del operador
 
@@ -175,8 +175,7 @@ estados, versiones, referencias y secuencia.
 
 Esta política no redefine la identidad de replay. Dos comandos que solo difieren en el dato
 redactado siguen siendo distintos: #128 deriva el fingerprint del motivo normalizado original,
-no del motivo redactado. #127 por sí solo no es integrable; la exposición de auditoría requiere
-integrar ambos cambios. El stack no añade rutas, DTOs wire ni pantallas de auditoría.
+no del motivo redactado. La política de salida y los recibos opacos se aplican juntos.
 
 ## Recibos opacos y compatibilidad de replay (#128)
 
@@ -248,8 +247,7 @@ vacío (null) y otra con motivo literal `"-"` tenían el mismo recibo textual, m
 `confirmed`/`approved` omitían el motivo. Ambas solicitudes devuelven ahora
 `results.command_key_reused` para ese recibo ambiguo: no se inventa la identidad original,
 no se duplica ningún efecto y no se toca el historial. Los recibos opacos nuevos distinguen
-estos casos y replayan normalmente. Esta excepción explícita de compatibilidad requiere aceptación
-del responsable antes de integrar el stack; no habilita exposición de motivos.
+estos casos y replayan normalmente. Esta excepción de compatibilidad no habilita la exposición de motivos.
 
 El replay reconstruye el resultado histórico y luego aplica la política de salida de #127.
 Mantiene IDs, actores, fechas, versiones y conteos; no actualiza el recibo ni duplica selección,
@@ -270,17 +268,14 @@ El publisher de eventos sigue siendo `NoopEventPublisher`: los eventos `results.
 `results.official-selection-confirmed`, `results.match-dispute-opened` y `results.official-result-approved`
 se publican tras el commit pero no se entregan de forma durable. No hay outbox ni notificaciones.
 
-## Pendiente fuera de este corte
+## Pendiente
 
-- UI del Match Center y la previsualización FTR-SEL-002. HTTP y OpenAPI Team están integrados
-  mediante #113; #130 añade deadline y auditoría de vencimiento al contrato. SDK y BFF Team y
-  operador están implementados mediante #115.
 - Disputa abierta por un Team sobre un resultado ya aprobado, sanciones, evidencias y notificaciones.
 
 ## Vencimiento de la confirmación rival (DEC-021)
 
 **Estado:** decisión validada el 2026-10-05: `D` = creación de la propuesta + 24 horas. El runtime
-([#130](https://github.com/thedavos/futrob/issues/130)) está implementado en el checkout, sin despliegue. La comparación de alternativas y los vectores V21-01…V21-19 están en
+([#130](https://github.com/thedavos/futrob/issues/130)) está implementado en el repositorio. La comparación de alternativas y los vectores V21-01…V21-19 están en
 [open-decisions §3.1](/product/open-decisions.md#31-dec-021--vencimiento-de-la-confirmación-rival).
 
 Forma de datos que la regla exige con cualquier alternativa:
