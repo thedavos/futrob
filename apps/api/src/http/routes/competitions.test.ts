@@ -2,6 +2,8 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   addCompetitionParticipantResponseSchema,
   completeOrganizationOnboardingResponseSchema,
+  getCompetitionDraftResponseSchema,
+  updateCompetitionDraftResponseSchema,
 } from "@futrob/api-contracts";
 import {
   buildApp,
@@ -392,5 +394,61 @@ describe("apps/api http competitions", () => {
     );
     expect(hidden.status).toBe(404);
     expect(await hidden.json()).toMatchObject({ code: "competitions.not_discoverable" });
+  });
+
+  it("competitions: stores ranking eligibility on the draft and keeps it when a later edit omits it", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-eligibility-organizer";
+    const created = await app.request("/api/v1/identity/onboarding/organization", {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Eligibility Org",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    expect(body.competition.rules.rankingEligibility).toBeNull();
+    const path = `/api/v1/organizations/${body.organizationId}/competitions/${body.competition.competition.id}`;
+    const rankingEligibility = { minimumMatches: 1, minimumTeamMinutesRatio: 0.25 };
+
+    const saved = await app.request(path, {
+      method: "PATCH",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        ...onboardingCompetition,
+        rules: { ...LEAGUE_RULES, rankingEligibility },
+      }),
+    });
+    const savedBody = await parseResponse(updateCompetitionDraftResponseSchema, saved);
+    expect(savedBody.rules.rankingEligibility).toEqual(rankingEligibility);
+
+    const kept = await app.request(path, {
+      method: "PATCH",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        ...onboardingCompetition,
+        name: "Liga con mínimos",
+        rules: LEAGUE_RULES,
+      }),
+    });
+    const keptBody = await parseResponse(updateCompetitionDraftResponseSchema, kept);
+    expect(keptBody.rules.rankingEligibility).toEqual(rankingEligibility);
+
+    const cleared = await app.request(path, {
+      method: "PATCH",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        ...onboardingCompetition,
+        rules: { ...LEAGUE_RULES, rankingEligibility: null },
+      }),
+    });
+    const clearedBody = await parseResponse(updateCompetitionDraftResponseSchema, cleared);
+    expect(clearedBody.rules.rankingEligibility).toBeNull();
+
+    const read = await app.request(path, { headers: serviceHeaders(organizer) });
+    const readBody = await parseResponse(getCompetitionDraftResponseSchema, read);
+    expect(readBody.rules.rankingEligibility).toBeNull();
   });
 });

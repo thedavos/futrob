@@ -374,6 +374,7 @@ function toUpdateInput(draft: CompetitionDraftDto): UpdateCompetitionDraftReques
       regularStage: draft.rules.regularStage,
       knockoutStage: draft.rules.knockoutStage,
       maxRosterSize: draft.rules.maxRosterSize,
+      rankingEligibility: draft.rules.rankingEligibility,
     },
   };
 }

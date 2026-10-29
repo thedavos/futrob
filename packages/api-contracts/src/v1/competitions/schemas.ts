@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { rankingEligibilitySchema } from "../statistics/schemas.ts";
 import { gamePlatformSchema } from "../game-platform.ts";
 import { acceptInvitationResponseSchema } from "../organizations/schemas.ts";
 
@@ -103,6 +104,8 @@ export const competitionRulesSchema = z.object({
   knockoutStage: competitionMatchRulesSchema.nullable(),
   awayGoalsEnabled: z.literal(false),
   maxRosterSize: z.number().int().positive().nullable(),
+  /** Null when the competition keeps the statistics defaults. */
+  rankingEligibility: rankingEligibilitySchema.nullable(),
   createdAt: z.string().datetime(),
 });
 export type CompetitionRulesDto = z.infer<typeof competitionRulesSchema>;
@@ -112,6 +115,8 @@ export const updateCompetitionDraftRequestSchema = competitionDraftInputSchema.e
     regularStage: competitionMatchRulesSchema.nullable(),
     knockoutStage: competitionMatchRulesSchema.nullable(),
     maxRosterSize: z.number().int().positive().nullable(),
+    /** Absent keeps the stored minimums. Null clears them back to the defaults. */
+    rankingEligibility: rankingEligibilitySchema.nullable().optional(),
   }),
 });
 export type UpdateCompetitionDraftRequest = z.infer<typeof updateCompetitionDraftRequestSchema>;

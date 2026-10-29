@@ -152,6 +152,7 @@ export class CreateCompetitionDraftUseCase {
       ...rulesPreset(input.format),
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: existing?.rules.createdAt ?? now,
     };
 

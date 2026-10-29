@@ -573,6 +573,7 @@ async function seedTenant(
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: 11,
+      rankingEligibility: null,
       createdAt: KICKOFF,
     },
   });

@@ -59,6 +59,7 @@ export type {
   CompetitionMatchRulesQuery,
   CompetitionMatchRulesReaderPort,
 } from "./domain/ports/competition-match-rules-reader.port.ts";
+export type { CompetitionRankingEligibilityReaderPort } from "./domain/ports/competition-ranking-eligibility-reader.port.ts";
 export type { PlayerProfileLookupPort } from "./domain/ports/player-profile-lookup.port.ts";
 export type {
   PlayerIdentityResolution,

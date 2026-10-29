@@ -12,6 +12,7 @@ import {
   type RankingKind,
 } from "../../domain/entities/ranking-snapshot.ts";
 import { buildCompetitionRankings } from "../../domain/policies/build-competition-rankings.ts";
+import type { CompetitionRankingEligibilityReaderPort } from "../../domain/ports/competition-ranking-eligibility-reader.port.ts";
 import type { PlayerMatchContributionRepository } from "../../domain/ports/player-match-contribution.repository.ts";
 import type { RankingSnapshotRepository } from "../../domain/ports/ranking-snapshot.repository.ts";
 import type { TeamMatchContributionRepository } from "../../domain/ports/team-match-contribution.repository.ts";
@@ -30,6 +31,7 @@ export interface RebuildCompetitionRankingsDependencies {
   readonly contributions: PlayerMatchContributionRepository;
   readonly teamContributions: TeamMatchContributionRepository;
   readonly rankings: RankingSnapshotRepository;
+  readonly eligibility?: CompetitionRankingEligibilityReaderPort;
   readonly eventPublisher: EventPublisherPort;
   readonly transaction: TransactionPort;
   readonly clock: ClockPort;
@@ -50,6 +52,11 @@ export class RebuildCompetitionRankingsUseCase {
     const organizationId =
       playerContributions[0]?.organizationId ?? teamContributions[0]?.organizationId;
 
+    const eligibility =
+      input.eligibility ??
+      (await this.deps.eligibility?.getRankingEligibility(input.competitionId)) ??
+      undefined;
+
     const snapshots =
       organizationId === undefined
         ? []
@@ -58,7 +65,7 @@ export class RebuildCompetitionRankingsUseCase {
             organizationId,
             playerContributions,
             teamContributions,
-            eligibility: input.eligibility,
+            eligibility,
             updatedAt: this.deps.clock.now(),
           });
 

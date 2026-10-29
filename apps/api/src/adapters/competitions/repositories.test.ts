@@ -51,6 +51,7 @@ const draft: CompetitionDraft = {
     knockoutStage: null,
     awayGoalsEnabled: false,
     maxRosterSize: null,
+    rankingEligibility: null,
     createdAt: new Date("2026-07-31T12:00:00.000Z"),
   },
 };
@@ -76,6 +77,19 @@ describe.each(repositoryCases())("competition %s repository", (_name, createRepo
     await expect(
       repository.findByCreationKey("onboarding:competition:actor-1"),
     ).resolves.toMatchObject({ competition: { id: "competition-1" } });
+  });
+
+  it("round-trips ranking eligibility and defaults to null when unset", async () => {
+    const repository = createRepository();
+    await repository.saveDraft(draft);
+    const unset = await repository.findRulesByCompetitionId(asCompetitionId("competition-1"));
+    expect(unset?.rankingEligibility ?? null).toBeNull();
+
+    const rankingEligibility = { minimumMatches: 5, minimumTeamMinutesRatio: 0.4 };
+    await repository.saveDraft({ ...draft, rules: { ...draft.rules, rankingEligibility } });
+    await expect(
+      repository.findRulesByCompetitionId(asCompetitionId("competition-1")),
+    ).resolves.toMatchObject({ rankingEligibility });
   });
 
   it("lists competitions for an organization newest-first", async () => {
@@ -190,7 +204,9 @@ class FakeCompetitionPool {
         knockout_stage: null,
         away_goals_enabled: Boolean(values[4]),
         max_roster_size: values[5] == null ? null : Number(values[5]),
-        created_at: pgTimestampSchema.parse(values[6]),
+        ranking_minimum_matches: values[6] == null ? null : Number(values[6]),
+        ranking_minimum_team_minutes_ratio: values[7] == null ? null : Number(values[7]),
+        created_at: pgTimestampSchema.parse(values[8]),
       };
       return { rows: [this.rules] };
     }
@@ -215,6 +231,8 @@ class FakeCompetitionPool {
                 knockout_stage: this.rules.knockout_stage,
                 away_goals_enabled: this.rules.away_goals_enabled,
                 max_roster_size: this.rules.max_roster_size,
+                ranking_minimum_matches: this.rules.ranking_minimum_matches,
+                ranking_minimum_team_minutes_ratio: this.rules.ranking_minimum_team_minutes_ratio,
                 rules_created_at: this.rules.created_at,
               },
             ]

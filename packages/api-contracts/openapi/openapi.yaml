@@ -7729,6 +7729,21 @@ components:
                 - integer
                 - "null"
               exclusiveMinimum: 0
+            rankingEligibility:
+              type:
+                - object
+                - "null"
+              properties:
+                minimumMatches:
+                  type: integer
+                  minimum: 0
+                minimumTeamMinutesRatio:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+              required:
+                - minimumMatches
+                - minimumTeamMinutesRatio
             createdAt:
               type: string
               format: date-time
@@ -7738,6 +7753,7 @@ components:
             - knockoutStage
             - awayGoalsEnabled
             - maxRosterSize
+            - rankingEligibility
             - createdAt
       required:
         - competition
@@ -8233,6 +8249,21 @@ components:
             - integer
             - "null"
           exclusiveMinimum: 0
+        rankingEligibility:
+          type:
+            - object
+            - "null"
+          properties:
+            minimumMatches:
+              type: integer
+              minimum: 0
+            minimumTeamMinutesRatio:
+              type: number
+              minimum: 0
+              maximum: 1
+          required:
+            - minimumMatches
+            - minimumTeamMinutesRatio
         createdAt:
           type: string
           format: date-time
@@ -8242,6 +8273,7 @@ components:
         - knockoutStage
         - awayGoalsEnabled
         - maxRosterSize
+        - rankingEligibility
         - createdAt
     CompetitionSchedule:
       type: object
@@ -9126,6 +9158,21 @@ components:
                     - integer
                     - "null"
                   exclusiveMinimum: 0
+                rankingEligibility:
+                  type:
+                    - object
+                    - "null"
+                  properties:
+                    minimumMatches:
+                      type: integer
+                      minimum: 0
+                    minimumTeamMinutesRatio:
+                      type: number
+                      minimum: 0
+                      maximum: 1
+                  required:
+                    - minimumMatches
+                    - minimumTeamMinutesRatio
                 createdAt:
                   type: string
                   format: date-time
@@ -9135,6 +9182,7 @@ components:
                 - knockoutStage
                 - awayGoalsEnabled
                 - maxRosterSize
+                - rankingEligibility
                 - createdAt
           required:
             - competition
@@ -22633,6 +22681,21 @@ components:
                 - integer
                 - "null"
               exclusiveMinimum: 0
+            rankingEligibility:
+              type:
+                - object
+                - "null"
+              properties:
+                minimumMatches:
+                  type: integer
+                  minimum: 0
+                minimumTeamMinutesRatio:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+              required:
+                - minimumMatches
+                - minimumTeamMinutesRatio
           required:
             - regularStage
             - knockoutStage

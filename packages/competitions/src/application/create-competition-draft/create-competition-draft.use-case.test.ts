@@ -51,6 +51,7 @@ describe("CreateCompetitionDraftUseCase", () => {
       version: 1,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       knockoutStage: null,
       regularStage: {
         officialMatchesPerEncounter: 1,

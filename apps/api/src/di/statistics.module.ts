@@ -25,6 +25,7 @@ import type {
 import type { AuthorizationPort, EventPublisherPort, TransactionPort } from "@futrob/shared-kernel";
 import { SystemClock } from "@/adapters/organizations/crypto-ports";
 import { CompetitionsMatchRulesReader } from "@/adapters/statistics/competition-match-rules-reader";
+import { CompetitionsRankingEligibilityReader } from "@/adapters/statistics/competition-ranking-eligibility-reader";
 import { TeamsPlayerIdentityResolver } from "@/adapters/statistics/player-identity-resolver";
 import { TeamsPlayerProfileLookup } from "@/adapters/statistics/player-profile-lookup";
 import {
@@ -131,6 +132,7 @@ export function createStatisticsModule(deps: {
     contributions,
     teamContributions,
     rankings,
+    eligibility: new CompetitionsRankingEligibilityReader(deps.competitions),
     eventPublisher: deps.eventPublisher,
     transaction: deps.transaction,
     clock,

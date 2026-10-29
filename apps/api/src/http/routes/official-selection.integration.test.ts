@@ -171,6 +171,7 @@ suite("Team official-selection routes over HTTP on Postgres", () => {
         knockoutStage: null,
         awayGoalsEnabled: false,
         maxRosterSize: 11,
+        rankingEligibility: null,
         createdAt: NOW,
       },
     });

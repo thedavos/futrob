@@ -11842,6 +11842,27 @@
                 ],
                 "exclusiveMinimum": 0
               },
+              "rankingEligibility": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "minimumMatches": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "minimumTeamMinutesRatio": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "minimumMatches",
+                  "minimumTeamMinutesRatio"
+                ]
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -11853,6 +11874,7 @@
               "knockoutStage",
               "awayGoalsEnabled",
               "maxRosterSize",
+              "rankingEligibility",
               "createdAt"
             ]
           }
@@ -12551,6 +12573,27 @@
             ],
             "exclusiveMinimum": 0
           },
+          "rankingEligibility": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "minimumMatches": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minimumTeamMinutesRatio": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "minimumMatches",
+              "minimumTeamMinutesRatio"
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -12562,6 +12605,7 @@
           "knockoutStage",
           "awayGoalsEnabled",
           "maxRosterSize",
+          "rankingEligibility",
           "createdAt"
         ]
       },
@@ -13768,6 +13812,27 @@
                     ],
                     "exclusiveMinimum": 0
                   },
+                  "rankingEligibility": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "minimumMatches": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "minimumTeamMinutesRatio": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "minimumMatches",
+                      "minimumTeamMinutesRatio"
+                    ]
+                  },
                   "createdAt": {
                     "type": "string",
                     "format": "date-time"
@@ -13779,6 +13844,7 @@
                   "knockoutStage",
                   "awayGoalsEnabled",
                   "maxRosterSize",
+                  "rankingEligibility",
                   "createdAt"
                 ]
               }
@@ -32776,6 +32842,27 @@
                   "null"
                 ],
                 "exclusiveMinimum": 0
+              },
+              "rankingEligibility": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "minimumMatches": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "minimumTeamMinutesRatio": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "minimumMatches",
+                  "minimumTeamMinutesRatio"
+                ]
               }
             },
             "required": [
