@@ -14,6 +14,7 @@ import {
 } from "@futrob/scheduling";
 import type { ActorId, Result, TransactionPort } from "@futrob/shared-kernel";
 import type { ActivityWriter } from "@/di/notifications.module.ts";
+import { runAtomically } from "./run-atomically.ts";
 import { encounterSubject, teamName, type ActivitySubjectReaders } from "./activity-subjects.ts";
 
 const PROPOSAL = "schedule_change_proposal";
@@ -93,10 +94,11 @@ export class ScheduleChangeActivity {
         current.proposedByTeamId === encounter.homeTeamId
           ? encounter.awayTeamId
           : encounter.homeTeamId;
+      const source = { name: PROPOSAL, id: current.id } as const;
       await writer.record({
         ...base,
         kind: "schedule_change",
-        source: { name: PROPOSAL, id: current.id },
+        source,
         subject: {
           ...encounterNames,
           teamName: await teamName(this.deps.readers, request.organizationId, rivalTeamId),
@@ -111,6 +113,20 @@ export class ScheduleChangeActivity {
           organization(required.includes("organizer")),
         ],
       });
+      // Each authority stops being asked once it consented to the current proposal; the
+      // proposal stays open for whoever is still missing.
+      for (const decision of request.decisions) {
+        if (decision.proposalId !== current.id || decision.kind !== "consent") continue;
+        await writer.close({
+          source,
+          audience:
+            decision.responder.authority === "rival_team"
+              ? { audience: "team", audienceId: rivalTeamId }
+              : { audience: "organization", audienceId: request.organizationId },
+          closedByActorId: decision.actorId,
+          closedAt: decision.createdAt,
+        });
+      }
       return;
     }
 
@@ -169,21 +185,29 @@ export function createScheduleChangeCommands(deps: {
 }) {
   const { transaction, activity } = deps;
 
-  /** Runs a command that returns the request it changed, then projects that request. */
+  /**
+   * Runs a command that returns the request it changed, then projects that request. A
+   * replayed command returns a historical snapshot whose activity was already written with
+   * it; projecting it again would rewind rows the request has moved past.
+   */
   function projected<I extends { readonly actorId: ActorId }, V, E>(
     run: (input: I) => Promise<Result<V, E>>,
-    requestOf: (value: V) => ScheduleChangeRequest,
+    requestOf: (value: V) => ScheduleChangeRequest | null,
   ) {
     return {
       execute: (input: I) =>
-        transaction.runInTransaction(async () => {
+        runAtomically(transaction, async () => {
           const result = await run(input);
-          if (result.isOk()) await activity.project(requestOf(result.value), input.actorId);
+          const request = result.isOk() ? requestOf(result.value) : null;
+          if (request) await activity.project(request, input.actorId);
           return result;
         }),
     };
   }
-  const decided = (output: { readonly request: ScheduleChangeRequest }) => output.request;
+  const decided = (output: {
+    readonly request: ScheduleChangeRequest;
+    readonly replayed: boolean;
+  }) => (output.replayed ? null : output.request);
 
   return {
     createScheduleChangeRequest: projected(
@@ -209,7 +233,7 @@ export function createScheduleChangeCommands(deps: {
     /** The system escalates a request nobody answered in time; the organizer must decide. */
     expireScheduleChangeProposal: {
       execute: (input: ExpireInput) =>
-        transaction.runInTransaction(async () => {
+        runAtomically(transaction, async () => {
           const result = await deps.expire.execute(input);
           if (result.isOk() && result.value.status === "escalated") {
             const request = await deps.requests.findById(input.organizationId, input.requestId);

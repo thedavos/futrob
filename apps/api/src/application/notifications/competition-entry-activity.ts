@@ -6,6 +6,7 @@ import type {
 } from "@futrob/competitions";
 import type { ActorId, TransactionPort } from "@futrob/shared-kernel";
 import type { ActivityWriter } from "@/di/notifications.module.ts";
+import { runAtomically } from "./run-atomically.ts";
 import { competitionName, teamName, type ActivitySubjectReaders } from "./activity-subjects.ts";
 
 const SOURCE = "competition_entry";
@@ -104,7 +105,7 @@ export function createCompetitionEntryCommands(deps: {
   return {
     registerTeamEntry: {
       execute: (input: RegisterInput) =>
-        transaction.runInTransaction(async () => {
+        runAtomically(transaction, async () => {
           const result = await deps.register.execute(input);
           if (result.isOk()) await activity.registered(result.value, input.actorId);
           return result;
@@ -112,7 +113,7 @@ export function createCompetitionEntryCommands(deps: {
     },
     approveTeamEntry: {
       execute: (input: DecideInput) =>
-        transaction.runInTransaction(async () => {
+        runAtomically(transaction, async () => {
           const result = await deps.approve.execute(input);
           if (result.isOk()) await activity.decided(result.value, input.actorId);
           return result;
@@ -120,7 +121,7 @@ export function createCompetitionEntryCommands(deps: {
     },
     rejectTeamEntry: {
       execute: (input: DecideInput) =>
-        transaction.runInTransaction(async () => {
+        runAtomically(transaction, async () => {
           const result = await deps.reject.execute(input);
           if (result.isOk()) await activity.decided(result.value, input.actorId);
           return result;
