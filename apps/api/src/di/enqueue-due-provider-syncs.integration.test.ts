@@ -144,6 +144,7 @@ async function seedOrganization(modules: AppModules): Promise<void> {
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: 11,
+      rankingEligibility: null,
       createdAt: NOW,
     },
   });
