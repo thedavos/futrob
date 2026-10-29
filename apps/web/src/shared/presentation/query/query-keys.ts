@@ -68,6 +68,10 @@ export const queryKeys = {
     profile: (organizationId: string) =>
       [...queryKeys.organizations.all, "profile", organizationId] as const,
   },
+  billing: {
+    all: ["billing"] as const,
+    plan: (organizationId: string) => [...queryKeys.billing.all, "plan", organizationId] as const,
+  },
   authorization: {
     all: ["authorization"] as const,
     effectiveAccess: (

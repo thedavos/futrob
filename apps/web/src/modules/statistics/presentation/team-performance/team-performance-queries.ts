@@ -17,7 +17,9 @@ type Scope = { readonly organizationId: string; readonly competitionId: string }
  */
 export type TeamPerformanceRankingResult =
   | { readonly kind: "ranking"; readonly response: GetTeamPerformanceRankingResponse }
-  | { readonly kind: "refused"; readonly status: 401 | 403 | 404 };
+  | { readonly kind: "refused"; readonly status: 401 | 403 | 404 }
+  /** The organization's plan does not include the ranking (402, ADR-0025). */
+  | { readonly kind: "notInPlan" };
 
 export const teamPerformanceRankingQueryKey = ({ organizationId, competitionId }: Scope) =>
   [...queryKeys.statistics.all, "team-performance", organizationId, competitionId] as const;
@@ -39,6 +41,16 @@ export function getTeamPerformanceRanking({
 export async function loadTeamPerformanceRanking(
   scope: Scope,
 ): Promise<TeamPerformanceRankingResult> {
+  try {
+    return await readRanking(scope);
+  } catch (error) {
+    if (error instanceof StatisticsClientError && error.status === 402)
+      return { kind: "notInPlan" };
+    throw error;
+  }
+}
+
+async function readRanking(scope: Scope): Promise<TeamPerformanceRankingResult> {
   const readResult = await readKeepingRefusal(
     () => getTeamPerformanceRanking(scope),
     (error) => (error instanceof StatisticsClientError ? error.status : undefined),

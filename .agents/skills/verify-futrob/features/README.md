@@ -35,6 +35,7 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 
 ## Features
 
+- [Plan y uso](./billing-plan.md) covers the organization plan page, 402 upsell states and `/pricing`.
 - [Landing](./landing.md) covers the public marketing page, CTAs, and the mechanism section. **Seed proof target.**
 - [Auth](./auth.md) covers login, signup, session gate, and secret-mismatch failure.
 - [Onboarding (player)](./onboarding-player.md) covers intention → optional account/club → `/player`.

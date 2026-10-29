@@ -559,6 +559,7 @@ se identifican por separado; brackets incluyen lista accesible y byes sin score 
 ```text
 Futrob
 ├── Landing pública
+│   ├── Precios (/pricing)
 │   ├── Producto
 │   ├── Cómo funciona (EA → candidatos → selección → oficial)
 │   ├── Para organizadores / capitanes
@@ -721,6 +722,7 @@ El inicio de organización incluye la sección **Actividad reciente**: las últi
 - Jugadores
 - Invitaciones
 - Miembros y roles
+- Plan y uso
 - Ajustes
 
 #### Miembros y roles
@@ -745,6 +747,21 @@ El gap entre secciones y la distancia de la cabecera de página al contenido son
 - En esta página, incluidos menús y diálogo, el peso mínimo de texto es medium (500).
   La fila seleccionada conserva su fondo habitual y se identifica con una barra lateral
   `primary` de 3 px y el nombre en peso 600. Conserva el estado accesible y el foco de teclado.
+
+#### Plan y uso
+
+Ruta `/orgs/:orgId/settings/plan`, visible con `billing.read` (organizer y staff). Compone
+«Uso» (competiciones activas, staff y sincronizaciones con EA del mes, cada una con valor
+«N de M» y barra; «sin límite» no dibuja barra), «Plan actual» (nombre, estado como `Badge`
+y enlace «Ver planes»), «Incluido en tu plan» (icono check lima o círculo muted con texto,
+nunca solo color) y «Cambios de plan» a todo el ancho. Al alcanzar un límite, la fila muestra
+un `Alert` warning que explica qué se frena y que lo ya en marcha sigue. Sin permiso: vacío
+de permiso, no un plan vacío. La compra no existe en la Fase 0: no hay botón de pago.
+
+**Upsell (402).** Una acción que el plan no incluye responde 402. La UI muestra un `Alert`
+warning con el motivo y el enlace «Ver plan y uso»; nunca lo disfraza de error de permiso.
+Una pantalla completa fuera del plan (ranking de rendimiento) usa `EmptyState` con salida a
+la tabla oficial. Mobile oculta lo que el plan no incluye y no muestra precios ni CTA de compra.
 
 #### Inicio de organización
 

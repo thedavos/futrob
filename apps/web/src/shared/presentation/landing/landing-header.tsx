@@ -59,6 +59,9 @@ export function LandingHeader() {
           <span {...applyStyles(typography.heading, styles.wordmark)}>Futrob</span>
         </Link>
         <nav aria-label={t("landing.nav.aria")} {...applyStyles(styles.nav)}>
+          <Button render={<Link to="/pricing" />} variant="ghost">
+            {t("landing.nav.pricing")}
+          </Button>
           <Button render={<Link to="/login" />} variant="ghost">
             {t("landing.nav.login")}
           </Button>

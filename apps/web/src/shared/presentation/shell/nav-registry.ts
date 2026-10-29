@@ -1,3 +1,4 @@
+import { BILLING_PERMISSION } from "@futrob/billing";
 import type { Permission } from "@futrob/shared-kernel";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
@@ -26,6 +27,7 @@ export type ShellNavIconId =
   | "players"
   | "organization"
   | "settings"
+  | "plan"
   | "overview"
   | "fixture"
   | "encounters"
@@ -127,6 +129,13 @@ function organizationGeneralNav(organizationId: string, t: Translator): readonly
       href: `${base}/settings/members`,
       icon: "organization",
       requiredPermission: ORGANIZATION_PERMISSION.membershipsRead,
+    },
+    {
+      id: "plan",
+      label: t("pages.organization.plan.title"),
+      href: `${base}/settings/plan`,
+      icon: "plan",
+      requiredPermission: BILLING_PERMISSION.read,
     },
     {
       id: "settings",

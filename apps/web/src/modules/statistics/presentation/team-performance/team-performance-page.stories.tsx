@@ -46,6 +46,7 @@ type Scenario =
   | "empty"
   | "projectionIncomplete"
   | "forbidden"
+  | "notInPlan"
   | "error"
   | "accessError"
   | "refreshError"
@@ -68,6 +69,7 @@ const STATES: Record<Scenario, TeamPerformanceState> = {
   },
   projectionIncomplete: { kind: "ready", ranking: projectionIncompleteFixture() },
   forbidden: { kind: "forbidden" },
+  notInPlan: { kind: "notInPlan" },
   error: { kind: "error", cause: "load", retry: noop },
   accessError: { kind: "error", cause: "access", retry: noop },
   refreshError: { kind: "ready", ranking: ready, refreshRetry: noop },
@@ -113,8 +115,13 @@ function TeamPerformanceStory({ locale, names, narrow = false, scenario }: Story
         component: () => <p>Destino</p>,
       }),
     );
+    const plan = createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/orgs/$orgId/settings/plan",
+      component: () => <p>Destino</p>,
+    });
     return createRouter({
-      routeTree: rootRoute.addChildren([page, ...stubs]),
+      routeTree: rootRoute.addChildren([page, plan, ...stubs]),
       history: createMemoryHistory({
         initialEntries: ["/orgs/org-1/competitions/competition-1/team-performance"],
       }),
@@ -195,6 +202,26 @@ export const Empty: Story = { name: "Sin equipos", args: { scenario: "empty" } }
 export const ProjectionIncomplete: Story = {
   name: "Pendiente de reconstrucción",
   args: { scenario: "projectionIncomplete" },
+};
+
+export const NotInPlan: Story = {
+  name: "Fuera del plan",
+  args: { scenario: "notInPlan" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText("El ranking de rendimiento es de Pro y Liga"),
+    ).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Ver la tabla" })).toHaveAttribute(
+      "href",
+      "/orgs/org-1/competitions/competition-1/standings",
+    );
+    await expect(canvas.getByRole("link", { name: "Ver plan y uso" })).toHaveAttribute(
+      "href",
+      "/orgs/org-1/settings/plan",
+    );
+  },
 };
 
 export const Forbidden: Story = {
