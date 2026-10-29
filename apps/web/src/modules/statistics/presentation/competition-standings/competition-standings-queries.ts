@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { CompetitionsClientError } from "@/modules/competitions/presentation/competitions-browser-client.ts";
 import { TeamsClientError } from "@/modules/teams/presentation/teams-browser-client.ts";
@@ -61,8 +62,10 @@ async function refusedAsValue<T>(read: () => Promise<T>): Promise<T | Refusal> {
 export function useCompetitionStandings(organizationId: string, competitionId: string) {
   const access = useEffectivePermissions({ organizationId, competitionId }, [
     STATISTICS_PERMISSION.read,
+    COMPETITION_PERMISSION.read,
   ]);
   const allowed = access.allowed.has(STATISTICS_PERMISSION.read);
+  const canViewEncounters = access.allowed.has(COMPETITION_PERMISSION.read);
   const standings = useQuery({
     queryKey: [
       ...queryKeys.statistics.all,
@@ -75,7 +78,7 @@ export function useCompetitionStandings(organizationId: string, competitionId: s
     enabled: allowed,
     retry: (failureCount) => failureCount < 2,
   });
-  return { access, allowed, standings };
+  return { access, allowed, canViewEncounters, standings };
 }
 
 /**

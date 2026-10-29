@@ -79,9 +79,11 @@ type Scenario =
   | "namesError"
   | "refreshFailed"
   | "empty"
+  | "emptyNoEncounters"
   | "emptyRefreshFailed"
   | "loading"
   | "forbidden"
+  | "notFound"
   | "accessError"
   | "error";
 
@@ -110,10 +112,22 @@ const STATES: Record<Scenario, CompetitionStandingsState> = {
     retry: noop,
     retryNames: noop,
   },
-  empty: { kind: "empty", refreshFailed: false, retry: noop },
-  emptyRefreshFailed: { kind: "empty", refreshFailed: true, retry: noop },
+  empty: { kind: "empty", refreshFailed: false, canViewEncounters: true, retry: noop },
+  emptyNoEncounters: {
+    kind: "empty",
+    refreshFailed: false,
+    canViewEncounters: false,
+    retry: noop,
+  },
+  emptyRefreshFailed: {
+    kind: "empty",
+    refreshFailed: true,
+    canViewEncounters: true,
+    retry: noop,
+  },
   loading: { kind: "loading" },
   forbidden: { kind: "forbidden" },
+  notFound: { kind: "not_found" },
   accessError: { kind: "access_error", retry: noop },
   error: { kind: "error", retry: noop },
 };
@@ -131,7 +145,11 @@ function StandingsStory({ locale, narrow = false, scenario }: StoryArgs) {
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId/standings",
       component: () => (
-        <CompetitionStandingsPageView organizationId="org-1" state={STATES[scenario]} />
+        <CompetitionStandingsPageView
+          competitionId="competition-1"
+          organizationId="org-1"
+          state={STATES[scenario]}
+        />
       ),
     });
     const org = createRoute({
@@ -139,8 +157,18 @@ function StandingsStory({ locale, narrow = false, scenario }: StoryArgs) {
       path: "/orgs/$orgId",
       component: () => <p>Organización</p>,
     });
+    const competitions = createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/orgs/$orgId/competitions",
+      component: () => <p>Competiciones</p>,
+    });
+    const encounters = createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/orgs/$orgId/competitions/$competitionId/encounters",
+      component: () => <p>Enfrentamientos</p>,
+    });
     return createRouter({
-      routeTree: rootRoute.addChildren([page, org]),
+      routeTree: rootRoute.addChildren([page, org, competitions, encounters]),
       history: createMemoryHistory({
         initialEntries: ["/orgs/org-1/competitions/competition-1/standings"],
       }),
@@ -168,9 +196,11 @@ const meta = {
         "namesError",
         "refreshFailed",
         "empty",
+        "emptyNoEncounters",
         "emptyRefreshFailed",
         "loading",
         "forbidden",
+        "notFound",
         "accessError",
         "error",
       ] satisfies Scenario[],
@@ -208,7 +238,35 @@ export const RefreshFailed: Story = {
   name: "Actualización fallida con datos previos",
   args: { scenario: "refreshFailed" },
 };
-export const Empty: Story = { name: "Sin resultados aprobados", args: { scenario: "empty" } };
+export const Empty: Story = {
+  name: "Sin resultados aprobados",
+  args: { scenario: "empty" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("Aún no hay clasificación oficial")).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Ver enfrentamientos" })).toBeVisible();
+  },
+};
+export const EmptyEnglishNarrow: Story = {
+  name: "Sin resultados aprobados · EN 360",
+  args: { scenario: "empty", locale: "en", narrow: true },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const action = await canvas.findByRole("link", { name: "View encounters" });
+    await expect(action.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+  },
+};
+export const EmptyNoEncounters: Story = {
+  name: "Sin resultados · sin acceso a enfrentamientos",
+  args: { scenario: "emptyNoEncounters" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("Aún no hay clasificación oficial")).toBeVisible();
+    await expect(canvas.queryByRole("link")).toBeNull();
+  },
+};
 export const EmptyRefreshFailed: Story = {
   name: "Sin resultados · actualización fallida",
   args: { scenario: "emptyRefreshFailed" },
@@ -220,6 +278,31 @@ export const EmptyRefreshFailed: Story = {
   },
 };
 export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
-export const Forbidden: Story = { name: "Sin permiso", args: { scenario: "forbidden" } };
+export const Forbidden: Story = {
+  name: "Sin permiso",
+  args: { scenario: "forbidden" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("No tienes acceso a la clasificación")).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Volver a la organización" })).toBeVisible();
+  },
+};
+export const NotFound: Story = {
+  name: "Competición no encontrada",
+  args: { scenario: "notFound" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("No encontramos esta competición")).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Ver competiciones" })).toBeVisible();
+    await expect(canvas.queryByRole("link", { name: "Volver a la organización" })).toBeNull();
+  },
+};
+export const NotFoundEnglishNarrow: Story = {
+  name: "Competición no encontrada · EN 360",
+  args: { scenario: "notFound", locale: "en", narrow: true },
+  parameters: { a11y: { test: "error" } },
+};
 export const AccessError: Story = { name: "Error de acceso", args: { scenario: "accessError" } };
 export const LoadError: Story = { name: "Error", args: { scenario: "error" } };

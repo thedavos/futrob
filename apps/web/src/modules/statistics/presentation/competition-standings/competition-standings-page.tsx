@@ -15,6 +15,7 @@ import {
 } from "@futrob/ui";
 import emptyStandingsUrl from "@/assets/illustration-empty-standings.png";
 import accessUrl from "@/assets/illustration-permissions.png";
+import notFoundUrl from "@/assets/illustration-sports-venue.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { teamNamesFrom, type TeamNames } from "./competition-standings-model.ts";
@@ -38,6 +39,8 @@ export type CompetitionStandingsState =
       readonly kind: "empty";
       /** The last refresh failed; the empty result is the last known one, not a confirmed current one. */
       readonly refreshFailed: boolean;
+      /** Results are approved from Encounters; only actors who can read them get the way there. */
+      readonly canViewEncounters: boolean;
       readonly retry: () => void;
     }
   | {
@@ -58,7 +61,10 @@ export function CompetitionStandingsRoute({
   readonly competitionId: string;
   readonly organizationId: string;
 }) {
-  const { access, allowed, standings } = useCompetitionStandings(organizationId, competitionId);
+  const { access, allowed, canViewEncounters, standings } = useCompetitionStandings(
+    organizationId,
+    competitionId,
+  );
   // A refusal is the query's stored value, so no later error can bring older data back.
   const standingsValue = standings.data;
   const refusal = isRefusal(standingsValue) ? standingsValue : undefined;
@@ -85,6 +91,7 @@ export function CompetitionStandingsRoute({
         return {
           kind: "empty",
           refreshFailed: standings.isError,
+          canViewEncounters,
           retry: () => void standings.refetch(),
         };
       }
@@ -106,13 +113,21 @@ export function CompetitionStandingsRoute({
     return { kind: "loading" };
   })();
 
-  return <CompetitionStandingsPageView organizationId={organizationId} state={state} />;
+  return (
+    <CompetitionStandingsPageView
+      competitionId={competitionId}
+      organizationId={organizationId}
+      state={state}
+    />
+  );
 }
 
 export function CompetitionStandingsPageView({
+  competitionId,
   organizationId,
   state,
 }: {
+  readonly competitionId: string;
   readonly organizationId: string;
   readonly state: CompetitionStandingsState;
 }) {
@@ -153,6 +168,7 @@ export function CompetitionStandingsPageView({
                 <EmptyStateActions>
                   <Button
                     render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId" />}
+                    role="link"
                     variant="outline"
                   >
                     {t("standings.forbidden.back")}
@@ -164,7 +180,7 @@ export function CompetitionStandingsPageView({
             return (
               <EmptyState>
                 <EmptyStateIcon>
-                  <img alt="" data-outline="none" src={emptyStandingsUrl} />
+                  <img alt="" data-outline="none" src={notFoundUrl} />
                 </EmptyStateIcon>
                 <EmptyStateCopy>
                   <EmptyStateTitle>{t("standings.notFound.title")}</EmptyStateTitle>
@@ -174,10 +190,13 @@ export function CompetitionStandingsPageView({
                 </EmptyStateCopy>
                 <EmptyStateActions>
                   <Button
-                    render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId" />}
+                    render={
+                      <Link params={{ orgId: organizationId }} to="/orgs/$orgId/competitions" />
+                    }
+                    role="link"
                     variant="outline"
                   >
-                    {t("standings.forbidden.back")}
+                    {t("standings.notFound.action")}
                   </Button>
                 </EmptyStateActions>
               </EmptyState>
@@ -198,6 +217,21 @@ export function CompetitionStandingsPageView({
                       {t("standings.empty.description")}
                     </EmptyStateDescription>
                   </EmptyStateCopy>
+                  {state.canViewEncounters ? (
+                    <EmptyStateActions>
+                      <Button
+                        render={
+                          <Link
+                            params={{ orgId: organizationId, competitionId }}
+                            to="/orgs/$orgId/competitions/$competitionId/encounters"
+                          />
+                        }
+                        role="link"
+                      >
+                        {t("standings.empty.action")}
+                      </Button>
+                    </EmptyStateActions>
+                  ) : null}
                 </EmptyState>
               </div>
             );

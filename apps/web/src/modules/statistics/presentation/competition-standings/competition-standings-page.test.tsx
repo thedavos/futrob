@@ -57,13 +57,18 @@ type Routes = {
   teams?: () => Response;
 };
 
-const allow = (allowed: boolean) => () =>
-  Response.json({
-    actorId: "a",
-    scope: { organizationId: "org-1", competitionId: "competition-1" },
-    roles: [],
-    permissions: [{ permission: "statistics.read", allowed, decidedAt: "competition" }],
-  });
+const allow =
+  (allowed: boolean, encounters = allowed) =>
+  () =>
+    Response.json({
+      actorId: "a",
+      scope: { organizationId: "org-1", competitionId: "competition-1" },
+      roles: [],
+      permissions: [
+        { permission: "statistics.read", allowed, decidedAt: "competition" },
+        { permission: "competitions.read", allowed: encounters, decidedAt: "competition" },
+      ],
+    });
 // Serves each response in turn, repeating the last.
 const sequence =
   (...responses: Array<() => Response>) =>
@@ -127,6 +132,23 @@ describe("Competition standings page", () => {
     expect(screen.getByText("Fórmula points-gd-gf-v1")).toBeTruthy();
   });
 
+  it("sets every figure as a right-aligned table-scale Score so columns share one scale", async () => {
+    serve({});
+    renderRoute();
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+    const [first] = within(screen.getByRole("table")).getAllByRole("row").slice(1);
+    const cells = within(first!).getAllByRole("cell");
+    expect(cells).toHaveLength(10);
+    const figures = cells.filter((_, index) => index !== 1);
+    for (const cell of figures) {
+      expect(cell.querySelector('[data-slot="score"]')?.getAttribute("data-size")).toBe("table");
+    }
+    for (const cell of cells.slice(2)) {
+      expect(cell.querySelector('[data-slot="score"]')?.getAttribute("data-align")).toBe("end");
+    }
+    expect(cells[9]!.textContent).toBe("4");
+  });
+
   it("names the rows for competition staff who cannot read the organization teams", async () => {
     const fetch = serve({});
     renderRoute();
@@ -164,6 +186,26 @@ describe("Competition standings page", () => {
     expect(await screen.findByText("Aún no hay clasificación oficial")).toBeTruthy();
     expect(screen.queryByRole("table")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("points an empty table to Encounters, where results get approved", async () => {
+    serve({ standings: () => Response.json({ standings: null }) });
+    renderRoute();
+    const action = await screen.findByRole("link", { name: "Ver enfrentamientos" });
+    expect(action.getAttribute("to")).toBe("/orgs/$orgId/competitions/$competitionId/encounters");
+  });
+
+  it("offers no Encounters action to an actor who cannot read them", async () => {
+    serve({ access: allow(true, false), standings: () => Response.json({ standings: null }) });
+    renderRoute();
+    expect(await screen.findByText("Aún no hay clasificación oficial")).toBeTruthy();
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("speaks English in the empty state action", async () => {
+    serve({ standings: () => Response.json({ standings: null }) });
+    renderRoute("en");
+    expect(await screen.findByRole("link", { name: "View encounters" })).toBeTruthy();
   });
 
   it.each([
@@ -432,6 +474,13 @@ describe("Competition standings page", () => {
       expect(screen.queryByRole("alert")).toBeNull();
       expect(screen.queryByRole("button", { name: /Reintentar|Retry/ })).toBeNull();
       expect(screen.queryByText(/No tienes acceso|can't view/)).toBeNull();
+      const way = screen.getByRole("link", {
+        name: locale === "es" ? "Ver competiciones" : "View competitions",
+      });
+      expect(way.getAttribute("to")).toBe("/orgs/$orgId/competitions");
+      expect(
+        screen.queryByRole("link", { name: /Volver a la organización|Back to the organization/ }),
+      ).toBeNull();
 
       await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
       expect(screen.getByText(title)).toBeTruthy();
