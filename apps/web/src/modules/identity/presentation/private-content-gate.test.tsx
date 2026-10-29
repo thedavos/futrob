@@ -28,6 +28,7 @@ let sessionStatus: number;
 let heldSession: Hold | null;
 let heldPrivateRead: Hold | null;
 let visibility: DocumentVisibilityState;
+let closeTab: (() => void) | undefined;
 
 function serve() {
   vi.stubGlobal(
@@ -77,11 +78,18 @@ function PlayerSpace() {
 /** One browser tab: its own module graph (session store) and its own QueryClient. */
 async function openTab(locale: Locale = "es") {
   vi.resetModules();
-  const [{ PrivateContentGate }, { I18nProvider }] = await Promise.all([
-    import("./private-content-gate.tsx"),
-    import("@/shared/presentation/i18n/i18n-provider.tsx"),
-  ]);
+  const [{ PrivateContentGate }, { I18nProvider }, { authClient }, { cleanStores }] =
+    await Promise.all([
+      import("./private-content-gate.tsx"),
+      import("@/shared/presentation/i18n/i18n-provider.tsx"),
+      import("@/modules/identity/auth-client.ts"),
+      import("nanostores"),
+    ]);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  closeTab = () => {
+    cleanStores(...Object.values(authClient.$store.atoms));
+    queryClient.clear();
+  };
   render(
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale={locale}>
@@ -148,6 +156,9 @@ beforeEach(() => {
 afterEach(() => {
   heldPrivateRead?.resolve();
   cleanup();
+  // Nanostores delays unmount cleanup; close this module graph before jsdom goes away.
+  closeTab?.();
+  closeTab = undefined;
   vi.unstubAllGlobals();
 });
 

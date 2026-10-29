@@ -85,7 +85,7 @@ suite("enqueue due provider syncs on Postgres", () => {
         first.jobs.map((job) => modules.gameData.jobs.findById(job.id)),
       );
       const index = await isolated.pool.query<{ indexname: string }>(
-        "SELECT indexname FROM pg_indexes WHERE indexname = 'provider_sync_jobs_dedupe_latest'",
+        "SELECT indexname FROM pg_indexes WHERE schemaname = current_schema() AND indexname = 'provider_sync_jobs_dedupe_latest'",
       );
 
       expect(providerCalls).toBe(0);
