@@ -1427,7 +1427,7 @@ const es = {
   "pages.competitionPlayer.stats.subtitle": "Tus estadísticas oficiales en esta competición.",
   "pages.competitionPlayer.team.title": "Mi equipo",
   "pages.competitionPlayer.team.subtitle":
-    "Tu equipo en esta competición: plantilla, club EA y próximos enfrentamientos.",
+    "Consulta la plantilla y el club de tu equipo en esta competición.",
   "pages.captain.roster.title": "Plantilla",
   "pages.captain.roster.subtitle":
     "Revisa quién está en tu equipo, asigna roles y decide si admite jugadores nuevos.",
@@ -1441,6 +1441,7 @@ const es = {
   "captain.noTeam.action": "Revisar mis invitaciones",
   "captain.forbidden.title": "No tienes acceso a esta página",
   "captain.forbidden.roster": "Solo el capitán y el subcapitán pueden gestionar la plantilla.",
+  "captain.forbidden.team": "No puedes consultar la plantilla de este equipo.",
   "captain.forbidden.invitations": "Solo el capitán y el subcapitán pueden invitar jugadores.",
   "captain.forbidden.action": "Ir a Mi equipo",
   "captain.unavailable.title": "No se pudo comprobar tu acceso",
@@ -3799,7 +3800,7 @@ const en: Catalog = {
   "pages.competitionPlayer.stats.subtitle": "Your official statistics in this competition.",
   "pages.competitionPlayer.team.title": "My team",
   "pages.competitionPlayer.team.subtitle":
-    "Your team in this competition: roster, EA club, and upcoming encounters.",
+    "View the roster and club of your team in this competition.",
   "pages.captain.roster.title": "Roster",
   "pages.captain.roster.subtitle":
     "See who is on your team, assign roles, and decide whether it accepts new players.",
@@ -3811,6 +3812,7 @@ const en: Catalog = {
   "captain.noTeam.action": "Review my invitations",
   "captain.forbidden.title": "You don't have access to this page",
   "captain.forbidden.roster": "Only the captain and vice-captain can manage the roster.",
+  "captain.forbidden.team": "You cannot view the roster of this team.",
   "captain.forbidden.invitations": "Only the captain and vice-captain can invite players.",
   "captain.forbidden.action": "Go to My team",
   "captain.unavailable.title": "Unable to check your access",
