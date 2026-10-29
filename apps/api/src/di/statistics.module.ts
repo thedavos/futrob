@@ -11,6 +11,7 @@ import {
   ProjectOfficialResultUseCase,
   RebuildCompetitionRankingsUseCase,
   RebuildCompetitionStatisticsUseCase,
+  type CompetitionStandingSnapshotRepository,
   type PlayerIdentityResolverPort,
   type PlayerProfileLookupPort,
 } from "@futrob/statistics";
@@ -74,6 +75,7 @@ export type StatisticsModule = {
     teamPerformanceLock: TeamPerformanceRankingLockPort;
     identities: PlayerIdentityResolverPort;
     profiles: PlayerProfileLookupPort;
+    standings: CompetitionStandingSnapshotRepository;
   };
 };
 
@@ -230,6 +232,7 @@ export function createStatisticsModule(deps: {
       teamPerformanceLock,
       identities,
       profiles,
+      standings,
     },
   };
 }

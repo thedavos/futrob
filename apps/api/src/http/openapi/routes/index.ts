@@ -9,6 +9,7 @@ import * as meta from "@/http/openapi/routes/meta.ts";
 import * as notifications from "@/http/openapi/routes/notifications.ts";
 import * as organizations from "@/http/openapi/routes/organizations.ts";
 import * as players from "@/http/openapi/routes/players.ts";
+import * as publicPortal from "@/http/openapi/routes/public-portal.ts";
 import * as results from "@/http/openapi/routes/results.ts";
 import * as statistics from "@/http/openapi/routes/statistics.ts";
 import * as teams from "@/http/openapi/routes/teams.ts";
@@ -24,6 +25,7 @@ export * from "@/http/openapi/routes/meta.ts";
 export * from "@/http/openapi/routes/notifications.ts";
 export * from "@/http/openapi/routes/organizations.ts";
 export * from "@/http/openapi/routes/players.ts";
+export * from "@/http/openapi/routes/public-portal.ts";
 export * from "@/http/openapi/routes/results.ts";
 export * from "@/http/openapi/routes/statistics.ts";
 export * from "@/http/openapi/routes/teams.ts";
@@ -41,6 +43,7 @@ export const openApiRoutes = [
   ...Object.values(statistics),
   ...Object.values(notifications),
   ...Object.values(teams),
+  ...Object.values(publicPortal),
   ...Object.values(encounters),
   ...Object.values(authorization),
 ] as const;

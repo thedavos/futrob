@@ -69,6 +69,7 @@ import {
 import { createResultsModule } from "./results.module.ts";
 import { createActivityFeed } from "./notifications.module.ts";
 import { createStatisticsModule } from "./statistics.module.ts";
+import { createPublicPortalModule } from "./public-portal.module.ts";
 import { createEncounterReads } from "./encounter-reads.composition.ts";
 import {
   GetTeamRosterManagementUseCase,
@@ -296,6 +297,15 @@ export function createModules(input: CreateModulesInput): AppModules {
     eventPublisher,
   });
 
+  const publicPortal = createPublicPortalModule({
+    clock,
+    discovery: competitions.discovery,
+    standings: statistics.ports.standings,
+    fixturePlans: scheduling.fixturePlans,
+    officialResults: results.officialResultReader,
+    teams: teams.repositories.teams,
+  });
+
   const activityFeed = createActivityFeed({
     pool: input.pool,
     clock,
@@ -401,6 +411,7 @@ export function createModules(input: CreateModulesInput): AppModules {
       ...organizations,
       listOrganizationMembers,
     },
+    publicPortal,
     results,
     scheduling,
     statistics,

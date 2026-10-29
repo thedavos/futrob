@@ -17,7 +17,7 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 | `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                                                                 |
 | `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                                                   |
 | `notifications` | Web, email (WhatsApp/push como ampliación)                                                                                          |
-| `public-portal` | Lecturas públicas sanitizadas                                                                                                       |
+| `public-portal` | Lecturas públicas anónimas y sanitizadas de competiciones publicadas ([ADR-0024](/docs/adr/0024-anonymous-public-portal-reads.md))  |
 
 `billing` está fuera del MVP.
 
@@ -63,6 +63,13 @@ competition discovery (apps/api)
   → CompetitionDiscoveryReader
   → OrganizationRepository.getByIds (nombres de organizador por lote)
   → no abre public-portal ni lectura anónima
+
+public portal (apps/api)
+  → PublishedCompetitionReaderPort (CompetitionDiscoveryReader)
+  → PublicStandingsReaderPort (CompetitionStandingSnapshotRepository)
+  → PublicCalendarReaderPort (FixturePlanRepository + OfficialResultReaderPort, solo "existe resultado")
+  → PublicTeamDirectoryPort (TeamRepository)
+  → proyección por allowlist; sin ActorId, organizationId, ids de equipo ni OfficialResult.slots
 
 onboarding HTTP orchestration
   → organizations / competitions / teams public application APIs

@@ -27,6 +27,7 @@ import type {
 } from "./official-selection.commands.ts";
 import type { ResultsModule } from "./results.module.ts";
 import type { NotificationsModule } from "./notifications.module.ts";
+import type { PublicPortalModule } from "./public-portal.module.ts";
 import type { StatisticsModule } from "./statistics.module.ts";
 
 export interface AppModules {
@@ -53,6 +54,7 @@ export interface AppModules {
   readonly organizations: OrganizationsModule & {
     readonly listOrganizationMembers: ListOrganizationMembersUseCase;
   };
+  readonly publicPortal: PublicPortalModule;
   readonly results: ResultsModule;
   readonly scheduling: SchedulingModule;
   readonly statistics: StatisticsModule;

@@ -21,6 +21,7 @@ export * from "./teams/index.ts";
 export * from "./authorization/index.ts";
 export * from "./encounters/index.ts";
 export * from "./statistics/index.ts";
+export * from "./public-portal/index.ts";
 export * from "./results/index.ts";
 export * from "./notifications/index.ts";
 export { futrobOpenApiV1 } from "./openapi/document.ts";
