@@ -18,6 +18,7 @@ Comandos base:
   ping                    Comprueba que el CLI arranca
   domain-smoke            Smoke de shared-kernel + tipos de scheduling/results
   domain-smoke-game-data  Smoke de @futrob/game-data (pure helpers + use case con fake)
+  statistics-rebuild <orgId> <compId>  Reconstruir estadísticas y rankings (superusuario)
   statistics-smoke        Smoke de GetMyPersonalStatisticsUseCase con fakes
   results-smoke           Select → Confirm con fakes en memoria (@futrob/results)
 

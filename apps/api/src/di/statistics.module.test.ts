@@ -79,6 +79,20 @@ describe("statistics module projection", () => {
     });
 
     expect(projected.isOk()).toBe(true);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const rebuilt = await statistics.useCases.rebuildCompetitionStatistics.execute({
+        organizationId: result.organizationId,
+        competitionId: result.competitionId,
+      });
+      expect(rebuilt.isOk()).toBe(true);
+      if (rebuilt.isOk())
+        expect(rebuilt.value).toEqual({
+          competitionId: result.competitionId,
+          officialResultsProjected: 1,
+          contributionsProjected: 1,
+        });
+    }
+
     const contributions = await statistics.useCases.listMyMatchContributions.execute({
       actorId: asActorId("actor-1"),
       limit: 20,

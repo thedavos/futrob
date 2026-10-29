@@ -6,7 +6,10 @@ import {
   GetCompetitionTeamStatisticsResponse,
   GetTeamPerformanceRankingResponse,
 } from "@/http/openapi/components.ts";
-import { getCompetitionRankingsQuerySchema } from "@futrob/api-contracts";
+import {
+  rebuildCompetitionStatisticsResponseSchema,
+  getCompetitionRankingsQuerySchema,
+} from "@futrob/api-contracts";
 
 export const getTeamPerformanceRankingRoute = defineRoute({
   method: "get",
@@ -68,4 +71,19 @@ export const getCompetitionRankingsRoute = defineRoute({
     schema: GetCompetitionRankingsResponse,
   },
   errors: [401, 403],
+});
+
+export const rebuildCompetitionStatisticsRoute = defineRoute({
+  method: "post",
+  path: "/internal/organizations/{organizationId}/competitions/{competitionId}/statistics/rebuild",
+  operationId: "rebuildCompetitionStatistics",
+  tags: ["statistics"],
+  summary: "Rebuild official statistics, standings and rankings (superuser only)",
+  params: pathParams(["organizationId", "competitionId"]),
+  success: {
+    status: 200,
+    description: "Reconstruction completed",
+    schema: rebuildCompetitionStatisticsResponseSchema,
+  },
+  errors: [400, 401, 403, 404, 409],
 });

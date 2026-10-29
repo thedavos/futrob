@@ -18,6 +18,7 @@ import {
 } from "./commands/organizations.ts";
 import { run as onboardingStatus } from "./commands/onboarding.ts";
 import {
+  statisticsRebuild,
   compCreate,
   compExplore,
   compExploreShow,
@@ -67,6 +68,7 @@ const commands = {
   ping: () => ping(),
   "domain-smoke": () => domainSmoke(),
   "domain-smoke-game-data": () => domainSmokeGameData(),
+  "statistics-rebuild": (args) => statisticsRebuild(args),
   "statistics-smoke": () => statisticsSmoke(),
   "results-smoke": () => resultsSmoke(),
 

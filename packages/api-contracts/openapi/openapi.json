@@ -3220,6 +3220,87 @@
         ]
       }
     },
+    "/internal/organizations/{organizationId}/competitions/{competitionId}/statistics/rebuild": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reconstruction completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "competitionId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "officialResultsProjected": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "contributionsProjected": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "competitionId",
+                    "officialResultsProjected",
+                    "contributionsProjected"
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "rebuildCompetitionStatistics",
+        "tags": [
+          "statistics"
+        ],
+        "summary": "Rebuild official statistics, standings and rankings (superuser only)"
+      }
+    },
     "/internal/results/candidate-recalculation/run": {
       "post": {
         "responses": {

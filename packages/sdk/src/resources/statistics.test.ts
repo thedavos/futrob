@@ -3,6 +3,30 @@ import { createFutrobClient } from "../client.ts";
 import { mockFetch, requestUrl } from "../testing/mock-fetch.ts";
 
 describe("statistics SDK resource", () => {
+  it("rebuilds official projections through the internal endpoint", async () => {
+    const output = {
+      competitionId: "cup 1",
+      officialResultsProjected: 2,
+      contributionsProjected: 4,
+    };
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        expect(requestUrl(input)).toBe(
+          "https://api.example.com/api/v1/internal/organizations/org%2Fa/competitions/cup%201/statistics/rebuild",
+        );
+        expect(init?.method).toBe("POST");
+        return Response.json(output);
+      }),
+    });
+    expect(
+      await client.statistics.rebuildCompetitionStatistics({
+        organizationId: "org/a",
+        competitionId: "cup 1",
+      }),
+    ).toEqual(output);
+  });
+
   it("reads the separate team performance endpoint, encodes IDs and forwards cancellation", async () => {
     const controller = new AbortController();
     const client = createFutrobClient({

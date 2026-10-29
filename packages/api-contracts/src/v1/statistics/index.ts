@@ -50,3 +50,5 @@ export {
   type TeamPerformanceRankingSnapshotDto,
   type GetTeamPerformanceRankingResponse,
 } from "./team-performance.schemas.ts";
+
+export { rebuildCompetitionStatisticsResponseSchema } from "./schemas.ts";
