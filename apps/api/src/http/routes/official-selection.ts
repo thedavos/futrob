@@ -1,4 +1,4 @@
-import { failureToHttp } from "@/http/errors.ts";
+import { apiErrorResponse, failureToHttp } from "@/http/errors.ts";
 import type { OfficialSelectionCommandOutput } from "@futrob/results";
 import {
   asCompetitionId,
@@ -18,7 +18,6 @@ import {
   type TeamOfficialSelectionError,
   type OperatorOfficialSelectionError,
 } from "@/http/mappers/official-selection.ts";
-import { apiErrorResponse } from "@/http/errors.ts";
 import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
