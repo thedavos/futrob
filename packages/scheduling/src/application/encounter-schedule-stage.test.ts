@@ -18,6 +18,7 @@ async function generate(format: "league-playoffs" | "knockout") {
       format,
       rulesVersion: 1,
       officialMatchCounts: { regular: 2, knockout: 1 },
+      standingPoints: { winPoints: 3, drawPoints: 1, lossPoints: 0 },
       approvedParticipants: [...fourTeams],
     }),
   });

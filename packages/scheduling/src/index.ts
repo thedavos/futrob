@@ -30,6 +30,7 @@ export {
   type FixtureFormat,
   type FixtureGenerationSpec,
   type FixtureParticipantSlot,
+  type FixturePlaceholderSlot,
   type FixturePlan,
   type FixturePlanStatus,
   type FixtureRound,
@@ -73,6 +74,16 @@ export type {
   CompetitionFixtureSourceSnapshot,
   FixturePlanRepository,
 } from "./domain/ports/fixture-plan.repository.ts";
+export type {
+  OfficialEncounterScore,
+  OfficialEncounterScoreReaderPort,
+} from "./domain/ports/official-encounter-score-reader.port.ts";
+export type { StandingPoints } from "./domain/policies/reconcile-fixture-advancement.ts";
+export {
+  AdvanceFixtureFromOfficialResultUseCase,
+  type AdvanceFixtureFromOfficialResultInput,
+  type AdvanceFixtureFromOfficialResultOutput,
+} from "./application/advance-fixture-from-official-result/advance-fixture-from-official-result.use-case.ts";
 export type {
   FixtureAuditEntry,
   FixtureAuditPort,
@@ -155,6 +166,9 @@ export {
   FixtureSupersedeConflict,
   InvalidFixtureConfiguration,
   type EditFixtureEncounterError,
+  AdvancementNotReversible,
+  TieRequiresOrganizerReview,
+  type AdvanceFixtureFromOfficialResultError,
   type GenerateCompetitionFixtureError,
 } from "./domain/errors/fixture.errors.ts";
 export {
