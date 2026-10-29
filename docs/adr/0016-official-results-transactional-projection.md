@@ -123,6 +123,12 @@ el snapshot. Cuando un destino gana, cambia o pierde sus Teams, scheduling avisa
 results, que conservan la evidencia como no elegible, y vuelve a asociar los del enfrentamiento
 vigente. Así un partido del rival anterior no se puede seleccionar tras reconstruir el destino.
 
+Los demás escritores de candidatos, como el sync de proveedores, no toman ese lock. Results
+cierra la carrera en su compare-and-swap. La asociación relee el Encounter después de cargar
+la generación y reintenta si cambiaron Teams, clubes o ventanas. La invalidación siempre
+avanza la generación, aunque no haya candidatos elegibles. Una asociación calculada para el
+rival anterior vuelve a leer el Encounter o pierde el compare-and-swap.
+
 En la ruta de aprobación, `scheduling.advancement_not_reversible` solo aparece si un resultado
 cambia de ganador sin anularse antes. Results no ofrece ese flujo, así que se trata como defecto:
 lanza y revierte. La memoria sigue sin rollback; la reversión se prueba en Postgres.

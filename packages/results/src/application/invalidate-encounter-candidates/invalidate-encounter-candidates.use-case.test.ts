@@ -54,4 +54,21 @@ describe("InvalidateEncounterCandidatesUseCase", () => {
     expect(repeated.isOk()).toBe(true);
     expect(associations.rows).toEqual(afterFirst);
   });
+
+  it("advances the generation even with nothing eligible, so a stale association conflicts", async () => {
+    const { snapshot, associations, invalidate } = await associated();
+    await invalidate.execute({ organizationId, encounterId: snapshot.encounterId });
+    const stale = await associations.loadForEncounter(organizationId, snapshot.encounterId);
+
+    await invalidate.execute({ organizationId, encounterId: snapshot.encounterId });
+    const replaced = await associations.replaceForEncounter(
+      organizationId,
+      snapshot.encounterId,
+      stale.associations.map((row) => ({ ...row, eligible: true })),
+      stale.generation,
+    );
+
+    expect(replaced.status).toBe("conflict");
+    expect(eligibleExternalIds(associations.rows)).toEqual([]);
+  });
 });

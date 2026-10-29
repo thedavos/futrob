@@ -19,6 +19,8 @@ export interface InvalidateEncounterCandidatesInput {
 /**
  * Withdraws the eligibility of every candidate of an Encounter whose Teams changed or that
  * left the schedule. Rows stay as evidence; a later association re-evaluates the new pairing.
+ * It always advances the candidate generation, even with nothing eligible, so an association
+ * computed for the previous Teams loses its compare-and-swap.
  */
 export class InvalidateEncounterCandidatesUseCase {
   constructor(
@@ -36,7 +38,6 @@ export class InvalidateEncounterCandidatesUseCase {
         input.organizationId,
         input.encounterId,
       );
-      if (!loaded.associations.some((association) => association.eligible)) return ok(undefined);
       const replaced = await this.deps.associations.replaceForEncounter(
         input.organizationId,
         input.encounterId,

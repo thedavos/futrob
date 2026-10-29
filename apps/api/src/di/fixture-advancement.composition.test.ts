@@ -410,6 +410,67 @@ function bracketSuite(backend: () => Promise<Backend>, options: { readonly durab
     expect(await modules.results.selections.findLatestByEncounter(BYE_FINAL)).toBeNull();
   });
 
+  it("does not let a refresh computed for the previous rival restore its candidates", async () => {
+    const { modules, approve } = await seedBracket(await backend(), byeBracket);
+    await approve("m-1");
+    const associations = modules.results.associations;
+    const loadGeneration = associations.loadForEncounter.bind(associations);
+    let paused = () => {};
+    const readOldPairing = new Promise<void>((resolve) => {
+      paused = resolve;
+    });
+    let resume = () => {};
+    const resumed = new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+    let gated = true;
+    const gate = vi
+      .spyOn(associations, "loadForEncounter")
+      .mockImplementation(async (organizationId, encounterId) => {
+        if (gated && encounterId === BYE_FINAL) {
+          gated = false;
+          paused();
+          await resumed;
+        }
+        return loadGeneration(organizationId, encounterId);
+      });
+    try {
+      // A provider sync refreshes the destination while it is still NEW against HOME.
+      const refreshing = modules.results.associateEncounterCandidates.execute({
+        organizationId: ORG,
+        encounterId: BYE_FINAL,
+      });
+      await readOldPairing;
+      const voided = await modules.voidOfficialResultAndUnproject.execute({
+        actorId: OPERATOR,
+        encounterId: ENCOUNTER,
+        reason: "Wrong evidence",
+      });
+      expect(voided.isOk()).toBe(true);
+      await approve("m-away");
+      expect(await modules.scheduling.encounters.findById(BYE_FINAL)).toMatchObject({
+        homeTeamId: NEW,
+        awayTeamId: AWAY,
+      });
+      resume();
+      await refreshing;
+
+      expect(eligible(await associations.listByEncounter(ORG, BYE_FINAL))).toEqual([]);
+      const stale = await modules.officialSelection.propose.execute({
+        actorId: AWAY_CAPTAIN,
+        organizationId: ORG,
+        encounterId: BYE_FINAL,
+        actingTeamId: AWAY,
+        selections: slot("m-nh"),
+        expectedVersion: 0,
+        commandKey: "propose-after-stale-refresh",
+      });
+      expect(stale.isOk()).toBe(false);
+    } finally {
+      gate.mockRestore();
+    }
+  });
+
   it("approves an elimination draw and leaves the destination for organizer review", async () => {
     const { modules, finalAway, approve } = await seedBracket(await backend());
 
