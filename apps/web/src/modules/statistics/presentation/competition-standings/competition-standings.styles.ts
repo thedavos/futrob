@@ -46,8 +46,6 @@ export const styles = stylex.create({
   },
   position: {
     whiteSpace: "nowrap",
-    fontWeight: 600,
-    color: colors.mutedForeground,
     paddingInline: { default: "0.5rem", [media.sm]: "0.75rem" },
   },
   teamCell: {
@@ -74,9 +72,5 @@ export const styles = stylex.create({
     display: { default: "block", [media.sm]: "none" },
     marginTop: "0.125rem",
     color: colors.mutedForeground,
-  },
-  points: {
-    fontWeight: 700,
-    color: colors.foreground,
   },
 });

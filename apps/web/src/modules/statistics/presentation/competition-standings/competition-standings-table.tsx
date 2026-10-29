@@ -6,6 +6,7 @@ import {
   applyProps,
   applyStyles,
   Caption,
+  Score,
   Skeleton,
   Table,
   TableBody,
@@ -143,7 +144,9 @@ function StandingsRow({
   return (
     <TableRow>
       <TableCell {...applyStyles(styles.position)}>
-        {formats.integer.format(row.position)}
+        <Score as="span" size="table">
+          {formats.integer.format(row.position)}
+        </Score>
       </TableCell>
       <TableCell {...applyStyles(styles.teamCell)}>
         <TeamName team={entry.team} t={t} />
@@ -165,12 +168,13 @@ function StandingsRow({
             undefined,
             styles.numeric,
             column.secondary && styles.secondary,
-            column.id === "points" && styles.points,
           )}
         >
-          {(column.id === "goalDifference" ? formats.signed : formats.integer).format(
-            row[column.id],
-          )}
+          <Score align="end" as="span" size="table">
+            {(column.id === "goalDifference" ? formats.signed : formats.integer).format(
+              row[column.id],
+            )}
+          </Score>
         </TableCell>
       ))}
     </TableRow>

@@ -25,4 +25,11 @@ describe("Score", () => {
 
     expect(markup).toContain('data-tone="muted"');
   });
+
+  it("uses the KPI scale unless a row asks for the table scale", () => {
+    expect(renderToStaticMarkup(createElement(Score, null, "28"))).toContain('data-size="default"');
+    expect(renderToStaticMarkup(createElement(Score, { size: "table" }, "28"))).toContain(
+      'data-size="table"',
+    );
+  });
 });
