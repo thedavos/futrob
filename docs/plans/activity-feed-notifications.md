@@ -59,8 +59,8 @@ Se añaden después de T9 sin cambiar la forma de la fila:
   aprobada (alta del organizador o invitación aceptada).
 - **Sin backfill.** `competition_entries` no guarda el actor y la fila lo exige; lo pendiente antes
   de migrar no aparece en el feed.
-- **Migración con marca de tiempo** (`20261029120000_…`): ordena después de todas las numeradas y no
-  compite por el siguiente número con otras ramas.
+- **Migración numerada** (`0059_…`): sigue la numeración secuencial de `apps/api/migrations`;
+  `0058` queda para la migración de sincronizaciones de EA (PR #211).
 
 ## Lo que se decidió y por qué
 
