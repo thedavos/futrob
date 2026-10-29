@@ -5,6 +5,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { ProviderHealthResponse } from "@futrob/api-contracts";
+import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { ProviderHealthPage } from "./provider-health-page.tsx";
 
@@ -56,6 +57,7 @@ function renderPage() {
       </I18nProvider>
     </QueryClientProvider>,
   );
+  return queryClient;
 }
 
 beforeEach(() => {
@@ -150,6 +152,39 @@ describe("Provider health page", () => {
     renderPage();
     expect(await screen.findByText("No tienes acceso a este panel")).toBeTruthy();
   });
+
+  it.each(["server", "network"])(
+    "discards a revoked snapshot through a later %s failure and recovers only on success",
+    async (failureKind) => {
+      const fetch = serve(
+        () => Response.json(health),
+        () => failure(403, "authorization.forbidden"),
+        () => {
+          if (failureKind === "network") throw new TypeError("Network unavailable");
+          return failure(500, "api.internal_error");
+        },
+        () => Response.json(health),
+      );
+      const client = renderPage();
+      const key = queryKeys.gameData.providerHealth("ea-clubs");
+      expect(await screen.findByText("Estado: Degradado")).toBeTruthy();
+      await userEvent.click(screen.getByRole("button", { name: "Actualizar" }));
+      expect(await screen.findByText("No tienes acceso a este panel")).toBeTruthy();
+      expect(client.getQueryData(key)).toBeNull();
+      expect(screen.queryByText("80 %")).toBeNull();
+
+      await userEvent.click(screen.getByRole("button", { name: "Actualizar" }));
+      await waitFor(() => expect(client.getQueryState(key)?.status).toBe("error"));
+      expect(client.getQueryData(key)).toBeNull();
+      expect(screen.getByText("No tienes acceso a este panel")).toBeTruthy();
+      expect(screen.queryByText("Estado: Degradado")).toBeNull();
+      expect(screen.queryByText("80 %")).toBeNull();
+
+      await userEvent.click(screen.getByRole("button", { name: "Actualizar" }));
+      expect(await screen.findByText("Estado: Degradado")).toBeTruthy();
+      expect(fetch).toHaveBeenCalledTimes(4);
+    },
+  );
 
   it("never requests the endpoint for non-superusers", async () => {
     access.state = { allowed: false, loading: false, unavailable: false };

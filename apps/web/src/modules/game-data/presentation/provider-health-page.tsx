@@ -39,7 +39,6 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { useIsSuperuser } from "@/shared/presentation/permissions/index.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
-import { ProviderHealthClientError } from "./provider-health-browser-client.ts";
 import {
   circuitStateBadgeVariant,
   providerHealthView,
@@ -128,7 +127,7 @@ export function ProviderHealthPage() {
   const retry = () => {
     void query.refetch();
   };
-  const denied = query.error instanceof ProviderHealthClientError && query.error.status === 403;
+  const denied = query.data === null;
 
   let body: ReactNode;
   if (access.loading) {
