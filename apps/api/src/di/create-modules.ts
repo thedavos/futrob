@@ -47,6 +47,7 @@ import {
 } from "@/adapters/results/official-result.repository.ts";
 import type { Pool } from "pg";
 import { createGameDataModule } from "./game-data.module.ts";
+import { createGameDataPersistence } from "./game-data-persistence.composition.ts";
 import { createIdentityModule } from "./identity.module.ts";
 import { createOrganizationMemberDirectory } from "./organization-members.composition.ts";
 import { createOrganizationsModule } from "./organizations.module.ts";
@@ -99,26 +100,14 @@ export function createModules(input: CreateModulesInput): AppModules {
   const ids = new CryptoIdGenerator();
   const clock = input.clock ?? new SystemClock();
   const transaction = createTransactionPort(input.pool);
-  const providerMatches =
-    input.providerMatches ??
-    (input.pool
-      ? new PostgresProviderMatchRepository(input.pool)
-      : new InMemoryProviderMatchRepository());
-  const rawObservations = input.pool
-    ? new PostgresRawObservationRepository(input.pool)
-    : new InMemoryRawObservationRepository();
-  const providerSyncJobs = input.pool
-    ? new PostgresProviderSyncJobRepository(input.pool)
-    : new InMemoryProviderSyncJobRepository();
-  const providerCircuit = input.pool
-    ? new PostgresProviderCircuitBreaker(input.pool)
-    : new InMemoryProviderCircuitBreaker();
-  const providerCache = input.pool
-    ? new PostgresProviderResponseCache(input.pool)
-    : new InMemoryProviderResponseCache();
-  const providerHealth = input.pool
-    ? new PostgresProviderHealthRepository(input.pool, providerCircuit, clock)
-    : new InMemoryProviderHealthRepository(providerCircuit, clock);
+  const {
+    providerMatches,
+    rawObservations,
+    providerSyncJobs,
+    providerCircuit,
+    providerCache,
+    providerHealth,
+  } = createGameDataPersistence(input.pool, clock, input.providerMatches);
   const eaAdapter = new EaClubsGameDataAdapter({
     fetcher: input.fetcher,
     baseUrl: input.eaClubsBaseUrl,
