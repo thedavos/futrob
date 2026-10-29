@@ -1,3 +1,4 @@
+import { clearPendingRosterInvitation } from "./roster-invitation-link.ts";
 import type { FutrobApiError } from "@futrob/sdk";
 import { signOutRemote, type RemoteSignOutResult } from "./auth-api.ts";
 import { clearSession, getSession } from "./session-store.ts";
@@ -12,6 +13,7 @@ export async function onProductUnauthorized(showLogin: () => void): Promise<void
   await clearSession();
   await clearOnboardingDraft();
   await clearPendingInvitation();
+  await clearPendingRosterInvitation();
   showLogin();
 }
 
@@ -35,6 +37,7 @@ export async function logout(showLogin: () => void): Promise<RemoteSignOutResult
   await clearSession();
   await clearOnboardingDraft();
   await clearPendingInvitation();
+  await clearPendingRosterInvitation();
   showLogin();
   return remote;
 }
