@@ -2030,6 +2030,52 @@ const es = {
   "standings.col.goalDifference.full": "Diferencia de goles",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Puntos",
+  "competition.overview.documentTitle": "Resumen",
+  "competition.overview.description":
+    "Estado, equipos, próximos enfrentamientos y pendientes de la competición.",
+  "competition.overview.loading": "Cargando la competición",
+  "competition.overview.error": "No pudimos cargar la competición.",
+  "competition.overview.accessError": "No pudimos comprobar tu acceso a la competición.",
+  "competition.overview.memberTitle": "Ya formas parte de la competición",
+  "competition.overview.memberDescription":
+    "Tu acceso está listo. Usa el menú para ver tus partidos, estadísticas y equipo.",
+  "competition.overview.status": "Estado de la competición",
+  "competition.overview.continueSetup": "Continuar configuración",
+  "competition.overview.kpi.label": "Indicadores de la competición",
+  "competition.overview.kpi.teams": "Equipos aprobados",
+  "competition.overview.kpi.applications": "Inscripciones por revisar",
+  "competition.overview.kpi.upcoming": "Próximos enfrentamientos",
+  "competition.overview.kpi.awaiting": "Sin resultado oficial",
+  "competition.overview.pending.title": "Pendientes",
+  "competition.overview.pending.applications": ({ count }) =>
+    Number(count) === 1
+      ? "1 inscripción de equipo por revisar"
+      : `${count} inscripciones de equipo por revisar`,
+  "competition.overview.pending.awaiting": ({ count }) =>
+    Number(count) === 1
+      ? "1 enfrentamiento sin resultado oficial"
+      : `${count} enfrentamientos sin resultado oficial`,
+  "competition.overview.pending.activities": "Tareas abiertas",
+  "competition.overview.pending.error": "No pudimos cargar todas las tareas pendientes.",
+  "competition.overview.pending.empty.title": "Todo al día",
+  "competition.overview.pending.empty.description":
+    "No hay inscripciones, resultados ni disputas esperando tu revisión.",
+  "competition.overview.upcoming.title": "Próximos enfrentamientos",
+  "competition.overview.upcoming.viewAll": "Ver todos",
+  "competition.overview.upcoming.error": "No pudimos cargar los enfrentamientos.",
+  "competition.overview.upcoming.empty.title": "Sin enfrentamientos programados",
+  "competition.overview.upcoming.empty.description":
+    "Cuando el calendario tenga cruces por jugar, los verás aquí.",
+  "competition.overview.teams.title": "Equipos",
+  "competition.overview.teams.viewAll": "Ver todos",
+  "competition.overview.teams.error": "No pudimos cargar los equipos.",
+  "competition.overview.teams.empty.title": "Aún no hay equipos",
+  "competition.overview.teams.empty.description":
+    "Invita a capitanes o aprueba solicitudes para completar la competición.",
+  "competition.overview.teams.empty.action": "Gestionar equipos",
+  "competition.overview.teams.roster": ({ count, max }) => `${count} de ${max} jugadores`,
+  "competition.overview.teams.entry.pending": "Por revisar",
+  "competition.overview.teams.entry.approved": "Aprobado",
   "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
     `${wins} G · ${draws} E · ${losses} P · GF ${goalsFor} · GC ${goalsAgainst}`,
 } satisfies Record<string, Message>;
@@ -2038,6 +2084,9 @@ export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "competition.overview.pending.applications": { readonly count: number };
+  readonly "competition.overview.pending.awaiting": { readonly count: number };
+  readonly "competition.overview.teams.roster": { readonly count: number; readonly max: number };
   readonly "competition.rankings.eligibility": {
     readonly matches: number;
     readonly percent: string;
@@ -4285,6 +4334,50 @@ const en: Catalog = {
   "standings.col.goalDifference.full": "Goal difference",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Points",
+  "competition.overview.documentTitle": "Overview",
+  "competition.overview.description":
+    "Status, teams, upcoming encounters and pending work for the competition.",
+  "competition.overview.loading": "Loading the competition",
+  "competition.overview.error": "We couldn't load the competition.",
+  "competition.overview.accessError": "We couldn't check your access to the competition.",
+  "competition.overview.memberTitle": "You are part of the competition",
+  "competition.overview.memberDescription":
+    "Your access is ready. Use the menu to see your matches, statistics and team.",
+  "competition.overview.status": "Competition status",
+  "competition.overview.continueSetup": "Continue setup",
+  "competition.overview.kpi.label": "Competition indicators",
+  "competition.overview.kpi.teams": "Approved teams",
+  "competition.overview.kpi.applications": "Entries to review",
+  "competition.overview.kpi.upcoming": "Upcoming encounters",
+  "competition.overview.kpi.awaiting": "No official result",
+  "competition.overview.pending.title": "Pending",
+  "competition.overview.pending.applications": ({ count }) =>
+    Number(count) === 1 ? "1 team entry to review" : `${count} team entries to review`,
+  "competition.overview.pending.awaiting": ({ count }) =>
+    Number(count) === 1
+      ? "1 encounter without an official result"
+      : `${count} encounters without an official result`,
+  "competition.overview.pending.activities": "Open tasks",
+  "competition.overview.pending.error": "We couldn't load all the pending tasks.",
+  "competition.overview.pending.empty.title": "All caught up",
+  "competition.overview.pending.empty.description":
+    "No entries, results or disputes are waiting for your review.",
+  "competition.overview.upcoming.title": "Upcoming encounters",
+  "competition.overview.upcoming.viewAll": "View all",
+  "competition.overview.upcoming.error": "We couldn't load the encounters.",
+  "competition.overview.upcoming.empty.title": "No scheduled encounters",
+  "competition.overview.upcoming.empty.description":
+    "When the schedule has encounters left to play, you will see them here.",
+  "competition.overview.teams.title": "Teams",
+  "competition.overview.teams.viewAll": "View all",
+  "competition.overview.teams.error": "We couldn't load the teams.",
+  "competition.overview.teams.empty.title": "No teams yet",
+  "competition.overview.teams.empty.description":
+    "Invite captains or approve applications to fill the competition.",
+  "competition.overview.teams.empty.action": "Manage teams",
+  "competition.overview.teams.roster": ({ count, max }) => `${count} of ${max} players`,
+  "competition.overview.teams.entry.pending": "To review",
+  "competition.overview.teams.entry.approved": "Approved",
   "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
     `${wins} W · ${draws} D · ${losses} L · GF ${goalsFor} · GA ${goalsAgainst}`,
 };
