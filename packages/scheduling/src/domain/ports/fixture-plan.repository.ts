@@ -5,6 +5,7 @@ import type {
   FixturePlan,
   SeriesResolutionMode,
 } from "../entities/fixture-plan.ts";
+import type { StandingPoints } from "../policies/reconcile-fixture-advancement.ts";
 
 export interface CompetitionFixtureSourceSnapshot {
   readonly organizationId: OrganizationId;
@@ -21,6 +22,8 @@ export interface CompetitionFixtureSourceSnapshot {
     readonly regular: SeriesResolutionMode;
     readonly knockout: SeriesResolutionMode;
   };
+  /** Regular-stage points that rank groups and leagues for qualification. */
+  readonly standingPoints: StandingPoints;
   readonly approvedParticipants: readonly TeamId[];
 }
 

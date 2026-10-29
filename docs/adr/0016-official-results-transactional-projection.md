@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-09-22
-- Actualización: 2026-10-03
+- Actualización: 2026-10-29
 - Relacionado: [ADR-0002](/docs/adr/0002-hexagonal-feature-modules.md) · [ADR-0011](/docs/adr/0011-tagged-errors.md)
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
@@ -91,43 +91,51 @@ el resultado aprobado se añade después de ese commit y una falla posterior rev
 pasa a ser append-only: una revisión nueva se inserta y nunca reemplaza a otra. Detalle y matriz en
 [selección oficial](/docs/architecture/results-selection-disputes.md).
 
-### Avance y reversión del bracket: ampliación pendiente
+### Avance y reversión del bracket (2026-10-29)
 
 La tarea [Avance ganador / clasificado / bracket](https://app.notion.com/p/3dc7b204009a815ab937c60cd28edf19)
-requiere resolver los slots `winner`, `group-rank` y `stage-rank` después de oficializar
-resultados. La composición actual no ejecuta ese avance ni su reversión. Esta sección
-registra el alcance y las decisiones pendientes; la atomicidad aceptada arriba sigue
-limitada a results + statistics.
+resuelve los slots `winner`, `group-rank` y `stage-rank` después de oficializar resultados.
+Scheduling conserva la escritura del fixture con `AdvanceFixtureFromOfficialResultUseCase`.
+Lee los marcadores aprobados mediante su propio port (`OfficialEncounterScoreReaderPort`),
+que la API conecta con el repositorio de results. Results no escribe tablas de scheduling.
 
-Scheduling conserva la escritura del fixture y expone sus casos de uso públicos.
-Results conserva el resultado oficial y statistics sus proyecciones. La API coordina
-esos contratos mediante ports/bridges conforme a ADR-0002; results no escribe tablas
-de scheduling. Una liga sin eliminatorias no debe producir avances de bracket; un bye
-no debe inventar un marcador. DEC-017 exige aplicar el desempate configurado y, si
-faltan datos, solicitar revisión del organizador sin elegir por seed.
+| Decisión                      | Resolución aceptada                                                                                                                                                                                                                                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consistencia del avance       | Transaccional. Los comandos que aprueban y la anulación ejecutan el avance después de proyectar statistics, en la misma transacción. Un fallo del avance lanza y revierte resultado, proyección y slots. No hay outbox ni estado eventual.                                                                                                                    |
+| Idempotencia y procedencia    | El avance es una reconciliación. Calcula el estado deseado de cada slot derivado a partir de los resultados aprobados actuales y escribe solo la diferencia. Repetirlo no escribe nada. Un evento antiguo no puede sobrescribir una corrección porque no se usa el payload del evento. El slot `team` avanzado guarda su placeholder en `advancedFrom`.       |
+| Clasificación por grupo/stage | Es definitiva cuando todos los encuentros Team contra Team del grupo o stage tienen un resultado aprobado. Ordena por puntos de la etapa regular, diferencia de goles y goles a favor. Un empate que toca el puesto pedido va a revisión, porque los criterios restantes de DEC-014 no están modelados.                                                       |
+| Concurrencia                  | Aprobaciones y anulaciones de una competición ya se serializan con el lock transaccional de competición (`statistics:team-performance:{competitionId}`) antes del lock de Encounter. Por eso dos encuentros que alimentan el mismo destino no escriben a la vez. La revisión del plan actúa además como compare-and-swap. Un conflicto revierte la operación. |
+| Anulación y corrección        | Un destino vuelve a su placeholder solo si sigue siendo reversible, es decir, sin selección activa ni resultado oficial. Si no lo es, la anulación falla con `scheduling.advancement_not_reversible` y se revierte. Hay que anular primero los encuentros posteriores. Nunca se borran resultados posteriores.                                                |
+| Empate pendiente de revisión  | La oficialización no se bloquea. El resultado empatado se aprueba, el destino conserva su placeholder y el caso de uso devuelve `scheduling.tie_requires_organizer_review` sin escribir slots. La composición trata ese error como pendiente y no revierte.                                                                                                   |
 
-Antes de implementar se debe resolver y registrar:
+Un bye nunca recibe marcador. El ganador de un encuentro Team contra bye es el Team, sin
+resultado oficial. Una liga sin slots derivados no lee resultados ni escribe el fixture.
+Cuando ambos lados de un destino quedan resueltos, el avance crea su serie con el modo de
+la etapa de eliminación y proyecta el Encounter y sus OfficialMatch. Al revertirlo, borra
+el snapshot del Encounter y Postgres elimina sus OfficialMatch en cascada.
 
-| Decisión pendiente            | Opciones y garantía que debe verificarse                                                                                                                                                                                                                    |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consistencia del avance       | Incorporar scheduling a la transacción existente, o usar procesamiento eventual con outbox atómico, reintentos y estado pendiente visible. El publisher actual no entrega eventos.                                                                          |
-| Clasificación por grupo/stage | Definir cuándo es definitiva y qué versión de resultados/proyección habilita el avance; una tabla provisional no basta.                                                                                                                                     |
-| Concurrencia                  | Dos encuentros distintos pueden alimentar el mismo destino. El lock por Encounter no prueba exclusión sobre ese destino; definir locks ordenados o control de versiones para escrituras compartidas.                                                        |
-| Anulación y corrección        | Restaurar un placeholder solo si el destino sigue siendo reversible. Definir bloqueo o resolución explícita cuando existen encuentros posteriores jugados, resultados oficiales o decisiones dependientes. No borrar resultados posteriores implícitamente. |
-| Idempotencia y procedencia    | Conservar origen del slot y versión oficial aplicada para repetir, reconstruir o revertir sin duplicar avances ni permitir que un evento antiguo sobrescriba una corrección.                                                                                |
-| Empate pendiente de revisión  | Definir si la oficialización queda bloqueada o si se confirma con avance pendiente; mantener coherentes API, UI y estrategia transaccional.                                                                                                                 |
+El avance toma el lock de cada destino programado que va a cambiar, en orden de id, desde
+la comprobación de reversibilidad hasta su última escritura. Lo adquiere bajo el lock de
+competición y sin repetir el del Encounter origen. Una selección sobre ese destino solo toma
+su propio lock: o termina antes y bloquea la reversión, o empieza después y ya no encuentra
+el snapshot. Cuando un destino gana, cambia o pierde sus Teams, scheduling avisa por
+`EncounterParticipantsChangePort` dentro de ese lock. La API invalida los candidatos de
+results, que conservan la evidencia como no elegible, y vuelve a asociar los del enfrentamiento
+vigente. Así un partido del rival anterior no se puede seleccionar tras reconstruir el destino.
 
-La opción transaccional aprovecha el executor existente, pero amplía los locks y las
-escrituras. La eventual desacopla el trabajo, pero exige entrega durable y reconciliación
-que todavía no existen. Ninguna queda aceptada por esta ampliación. Las reglas
-competitivas permanecen en producto; este ADR documenta su consistencia entre contextos.
+Los demás escritores de candidatos, como el sync de proveedores, no toman ese lock. Results
+cierra la carrera en su compare-and-swap. La asociación relee el Encounter después de cargar
+la generación y reintenta si cambiaron Teams, clubes o ventanas. La invalidación siempre
+avanza la generación, aunque no haya candidatos elegibles. Una asociación calculada para el
+rival anterior vuelve a leer el Encounter o pierde el compare-and-swap.
 
-La implementación deberá comprobar aprobación repetida, clasificación provisional,
-empate sin dato de desempate, fallo de avance, anulación antes y después de actividad
-posterior, corrección seguida de un evento antiguo y dos resultados concurrentes sobre
-el mismo destino. En la opción transaccional, un fallo posterior a una escritura debe
-causar rollback de todos los participantes; en la eventual, debe persistir trabajo
-recuperable y evitar presentar el avance como completado.
+En la ruta de aprobación, `scheduling.advancement_not_reversible` solo aparece si un resultado
+cambia de ganador sin anularse antes. Results no ofrece ese flujo, así que se trata como defecto:
+lanza y revierte. La memoria sigue sin rollback; la reversión se prueba en Postgres.
+
+Pendiente: un comando para que el organizador resuelva un empate, la visualización del
+estado «pendiente de revisión» y el resto de criterios de DEC-014 (enfrentamiento directo,
+sanciones, sorteo auditado).
 
 ## Consecuencias
 
@@ -152,6 +160,10 @@ que ejerciten los adapters participantes; este ADR no declara una ejecución E2E
 - [Lock de Encounter](/apps/api/src/adapters/scheduling/encounter-mutation-lock.ts).
 - [Slots del fixture](/packages/scheduling/src/domain/entities/fixture-plan.ts) y
   [decisiones de producto, incluyendo DEC-017](/product/open-decisions.md).
+- [Reconciliación del avance](/packages/scheduling/src/domain/policies/reconcile-fixture-advancement.ts),
+  [caso de uso y tests](/packages/scheduling/src/application/advance-fixture-from-official-result/),
+  [composición](/apps/api/src/di/official-selection.commands.ts) y
+  [tests en memoria y Postgres](/apps/api/src/di/fixture-advancement.composition.test.ts).
 
 Verificar aprobación, anulación, fallo de proyección con rollback, repetición y
 concurrencia sobre un Encounter al modificar este límite.

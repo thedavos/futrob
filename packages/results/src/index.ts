@@ -135,6 +135,10 @@ export {
   type RecalculateEncounterCandidatesInput,
 } from "./application/recalculate-encounter-candidates/recalculate-encounter-candidates.use-case.ts";
 export {
+  InvalidateEncounterCandidatesUseCase,
+  type InvalidateEncounterCandidatesInput,
+} from "./application/invalidate-encounter-candidates/invalidate-encounter-candidates.use-case.ts";
+export {
   ListEncounterCandidatesUseCase,
   type EncounterCandidateSummary,
   type EncounterCandidateTeam,

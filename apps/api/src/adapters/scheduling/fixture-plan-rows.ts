@@ -95,8 +95,24 @@ export function rehydrateEncounter(row: EncounterRow): FixtureEncounter {
   return encounter;
 }
 
+const advancedFromColumnSchema = z.object({
+  advancedFrom: fixtureParticipantSlotSchema.optional(),
+});
+
 function parseParticipantSlot(value: PgJsonInput): FixtureParticipantSlot {
-  const parsed = parseJsonColumn(fixtureParticipantSlotSchema, value);
+  const slot = toParticipantSlot(parseJsonColumn(fixtureParticipantSlotSchema, value));
+  const { advancedFrom } = parseJsonColumn(advancedFromColumnSchema, value);
+  if (slot.kind !== "team" || !advancedFrom) return slot;
+  const origin = toParticipantSlot(advancedFrom);
+  if (origin.kind === "team" || origin.kind === "bye") {
+    throw new Error("An advanced fixture slot must originate from a placeholder");
+  }
+  return { ...slot, advancedFrom: origin };
+}
+
+function toParticipantSlot(
+  parsed: z.infer<typeof fixtureParticipantSlotSchema>,
+): FixtureParticipantSlot {
   switch (parsed.kind) {
     case "team":
       return { kind: "team", teamId: asTeamId(parsed.teamId) };

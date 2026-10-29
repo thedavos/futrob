@@ -422,9 +422,13 @@ async function negotiationModule(
     fixtureSource: { load: async () => null },
     eventPublisher: { publish: async () => undefined, publishMany: async () => undefined },
     transaction: new PostgresTransactionPort(pool),
-    officialResults: { findApprovedByEncounter: async () => null },
+    officialResults: {
+      findApprovedByEncounter: async () => null,
+      listByCompetition: async () => [],
+    },
     officialSelections: { findLatestByEncounter: async () => null },
     encounterMutationLock: new PostgresEncounterMutationLock(pool),
+    encounterParticipants: { participantsChanged: async () => undefined },
     competitions,
   });
   const target = { organizationId, competitionId, encounterId };

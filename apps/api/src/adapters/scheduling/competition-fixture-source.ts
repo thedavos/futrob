@@ -1,4 +1,8 @@
-import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
+import {
+  selectStageMatchRules,
+  type CompetitionEntryRepository,
+  type CompetitionRepository,
+} from "@futrob/competitions";
 import { compareTime } from "@futrob/shared-kernel";
 import type {
   CompetitionFixtureSourcePort,
@@ -41,6 +45,8 @@ export class CompetitionFixtureSourceAdapter implements CompetitionFixtureSource
     const knockoutResolution =
       draft.rules.knockoutStage?.resolutionMode ?? draft.rules.regularStage?.resolutionMode;
     if (!regularResolution || !knockoutResolution) return null;
+    const regularRules = selectStageMatchRules(draft.rules, "regular");
+    if (!regularRules) return null;
 
     return {
       organizationId: draft.competition.organizationId,
@@ -51,6 +57,11 @@ export class CompetitionFixtureSourceAdapter implements CompetitionFixtureSource
       rulesVersion: draft.rules.version,
       officialMatchCounts: { regular, knockout },
       resolutionModes: { regular: regularResolution, knockout: knockoutResolution },
+      standingPoints: {
+        winPoints: regularRules.winPoints,
+        drawPoints: regularRules.drawPoints,
+        lossPoints: regularRules.lossPoints,
+      },
       approvedParticipants,
     };
   }

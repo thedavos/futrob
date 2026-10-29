@@ -22,9 +22,8 @@ export interface FixtureSeries {
   }[];
 }
 
-export type FixtureParticipantSlot =
-  | { readonly kind: "team"; readonly teamId: TeamId }
-  | { readonly kind: "bye" }
+/** A slot whose Team is decided by an earlier Encounter or ranking. */
+export type FixturePlaceholderSlot =
   | { readonly kind: "winner"; readonly encounterId: EncounterId }
   | {
       readonly kind: "group-rank";
@@ -37,6 +36,16 @@ export type FixtureParticipantSlot =
       readonly stageId: FixtureStageId;
       readonly rank: number;
     };
+
+export type FixtureParticipantSlot =
+  | {
+      readonly kind: "team";
+      readonly teamId: TeamId;
+      /** Placeholder this Team was advanced into; restored when the advance is reverted. */
+      readonly advancedFrom?: FixturePlaceholderSlot;
+    }
+  | { readonly kind: "bye" }
+  | FixturePlaceholderSlot;
 
 export interface FixtureEncounter {
   readonly id: EncounterId;

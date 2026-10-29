@@ -213,9 +213,13 @@ async function wiredScheduling() {
       },
     },
     transaction: new NoopTransactionPort(),
-    officialResults: { findApprovedByEncounter: async () => null },
+    officialResults: {
+      findApprovedByEncounter: async () => null,
+      listByCompetition: async () => [],
+    },
     officialSelections: { findLatestByEncounter: async () => null },
     encounterMutationLock: new InMemoryEncounterMutationLock(),
+    encounterParticipants: { participantsChanged: async () => undefined },
     competitions,
   });
   const snapshot = {
