@@ -3177,6 +3177,41 @@
         "description": "Service-only Queue target authenticated with the internal bearer secret."
       }
     },
+    "/internal/game-data/sync-jobs/enqueue-due": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Jobs created in this tick, plus counts of covered and deferred targets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnqueueDueProviderSyncsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "enqueueDueProviderSyncs",
+        "tags": [
+          "game-data"
+        ],
+        "summary": "Enqueue provider syncs for official slots inside the candidate window",
+        "description": "Service-only Cron target authenticated with the internal bearer secret. Selects connected EA clubs on scheduled or awaiting-selection slots whose start is inside the candidate window, and persists one recent-matches job per club and match type. An active job or a finished job inside the cooldown is not duplicated. The response lists only jobs created by this call so the caller can publish them. Retry converges.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/internal/game-data/sync-jobs/run-next": {
       "post": {
         "responses": {
@@ -15314,6 +15349,49 @@
           "away",
           "resolutionMode",
           "officialMatches"
+        ]
+      },
+      "EnqueueDueProviderSyncsResponse": {
+        "type": "object",
+        "properties": {
+          "enqueued": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "alreadyCovered": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "deferred": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "requestId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "id",
+                "requestId"
+              ]
+            }
+          }
+        },
+        "required": [
+          "enqueued",
+          "alreadyCovered",
+          "deferred",
+          "jobs"
         ]
       },
       "EnqueueProviderSyncJobRequest": {

@@ -10,5 +10,13 @@ describe("provider sync job contract host", () => {
     ).toMatchObject({
       description: expect.stringContaining("internal bearer secret"),
     });
+    expect(
+      getOpenApiOperation(
+        futrobOpenApiV1.paths["/internal/game-data/sync-jobs/enqueue-due"],
+        "post",
+      ),
+    ).toMatchObject({
+      operationId: "enqueueDueProviderSyncs",
+    });
   });
 });

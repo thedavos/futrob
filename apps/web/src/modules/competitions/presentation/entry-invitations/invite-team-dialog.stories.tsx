@@ -270,8 +270,10 @@ export const LinkShare: Story = {
     await expect(body.getByRole("textbox", { name: "Enlace de invitación" })).toHaveValue(
       "https://futrob.app/entry-invitations/link/liga-8K2Mabcd",
     );
-    await userEvent.click(body.getByRole("button", { name: "Copiar enlace" }));
-    await expect(await body.findByRole("button", { name: "Copiado" })).toBeVisible();
+    const copyButton = body.getByRole("button", { name: "Copiar enlace" });
+    await waitFor(() => expect(copyButton).toBeVisible());
+    await userEvent.click(copyButton);
+    await waitFor(() => expect(body.getByRole("button", { name: "Copiado" })).toBeVisible());
     await expect(writeText).toHaveBeenCalledWith(
       "https://futrob.app/entry-invitations/link/liga-8K2Mabcd",
     );

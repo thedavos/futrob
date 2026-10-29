@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { handleGameDataSyncJob, recoverNextProviderSyncJob } from "./game-data-sync.worker.ts";
+import {
+  enqueueDueProviderSyncs,
+  handleGameDataSyncJob,
+  recoverNextProviderSyncJob,
+} from "./game-data-sync.worker.ts";
 
 function readFetchTarget(input: RequestInfo | URL) {
   if (input instanceof Request) {
@@ -53,6 +57,32 @@ describe("handleGameDataSyncJob", () => {
     });
 
     expect(requested).toBe("https://api.futrob.test/api/v1/internal/game-data/sync-jobs/run-next");
+  });
+
+  it("publishes only the jobs the enqueue tick created", async () => {
+    const published: { jobId: string; requestId: string }[] = [];
+    let requested = "";
+    await enqueueDueProviderSyncs({
+      fetcher: async (input) => {
+        requested = readFetchTarget(input).url;
+        return Response.json({
+          enqueued: 1,
+          alreadyCovered: 2,
+          deferred: 0,
+          jobs: [{ id: "job-new", requestId: "request-new" }],
+        });
+      },
+      apiBaseUrl: "https://api.futrob.test/api/v1/",
+      internalJobSecret: "secret",
+      publish: async (message) => {
+        published.push(message);
+      },
+    });
+
+    expect(requested).toBe(
+      "https://api.futrob.test/api/v1/internal/game-data/sync-jobs/enqueue-due",
+    );
+    expect(published).toEqual([{ jobId: "job-new", requestId: "request-new" }]);
   });
 
   it("drops unknown jobs and retries durable retry schedules instead of acknowledging them", async () => {

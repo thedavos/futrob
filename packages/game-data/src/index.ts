@@ -23,6 +23,12 @@ export type {
   ProviderHealthSnapshot,
 } from "./domain/entities/provider-health.ts";
 export { providerSyncDedupeKey } from "./domain/entities/provider-sync-job.ts";
+export {
+  PROVIDER_SYNC_DUE_ENQUEUE_LIMIT,
+  PROVIDER_SYNC_DUE_SCAN_LIMIT,
+  PROVIDER_SYNC_ENQUEUE_COOLDOWN_MS,
+  providerSyncStillCovered,
+} from "./domain/policies/provider-sync-enqueue-coverage.ts";
 
 export type { GameDataProviderKey } from "./domain/value-objects/provider-key.ts";
 export { isGameDataProviderKey } from "./domain/value-objects/provider-key.ts";
@@ -60,6 +66,10 @@ export type { GameDataProviderRegistryPort } from "./domain/ports/game-data-prov
 export type { ProviderMatchRepository } from "./domain/ports/provider-match.repository.ts";
 export type { RawObservationRepository } from "./domain/ports/raw-observation.repository.ts";
 export type { ProviderSyncJobRepository } from "./domain/ports/provider-sync-job.repository.ts";
+export type {
+  DueProviderSyncTarget,
+  DueProviderSyncTargetFeed,
+} from "./domain/ports/due-provider-sync-target.feed.ts";
 export type {
   ProviderSyncCompletionFailure,
   ProviderSyncCompletionPort,
@@ -123,5 +133,10 @@ export {
   EnqueueProviderSyncJobUseCase,
   type EnqueueProviderSyncJobInput,
 } from "./application/enqueue-provider-sync-job/enqueue-provider-sync-job.use-case.ts";
+export {
+  EnqueueDueProviderSyncsUseCase,
+  type EnqueueDueProviderSyncsResult,
+  type EnqueuedProviderSyncJobRef,
+} from "./application/enqueue-due-provider-syncs/enqueue-due-provider-syncs.use-case.ts";
 export { ExecuteProviderSyncJobUseCase } from "./application/execute-provider-sync-job/execute-provider-sync-job.use-case.ts";
 export { GetProviderHealthUseCase } from "./application/get-provider-health/get-provider-health.use-case.ts";

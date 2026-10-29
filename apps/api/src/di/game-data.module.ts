@@ -1,4 +1,5 @@
 import {
+  EnqueueDueProviderSyncsUseCase,
   EnqueueProviderSyncJobUseCase,
   ExecuteProviderSyncJobUseCase,
   GetExternalClubUseCase,
@@ -16,6 +17,7 @@ import {
   type ProviderMatchIngestionPort,
   type ProviderMatchRepository,
   type RawObservationRepository,
+  type DueProviderSyncTargetFeed,
   type ProviderSyncJobRepository,
   type ProviderSyncCompletionPort,
   type ProviderHealthPort,
@@ -33,6 +35,7 @@ export interface GameDataModuleDependencies {
   readonly providerMatches: ProviderMatchRepository;
   readonly rawObservations: RawObservationRepository;
   readonly jobs: ProviderSyncJobRepository;
+  readonly dueSyncTargets: DueProviderSyncTargetFeed;
   readonly completion: ProviderSyncCompletionPort;
   readonly ids: IdGeneratorPort;
   readonly clock: ClockPort;
@@ -54,6 +57,13 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
     transaction: deps.transaction,
   });
 
+  const enqueueProviderSyncJob = new EnqueueProviderSyncJobUseCase({
+    jobs: deps.jobs,
+    ids: deps.ids,
+    clock: deps.clock,
+    maxAttempts: deps.maxJobAttempts,
+  });
+
   return {
     searchExternalClubs: new SearchExternalClubsUseCase(registry),
     getExternalClub: new GetExternalClubUseCase(registry),
@@ -64,11 +74,13 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
     getProviderHealth: new GetProviderHealthUseCase(deps.health),
     listMatchesBetweenClubs: new ListMatchesBetweenClubsUseCase(deps.providerMatches),
     syncRecentProviderMatches,
-    enqueueProviderSyncJob: new EnqueueProviderSyncJobUseCase({
+    enqueueProviderSyncJob,
+    enqueueDueProviderSyncs: new EnqueueDueProviderSyncsUseCase({
+      targets: deps.dueSyncTargets,
       jobs: deps.jobs,
+      enqueue: enqueueProviderSyncJob,
       ids: deps.ids,
       clock: deps.clock,
-      maxAttempts: deps.maxJobAttempts,
     }),
     executeProviderSyncJob: new ExecuteProviderSyncJobUseCase({
       jobs: deps.jobs,
