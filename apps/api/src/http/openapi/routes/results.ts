@@ -1,6 +1,8 @@
 import { defineRoute } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
 import {
+  VoidOfficialResultRequest,
+  VoidOfficialResultResponse,
   ConfirmOfficialSelectionRequest,
   OfficialSelectionCommandResponse,
   OfficialSelectionView,
@@ -204,6 +206,24 @@ export const resolveMatchDisputeRoute = defineRoute({
     status: 200,
     description: "Command outcome or its replay",
     schema: OfficialSelectionCommandResponse,
+  },
+  errors: [400, 401, 403, 404, 409],
+});
+
+export const voidOfficialResultRoute = defineRoute({
+  method: "post",
+  path: "/official-results/{officialResultId}/void",
+  operationId: "voidOfficialResult",
+  tags: ["results"],
+  summary: "Void an approved result and remove its official statistics",
+  description:
+    "Requires encounters.results.approve on the stored result scope. Uses the trusted service actor. Repeated calls converge without duplicate audit entries. Preserves approval history and releases provider references.",
+  params: pathParams(["officialResultId"]),
+  body: VoidOfficialResultRequest,
+  success: {
+    status: 200,
+    description: "Voided official result",
+    schema: VoidOfficialResultResponse,
   },
   errors: [400, 401, 403, 404, 409],
 });

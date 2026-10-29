@@ -2332,6 +2332,45 @@ paths:
       security: []
       parameters:
         - $ref: "#/components/parameters/RequestId"
+  /official-results/{officialResultId}/void:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: officialResultId
+          in: path
+      responses:
+        "200":
+          description: Voided official result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoidOfficialResultResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400": &a40
+          $ref: "#/components/responses/ApiError"
+        "401": *a40
+        "403": *a40
+        "404": *a40
+        "409": *a40
+      operationId: voidOfficialResult
+      tags:
+        - results
+      summary: Void an approved result and remove its official statistics
+      description: Requires encounters.results.approve on the stored result scope.
+        Uses the trusted service actor. Repeated calls converge without
+        duplicate audit entries. Preserves approval history and releases
+        provider references.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoidOfficialResultRequest"
   /openapi.json:
     get:
       responses:
@@ -21902,6 +21941,49 @@ components:
         - effect
         - scopeType
         - scopeId
+    VoidOfficialResultRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+    VoidOfficialResultResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        revision:
+          type: integer
+          exclusiveMinimum: 0
+        status:
+          type: string
+          enum:
+            - approved
+            - voided
+        approvalBasis:
+          type:
+            - string
+            - "null"
+          enum:
+            - team_agreement
+            - operator_resolution
+            - null
+        proposalId:
+          type:
+            - string
+            - "null"
+          minLength: 1
+        approvedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - revision
+        - status
+        - approvalBasis
+        - proposalId
+        - approvedAt
   securitySchemes:
     bearerAuth:
       type: http

@@ -20,6 +20,7 @@ Comandos base:
   domain-smoke-game-data  Smoke de @futrob/game-data (pure helpers + use case con fake)
   statistics-rebuild <orgId> <compId>  Reconstruir estadísticas y rankings (superusuario)
   statistics-smoke        Smoke de GetMyPersonalStatisticsUseCase con fakes
+  result-void <officialResultId> [--reason <text>] [--actor <id>] — Anular resultado aprobado
   results-smoke           Select → Confirm con fakes en memoria (@futrob/results)
 
 Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor):

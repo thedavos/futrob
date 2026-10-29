@@ -1,4 +1,6 @@
 import {
+  voidOfficialResultRequestSchema,
+  voidOfficialResultResponseSchema,
   officialSelectionViewSchema,
   officialSelectionCommandResponseSchema,
   proposeOfficialSelectionRequestSchema,
@@ -56,4 +58,13 @@ export const RunConfirmationExpiryResponse = namedSchema(
 export const RunCandidateRecalculationResponse = namedSchema(
   "RunCandidateRecalculationResponse",
   runCandidateRecalculationResponseSchema,
+);
+
+export const VoidOfficialResultRequest = namedSchema(
+  "VoidOfficialResultRequest",
+  voidOfficialResultRequestSchema,
+);
+export const VoidOfficialResultResponse = namedSchema(
+  "VoidOfficialResultResponse",
+  voidOfficialResultResponseSchema,
 );

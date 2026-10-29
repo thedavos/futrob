@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { run as resultVoid } from "./commands/void-official-result.ts";
 import type { Effect } from "effect";
 import { HELP_TEXT, run as help } from "./commands/help.ts";
 import { run as ping } from "./commands/ping.ts";
@@ -64,6 +65,7 @@ import { runProgram } from "./lib/run-program.ts";
 type Handler = (args: string[]) => Effect.Effect<number, CliError>;
 
 const commands = {
+  "result-void": (args) => resultVoid(args),
   help: () => help(),
   ping: () => ping(),
   "domain-smoke": () => domainSmoke(),
