@@ -111,7 +111,7 @@ export type { LeadCardProps, LeadCardTone } from "./components/lead-card";
 export { MetaItem, MetaList, MetaTerm, MetaValue } from "./components/meta-list";
 export type { MetaListColumns, MetaListProps, MetaValueProps } from "./components/meta-list";
 export { Score } from "./components/score";
-export type { ScoreAlign, ScoreElement, ScoreProps } from "./components/score";
+export type { ScoreAlign, ScoreElement, ScoreProps, ScoreSize } from "./components/score";
 export { SectionTitle } from "./components/section-title";
 export type { SectionTitleLevel, SectionTitleProps } from "./components/section-title";
 export { Subtitle } from "./components/subtitle";

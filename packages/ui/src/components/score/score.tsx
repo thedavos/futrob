@@ -10,6 +10,7 @@ const styles = stylex.create({
   start: { textAlign: "start" },
   center: { textAlign: "center" },
   end: { textAlign: "end" },
+  table: { fontSize: "0.875rem", lineHeight: "1.25rem" },
 });
 
 const alignStyles = {
@@ -19,11 +20,14 @@ const alignStyles = {
 } as const;
 
 export type ScoreAlign = keyof typeof alignStyles;
+/** `table` is the row scale (14/20 px); `default` is the KPI scale and never belongs in a row. */
+export type ScoreSize = "default" | "table";
 export type ScoreElement = "p" | "span";
 
 export type ScoreProps = ComponentProps<"p"> & {
   as?: ScoreElement;
   align?: ScoreAlign;
+  size?: ScoreSize;
   /** `muted` for unavailable values (`—`). Status color lives on `StatValue`. */
   tone?: TextTone;
   truncate?: boolean;
@@ -38,6 +42,7 @@ function Score({
   className,
   style,
   align = "start",
+  size = "default",
   tone = "default",
   truncate = false,
   title,
@@ -48,6 +53,7 @@ function Score({
     <Tag
       data-slot="score"
       data-align={align}
+      data-size={size}
       data-tone={tone}
       data-truncate={truncate ? "true" : undefined}
       title={titleWhenTruncated(truncate, children, title)}
@@ -58,6 +64,7 @@ function Score({
         typography.score,
         textTone[tone],
         alignStyles[align],
+        size === "table" && styles.table,
         truncate && typography.truncate,
       )}
       {...props}
