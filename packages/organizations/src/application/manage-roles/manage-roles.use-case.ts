@@ -89,22 +89,6 @@ export class ChangeOrganizationRoleUseCase {
         }),
       );
     }
-    for (const permission of this.deps.roleCapabilities.permissionsForRole(input.role)) {
-      const delegated = await this.deps.authorization.decide({
-        actorId: input.actorId,
-        permission,
-        scope: { organizationId: input.organizationId },
-      });
-      if (!delegated.allowed) {
-        return err(
-          new AuthorizationForbidden({
-            code: "authorization.forbidden",
-            message: "Cannot assign a role with capabilities outside the actor's authority",
-            permission,
-          }),
-        );
-      }
-    }
     const current = await this.deps.memberships.findByOrgAndActor(
       input.organizationId,
       input.targetActorId,
@@ -116,6 +100,28 @@ export class ChangeOrganizationRoleUseCase {
           message: "Organization membership not found",
         }),
       );
+    }
+    // Both the role being removed and the role being assigned must sit within the
+    // actor's authority, so a delegated manager cannot demote someone above them.
+    const capabilities = new Set([
+      ...this.deps.roleCapabilities.permissionsForRole(current.role),
+      ...this.deps.roleCapabilities.permissionsForRole(input.role),
+    ]);
+    for (const permission of capabilities) {
+      const delegated = await this.deps.authorization.decide({
+        actorId: input.actorId,
+        permission,
+        scope: { organizationId: input.organizationId },
+      });
+      if (!delegated.allowed) {
+        return err(
+          new AuthorizationForbidden({
+            code: "authorization.forbidden",
+            message: "Cannot change a role with capabilities outside the actor's authority",
+            permission,
+          }),
+        );
+      }
     }
     const updated = await this.deps.memberships.updateRoleProtectingLastOrganizer({
       ...current,

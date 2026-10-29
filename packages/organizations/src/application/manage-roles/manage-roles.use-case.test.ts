@@ -122,6 +122,62 @@ describe("role escalation guards", () => {
       role: "member",
     });
   });
+
+  it("cannot demote a member whose current role exceeds the manager's authority", async () => {
+    const harness = createOrgTestHarness();
+    const organizationId = asOrganizationId("org-1");
+    const managerId = asActorId("manager-1");
+    const organizerId = asActorId("organizer-1");
+    await harness.memberships.add({
+      organizationId,
+      actorId: organizerId,
+      role: "organizer",
+      createdAt: harness.clock.now(),
+    });
+    await harness.memberships.add({
+      organizationId,
+      actorId: asActorId("organizer-2"),
+      role: "organizer",
+      createdAt: harness.clock.now(),
+    });
+    const delegated = new Set(["authorization.roles.manage", "organizations.read"]);
+    const delegatedAuthorization: AuthorizationPort = {
+      decide: async (request) => ({
+        ...request,
+        allowed: delegated.has(request.permission),
+        reason: delegated.has(request.permission) ? "allowed" : "denied",
+      }),
+      getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
+    };
+    const result = await new ChangeOrganizationRoleUseCase({
+      authorization: delegatedAuthorization,
+      audit: auditRepository(),
+      clock: harness.clock,
+      ids: harness.ids,
+      memberships: harness.memberships,
+      roleCapabilities: {
+        permissionsForRole: (role) =>
+          role === "organizer"
+            ? ["organizations.read", "organizations.update"]
+            : ["organizations.read"],
+      },
+      transaction: { runInTransaction: async (operation) => operation() },
+      mutationLock: { runWithActors: async (_org, _actors, operation) => operation() },
+    }).execute({
+      actorId: managerId,
+      organizationId,
+      targetActorId: organizerId,
+      role: "member",
+    });
+
+    expect(unwrapErr(result)).toMatchObject({
+      code: "authorization.forbidden",
+      permission: "organizations.update",
+    });
+    expect(await harness.memberships.findByOrgAndActor(organizationId, organizerId)).toMatchObject({
+      role: "organizer",
+    });
+  });
 });
 
 function auditRepository(): AuthorizationAuditRepository {

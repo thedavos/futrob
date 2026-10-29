@@ -1202,6 +1202,25 @@ const es = {
   "organizations.members.actionsFor": "Acciones de {name}",
   "organizations.members.viewDetails": "Ver detalle",
   "organizations.members.clearFilters": "Limpiar filtros",
+  "organizations.members.organizerHint":
+    "Control total de la organización: miembros, roles, permisos y competiciones.",
+  "organizations.members.roleEditor.label": "Cambiar rol",
+  "organizations.members.roleEditor.save": "Guardar rol",
+  "organizations.members.roleEditor.saving": "Guardando rol…",
+  "organizations.members.roleEditor.saved": "Rol actualizado",
+  "organizations.members.roleEditor.lastOrganizer":
+    "La organización necesita al menos un organizador. Asigna otro antes de cambiar este rol.",
+  "organizations.members.roleEditor.forbidden":
+    "No tienes autoridad para asignar o retirar este rol.",
+  "organizations.members.roleEditor.failed": "No pudimos cambiar el rol. Inténtalo nuevamente.",
+  "organizations.members.grants.title": "Permisos específicos",
+  "organizations.members.grants.loading": "Cargando permisos específicos…",
+  "organizations.members.grants.empty":
+    "Sin permisos específicos: sus accesos dependen solo de su rol.",
+  "organizations.members.grants.failed": "No pudimos cargar los permisos específicos.",
+  "organizations.members.grants.retry": "Reintentar",
+  "organizations.members.grants.allow": "Permitido",
+  "organizations.members.grants.deny": "Denegado",
   "organizations.members.detail.title": "Detalle del miembro",
   "organizations.members.detail.description": "Datos del miembro y alcance de sus accesos.",
   "organizations.members.detail.emptyTitle": "Selecciona un miembro",
@@ -3629,6 +3648,25 @@ const en: Catalog = {
   "organizations.members.actionsFor": "Actions for {name}",
   "organizations.members.viewDetails": "View details",
   "organizations.members.clearFilters": "Clear filters",
+  "organizations.members.organizerHint":
+    "Full control of the organization: members, roles, permissions and competitions.",
+  "organizations.members.roleEditor.label": "Change role",
+  "organizations.members.roleEditor.save": "Save role",
+  "organizations.members.roleEditor.saving": "Saving role…",
+  "organizations.members.roleEditor.saved": "Role updated",
+  "organizations.members.roleEditor.lastOrganizer":
+    "The organization needs at least one organizer. Assign another before changing this role.",
+  "organizations.members.roleEditor.forbidden":
+    "You don't have the authority to assign or remove this role.",
+  "organizations.members.roleEditor.failed": "We couldn't change the role. Please try again.",
+  "organizations.members.grants.title": "Specific permissions",
+  "organizations.members.grants.loading": "Loading specific permissions…",
+  "organizations.members.grants.empty":
+    "No specific permissions: their access depends only on their role.",
+  "organizations.members.grants.failed": "We couldn't load the specific permissions.",
+  "organizations.members.grants.retry": "Retry",
+  "organizations.members.grants.allow": "Allowed",
+  "organizations.members.grants.deny": "Denied",
   "organizations.members.detail.title": "Member details",
   "organizations.members.detail.description": "Member information and scope of access.",
   "organizations.members.detail.emptyTitle": "Select a member",
