@@ -14,6 +14,7 @@ import {
   GetCompetitionFixtureUseCase,
   GetCurrentCompetitionFixtureUseCase,
   ListScheduleChangeRequestsUseCase,
+  AdvanceFixtureFromOfficialResultUseCase,
   MaterializeOfficialMatchesForEncounterUseCase,
   RejectScheduleChangeProposalUseCase,
   UpsertEncounterScheduleSnapshotUseCase,
@@ -57,6 +58,7 @@ import {
   InMemoryFixtureAuditPort,
   OfficialResultFixtureEditGuard,
   OfficialResultOccupancyGuard,
+  OfficialResultScoreReader,
   PostgresFixtureAuditPort,
 } from "@/adapters/scheduling/fixture-editing.adapters.ts";
 import { CompetitionRescheduleRulesAdapter } from "@/adapters/scheduling/competition-reschedule-rules.adapter.ts";
@@ -75,7 +77,10 @@ export function createSchedulingModule(input: {
   readonly fixtureSource: CompetitionFixtureSourcePort;
   readonly eventPublisher: EventPublisherPort;
   readonly transaction: TransactionPort;
-  readonly officialResults: Pick<OfficialResultRepository, "findApprovedByEncounter">;
+  readonly officialResults: Pick<
+    OfficialResultRepository,
+    "findApprovedByEncounter" | "listByCompetition"
+  >;
   readonly officialSelections: Pick<OfficialMatchSelectionRepository, "findLatestByEncounter">;
   readonly encounterMutationLock: EncounterMutationLockPort;
   readonly competitions: Pick<CompetitionRepository, "findById">;
@@ -210,6 +215,15 @@ export function createSchedulingModule(input: {
       mutationLock: input.encounterMutationLock,
       participants: input.participants,
       transaction: input.transaction,
+    }),
+    advanceFixtureFromOfficialResult: new AdvanceFixtureFromOfficialResultUseCase({
+      clock,
+      editGuard,
+      encounters,
+      fixtures: fixturePlans,
+      matches: officialMatches,
+      scores: new OfficialResultScoreReader(input.officialResults),
+      source: input.fixtureSource,
     }),
     materializeOfficialMatches: new MaterializeOfficialMatchesForEncounterUseCase({
       authorization: input.authorization,

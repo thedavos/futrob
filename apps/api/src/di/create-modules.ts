@@ -286,6 +286,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
   const officialSelection = createOfficialSelectionCommands({
     results,
+    scheduling,
     statistics,
     transaction,
     encounterLock: encounterMutationLock,
@@ -311,6 +312,7 @@ export function createModules(input: CreateModulesInput): AppModules {
 
   const voidOfficialResultAndUnproject = createVoidOfficialResultAndUnproject({
     results,
+    scheduling,
     statistics,
     transaction,
     encounterLock: encounterMutationLock,

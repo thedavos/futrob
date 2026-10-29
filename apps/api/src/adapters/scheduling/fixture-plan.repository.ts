@@ -302,6 +302,7 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
         input.competitionId,
       ],
     );
+    await syncEncounterSeries(executor, input);
     return this.findById(input.organizationId, input.competitionId, input.fixturePlanId);
   }
 
@@ -319,6 +320,39 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
 }
 
 type Executor = ReturnType<typeof getPgExecutor>;
+
+/** Advancement creates the series when both slots become Teams and drops it when reverted. */
+async function syncEncounterSeries(
+  executor: Executor,
+  input: Parameters<FixturePlanRepository["updateEncounter"]>[0],
+): Promise<void> {
+  const { encounter } = input;
+  if (!encounter.series) {
+    await executor.query(
+      `DELETE FROM encounter_series
+       WHERE encounter_id = $1 AND fixture_plan_id = $2 AND organization_id = $3
+         AND competition_id = $4`,
+      [encounter.id, input.fixturePlanId, input.organizationId, input.competitionId],
+    );
+    return;
+  }
+  await executor.query(
+    `INSERT INTO encounter_series (
+       id, encounter_id, fixture_plan_id, organization_id, competition_id,
+       resolution_mode, official_match_count
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (encounter_id) DO NOTHING`,
+    [
+      encounter.series.id,
+      encounter.id,
+      input.fixturePlanId,
+      input.organizationId,
+      input.competitionId,
+      encounter.series.resolutionMode,
+      encounter.series.officialMatches.length,
+    ],
+  );
+}
 
 async function insertEncounter(
   executor: Executor,
