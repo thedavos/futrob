@@ -12,12 +12,17 @@ import {
   resolveMatchDisputeRequestSchema,
   runConfirmationExpiryResponseSchema,
   runCandidateRecalculationResponseSchema,
+  listCompetitionDisputesResponseSchema,
 } from "@futrob/api-contracts";
 import { namedSchema } from "@/http/openapi/named-schema.ts";
 
 export const OfficialSelectionView = namedSchema(
   "OfficialSelectionView",
   officialSelectionViewSchema,
+);
+export const ListCompetitionDisputesResponse = namedSchema(
+  "ListCompetitionDisputesResponse",
+  listCompetitionDisputesResponseSchema,
 );
 export const OfficialSelectionCommandResponse = namedSchema(
   "OfficialSelectionCommandResponse",

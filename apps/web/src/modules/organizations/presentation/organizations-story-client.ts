@@ -1,4 +1,7 @@
 import type {
+  ChangeOrganizationRoleRequest,
+  ListAccessGrantsResponse,
+  OrganizationRoleAssignmentDto,
   AcceptCompetitionInvitationResponse,
   AcceptInvitationRequest,
   CreateInvitationRequest,
@@ -88,6 +91,8 @@ export type OrganizationsStoryState = {
   readonly acceptInvitation: OrganizationsInvitationStoryState;
   readonly createOrganization: OrganizationsCreateStoryState;
   readonly memberships: ListMyMembershipsResponse;
+  readonly changeRole: "success" | "pending" | "lastOrganizer";
+  readonly grants: ListAccessGrantsResponse["grants"];
 };
 
 const hang = <T>(): Promise<T> => new Promise(() => undefined);
@@ -115,6 +120,8 @@ let state: OrganizationsStoryState = {
   acceptInvitation: "success",
   createOrganization: "success",
   memberships: { memberships: [] },
+  changeRole: "success",
+  grants: [],
 };
 
 export function configureOrganizationsStory(next: Partial<OrganizationsStoryState>): void {
@@ -128,6 +135,8 @@ export function configureOrganizationsStory(next: Partial<OrganizationsStoryStat
     acceptInvitation: "success",
     createOrganization: "success",
     memberships: { memberships: [] },
+    changeRole: "success",
+    grants: [],
     ...next,
   };
 }
@@ -149,6 +158,24 @@ function invitationError(
 export const organizationsBrowserClient = {
   async listMembers(_organizationId: string): Promise<ListOrganizationMembersResponse> {
     return { members: [] };
+  },
+  changeMemberRole(
+    organizationId: string,
+    actorId: string,
+    input: ChangeOrganizationRoleRequest,
+  ): Promise<OrganizationRoleAssignmentDto> {
+    if (state.changeRole === "pending") return hang();
+    if (state.changeRole === "lastOrganizer")
+      return Promise.reject(invitationError("authorization.last_organizer", 409));
+    return Promise.resolve({
+      organizationId,
+      actorId,
+      role: input.role,
+      createdAt: "2026-08-01T12:00:00.000Z",
+    });
+  },
+  listMemberGrants(_organizationId: string, _actorId: string): Promise<ListAccessGrantsResponse> {
+    return Promise.resolve({ grants: state.grants });
   },
   listMine(): Promise<ListMyMembershipsResponse> {
     return Promise.resolve(state.memberships);

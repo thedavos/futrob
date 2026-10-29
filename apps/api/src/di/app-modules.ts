@@ -6,6 +6,7 @@ import type { GetEncounterViewUseCase } from "@/application/scheduling/get-encou
 import type { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
 import type { ListCompetitionEncountersUseCase } from "@/application/scheduling/list-competition-encounters.use-case.ts";
 import type { GetCurrentCompetitionFixtureViewUseCase } from "@/application/scheduling/get-current-competition-fixture-view.use-case.ts";
+import type { ListCompetitionDisputesQuery } from "@/application/results/list-competition-disputes.query.ts";
 import type {
   GetTeamRosterManagementUseCase,
   ListTeamRosterManagementUseCase,
@@ -47,6 +48,8 @@ export interface AppModules {
   readonly getEncounterView: GetEncounterViewUseCase;
   readonly listCompetitionEncounters: ListCompetitionEncountersUseCase;
   readonly getCurrentCompetitionFixture: GetCurrentCompetitionFixtureViewUseCase;
+  /** Operator queue of selections in `disputed` or `organizer_review`. */
+  readonly listCompetitionDisputes: ListCompetitionDisputesQuery;
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
   readonly notifications: NotificationsModule;

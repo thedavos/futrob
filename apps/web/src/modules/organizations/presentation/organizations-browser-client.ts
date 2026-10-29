@@ -1,4 +1,10 @@
 import {
+  changeOrganizationRoleRequestSchema,
+  listAccessGrantsResponseSchema,
+  organizationRoleAssignmentSchema,
+  type ChangeOrganizationRoleRequest,
+  type ListAccessGrantsResponse,
+  type OrganizationRoleAssignmentDto,
   listOrganizationMembersResponseSchema,
   type ListOrganizationMembersResponse,
   createOrganizationRequestSchema,
@@ -99,6 +105,36 @@ export const organizationsBrowserClient = {
       path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/members`,
       method: "GET",
       schema: listOrganizationMembersResponseSchema,
+      signal: options.signal,
+    });
+  },
+  changeMemberRole(
+    organizationId: string,
+    actorId: string,
+    input: ChangeOrganizationRoleRequest,
+  ): Promise<OrganizationRoleAssignmentDto> {
+    return requestOrganizationsJson({
+      path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/members/${encodeURIComponent(actorId)}/role`,
+      method: "PATCH",
+      body: changeOrganizationRoleRequestSchema.parse(input),
+      schema: organizationRoleAssignmentSchema,
+    });
+  },
+  listMemberGrants(
+    organizationId: string,
+    actorId: string,
+    options: { readonly signal?: AbortSignal } = {},
+  ): Promise<ListAccessGrantsResponse> {
+    const query = new URLSearchParams({
+      organizationId,
+      scopeType: "organization",
+      scopeId: organizationId,
+      targetActorId: actorId,
+    });
+    return requestOrganizationsJson({
+      path: `/api/v1/authorization/grants?${query.toString()}`,
+      method: "GET",
+      schema: listAccessGrantsResponseSchema,
       signal: options.signal,
     });
   },

@@ -3122,6 +3122,43 @@ paths:
                         - key
               required:
                 - cover
+  /organizations/{organizationId}/competitions/{competitionId}/disputes:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+      responses:
+        "200":
+          description: Operator dispute queue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListCompetitionDisputesResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "401": &a51
+          $ref: "#/components/responses/ApiError"
+        "404": *a51
+      operationId: listCompetitionDisputes
+      tags:
+        - results
+      summary: List the competition's selections waiting on an operator decision
+      description: Selections in `disputed` or `organizer_review`, longest waiting
+        first. Each Encounter is decided on `encounters.results.approve` at its
+        own scope, so a specific deny hides it. A missing competition and an
+        actor without the capability anywhere in it both answer 404
+        `competitions.not_found`. Dispute reasons are not included; read them
+        from the Encounter's operator selection view.
   /organizations/{organizationId}/competitions/{competitionId}/encounters:
     get:
       parameters:
@@ -3146,9 +3183,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a51
+        "401": &a52
           $ref: "#/components/responses/ApiError"
-        "404": *a51
+        "404": *a52
       operationId: listCompetitionEncounters
       tags:
         - encounters
@@ -3178,12 +3215,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a52
+        "400": &a53
           $ref: "#/components/responses/ApiError"
-        "401": *a52
-        "403": *a52
-        "404": *a52
-        "409": *a52
+        "401": *a53
+        "403": *a53
+        "404": *a53
+        "409": *a53
       operationId: registerTeamEntry
       tags:
         - competitions
@@ -3223,11 +3260,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a53
+        "401": &a54
           $ref: "#/components/responses/ApiError"
-        "403": *a53
-        "404": *a53
-        "409": *a53
+        "403": *a54
+        "404": *a54
+        "409": *a54
       operationId: approveTeamEntry
       tags:
         - competitions
@@ -3261,11 +3298,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a54
+        "401": &a55
           $ref: "#/components/responses/ApiError"
-        "403": *a54
-        "404": *a54
-        "409": *a54
+        "403": *a55
+        "404": *a55
+        "409": *a55
       operationId: rejectTeamEntry
       tags:
         - competitions
@@ -3294,12 +3331,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a55
+        "400": &a56
           $ref: "#/components/responses/ApiError"
-        "401": *a55
-        "403": *a55
-        "404": *a55
-        "409": *a55
+        "401": *a56
+        "403": *a56
+        "404": *a56
+        "409": *a56
       operationId: inviteTeamCaptain
       tags:
         - competitions
@@ -3338,9 +3375,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a56
+        "401": &a57
           $ref: "#/components/responses/ApiError"
-        "403": *a56
+        "403": *a57
       operationId: listSentEntryInvitations
       tags:
         - competitions
@@ -3371,11 +3408,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a57
+        "401": &a58
           $ref: "#/components/responses/ApiError"
-        "403": *a57
-        "404": *a57
-        "409": *a57
+        "403": *a58
+        "404": *a58
+        "409": *a58
       operationId: revokeEntryInvitation
       tags:
         - competitions
@@ -3411,10 +3448,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a58
+        "400": &a59
           $ref: "#/components/responses/ApiError"
-        "401": *a58
-        "403": *a58
+        "401": *a59
+        "403": *a59
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: searchEntryInvitees
@@ -3446,10 +3483,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a59
+        "401": &a60
           $ref: "#/components/responses/ApiError"
-        "403": *a59
-        "409": *a59
+        "403": *a60
+        "409": *a60
       operationId: ensureEntryInvitationLink
       tags:
         - competitions
@@ -3478,10 +3515,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a60
+        "401": &a61
           $ref: "#/components/responses/ApiError"
-        "403": *a60
-        "409": *a60
+        "403": *a61
+        "409": *a61
       operationId: regenerateEntryInvitationLink
       tags:
         - competitions
@@ -3510,11 +3547,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a61
+        "400": &a62
           $ref: "#/components/responses/ApiError"
-        "401": *a61
-        "403": *a61
-        "409": *a61
+        "401": *a62
+        "403": *a62
+        "409": *a62
       operationId: generateCompetitionFixture
       tags:
         - fixtures
@@ -3548,9 +3585,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a62
+        "401": &a63
           $ref: "#/components/responses/ApiError"
-        "404": *a62
+        "404": *a63
       operationId: getCurrentCompetitionFixture
       tags:
         - fixtures
@@ -3584,9 +3621,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a63
+        "401": &a64
           $ref: "#/components/responses/ApiError"
-        "404": *a63
+        "404": *a64
       operationId: getCompetitionFixture
       tags:
         - fixtures
@@ -3625,12 +3662,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a64
+        "400": &a65
           $ref: "#/components/responses/ApiError"
-        "401": *a64
-        "403": *a64
-        "404": *a64
-        "409": *a64
+        "401": *a65
+        "403": *a65
+        "404": *a65
+        "409": *a65
       operationId: editFixtureEncounter
       tags:
         - fixtures
@@ -3665,11 +3702,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a65
+        "400": &a66
           $ref: "#/components/responses/ApiError"
-        "401": *a65
-        "403": *a65
-        "404": *a65
+        "401": *a66
+        "403": *a66
+        "404": *a66
       operationId: createCompetitionInvitation
       tags:
         - competitions
@@ -3733,9 +3770,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a66
+        "403": &a67
           $ref: "#/components/responses/ApiError"
-        "404": *a66
+        "404": *a67
       operationId: changeCompetitionRole
       tags:
         - authorization
@@ -3770,10 +3807,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a67
+        "400": &a68
           $ref: "#/components/responses/ApiError"
-        "403": *a67
-        "409": *a67
+        "403": *a68
+        "409": *a68
       operationId: addCompetitionParticipant
       tags:
         - competitions
@@ -3874,10 +3911,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a68
+        "403": &a69
           $ref: "#/components/responses/ApiError"
-        "404": *a68
-        "409": *a68
+        "404": *a69
+        "409": *a69
       operationId: removeCompetitionParticipant
       tags:
         - competitions
@@ -3906,10 +3943,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a69
+        "403": &a70
           $ref: "#/components/responses/ApiError"
-        "404": *a69
-        "409": *a69
+        "404": *a70
+        "409": *a70
       operationId: publishCompetition
       tags:
         - competitions
@@ -3950,9 +3987,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a70
+        "401": &a71
           $ref: "#/components/responses/ApiError"
-        "403": *a70
+        "403": *a71
       operationId: getCompetitionRankings
       tags:
         - statistics
@@ -3981,10 +4018,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a71
+        "403": &a72
           $ref: "#/components/responses/ApiError"
-        "404": *a71
-        "409": *a71
+        "404": *a72
+        "409": *a72
       operationId: closeCompetitionRegistration
       tags:
         - competitions
@@ -4013,10 +4050,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a72
+        "403": &a73
           $ref: "#/components/responses/ApiError"
-        "404": *a72
-        "409": *a72
+        "404": *a73
+        "409": *a73
       operationId: openCompetitionRegistration
       tags:
         - competitions
@@ -4046,9 +4083,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a73
+        "401": &a74
           $ref: "#/components/responses/ApiError"
-        "403": *a73
+        "403": *a74
       operationId: getCompetitionStandings
       tags:
         - statistics
@@ -4218,9 +4255,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a74
+        "400": &a75
           $ref: "#/components/responses/ApiError"
-        "403": *a74
+        "403": *a75
       operationId: listCompetitionTeamManagement
       tags:
         - teams
@@ -4254,9 +4291,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a75
+        "403": &a76
           $ref: "#/components/responses/ApiError"
-        "404": *a75
+        "404": *a76
       operationId: getCompetitionTeamManagement
       tags:
         - teams
@@ -4286,9 +4323,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a76
+        "401": &a77
           $ref: "#/components/responses/ApiError"
-        "403": *a76
+        "403": *a77
       operationId: getTeamPerformanceRanking
       tags:
         - statistics
@@ -4318,9 +4355,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a77
+        "401": &a78
           $ref: "#/components/responses/ApiError"
-        "403": *a77
+        "403": *a78
       operationId: getCompetitionTeamStatistics
       tags:
         - statistics
@@ -4354,11 +4391,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a78
+        "400": &a79
           $ref: "#/components/responses/ApiError"
-        "401": *a78
-        "403": *a78
-        "404": *a78
+        "401": *a79
+        "403": *a79
+        "404": *a79
       operationId: connectCompetitionTeamExternalClub
       tags:
         - teams
@@ -4397,9 +4434,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a79
+        "401": &a80
           $ref: "#/components/responses/ApiError"
-        "403": *a79
+        "403": *a80
       operationId: getCompetitionTeamExternalClub
       tags:
         - teams
@@ -4433,12 +4470,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a80
+        "400": &a81
           $ref: "#/components/responses/ApiError"
-        "401": *a80
-        "403": *a80
-        "404": *a80
-        "409": *a80
+        "401": *a81
+        "403": *a81
+        "404": *a81
+        "409": *a81
       operationId: addToTeamRoster
       tags:
         - teams
@@ -4477,9 +4514,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a81
+        "401": &a82
           $ref: "#/components/responses/ApiError"
-        "403": *a81
+        "403": *a82
       operationId: listTeamRoster
       tags:
         - teams
@@ -4513,11 +4550,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a82
+        "400": &a83
           $ref: "#/components/responses/ApiError"
-        "401": *a82
-        "403": *a82
-        "409": *a82
+        "401": *a83
+        "403": *a83
+        "409": *a83
       operationId: createRosterInvitation
       tags:
         - teams
@@ -4562,11 +4599,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a83
+        "400": &a84
           $ref: "#/components/responses/ApiError"
-        "401": *a83
-        "403": *a83
-        "404": *a83
+        "401": *a84
+        "403": *a84
+        "404": *a84
       operationId: changeRosterRole
       tags:
         - teams
@@ -4606,10 +4643,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a84
+        "401": &a85
           $ref: "#/components/responses/ApiError"
-        "403": *a84
-        "409": *a84
+        "403": *a85
+        "409": *a85
       operationId: closeTeamRoster
       tags:
         - teams
@@ -4643,10 +4680,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a85
+        "401": &a86
           $ref: "#/components/responses/ApiError"
-        "403": *a85
-        "409": *a85
+        "403": *a86
+        "409": *a86
       operationId: openTeamRoster
       tags:
         - teams
@@ -4675,9 +4712,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a86
+        "401": &a87
           $ref: "#/components/responses/ApiError"
-        "404": *a86
+        "404": *a87
       operationId: getEncounterView
       tags:
         - encounters
@@ -4713,11 +4750,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a87
+        "400": &a88
           $ref: "#/components/responses/ApiError"
-        "401": *a87
-        "403": *a87
-        "404": *a87
+        "401": *a88
+        "403": *a88
+        "404": *a88
       operationId: getTeamOfficialSelection
       tags:
         - results
@@ -4748,10 +4785,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a88
+        "401": &a89
           $ref: "#/components/responses/ApiError"
-        "403": *a88
-        "404": *a88
+        "403": *a89
+        "404": *a89
       operationId: getOperatorOfficialSelection
       tags:
         - results
@@ -4784,12 +4821,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a89
+        "400": &a90
           $ref: "#/components/responses/ApiError"
-        "401": *a89
-        "403": *a89
-        "404": *a89
-        "409": *a89
+        "401": *a90
+        "403": *a90
+        "404": *a90
+        "409": *a90
       operationId: openMatchDispute
       tags:
         - results
@@ -4842,12 +4879,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a90
+        "400": &a91
           $ref: "#/components/responses/ApiError"
-        "401": *a90
-        "403": *a90
-        "404": *a90
-        "409": *a90
+        "401": *a91
+        "403": *a91
+        "404": *a91
+        "409": *a91
       operationId: resolveMatchDispute
       tags:
         - results
@@ -4909,12 +4946,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a91
+        "400": &a92
           $ref: "#/components/responses/ApiError"
-        "401": *a91
-        "403": *a91
-        "404": *a91
-        "409": *a91
+        "401": *a92
+        "403": *a92
+        "404": *a92
+        "409": *a92
       operationId: reviewMatchDispute
       tags:
         - results
@@ -4975,12 +5012,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a92
+        "400": &a93
           $ref: "#/components/responses/ApiError"
-        "401": *a92
-        "403": *a92
-        "404": *a92
-        "409": *a92
+        "401": *a93
+        "403": *a93
+        "404": *a93
+        "409": *a93
       operationId: proposeOfficialSelection
       tags:
         - results
@@ -5038,12 +5075,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a93
+        "400": &a94
           $ref: "#/components/responses/ApiError"
-        "401": *a93
-        "403": *a93
-        "404": *a93
-        "409": *a93
+        "401": *a94
+        "403": *a94
+        "404": *a94
+        "409": *a94
       operationId: proposeAlternativeOfficialSelection
       tags:
         - results
@@ -5101,12 +5138,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a94
+        "400": &a95
           $ref: "#/components/responses/ApiError"
-        "401": *a94
-        "403": *a94
-        "404": *a94
-        "409": *a94
+        "401": *a95
+        "403": *a95
+        "404": *a95
+        "409": *a95
       operationId: confirmOfficialSelection
       tags:
         - results
@@ -5164,12 +5201,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a95
+        "400": &a96
           $ref: "#/components/responses/ApiError"
-        "401": *a95
-        "403": *a95
-        "404": *a95
-        "409": *a95
+        "401": *a96
+        "403": *a96
+        "404": *a96
+        "409": *a96
       operationId: rejectOfficialSelection
       tags:
         - results
@@ -5217,12 +5254,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a96
+        "400": &a97
           $ref: "#/components/responses/ApiError"
-        "401": *a96
-        "403": *a96
-        "404": *a96
-        "409": *a96
+        "401": *a97
+        "403": *a97
+        "404": *a97
+        "409": *a97
       operationId: createOrganizationInvitation
       tags:
         - organizations
@@ -5252,11 +5289,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a97
+        "400": &a98
           $ref: "#/components/responses/ApiError"
-        "401": *a97
-        "403": *a97
-        "404": *a97
+        "401": *a98
+        "403": *a98
+        "404": *a98
       operationId: setOrganizationLogo
       tags:
         - organizations
@@ -5447,12 +5484,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a98
+        "400": &a99
           $ref: "#/components/responses/ApiError"
-        "401": *a98
-        "403": *a98
-        "404": *a98
-        "409": *a98
+        "401": *a99
+        "403": *a99
+        "404": *a99
+        "409": *a99
       operationId: listOrganizationMembers
       tags:
         - organizations
@@ -5477,13 +5514,18 @@ paths:
       responses:
         "200":
           description: Updated role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationRoleAssignment"
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a99
+        "400": &a100
           $ref: "#/components/responses/ApiError"
-        "404": *a99
-        "409": *a99
+        "403": *a100
+        "404": *a100
+        "409": *a100
       operationId: changeOrganizationRole
       tags:
         - authorization
@@ -5513,11 +5555,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a100
+        "400": &a101
           $ref: "#/components/responses/ApiError"
-        "401": *a100
-        "403": *a100
-        "409": *a100
+        "401": *a101
+        "403": *a101
+        "409": *a101
       operationId: createOrganizationTeam
       tags:
         - teams
@@ -5571,9 +5613,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a101
+        "401": &a102
           $ref: "#/components/responses/ApiError"
-        "403": *a101
+        "403": *a102
       operationId: listOrganizationTeams
       tags:
         - teams
@@ -5602,11 +5644,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a102
+        "400": &a103
           $ref: "#/components/responses/ApiError"
-        "401": *a102
-        "403": *a102
-        "404": *a102
+        "401": *a103
+        "403": *a103
+        "404": *a103
       operationId: connectOrganizationTeamExternalClub
       tags:
         - teams
@@ -5640,9 +5682,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a103
+        "401": &a104
           $ref: "#/components/responses/ApiError"
-        "403": *a103
+        "403": *a104
       operationId: getOrganizationTeamExternalClub
       tags:
         - teams
@@ -5690,11 +5732,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a104
+        "400": &a105
           $ref: "#/components/responses/ApiError"
-        "401": *a104
-        "404": *a104
-        "409": *a104
+        "401": *a105
+        "404": *a105
+        "409": *a105
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptOrganizationInvitation
@@ -5804,9 +5846,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a105
+        "400": &a106
           $ref: "#/components/responses/ApiError"
-        "401": *a105
+        "401": *a106
       operationId: checkOrganizationNameAvailability
       tags:
         - organizations
@@ -5872,9 +5914,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a106
+        "400": &a107
           $ref: "#/components/responses/ApiError"
-        "401": *a106
+        "401": *a107
       operationId: checkOrganizationSlugAvailability
       tags:
         - organizations
@@ -5929,11 +5971,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a107
+        "400": &a108
           $ref: "#/components/responses/ApiError"
-        "401": *a107
-        "403": *a107
-        "404": *a107
+        "401": *a108
+        "403": *a108
+        "404": *a108
       operationId: setMyActiveTeam
       tags:
         - teams
@@ -6004,9 +6046,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a108
+        "400": &a109
           $ref: "#/components/responses/ApiError"
-        "401": *a108
+        "401": *a109
       operationId: listMyActivities
       tags:
         - notifications
@@ -6046,10 +6088,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a109
+        "400": &a110
           $ref: "#/components/responses/ApiError"
-        "401": *a109
-        "404": *a109
+        "401": *a110
+        "404": *a110
       operationId: associateMyPlayerExternalClub
       tags:
         - players
@@ -6074,9 +6116,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a110
+        "400": &a111
           $ref: "#/components/responses/ApiError"
-        "401": *a110
+        "401": *a111
       operationId: addMyPlayerGameAccount
       tags:
         - players
@@ -6109,11 +6151,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a111
+        "400": &a112
           $ref: "#/components/responses/ApiError"
-        "401": *a111
-        "404": *a111
-        "409": *a111
+        "401": *a112
+        "404": *a112
+        "409": *a112
       operationId: updateMyPlayerGameAccount
       tags:
         - players
@@ -6156,10 +6198,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a112
+        "400": &a113
           $ref: "#/components/responses/ApiError"
-        "401": *a112
-        "503": *a112
+        "401": *a113
+        "503": *a113
       operationId: getMyGameProfile
       tags:
         - players
@@ -6225,10 +6267,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a113
+        "400": &a114
           $ref: "#/components/responses/ApiError"
-        "401": *a113
-        "403": *a113
+        "401": *a114
+        "403": *a114
       operationId: getMyMatches
       tags:
         - players
@@ -6278,11 +6320,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a114
+        "400": &a115
           $ref: "#/components/responses/ApiError"
-        "401": *a114
-        "403": *a114
-        "502": *a114
+        "401": *a115
+        "403": *a115
+        "502": *a115
       operationId: getMyRecentMatches
       tags:
         - players
@@ -6324,12 +6366,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a115
+        "400": &a116
           $ref: "#/components/responses/ApiError"
-        "401": *a115
-        "403": *a115
-        "502": *a115
-        "503": *a115
+        "401": *a116
+        "403": *a116
+        "502": *a116
+        "503": *a116
       operationId: getMyRecentMatch
       tags:
         - players
@@ -6507,9 +6549,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a116
+        "401": &a117
           $ref: "#/components/responses/ApiError"
-        "403": *a116
+        "403": *a117
       operationId: getMyStatistics
       tags:
         - players
@@ -6722,12 +6764,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a117
+        "400": &a118
           $ref: "#/components/responses/ApiError"
-        "401": *a117
-        "403": *a117
-        "404": *a117
-        "409": *a117
+        "401": *a118
+        "403": *a118
+        "404": *a118
+        "409": *a118
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: respondToRosterInvitation
@@ -6761,11 +6803,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a118
+        "400": &a119
           $ref: "#/components/responses/ApiError"
-        "401": *a118
-        "404": *a118
-        "409": *a118
+        "401": *a119
+        "404": *a119
+        "409": *a119
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptRosterInvitation
@@ -15960,6 +16002,113 @@ components:
       required:
         - activities
         - nextCursor
+    ListCompetitionDisputesResponse:
+      type: object
+      properties:
+        competition:
+          type: object
+          properties:
+            id:
+              type: string
+              minLength: 1
+            name:
+              type: string
+              minLength: 1
+            timeZone:
+              type: string
+              minLength: 1
+          required:
+            - id
+            - name
+            - timeZone
+        disputes:
+          type: array
+          items:
+            type: object
+            properties:
+              encounterId:
+                type: string
+                minLength: 1
+              status:
+                type: string
+                enum:
+                  - disputed
+                  - organizer_review
+              home:
+                type: object
+                properties:
+                  teamId:
+                    type: string
+                    minLength: 1
+                  name:
+                    type:
+                      - string
+                      - "null"
+                    minLength: 1
+                required:
+                  - teamId
+                  - name
+              away:
+                type: object
+                properties:
+                  teamId:
+                    type: string
+                    minLength: 1
+                  name:
+                    type:
+                      - string
+                      - "null"
+                    minLength: 1
+                required:
+                  - teamId
+                  - name
+              scheduledStartAt:
+                type: string
+                format: date-time
+              since:
+                type: string
+                format: date-time
+              dispute:
+                type:
+                  - object
+                  - "null"
+                properties:
+                  id:
+                    type: string
+                    minLength: 1
+                  status:
+                    type: string
+                    enum:
+                      - open
+                      - under_review
+                  openedByTeamId:
+                    type: string
+                    minLength: 1
+                  openedAt:
+                    type: string
+                    format: date-time
+                  reviewStartedAt:
+                    type:
+                      - string
+                      - "null"
+                    format: date-time
+                required:
+                  - id
+                  - status
+                  - openedByTeamId
+                  - openedAt
+                  - reviewStartedAt
+            required:
+              - encounterId
+              - status
+              - home
+              - away
+              - scheduledStartAt
+              - since
+              - dispute
+      required:
+        - competition
+        - disputes
     ListCompetitionEncountersResponse:
       type: object
       properties:
@@ -18251,6 +18400,29 @@ components:
         - slug
         - timeZone
         - logo
+    OrganizationRoleAssignment:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          minLength: 1
+        actorId:
+          type: string
+          minLength: 1
+        role:
+          type: string
+          enum:
+            - organizer
+            - staff
+            - member
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - organizationId
+        - actorId
+        - role
+        - createdAt
     PingResponse:
       type: object
       properties:
@@ -22919,7 +23091,7 @@ components:
     ApiError:
       description: API error
       headers:
-        X-Request-ID: &a119
+        X-Request-ID: &a120
           $ref: "#/components/headers/RequestId"
       content:
         application/json:
@@ -22928,7 +23100,7 @@ components:
     RateLimited:
       description: Rate limit exceeded
       headers:
-        X-Request-ID: *a119
+        X-Request-ID: *a120
         Retry-After:
           $ref: "#/components/headers/RetryAfter"
       content:
