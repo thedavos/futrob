@@ -7,6 +7,7 @@ import {
   type OrganizationId,
   type Result,
 } from "@futrob/shared-kernel";
+import type { FixturePlan } from "../../domain/entities/fixture-plan.ts";
 import {
   AdvancementNotReversible,
   FixtureSourceNotFound,
@@ -14,6 +15,8 @@ import {
   TieRequiresOrganizerReview,
   type AdvanceFixtureFromOfficialResultError,
 } from "../../domain/errors/fixture.errors.ts";
+import type { EncounterMutationLockPort } from "../../domain/ports/encounter-mutation-lock.port.ts";
+import type { EncounterParticipantsChangePort } from "../../domain/ports/encounter-participants-change.port.ts";
 import type { EncounterScheduleRepository } from "../../domain/ports/encounter-schedule.repository.ts";
 import type { FixtureEncounterEditGuardPort } from "../../domain/ports/fixture-editing.ports.ts";
 import type {
@@ -27,6 +30,7 @@ import {
   hasAdvancementSlots,
   placeholderDependsOn,
   reconcileFixtureAdvancement,
+  type FixtureAdvancementChange,
 } from "../../domain/policies/reconcile-fixture-advancement.ts";
 import { projectFixtureEncounter } from "../project-fixture-encounters.ts";
 
@@ -46,6 +50,10 @@ export interface AdvanceFixtureFromOfficialResultOutput {
  * fills winner, group-rank and stage-rank slots, and restores the placeholder when a source
  * result is voided. Writes nothing when the Encounter's destination is tied (DEC-017) or when
  * a destination to change already has a selection or official result.
+ *
+ * The caller holds the triggering Encounter's lock. Each scheduled destination is locked from
+ * its reversibility check until its last write, so a concurrent selection on it either runs
+ * first and blocks the change or runs after and sees the new Teams.
  */
 export class AdvanceFixtureFromOfficialResultUseCase {
   constructor(
@@ -55,6 +63,8 @@ export class AdvanceFixtureFromOfficialResultUseCase {
       readonly encounters: EncounterScheduleRepository;
       readonly fixtures: FixturePlanRepository;
       readonly matches: OfficialMatchRepository;
+      readonly mutationLock: EncounterMutationLockPort;
+      readonly participants: EncounterParticipantsChangePort;
       readonly scores: OfficialEncounterScoreReaderPort;
       readonly source: CompetitionFixtureSourcePort;
     },
@@ -96,7 +106,27 @@ export class AdvanceFixtureFromOfficialResultUseCase {
         }),
       );
     }
-    for (const { before } of advancement.changes) {
+    const locked = advancement.changes
+      .filter(({ before }) => before.series && before.id !== trigger.id)
+      .map(({ before }) => before.id)
+      .sort();
+    return this.withLocks(locked, () => this.apply(input, plan, advancement.changes));
+  }
+
+  private withLocks<T>(encounterIds: readonly EncounterId[], run: () => Promise<T>): Promise<T> {
+    const [first, ...rest] = encounterIds;
+    if (first === undefined) return run();
+    return this.deps.mutationLock.runExclusive(first, () => this.withLocks(rest, run));
+  }
+
+  private async apply(
+    input: AdvanceFixtureFromOfficialResultInput,
+    plan: FixturePlan,
+    changes: readonly FixtureAdvancementChange[],
+  ): Promise<
+    Result<AdvanceFixtureFromOfficialResultOutput, AdvanceFixtureFromOfficialResultError>
+  > {
+    for (const { before } of changes) {
       if (
         before.series &&
         !(await this.deps.editGuard.canEdit({ ...input, encounterId: before.id }))
@@ -112,7 +142,7 @@ export class AdvanceFixtureFromOfficialResultUseCase {
     }
 
     let revision = plan.revision;
-    for (const { before, after } of advancement.changes) {
+    for (const { before, after } of changes) {
       const updated = await this.deps.fixtures.updateEncounter({
         organizationId: plan.organizationId,
         competitionId: plan.competitionId,
@@ -134,7 +164,10 @@ export class AdvanceFixtureFromOfficialResultUseCase {
       } else if (before.series) {
         await this.deps.encounters.deleteByEncounterIds([before.id]);
       }
+      if (before.series || after.series) {
+        await this.deps.participants.participantsChanged({ ...input, encounterId: after.id });
+      }
     }
-    return ok({ changedEncounterIds: advancement.changes.map(({ after }) => after.id) });
+    return ok({ changedEncounterIds: changes.map(({ after }) => after.id) });
   }
 }

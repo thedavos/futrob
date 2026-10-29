@@ -114,6 +114,15 @@ Cuando ambos lados de un destino quedan resueltos, el avance crea su serie con e
 la etapa de eliminación y proyecta el Encounter y sus OfficialMatch. Al revertirlo, borra
 el snapshot del Encounter y Postgres elimina sus OfficialMatch en cascada.
 
+El avance toma el lock de cada destino programado que va a cambiar, en orden de id, desde
+la comprobación de reversibilidad hasta su última escritura. Lo adquiere bajo el lock de
+competición y sin repetir el del Encounter origen. Una selección sobre ese destino solo toma
+su propio lock: o termina antes y bloquea la reversión, o empieza después y ya no encuentra
+el snapshot. Cuando un destino gana, cambia o pierde sus Teams, scheduling avisa por
+`EncounterParticipantsChangePort` dentro de ese lock. La API invalida los candidatos de
+results, que conservan la evidencia como no elegible, y vuelve a asociar los del enfrentamiento
+vigente. Así un partido del rival anterior no se puede seleccionar tras reconstruir el destino.
+
 En la ruta de aprobación, `scheduling.advancement_not_reversible` solo aparece si un resultado
 cambia de ganador sin anularse antes. Results no ofrece ese flujo, así que se trata como defecto:
 lanza y revierte. La memoria sigue sin rollback; la reversión se prueba en Postgres.

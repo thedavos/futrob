@@ -79,6 +79,7 @@ export type {
   OfficialEncounterScoreReaderPort,
 } from "./domain/ports/official-encounter-score-reader.port.ts";
 export type { StandingPoints } from "./domain/policies/reconcile-fixture-advancement.ts";
+export type { EncounterParticipantsChangePort } from "./domain/ports/encounter-participants-change.port.ts";
 export {
   AdvanceFixtureFromOfficialResultUseCase,
   type AdvanceFixtureFromOfficialResultInput,

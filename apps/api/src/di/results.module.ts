@@ -6,6 +6,7 @@ import {
   ListEncounterCandidatesUseCase,
   OpenMatchDisputeUseCase,
   ProposeAlternativeOfficialSelectionUseCase,
+  InvalidateEncounterCandidatesUseCase,
   RecalculateEncounterCandidatesUseCase,
   RejectOfficialSelectionUseCase,
   ResolveMatchDisputeUseCase,
@@ -106,6 +107,10 @@ export function createResultsModule(input: {
     associateEncounterCandidates: new AssociateEncounterCandidatesUseCase({
       encounterReader: input.encounterReader,
       providerMatches: input.providerMatches,
+      associations,
+      clock,
+    }),
+    invalidateEncounterCandidates: new InvalidateEncounterCandidatesUseCase({
       associations,
       clock,
     }),

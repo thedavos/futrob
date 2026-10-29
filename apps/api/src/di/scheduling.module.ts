@@ -19,6 +19,7 @@ import {
   RejectScheduleChangeProposalUseCase,
   UpsertEncounterScheduleSnapshotUseCase,
   type EncounterMutationLockPort,
+  type EncounterParticipantsChangePort,
   type EncounterParticipantValidationPort,
   type EncounterScheduleRepository,
   type EncounterWindowReaderPort,
@@ -83,6 +84,7 @@ export function createSchedulingModule(input: {
   >;
   readonly officialSelections: Pick<OfficialMatchSelectionRepository, "findLatestByEncounter">;
   readonly encounterMutationLock: EncounterMutationLockPort;
+  readonly encounterParticipants: EncounterParticipantsChangePort;
   readonly competitions: Pick<CompetitionRepository, "findById">;
 }) {
   const encounterStore = input.pool
@@ -222,6 +224,8 @@ export function createSchedulingModule(input: {
       encounters,
       fixtures: fixturePlans,
       matches: officialMatches,
+      mutationLock: input.encounterMutationLock,
+      participants: input.encounterParticipants,
       scores: new OfficialResultScoreReader(input.officialResults),
       source: input.fixtureSource,
     }),

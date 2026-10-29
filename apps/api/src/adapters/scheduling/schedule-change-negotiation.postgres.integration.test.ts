@@ -428,6 +428,7 @@ async function negotiationModule(
     },
     officialSelections: { findLatestByEncounter: async () => null },
     encounterMutationLock: new PostgresEncounterMutationLock(pool),
+    encounterParticipants: { participantsChanged: async () => undefined },
     competitions,
   });
   const target = { organizationId, competitionId, encounterId };

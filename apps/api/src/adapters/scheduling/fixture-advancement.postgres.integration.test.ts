@@ -20,6 +20,7 @@ import {
   migrateIsolatedSchema,
   type IsolatedSchema,
 } from "@/testing/isolated-schema.ts";
+import { PostgresEncounterMutationLock } from "./encounter-mutation-lock.ts";
 import { PostgresEncounterScheduleRepository } from "./encounter-schedule.repository.ts";
 import { PostgresFixturePlanRepository } from "./fixture-plan.repository.ts";
 import { PostgresOfficialMatchRepository } from "./official-match.repository.ts";
@@ -133,6 +134,8 @@ async function setup() {
     encounters: new PostgresEncounterScheduleRepository(schema.pool),
     fixtures,
     matches: new PostgresOfficialMatchRepository(schema.pool),
+    mutationLock: new PostgresEncounterMutationLock(schema.pool),
+    participants: { participantsChanged: async () => undefined },
     scores: { listApproved: async () => scores },
     source: { load: async () => source },
   });

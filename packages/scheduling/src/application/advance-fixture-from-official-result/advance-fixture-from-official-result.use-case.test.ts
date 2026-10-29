@@ -56,6 +56,14 @@ function setup(options: {
   const scores = new Map<EncounterId, OfficialEncounterScore>();
   const selections = new Set<EncounterId>();
   const encounters = new Snapshots();
+  const held = new Set<EncounterId>();
+  const removedWhileLocked: boolean[] = [];
+  const deleteSnapshots = encounters.deleteByEncounterIds.bind(encounters);
+  encounters.deleteByEncounterIds = async (ids) => {
+    removedWhileLocked.push(...ids.map((id) => held.has(id)));
+    await deleteSnapshots(ids);
+  };
+  const participantChanges: EncounterId[] = [];
   const source: CompetitionFixtureSourceSnapshot = {
     organizationId,
     competitionId,
@@ -76,6 +84,21 @@ function setup(options: {
     encounters,
     fixtures,
     matches: new Matches(),
+    mutationLock: {
+      runExclusive: async (encounterId, operation) => {
+        held.add(encounterId);
+        try {
+          return await operation();
+        } finally {
+          held.delete(encounterId);
+        }
+      },
+    },
+    participants: {
+      participantsChanged: async ({ encounterId }) => {
+        participantChanges.push(encounterId);
+      },
+    },
     scores: { listApproved: async () => scores },
     source: { load: async () => source },
   });
@@ -106,6 +129,8 @@ function setup(options: {
     advance,
     encounter,
     encounters,
+    participantChanges,
+    removedWhileLocked,
     occupancy,
     plan,
     scores,
@@ -249,6 +274,33 @@ describe("AdvanceFixtureFromOfficialResultUseCase", () => {
     await advance(semiOne);
 
     expect(await encounters.findById(final)).toBeNull();
+  });
+
+  it("removes a scheduled destination only while holding its lock", async () => {
+    const { approve, advance, removedWhileLocked, scores, semiOne, semiTwo } = knockout();
+    approve(semiOne, [2, 0], [0, 0]);
+    approve(semiTwo, [2, 0], [0, 0]);
+    await advance(semiOne);
+    await advance(semiTwo);
+
+    scores.delete(semiOne);
+    await advance(semiOne);
+
+    expect(removedWhileLocked).toEqual([true]);
+  });
+
+  it("reports every destination whose Teams were created, changed or removed", async () => {
+    const { approve, advance, participantChanges, scores, semiOne, semiTwo, final } = knockout();
+    approve(semiOne, [2, 0], [0, 0]);
+    await advance(semiOne);
+    expect(participantChanges).toEqual([]);
+
+    approve(semiTwo, [2, 0], [0, 0]);
+    await advance(semiTwo);
+    scores.delete(semiOne);
+    await advance(semiOne);
+
+    expect(participantChanges).toEqual([final, final]);
   });
 
   it("refuses to unadvance a destination that already has a selection", async () => {

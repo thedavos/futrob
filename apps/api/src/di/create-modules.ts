@@ -37,6 +37,8 @@ import { createTeamsModule } from "./teams.module.ts";
 import { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
 import { createAuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
+import { DeferredEncounterParticipantsChangePort } from "./deferred-encounter-participants.port.ts";
+import { ResultsCandidateEligibilityAdapter } from "@/adapters/scheduling/results-candidate-eligibility.adapter.ts";
 import { CompetitionFixtureSourceAdapter } from "@/adapters/scheduling/competition-fixture-source.ts";
 import {
   InMemoryEncounterMutationLock,
@@ -147,6 +149,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     mutationLock: organizations.repositories.mutationLock,
     organizations: organizations.repositories.organizations,
   });
+  const encounterParticipants = new DeferredEncounterParticipantsChangePort();
   const scheduling = createSchedulingModule({
     clock,
     pool: input.pool,
@@ -156,6 +159,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     officialResults,
     officialSelections,
     encounterMutationLock,
+    encounterParticipants,
     competitions: competitionRepository,
     fixtureSource: new CompetitionFixtureSourceAdapter({
       competitions: competitionRepository,
@@ -235,6 +239,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     clock,
     ids,
   });
+  encounterParticipants.bind(new ResultsCandidateEligibilityAdapter(results));
   const gameData = createGameDataModule({
     providers: [eaProvider, new ManualGameDataAdapter()],
     ingestion: eaProvider,
