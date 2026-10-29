@@ -75,7 +75,11 @@ export type {
   ProviderSyncCompletionPort,
   ProviderSyncMatchTarget,
 } from "./domain/ports/provider-sync-completion.port.ts";
-export { ProviderSyncIngestionLeaseLost } from "./domain/errors/provider-sync-job.errors.ts";
+export {
+  ProviderSyncIngestionLeaseLost,
+  ProviderSyncQuotaExhausted,
+} from "./domain/errors/provider-sync-job.errors.ts";
+export type { ProviderSyncQuotaPort } from "./domain/ports/provider-sync-quota.port.ts";
 export type { ProviderHealthPort } from "./domain/ports/provider-health.port.ts";
 export type {
   ProviderMatchIngestionPort,

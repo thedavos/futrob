@@ -545,3 +545,52 @@ describe("AcceptInvitationUseCase (redeemPolicy multi)", () => {
     expect(secondError.code).toBe("organizations.invitation_invalid");
   });
 });
+
+describe("staff seats on invitations", () => {
+  it("blocks new staff invitations and acceptances once the plan's seats are used", async () => {
+    const harness = createOrgTestHarness();
+    const createInvite = new CreateInvitationUseCase(harness);
+    const acceptInvite = new AcceptInvitationUseCase(harness);
+    const organizer = harness.actor("org-owner");
+    const org = await new CreateOrganizationUseCase(harness).execute({
+      timeZone: "UTC",
+      name: "Club",
+      actorId: organizer,
+    });
+    if (!org.isOk()) throw org.error;
+    const organizationId = org.value.organization.id;
+    const pending = await createInvite.execute({
+      organizationId,
+      role: "staff",
+      invitedByActorId: organizer,
+    });
+    if (!pending.isOk()) throw pending.error;
+
+    harness.setStaffSeatLimit(1);
+    const blockedInvite = await createInvite.execute({
+      organizationId,
+      role: "staff",
+      invitedByActorId: organizer,
+    });
+    const blockedAccept = await acceptInvite.execute({
+      token: pending.value.token,
+      actorId: harness.actor("staff-1"),
+    });
+    const memberInvite = await createInvite.execute({
+      organizationId,
+      role: "member",
+      invitedByActorId: organizer,
+    });
+
+    expect(unwrapErr(blockedInvite).code).toBe("organizations.staff_limit_reached");
+    expect(unwrapErr(blockedAccept).code).toBe("organizations.staff_limit_reached");
+    expect(memberInvite.isOk()).toBe(true);
+
+    harness.setStaffSeatLimit(2);
+    const accepted = await acceptInvite.execute({
+      token: pending.value.token,
+      actorId: harness.actor("staff-1"),
+    });
+    expect(accepted.isOk() && accepted.value.role).toBe("staff");
+  });
+});

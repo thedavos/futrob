@@ -6,7 +6,7 @@ import {
 import type { ProviderSyncJob } from "@futrob/game-data";
 import type { AppDeps } from "@/app.ts";
 import { currentRequestCorrelation, logCorrelatedInfo } from "@/context/request-correlation.ts";
-import { apiErrorResponse } from "@/http/errors.ts";
+import { apiErrorResponse, failureToHttp } from "@/http/errors.ts";
 import { createInternalOpenApiRouter } from "@/http/openapi/router.ts";
 import {
   enqueueDueProviderSyncsRoute,
@@ -21,7 +21,7 @@ export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
 
   internal.openapi(persistProviderSyncJobRoute, async (c) => {
     const input = c.req.valid("json");
-    const job = await deps.modules.gameData.enqueueProviderSyncJob.execute({
+    const queued = await deps.modules.gameData.enqueueProviderSyncJob.execute({
       organizationId: input.organizationId,
       providerKey: input.providerKey,
       requestId: currentRequestCorrelation()?.requestId ?? crypto.randomUUID(),
@@ -33,7 +33,8 @@ export function registerProviderSyncJobRoutes(app: Hono, deps: AppDeps): void {
         maxResultCount: input.maxResultCount,
       },
     });
-    return jsonResponse(toSyncJobDto(job), 202);
+    if (!queued.isOk()) return failureToHttp(queued.error);
+    return jsonResponse(toSyncJobDto(queued.value), 202);
   });
 
   internal.openapi(enqueueDueProviderSyncsRoute, async () => {

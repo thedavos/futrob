@@ -12,15 +12,25 @@ export class InMemoryProviderSyncJobRepository implements ProviderSyncJobReposit
   private readonly jobs = new Map<string, ProviderSyncJob>();
 
   enqueue(job: QueuedProviderSyncJob): Promise<ProviderSyncJob> {
-    const existing = [...this.jobs.values()].find(
-      (candidate) =>
-        candidate.organizationId === job.organizationId &&
-        candidate.dedupeKey === job.dedupeKey &&
-        activeStatuses.has(candidate.status),
-    );
+    const existing = this.activeByDedupeKey(job.organizationId, job.dedupeKey);
     if (existing) return Promise.resolve(existing);
     this.jobs.set(job.id, job);
     return Promise.resolve(job);
+  }
+
+  findActiveByDedupeKey(organizationId: string, dedupeKey: string) {
+    return Promise.resolve(this.activeByDedupeKey(organizationId, dedupeKey));
+  }
+
+  private activeByDedupeKey(organizationId: string, dedupeKey: string): ProviderSyncJob | null {
+    return (
+      [...this.jobs.values()].find(
+        (candidate) =>
+          candidate.organizationId === organizationId &&
+          candidate.dedupeKey === dedupeKey &&
+          activeStatuses.has(candidate.status),
+      ) ?? null
+    );
   }
 
   claimNext(input: Parameters<ProviderSyncJobRepository["claimNext"]>[0]) {

@@ -124,6 +124,7 @@ export {
 export type { OfficialResultReaderPort } from "@futrob/results";
 export * from "./domain/entities/team-performance-ranking-snapshot.ts";
 export * from "./domain/ports/team-performance-ranking.repository.ts";
+export type { PerformanceRankingAccessPort } from "./domain/ports/performance-ranking-access.port.ts";
 export * from "./domain/errors/team-performance.errors.ts";
 export { buildTeamPerformanceRanking } from "./domain/policies/build-team-performance-ranking.ts";
 export {

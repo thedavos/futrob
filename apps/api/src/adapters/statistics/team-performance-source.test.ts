@@ -365,6 +365,7 @@ describe("official team performance sources and rebuild", () => {
     const requests: string[] = [];
     const query = new GetTeamPerformanceRankingUseCase({
       rankings,
+      planAccess: { includesPerformanceRanking: async () => true },
       authorization: {
         async decide(request) {
           requests.push(request.permission);

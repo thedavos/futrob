@@ -1,6 +1,5 @@
-import { orgMembershipRoleSchema } from "@futrob/api-contracts";
-import { asOrganizationId, Panic, type ActorId, type OrganizationId } from "@futrob/shared-kernel";
 import type {
+  OrgMembershipRole,
   InvitationRepository,
   MembershipRepository,
   MembershipSummary,
@@ -9,6 +8,8 @@ import type {
   OrganizationLogo,
   OrganizationMembership,
 } from "@futrob/organizations";
+import { orgMembershipRoleSchema } from "@futrob/api-contracts";
+import { asOrganizationId, Panic, type ActorId, type OrganizationId } from "@futrob/shared-kernel";
 import { INVITATION_STATUS, parseOrganizationLogo, REDEEM_POLICY } from "@futrob/organizations";
 import type { Pool } from "pg";
 import { z } from "zod";
@@ -163,7 +164,7 @@ export class PostgresMembershipRepository implements MembershipRepository {
     return result.rows[0] ? rehydrateMembership(membershipRowSchema.parse(result.rows[0])) : null;
   }
 
-  async countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number> {
+  async countByRole(organizationId: OrganizationId, role: OrgMembershipRole): Promise<number> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT COUNT(*)::int AS count FROM organization_memberships
        WHERE organization_id = $1 AND role = $2`,

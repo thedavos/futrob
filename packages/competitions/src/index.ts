@@ -49,6 +49,8 @@ export {
   type MediaKey,
 } from "./domain/value-objects/competition-cover.ts";
 export {
+  ACTIVE_COMPETITION_STATUSES,
+  isActiveCompetitionStatus,
   PARTICIPANT_EDITABLE_STATUSES,
   PUBLISHABLE_STATUSES,
   canEditParticipants,
@@ -91,6 +93,8 @@ export {
   CompetitionPublishBlocked,
   CompetitionRegistrationClosed,
   CompetitionCapacityReached,
+  CompetitionFormatNotInPlan,
+  CompetitionPlanLimitReached,
   InvalidCompetitionTeamRange,
   InvalidCompetitionSchedule,
   InvalidCompetitionCover,
@@ -131,6 +135,10 @@ export type {
   CompetitionEntryStatus,
 } from "./domain/entities/competition-entry.ts";
 export type { CompetitionEntryRepository } from "./domain/ports/competition-entry.repository.ts";
+export type {
+  CompetitionPlanLimits,
+  CompetitionPlanLimitsPort,
+} from "./domain/ports/competition-plan-limits.port.ts";
 export {
   RegisterTeamEntryUseCase,
   type RegisterTeamEntryInput,

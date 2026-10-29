@@ -8,6 +8,7 @@ import {
   AssignSuperuserUseCase,
   ChangeOrganizationRoleUseCase,
   RevokeSuperuserUseCase,
+  type StaffSeatLimitPort,
 } from "@futrob/organizations";
 import type { ActorId, TransactionPort } from "@futrob/shared-kernel";
 import {
@@ -26,6 +27,7 @@ export function createAuthorizationModule(input: {
   readonly teams: TeamsModule;
   readonly transaction: TransactionPort;
   readonly scheduling: SchedulingModule;
+  readonly staffSeats: StaffSeatLimitPort;
 }) {
   const authorization = new ContextualAuthorizationAdapter({
     organizations: input.organizations.repositories.organizations,
@@ -69,6 +71,7 @@ export function createAuthorizationModule(input: {
     changeOrganizationRole: new ChangeOrganizationRoleUseCase({
       ...shared,
       memberships: input.organizations.repositories.memberships,
+      staffSeats: input.staffSeats,
       roleCapabilities: { permissionsForRole: contextualOrganizationRolePermissions },
     }),
     assignSuperuser: new AssignSuperuserUseCase({

@@ -1,3 +1,4 @@
+import { fixedPlanLimits } from "../plan-limits.test-helper.ts";
 import { FakeCompetitionRepository } from "../fake-competition-repository.test-helper.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
@@ -6,12 +7,14 @@ import { InvalidCompetitionTimeZone } from "../../domain/errors/competition.erro
 import { CreateCompetitionDraftUseCase } from "./create-competition-draft.use-case.ts";
 import { allowAllAuthorization } from "../allow-all-authorization.test-helper.ts";
 
-function createHarness() {
+function createHarness(planLimits = fixedPlanLimits()) {
   const competitions = new FakeCompetitionRepository();
   let nextId = 0;
   return {
     competitions,
+    planLimits,
     useCase: new CreateCompetitionDraftUseCase({
+      planLimits,
       competitions,
       clock: { now: () => new Date("2026-07-31T12:00:00.000Z") },
       ids: { generate: () => `competition-${++nextId}` },
@@ -97,5 +100,59 @@ describe("CreateCompetitionDraftUseCase", () => {
 
     expect(result.isOk()).toBe(false);
     expect(!result.isOk() && InvalidCompetitionTimeZone.is(result.error)).toBe(true);
+  });
+});
+
+describe("CreateCompetitionDraftUseCase plan limits", () => {
+  const freePlan = { maxActiveCompetitions: 1, allowedFormats: ["league", "knockout"] as const };
+
+  it("rejects a second active competition with a stable code and allows it after an upgrade", async () => {
+    const harness = createHarness(
+      fixedPlanLimits({ ...freePlan, allowedFormats: ["league", "knockout"] }),
+    );
+    expect((await harness.useCase.execute({ ...baseInput, creationKey: "first" })).isOk()).toBe(
+      true,
+    );
+
+    const second = await harness.useCase.execute({ ...baseInput, creationKey: "second" });
+
+    expect(!second.isOk() && second.error).toMatchObject({
+      code: "competitions.plan_limit_reached",
+      limit: "active_competitions",
+      max: 1,
+    });
+    harness.planLimits.set({ maxActiveCompetitions: 5 });
+    expect((await harness.useCase.execute({ ...baseInput, creationKey: "second" })).isOk()).toBe(
+      true,
+    );
+  });
+
+  it("replays the same creation key and ignores finished competitions", async () => {
+    const harness = createHarness(fixedPlanLimits({ ...freePlan, allowedFormats: ["league"] }));
+    const first = await harness.useCase.execute({ ...baseInput, creationKey: "first" });
+    expect((await harness.useCase.execute({ ...baseInput, creationKey: "first" })).isOk()).toBe(
+      true,
+    );
+    if (!first.isOk()) return;
+    await harness.competitions.saveDraft({
+      ...first.value,
+      competition: { ...first.value.competition, status: "finished" },
+    });
+
+    expect((await harness.useCase.execute({ ...baseInput, creationKey: "next" })).isOk()).toBe(
+      true,
+    );
+  });
+
+  it("rejects a format the plan does not include", async () => {
+    const harness = createHarness(fixedPlanLimits({ allowedFormats: ["league", "knockout"] }));
+
+    const result = await harness.useCase.execute({ ...baseInput, format: "groups-knockout" });
+
+    expect(!result.isOk() && result.error).toMatchObject({
+      code: "competitions.format_not_in_plan",
+      format: "groups-knockout",
+      allowedFormats: ["league", "knockout"],
+    });
   });
 });

@@ -11,3 +11,8 @@ export class TeamPerformanceSnapshotConflict extends TaggedError(
   code: "statistics.team_performance_snapshot_conflict";
   message: string;
 }> {}
+
+export class PerformanceRankingNotInPlan extends TaggedError("PerformanceRankingNotInPlan")<{
+  code: "statistics.performance_ranking_not_in_plan";
+  message: string;
+}> {}

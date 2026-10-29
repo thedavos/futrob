@@ -19,6 +19,7 @@ import {
   type RawObservationRepository,
   type DueProviderSyncTargetFeed,
   type ProviderSyncJobRepository,
+  type ProviderSyncQuotaPort,
   type ProviderSyncCompletionPort,
   type ProviderHealthPort,
 } from "@futrob/game-data";
@@ -36,6 +37,7 @@ export interface GameDataModuleDependencies {
   readonly rawObservations: RawObservationRepository;
   readonly jobs: ProviderSyncJobRepository;
   readonly dueSyncTargets: DueProviderSyncTargetFeed;
+  readonly syncQuota: ProviderSyncQuotaPort;
   readonly completion: ProviderSyncCompletionPort;
   readonly ids: IdGeneratorPort;
   readonly clock: ClockPort;
@@ -58,6 +60,7 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
   });
 
   const enqueueProviderSyncJob = new EnqueueProviderSyncJobUseCase({
+    quota: deps.syncQuota,
     jobs: deps.jobs,
     ids: deps.ids,
     clock: deps.clock,

@@ -26,6 +26,7 @@ import {
   PostgresOfficialResultRepository,
 } from "@/adapters/results/official-result.repository.ts";
 import type { Pool } from "pg";
+import { createBillingModule } from "./billing.module.ts";
 import { createGameDataModule } from "./game-data.module.ts";
 import { createGameDataPersistence } from "./game-data-persistence.composition.ts";
 import { createIdentityModule } from "./identity.module.ts";
@@ -116,9 +117,12 @@ export function createModules(input: CreateModulesInput): AppModules {
   const encounterMutationLock = input.pool
     ? new PostgresEncounterMutationLock(input.pool)
     : new InMemoryEncounterMutationLock();
+  const billingPorts = { transaction, clock, ids };
+  const billing = createBillingModule(input.pool, deferredAuthorization, billingPorts);
   const organizations = createOrganizationsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
+    staffSeats: billing.planLimits.staffSeats,
   });
   const identity = createIdentityModule({
     pool: input.pool,
@@ -150,6 +154,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     transaction,
     mutationLock: organizations.repositories.mutationLock,
     organizations: organizations.repositories.organizations,
+    planLimits: billing.planLimits.competitions,
   });
   const encounterParticipants = new DeferredEncounterParticipantsChangePort();
   const scheduling = createSchedulingModule({
@@ -187,6 +192,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     teams,
     transaction,
     scheduling,
+    staffSeats: billing.planLimits.staffSeats,
   });
   deferredAuthorization.bind(authorization.port);
   entryGate.bind(new CompetitionRosterEntryGate(competitions.entryRepository));
@@ -255,6 +261,7 @@ export function createModules(input: CreateModulesInput): AppModules {
       matches: scheduling.officialMatches,
       connections: teams.externalClubConnections,
     }),
+    syncQuota: billing.planLimits.providerSyncQuota,
     completion: new AssociateSyncedProviderMatches({
       externalClubTeams: teams.externalClubTeams,
       encounterWindow: scheduling.encounterWindow,
@@ -275,6 +282,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     competitions: competitions.repository,
     entries: competitions.entryRepository,
     authorization: authorization.port,
+    performanceRankingAccess: billing.planLimits.performanceRanking,
     encounterReader,
     transaction,
     eventPublisher,
@@ -372,6 +380,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   return {
     activityCommands: activityFeed.commands,
     authorization,
+    billing,
     competitionApplications,
     competitions,
     entryInvitations,

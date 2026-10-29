@@ -19,6 +19,8 @@ import type {
 import type { CompetitionRules } from "../../domain/entities/competition-rules.ts";
 import {
   CompetitionCreationKeyConflict,
+  CompetitionFormatNotInPlan,
+  CompetitionPlanLimitReached,
   InvalidCompetitionGameEdition,
   InvalidCompetitionName,
   InvalidCompetitionTimeZone,
@@ -28,7 +30,9 @@ import type {
   CompetitionDraft,
   CompetitionRepository,
 } from "../../domain/ports/competition.repository.ts";
+import type { CompetitionPlanLimitsPort } from "../../domain/ports/competition-plan-limits.port.ts";
 import type { CompetitionMatchRules } from "../../domain/value-objects/resolution-mode.ts";
+import { isActiveCompetitionStatus } from "../../domain/policies/competition-lifecycle.ts";
 import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
 import { DEFAULT_COMPETITION_COVER } from "../../domain/value-objects/competition-cover.ts";
 import { EMPTY_SCHEDULE } from "../../domain/value-objects/competition-schedule.ts";
@@ -62,6 +66,7 @@ export class CreateCompetitionDraftUseCase {
   constructor(
     private readonly deps: {
       readonly competitions: CompetitionRepository;
+      readonly planLimits: CompetitionPlanLimitsPort;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
       readonly authorization: AuthorizationPort;
@@ -121,6 +126,9 @@ export class CreateCompetitionDraftUseCase {
       return ok(existing);
     }
 
+    const planError = await this.planError(input, existing?.competition ?? null);
+    if (planError) return err(planError);
+
     const profile = resolveCompetitionProfile(
       existing?.competition ?? DEFAULT_PROFILE,
       input,
@@ -157,6 +165,33 @@ export class CreateCompetitionDraftUseCase {
     };
 
     return ok(await this.deps.competitions.saveDraft({ competition, rules }));
+  }
+
+  /** A replayed creation key edits its own draft, so it never counts as a new competition. */
+  private async planError(
+    input: CreateCompetitionDraftInput,
+    existing: Competition | null,
+  ): Promise<CompetitionPlanLimitReached | CompetitionFormatNotInPlan | null> {
+    const limits = await this.deps.planLimits.limitsFor(input.organizationId);
+    if (existing?.format !== input.format && !limits.allowedFormats.includes(input.format)) {
+      return new CompetitionFormatNotInPlan({
+        code: "competitions.format_not_in_plan",
+        message: `The organization's plan does not include the ${input.format} format`,
+        format: input.format,
+        allowedFormats: limits.allowedFormats,
+      });
+    }
+    if (existing || limits.maxActiveCompetitions === null) return null;
+    const active = (await this.deps.competitions.listByOrganization(input.organizationId)).filter(
+      (competition) => isActiveCompetitionStatus(competition.status),
+    ).length;
+    if (active < limits.maxActiveCompetitions) return null;
+    return new CompetitionPlanLimitReached({
+      code: "competitions.plan_limit_reached",
+      message: `The organization's plan allows ${limits.maxActiveCompetitions} active competitions`,
+      limit: "active_competitions",
+      max: limits.maxActiveCompetitions,
+    });
   }
 }
 

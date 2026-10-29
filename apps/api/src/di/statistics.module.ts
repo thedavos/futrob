@@ -14,6 +14,7 @@ import {
   type CompetitionStandingSnapshotRepository,
   type PlayerIdentityResolverPort,
   type PlayerProfileLookupPort,
+  type PerformanceRankingAccessPort,
 } from "@futrob/statistics";
 import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
 import type { EncounterReaderPort, OfficialResultReaderPort } from "@futrob/results";
@@ -89,6 +90,7 @@ export function createStatisticsModule(deps: {
   competitions: Pick<CompetitionRepository, "findRulesByCompetitionId" | "findById">;
   entries: CompetitionEntryRepository;
   authorization: AuthorizationPort;
+  performanceRankingAccess: PerformanceRankingAccessPort;
   encounterReader?: EncounterReaderPort;
   transaction: TransactionPort;
   eventPublisher: EventPublisherPort;
@@ -181,6 +183,7 @@ export function createStatisticsModule(deps: {
       getTeamPerformanceRanking: new GetTeamPerformanceRankingUseCase({
         rankings: teamPerformanceRankings,
         authorization: deps.authorization,
+        planAccess: deps.performanceRankingAccess,
       }),
       rebuildTeamPerformanceRanking: rebuildTeamPerformance,
       projectOfficialResult,

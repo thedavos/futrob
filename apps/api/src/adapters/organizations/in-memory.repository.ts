@@ -1,9 +1,5 @@
-import {
-  inviteRoleSchema,
-  orgMembershipRoleSchema,
-  redeemPolicySchema,
-} from "@futrob/api-contracts";
 import type {
+  OrgMembershipRole,
   InvitationRepository,
   MembershipRepository,
   MembershipSummary,
@@ -14,6 +10,11 @@ import type {
   OrganizationMembership,
   OrganizationRepository,
 } from "@futrob/organizations";
+import {
+  inviteRoleSchema,
+  orgMembershipRoleSchema,
+  redeemPolicySchema,
+} from "@futrob/api-contracts";
 import {
   DEFAULT_ORGANIZATION_LOGO,
   INVITATION_STATUS,
@@ -184,7 +185,7 @@ export class InMemoryMembershipRepository implements MembershipRepository {
     return membership;
   }
 
-  async countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number> {
+  async countByRole(organizationId: OrganizationId, role: OrgMembershipRole): Promise<number> {
     return this.rows.filter((row) => row.organizationId === organizationId && row.role === role)
       .length;
   }

@@ -15,6 +15,7 @@
     "generate:openapi": "tsx scripts/generate-openapi.ts"
   },
   "dependencies": {
+    "@futrob/analytics": "0.1.0",
     "@futrob/api-contracts": "0.1.0",
     "@futrob/billing": "0.1.0",
     "@futrob/competitions": "0.1.0",

@@ -11,14 +11,14 @@ import type { CompetitionEntry } from "../../domain/entities/competition-entry.t
 import {
   CompetitionNotFound,
   CompetitionAuthorizationForbidden,
-  CompetitionCapacityReached,
   EntryAlreadyDecided,
   EntryNotFound,
   type ApproveCompetitionEntryError,
 } from "../../domain/errors/competition.errors.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
-import { hasCapacityFor } from "../../domain/value-objects/team-range.ts";
+import type { CompetitionPlanLimitsPort } from "../../domain/ports/competition-plan-limits.port.ts";
+import { approvedTeamCapacityError } from "../team-capacity.ts";
 import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permissions.ts";
 
 export interface ApproveCompetitionEntryInput {
@@ -33,6 +33,7 @@ export class ApproveCompetitionEntryUseCase {
     private readonly deps: {
       readonly entries: CompetitionEntryRepository;
       readonly competitions: CompetitionRepository;
+      readonly planLimits: CompetitionPlanLimitsPort;
       readonly authorization: AuthorizationPort;
     },
   ) {}
@@ -87,14 +88,8 @@ export class ApproveCompetitionEntryUseCase {
       input.organizationId,
       input.competitionId,
     );
-    if (!hasCapacityFor(draft.competition.teams, approved)) {
-      return err(
-        new CompetitionCapacityReached({
-          code: "competitions.capacity_reached",
-          message: "Competition has reached its team capacity",
-        }),
-      );
-    }
+    const full = await approvedTeamCapacityError(this.deps.planLimits, draft.competition, approved);
+    if (full) return err(full);
 
     return ok(
       await this.deps.entries.save({
