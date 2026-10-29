@@ -34,7 +34,7 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 - API de producto Hono/Node en Railway, con Postgres. Auth, actores y rate limits BFF en ese mismo Postgres, accedido desde los Workers por Hyperdrive ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); una sola historia de migraciones en `apps/api/migrations` y FK a `actors` en toda columna de actor. R2 / Queues / Cron en web. Tenancy scoped en aplicación, sin depender de RLS.
 - shadcn/Base UI, StyleX, Vite+, Sentry en boundaries.
 - `apps/cli` para ejercitar dominio/use cases en local (no es deployable de producto).
-- `billing` queda fuera del MVP inicial.
+- `billing` entra al MVP sin pagos automatizados: planes, entitlements y cupos asignados por superusuario ([ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md)).
 
 ## Forma del sistema
 
