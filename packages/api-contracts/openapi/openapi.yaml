@@ -6417,6 +6417,120 @@ paths:
       summary: List roster memberships of the authenticated player
       parameters:
         - $ref: "#/components/parameters/RequestId"
+  /public/competitions/{publicKey}:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: publicKey
+          in: path
+      responses:
+        "200":
+          description: Allowlisted portada fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicCompetitionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The key is unknown or the competition is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicCompetition
+      tags:
+        - public-portal
+      summary: Read the sanitized portada of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
+  /public/competitions/{publicKey}/calendar:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: publicKey
+          in: path
+      responses:
+        "200":
+          description: Encounters with both teams known, earliest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicCalendarResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The key is unknown or the competition is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicCalendar
+      tags:
+        - public-portal
+      summary: Read the calendar of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
+  /public/competitions/{publicKey}/standings:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: publicKey
+          in: path
+      responses:
+        "200":
+          description: Table rows with team names; empty before the first approved result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicStandingsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The key is unknown or the competition is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicStandings
+      tags:
+        - public-portal
+      summary: Read the official table of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
   /roster-invitations/{invitationId}/respond:
     post:
       parameters:
@@ -14460,6 +14574,199 @@ components:
       required:
         - teams
         - activeRosterMembershipId
+    GetPublicCalendarResponse:
+      type: object
+      properties:
+        calendar:
+          type: object
+          properties:
+            timeZone:
+              type: string
+            entries:
+              type: array
+              items:
+                type: object
+                properties:
+                  roundNumber:
+                    type: integer
+                    exclusiveMinimum: 0
+                  scheduledStartAt:
+                    type: string
+                    format: date-time
+                  homeTeamName:
+                    type: string
+                  awayTeamName:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - scheduled
+                      - awaiting_result
+                      - official
+                required:
+                  - roundNumber
+                  - scheduledStartAt
+                  - homeTeamName
+                  - awayTeamName
+                  - status
+                additionalProperties: false
+          required:
+            - timeZone
+            - entries
+          additionalProperties: false
+      required:
+        - calendar
+      additionalProperties: false
+    GetPublicCompetitionResponse:
+      type: object
+      properties:
+        competition:
+          type: object
+          properties:
+            name:
+              type: string
+            status:
+              type: string
+              enum:
+                - published
+                - paused
+                - finished
+            format:
+              type: string
+              enum:
+                - league
+                - knockout
+                - groups-knockout
+                - league-playoffs
+            platform:
+              type: string
+              enum:
+                - playstation
+                - xbox
+                - pc
+                - nintendo-switch-1
+                - nintendo-switch-2
+            gameEdition:
+              type: string
+            region:
+              type: string
+              enum:
+                - america
+                - south-america
+                - north-central-america
+                - europe
+                - africa
+                - asia
+                - middle-east
+                - oceania
+            timeZone:
+              type: string
+            startsOn:
+              type:
+                - string
+                - "null"
+              pattern: ^\d{4}-\d{2}-\d{2}$
+            endsOn:
+              type:
+                - string
+                - "null"
+              pattern: ^\d{4}-\d{2}-\d{2}$
+            approvedTeamCount:
+              type: integer
+              minimum: 0
+            coverPreset:
+              type:
+                - string
+                - "null"
+              enum:
+                - cup
+                - classic
+                - friendlies
+                - groups
+                - league
+                - lightning
+                - playoffs
+                - pre-season
+                - supercup
+                - null
+          required:
+            - name
+            - status
+            - format
+            - platform
+            - gameEdition
+            - region
+            - timeZone
+            - startsOn
+            - endsOn
+            - approvedTeamCount
+            - coverPreset
+          additionalProperties: false
+      required:
+        - competition
+      additionalProperties: false
+    GetPublicStandingsResponse:
+      type: object
+      properties:
+        standings:
+          type: object
+          properties:
+            rows:
+              type: array
+              items:
+                type: object
+                properties:
+                  position:
+                    type: integer
+                    exclusiveMinimum: 0
+                  teamName:
+                    type: string
+                  played:
+                    type: integer
+                    minimum: 0
+                  wins:
+                    type: integer
+                    minimum: 0
+                  draws:
+                    type: integer
+                    minimum: 0
+                  losses:
+                    type: integer
+                    minimum: 0
+                  goalsFor:
+                    type: integer
+                    minimum: 0
+                  goalsAgainst:
+                    type: integer
+                    minimum: 0
+                  goalDifference:
+                    type: integer
+                  points:
+                    type: integer
+                required:
+                  - position
+                  - teamName
+                  - played
+                  - wins
+                  - draws
+                  - losses
+                  - goalsFor
+                  - goalsAgainst
+                  - goalDifference
+                  - points
+                additionalProperties: false
+            updatedAt:
+              type:
+                - string
+                - "null"
+              format: date-time
+          required:
+            - rows
+            - updatedAt
+          additionalProperties: false
+      required:
+        - standings
+      additionalProperties: false
     GetTeamExternalClubResponse:
       type:
         - object
@@ -19346,6 +19653,114 @@ components:
         - availableAt
         - leaseExpiresAt
         - updatedAt
+    PublicCalendarEntry:
+      type: object
+      properties:
+        roundNumber:
+          type: integer
+          exclusiveMinimum: 0
+        scheduledStartAt:
+          type: string
+          format: date-time
+        homeTeamName:
+          type: string
+        awayTeamName:
+          type: string
+        status:
+          type: string
+          enum:
+            - scheduled
+            - awaiting_result
+            - official
+      required:
+        - roundNumber
+        - scheduledStartAt
+        - homeTeamName
+        - awayTeamName
+        - status
+      additionalProperties: false
+    PublicCompetition:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - published
+            - paused
+            - finished
+        format:
+          type: string
+          enum:
+            - league
+            - knockout
+            - groups-knockout
+            - league-playoffs
+        platform:
+          type: string
+          enum:
+            - playstation
+            - xbox
+            - pc
+            - nintendo-switch-1
+            - nintendo-switch-2
+        gameEdition:
+          type: string
+        region:
+          type: string
+          enum:
+            - america
+            - south-america
+            - north-central-america
+            - europe
+            - africa
+            - asia
+            - middle-east
+            - oceania
+        timeZone:
+          type: string
+        startsOn:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        endsOn:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        approvedTeamCount:
+          type: integer
+          minimum: 0
+        coverPreset:
+          type:
+            - string
+            - "null"
+          enum:
+            - cup
+            - classic
+            - friendlies
+            - groups
+            - league
+            - lightning
+            - playoffs
+            - pre-season
+            - supercup
+            - null
+      required:
+        - name
+        - status
+        - format
+        - platform
+        - gameEdition
+        - region
+        - timeZone
+        - startsOn
+        - endsOn
+        - approvedTeamCount
+        - coverPreset
+      additionalProperties: false
     PublicEntryInvitationLink:
       oneOf:
         - type: object
@@ -19393,6 +19808,48 @@ components:
           required:
             - state
             - reason
+    PublicStandingRow:
+      type: object
+      properties:
+        position:
+          type: integer
+          exclusiveMinimum: 0
+        teamName:
+          type: string
+        played:
+          type: integer
+          minimum: 0
+        wins:
+          type: integer
+          minimum: 0
+        draws:
+          type: integer
+          minimum: 0
+        losses:
+          type: integer
+          minimum: 0
+        goalsFor:
+          type: integer
+          minimum: 0
+        goalsAgainst:
+          type: integer
+          minimum: 0
+        goalDifference:
+          type: integer
+        points:
+          type: integer
+      required:
+        - position
+        - teamName
+        - played
+        - wins
+        - draws
+        - losses
+        - goalsFor
+        - goalsAgainst
+        - goalDifference
+        - points
+      additionalProperties: false
     RankingEligibility:
       type: object
       properties:

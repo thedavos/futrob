@@ -113,6 +113,7 @@ export function createCompetitionsModule(input: {
   };
   return {
     repository: competitions,
+    discovery,
     membershipRepository: memberships,
     entryRepository: entries,
     createDraft: new CreateCompetitionDraftUseCase({

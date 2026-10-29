@@ -20,6 +20,7 @@ import { registerMetaRoutes } from "@/http/routes/meta.ts";
 import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
 import { registerOrganizationRoutes } from "@/http/routes/organizations.ts";
+import { registerPublicPortalRoutes } from "@/http/routes/public-portal.ts";
 import { registerPlayerRoutes } from "@/http/routes/players.ts";
 import { registerTeamRoutes } from "@/http/routes/teams.ts";
 import { registerAuthorizationRoutes } from "@/http/routes/authorization.ts";
@@ -87,6 +88,7 @@ export function createApp(deps: AppDeps): Hono {
   const v1 = new Hono();
 
   registerMetaRoutes(v1, deps);
+  registerPublicPortalRoutes(v1, deps);
   registerOpenApiRoutes(v1);
   registerProviderSyncJobRoutes(v1, deps);
   registerConfirmationExpiryRoutes(v1, deps);
