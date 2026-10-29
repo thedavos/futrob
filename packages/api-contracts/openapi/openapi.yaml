@@ -5514,11 +5514,16 @@ paths:
       responses:
         "200":
           description: Updated role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationRoleAssignment"
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a100
+        "400": &a100
           $ref: "#/components/responses/ApiError"
+        "403": *a100
         "404": *a100
         "409": *a100
       operationId: changeOrganizationRole
@@ -18380,6 +18385,29 @@ components:
         - slug
         - timeZone
         - logo
+    OrganizationRoleAssignment:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          minLength: 1
+        actorId:
+          type: string
+          minLength: 1
+        role:
+          type: string
+          enum:
+            - organizer
+            - staff
+            - member
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - organizationId
+        - actorId
+        - role
+        - createdAt
     PingResponse:
       type: object
       properties:
