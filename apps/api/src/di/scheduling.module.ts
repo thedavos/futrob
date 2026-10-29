@@ -12,6 +12,7 @@ import {
   EditFixtureEncounterUseCase,
   GenerateCompetitionFixtureUseCase,
   GetCompetitionFixtureUseCase,
+  GetCurrentCompetitionFixtureUseCase,
   ListScheduleChangeRequestsUseCase,
   MaterializeOfficialMatchesForEncounterUseCase,
   RejectScheduleChangeProposalUseCase,
@@ -194,6 +195,10 @@ export function createSchedulingModule(input: {
     listScheduleChangeRequests: new ListScheduleChangeRequestsUseCase(negotiation),
     getScheduleChangeRequest: new GetScheduleChangeRequestUseCase(negotiation),
     getFixture: new GetCompetitionFixtureUseCase({
+      authorization: input.authorization,
+      fixtures: fixturePlans,
+    }),
+    getCurrentFixture: new GetCurrentCompetitionFixtureUseCase({
       authorization: input.authorization,
       fixtures: fixturePlans,
     }),

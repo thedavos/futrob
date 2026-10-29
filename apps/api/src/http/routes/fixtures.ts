@@ -1,4 +1,7 @@
-import { fixturePlanSchema } from "@futrob/api-contracts";
+import {
+  fixturePlanSchema,
+  getCurrentCompetitionFixtureResponseSchema,
+} from "@futrob/api-contracts";
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
@@ -10,6 +13,7 @@ import {
   editFixtureEncounterRoute,
   generateCompetitionFixtureRoute,
   getCompetitionFixtureRoute,
+  getCurrentCompetitionFixtureRoute,
 } from "@/http/openapi/routes/fixtures.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
@@ -34,6 +38,22 @@ export function registerFixtureRoutes(app: Hono, deps: AppDeps): void {
     });
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));
+  });
+
+  secured.openapi(getCurrentCompetitionFixtureRoute, async (c) => {
+    const params = c.req.valid("param");
+    const result = await deps.modules.getCurrentCompetitionFixture.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+    });
+    if (result.isErr()) return failureToHttp(result.error);
+    return jsonResponse(
+      getCurrentCompetitionFixtureResponseSchema.parse({
+        fixture: result.value.fixture ? fixturePlanDto(result.value.fixture) : null,
+        teams: result.value.teams,
+      }),
+    );
   });
 
   secured.openapi(getCompetitionFixtureRoute, async (c) => {

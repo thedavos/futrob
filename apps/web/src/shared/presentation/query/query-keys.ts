@@ -126,6 +126,11 @@ export const queryKeys = {
         teamId,
       ] as const,
   },
+  scheduling: {
+    all: ["scheduling"] as const,
+    currentFixture: (organizationId: string, competitionId: string) =>
+      [...queryKeys.scheduling.all, "current-fixture", organizationId, competitionId] as const,
+  },
   statistics: {
     all: ["statistics"] as const,
     me: (query: GetMyStatisticsQuery = {}) =>

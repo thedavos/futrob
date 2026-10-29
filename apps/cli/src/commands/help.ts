@@ -59,6 +59,7 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   roster-open <orgId> <compId> <teamId>
   club-link <orgId> <compId> <teamId> <externalClubId> <externalClubName> [--platform p] [--edition e]
   fixture-generate <orgId> <compId> [--starts-at ISO] [--interval-days 7]
+  fixture-current <orgId> <compId>
   fixture-show <orgId> <compId> <fixturePlanId>
   snapshot-set <encounterId> <orgId> <compId> <homeTeamId> <awayTeamId> <startISO> [--slots 1|2]
   club-search <query>

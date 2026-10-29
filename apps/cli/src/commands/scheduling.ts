@@ -9,6 +9,7 @@ import { print, printJson } from "../lib/print.ts";
 
 const USAGE = `Uso:
   npm run cli -- fixture-generate <orgId> <compId> [--starts-at ISO] [--interval-days 7] [--home-and-away]
+  npm run cli -- fixture-current <orgId> <compId>
   npm run cli -- fixture-show <orgId> <compId> <fixturePlanId>
   npm run cli -- snapshot-set <encounterId> <orgId> <compId> <homeTeamId> <awayTeamId> <startISO> [--slots 1|2] [--stage-id STAGE]`;
 
@@ -43,6 +44,18 @@ export function fixtureGenerate(raw: string[]): Effect.Effect<number, CliError> 
       }
     }
     print(`fixturePlanId: ${plan.id}`);
+    return 0;
+  });
+}
+
+export function fixtureCurrent(raw: string[]): Effect.Effect<number, CliError> {
+  return Effect.gen(function* () {
+    const common = parseCommon(raw);
+    const [organizationId, competitionId] = yield* requirePositionals(common.positionals, 2, USAGE);
+    const current = yield* apiCall(configOf(common), (client) =>
+      client.encounters.getCurrentFixture(organizationId, competitionId),
+    );
+    printJson(current);
     return 0;
   });
 }

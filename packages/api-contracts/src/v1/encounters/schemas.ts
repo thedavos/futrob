@@ -123,6 +123,21 @@ export const fixturePlanSchema = z.object({
 
 export type FixturePlanDto = z.infer<typeof fixturePlanSchema>;
 export type FixtureEncounterDto = z.infer<typeof fixtureEncounterSchema>;
+export type FixtureParticipantSlotDto = z.infer<typeof fixtureParticipantSlotSchema>;
+export type FixtureStageDto = z.infer<typeof fixtureStageSchema>;
+
+/**
+ * The competition's current fixture with the name of every Team it places. `fixture`
+ * is null until one is generated; a Team missing from `teams` no longer resolves.
+ */
+export const getCurrentCompetitionFixtureResponseSchema = z.object({
+  fixture: fixturePlanSchema.nullable(),
+  teams: z.array(z.object({ teamId: z.string().min(1), name: z.string().min(1) })),
+});
+
+export type GetCurrentCompetitionFixtureResponse = z.infer<
+  typeof getCurrentCompetitionFixtureResponseSchema
+>;
 
 export const generateCompetitionFixtureRequestSchema = z.object({
   generationVersion: z.number().int().positive(),

@@ -1,6 +1,7 @@
 import {
   completeOrganizationOnboardingResponseSchema,
   fixturePlanSchema,
+  getCurrentCompetitionFixtureResponseSchema,
 } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
 import {
@@ -69,6 +70,14 @@ describe("apps/api http fixtures", () => {
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/publish`,
       { method: "POST", headers: serviceHeaders(organizer) },
     );
+    const readCurrent = (actor: string) =>
+      app.request(`/api/v1/organizations/${organizationId}/competitions/${competitionId}/fixture`, {
+        headers: serviceHeaders(actor),
+      });
+    expect(
+      await parseResponse(getCurrentCompetitionFixtureResponseSchema, await readCurrent(organizer)),
+    ).toEqual({ fixture: null, teams: [] });
+
     const generationBody = {
       generationVersion: 1,
       startsAt: "2026-09-01T01:00:00.000Z",
@@ -104,6 +113,19 @@ describe("apps/api http fixtures", () => {
     );
     expect(read.status).toBe(200);
     expect(await read.json()).toEqual(fixture);
+
+    const current = await parseResponse(
+      getCurrentCompetitionFixtureResponseSchema,
+      await readCurrent(organizer),
+    );
+    expect(current.fixture).toEqual(fixture);
+    expect(current.teams.map((team) => team.name).sort()).toEqual([
+      "Alpha Fixture",
+      "Beta Fixture",
+      "Gamma Fixture",
+    ]);
+    expect(current.teams.map((team) => team.teamId).sort()).toEqual([...fixture.seed].sort());
+    expect((await readCurrent("fixture-outsider")).status).toBe(404);
 
     const readableEncounter = fixture.stages[0]?.rounds[0]?.encounters.find(
       (encounter) => encounter.home.kind === "team" && encounter.away.kind === "team",

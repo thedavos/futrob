@@ -14,6 +14,8 @@ import {
   fixturePlanSchema,
   type FixturePlanDto,
   generateCompetitionFixtureRequestSchema,
+  getCurrentCompetitionFixtureResponseSchema,
+  type GetCurrentCompetitionFixtureResponse,
   listCompetitionEncountersResponseSchema,
   type ListCompetitionEncountersResponse,
   type GenerateCompetitionFixtureRequest,
@@ -95,6 +97,18 @@ export function createEncountersResource(http: HttpClient) {
         body: generateCompetitionFixtureRequestSchema.parse(input),
         options,
         parse: (data) => fixturePlanSchema.parse(data),
+      });
+    },
+    async getCurrentFixture(
+      organizationId: string,
+      competitionId: string,
+      options: RequestOptions = {},
+    ): Promise<GetCurrentCompetitionFixtureResponse> {
+      return http.request({
+        path: apiPath("organizations", organizationId, "competitions", competitionId, "fixture"),
+        method: "GET",
+        options,
+        parse: (data) => getCurrentCompetitionFixtureResponseSchema.parse(data),
       });
     },
     async getFixture(

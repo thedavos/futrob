@@ -1,5 +1,6 @@
 import type { AuthorizationBatchPort, AuthorizationPort, ClockPort } from "@futrob/shared-kernel";
 import type { EncounterSummaryDependencies } from "@/application/scheduling/encounter-summary.ts";
+import { GetCurrentCompetitionFixtureViewUseCase } from "@/application/scheduling/get-current-competition-fixture-view.use-case.ts";
 import { GetEncounterViewUseCase } from "@/application/scheduling/get-encounter-view.use-case.ts";
 import { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
 import { ListCompetitionEncountersUseCase } from "@/application/scheduling/list-competition-encounters.use-case.ts";
@@ -46,6 +47,10 @@ export function createEncounterReads(input: {
       fixturePlans: scheduling.fixturePlans,
       teams: encounterSummaryDeps.teams,
       officialResults: input.results.officialResultReader,
+    }),
+    getCurrentCompetitionFixture: new GetCurrentCompetitionFixtureViewUseCase({
+      currentFixture: scheduling.getCurrentFixture,
+      teams: encounterSummaryDeps.teams,
     }),
   };
 }
