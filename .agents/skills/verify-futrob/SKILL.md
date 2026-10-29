@@ -170,7 +170,7 @@ These are real product destinations. Do not claim them verified through a differ
 - Player club / game-account / invitations (`/player/ea-clubs`, `/player/game-accounts`, invitation accept routes). The player competitions **index** (`/player/competitions`, Mis competiciones) is not this seed; `/player/competitions/explore` is mapped.
 - Organizer and invitation onboarding (do not claim them via the player path)
 - Official competition reads (standings, rankings, team performance, rules), org Equipos / Miembros y roles, Encounter reschedule, public invitation link `/entry-invitations/link/$code`. See `features/README.md`.
-- `/player/competitions/$competitionId/matches` is a scaffold; the Team list is org-scoped (see `results-match-center`)
+- `/player/competitions/$competitionId/matches` lists the same Encounters as the org Team route once the viewer's organization is known (see `results-match-center`)
 
 ## Maintenance
 

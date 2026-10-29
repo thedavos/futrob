@@ -54,5 +54,5 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 - Official competition reads after publish: standings `/orgs/$orgId/competitions/$competitionId/standings` (`Clasificación`), rankings `.../rankings`, team performance `.../team-performance` (`Rendimiento de equipos`), rules `.../rules` (`Reglamento`). Sidebar entries on a competition; not this seed.
 - Encounter reschedule (`Solicitar reprogramación` on the Encounter). Visible from `results-match-center`; driving it is not that feature's seed.
 - Public entry-invitation link `/entry-invitations/link/$code` (`apps/web/src/routes/entry-invitations/link.$code.tsx`). Signed-out preview; not the authenticated accept routes already listed above.
-- Player competition matches `/player/competitions/$competitionId/matches` — `PageScaffold` only. The working Team list is `/orgs/$orgId/competitions/$competitionId/matches` (`results-match-center`).
+- Player competition matches `/player/competitions/$competitionId/matches` — same Encounter list as the Team route in `results-match-center`, after resolving the organization from the viewer's accessible competitions. The competitions index still opens `/orgs/$orgId/competitions/$competitionId/matches`.
 - Team invitations from setup participants (`Invitar equipo`) — visible on the mapped wizard; driving invitations is not this seed.
