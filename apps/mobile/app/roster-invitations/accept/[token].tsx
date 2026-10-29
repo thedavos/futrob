@@ -29,9 +29,11 @@ export default function RosterInvitationRoute() {
       return route;
     },
     retry: false,
-    staleTime: Infinity,
+    staleTime: (current) => (current.state.data === "/player" ? Infinity : 0),
   });
-  if (query.data) return <Redirect href={nativeRoute(query.data)} />;
+  if (query.data && !query.isFetching && !query.isError) {
+    return <Redirect href={nativeRoute(query.data)} />;
+  }
   return (
     <Screen>
       <View style={{ flex: 1, justifyContent: "center", gap: theme.spacing[4] }}>

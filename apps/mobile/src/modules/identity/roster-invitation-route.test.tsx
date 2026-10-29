@@ -1,9 +1,10 @@
-import { waitFor } from "@testing-library/react";
+import { act, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { clearSession, saveSession } from "./session-store";
 import { clearPendingRosterInvitation, pendingRosterInvitation } from "./roster-invitation-link";
 import { installFakeApi } from "../../../test/fake-api";
-import { currentLocation } from "../../../test/expo-router";
+import { createMobileQueryClient } from "@/modules/query/create-query-client";
+import { currentLocation, useRouter } from "../../../test/expo-router";
 import { cleanupApp, renderApp } from "../../../test/render-app";
 
 afterEach(async () => {
@@ -19,6 +20,49 @@ describe("roster deep link", () => {
     renderApp("/roster-invitations/accept/roster-token");
     await waitFor(() => expect(currentLocation()?.pathname).toBe("/(auth)/login"));
     expect(await pendingRosterInvitation()).toBe("roster-token");
+  });
+
+  it("resumes after onboarding with the production cache", async () => {
+    await saveSession({
+      token: "session",
+      user: { id: "actor", name: "Ana", email: "ana@example.com" },
+    });
+    let completed = false;
+    const accept = vi.fn(() =>
+      Response.json({
+        id: "membership",
+        organizationId: "org",
+        competitionId: "comp",
+        teamId: "team",
+        playerProfileId: "player",
+        gameAccountId: null,
+        role: "player",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      }),
+    );
+    installFakeApi({
+      "/identity/onboarding": () =>
+        Response.json({
+          completed,
+          completedAt: completed ? "2026-01-01T00:00:00.000Z" : null,
+          version: 1,
+          path: completed ? "player" : null,
+          currentStep: null,
+        }),
+      "/organizations/post-auth-destination": () =>
+        Response.json({ destination: { kind: "personal" }, memberships: [] }),
+      "/roster-invitations/accept": accept,
+    });
+    renderApp("/roster-invitations/accept/roster-token", {
+      queryClient: createMobileQueryClient(),
+    });
+    await waitFor(() => expect(currentLocation()?.pathname).toBe("/(onboarding)/welcome"));
+    expect(accept).not.toHaveBeenCalled();
+    completed = true;
+    act(() => useRouter().replace("/"));
+    await waitFor(() => expect(accept).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(currentLocation()?.pathname).toBe("/player"));
+    expect(await pendingRosterInvitation()).toBeNull();
   });
 
   it("accepts the link and navigates to the player home", async () => {
