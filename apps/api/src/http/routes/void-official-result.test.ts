@@ -1,7 +1,9 @@
+import { InMemoryOfficialMatchSelectionRepository } from "@/adapters/results/official-selection.in-memory.ts";
 import { createApp } from "@/app.ts";
 import { InMemoryProviderMatchRepository } from "@/adapters/game-data/persistence/in-memory.repository.ts";
 import {
   seedComposition,
+  COMPETITION,
   HOME_CAPTAIN,
   AWAY_CAPTAIN,
   HOME,
@@ -92,4 +94,91 @@ it("denies captains and unrelated actors, permits the superuser, and preserves t
   expect(project).toHaveBeenLastCalledWith({ officialResultId: id });
   expect((await modules.results.results.findById(id))?.status).toBe("voided");
   expect((await send(OPERATOR)).status).toBe(200);
+});
+
+it("retrying a historical void preserves the newer approval, claims, audit and statistics", async () => {
+  const { modules } = await seedComposition({
+    pool: undefined,
+    matches: new InMemoryProviderMatchRepository(),
+  });
+  const app = createApp({
+    modules,
+    internalJobSecret: INTERNAL_JOB_SECRET,
+    checkDbHealth: () => Promise.resolve("skipped"),
+    correlationLogger: { info() {}, error() {} },
+  });
+  const approve = async (match: string, expectedVersion: number) => {
+    const proposed = await modules.officialSelection.propose.execute({
+      actorId: HOME_CAPTAIN,
+      organizationId: ORG,
+      encounterId: ENCOUNTER,
+      actingTeamId: HOME,
+      selections: slot(match),
+      expectedVersion,
+      commandKey: `propose-${match}`,
+    });
+    if (proposed.isErr()) throw proposed.error;
+    const confirmed = await modules.officialSelection.confirm.execute({
+      actorId: AWAY_CAPTAIN,
+      organizationId: ORG,
+      encounterId: ENCOUNTER,
+      actingTeamId: AWAY,
+      proposalId: proposed.value.proposal!.id,
+      expectedVersion: proposed.value.selection.version,
+      commandKey: `confirm-${match}`,
+    });
+    if (confirmed.isErr()) throw confirmed.error;
+    return confirmed.value.approvedResult!;
+  };
+  const send = (id: string) =>
+    app.request(`/api/v1/official-results/${id}/void`, {
+      method: "POST",
+      headers: serviceHeaders(OPERATOR),
+      body: JSON.stringify({ reason: "Correction" }),
+    });
+  const first = await approve("m-1", 0);
+  expect((await send(first.id)).status).toBe(200);
+  const closed = await modules.results.selections.findLatestByEncounter(ENCOUNTER);
+  const second = await approve("m-2", closed!.version);
+  expect(second.revision).toBe(2);
+  const selections = modules.results.selections;
+  if (!(selections instanceof InMemoryOfficialMatchSelectionRepository))
+    throw new Error("Expected memory fixture");
+  const selectionBefore = structuredClone(await selections.findLatestByEncounter(ENCOUNTER));
+  const actionsBefore = structuredClone(await selections.listActions(ENCOUNTER));
+  const claimsBefore = structuredClone(selections.claims);
+  expect(
+    claimsBefore.some((claim) => claim.externalMatchId === "m-2" && claim.releasedAt === null),
+  ).toBe(true);
+  const statistics = () =>
+    modules.statistics.useCases.getCompetitionStandings.execute({
+      actorId: OPERATOR,
+      organizationId: ORG,
+      competitionId: COMPETITION,
+    });
+  const teamStatistics = () =>
+    modules.statistics.useCases.getCompetitionTeamStatistics.execute({
+      actorId: OPERATOR,
+      organizationId: ORG,
+      competitionId: COMPETITION,
+    });
+  const teamsBefore = await teamStatistics();
+  expect(teamsBefore).toHaveLength(2);
+  for (const team of teamsBefore) {
+    expect(team).toMatchObject({ matchesPlayed: 1, sourceRevisionMax: 2 });
+  }
+  const statsBefore = await statistics();
+  expect(statsBefore?.rows).toHaveLength(2);
+  const retried = await send(first.id);
+  expect(retried.status).toBe(200);
+  expect(await retried.json()).toMatchObject({ id: first.id, status: "voided", revision: 1 });
+  expect(await modules.results.results.findById(second.id)).toMatchObject({
+    status: "approved",
+    revision: 2,
+  });
+  expect(await selections.findLatestByEncounter(ENCOUNTER)).toEqual(selectionBefore);
+  expect(await selections.listActions(ENCOUNTER)).toEqual(actionsBefore);
+  expect(selections.claims).toEqual(claimsBefore);
+  expect(await statistics()).toEqual(statsBefore);
+  expect(await teamStatistics()).toEqual(teamsBefore);
 });
