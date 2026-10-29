@@ -1,27 +1,7 @@
 import type { AppModules } from "./app-modules.ts";
 export type { AppModules } from "./app-modules.ts";
 import { RunScheduleChangeExpiry } from "@/application/scheduling/run-schedule-change-expiry.ts";
-import {
-  InMemoryProviderMatchRepository,
-  InMemoryRawObservationRepository,
-} from "@/adapters/game-data/persistence/in-memory.repository.ts";
-import {
-  PostgresProviderMatchRepository,
-  PostgresRawObservationRepository,
-} from "@/adapters/game-data/persistence/postgres.repository.ts";
-import { InMemoryProviderSyncJobRepository } from "@/adapters/game-data/jobs/in-memory-provider-sync-job.repository.ts";
-import { PostgresProviderSyncJobRepository } from "@/adapters/game-data/jobs/postgres-provider-sync-job.repository.ts";
 import { CachedGameDataProviderAdapter } from "@/adapters/game-data/resilience/cached-game-data-provider.adapter.ts";
-import { InMemoryProviderCircuitBreaker } from "@/adapters/game-data/resilience/provider-circuit-breaker.ts";
-import { PostgresProviderCircuitBreaker } from "@/adapters/game-data/resilience/postgres-provider-circuit-breaker.ts";
-import {
-  InMemoryProviderResponseCache,
-  PostgresProviderResponseCache,
-} from "@/adapters/game-data/resilience/provider-response-cache.ts";
-import {
-  InMemoryProviderHealthRepository,
-  PostgresProviderHealthRepository,
-} from "@/adapters/game-data/health/provider-health.repository.ts";
 import { EaClubsGameDataAdapter, ManualGameDataAdapter } from "@/adapters/game-data/internal.ts";
 import {
   RepositoryProviderMatchReader,
