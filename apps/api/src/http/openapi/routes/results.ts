@@ -4,6 +4,7 @@ import {
   VoidOfficialResultRequest,
   VoidOfficialResultResponse,
   ConfirmOfficialSelectionRequest,
+  ListCompetitionDisputesResponse,
   OfficialSelectionCommandResponse,
   OfficialSelectionView,
   OpenMatchDisputeRequest,
@@ -154,6 +155,23 @@ export const getOperatorOfficialSelectionRoute = defineRoute({
     schema: OfficialSelectionView,
   },
   errors: [401, 403, 404],
+});
+
+export const listCompetitionDisputesRoute = defineRoute({
+  method: "get",
+  path: "/organizations/{organizationId}/competitions/{competitionId}/disputes",
+  operationId: "listCompetitionDisputes",
+  tags: ["results"],
+  summary: "List the competition's selections waiting on an operator decision",
+  description:
+    "Selections in `disputed` or `organizer_review`, longest waiting first. Each Encounter is decided on `encounters.results.approve` at its own scope, so a specific deny hides it. A missing competition and an actor without the capability anywhere in it both answer 404 `competitions.not_found`. Dispute reasons are not included; read them from the Encounter's operator selection view.",
+  params: pathParams(["organizationId", "competitionId"]),
+  success: {
+    status: 200,
+    description: "Operator dispute queue",
+    schema: ListCompetitionDisputesResponse,
+  },
+  errors: [401, 404],
 });
 
 export const openMatchDisputeRoute = defineRoute({

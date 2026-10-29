@@ -32,6 +32,9 @@ export const queryKeys = {
       [...queryKeys.encounters.all, "competition", organizationId, competitionId] as const,
     candidates: (encounterId: string) =>
       [...queryKeys.encounters.all, "candidates", encounterId] as const,
+    /** Operator dispute queue; under `encounters` so selection commands refresh it. */
+    disputes: (organizationId: string, competitionId: string) =>
+      [...queryKeys.encounters.all, "disputes", organizationId, competitionId] as const,
     officialSelection: (organizationId: string, encounterId: string, actingTeamId: string) =>
       [
         ...queryKeys.encounters.all,
@@ -60,6 +63,8 @@ export const queryKeys = {
     mine: () => [...queryKeys.organizations.all, "mine"] as const,
     members: (organizationId: string) =>
       [...queryKeys.organizations.all, "members", organizationId] as const,
+    memberGrants: (organizationId: string, actorId: string) =>
+      [...queryKeys.organizations.all, "member-grants", organizationId, actorId] as const,
     profile: (organizationId: string) =>
       [...queryKeys.organizations.all, "profile", organizationId] as const,
   },

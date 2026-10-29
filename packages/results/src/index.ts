@@ -69,6 +69,10 @@ export type {
   SelectionTransition,
 } from "./domain/ports/official-result.repository.ts";
 export type { OfficialResultReaderPort } from "./domain/ports/official-result-reader.port.ts";
+export type {
+  SelectionDisputeReaderPort,
+  SelectionUnderDispute,
+} from "./domain/ports/selection-dispute-reader.port.ts";
 export type { OfficialResultApprovedEvent } from "./domain/events/official-result-approved.event.ts";
 export type { OfficialResultVoidedEvent } from "./domain/events/official-result-voided.event.ts";
 export { RESULT_PERMISSION, RESULT_PERMISSIONS } from "./domain/policies/result-permissions.ts";
@@ -175,6 +179,11 @@ export {
   GetOfficialSelectionUseCase,
   type GetOfficialSelectionInput,
 } from "./application/get-official-selection/get-official-selection.use-case.ts";
+export {
+  ListCompetitionDisputesUseCase,
+  type CompetitionDisputeCase,
+  type ListCompetitionDisputesInput,
+} from "./application/list-competition-disputes/list-competition-disputes.use-case.ts";
 export {
   ConfirmOfficialSelectionUseCase,
   type ConfirmOfficialSelectionInput,

@@ -7,6 +7,7 @@ import {
   CompetitionRoleAssignment,
   EffectiveAccess,
   ManageSuperuserRequest,
+  OrganizationRoleAssignment,
   UpsertAccessGrantRequest,
 } from "@/http/openapi/components.ts";
 import {
@@ -74,8 +75,8 @@ export const changeOrganizationRoleRoute = defineRoute({
   summary: "Change an organization membership role",
   params: pathParams(["organizationId", "actorId"]),
   body: ChangeOrganizationRoleRequest,
-  success: { status: 200, description: "Updated role" },
-  errors: [403, 404, 409],
+  success: { status: 200, description: "Updated role", schema: OrganizationRoleAssignment },
+  errors: [400, 403, 404, 409],
 });
 
 export const changeCompetitionRoleRoute = defineRoute({

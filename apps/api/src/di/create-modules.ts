@@ -60,6 +60,7 @@ import {
 } from "@/application/teams/team-roster-management.use-case.ts";
 import { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
 import { RecalculateRescheduledCandidates } from "@/application/results/recalculate-rescheduled-candidates.ts";
+import { ListCompetitionDisputesQuery } from "@/application/results/list-competition-disputes.query.ts";
 import { findProvisionedSystemActor } from "@/adapters/identity/configured-system-actor.ts";
 import { AssociateSyncedProviderMatches } from "@/application/game-data/associate-synced-provider-matches.ts";
 
@@ -315,6 +316,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     results,
   });
 
+  const listCompetitionDisputes = new ListCompetitionDisputesQuery({
+    disputes: results.listCompetitionDisputes,
+    competitions: competitions.repository,
+    teams: teams.repositories.teams,
+  });
+
   const voidOfficialResultAndUnproject = createVoidOfficialResultAndUnproject({
     results,
     scheduling,
@@ -381,6 +388,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     getEncounterView,
     listCompetitionEncounters,
     getCurrentCompetitionFixture,
+    listCompetitionDisputes,
     identity,
     notifications: activityFeed.notifications,
     organizations: {

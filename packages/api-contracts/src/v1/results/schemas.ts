@@ -115,6 +115,46 @@ export const matchDisputeSchema = z.object({
   resolutionReason: z.string().nullable(),
 });
 
+const competitionDisputeTeamSchema = z.object({
+  teamId: z.string().min(1),
+  /** Null when the Team can no longer be read; the case stays listed. */
+  name: z.string().min(1).nullable(),
+});
+
+/** One Encounter whose selection waits on an operator decision. */
+export const competitionDisputeSchema = z.object({
+  encounterId: z.string().min(1),
+  status: z.enum(["disputed", "organizer_review"]),
+  home: competitionDisputeTeamSchema,
+  away: competitionDisputeTeamSchema,
+  scheduledStartAt: z.string().datetime(),
+  /** When the selection entered its current status. */
+  since: z.string().datetime(),
+  /**
+   * Active dispute summary; null when the case reached organizer review without one
+   * (integrity flags or an expired confirmation window). The reason stays on the Encounter.
+   */
+  dispute: z
+    .object({
+      id: z.string().min(1),
+      status: z.enum(["open", "under_review"]),
+      openedByTeamId: z.string().min(1),
+      openedAt: z.string().datetime(),
+      reviewStartedAt: z.string().datetime().nullable(),
+    })
+    .nullable(),
+});
+
+/** Operator queue of a competition, the case that has waited longest first. */
+export const listCompetitionDisputesResponseSchema = z.object({
+  competition: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    timeZone: z.string().min(1),
+  }),
+  disputes: z.array(competitionDisputeSchema),
+});
+
 export const officialSelectionAllowedActionSchema = z.enum([
   "propose",
   "confirm",
@@ -226,6 +266,8 @@ export type OfficialSelectionCommandResponse = z.infer<
 export type OfficialSelectionProposalDto = z.infer<typeof officialSelectionProposalSchema>;
 export type OfficialSelectionActionDto = z.infer<typeof officialSelectionActionSchema>;
 export type MatchDisputeDto = z.infer<typeof matchDisputeSchema>;
+export type CompetitionDisputeDto = z.infer<typeof competitionDisputeSchema>;
+export type ListCompetitionDisputesResponse = z.infer<typeof listCompetitionDisputesResponseSchema>;
 export type GetTeamOfficialSelectionQuery = z.infer<typeof getTeamOfficialSelectionQuerySchema>;
 export type ProposeOfficialSelectionRequest = z.infer<typeof proposeOfficialSelectionRequestSchema>;
 export type ConfirmOfficialSelectionRequest = z.infer<typeof confirmOfficialSelectionRequestSchema>;
