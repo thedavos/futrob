@@ -7,6 +7,7 @@ import {
   asTeamId,
 } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
+import { InMemoryProviderSyncJobRepository } from "@/adapters/game-data/jobs/in-memory-provider-sync-job.repository.ts";
 import { DUE_PROVIDER_SYNC_MATCH_TYPES } from "@/adapters/game-data/jobs/due-provider-sync-target.feed.ts";
 import { InMemoryEncounterScheduleRepository } from "@/adapters/scheduling/encounter-schedule.repository.ts";
 import { InMemoryOfficialMatchRepository } from "@/adapters/scheduling/official-match.repository.ts";
@@ -57,10 +58,11 @@ describe("createDueProviderSyncTargetFeed", () => {
 
     const targets = await createDueProviderSyncTargetFeed({
       pool: undefined,
+      jobs: new InMemoryProviderSyncJobRepository(),
       encounters,
       matches,
       connections,
-    }).list({ now, limit: 10 });
+    }).list({ now, limit: 10, cooldownMs: 900_000 });
 
     expect(targets.map((target) => target.matchType)).toEqual([...DUE_PROVIDER_SYNC_MATCH_TYPES]);
     expect(targets.every((target) => target.externalClubId === "club-home")).toBe(true);

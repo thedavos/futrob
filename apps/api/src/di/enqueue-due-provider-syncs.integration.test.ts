@@ -100,8 +100,86 @@ suite("enqueue due provider syncs on Postgres", () => {
         "leagueMatch",
         "playoffMatch",
       ]);
-      expect(second).toMatchObject({ enqueued: 0, alreadyCovered: 3, jobs: [] });
+      expect(second).toMatchObject({ enqueued: 0, alreadyCovered: 0, jobs: [] });
       expect(index.rows.map((row) => row.indexname)).toEqual(["provider_sync_jobs_dedupe_latest"]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "reaches all 82 open clubs across ticks, beyond both former scan limits",
+    async () => {
+      let currentTime = NOW;
+      const modules = createModules({
+        fetcher: async () => {
+          throw new Error("Enqueuing must not call EA");
+        },
+        eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
+        pool: isolated.pool,
+        clock: { now: () => currentTime },
+      });
+      await seedActors(isolated.pool, CREATOR);
+      await seedOrganization(modules);
+      for (let index = 0; index < 82; index += 1) {
+        const suffix = String(index).padStart(3, "0");
+        await seedClub(
+          modules,
+          asTeamId(`team-${suffix}`),
+          `club-${suffix}`,
+          asEncounterId(`encounter-${suffix}`),
+          NOW,
+          "scheduled",
+        );
+      }
+      // Repeated slots for club 000 used to consume the entire 1000-row SQL prefix.
+      await isolated.pool.query(`
+      INSERT INTO encounter_schedule_snapshots
+        (encounter_id, organization_id, competition_id, stage_id, home_team_id,
+         away_team_id, scheduled_start_at, official_match_count)
+      SELECT 'duplicate-' || n, organization_id, competition_id, stage_id, home_team_id,
+             away_team_id, scheduled_start_at - interval '1 millisecond', 1
+      FROM encounter_schedule_snapshots CROSS JOIN generate_series(1, 1001) AS n
+      WHERE encounter_id = 'encounter-000'`);
+      await isolated.pool.query(`
+      INSERT INTO official_matches
+        (id, encounter_id, organization_id, competition_id, slot, status, scheduled_start_at, created_at)
+      SELECT encounter_id, encounter_id, organization_id, competition_id, 1, 'scheduled',
+             scheduled_start_at, scheduled_start_at
+      FROM encounter_schedule_snapshots WHERE encounter_id LIKE 'duplicate-%'`);
+
+      const seen = new Set<string>();
+      for (let tick = 0; tick < 13; tick += 1) {
+        currentTime = new Date(NOW.getTime() + tick * 60_000);
+        const result = await modules.gameData.enqueueDueProviderSyncs.execute();
+        expect(result.enqueued).toBeLessThanOrEqual(20);
+        for (const job of result.jobs) seen.add(job.id);
+        // Keep a mix of active jobs and finished jobs still inside their cooldown.
+        if (tick % 3 !== 0) {
+          await isolated.pool.query(
+            `UPDATE provider_sync_jobs SET status = $2, completed_at = $3,
+             available_at = NULL, last_error_code = $4 WHERE id = ANY($1::text[])`,
+            [
+              result.jobs.map((job) => job.id),
+              tick % 3 === 1 ? "succeeded" : "dead",
+              currentTime.toISOString(),
+              tick % 3 === 1 ? null : "game_data.test_failure",
+            ],
+          );
+        }
+      }
+      expect(seen.size).toBe(246);
+      const jobs = await isolated.pool.query(`
+      SELECT input_json->>'externalClubId' AS club, count(*)::int AS total
+      FROM provider_sync_jobs GROUP BY input_json->>'externalClubId'`);
+      expect(jobs.rows).toHaveLength(82);
+      expect(jobs.rows).toContainEqual({ club: "club-080", total: 3 });
+      expect(jobs.rows).toContainEqual({ club: "club-081", total: 3 });
+      expect(jobs.rows.every((row) => row.total === 3)).toBe(true);
+      expect((await modules.gameData.enqueueDueProviderSyncs.execute()).enqueued).toBe(0);
+
+      // The cutoff is inclusive: successes completed at minute 1 become due at minute 16.
+      currentTime = new Date(NOW.getTime() + 16 * 60_000);
+      expect((await modules.gameData.enqueueDueProviderSyncs.execute()).enqueued).toBe(20);
     },
     TEST_TIMEOUT_MS,
   );

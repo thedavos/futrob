@@ -47,7 +47,11 @@ durable `availableAt` value for delayed retries, stop after the configured attem
 to `futrob-job-dlq`. A one-minute Cron calls `POST /internal/game-data/sync-jobs/enqueue-due`
 to persist recent-matches jobs for connected EA clubs that have a scheduled or
 awaiting-selection slot inside the candidate window. Active jobs and finished jobs inside a
-15-minute cooldown are not duplicated. The same Cron still calls `run-next` so a job survives an
+15-minute cooldown are excluded before the 240-target read limit. Never-synced targets
+come first, followed by the oldest completed syncs; each tick creates at most 20 jobs.
+This selection uses persisted jobs, so subsequent ticks advance even after an API restart.
+`alreadyCovered` counts targets covered between the feed read and the enqueue guard;
+`deferred` counts unread targets within the returned batch. The same Cron still calls `run-next` so a job survives an
 interrupted publication or Queue delivery. The worker publishes only the jobs that tick created.
 Replaying a message is safe because claim and completion are lease-token guarded.
 

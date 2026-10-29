@@ -249,6 +249,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     rawObservations,
     jobs: providerSyncJobs,
     dueSyncTargets: createDueProviderSyncTargetFeed({
+      jobs: providerSyncJobs,
       pool: input.pool,
       encounters: scheduling.encounters,
       matches: scheduling.officialMatches,

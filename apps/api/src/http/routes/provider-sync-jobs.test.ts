@@ -241,6 +241,6 @@ describe("provider sync job routes", () => {
     expect(created.enqueued).toBe(3);
     expect(stored.map((job) => job?.sync.externalClubId)).toEqual(["10754", "10754", "10754"]);
     expect(providerCalls).toBe(0);
-    expect(replay).toMatchObject({ enqueued: 0, alreadyCovered: 3, jobs: [] });
+    expect(replay).toMatchObject({ enqueued: 0, alreadyCovered: 0, jobs: [] });
   });
 });

@@ -6,7 +6,7 @@ export const PROVIDER_SYNC_ENQUEUE_COOLDOWN_MS = 15 * 60 * 1000;
 /** New jobs persisted on one cron tick. The next tick continues the remainder. */
 export const PROVIDER_SYNC_DUE_ENQUEUE_LIMIT = 20;
 
-/** Targets inspected per tick so covered clubs do not hide a club that still needs a job. */
+/** Uncovered targets returned per tick, after excluding active jobs and the cooldown. */
 export const PROVIDER_SYNC_DUE_SCAN_LIMIT = 240;
 
 export function providerSyncStillCovered(

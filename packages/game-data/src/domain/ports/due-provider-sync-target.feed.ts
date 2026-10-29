@@ -11,9 +11,11 @@ export interface DueProviderSyncTarget {
   readonly maxResultCount: number;
 }
 
+/** Select uncovered targets before limiting, oldest completed synchronization first. */
 export interface DueProviderSyncTargetFeed {
   list(input: {
     readonly now: Date;
     readonly limit: number;
+    readonly cooldownMs: number;
   }): Promise<readonly DueProviderSyncTarget[]>;
 }

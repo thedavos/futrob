@@ -6,7 +6,7 @@ import {
 import { InMemoryEncounterScheduleRepository } from "@/adapters/scheduling/encounter-schedule.repository.ts";
 import { InMemoryOfficialMatchRepository } from "@/adapters/scheduling/official-match.repository.ts";
 import { InMemoryExternalClubConnectionRepository } from "@/adapters/teams/external-club-connection.repository.ts";
-import type { DueProviderSyncTargetFeed } from "@futrob/game-data";
+import type { DueProviderSyncTargetFeed, ProviderSyncJobRepository } from "@futrob/game-data";
 import type { EncounterScheduleRepository, OfficialMatchRepository } from "@futrob/scheduling";
 import { Panic } from "@futrob/shared-kernel";
 import type { ExternalClubConnectionRepository } from "@futrob/teams";
@@ -14,6 +14,7 @@ import type { Pool } from "pg";
 
 export function createDueProviderSyncTargetFeed(input: {
   readonly pool: Pool | undefined;
+  readonly jobs: ProviderSyncJobRepository;
   readonly encounters: EncounterScheduleRepository;
   readonly matches: OfficialMatchRepository;
   readonly connections: ExternalClubConnectionRepository;
@@ -27,8 +28,9 @@ export function createDueProviderSyncTargetFeed(input: {
     const encounters = input.encounters;
     const matches = input.matches;
     const connections = input.connections;
-    return dueProviderSyncTargetFeedFromSlots(() =>
-      slotsFromMemory(encounters, matches, connections),
+    return dueProviderSyncTargetFeedFromSlots(
+      () => slotsFromMemory(encounters, matches, connections),
+      input.jobs,
     );
   }
   throw new Panic("Due provider sync feed has no store for this composition");

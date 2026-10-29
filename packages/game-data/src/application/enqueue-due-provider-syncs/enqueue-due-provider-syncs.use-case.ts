@@ -39,11 +39,12 @@ export class EnqueueDueProviderSyncsUseCase {
   async execute(): Promise<EnqueueDueProviderSyncsResult> {
     const now = this.deps.clock.now();
     const maxEnqueues = this.deps.maxEnqueues ?? PROVIDER_SYNC_DUE_ENQUEUE_LIMIT;
+    const cooldownMs = this.deps.cooldownMs ?? PROVIDER_SYNC_ENQUEUE_COOLDOWN_MS;
     const targets = await this.deps.targets.list({
       now,
+      cooldownMs,
       limit: this.deps.scanLimit ?? PROVIDER_SYNC_DUE_SCAN_LIMIT,
     });
-    const cooldownMs = this.deps.cooldownMs ?? PROVIDER_SYNC_ENQUEUE_COOLDOWN_MS;
     let enqueued = 0;
     let alreadyCovered = 0;
     let index = 0;
