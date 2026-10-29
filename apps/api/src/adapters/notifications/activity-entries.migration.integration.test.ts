@@ -127,6 +127,7 @@ describe.skipIf(!databaseUrl)("0054 activity entries backfill", () => {
       competitionName: "Liga A",
       encounterLabel: "Cuervos vs Halcones",
       teamName: null,
+      outcome: null,
     });
 
     const rival = await list.execute({

@@ -65,6 +65,10 @@ export class CompetitionApplicationFlow {
       readonly teams: TeamRepository;
       readonly profiles: PlayerProfileRepository;
       readonly rosters: CompetitionRosterMembershipRepository;
+      /** Puts the pending entry in front of the organizer in the same transaction. */
+      readonly activity: {
+        registered(entry: CompetitionEntry, actorId: ActorId): Promise<void>;
+      };
     },
   ) {}
 
@@ -133,6 +137,7 @@ export class CompetitionApplicationFlow {
       creationKey: `${input.creationKey}:entry`,
     });
     if (!entry.isOk()) return err(entry.error);
+    await this.deps.activity.registered(entry.value, input.actorId);
 
     const captain = await this.deps.claimCaptaincy.execute({
       actorId: input.actorId,

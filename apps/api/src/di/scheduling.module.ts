@@ -134,6 +134,7 @@ export function createSchedulingModule(input: {
     officialMatches,
     fixturePlans,
     scheduleChangeRequests,
+    rescheduleRules,
     scheduleChangeApplications,
     scheduleChangeExpiryFeed: input.pool
       ? new PostgresScheduleChangeExpiryFeed(input.pool)

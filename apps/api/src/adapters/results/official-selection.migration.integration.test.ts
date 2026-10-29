@@ -92,6 +92,7 @@ suite("0045/0046 official selection and candidate migrations", () => {
           "0055_schedule_change_expiry_resolution.sql",
           "0056_actor_contact_profiles.sql",
           "0057_competition_ranking_eligibility.sql",
+          "0059_activity_entry_schedule_decision_entry_kinds.sql",
         ]);
       } finally {
         client.release();

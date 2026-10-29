@@ -284,6 +284,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     encounterReader,
     competitions,
     teams,
+    scheduling,
   });
   const officialSelection = createOfficialSelectionCommands({
     results,
@@ -333,11 +334,13 @@ export function createModules(input: CreateModulesInput): AppModules {
     teams: teams.repositories.teams,
     profiles: teams.repositories.profiles,
     rosters: teams.repositories.rosters,
+    activity: activityFeed.entries,
   });
 
   const entryInvitations = createEntryInvitations({
     transaction,
     writer: activityFeed.notifications.writer,
+    entryActivity: activityFeed.entries,
     competitions,
     teams,
     organizations: organizations.repositories.organizations,
@@ -360,7 +363,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     officialSelection,
     runScheduleChangeExpiry: new RunScheduleChangeExpiry({
       feed: scheduling.scheduleChangeExpiryFeed,
-      expire: scheduling.expireScheduleChangeProposal,
+      expire: activityFeed.commands.expireScheduleChangeProposal,
       clock,
       resolveSystemActor: () =>
         findProvisionedSystemActor(input.pool, input.schedulingSystemActorId),

@@ -15914,6 +15914,9 @@ components:
                   - roster_invitation
                   - competition_published
                   - entry_invitation
+                  - schedule_change
+                  - organizer_decision
+                  - competition_entry
               status:
                 type: string
                 enum:
@@ -15945,10 +15948,22 @@ components:
                     type:
                       - string
                       - "null"
+                  outcome:
+                    type:
+                      - string
+                      - "null"
+                    enum:
+                      - entry_approved
+                      - entry_rejected
+                      - schedule_set
+                      - schedule_kept
+                      - walkover_intended
+                      - null
                 required:
                   - competitionName
                   - encounterLabel
                   - teamName
+                  - outcome
               openedAt:
                 type: string
                 format: date-time

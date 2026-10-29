@@ -37,6 +37,31 @@ abierta. Diferencias con el plan original:
 - `create-modules.ts` superaba el límite de 400 líneas; la composición de anular un resultado
   se movió a `official-selection.commands.ts` sin cambiar su comportamiento.
 
+### Reprogramaciones, decisiones del organizador e inscripciones
+
+Se añaden después de T9 sin cambiar la forma de la fila:
+
+- **Mismo patrón que `SelectionActivityProjector`.** `ScheduleChangeActivity` reconcilia desde la
+  solicitud que devuelve cada comando (crear, aceptar, rechazar, contraproponer, resolver) y desde
+  el vencimiento, dentro de su transacción. Cada propuesta tiene su origen
+  `schedule_change_proposal:<proposalId>`: una contrapropuesta cierra la anterior y abre la fila del
+  otro equipo. La escalada tiene el suyo, `schedule_change_escalation:<requestId>`, para que
+  Pendientes del organizador distinga «decide tú» de «vigila».
+- **Las reglas deciden quién actúa.** Si la competición no exige la aprobación del rival, no hay fila
+  de equipo; si exige la del organizador, su fila de organización es accionable desde el principio.
+- **`organizer_decision` es el resultado, no el ciclo de vida.** Las filas accionables de la
+  organización se cierran como siempre (escalada resuelta, inscripción decidida). La decisión llega
+  además a los equipos afectados y queda en la actividad de la organización, con `subject.outcome`
+  (vocabulario cerrado: `entry_approved`, `entry_rejected`, `schedule_set`, `schedule_kept`,
+  `walkover_intended`). Nunca lleva la razón libre.
+- **Inscripción.** `competition_entry` abre una fila accionable de organización cuando la
+  solicitud queda pendiente (aplicación self-service) y nace cerrada cuando la inscripción ya está
+  aprobada (alta del organizador o invitación aceptada).
+- **Sin backfill.** `competition_entries` no guarda el actor y la fila lo exige; lo pendiente antes
+  de migrar no aparece en el feed.
+- **Migración numerada** (`0059_…`): sigue la numeración secuencial de `apps/api/migrations`;
+  `0058` queda para la migración de sincronizaciones de EA (PR #211).
+
 ## Lo que se decidió y por qué
 
 - **Una tabla, `activity_entries`.** Cada fila es un hecho para una audiencia. Tres tablas por
@@ -60,24 +85,24 @@ abierta. Diferencias con el plan original:
 
 ## Forma de la fila
 
-| Campo                          | Regla                                                                                                                                                            |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                           | Identidad de la fila                                                                                                                                             |
-| `organization_id`              | Siempre presente. Todo filtro de lectura incluye organización, o actor/equipo                                                                                    |
-| `competition_id`               | Nulo si el hecho no pertenece a una competición                                                                                                                  |
-| `audience`                     | `organization`, `team` o `actor`                                                                                                                                 |
-| `audience_id`                  | Id de esa audiencia. Con `organization` repite `organization_id`                                                                                                 |
-| `kind`                         | `match_dispute`, `selection_confirmation`, `roster_invitation` o `competition_published`                                                                         |
-| `status`                       | `open` o `closed`. `closed_at` es nulo exactamente cuando está abierta (CHECK)                                                                                   |
-| `requires_action`              | La audiencia debe actuar. Pendientes muestra estas filas abiertas                                                                                                |
-| `resource_type`, `resource_id` | Destino del clic: encuentro, invitación o competición                                                                                                            |
-| `subject`                      | JSONB instantáneo para pintar la fila (`competitionName`, `encounterLabel`, `teamName` según `kind`). Nunca razones libres: las razones de auditoría se redactan |
-| `actor_id`                     | Quién provocó el hecho. FK a `actors`                                                                                                                            |
-| `closed_by_actor_id`           | Quién lo cerró. Nulo si lo cerró el sistema o nació cerrado. FK a `actors`                                                                                       |
-| `opened_at`, `closed_at`       | Un hecho nacido cerrado usa la misma marca en ambas                                                                                                              |
-| `expires_at`                   | Opcional. Una fila abierta y vencida no entra en Pendientes                                                                                                      |
-| `last_event_at`                | `closed_at ?? opened_at`. Lo mantienen `record` y `close`. Ordena el feed                                                                                        |
-| `source_name`, `source_id`     | `match_dispute:<id>`, `proposal:<id>`, `roster_invitation:<id>`, `competition:<id>`                                                                              |
+| Campo                          | Regla                                                                                                                                                                                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                           | Identidad de la fila                                                                                                                                                                                        |
+| `organization_id`              | Siempre presente. Todo filtro de lectura incluye organización, o actor/equipo                                                                                                                               |
+| `competition_id`               | Nulo si el hecho no pertenece a una competición                                                                                                                                                             |
+| `audience`                     | `organization`, `team` o `actor`                                                                                                                                                                            |
+| `audience_id`                  | Id de esa audiencia. Con `organization` repite `organization_id`                                                                                                                                            |
+| `kind`                         | `match_dispute`, `selection_confirmation`, `roster_invitation`, `competition_published`, `entry_invitation`, `schedule_change`, `organizer_decision` o `competition_entry`                                  |
+| `status`                       | `open` o `closed`. `closed_at` es nulo exactamente cuando está abierta (CHECK)                                                                                                                              |
+| `requires_action`              | La audiencia debe actuar. Pendientes muestra estas filas abiertas                                                                                                                                           |
+| `resource_type`, `resource_id` | Destino del clic: encuentro, invitación o competición                                                                                                                                                       |
+| `subject`                      | JSONB instantáneo para pintar la fila (`competitionName`, `encounterLabel`, `teamName` y, solo en `organizer_decision`, `outcome` según `kind`). Nunca razones libres: las razones de auditoría se redactan |
+| `actor_id`                     | Quién provocó el hecho. FK a `actors`                                                                                                                                                                       |
+| `closed_by_actor_id`           | Quién lo cerró. Nulo si lo cerró el sistema o nació cerrado. FK a `actors`                                                                                                                                  |
+| `opened_at`, `closed_at`       | Un hecho nacido cerrado usa la misma marca en ambas                                                                                                                                                         |
+| `expires_at`                   | Opcional. Una fila abierta y vencida no entra en Pendientes                                                                                                                                                 |
+| `last_event_at`                | `closed_at ?? opened_at`. Lo mantienen `record` y `close`. Ordena el feed                                                                                                                                   |
+| `source_name`, `source_id`     | `match_dispute:<id>`, `proposal:<id>`, `roster_invitation:<id>`, `competition:<id>`                                                                                                                         |
 
 - Clave única `(source_name, source_id, audience, audience_id)`. Reintentar no duplica. Cerrar dos
   veces conserva el primer `closed_at`.
@@ -91,14 +116,19 @@ abierta con `expires_at` vencido queda fuera de Pendientes en la lectura, sin jo
 
 ### Reparto
 
-| Hecho                                     | Filas                                                                    | Quién actúa                     | Cierra                                                        |
-| ----------------------------------------- | ------------------------------------------------------------------------ | ------------------------------- | ------------------------------------------------------------- |
-| Disputa abierta (`open` o `under_review`) | Organización, accionable                                                 | Operador                        | Resolución `approved_proposal` o `returned_to_selection`      |
-| Propuesta pendiente de confirmar          | Equipo rival, accionable. Organización en vigilancia                     | Capitán o vicecapitán del rival | Confirmar, rechazar, alternativa, disputa abierta, expiración |
-| Alternativa propuesta                     | Cierra la anterior y abre otra para el otro equipo                       | El otro equipo                  | Igual que la anterior                                         |
-| Invitación con `invitee_actor_id`         | Actor invitado, accionable, con `expires_at`. Organización en vigilancia | El invitado                     | Aceptar por token o por id, declinar                          |
-| Invitación solo por token                 | Ninguna en este corte                                                    | —                               | —                                                             |
-| Competición publicada                     | Organización, nacida cerrada                                             | Nadie                           | —                                                             |
+| Hecho                                          | Filas                                                                                                                                  | Quién actúa                                          | Cierra                                                        |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- |
+| Disputa abierta (`open` o `under_review`)      | Organización, accionable                                                                                                               | Operador                                             | Resolución `approved_proposal` o `returned_to_selection`      |
+| Propuesta pendiente de confirmar               | Equipo rival, accionable. Organización en vigilancia                                                                                   | Capitán o vicecapitán del rival                      | Confirmar, rechazar, alternativa, disputa abierta, expiración |
+| Alternativa propuesta                          | Cierra la anterior y abre otra para el otro equipo                                                                                     | El otro equipo                                       | Igual que la anterior                                         |
+| Invitación con `invitee_actor_id`              | Actor invitado, accionable, con `expires_at`. Organización en vigilancia                                                               | El invitado                                          | Aceptar por token o por id, declinar                          |
+| Invitación solo por token                      | Ninguna en este corte                                                                                                                  | —                                                    | —                                                             |
+| Competición publicada                          | Organización, nacida cerrada                                                                                                           | Nadie                                                | —                                                             |
+| Reprogramación propuesta                       | Equipo rival, accionable, si las reglas piden su aprobación. Organización: accionable si las reglas piden la suya, en vigilancia si no | Equipo rival (y organizador si lo exigen las reglas) | Aceptar, rechazar, contraproponer, vencimiento                |
+| Reprogramación escalada (venció sin respuesta) | Organización, accionable                                                                                                               | Organizador                                          | Resolución del organizador                                    |
+| Inscripción pendiente                          | Organización, accionable                                                                                                               | Organizador                                          | Aprobar o rechazar                                            |
+| Inscripción ya aprobada al crearse             | Organización, nacida cerrada                                                                                                           | Nadie                                                | —                                                             |
+| Decisión del organizador                       | Equipo(s) afectado(s) y organización, nacida cerrada, con `subject.outcome`                                                            | Nadie                                                | —                                                             |
 
 Todas las filas de organización, de cualquier `kind` y estado, alimentan la actividad del
 organizador. Así el inicio y la pantalla completa muestran actividad de todo tipo.

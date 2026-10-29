@@ -12,7 +12,7 @@ const activity = {
   requiresAction: true,
   resourceType: "encounter",
   resourceId: "enc-1",
-  subject: { competitionName: "Liga", encounterLabel: "A vs B", teamName: null },
+  subject: { competitionName: "Liga", encounterLabel: "A vs B", teamName: null, outcome: null },
   openedAt: "2026-10-07T10:00:00.000Z",
   closedAt: null,
   expiresAt: null,

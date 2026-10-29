@@ -121,6 +121,7 @@ function activity(
       competitionName: "Liga Nocturna",
       encounterLabel: "Nova FC vs Orion",
       teamName: null,
+      outcome: null,
     },
     openedAt: "2026-10-19T10:00:00.000Z",
     closedAt: null,

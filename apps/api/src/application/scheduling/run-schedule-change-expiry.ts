@@ -23,7 +23,7 @@ export class RunScheduleChangeExpiry {
   constructor(
     private readonly deps: {
       readonly feed: ScheduleChangeExpiryFeedPort;
-      readonly expire: ExpireScheduleChangeProposalUseCase;
+      readonly expire: Pick<ExpireScheduleChangeProposalUseCase, "execute">;
       readonly clock: ClockPort;
       readonly resolveSystemActor: () => Promise<ActorId | null>;
     },

@@ -13,7 +13,6 @@ import type {
 } from "@/application/teams/team-roster-management.use-case.ts";
 import type { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
 import type { EntryInvitationsComposition } from "./entry-invitations.composition.ts";
-import type { ActivityCommands } from "@/application/notifications/activity-commands.ts";
 import type { SchedulingModule } from "./scheduling.module.ts";
 import type { GameDataModule } from "./game-data.module.ts";
 import type { IdentityModule } from "./identity.module.ts";
@@ -27,7 +26,7 @@ import type {
   VoidOfficialResultAndUnproject,
 } from "./official-selection.commands.ts";
 import type { ResultsModule } from "./results.module.ts";
-import type { NotificationsModule } from "./notifications.module.ts";
+import type { ActivityCommands, NotificationsModule } from "./notifications.module.ts";
 import type { PublicPortalModule } from "./public-portal.module.ts";
 import type { StatisticsModule } from "./statistics.module.ts";
 
