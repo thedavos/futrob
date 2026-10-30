@@ -33,6 +33,12 @@ flowchart TD
   PublicPortal["public-portal"] --> Statistics
   PublicPortal --> Competitions
   Organizations["organizations"] --> Identity
+  PlanLimitBridges["apps/api plan-limit bridges"] --> Billing["billing (hoja)"]
+  Competitions -.->|"CompetitionPlanLimitsPort"| PlanLimitBridges
+  Organizations -.->|"StaffSeatLimitPort"| PlanLimitBridges
+  GameData -.->|"ProviderSyncQuotaPort"| PlanLimitBridges
+  Statistics -.->|"PerformanceRankingAccessPort"| PlanLimitBridges
+  Analytics -.->|"PremiumAnalyticsAccessPort"| PlanLimitBridges
   PrivateUseCases["private use cases"] -->|"AuthorizationPort"| AuthResolver["apps/api contextual resolver"]
   AuthResolver --> Organizations
   AuthResolver --> Competitions
@@ -40,6 +46,8 @@ flowchart TD
 ```
 
 Los edges entre módulos son **APIs públicas / ports / eventos**, nunca imports de adapters.
+
+`billing` es una hoja: ningún BC importa `@futrob/billing`. Las flechas punteadas son ports declarados por cada consumidor e implementados por bridges en `apps/api/src/di/` ([ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md)).
 
 Los siguientes diagramas describen el flujo objetivo de eventos. Actualmente la API usa `NoopEventPublisher` y compone confirmación/anulación con proyección transaccional; ver [overview](/docs/architecture/overview.md#flujo-de-dependencias). La cola de sync de proveedores es un circuito separado.
 

@@ -377,6 +377,7 @@ export default defineConfig({
       "packages/public-portal",
       "packages/teams",
       "packages/notifications",
+      "packages/billing",
       "apps/mobile",
       // Storybook component tests (stories as tests) in a real browser.
       storybookVitestProject(),
