@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@futrob/api-contracts": "0.1.0",
+    "@futrob/billing": "0.1.0",
     "@futrob/competitions": "0.1.0",
     "@futrob/ea-clubs": "0.1.0",
     "@futrob/game-data": "0.1.0",
