@@ -1,4 +1,11 @@
-import { err, ok, type ClockPort, type IdGeneratorPort, type Result } from "@futrob/shared-kernel";
+import {
+  err,
+  ok,
+  type ClockPort,
+  type IdGeneratorPort,
+  type Result,
+  type TransactionPort,
+} from "@futrob/shared-kernel";
 import type {
   ProviderSyncJob,
   QueuedProviderSyncJob,
@@ -24,6 +31,7 @@ export interface EnqueueProviderSyncJobInput {
 export class EnqueueProviderSyncJobUseCase {
   constructor(
     private readonly deps: {
+      readonly transaction: TransactionPort;
       readonly jobs: ProviderSyncJobRepository;
       readonly quota: ProviderSyncQuotaPort;
       readonly ids: IdGeneratorPort;
@@ -55,17 +63,25 @@ export class EnqueueProviderSyncJobUseCase {
       createdAt: now,
       updatedAt: now,
     };
-    const reserved = await this.deps.quota.reserve({
-      organizationId: job.organizationId,
-      jobId: job.id,
-    });
-    if (!reserved.isOk()) return err(reserved.error);
+    try {
+      return await this.deps.transaction.runInTransaction(async () => {
+        const reserved = await this.deps.quota.reserve({
+          organizationId: job.organizationId,
+          jobId: job.id,
+        });
+        if (!reserved.isOk()) return err(reserved.error);
 
-    const stored = await this.deps.jobs.enqueue(job);
-    // A concurrent request won the dedupe key between the lookup and the insert.
-    if (stored.id !== job.id) {
+        const stored = await this.deps.jobs.enqueue(job);
+        // A concurrent request won the dedupe key between lookup and insert.
+        if (stored.id !== job.id) {
+          await this.deps.quota.release({ organizationId: job.organizationId, jobId: job.id });
+        }
+        return ok(stored);
+      });
+    } catch (error) {
+      // Postgres has rolled back; memory adapters need the compensating release.
       await this.deps.quota.release({ organizationId: job.organizationId, jobId: job.id });
+      throw error;
     }
-    return ok(stored);
   }
 }

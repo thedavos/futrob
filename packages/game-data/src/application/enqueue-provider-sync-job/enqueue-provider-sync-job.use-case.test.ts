@@ -15,6 +15,7 @@ class MemoryJobs implements ProviderSyncJobRepository {
   readonly jobs: ProviderSyncJob[] = [];
   /** Simulates a concurrent request storing the same dedupe key after the lookup. */
   raceWinner: ProviderSyncJob | null = null;
+  failNextInsert = false;
 
   findActiveByDedupeKey(organizationId: string, dedupeKey: string) {
     return Promise.resolve(
@@ -26,6 +27,10 @@ class MemoryJobs implements ProviderSyncJobRepository {
   }
 
   async enqueue(job: ProviderSyncJob): Promise<ProviderSyncJob> {
+    if (this.failNextInsert) {
+      this.failNextInsert = false;
+      throw new Error("simulated INSERT failure");
+    }
     if (this.raceWinner) {
       this.jobs.push(this.raceWinner);
       this.raceWinner = null;
@@ -97,6 +102,7 @@ function setup(limit = 60) {
   const quota = quotaOf(limit);
   let nextId = 0;
   const useCase = new EnqueueProviderSyncJobUseCase({
+    transaction: { runInTransaction: (operation) => operation() },
     jobs,
     quota,
     ids: { generate: () => `job-${++nextId}` },
@@ -159,4 +165,16 @@ describe("EnqueueProviderSyncJobUseCase", () => {
     expect(result.isOk() && result.value.id).toBe("job-winner");
     expect(quota.reserved.size).toBe(0);
   });
+});
+
+it("releases quota after a failed insert so the last unit remains available on retry", async () => {
+  const { jobs, quota, useCase } = setup(1);
+  jobs.failNextInsert = true;
+  await expect(useCase.execute(input())).rejects.toThrow("simulated INSERT failure");
+  expect(jobs.jobs).toHaveLength(0);
+  expect(quota.reserved.size).toBe(0);
+  const retry = await useCase.execute(input());
+  expect(retry.isOk()).toBe(true);
+  expect(jobs.jobs).toHaveLength(1);
+  expect(quota.reserved.size).toBe(1);
 });

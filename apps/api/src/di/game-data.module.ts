@@ -60,6 +60,7 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
   });
 
   const enqueueProviderSyncJob = new EnqueueProviderSyncJobUseCase({
+    transaction: deps.transaction,
     quota: deps.syncQuota,
     jobs: deps.jobs,
     ids: deps.ids,
