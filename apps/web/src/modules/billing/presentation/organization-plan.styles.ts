@@ -1,0 +1,62 @@
+import * as stylex from "@stylexjs/stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+
+export const styles = stylex.create({
+  grid: {
+    display: "grid",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      "@container (min-width: 48rem)": "minmax(0, 3fr) minmax(16rem, 2fr)",
+    },
+    gap: "1rem",
+    marginTop: "1rem",
+    alignItems: "start",
+    containerType: "inline-size",
+  },
+  wide: { gridColumn: "1 / -1" },
+  panel: { minWidth: 0, display: "flex", flexDirection: "column" },
+  header: { padding: "1.25rem", gap: "0.5rem" },
+  heading: { fontSize: "var(--text-lg)", fontWeight: 600 },
+  content: {
+    paddingInline: "1.25rem",
+    paddingBottom: "1.25rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    minWidth: 0,
+  },
+  planLine: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem" },
+  planName: { fontSize: "var(--text-2xl)", fontWeight: 700 },
+  muted: { color: colors.mutedForeground },
+  usageList: {
+    listStyle: "none",
+    margin: 0,
+    padding: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  usageItem: { display: "flex", flexDirection: "column", gap: "0.375rem" },
+  usageLine: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    gap: "0.75rem",
+  },
+  usageValue: { fontVariantNumeric: "tabular-nums", fontWeight: 600 },
+  featureList: {
+    listStyle: "none",
+    margin: 0,
+    padding: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.625rem",
+  },
+  feature: { display: "flex", alignItems: "flex-start", gap: "0.5rem" },
+  featureIcon: { flexShrink: 0, width: "1.25rem", height: "1.25rem", marginTop: "0.0625rem" },
+  included: { color: colors.primary },
+  excluded: { color: colors.mutedForeground },
+  excludedText: { color: colors.mutedForeground },
+  skeletonStack: { display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" },
+  skeletonRow: { height: "6rem", width: "100%" },
+});

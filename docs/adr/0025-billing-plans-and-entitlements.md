@@ -138,6 +138,26 @@ ninguna organización. Si su coste lo requiere, se limitará con el entitlement 
 
 ## Estado de implementación y evidencia
 
-Ver el stack de PRs que introduce `packages/billing`, la migración de billing en
-`apps/api/migrations`, los bridges en `apps/api/src/di/` y las rutas `/api/v1` de plan.
-La evidencia ejecutada se lista en cada PR; este ADR no afirma despliegue.
+Implementado en el checkout (Fase 0). Sin despliegue ni proveedor de pagos.
+
+- Dominio y casos de uso: [`packages/billing`](/packages/billing/src/index.ts); gates en
+  [competitions](/packages/competitions/src/domain/ports/competition-plan-limits.port.ts),
+  [organizations](/packages/organizations/src/domain/ports/staff-seat-limit.port.ts),
+  [game-data](/packages/game-data/src/domain/ports/provider-sync-quota.port.ts),
+  [statistics](/packages/statistics/src/domain/ports/performance-ranking-access.port.ts) y
+  [analytics](/packages/analytics/src/domain/ports/premium-analytics-access.port.ts).
+- Persistencia: [migración 0060](/apps/api/migrations/0060_billing_plans_and_entitlements.sql) y
+  [adapters](/apps/api/src/adapters/billing/), con un contrato compartido memoria/Postgres que
+  incluye consumo concurrente; la semilla del catálogo se compara con `DEFAULT_ORGANIZATION_PLANS`.
+- Composición: [billing.module](/apps/api/src/di/billing.module.ts) y
+  [bridges](/apps/api/src/adapters/billing/plan-limit.bridges.ts); prueba de composición en
+  [billing-plan-limits.composition.test.ts](/apps/api/src/di/billing-plan-limits.composition.test.ts)
+  y oficialización con cupo agotado en
+  [official-selection.quota-exhausted.composition.test.ts](/apps/api/src/di/official-selection.quota-exhausted.composition.test.ts).
+- HTTP: [rutas de billing](/apps/api/src/http/routes/billing.ts), 402 en
+  [errors.ts](/apps/api/src/http/errors.ts) y
+  [contrato](/apps/api/src/http/routes/billing.contract.test.ts). Smoke en vivo:
+  `npm run cli -- billing-smoke --actor <organizer> --superuser <superuser>`.
+- Web: página «Plan y uso» (`/orgs/:orgId/settings/plan`), estados de upsell y `/pricing`.
+  Mobile solo lee entitlements (fail-closed) y no ofrece compra.
+- Pendiente de prueba en navegador con `verify-futrob` sobre un stack propio.

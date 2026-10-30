@@ -7,6 +7,107 @@ export type Message = string | ((params: TranslationParams) => string);
 const count = (params: TranslationParams): number => Number(params.count ?? 0);
 
 const es = {
+  "pages.organization.plan.title": "Plan y uso",
+  "pages.organization.plan.subtitle":
+    "Qué incluye el plan de tu organización y cuánto llevas usado este mes.",
+  "billing.plan.name.free": "Gratis",
+  "billing.plan.name.pro": "Pro",
+  "billing.plan.name.league": "Liga",
+  "billing.plan.current": "Plan actual",
+  "billing.plan.status.default": "Plan por defecto",
+  "billing.plan.status.active": "Activo",
+  "billing.plan.status.trialing": "Prueba hasta el {date}",
+  "billing.plan.status.past_due": "Pago pendiente",
+  "billing.plan.status.lapsed": "{plan} terminó; se aplica Gratis",
+  "billing.plan.upgrade": "Para pasar a {plan}, escríbenos. Por ahora asignamos los planes a mano.",
+  "billing.plan.topPlan": "Tienes el plan más completo.",
+  "billing.plan.compare": "Ver planes",
+  "billing.usage.title": "Uso",
+  "billing.usage.description":
+    "Los límites solo frenan acciones nuevas. Lo que ya está en marcha termina igual.",
+  "billing.usage.activeCompetitions": "Competiciones activas",
+  "billing.usage.staffMembers": "Staff",
+  "billing.usage.providerSyncJobs": "Sincronizaciones con EA este mes",
+  "billing.usage.value": "{used} de {limit}",
+  "billing.usage.unlimited": "{used} · sin límite",
+  "billing.usage.resets": "Se reinicia el {date}",
+  "billing.usage.fairUse": "Uso justo",
+  "billing.usage.reached.activeCompetitions":
+    "Llegaste al límite de competiciones activas. Finaliza o archiva una para crear otra.",
+  "billing.usage.reached.staffMembers":
+    "No puedes sumar más staff con este plan. El staff actual conserva su rol.",
+  "billing.usage.reached.providerSyncJobs":
+    "Usaste las sincronizaciones del mes. Los enfrentamientos en curso se resuelven con los partidos ya sincronizados.",
+  "billing.features.title": "Incluido en tu plan",
+  "billing.features.included": "Incluido",
+  "billing.features.notIncluded": "No incluido",
+  "billing.features.formats": "Formatos: {formats}",
+  "billing.features.teamsPerCompetition": "Hasta {count} equipos por competición",
+  "billing.features.teamsUnlimited": "Equipos por competición sin límite",
+  "billing.features.automaticProviderSync": "Sincronización automática con EA",
+  "billing.features.performanceRanking": "Ranking de rendimiento 0–100",
+  "billing.features.premiumAnalytics": "Analíticas premium de equipo y jugador",
+  "billing.features.organizerAnalytics.none": "Analítica de organizador",
+  "billing.features.organizerAnalytics.basic": "Analítica de organizador básica",
+  "billing.features.organizerAnalytics.full": "Analítica de organizador completa",
+  "billing.features.portalBranding.futrob": "Portal público con marca Futrob",
+  "billing.features.portalBranding.logo_colors": "Portal público con tu logo y colores",
+  "billing.features.portalBranding.advanced": "Portal público con branding avanzado",
+  "billing.features.notifications": "Notificaciones: {channels}",
+  "billing.channel.web": "web",
+  "billing.channel.email": "email",
+  "billing.channel.announcements": "anuncios",
+  "billing.changes.title": "Cambios de plan",
+  "billing.changes.empty": "Todavía no hubo cambios de plan.",
+  "billing.changes.change": "Cambio",
+  "billing.changes.reason": "Motivo",
+  "billing.changes.date": "Fecha",
+  "billing.changes.assigned": "{plan} ({status})",
+  "billing.changes.from": "{before} → {after}",
+  "billing.changes.status.active": "activo",
+  "billing.changes.status.trialing": "en prueba",
+  "billing.changes.status.past_due": "pago pendiente",
+  "billing.changes.status.canceled": "cancelado",
+  "billing.loading": "Cargando el plan…",
+  "billing.error": "No pudimos cargar el plan.",
+  "billing.accessError": "No pudimos comprobar tu acceso al plan.",
+  "billing.forbidden.title": "No puedes ver el plan",
+  "billing.forbidden.description":
+    "Solo el organizador y el staff ven el plan y el uso de la organización.",
+  "billing.upsell.action": "Ver plan y uso",
+  "teamPerformance.viewStandings": "Ver la tabla",
+  "billing.upsell.competitions.plan_limit_reached":
+    "Tu plan no admite más competiciones activas. Finaliza o archiva una, o cambia de plan.",
+  "billing.upsell.competitions.format_not_in_plan":
+    "Tu plan no incluye este formato. Elige liga o eliminación directa, o cambia de plan.",
+  "billing.upsell.organizations.staff_limit_reached":
+    "Tu plan no admite más staff. Puedes invitar a la persona como miembro.",
+  "billing.upsell.game_data.sync_quota_exhausted":
+    "Usaste las sincronizaciones con EA de este mes. Los partidos ya sincronizados siguen disponibles.",
+  "billing.upsell.statistics.performance_ranking_not_in_plan":
+    "El ranking de rendimiento forma parte de Pro y Liga.",
+  "billing.upsell.generic": "Tu plan no incluye esta acción.",
+  "billing.rankingUpsell.title": "El ranking de rendimiento es de Pro y Liga",
+  "billing.rankingUpsell.description":
+    "Tu plan actual no lo incluye. La tabla oficial de la competición sigue disponible para todos.",
+  "pricing.meta.title": "Precios | Futrob",
+  "pricing.meta.description":
+    "Planes Gratis, Pro y Liga para organizar competiciones de EA SPORTS FC Clubs.",
+  "pricing.title": "Planes para cada competición",
+  "pricing.subtitle":
+    "Empieza gratis. La selección oficial, las disputas y la oficialización funcionan igual en todos los planes.",
+  "pricing.unavailable": "No pudimos cargar los planes. Vuelve a intentarlo en unos minutos.",
+  "pricing.contact": "Por ahora activamos Pro y Liga a mano. Escríbenos para cambiar de plan.",
+  "pricing.start": "Crear competición",
+  "pricing.perMonth": "{count} sincronizaciones al mes",
+  "pricing.fairUse": "{count} sincronizaciones al mes (uso justo)",
+  "pricing.competitions": "{count} competiciones activas",
+  "pricing.competitionsOne": "1 competición activa",
+  "pricing.competitionsUnlimited": "Competiciones activas sin límite",
+  "pricing.staff": "Hasta {count} personas de staff",
+  "pricing.staffUnlimited": "Staff sin límite",
+  "pricing.integrity": "Integridad competitiva sin costo",
+  "landing.nav.pricing": "Precios",
   "competitions.reschedule.expiryLabel": "Plazo de respuesta de la propuesta (horas)",
   "competitions.reschedule.expiryHelp":
     "De 1 a 72 horas desde cada propuesta. Al vencer, el organizador resuelve la solicitud.",
@@ -2223,6 +2324,21 @@ export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "billing.plan.status.trialing": { readonly date: string };
+  readonly "billing.plan.status.lapsed": { readonly plan: string };
+  readonly "billing.plan.upgrade": { readonly plan: string };
+  readonly "billing.usage.value": { readonly limit: number; readonly used: number };
+  readonly "billing.usage.unlimited": { readonly used: number };
+  readonly "billing.usage.resets": { readonly date: string };
+  readonly "billing.features.formats": { readonly formats: string };
+  readonly "billing.features.teamsPerCompetition": { readonly count: number };
+  readonly "billing.features.notifications": { readonly channels: string };
+  readonly "billing.changes.assigned": { readonly plan: string; readonly status: string };
+  readonly "billing.changes.from": { readonly after: string; readonly before: string };
+  readonly "pricing.perMonth": { readonly count: number };
+  readonly "pricing.fairUse": { readonly count: number };
+  readonly "pricing.competitions": { readonly count: number };
+  readonly "pricing.staff": { readonly count: number };
   readonly "competition.overview.pending.applications": { readonly count: number };
   readonly "competition.overview.pending.awaiting": { readonly count: number };
   readonly "competition.overview.teams.roster": { readonly count: number; readonly max: number };
@@ -2497,6 +2613,106 @@ export type ParameterizedMessageKey = keyof MessageParamsByKey;
 export type ParameterlessMessageKey = Exclude<MessageKey, ParameterizedMessageKey>;
 
 const en: Catalog = {
+  "pages.organization.plan.title": "Plan and usage",
+  "pages.organization.plan.subtitle":
+    "What your organization's plan includes and how much you have used this month.",
+  "billing.plan.name.free": "Free",
+  "billing.plan.name.pro": "Pro",
+  "billing.plan.name.league": "League",
+  "billing.plan.current": "Current plan",
+  "billing.plan.status.default": "Default plan",
+  "billing.plan.status.active": "Active",
+  "billing.plan.status.trialing": "Trial until {date}",
+  "billing.plan.status.past_due": "Payment due",
+  "billing.plan.status.lapsed": "{plan} ended; Free applies",
+  "billing.plan.upgrade": "To move to {plan}, contact us. For now we assign plans by hand.",
+  "billing.plan.topPlan": "You are on the most complete plan.",
+  "billing.plan.compare": "Compare plans",
+  "billing.usage.title": "Usage",
+  "billing.usage.description":
+    "Limits only stop new actions. Anything already under way finishes as usual.",
+  "billing.usage.activeCompetitions": "Active competitions",
+  "billing.usage.staffMembers": "Staff",
+  "billing.usage.providerSyncJobs": "EA syncs this month",
+  "billing.usage.value": "{used} of {limit}",
+  "billing.usage.unlimited": "{used} · no limit",
+  "billing.usage.resets": "Resets on {date}",
+  "billing.usage.fairUse": "Fair use",
+  "billing.usage.reached.activeCompetitions":
+    "You reached the active competition limit. Finish or archive one to create another.",
+  "billing.usage.reached.staffMembers":
+    "You cannot add more staff on this plan. Current staff keep their role.",
+  "billing.usage.reached.providerSyncJobs":
+    "You used this month's syncs. Encounters in progress resolve with the matches already synced.",
+  "billing.features.title": "Included in your plan",
+  "billing.features.included": "Included",
+  "billing.features.notIncluded": "Not included",
+  "billing.features.formats": "Formats: {formats}",
+  "billing.features.teamsPerCompetition": "Up to {count} teams per competition",
+  "billing.features.teamsUnlimited": "No team limit per competition",
+  "billing.features.automaticProviderSync": "Automatic EA sync",
+  "billing.features.performanceRanking": "0–100 performance ranking",
+  "billing.features.premiumAnalytics": "Premium team and player analytics",
+  "billing.features.organizerAnalytics.none": "Organizer analytics",
+  "billing.features.organizerAnalytics.basic": "Basic organizer analytics",
+  "billing.features.organizerAnalytics.full": "Full organizer analytics",
+  "billing.features.portalBranding.futrob": "Public portal with Futrob branding",
+  "billing.features.portalBranding.logo_colors": "Public portal with your logo and colors",
+  "billing.features.portalBranding.advanced": "Public portal with advanced branding",
+  "billing.features.notifications": "Notifications: {channels}",
+  "billing.channel.web": "web",
+  "billing.channel.email": "email",
+  "billing.channel.announcements": "announcements",
+  "billing.changes.title": "Plan changes",
+  "billing.changes.empty": "No plan changes yet.",
+  "billing.changes.change": "Change",
+  "billing.changes.reason": "Reason",
+  "billing.changes.date": "Date",
+  "billing.changes.assigned": "{plan} ({status})",
+  "billing.changes.from": "{before} → {after}",
+  "billing.changes.status.active": "active",
+  "billing.changes.status.trialing": "trial",
+  "billing.changes.status.past_due": "payment due",
+  "billing.changes.status.canceled": "canceled",
+  "billing.loading": "Loading the plan…",
+  "billing.error": "We couldn't load the plan.",
+  "billing.accessError": "We couldn't check your access to the plan.",
+  "billing.forbidden.title": "You can't view the plan",
+  "billing.forbidden.description":
+    "Only the organizer and staff see the organization's plan and usage.",
+  "billing.upsell.action": "View plan and usage",
+  "teamPerformance.viewStandings": "View standings",
+  "billing.upsell.competitions.plan_limit_reached":
+    "Your plan allows no more active competitions. Finish or archive one, or change plans.",
+  "billing.upsell.competitions.format_not_in_plan":
+    "Your plan doesn't include this format. Pick league or knockout, or change plans.",
+  "billing.upsell.organizations.staff_limit_reached":
+    "Your plan allows no more staff. You can invite the person as a member.",
+  "billing.upsell.game_data.sync_quota_exhausted":
+    "You used this month's EA syncs. Matches already synced stay available.",
+  "billing.upsell.statistics.performance_ranking_not_in_plan":
+    "The performance ranking is part of Pro and League.",
+  "billing.upsell.generic": "Your plan doesn't include this action.",
+  "billing.rankingUpsell.title": "The performance ranking is on Pro and League",
+  "billing.rankingUpsell.description":
+    "Your current plan doesn't include it. The official competition table stays available to everyone.",
+  "pricing.meta.title": "Pricing | Futrob",
+  "pricing.meta.description": "Free, Pro and League plans to run EA SPORTS FC Clubs competitions.",
+  "pricing.title": "Plans for every competition",
+  "pricing.subtitle":
+    "Start free. Official selection, disputes and officialization work the same on every plan.",
+  "pricing.unavailable": "We couldn't load the plans. Try again in a few minutes.",
+  "pricing.contact": "For now we activate Pro and League by hand. Contact us to change plans.",
+  "pricing.start": "Create competition",
+  "pricing.perMonth": "{count} syncs a month",
+  "pricing.fairUse": "{count} syncs a month (fair use)",
+  "pricing.competitions": "{count} active competitions",
+  "pricing.competitionsOne": "1 active competition",
+  "pricing.competitionsUnlimited": "No active competition limit",
+  "pricing.staff": "Up to {count} staff",
+  "pricing.staffUnlimited": "No staff limit",
+  "pricing.integrity": "Competitive integrity at no cost",
+  "landing.nav.pricing": "Pricing",
   "competitions.reschedule.expiryLabel": "Proposal response window (hours)",
   "competitions.reschedule.expiryHelp":
     "Between 1 and 72 hours from each proposal. Once it expires, the organizer resolves the request.",

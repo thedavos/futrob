@@ -128,6 +128,7 @@ function roleChangeFailure(error: Error): ParameterlessMessageKey {
     return "organizations.members.roleEditor.failed";
   if (error.code === "authorization.last_organizer")
     return "organizations.members.roleEditor.lastOrganizer";
+  if (error.status === 402) return "billing.upsell.organizations.staff_limit_reached";
   if (error.status === 403) return "organizations.members.roleEditor.forbidden";
   return "organizations.members.roleEditor.failed";
 }
