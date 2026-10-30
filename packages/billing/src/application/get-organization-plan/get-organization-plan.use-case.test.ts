@@ -41,9 +41,9 @@ describe("GetOrganizationPlanUseCase", () => {
 });
 
 describe("GetOrganizationEntitlementsUseCase", () => {
-  it("returns entitlements to members with the entitlement capability", async () => {
+  it("returns entitlements with organizations.read without exposing usage or history", async () => {
     const harness = createBillingHarness();
-    harness.allow(ORGANIZER, BILLING_PERMISSION.entitlementsRead);
+    harness.allow(ORGANIZER, "organizations.read");
 
     const result = await new GetOrganizationEntitlementsUseCase(harness).execute({
       actorId: ORGANIZER,
@@ -51,5 +51,18 @@ describe("GetOrganizationEntitlementsUseCase", () => {
     });
 
     expect(result.isOk() && result.value.entitlements.features.performanceRanking).toBe(false);
+    expect(result.isOk() && result.value).not.toHaveProperty("quotas");
+    expect(result.isOk() && result.value).not.toHaveProperty("recentChanges");
   });
+});
+
+it("denies entitlements without organizations.read, even with billing permissions", async () => {
+  const harness = createBillingHarness();
+  harness.allow(ORGANIZER, BILLING_PERMISSION.read);
+  harness.allow(ORGANIZER, BILLING_PERMISSION.entitlementsRead);
+  const result = await new GetOrganizationEntitlementsUseCase(harness).execute({
+    actorId: ORGANIZER,
+    organizationId: ORG,
+  });
+  expect(!result.isOk() && result.error.code).toBe("billing.forbidden");
 });

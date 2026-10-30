@@ -73,3 +73,25 @@ describe("AssignOrganizationPlanUseCase", () => {
     expect(!noReason.isOk() && noReason.error.code).toBe("billing.invalid_subscription");
   });
 });
+
+it("serializes concurrent first assignments into a coherent audit chain", async () => {
+  const { harness, assign } = setup();
+  const results = await Promise.all(
+    (["pro", "league"] as const).map((planKey) =>
+      assign.execute({
+        actorId: SUPERUSER,
+        organizationId: ORG,
+        planKey,
+        state: { status: "active" },
+        reason: "Concurrent assignment",
+      }),
+    ),
+  );
+  expect(results.every((result) => result.isOk())).toBe(true);
+  const [first, second] = harness.auditEntries;
+  expect(first?.before).toBeNull();
+  expect(second?.before).toEqual(first?.after);
+  const stored = await harness.subscriptions.findForOrganization(ORG);
+  expect(stored).toMatchObject(second?.after ?? {});
+  expect(results.every((result) => result.isOk() && result.value.id === stored?.id)).toBe(true);
+});

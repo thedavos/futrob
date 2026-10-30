@@ -128,7 +128,7 @@ export class GetOrganizationEntitlementsUseCase {
     const forbidden = await requireBillingPermission(
       this.deps.authorization,
       input,
-      BILLING_PERMISSION.entitlementsRead,
+      "organizations.read",
     );
     if (forbidden) return err(forbidden);
     const { plan } = await this.deps.resolve.execute(input.organizationId);

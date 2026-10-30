@@ -46,7 +46,24 @@ export function createBillingHarness(start = new Date("2026-10-15T12:00:00.000Z"
     findActorAddOn: async (key) => DEFAULT_ACTOR_ADD_ONS.find((p) => p.key === key) ?? null,
     listOrganizationPlans: async () => DEFAULT_ORGANIZATION_PLANS,
   };
+  const assignmentTails = new Map<OrganizationId, Promise<void>>();
   const subscriptionRepository: SubscriptionRepository = {
+    async withOrganizationLock<T>(id: OrganizationId, operation: () => Promise<T>) {
+      const previous = assignmentTails.get(id) ?? Promise.resolve();
+      let release!: () => void;
+      const promise = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const tail = previous.then(() => promise);
+      assignmentTails.set(id, tail);
+      await previous;
+      try {
+        return await operation();
+      } finally {
+        release();
+        if (assignmentTails.get(id) === tail) assignmentTails.delete(id);
+      }
+    },
     findForOrganization: async (id) => organizationSubscriptions.get(id) ?? null,
     findForActor: async (id) => actorSubscriptions.get(id) ?? null,
     save: async (subscription) => {

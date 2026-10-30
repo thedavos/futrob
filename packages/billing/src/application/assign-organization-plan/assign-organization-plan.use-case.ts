@@ -103,28 +103,30 @@ export class AssignOrganizationPlanUseCase {
       );
     }
 
-    return this.deps.transaction.runInTransaction(async () => {
-      const before = await this.deps.subscriptions.findForOrganization(input.organizationId);
-      const subscription: OrganizationSubscription = {
-        id: before?.id ?? this.deps.ids.generate(),
-        subject: { type: "organization", organizationId: input.organizationId },
-        planKey: input.planKey,
-        state: stampState(input.state, now),
-        createdAt: before?.createdAt ?? now,
-        updatedAt: now,
-      };
-      await this.deps.subscriptions.save(subscription);
-      await this.deps.audit.append({
-        id: this.deps.ids.generate(),
-        subject: subscription.subject,
-        changedByActorId: input.actorId,
-        before: before ? { planKey: before.planKey, state: before.state } : null,
-        after: { planKey: subscription.planKey, state: subscription.state },
-        reason,
-        occurredAt: now,
-      });
-      return ok(subscription);
-    });
+    return this.deps.subscriptions.withOrganizationLock(input.organizationId, () =>
+      this.deps.transaction.runInTransaction(async () => {
+        const before = await this.deps.subscriptions.findForOrganization(input.organizationId);
+        const subscription: OrganizationSubscription = {
+          id: before?.id ?? this.deps.ids.generate(),
+          subject: { type: "organization", organizationId: input.organizationId },
+          planKey: input.planKey,
+          state: stampState(input.state, now),
+          createdAt: before?.createdAt ?? now,
+          updatedAt: now,
+        };
+        await this.deps.subscriptions.save(subscription);
+        await this.deps.audit.append({
+          id: this.deps.ids.generate(),
+          subject: subscription.subject,
+          changedByActorId: input.actorId,
+          before: before ? { planKey: before.planKey, state: before.state } : null,
+          after: { planKey: subscription.planKey, state: subscription.state },
+          reason,
+          occurredAt: now,
+        });
+        return ok(subscription);
+      }),
+    );
   }
 }
 
