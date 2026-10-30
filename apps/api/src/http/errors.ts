@@ -1,5 +1,5 @@
 import type { ApiErrorBody, ApiErrorDetails } from "@futrob/api-contracts";
-import { apiErrorDetailsSchema } from "@futrob/api-contracts";
+import { apiErrorDetailsSchema, planLimitDetailSchema } from "@futrob/api-contracts";
 import type { AnyTaggedError } from "@futrob/shared-kernel";
 import type { HTTPException } from "hono/http-exception";
 import { z, type ZodIssue } from "zod";
@@ -82,8 +82,43 @@ const httpMappableFailureSchema = z.object({
 const taggedErrorDetailsSchema = apiErrorDetailsSchema.partial();
 const rescheduleNoticeDetailsSchema = apiErrorDetailsSchema.pick({ anchor: true }).strip();
 
+const planGatedPropsSchema = z.object({
+  limit: z.string().optional(),
+  max: z.number().int().nonnegative().optional(),
+  used: z.number().int().nonnegative().optional(),
+  resetsAt: z.date().optional(),
+  format: z.string().optional(),
+});
+
+function planLimitForCode(code: string, propLimit: string | undefined) {
+  if (code === "organizations.staff_limit_reached") return "staff_members";
+  if (code === "game_data.sync_quota_exhausted" || code === "billing.quota_exhausted") {
+    return "provider_sync_jobs";
+  }
+  return propLimit;
+}
+
+/** Only the plan fields a client needs for its upsell copy; never tenant data. */
+function planGatedDetails(error: HttpMappableFailure): ApiErrorDetails | undefined {
+  const props = planGatedPropsSchema.safeParse(error);
+  if (!props.success) return undefined;
+  const planLimit = planLimitDetailSchema.safeParse(planLimitForCode(error.code, props.data.limit));
+  const details = {
+    planLimit: planLimit.success ? planLimit.data : undefined,
+    max: props.data.max,
+    used: props.data.used,
+    resetsAt: props.data.resetsAt?.toISOString(),
+    format: props.data.format,
+  };
+  const defined = Object.fromEntries(
+    Object.entries(details).filter(([, value]) => value !== undefined),
+  );
+  return Object.keys(defined).length > 0 ? apiErrorDetailsSchema.parse(defined) : undefined;
+}
+
 function detailsFromTaggedProps(error: HttpMappableFailure): ApiErrorDetails | undefined {
   if (error.code.startsWith("game_data.ea_clubs_")) return undefined;
+  if (isPlanGatedFailureCode(error.code)) return planGatedDetails(error);
   if (error.code === "scheduling.reschedule_notice_not_met") {
     return rescheduleNoticeDetailsSchema.parse(error);
   }
@@ -99,7 +134,27 @@ export function isHttpMappableFailure(
   return httpMappableFailureSchema.safeParse(error).success;
 }
 
+/**
+ * Plan gating (ADR-0025): the plan does not include the action. 402 lets clients show an
+ * upsell instead of a permission error. Codes are owned by each consumer context.
+ */
+const PLAN_GATED_FAILURE_CODES: ReadonlySet<string> = new Set([
+  "billing.quota_exhausted",
+  "billing.feature_not_in_plan",
+  "competitions.plan_limit_reached",
+  "competitions.format_not_in_plan",
+  "organizations.staff_limit_reached",
+  "game_data.sync_quota_exhausted",
+  "statistics.performance_ranking_not_in_plan",
+  "analytics.premium_not_in_plan",
+]);
+
+export function isPlanGatedFailureCode(code: string): boolean {
+  return PLAN_GATED_FAILURE_CODES.has(code);
+}
+
 function statusForFailureCode(code: string): number {
+  if (isPlanGatedFailureCode(code)) return 402;
   if (
     code === "game_data.provider_unavailable" ||
     code === "game_data.provider_refresh_in_progress" ||

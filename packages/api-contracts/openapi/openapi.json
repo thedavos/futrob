@@ -60,6 +60,10 @@
     {
       "name": "notifications",
       "description": "Activity feeds and pending work per audience"
+    },
+    {
+      "name": "billing",
+      "description": "Plans, entitlements and quotas (Phase 0, no payments)"
     }
   ],
   "paths": {
@@ -1844,6 +1848,21 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -2009,6 +2028,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -2459,6 +2493,21 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -2626,6 +2675,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "409": {
             "$ref": "#/components/responses/ApiError"
@@ -3106,6 +3170,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           }
         },
         "operationId": "persistProviderSyncJob",
@@ -4060,6 +4139,162 @@
         "description": "Requires `encounters.results.approve` on the organization. Lists every kind: disputes to resolve, watched proposals and directed invitations, and publications. Failures: 400 `api.validation_error`, `notifications.invalid_cursor`; 403 `authorization.forbidden`."
       }
     },
+    "/organizations/{organizationId}/billing/entitlements": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entitlements of the effective plan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOrganizationEntitlementsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "getOrganizationEntitlements",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Read what the organization's plan includes, for hiding what does not apply"
+      }
+    },
+    "/organizations/{organizationId}/billing/plan": {
+      "put": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignOrganizationPlanResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "assignOrganizationPlan",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Assign a plan by hand (platform superuser, Phase 0 without payments)",
+        "description": "Every change is audited with the previous and new plan and the reason.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignOrganizationPlanRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Effective plan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOrganizationPlanResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "getOrganizationPlan",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Read the organization's effective plan, quota usage and recent plan changes"
+      }
+    },
     "/organizations/{organizationId}/competitions": {
       "post": {
         "parameters": [
@@ -4096,6 +4331,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -4621,6 +4871,21 @@
           "400": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -4927,6 +5192,21 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -5003,6 +5283,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -5939,6 +6234,21 @@
           "400": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -6753,6 +7063,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -8132,6 +8457,21 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -8556,6 +8896,21 @@
           "400": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -8907,6 +9262,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "404": {
             "$ref": "#/components/responses/ApiError"
@@ -10428,6 +10798,39 @@
         "security": []
       }
     },
+    "/public/plans": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Plans in upgrade order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPublicPlansResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "listPublicPlans",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Read the organization plan catalog for the pricing page",
+        "description": "Anonymous. Limits, quotas and features come from the catalog data; `null` means unlimited.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/roster-invitations/{invitationId}/respond": {
       "post": {
         "parameters": [
@@ -11088,6 +11491,30 @@
               },
               "requestedPath": {
                 "type": "string"
+              },
+              "planLimit": {
+                "type": "string",
+                "enum": [
+                  "active_competitions",
+                  "teams_per_competition",
+                  "staff_members",
+                  "provider_sync_jobs"
+                ]
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "used": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "resetsAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "format": {
+                "type": "string"
               }
             },
             "additionalProperties": false
@@ -11097,6 +11524,214 @@
           "code",
           "messageKey"
         ]
+      },
+      "AssignOrganizationPlanRequest": {
+        "type": "object",
+        "properties": {
+          "planKey": {
+            "type": "string",
+            "enum": [
+              "free",
+              "pro",
+              "league"
+            ]
+          },
+          "state": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "trialing"
+                    ]
+                  },
+                  "trialEndsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "status",
+                  "trialEndsAt"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "past_due"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "canceled"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "planKey",
+          "state",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "AssignOrganizationPlanResponse": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "subscription": {
+            "type": "object",
+            "properties": {
+              "planKey": {
+                "type": "string",
+                "enum": [
+                  "free",
+                  "pro",
+                  "league"
+                ]
+              },
+              "state": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "active"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "trialing"
+                        ]
+                      },
+                      "trialEndsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "trialEndsAt"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "past_due"
+                        ]
+                      },
+                      "pastDueSince": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "pastDueSince"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "canceled"
+                        ]
+                      },
+                      "canceledAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "canceledAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "planKey",
+              "state",
+              "updatedAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "organizationId",
+          "subscription"
+        ],
+        "additionalProperties": false
       },
       "AssociateMyPlayerExternalClubRequest": {
         "type": "object",
@@ -22386,6 +23021,741 @@
           "activeRosterMembershipId"
         ]
       },
+      "GetOrganizationEntitlementsResponse": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "planKey": {
+            "type": "string",
+            "enum": [
+              "free",
+              "pro",
+              "league"
+            ]
+          },
+          "entitlements": {
+            "type": "object",
+            "properties": {
+              "limits": {
+                "type": "object",
+                "properties": {
+                  "activeCompetitions": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "teamsPerCompetition": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "staffMembers": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "activeCompetitions",
+                  "teamsPerCompetition",
+                  "staffMembers"
+                ],
+                "additionalProperties": false
+              },
+              "quotas": {
+                "type": "object",
+                "properties": {
+                  "provider_sync_jobs": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "period": {
+                        "type": "string",
+                        "enum": [
+                          "calendar_month_utc"
+                        ]
+                      },
+                      "fairUse": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "period",
+                      "fairUse"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "provider_sync_jobs"
+                ],
+                "additionalProperties": false
+              },
+              "features": {
+                "type": "object",
+                "properties": {
+                  "competitionFormats": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "automaticProviderSync": {
+                    "type": "boolean"
+                  },
+                  "priorityProviderSync": {
+                    "type": "boolean"
+                  },
+                  "performanceRanking": {
+                    "type": "boolean"
+                  },
+                  "premiumAnalytics": {
+                    "type": "boolean"
+                  },
+                  "organizerAnalytics": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "basic",
+                      "full"
+                    ]
+                  },
+                  "portalBranding": {
+                    "type": "string",
+                    "enum": [
+                      "futrob",
+                      "logo_colors",
+                      "advanced"
+                    ]
+                  },
+                  "notificationChannels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "web",
+                        "email",
+                        "announcements"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "competitionFormats",
+                  "automaticProviderSync",
+                  "priorityProviderSync",
+                  "performanceRanking",
+                  "premiumAnalytics",
+                  "organizerAnalytics",
+                  "portalBranding",
+                  "notificationChannels"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "limits",
+              "quotas",
+              "features"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "organizationId",
+          "planKey",
+          "entitlements"
+        ],
+        "additionalProperties": false
+      },
+      "GetOrganizationPlanResponse": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "enum": [
+                  "free",
+                  "pro",
+                  "league"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "entitlements": {
+                "type": "object",
+                "properties": {
+                  "limits": {
+                    "type": "object",
+                    "properties": {
+                      "activeCompetitions": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "teamsPerCompetition": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "staffMembers": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "activeCompetitions",
+                      "teamsPerCompetition",
+                      "staffMembers"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "quotas": {
+                    "type": "object",
+                    "properties": {
+                      "provider_sync_jobs": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "minimum": 0
+                          },
+                          "period": {
+                            "type": "string",
+                            "enum": [
+                              "calendar_month_utc"
+                            ]
+                          },
+                          "fairUse": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "amount",
+                          "period",
+                          "fairUse"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "provider_sync_jobs"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "features": {
+                    "type": "object",
+                    "properties": {
+                      "competitionFormats": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "automaticProviderSync": {
+                        "type": "boolean"
+                      },
+                      "priorityProviderSync": {
+                        "type": "boolean"
+                      },
+                      "performanceRanking": {
+                        "type": "boolean"
+                      },
+                      "premiumAnalytics": {
+                        "type": "boolean"
+                      },
+                      "organizerAnalytics": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "basic",
+                          "full"
+                        ]
+                      },
+                      "portalBranding": {
+                        "type": "string",
+                        "enum": [
+                          "futrob",
+                          "logo_colors",
+                          "advanced"
+                        ]
+                      },
+                      "notificationChannels": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "web",
+                            "email",
+                            "announcements"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "competitionFormats",
+                      "automaticProviderSync",
+                      "priorityProviderSync",
+                      "performanceRanking",
+                      "premiumAnalytics",
+                      "organizerAnalytics",
+                      "portalBranding",
+                      "notificationChannels"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "limits",
+                  "quotas",
+                  "features"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "key",
+              "version",
+              "entitlements"
+            ],
+            "additionalProperties": false
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "subscription",
+              "fallback"
+            ]
+          },
+          "subscription": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "planKey": {
+                "type": "string",
+                "enum": [
+                  "free",
+                  "pro",
+                  "league"
+                ]
+              },
+              "state": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "active"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "trialing"
+                        ]
+                      },
+                      "trialEndsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "trialEndsAt"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "past_due"
+                        ]
+                      },
+                      "pastDueSince": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "pastDueSince"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "canceled"
+                        ]
+                      },
+                      "canceledAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "canceledAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "planKey",
+              "state",
+              "updatedAt"
+            ],
+            "additionalProperties": false
+          },
+          "quotas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "quota": {
+                  "type": "string",
+                  "enum": [
+                    "provider_sync_jobs"
+                  ]
+                },
+                "used": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "limit": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "fairUse": {
+                  "type": "boolean"
+                },
+                "periodKey": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}$"
+                },
+                "resetsAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "quota",
+                "used",
+                "limit",
+                "fairUse",
+                "periodKey",
+                "resetsAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "activeCompetitions": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "staffMembers": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "activeCompetitions",
+              "staffMembers"
+            ],
+            "additionalProperties": false
+          },
+          "recentChanges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "changedByActorId": {
+                  "type": "string"
+                },
+                "before": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "planKey": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "active"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "status"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "trialing"
+                              ]
+                            },
+                            "trialEndsAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "trialEndsAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "past_due"
+                              ]
+                            },
+                            "pastDueSince": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "pastDueSince"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "canceled"
+                              ]
+                            },
+                            "canceledAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "canceledAt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "planKey",
+                    "state"
+                  ],
+                  "additionalProperties": false
+                },
+                "after": {
+                  "type": "object",
+                  "properties": {
+                    "planKey": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "active"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "status"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "trialing"
+                              ]
+                            },
+                            "trialEndsAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "trialEndsAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "past_due"
+                              ]
+                            },
+                            "pastDueSince": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "pastDueSince"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "canceled"
+                              ]
+                            },
+                            "canceledAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "canceledAt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "planKey",
+                    "state"
+                  ],
+                  "additionalProperties": false
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "occurredAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "changedByActorId",
+                "before",
+                "after",
+                "reason",
+                "occurredAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "organizationId",
+          "plan",
+          "source",
+          "subscription",
+          "quotas",
+          "usage",
+          "recentChanges"
+        ],
+        "additionalProperties": false
+      },
       "GetPublicCalendarResponse": {
         "type": "object",
         "properties": {
@@ -24163,6 +25533,181 @@
         "required": [
           "invitations"
         ]
+      },
+      "ListPublicPlansResponse": {
+        "type": "object",
+        "properties": {
+          "plans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "free",
+                    "pro",
+                    "league"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "entitlements": {
+                  "type": "object",
+                  "properties": {
+                    "limits": {
+                      "type": "object",
+                      "properties": {
+                        "activeCompetitions": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0
+                        },
+                        "teamsPerCompetition": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0
+                        },
+                        "staffMembers": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "activeCompetitions",
+                        "teamsPerCompetition",
+                        "staffMembers"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "quotas": {
+                      "type": "object",
+                      "properties": {
+                        "provider_sync_jobs": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0
+                            },
+                            "period": {
+                              "type": "string",
+                              "enum": [
+                                "calendar_month_utc"
+                              ]
+                            },
+                            "fairUse": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "period",
+                            "fairUse"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "provider_sync_jobs"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "features": {
+                      "type": "object",
+                      "properties": {
+                        "competitionFormats": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "automaticProviderSync": {
+                          "type": "boolean"
+                        },
+                        "priorityProviderSync": {
+                          "type": "boolean"
+                        },
+                        "performanceRanking": {
+                          "type": "boolean"
+                        },
+                        "premiumAnalytics": {
+                          "type": "boolean"
+                        },
+                        "organizerAnalytics": {
+                          "type": "string",
+                          "enum": [
+                            "none",
+                            "basic",
+                            "full"
+                          ]
+                        },
+                        "portalBranding": {
+                          "type": "string",
+                          "enum": [
+                            "futrob",
+                            "logo_colors",
+                            "advanced"
+                          ]
+                        },
+                        "notificationChannels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "web",
+                              "email",
+                              "announcements"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "competitionFormats",
+                        "automaticProviderSync",
+                        "priorityProviderSync",
+                        "performanceRanking",
+                        "premiumAnalytics",
+                        "organizerAnalytics",
+                        "portalBranding",
+                        "notificationChannels"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "limits",
+                    "quotas",
+                    "features"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "key",
+                "version",
+                "entitlements"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "plans"
+        ],
+        "additionalProperties": false
       },
       "ListRosterResponse": {
         "type": "object",

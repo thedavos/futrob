@@ -33,6 +33,8 @@ tags:
     description: Official match selection negotiated by the Encounter Teams
   - name: notifications
     description: Activity feeds and pending work per audience
+  - name: billing
+    description: Plans, entitlements and quotas (Phase 0, no payments)
 paths:
   /authorization/effective-access:
     get:
@@ -1262,6 +1264,16 @@ paths:
         "400": &a22
           $ref: "#/components/responses/ApiError"
         "401": *a22
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
         "403": *a22
         "404": *a22
         "409": *a22
@@ -1360,6 +1372,16 @@ paths:
         "400": &a25
           $ref: "#/components/responses/ApiError"
         "401": *a25
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
         "403": *a25
         "404": *a25
         "409": *a25
@@ -1644,6 +1666,16 @@ paths:
         "400": &a30
           $ref: "#/components/responses/ApiError"
         "401": *a30
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
         "404": *a30
         "409": *a30
         "429":
@@ -1747,6 +1779,16 @@ paths:
         "400": &a32
           $ref: "#/components/responses/ApiError"
         "401": *a32
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
         "409": *a32
       operationId: completeOrganizationOnboarding
       tags:
@@ -2073,6 +2115,16 @@ paths:
         "400": &a36
           $ref: "#/components/responses/ApiError"
         "401": *a36
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
       operationId: persistProviderSyncJob
       tags:
         - game-data
@@ -2674,6 +2726,96 @@ paths:
         every kind: disputes to resolve, watched proposals and directed
         invitations, and publications. Failures: 400 `api.validation_error`,
         `notifications.invalid_cursor`; 403 `authorization.forbidden`."
+  /organizations/{organizationId}/billing/entitlements:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+      responses:
+        "200":
+          description: Entitlements of the effective plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetOrganizationEntitlementsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "401": &a46
+          $ref: "#/components/responses/ApiError"
+        "403": *a46
+        "404": *a46
+      operationId: getOrganizationEntitlements
+      tags:
+        - billing
+      summary: Read what the organization's plan includes, for hiding what does not
+        apply
+  /organizations/{organizationId}/billing/plan:
+    put:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+      responses:
+        "200":
+          description: Stored subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssignOrganizationPlanResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400": &a47
+          $ref: "#/components/responses/ApiError"
+        "401": *a47
+        "403": *a47
+        "404": *a47
+      operationId: assignOrganizationPlan
+      tags:
+        - billing
+      summary: Assign a plan by hand (platform superuser, Phase 0 without payments)
+      description: Every change is audited with the previous and new plan and the reason.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignOrganizationPlanRequest"
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+      responses:
+        "200":
+          description: Effective plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetOrganizationPlanResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "401": &a48
+          $ref: "#/components/responses/ApiError"
+        "403": *a48
+        "404": *a48
+      operationId: getOrganizationPlan
+      tags:
+        - billing
+      summary: Read the organization's effective plan, quota usage and recent plan
+        changes
   /organizations/{organizationId}/competitions:
     post:
       parameters:
@@ -2693,10 +2835,20 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a46
+        "400": &a49
           $ref: "#/components/responses/ApiError"
-        "401": *a46
-        "403": *a46
+        "401": *a49
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "403": *a49
       operationId: createCompetitionDraft
       tags:
         - competitions
@@ -2994,9 +3146,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a47
+        "401": &a50
           $ref: "#/components/responses/ApiError"
-        "403": *a47
+        "403": *a50
       operationId: listOrganizationCompetitions
       tags:
         - competitions
@@ -3025,10 +3177,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a48
+        "401": &a51
           $ref: "#/components/responses/ApiError"
-        "403": *a48
-        "404": *a48
+        "403": *a51
+        "404": *a51
       operationId: getCompetitionDraft
       tags:
         - competitions
@@ -3056,11 +3208,21 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a49
+        "400": &a52
           $ref: "#/components/responses/ApiError"
-        "403": *a49
-        "404": *a49
-        "409": *a49
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "403": *a52
+        "404": *a52
+        "409": *a52
       operationId: updateCompetitionDraft
       tags:
         - competitions
@@ -3095,11 +3257,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a50
+        "400": &a53
           $ref: "#/components/responses/ApiError"
-        "403": *a50
-        "404": *a50
-        "409": *a50
+        "403": *a53
+        "404": *a53
+        "409": *a53
       operationId: updateCompetitionCover
       tags:
         - competitions
@@ -3173,9 +3335,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a51
+        "401": &a54
           $ref: "#/components/responses/ApiError"
-        "404": *a51
+        "404": *a54
       operationId: listCompetitionDisputes
       tags:
         - results
@@ -3210,9 +3372,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a52
+        "401": &a55
           $ref: "#/components/responses/ApiError"
-        "404": *a52
+        "404": *a55
       operationId: listCompetitionEncounters
       tags:
         - encounters
@@ -3242,12 +3404,22 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a53
+        "400": &a56
           $ref: "#/components/responses/ApiError"
-        "401": *a53
-        "403": *a53
-        "404": *a53
-        "409": *a53
+        "401": *a56
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "403": *a56
+        "404": *a56
+        "409": *a56
       operationId: registerTeamEntry
       tags:
         - competitions
@@ -3287,11 +3459,21 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a54
+        "401": &a57
           $ref: "#/components/responses/ApiError"
-        "403": *a54
-        "404": *a54
-        "409": *a54
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "403": *a57
+        "404": *a57
+        "409": *a57
       operationId: approveTeamEntry
       tags:
         - competitions
@@ -3325,11 +3507,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a55
+        "401": &a58
           $ref: "#/components/responses/ApiError"
-        "403": *a55
-        "404": *a55
-        "409": *a55
+        "403": *a58
+        "404": *a58
+        "409": *a58
       operationId: rejectTeamEntry
       tags:
         - competitions
@@ -3358,12 +3540,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a56
+        "400": &a59
           $ref: "#/components/responses/ApiError"
-        "401": *a56
-        "403": *a56
-        "404": *a56
-        "409": *a56
+        "401": *a59
+        "403": *a59
+        "404": *a59
+        "409": *a59
       operationId: inviteTeamCaptain
       tags:
         - competitions
@@ -3402,9 +3584,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a57
+        "401": &a60
           $ref: "#/components/responses/ApiError"
-        "403": *a57
+        "403": *a60
       operationId: listSentEntryInvitations
       tags:
         - competitions
@@ -3435,11 +3617,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a58
+        "401": &a61
           $ref: "#/components/responses/ApiError"
-        "403": *a58
-        "404": *a58
-        "409": *a58
+        "403": *a61
+        "404": *a61
+        "409": *a61
       operationId: revokeEntryInvitation
       tags:
         - competitions
@@ -3475,10 +3657,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a59
+        "400": &a62
           $ref: "#/components/responses/ApiError"
-        "401": *a59
-        "403": *a59
+        "401": *a62
+        "403": *a62
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: searchEntryInvitees
@@ -3510,10 +3692,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a60
+        "401": &a63
           $ref: "#/components/responses/ApiError"
-        "403": *a60
-        "409": *a60
+        "403": *a63
+        "409": *a63
       operationId: ensureEntryInvitationLink
       tags:
         - competitions
@@ -3542,10 +3724,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a61
+        "401": &a64
           $ref: "#/components/responses/ApiError"
-        "403": *a61
-        "409": *a61
+        "403": *a64
+        "409": *a64
       operationId: regenerateEntryInvitationLink
       tags:
         - competitions
@@ -3574,11 +3756,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a62
+        "400": &a65
           $ref: "#/components/responses/ApiError"
-        "401": *a62
-        "403": *a62
-        "409": *a62
+        "401": *a65
+        "403": *a65
+        "409": *a65
       operationId: generateCompetitionFixture
       tags:
         - fixtures
@@ -3612,9 +3794,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a63
+        "401": &a66
           $ref: "#/components/responses/ApiError"
-        "404": *a63
+        "404": *a66
       operationId: getCurrentCompetitionFixture
       tags:
         - fixtures
@@ -3648,9 +3830,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a64
+        "401": &a67
           $ref: "#/components/responses/ApiError"
-        "404": *a64
+        "404": *a67
       operationId: getCompetitionFixture
       tags:
         - fixtures
@@ -3689,12 +3871,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a65
+        "400": &a68
           $ref: "#/components/responses/ApiError"
-        "401": *a65
-        "403": *a65
-        "404": *a65
-        "409": *a65
+        "401": *a68
+        "403": *a68
+        "404": *a68
+        "409": *a68
       operationId: editFixtureEncounter
       tags:
         - fixtures
@@ -3729,11 +3911,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a66
+        "400": &a69
           $ref: "#/components/responses/ApiError"
-        "401": *a66
-        "403": *a66
-        "404": *a66
+        "401": *a69
+        "403": *a69
+        "404": *a69
       operationId: createCompetitionInvitation
       tags:
         - competitions
@@ -3797,9 +3979,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a67
+        "403": &a70
           $ref: "#/components/responses/ApiError"
-        "404": *a67
+        "404": *a70
       operationId: changeCompetitionRole
       tags:
         - authorization
@@ -3834,10 +4016,20 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a68
+        "400": &a71
           $ref: "#/components/responses/ApiError"
-        "403": *a68
-        "409": *a68
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "403": *a71
+        "409": *a71
       operationId: addCompetitionParticipant
       tags:
         - competitions
@@ -3938,10 +4130,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a69
+        "403": &a72
           $ref: "#/components/responses/ApiError"
-        "404": *a69
-        "409": *a69
+        "404": *a72
+        "409": *a72
       operationId: removeCompetitionParticipant
       tags:
         - competitions
@@ -3970,10 +4162,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a70
+        "403": &a73
           $ref: "#/components/responses/ApiError"
-        "404": *a70
-        "409": *a70
+        "404": *a73
+        "409": *a73
       operationId: publishCompetition
       tags:
         - competitions
@@ -4014,9 +4206,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a71
+        "401": &a74
           $ref: "#/components/responses/ApiError"
-        "403": *a71
+        "403": *a74
       operationId: getCompetitionRankings
       tags:
         - statistics
@@ -4045,10 +4237,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a72
+        "403": &a75
           $ref: "#/components/responses/ApiError"
-        "404": *a72
-        "409": *a72
+        "404": *a75
+        "409": *a75
       operationId: closeCompetitionRegistration
       tags:
         - competitions
@@ -4077,10 +4269,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a73
+        "403": &a76
           $ref: "#/components/responses/ApiError"
-        "404": *a73
-        "409": *a73
+        "404": *a76
+        "409": *a76
       operationId: openCompetitionRegistration
       tags:
         - competitions
@@ -4110,9 +4302,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a74
+        "401": &a77
           $ref: "#/components/responses/ApiError"
-        "403": *a74
+        "403": *a77
       operationId: getCompetitionStandings
       tags:
         - statistics
@@ -4282,9 +4474,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a75
+        "400": &a78
           $ref: "#/components/responses/ApiError"
-        "403": *a75
+        "403": *a78
       operationId: listCompetitionTeamManagement
       tags:
         - teams
@@ -4318,9 +4510,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a76
+        "403": &a79
           $ref: "#/components/responses/ApiError"
-        "404": *a76
+        "404": *a79
       operationId: getCompetitionTeamManagement
       tags:
         - teams
@@ -4350,9 +4542,19 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a77
+        "401": &a80
           $ref: "#/components/responses/ApiError"
-        "403": *a77
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "403": *a80
       operationId: getTeamPerformanceRanking
       tags:
         - statistics
@@ -4382,9 +4584,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a78
+        "401": &a81
           $ref: "#/components/responses/ApiError"
-        "403": *a78
+        "403": *a81
       operationId: getCompetitionTeamStatistics
       tags:
         - statistics
@@ -4418,11 +4620,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a79
+        "400": &a82
           $ref: "#/components/responses/ApiError"
-        "401": *a79
-        "403": *a79
-        "404": *a79
+        "401": *a82
+        "403": *a82
+        "404": *a82
       operationId: connectCompetitionTeamExternalClub
       tags:
         - teams
@@ -4461,9 +4663,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a80
+        "401": &a83
           $ref: "#/components/responses/ApiError"
-        "403": *a80
+        "403": *a83
       operationId: getCompetitionTeamExternalClub
       tags:
         - teams
@@ -4497,12 +4699,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a81
+        "400": &a84
           $ref: "#/components/responses/ApiError"
-        "401": *a81
-        "403": *a81
-        "404": *a81
-        "409": *a81
+        "401": *a84
+        "403": *a84
+        "404": *a84
+        "409": *a84
       operationId: addToTeamRoster
       tags:
         - teams
@@ -4541,9 +4743,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a82
+        "401": &a85
           $ref: "#/components/responses/ApiError"
-        "403": *a82
+        "403": *a85
       operationId: listTeamRoster
       tags:
         - teams
@@ -4577,11 +4779,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a83
+        "400": &a86
           $ref: "#/components/responses/ApiError"
-        "401": *a83
-        "403": *a83
-        "409": *a83
+        "401": *a86
+        "403": *a86
+        "409": *a86
       operationId: createRosterInvitation
       tags:
         - teams
@@ -4626,11 +4828,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a84
+        "400": &a87
           $ref: "#/components/responses/ApiError"
-        "401": *a84
-        "403": *a84
-        "404": *a84
+        "401": *a87
+        "403": *a87
+        "404": *a87
       operationId: changeRosterRole
       tags:
         - teams
@@ -4670,10 +4872,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a85
+        "401": &a88
           $ref: "#/components/responses/ApiError"
-        "403": *a85
-        "409": *a85
+        "403": *a88
+        "409": *a88
       operationId: closeTeamRoster
       tags:
         - teams
@@ -4707,10 +4909,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a86
+        "401": &a89
           $ref: "#/components/responses/ApiError"
-        "403": *a86
-        "409": *a86
+        "403": *a89
+        "409": *a89
       operationId: openTeamRoster
       tags:
         - teams
@@ -4739,9 +4941,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a87
+        "401": &a90
           $ref: "#/components/responses/ApiError"
-        "404": *a87
+        "404": *a90
       operationId: getEncounterView
       tags:
         - encounters
@@ -4777,11 +4979,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a88
+        "400": &a91
           $ref: "#/components/responses/ApiError"
-        "401": *a88
-        "403": *a88
-        "404": *a88
+        "401": *a91
+        "403": *a91
+        "404": *a91
       operationId: getTeamOfficialSelection
       tags:
         - results
@@ -4812,10 +5014,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a89
+        "401": &a92
           $ref: "#/components/responses/ApiError"
-        "403": *a89
-        "404": *a89
+        "403": *a92
+        "404": *a92
       operationId: getOperatorOfficialSelection
       tags:
         - results
@@ -4848,12 +5050,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a90
+        "400": &a93
           $ref: "#/components/responses/ApiError"
-        "401": *a90
-        "403": *a90
-        "404": *a90
-        "409": *a90
+        "401": *a93
+        "403": *a93
+        "404": *a93
+        "409": *a93
       operationId: openMatchDispute
       tags:
         - results
@@ -4906,12 +5108,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a91
+        "400": &a94
           $ref: "#/components/responses/ApiError"
-        "401": *a91
-        "403": *a91
-        "404": *a91
-        "409": *a91
+        "401": *a94
+        "403": *a94
+        "404": *a94
+        "409": *a94
       operationId: resolveMatchDispute
       tags:
         - results
@@ -4973,12 +5175,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a92
+        "400": &a95
           $ref: "#/components/responses/ApiError"
-        "401": *a92
-        "403": *a92
-        "404": *a92
-        "409": *a92
+        "401": *a95
+        "403": *a95
+        "404": *a95
+        "409": *a95
       operationId: reviewMatchDispute
       tags:
         - results
@@ -5039,12 +5241,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a93
+        "400": &a96
           $ref: "#/components/responses/ApiError"
-        "401": *a93
-        "403": *a93
-        "404": *a93
-        "409": *a93
+        "401": *a96
+        "403": *a96
+        "404": *a96
+        "409": *a96
       operationId: proposeOfficialSelection
       tags:
         - results
@@ -5102,12 +5304,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a94
+        "400": &a97
           $ref: "#/components/responses/ApiError"
-        "401": *a94
-        "403": *a94
-        "404": *a94
-        "409": *a94
+        "401": *a97
+        "403": *a97
+        "404": *a97
+        "409": *a97
       operationId: proposeAlternativeOfficialSelection
       tags:
         - results
@@ -5165,12 +5367,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a95
+        "400": &a98
           $ref: "#/components/responses/ApiError"
-        "401": *a95
-        "403": *a95
-        "404": *a95
-        "409": *a95
+        "401": *a98
+        "403": *a98
+        "404": *a98
+        "409": *a98
       operationId: confirmOfficialSelection
       tags:
         - results
@@ -5228,12 +5430,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a96
+        "400": &a99
           $ref: "#/components/responses/ApiError"
-        "401": *a96
-        "403": *a96
-        "404": *a96
-        "409": *a96
+        "401": *a99
+        "403": *a99
+        "404": *a99
+        "409": *a99
       operationId: rejectOfficialSelection
       tags:
         - results
@@ -5281,12 +5483,22 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a97
+        "400": &a100
           $ref: "#/components/responses/ApiError"
-        "401": *a97
-        "403": *a97
-        "404": *a97
-        "409": *a97
+        "401": *a100
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "403": *a100
+        "404": *a100
+        "409": *a100
       operationId: createOrganizationInvitation
       tags:
         - organizations
@@ -5316,11 +5528,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a98
+        "400": &a101
           $ref: "#/components/responses/ApiError"
-        "401": *a98
-        "403": *a98
-        "404": *a98
+        "401": *a101
+        "403": *a101
+        "404": *a101
       operationId: setOrganizationLogo
       tags:
         - organizations
@@ -5511,12 +5723,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a99
+        "400": &a102
           $ref: "#/components/responses/ApiError"
-        "401": *a99
-        "403": *a99
-        "404": *a99
-        "409": *a99
+        "401": *a102
+        "403": *a102
+        "404": *a102
+        "409": *a102
       operationId: listOrganizationMembers
       tags:
         - organizations
@@ -5548,11 +5760,21 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a100
+        "400": &a103
           $ref: "#/components/responses/ApiError"
-        "403": *a100
-        "404": *a100
-        "409": *a100
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "403": *a103
+        "404": *a103
+        "409": *a103
       operationId: changeOrganizationRole
       tags:
         - authorization
@@ -5582,11 +5804,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a101
+        "400": &a104
           $ref: "#/components/responses/ApiError"
-        "401": *a101
-        "403": *a101
-        "409": *a101
+        "401": *a104
+        "403": *a104
+        "409": *a104
       operationId: createOrganizationTeam
       tags:
         - teams
@@ -5640,9 +5862,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a102
+        "401": &a105
           $ref: "#/components/responses/ApiError"
-        "403": *a102
+        "403": *a105
       operationId: listOrganizationTeams
       tags:
         - teams
@@ -5671,11 +5893,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a103
+        "400": &a106
           $ref: "#/components/responses/ApiError"
-        "401": *a103
-        "403": *a103
-        "404": *a103
+        "401": *a106
+        "403": *a106
+        "404": *a106
       operationId: connectOrganizationTeamExternalClub
       tags:
         - teams
@@ -5709,9 +5931,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a104
+        "401": &a107
           $ref: "#/components/responses/ApiError"
-        "403": *a104
+        "403": *a107
       operationId: getOrganizationTeamExternalClub
       tags:
         - teams
@@ -5759,11 +5981,21 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a105
+        "400": &a108
           $ref: "#/components/responses/ApiError"
-        "401": *a105
-        "404": *a105
-        "409": *a105
+        "401": *a108
+        "402":
+          description: The organization's plan does not include this action, or its
+            monthly quota is used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404": *a108
+        "409": *a108
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptOrganizationInvitation
@@ -5873,9 +6105,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a106
+        "400": &a109
           $ref: "#/components/responses/ApiError"
-        "401": *a106
+        "401": *a109
       operationId: checkOrganizationNameAvailability
       tags:
         - organizations
@@ -5941,9 +6173,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a107
+        "400": &a110
           $ref: "#/components/responses/ApiError"
-        "401": *a107
+        "401": *a110
       operationId: checkOrganizationSlugAvailability
       tags:
         - organizations
@@ -5998,11 +6230,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a108
+        "400": &a111
           $ref: "#/components/responses/ApiError"
-        "401": *a108
-        "403": *a108
-        "404": *a108
+        "401": *a111
+        "403": *a111
+        "404": *a111
       operationId: setMyActiveTeam
       tags:
         - teams
@@ -6073,9 +6305,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a109
+        "400": &a112
           $ref: "#/components/responses/ApiError"
-        "401": *a109
+        "401": *a112
       operationId: listMyActivities
       tags:
         - notifications
@@ -6115,10 +6347,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a110
+        "400": &a113
           $ref: "#/components/responses/ApiError"
-        "401": *a110
-        "404": *a110
+        "401": *a113
+        "404": *a113
       operationId: associateMyPlayerExternalClub
       tags:
         - players
@@ -6143,9 +6375,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a111
+        "400": &a114
           $ref: "#/components/responses/ApiError"
-        "401": *a111
+        "401": *a114
       operationId: addMyPlayerGameAccount
       tags:
         - players
@@ -6178,11 +6410,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a112
+        "400": &a115
           $ref: "#/components/responses/ApiError"
-        "401": *a112
-        "404": *a112
-        "409": *a112
+        "401": *a115
+        "404": *a115
+        "409": *a115
       operationId: updateMyPlayerGameAccount
       tags:
         - players
@@ -6225,10 +6457,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a113
+        "400": &a116
           $ref: "#/components/responses/ApiError"
-        "401": *a113
-        "503": *a113
+        "401": *a116
+        "503": *a116
       operationId: getMyGameProfile
       tags:
         - players
@@ -6294,10 +6526,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a114
+        "400": &a117
           $ref: "#/components/responses/ApiError"
-        "401": *a114
-        "403": *a114
+        "401": *a117
+        "403": *a117
       operationId: getMyMatches
       tags:
         - players
@@ -6347,11 +6579,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a115
+        "400": &a118
           $ref: "#/components/responses/ApiError"
-        "401": *a115
-        "403": *a115
-        "502": *a115
+        "401": *a118
+        "403": *a118
+        "502": *a118
       operationId: getMyRecentMatches
       tags:
         - players
@@ -6393,12 +6625,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a116
+        "400": &a119
           $ref: "#/components/responses/ApiError"
-        "401": *a116
-        "403": *a116
-        "502": *a116
-        "503": *a116
+        "401": *a119
+        "403": *a119
+        "502": *a119
+        "503": *a119
       operationId: getMyRecentMatch
       tags:
         - players
@@ -6576,9 +6808,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a117
+        "401": &a120
           $ref: "#/components/responses/ApiError"
-        "403": *a117
+        "403": *a120
       operationId: getMyStatistics
       tags:
         - players
@@ -6717,6 +6949,27 @@ paths:
         read. Successful responses send `Cache-Control: public, max-age=0,
         s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
       security: []
+  /public/plans:
+    get:
+      responses:
+        "200":
+          description: Plans in upgrade order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListPublicPlansResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: listPublicPlans
+      tags:
+        - billing
+      summary: Read the organization plan catalog for the pricing page
+      description: Anonymous. Limits, quotas and features come from the catalog data;
+        `null` means unlimited.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
   /roster-invitations/{invitationId}/respond:
     post:
       parameters:
@@ -6791,12 +7044,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a118
+        "400": &a121
           $ref: "#/components/responses/ApiError"
-        "401": *a118
-        "403": *a118
-        "404": *a118
-        "409": *a118
+        "401": *a121
+        "403": *a121
+        "404": *a121
+        "409": *a121
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: respondToRosterInvitation
@@ -6830,11 +7083,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a119
+        "400": &a122
           $ref: "#/components/responses/ApiError"
-        "401": *a119
-        "404": *a119
-        "409": *a119
+        "401": *a122
+        "404": *a122
+        "409": *a122
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptRosterInvitation
@@ -7179,10 +7432,164 @@ components:
               type: string
             requestedPath:
               type: string
+            planLimit:
+              type: string
+              enum:
+                - active_competitions
+                - teams_per_competition
+                - staff_members
+                - provider_sync_jobs
+            max:
+              type: integer
+              minimum: 0
+            used:
+              type: integer
+              minimum: 0
+            resetsAt:
+              type: string
+              format: date-time
+            format:
+              type: string
           additionalProperties: false
       required:
         - code
         - messageKey
+    AssignOrganizationPlanRequest:
+      type: object
+      properties:
+        planKey:
+          type: string
+          enum:
+            - free
+            - pro
+            - league
+        state:
+          oneOf:
+            - type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - active
+              required:
+                - status
+              additionalProperties: false
+            - type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - trialing
+                trialEndsAt:
+                  type: string
+                  format: date-time
+              required:
+                - status
+                - trialEndsAt
+              additionalProperties: false
+            - type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - past_due
+              required:
+                - status
+              additionalProperties: false
+            - type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - canceled
+              required:
+                - status
+              additionalProperties: false
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+        - planKey
+        - state
+        - reason
+      additionalProperties: false
+    AssignOrganizationPlanResponse:
+      type: object
+      properties:
+        organizationId:
+          type: string
+        subscription:
+          type: object
+          properties:
+            planKey:
+              type: string
+              enum:
+                - free
+                - pro
+                - league
+            state:
+              oneOf:
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - active
+                  required:
+                    - status
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - trialing
+                    trialEndsAt:
+                      type: string
+                      format: date-time
+                  required:
+                    - status
+                    - trialEndsAt
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - past_due
+                    pastDueSince:
+                      type: string
+                      format: date-time
+                  required:
+                    - status
+                    - pastDueSince
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - canceled
+                    canceledAt:
+                      type: string
+                      format: date-time
+                  required:
+                    - status
+                    - canceledAt
+                  additionalProperties: false
+            updatedAt:
+              type: string
+              format: date-time
+          required:
+            - planKey
+            - state
+            - updatedAt
+          additionalProperties: false
+      required:
+        - organizationId
+        - subscription
+      additionalProperties: false
     AssociateMyPlayerExternalClubRequest:
       type: object
       properties:
@@ -15188,6 +15595,517 @@ components:
       required:
         - teams
         - activeRosterMembershipId
+    GetOrganizationEntitlementsResponse:
+      type: object
+      properties:
+        organizationId:
+          type: string
+        planKey:
+          type: string
+          enum:
+            - free
+            - pro
+            - league
+        entitlements:
+          type: object
+          properties:
+            limits:
+              type: object
+              properties:
+                activeCompetitions:
+                  type:
+                    - integer
+                    - "null"
+                  minimum: 0
+                teamsPerCompetition:
+                  type:
+                    - integer
+                    - "null"
+                  minimum: 0
+                staffMembers:
+                  type:
+                    - integer
+                    - "null"
+                  minimum: 0
+              required:
+                - activeCompetitions
+                - teamsPerCompetition
+                - staffMembers
+              additionalProperties: false
+            quotas:
+              type: object
+              properties:
+                provider_sync_jobs:
+                  type: object
+                  properties:
+                    amount:
+                      type:
+                        - integer
+                        - "null"
+                      minimum: 0
+                    period:
+                      type: string
+                      enum:
+                        - calendar_month_utc
+                    fairUse:
+                      type: boolean
+                  required:
+                    - amount
+                    - period
+                    - fairUse
+                  additionalProperties: false
+              required:
+                - provider_sync_jobs
+              additionalProperties: false
+            features:
+              type: object
+              properties:
+                competitionFormats:
+                  type: array
+                  items:
+                    type: string
+                automaticProviderSync:
+                  type: boolean
+                priorityProviderSync:
+                  type: boolean
+                performanceRanking:
+                  type: boolean
+                premiumAnalytics:
+                  type: boolean
+                organizerAnalytics:
+                  type: string
+                  enum:
+                    - none
+                    - basic
+                    - full
+                portalBranding:
+                  type: string
+                  enum:
+                    - futrob
+                    - logo_colors
+                    - advanced
+                notificationChannels:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - web
+                      - email
+                      - announcements
+              required:
+                - competitionFormats
+                - automaticProviderSync
+                - priorityProviderSync
+                - performanceRanking
+                - premiumAnalytics
+                - organizerAnalytics
+                - portalBranding
+                - notificationChannels
+              additionalProperties: false
+          required:
+            - limits
+            - quotas
+            - features
+          additionalProperties: false
+      required:
+        - organizationId
+        - planKey
+        - entitlements
+      additionalProperties: false
+    GetOrganizationPlanResponse:
+      type: object
+      properties:
+        organizationId:
+          type: string
+        plan:
+          type: object
+          properties:
+            key:
+              type: string
+              enum:
+                - free
+                - pro
+                - league
+            version:
+              type: integer
+              exclusiveMinimum: 0
+            entitlements:
+              type: object
+              properties:
+                limits:
+                  type: object
+                  properties:
+                    activeCompetitions:
+                      type:
+                        - integer
+                        - "null"
+                      minimum: 0
+                    teamsPerCompetition:
+                      type:
+                        - integer
+                        - "null"
+                      minimum: 0
+                    staffMembers:
+                      type:
+                        - integer
+                        - "null"
+                      minimum: 0
+                  required:
+                    - activeCompetitions
+                    - teamsPerCompetition
+                    - staffMembers
+                  additionalProperties: false
+                quotas:
+                  type: object
+                  properties:
+                    provider_sync_jobs:
+                      type: object
+                      properties:
+                        amount:
+                          type:
+                            - integer
+                            - "null"
+                          minimum: 0
+                        period:
+                          type: string
+                          enum:
+                            - calendar_month_utc
+                        fairUse:
+                          type: boolean
+                      required:
+                        - amount
+                        - period
+                        - fairUse
+                      additionalProperties: false
+                  required:
+                    - provider_sync_jobs
+                  additionalProperties: false
+                features:
+                  type: object
+                  properties:
+                    competitionFormats:
+                      type: array
+                      items:
+                        type: string
+                    automaticProviderSync:
+                      type: boolean
+                    priorityProviderSync:
+                      type: boolean
+                    performanceRanking:
+                      type: boolean
+                    premiumAnalytics:
+                      type: boolean
+                    organizerAnalytics:
+                      type: string
+                      enum:
+                        - none
+                        - basic
+                        - full
+                    portalBranding:
+                      type: string
+                      enum:
+                        - futrob
+                        - logo_colors
+                        - advanced
+                    notificationChannels:
+                      type: array
+                      items:
+                        type: string
+                        enum:
+                          - web
+                          - email
+                          - announcements
+                  required:
+                    - competitionFormats
+                    - automaticProviderSync
+                    - priorityProviderSync
+                    - performanceRanking
+                    - premiumAnalytics
+                    - organizerAnalytics
+                    - portalBranding
+                    - notificationChannels
+                  additionalProperties: false
+              required:
+                - limits
+                - quotas
+                - features
+              additionalProperties: false
+          required:
+            - key
+            - version
+            - entitlements
+          additionalProperties: false
+        source:
+          type: string
+          enum:
+            - subscription
+            - fallback
+        subscription:
+          type:
+            - object
+            - "null"
+          properties:
+            planKey:
+              type: string
+              enum:
+                - free
+                - pro
+                - league
+            state:
+              oneOf:
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - active
+                  required:
+                    - status
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - trialing
+                    trialEndsAt:
+                      type: string
+                      format: date-time
+                  required:
+                    - status
+                    - trialEndsAt
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - past_due
+                    pastDueSince:
+                      type: string
+                      format: date-time
+                  required:
+                    - status
+                    - pastDueSince
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - canceled
+                    canceledAt:
+                      type: string
+                      format: date-time
+                  required:
+                    - status
+                    - canceledAt
+                  additionalProperties: false
+            updatedAt:
+              type: string
+              format: date-time
+          required:
+            - planKey
+            - state
+            - updatedAt
+          additionalProperties: false
+        quotas:
+          type: array
+          items:
+            type: object
+            properties:
+              quota:
+                type: string
+                enum:
+                  - provider_sync_jobs
+              used:
+                type: integer
+                minimum: 0
+              limit:
+                type:
+                  - integer
+                  - "null"
+                minimum: 0
+              fairUse:
+                type: boolean
+              periodKey:
+                type: string
+                pattern: ^\d{4}-\d{2}$
+              resetsAt:
+                type: string
+                format: date-time
+            required:
+              - quota
+              - used
+              - limit
+              - fairUse
+              - periodKey
+              - resetsAt
+            additionalProperties: false
+        usage:
+          type: object
+          properties:
+            activeCompetitions:
+              type: integer
+              minimum: 0
+            staffMembers:
+              type: integer
+              minimum: 0
+          required:
+            - activeCompetitions
+            - staffMembers
+          additionalProperties: false
+        recentChanges:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              changedByActorId:
+                type: string
+              before:
+                type:
+                  - object
+                  - "null"
+                properties:
+                  planKey:
+                    type: string
+                  state:
+                    oneOf:
+                      - type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - active
+                        required:
+                          - status
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - trialing
+                          trialEndsAt:
+                            type: string
+                            format: date-time
+                        required:
+                          - status
+                          - trialEndsAt
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - past_due
+                          pastDueSince:
+                            type: string
+                            format: date-time
+                        required:
+                          - status
+                          - pastDueSince
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - canceled
+                          canceledAt:
+                            type: string
+                            format: date-time
+                        required:
+                          - status
+                          - canceledAt
+                        additionalProperties: false
+                required:
+                  - planKey
+                  - state
+                additionalProperties: false
+              after:
+                type: object
+                properties:
+                  planKey:
+                    type: string
+                  state:
+                    oneOf:
+                      - type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - active
+                        required:
+                          - status
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - trialing
+                          trialEndsAt:
+                            type: string
+                            format: date-time
+                        required:
+                          - status
+                          - trialEndsAt
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - past_due
+                          pastDueSince:
+                            type: string
+                            format: date-time
+                        required:
+                          - status
+                          - pastDueSince
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - canceled
+                          canceledAt:
+                            type: string
+                            format: date-time
+                        required:
+                          - status
+                          - canceledAt
+                        additionalProperties: false
+                required:
+                  - planKey
+                  - state
+                additionalProperties: false
+              reason:
+                type: string
+              occurredAt:
+                type: string
+                format: date-time
+            required:
+              - id
+              - changedByActorId
+              - before
+              - after
+              - reason
+              - occurredAt
+            additionalProperties: false
+      required:
+        - organizationId
+        - plan
+        - source
+        - subscription
+        - quotas
+        - usage
+        - recentChanges
+      additionalProperties: false
     GetPublicCalendarResponse:
       type: object
       properties:
@@ -16488,6 +17406,132 @@ components:
               - competition
       required:
         - invitations
+    ListPublicPlansResponse:
+      type: object
+      properties:
+        plans:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                enum:
+                  - free
+                  - pro
+                  - league
+              version:
+                type: integer
+                exclusiveMinimum: 0
+              entitlements:
+                type: object
+                properties:
+                  limits:
+                    type: object
+                    properties:
+                      activeCompetitions:
+                        type:
+                          - integer
+                          - "null"
+                        minimum: 0
+                      teamsPerCompetition:
+                        type:
+                          - integer
+                          - "null"
+                        minimum: 0
+                      staffMembers:
+                        type:
+                          - integer
+                          - "null"
+                        minimum: 0
+                    required:
+                      - activeCompetitions
+                      - teamsPerCompetition
+                      - staffMembers
+                    additionalProperties: false
+                  quotas:
+                    type: object
+                    properties:
+                      provider_sync_jobs:
+                        type: object
+                        properties:
+                          amount:
+                            type:
+                              - integer
+                              - "null"
+                            minimum: 0
+                          period:
+                            type: string
+                            enum:
+                              - calendar_month_utc
+                          fairUse:
+                            type: boolean
+                        required:
+                          - amount
+                          - period
+                          - fairUse
+                        additionalProperties: false
+                    required:
+                      - provider_sync_jobs
+                    additionalProperties: false
+                  features:
+                    type: object
+                    properties:
+                      competitionFormats:
+                        type: array
+                        items:
+                          type: string
+                      automaticProviderSync:
+                        type: boolean
+                      priorityProviderSync:
+                        type: boolean
+                      performanceRanking:
+                        type: boolean
+                      premiumAnalytics:
+                        type: boolean
+                      organizerAnalytics:
+                        type: string
+                        enum:
+                          - none
+                          - basic
+                          - full
+                      portalBranding:
+                        type: string
+                        enum:
+                          - futrob
+                          - logo_colors
+                          - advanced
+                      notificationChannels:
+                        type: array
+                        items:
+                          type: string
+                          enum:
+                            - web
+                            - email
+                            - announcements
+                    required:
+                      - competitionFormats
+                      - automaticProviderSync
+                      - priorityProviderSync
+                      - performanceRanking
+                      - premiumAnalytics
+                      - organizerAnalytics
+                      - portalBranding
+                      - notificationChannels
+                    additionalProperties: false
+                required:
+                  - limits
+                  - quotas
+                  - features
+                additionalProperties: false
+            required:
+              - key
+              - version
+              - entitlements
+            additionalProperties: false
+      required:
+        - plans
+      additionalProperties: false
     ListRosterResponse:
       type: object
       properties:
@@ -23149,7 +24193,7 @@ components:
     ApiError:
       description: API error
       headers:
-        X-Request-ID: &a120
+        X-Request-ID: &a123
           $ref: "#/components/headers/RequestId"
       content:
         application/json:
@@ -23158,7 +24202,7 @@ components:
     RateLimited:
       description: Rate limit exceeded
       headers:
-        X-Request-ID: *a120
+        X-Request-ID: *a123
         Retry-After:
           $ref: "#/components/headers/RetryAfter"
       content:

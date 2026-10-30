@@ -1,4 +1,5 @@
 import * as authorization from "@/http/openapi/routes/authorization.ts";
+import * as billing from "@/http/openapi/routes/billing.ts";
 import * as competitions from "@/http/openapi/routes/competitions.ts";
 import * as entryInvitations from "@/http/openapi/routes/entry-invitations.ts";
 import * as encounters from "@/http/openapi/routes/encounters.ts";
@@ -15,6 +16,7 @@ import * as statistics from "@/http/openapi/routes/statistics.ts";
 import * as teams from "@/http/openapi/routes/teams.ts";
 
 export * from "@/http/openapi/routes/authorization.ts";
+export * from "@/http/openapi/routes/billing.ts";
 export * from "@/http/openapi/routes/competitions.ts";
 export * from "@/http/openapi/routes/encounters.ts";
 export * from "@/http/openapi/routes/entry-invitations.ts";
@@ -46,4 +48,5 @@ export const openApiRoutes = [
   ...Object.values(publicPortal),
   ...Object.values(encounters),
   ...Object.values(authorization),
+  ...Object.values(billing),
 ] as const;

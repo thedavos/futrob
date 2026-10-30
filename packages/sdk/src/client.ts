@@ -9,6 +9,7 @@ import { createPublicPortalResource } from "./resources/public-portal.ts";
 import { createResultsResource } from "./resources/results.ts";
 import { createTeamsResource } from "./resources/teams.ts";
 import { createAuthorizationResource } from "./resources/authorization.ts";
+import { createBillingResource } from "./resources/billing.ts";
 import { createStatisticsResource } from "./resources/statistics.ts";
 import { createPlayersResource } from "./resources/players.ts";
 import { createActivitiesResource } from "./resources/activities.ts";
@@ -30,6 +31,7 @@ export function createFutrobClient(options: CreateFutrobClientOptions) {
     publicPortal: createPublicPortalResource(http),
     results: createResultsResource(http),
     authorization: createAuthorizationResource(http),
+    billing: createBillingResource(http),
     statistics: createStatisticsResource(http),
     players: createPlayersResource(http),
     activities: createActivitiesResource(http),

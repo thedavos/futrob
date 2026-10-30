@@ -17,6 +17,12 @@ export { buildEntryInvitationShareUrl, buildWhatsAppShareUrl } from "./entry-inv
 
 export type { ActivitiesResource, ListActivitiesInput } from "./resources/activities.ts";
 export type { AuthorizationResource } from "./resources/authorization.ts";
+export {
+  isPlanGatedErrorCode,
+  PLAN_GATED_ERROR_CODES,
+  type BillingResource,
+  type PlanGatedErrorCode,
+} from "./resources/billing.ts";
 export type { CompetitionsResource } from "./resources/competitions.ts";
 export type {
   EntryInvitationsResource,

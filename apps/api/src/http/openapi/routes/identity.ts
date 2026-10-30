@@ -1,4 +1,4 @@
-import { defineRoute } from "@/http/openapi/define-route.ts";
+import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import {
   CompleteInvitationOnboardingResponse,
   CompleteOrganizationOnboardingResponse,
@@ -47,7 +47,8 @@ export const completeOrganizationOnboardingRoute = defineRoute({
     description: "Completed organization onboarding",
     schema: CompleteOrganizationOnboardingResponse,
   },
-  errors: [400, 401, 409],
+  errors: [400, 401, 402, 409],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const completeInvitationOnboardingRoute = defineRoute({
@@ -62,7 +63,8 @@ export const completeInvitationOnboardingRoute = defineRoute({
     description: "Completed invitation onboarding",
     schema: CompleteInvitationOnboardingResponse,
   },
-  errors: [400, 401, 404, 409, 429],
+  errors: [400, 401, 402, 404, 409, 429],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const inspectCompetitionInvitationRoute = defineRoute({

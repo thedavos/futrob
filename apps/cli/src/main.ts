@@ -63,6 +63,13 @@ import {
 import { compInviteLink, compInviteTeam, entryInviteAccept } from "./commands/entry-invitations.ts";
 import { myMatches, myNextEncounter, myStats, playerMe } from "./commands/players.ts";
 import { run as e2eGoldenPath } from "./commands/e2e-golden-path.ts";
+import {
+  billingSmoke,
+  orgEntitlements,
+  orgPlan,
+  orgPlanAssign,
+  plans,
+} from "./commands/billing.ts";
 import type { CliError } from "./lib/errors.ts";
 import { printError } from "./lib/print.ts";
 import { runProgram } from "./lib/run-program.ts";
@@ -127,6 +134,11 @@ const commands = {
   "club-get": (args) => clubGet(args),
   "club-matches": (args) => clubMatches(args),
   "sync-job-enqueue": (args) => syncJobEnqueue(args),
+  plans: (args) => plans(args),
+  "org-plan": (args) => orgPlan(args),
+  "org-entitlements": (args) => orgEntitlements(args),
+  "org-plan-assign": (args) => orgPlanAssign(args),
+  "billing-smoke": (args) => billingSmoke(args),
   "sync-job-run": (args) => syncJobRun(args),
   "sync-job-run-next": (args) => syncJobRunNext(args),
   "provider-health": (args) => providerHealth(args),
