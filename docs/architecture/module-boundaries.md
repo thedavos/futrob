@@ -18,8 +18,9 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 | `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                                                   |
 | `notifications` | Web, email (WhatsApp/push como ampliación)                                                                                          |
 | `public-portal` | Lecturas públicas anónimas y sanitizadas de competiciones publicadas ([ADR-0024](/docs/adr/0024-anonymous-public-portal-reads.md))  |
+| `billing`       | Catálogo de planes, suscripciones, entitlements y ledger de cupos ([ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md))    |
 
-`billing` está fuera del MVP.
+`billing` es una hoja: ningún BC lo importa. Cada consumidor declara su port de límites con su vocabulario y `apps/api/src/di/` lo conecta con billing. Los pagos automatizados siguen fuera del MVP (WONT-05).
 
 ## Capas dentro de un BC
 

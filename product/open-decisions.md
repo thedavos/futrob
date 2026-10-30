@@ -255,11 +255,11 @@ operativa del Encounter. Sin despliegue. Verificación y límites operativos en
 
 ## 6. Comercial e integraciones
 
-| ID      | Decisión pendiente     | Default recomendado                                                                          | Motivo             |
-| ------- | ---------------------- | -------------------------------------------------------------------------------------------- | ------------------ |
-| DEC-050 | Planes comerciales MVP | Un plan free operativo + flag de premium analytics; sin pagos automatizados en MVP.          | WONT de pagos.     |
-| DEC-051 | Tratamiento del API EA | Proveedor no garantizado: caché, retries, circuit breaker, storage propio y revisión manual. | Riesgo #1 del PRD. |
-| DEC-052 | Idiomas UI             | `es` default, `en` soportado. Independiente de datos EA.                                     | Producto bilingüe. |
+| ID      | Decisión pendiente     | Default recomendado                                                                                                                                                                                                                                    | Motivo                       |
+| ------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| DEC-050 | Planes comerciales MVP | Reemplazada (2026-10-29): planes Gratis, Pro y Liga por organización, add-on Jugador Premium por actor y cupo mensual de sync. Fase 0 sin pagos: asignación manual por superusuario. Ver [ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md). | FR-17 y coste del egress EA. |
+| DEC-051 | Tratamiento del API EA | Proveedor no garantizado: caché, retries, circuit breaker, storage propio y revisión manual.                                                                                                                                                           | Riesgo #1 del PRD.           |
+| DEC-052 | Idiomas UI             | `es` default, `en` soportado. Independiente de datos EA.                                                                                                                                                                                               | Producto bilingüe.           |
 
 ## 7. Acceso personal del jugador
 

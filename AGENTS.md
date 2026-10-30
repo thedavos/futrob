@@ -55,7 +55,7 @@ contract, including Grafito + Lima for both theme selectors and the canonical st
 - Workers: `apps/web/src/workers/`
 - Packages también: `api-contracts`, `sdk`, `ui`, `ui-tokens`, `ea-clubs`, `logger`, `shared-kernel`, `test-support` — ver `/packages/README.md`
 
-MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**, results, statistics, analytics, notifications, public-portal. `billing` out of MVP.
+MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**, results, statistics, analytics, notifications, public-portal, billing (plans and entitlements; automated payments out of MVP, see ADR-0025).
 
 ## Rules
 

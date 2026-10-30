@@ -46,6 +46,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0022: Perfil de organización: slug, zona horaria y escudo](/docs/adr/0022-organization-profile-and-logo.md)              | Aceptada    | Implementado en el checkout; slug sin consumidor hasta el portal público      |
 | [ADR-0023: Invitaciones de inscripción de equipos](/docs/adr/0023-competition-entry-invitations.md)                           | Aceptada    | Invitación dirigida y enlace; deep link nativo y email pendientes             |
 | [ADR-0024: Lecturas públicas anónimas del portal](/docs/adr/0024-anonymous-public-portal-reads.md)                            | Aceptada    | Portada, tabla y calendario públicos; resto del portal y clave pendientes     |
+| [ADR-0025: Planes, entitlements y cupos en el BC billing](/docs/adr/0025-billing-plans-and-entitlements.md)                   | Aceptada    | Fase 0 sin pagos; revisión manual FR-09 y sync automático pendientes          |
 
 ## Consolidación de septiembre de 2026
 
@@ -55,7 +56,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 - ADR-0016 y ADR-0017 formalizan consistencia transaccional y autorización contextual.
 - ADR-0021 reemplaza el almacenamiento D1 de ADR-0015: auth, actores y rate limits pasan al Postgres de producto.
 
-Quedan **21 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
+Quedan **22 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
 archivo antiguos se conservan para no romper referencias. Para implementación nueva,
 seguir el sucesor indicado, aunque un enlace histórico aún apunte al documento anterior.
 

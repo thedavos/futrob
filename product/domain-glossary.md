@@ -112,7 +112,7 @@ Estados sugeridos: `draft`, `pending_opponent`, `counter_proposal`, `accepted`, 
 | **TeamCompetitionStats / PlayerCompetitionStats** | Agregados oficiales.                                  | Reconstruibles desde OfficialMatch aprobados.                                                                                               |
 | **RankingSnapshot**                               | Instantánea versionada de rankings.                   | Incluye elegibilidad por mínimos.                                                                                                           |
 | **Performance ranking**                           | Score 0–100 distinto de la tabla oficial.             | Fórmula transparente y estable durante la competición.                                                                                      |
-| **AnalyticsSnapshot**                             | Datos premium agregados.                              | Protegidos por suscripción/permiso.                                                                                                         |
+| **AnalyticsSnapshot**                             | Datos premium agregados.                              | Protegidos por el entitlement del plan y por permiso.                                                                                       |
 | **PlayerPersonalStats**                           | Proyección de estadísticas propias del PlayerProfile. | Solo usa partidos oficiales aprobados. No incorpora `ProviderMatch` recientes. Nunca expone payloads raw, disputas o datos administrativos. |
 
 ## 8. Publicación, comunicaciones y auditoría
@@ -124,7 +124,17 @@ Estados sugeridos: `draft`, `pending_opponent`, `counter_proposal`, `accepted`, 
 | **AuditLog**            | Registro append-only.                                        | Actor, fuente, antes/después, motivo, correlación, tiempo. |
 | **ProviderHealthEvent** | Evento de salud/latencia/error de un proveedor de game-data. | Observabilidad; no es resultado competitivo.               |
 
-## 9. Términos retirados o renombrados
+## 9. Planes, suscripciones y cupos
+
+| Término            | Definición canónica                                                                                                        | Regla o límite                                                                                                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Plan**           | Oferta comercial del catálogo: `free` (Gratis), `pro`, `league` (Liga) para organizaciones; `player_premium` para actores. | Sus límites, cupos y features son datos del catálogo, no constantes de código. Un plan nunca cobra por la integridad competitiva.                                           |
+| **Subscription**   | Vínculo entre un sujeto (organización o actor) y un Plan, con estado tipado `trialing`, `active`, `past_due` o `canceled`. | Una organización sin suscripción o con suscripción cancelada o con prueba vencida usa `free`. En la Fase 0 solo el superusuario la asigna; cada cambio queda auditado.      |
+| **Entitlement**    | Lo que el plan efectivo del sujeto incluye: límites, cupos y features.                                                     | No es una capacidad (ADR-0017): la capacidad dice si el actor puede actuar; el entitlement dice si el plan de la organización lo incluye. Ambos se comprueban por separado. |
+| **Quota**          | Entitlement consumible por periodo (por ejemplo, jobs de sync con el proveedor por mes calendario UTC).                    | El consumo se registra en un ledger idempotente por clave de uso: un job deduplicado o reintentado no vuelve a consumir. Agotarlo solo bloquea acciones nuevas.             |
+| **Player Premium** | Add-on personal de un Actor (`player_premium`).                                                                            | No pertenece a ninguna organización ni amplía sus entitlements. En la Fase 0 solo se modela el plan y su entitlement.                                                       |
+
+## 10. Términos retirados o renombrados
 
 - `ea-data` / `EaMatch` / `EaClubId` como nombres de bounded context o dominio → usar **game-data** / **ProviderMatch** / **ExternalClubId** (EA solo en adapters).
 - Evidence / OCR como fuente primaria Must (OCR puede ser un adapter futuro de game-data, no el camino feliz).
