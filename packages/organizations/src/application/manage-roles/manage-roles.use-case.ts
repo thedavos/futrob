@@ -29,6 +29,8 @@ import type {
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import { ORGANIZATION_PERMISSION } from "../../domain/policies/organization-permissions.ts";
 import type { OrgMembershipRole } from "../../domain/value-objects/organization-membership-role.ts";
+import type { StaffSeatLimitPort } from "../../domain/ports/staff-seat-limit.port.ts";
+import { occupiesStaffSeat, staffSeatError } from "../staff-seats.ts";
 
 interface SharedDependencies {
   readonly authorization: AuthorizationPort;
@@ -48,6 +50,7 @@ export class ChangeOrganizationRoleUseCase {
   constructor(
     private readonly deps: SharedDependencies & {
       readonly memberships: MembershipRepository;
+      readonly staffSeats: StaffSeatLimitPort;
       readonly roleCapabilities: OrganizationRoleCapabilityPort;
     },
   ) {}
@@ -122,6 +125,10 @@ export class ChangeOrganizationRoleUseCase {
           }),
         );
       }
+    }
+    if (occupiesStaffSeat(input.role) && !occupiesStaffSeat(current.role)) {
+      const seats = await staffSeatError(this.deps, input.organizationId);
+      if (seats) return err(seats);
     }
     const updated = await this.deps.memberships.updateRoleProtectingLastOrganizer({
       ...current,

@@ -7,11 +7,14 @@ import {
 } from "@futrob/api-contracts";
 import {
   buildApp,
+  buildAppWithModules,
   onboardingCompetition,
   serviceHeaders,
   stubFetch,
 } from "@/http/http-app.harness.ts";
 import { parseResponse } from "@/http/parse-response.ts";
+import { assignOrganizationPlanForTest } from "@/testing/organization-plan.fixture.ts";
+import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
 
 const LEAGUE_RULES = {
   regularStage: {
@@ -33,7 +36,7 @@ const LEAGUE_RULES = {
 
 describe("apps/api http competitions", () => {
   it("competitions: creates a draft with team range, dates and an uploaded cover", async () => {
-    const app = buildApp(stubFetch);
+    const { app, modules } = buildAppWithModules(stubFetch);
     const organizer = "actor-profile-organizer";
     const created = await app.request("/api/v1/identity/onboarding/organization", {
       method: "POST",
@@ -49,6 +52,11 @@ describe("apps/api http competitions", () => {
       created,
     );
     const createPath = `/api/v1/organizations/${organizationId}/competitions`;
+    // A second active competition needs a paid plan (ADR-0025).
+    await assignOrganizationPlanForTest(modules, {
+      organizationId: asOrganizationId(organizationId),
+      actorId: asActorId(organizer),
+    });
 
     const draft = await app.request(createPath, {
       method: "POST",

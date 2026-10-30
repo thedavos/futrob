@@ -17,12 +17,17 @@ import {
   type ProviderMatchIngestionPort,
   type ProviderMatchRepository,
   type RawObservationRepository,
-  type DueProviderSyncTargetFeed,
   type ProviderSyncJobRepository,
-  type ProviderSyncCompletionPort,
+  type ProviderSyncQuotaPort,
   type ProviderHealthPort,
 } from "@futrob/game-data";
 import type { ClockPort, IdGeneratorPort, TransactionPort } from "@futrob/shared-kernel";
+import type { Pool } from "pg";
+import type { SchedulingModule } from "./scheduling.module.ts";
+import type { TeamsModule } from "./teams.module.ts";
+import type { ResultsModule } from "./results.module.ts";
+import { createDueProviderSyncTargetFeed } from "./due-provider-sync-target.feed.ts";
+import { AssociateSyncedProviderMatches } from "@/application/game-data/associate-synced-provider-matches.ts";
 import { InMemoryGameDataProviderRegistry } from "@/adapters/game-data/internal.ts";
 import {
   createRequestCorrelation,
@@ -35,8 +40,11 @@ export interface GameDataModuleDependencies {
   readonly providerMatches: ProviderMatchRepository;
   readonly rawObservations: RawObservationRepository;
   readonly jobs: ProviderSyncJobRepository;
-  readonly dueSyncTargets: DueProviderSyncTargetFeed;
-  readonly completion: ProviderSyncCompletionPort;
+  readonly pool: Pool | undefined;
+  readonly scheduling: Pick<SchedulingModule, "encounters" | "officialMatches" | "encounterWindow">;
+  readonly teams: Pick<TeamsModule, "externalClubConnections" | "externalClubTeams">;
+  readonly results: Pick<ResultsModule, "associateEncounterCandidates">;
+  readonly syncQuota: ProviderSyncQuotaPort;
   readonly ids: IdGeneratorPort;
   readonly clock: ClockPort;
   readonly maxJobAttempts: number;
@@ -58,6 +66,8 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
   });
 
   const enqueueProviderSyncJob = new EnqueueProviderSyncJobUseCase({
+    transaction: deps.transaction,
+    quota: deps.syncQuota,
     jobs: deps.jobs,
     ids: deps.ids,
     clock: deps.clock,
@@ -76,7 +86,13 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
     syncRecentProviderMatches,
     enqueueProviderSyncJob,
     enqueueDueProviderSyncs: new EnqueueDueProviderSyncsUseCase({
-      targets: deps.dueSyncTargets,
+      targets: createDueProviderSyncTargetFeed({
+        pool: deps.pool,
+        jobs: deps.jobs,
+        encounters: deps.scheduling.encounters,
+        matches: deps.scheduling.officialMatches,
+        connections: deps.teams.externalClubConnections,
+      }),
       jobs: deps.jobs,
       enqueue: enqueueProviderSyncJob,
       ids: deps.ids,
@@ -84,7 +100,11 @@ export function createGameDataModule(deps: GameDataModuleDependencies) {
     }),
     executeProviderSyncJob: new ExecuteProviderSyncJobUseCase({
       jobs: deps.jobs,
-      completion: deps.completion,
+      completion: new AssociateSyncedProviderMatches({
+        externalClubTeams: deps.teams.externalClubTeams,
+        encounterWindow: deps.scheduling.encounterWindow,
+        associateEncounterCandidates: deps.results.associateEncounterCandidates,
+      }),
       sync: {
         execute: (providerKey, input, afterPersist) =>
           syncRecentProviderMatches.execute(providerKey, input, afterPersist),

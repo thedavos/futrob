@@ -14,6 +14,10 @@ class SingleJobRepository implements ProviderSyncJobRepository {
     return Promise.resolve(this.job);
   }
 
+  findActiveByDedupeKey(): Promise<ProviderSyncJob | null> {
+    return Promise.resolve(null);
+  }
+
   claimNext(input: Parameters<ProviderSyncJobRepository["claimNext"]>[0]) {
     if (this.job.status === "succeeded" || this.job.status === "dead") return Promise.resolve(null);
     const running: RunningProviderSyncJob = {

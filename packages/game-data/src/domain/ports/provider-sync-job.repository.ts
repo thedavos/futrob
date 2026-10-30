@@ -6,7 +6,9 @@ import type {
 import type { ProviderSyncMatchTarget } from "./provider-sync-completion.port.ts";
 
 export interface ProviderSyncJobRepository {
+  /** Returns the active job that already holds the dedupe key, if any. */
   enqueue(job: QueuedProviderSyncJob): Promise<ProviderSyncJob>;
+  findActiveByDedupeKey(organizationId: string, dedupeKey: string): Promise<ProviderSyncJob | null>;
   claimNext(input: {
     readonly now: Date;
     readonly leaseToken: string;

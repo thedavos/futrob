@@ -1,3 +1,5 @@
+import type { ProviderSyncQuotaExhausted } from "@futrob/game-data";
+import type { Result } from "@futrob/shared-kernel";
 import { parseOrganizationSlug } from "@futrob/organizations";
 import type { EncounterCandidateAssociation } from "@futrob/results";
 import { asFixtureStageId } from "@futrob/scheduling";
@@ -79,18 +81,20 @@ suite("provider sync candidate association on Postgres", () => {
       }
       const untouchedBefore = await untouchedContent();
 
-      const queued = await modules.gameData.enqueueProviderSyncJob.execute({
-        organizationId: ORG,
-        providerKey: "ea-clubs",
-        requestId: "request-sync-association",
-        sync: {
-          externalClubId: "club-home",
-          platform: "common-gen5",
-          gameEdition: "fc26",
-          matchType: "friendlyMatch",
-          maxResultCount: 10,
-        },
-      });
+      const queued = queuedJob(
+        await modules.gameData.enqueueProviderSyncJob.execute({
+          organizationId: ORG,
+          providerKey: "ea-clubs",
+          requestId: "request-sync-association",
+          sync: {
+            externalClubId: "club-home",
+            platform: "common-gen5",
+            gameEdition: "fc26",
+            matchType: "friendlyMatch",
+            maxResultCount: 10,
+          },
+        }),
+      );
       vi.spyOn(modules.results.associateEncounterCandidates, "execute").mockRejectedValueOnce(
         new Error("simulated process crash after provider persistence"),
       );
@@ -181,12 +185,14 @@ suite("provider sync candidate association on Postgres", () => {
           "DELETE FROM encounter_candidate_sets WHERE organization_id = $1 AND encounter_id = $2",
           [ORG, ENCOUNTER],
         );
-        const fresh = await modules.gameData.enqueueProviderSyncJob.execute({
-          organizationId: ORG,
-          providerKey: "ea-clubs",
-          requestId: "request-fresh-sync",
-          sync: queued.sync,
-        });
+        const fresh = queuedJob(
+          await modules.gameData.enqueueProviderSyncJob.execute({
+            organizationId: ORG,
+            providerKey: "ea-clubs",
+            requestId: "request-fresh-sync",
+            sync: queued.sync,
+          }),
+        );
         expect(await modules.gameData.executeProviderSyncJob.execute(fresh.id)).toMatchObject({
           status: "succeeded",
           attempt: 1,
@@ -358,19 +364,21 @@ suite("provider sync candidate association on Postgres", () => {
     TEST_TIMEOUT_MS,
   );
 
-  function enqueue(modules: AppModules) {
-    return modules.gameData.enqueueProviderSyncJob.execute({
-      organizationId: ORG,
-      providerKey: "ea-clubs",
-      requestId: "request-sync-failure",
-      sync: {
-        externalClubId: "club-home",
-        platform: "common-gen5",
-        gameEdition: "fc26",
-        matchType: "friendlyMatch",
-        maxResultCount: 10,
-      },
-    });
+  async function enqueue(modules: AppModules) {
+    return queuedJob(
+      await modules.gameData.enqueueProviderSyncJob.execute({
+        organizationId: ORG,
+        providerKey: "ea-clubs",
+        requestId: "request-sync-failure",
+        sync: {
+          externalClubId: "club-home",
+          platform: "common-gen5",
+          gameEdition: "fc26",
+          matchType: "friendlyMatch",
+          maxResultCount: 10,
+        },
+      }),
+    );
   }
 
   async function countRows(table: string): Promise<number> {
@@ -683,4 +691,9 @@ function eaMatch(matchId: string, occurredAt: Date) {
     },
     players: {},
   };
+}
+
+function queuedJob<T>(result: Result<T, ProviderSyncQuotaExhausted>): T {
+  if (!result.isOk()) throw result.error;
+  return result.value;
 }

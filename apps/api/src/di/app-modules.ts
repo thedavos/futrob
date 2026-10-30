@@ -21,6 +21,7 @@ import type { OrganizationsModule } from "./organizations.module.ts";
 import type { CompetitionsModule } from "./competitions.module.ts";
 import type { TeamsModule } from "./teams.module.ts";
 import type { AuthorizationModule } from "./authorization.module.ts";
+import type { BillingModule } from "./billing.module.ts";
 import type {
   OfficialSelectionCommands,
   VoidOfficialResultAndUnproject,
@@ -34,6 +35,7 @@ export interface AppModules {
   /** Commands of other contexts composed with their activity feed writes. */
   readonly activityCommands: ActivityCommands;
   readonly authorization: AuthorizationModule;
+  readonly billing: BillingModule;
   readonly competitionApplications: CompetitionApplicationFlow;
   readonly competitions: CompetitionsModule;
   readonly entryInvitations: EntryInvitationsComposition;

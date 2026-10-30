@@ -5,7 +5,14 @@ import {
   organizationRoleAssignmentSchema,
 } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
-import { buildApp, serviceHeaders, stubFetch } from "@/http/http-app.harness.ts";
+import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
+import {
+  buildApp,
+  buildAppWithModules,
+  serviceHeaders,
+  stubFetch,
+} from "@/http/http-app.harness.ts";
+import { assignOrganizationPlanForTest } from "@/testing/organization-plan.fixture.ts";
 import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http authorization", () => {
@@ -88,12 +95,17 @@ describe("apps/api http authorization", () => {
   });
 
   it("authorization: changes organization roles only within the manager's authority", async () => {
-    const app = buildApp(stubFetch);
+    const { app, modules } = buildAppWithModules(stubFetch);
     const organizer = "actor-role-organizer";
     const staff = "actor-role-staff";
     const member = "actor-role-member";
     const outsider = "actor-role-outsider";
     const organizationId = await createOrganization(app, organizer, "Roles Org");
+    // Promoting a third staff member needs more seats than the free plan (ADR-0025).
+    await assignOrganizationPlanForTest(modules, {
+      organizationId: asOrganizationId(organizationId),
+      actorId: asActorId(organizer),
+    });
     await joinOrganization(app, organizationId, organizer, staff, "staff");
     await joinOrganization(app, organizationId, organizer, member, "member");
     await createOrganization(app, outsider, "Outsider Org");

@@ -74,6 +74,8 @@ export type { InvitationTokenPort } from "./domain/ports/invitation-token.port.t
 export type { MembershipRepository } from "./domain/ports/membership.repository.ts";
 export type { OrganizationMemberAccessSummarizer } from "./domain/ports/organization-member-access.summarizer.ts";
 export type { OrganizationRepository } from "./domain/ports/organization.repository.ts";
+export type { StaffSeatLimitPort } from "./domain/ports/staff-seat-limit.port.ts";
+export { OrganizationStaffLimitReached } from "./domain/errors/staff-seat.errors.ts";
 export type {
   AccessGrantRepository,
   AuthorizationAuditRepository,

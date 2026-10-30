@@ -378,6 +378,7 @@ export default defineConfig({
       "packages/teams",
       "packages/notifications",
       "packages/billing",
+      "packages/analytics",
       "apps/mobile",
       // Storybook component tests (stories as tests) in a real browser.
       storybookVitestProject(),

@@ -19,12 +19,20 @@ export function createFetch(
 }
 
 export function buildApp(fetcher: typeof fetch, correlationLogEntries: CorrelationLogEntry[] = []) {
+  return buildAppWithModules(fetcher, correlationLogEntries).app;
+}
+
+/** Exposes the modules for fixtures that need a seam HTTP does not offer, such as a plan. */
+export function buildAppWithModules(
+  fetcher: typeof fetch,
+  correlationLogEntries: CorrelationLogEntry[] = [],
+) {
   const modules = createModules({
     fetcher,
     eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
     pool: undefined,
   });
-  return createApp({
+  const app = createApp({
     modules,
     checkDbHealth: () => Promise.resolve("skipped"),
     internalJobSecret: INTERNAL_JOB_SECRET,
@@ -33,6 +41,7 @@ export function buildApp(fetcher: typeof fetch, correlationLogEntries: Correlati
       error: (entry) => correlationLogEntries.push(entry),
     },
   });
+  return { app, modules };
 }
 
 export function serviceHeaders(actorId = "actor-test-1") {

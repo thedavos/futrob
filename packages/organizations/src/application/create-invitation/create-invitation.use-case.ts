@@ -13,6 +13,8 @@ import type { InvitationRepository } from "../../domain/ports/invitation.reposit
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
+import type { StaffSeatLimitPort } from "../../domain/ports/staff-seat-limit.port.ts";
+import { staffSeatError } from "../staff-seats.ts";
 import {
   INVITATION_STATUS,
   REDEEM_POLICY,
@@ -60,6 +62,7 @@ export class CreateInvitationUseCase {
     private readonly deps: {
       readonly organizations: OrganizationRepository;
       readonly memberships: MembershipRepository;
+      readonly staffSeats: StaffSeatLimitPort;
       readonly authorization: AuthorizationPort;
       readonly invitations: InvitationRepository;
       readonly clock: ClockPort;
@@ -139,6 +142,10 @@ export class CreateInvitationUseCase {
           message: "The actor cannot create invitations in this scope",
         }),
       );
+    }
+    if (!input.competitionId && inviteRole === "staff") {
+      const seats = await staffSeatError(this.deps, input.organizationId);
+      if (seats) return err(seats);
     }
 
     const now = this.deps.clock.now();

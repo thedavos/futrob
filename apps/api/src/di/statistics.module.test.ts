@@ -38,6 +38,7 @@ describe("statistics module projection", () => {
     await officialResults.append(result);
     const statistics = createStatisticsModule({
       pool: null,
+      performanceRankingAccess: { includesPerformanceRanking: async () => true },
       resultReader: {
         getApprovedByEncounter: (encounterId) =>
           officialResults.findApprovedByEncounter(encounterId),

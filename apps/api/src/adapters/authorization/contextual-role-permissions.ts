@@ -1,3 +1,4 @@
+import { BILLING_PERMISSION, BILLING_PERMISSIONS } from "@futrob/billing";
 import { COMPETITION_PERMISSIONS, COMPETITION_ROLE_PERMISSIONS } from "@futrob/competitions";
 import {
   ORGANIZATION_PERMISSION,
@@ -17,15 +18,20 @@ export const ALL_PERMISSIONS = [
   ...ENCOUNTER_PERMISSIONS,
   ...RESULT_PERMISSIONS,
   ...STATISTICS_PERMISSIONS,
+  ...BILLING_PERMISSIONS,
 ] satisfies readonly Permission[];
+
+/** Held only through the platform layer (superuser); never part of an organization bundle. */
+const PLATFORM_ONLY_PERMISSIONS: ReadonlySet<Permission> = new Set([
+  ORGANIZATION_PERMISSION.superusersManage,
+  BILLING_PERMISSION.plansAssign,
+]);
 
 export function contextualOrganizationRolePermissions(
   role: keyof typeof ORGANIZATION_ROLE_PERMISSIONS,
 ): readonly Permission[] {
   if (role === "organizer") {
-    return ALL_PERMISSIONS.filter(
-      (permission) => permission !== ORGANIZATION_PERMISSION.superusersManage,
-    );
+    return ALL_PERMISSIONS.filter((permission) => !PLATFORM_ONLY_PERMISSIONS.has(permission));
   }
   if (role === "staff") {
     return [
@@ -35,9 +41,11 @@ export function contextualOrganizationRolePermissions(
       ...ENCOUNTER_PERMISSIONS,
       ...RESULT_PERMISSIONS,
       ...STATISTICS_PERMISSIONS,
+      BILLING_PERMISSION.read,
+      BILLING_PERMISSION.entitlementsRead,
     ];
   }
-  return ORGANIZATION_ROLE_PERMISSIONS.member;
+  return [...ORGANIZATION_ROLE_PERMISSIONS.member, BILLING_PERMISSION.entitlementsRead];
 }
 
 export function contextualCompetitionRolePermissions(

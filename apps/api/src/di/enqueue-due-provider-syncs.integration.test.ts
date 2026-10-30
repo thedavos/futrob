@@ -16,6 +16,7 @@ import {
   migrateIsolatedSchema,
   type IsolatedSchema,
 } from "@/testing/isolated-schema.ts";
+import { assignOrganizationPlanForTest } from "@/testing/organization-plan.fixture.ts";
 import { seedActors } from "@/testing/seed-actors.ts";
 import { createModules, type AppModules } from "./create-modules.ts";
 
@@ -107,6 +108,52 @@ suite("enqueue due provider syncs on Postgres", () => {
   );
 
   it(
+    "defers automatic syncs at the quota limit and resumes without exceeding the available units",
+    async () => {
+      const modules = createModules({
+        pool: isolated.pool,
+        clock: { now: () => NOW },
+        fetcher: async () => {
+          throw new Error("Enqueue must not call EA");
+        },
+        eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
+      });
+      await seedActors(isolated.pool, CREATOR);
+      await seedOrganization(modules);
+      await seedClub(
+        modules,
+        asTeamId("quota-team"),
+        "quota-club",
+        asEncounterId("quota-encounter"),
+        NOW,
+        "scheduled",
+      );
+      await isolated.pool.query(`UPDATE billing_plans SET entitlements = jsonb_set(
+      entitlements, '{quotas,provider_sync_jobs,amount}', '0') WHERE key = 'free'`);
+      expect(await modules.gameData.enqueueDueProviderSyncs.execute()).toMatchObject({
+        enqueued: 0,
+        alreadyCovered: 0,
+        deferred: 3,
+        jobs: [],
+      });
+      await isolated.pool.query(`UPDATE billing_plans SET entitlements = jsonb_set(
+      entitlements, '{quotas,provider_sync_jobs,amount}', '1') WHERE key = 'free'`);
+      expect(await modules.gameData.enqueueDueProviderSyncs.execute()).toMatchObject({
+        enqueued: 1,
+        deferred: 2,
+      });
+      const stored = await isolated.pool.query(
+        `SELECT
+      (SELECT COUNT(*)::int FROM provider_sync_jobs WHERE organization_id = $1) AS jobs,
+      (SELECT COUNT(*)::int FROM billing_quota_consumptions WHERE organization_id = $1) AS usage`,
+        [ORG],
+      );
+      expect(stored.rows[0]).toEqual({ jobs: 1, usage: 1 });
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
     "reaches all 82 open clubs across ticks, beyond both former scan limits",
     async () => {
       let currentTime = NOW;
@@ -120,6 +167,7 @@ suite("enqueue due provider syncs on Postgres", () => {
       });
       await seedActors(isolated.pool, CREATOR);
       await seedOrganization(modules);
+      await assignOrganizationPlanForTest(modules, { organizationId: ORG, actorId: CREATOR });
       for (let index = 0; index < 82; index += 1) {
         const suffix = String(index).padStart(3, "0");
         await seedClub(

@@ -17,6 +17,7 @@ import type {
 } from "../../domain/entities/competition.ts";
 import type { CompetitionRules } from "../../domain/entities/competition-rules.ts";
 import {
+  CompetitionFormatNotInPlan,
   CompetitionNotEditable,
   CompetitionNotFound,
   InvalidCompetitionGameEdition,
@@ -30,6 +31,7 @@ import type {
   CompetitionDraft,
   CompetitionRepository,
 } from "../../domain/ports/competition.repository.ts";
+import type { CompetitionPlanLimitsPort } from "../../domain/ports/competition-plan-limits.port.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import { resolveCompetitionProfile, type CompetitionProfileInput } from "../competition-profile.ts";
 import { isValidCompetitionRules } from "../competition-draft-validation.ts";
@@ -55,6 +57,7 @@ export class UpdateCompetitionDraftUseCase {
     private readonly deps: {
       readonly competitions: CompetitionRepository;
       readonly entries: CompetitionEntryRepository;
+      readonly planLimits: CompetitionPlanLimitsPort;
       readonly clock: ClockPort;
       readonly authorization: AuthorizationPort;
     },
@@ -112,6 +115,18 @@ export class UpdateCompetitionDraftUseCase {
           message: "Invalid IANA time zone",
         }),
       );
+    if (input.format !== current.competition.format) {
+      const { allowedFormats } = await this.deps.planLimits.limitsFor(input.organizationId);
+      if (!allowedFormats.includes(input.format))
+        return err(
+          new CompetitionFormatNotInPlan({
+            code: "competitions.format_not_in_plan",
+            message: `The organization's plan does not include the ${input.format} format`,
+            format: input.format,
+            allowedFormats,
+          }),
+        );
+    }
     const profile = resolveCompetitionProfile(current.competition, input, input.organizationId);
     if (!profile.isOk()) return err(profile.error);
     if (profile.value.teams.max !== null) {
