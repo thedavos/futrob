@@ -21,6 +21,10 @@ export class PostgresQuotaLedger implements QuotaLedgerPort {
   consume(request: QuotaConsumptionRequest): Promise<QuotaConsumptionOutcome> {
     return runInPgAtomicScope(this.pool, async () => {
       const executor = getPgExecutor(this.pool);
+      // Replay keys are global across periods; take this lock before the monthly budget lock.
+      await executor.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+        `billing-usage:${request.organizationId}:${request.quota}:${request.usageKey}`,
+      ]);
       await executor.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
         `billing-quota:${request.organizationId}:${request.quota}:${request.periodKey}`,
       ]);

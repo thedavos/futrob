@@ -1,16 +1,19 @@
-import type {
-  PlanChangeAuditRepository,
-  QuotaLedgerPort,
-  SubscriptionRepository,
+import {
+  AssignOrganizationPlanUseCase,
+  type PlanChangeAuditRepository,
+  type QuotaLedgerPort,
+  type SubscriptionRepository,
 } from "@futrob/billing";
-import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
+import { asActorId, asOrganizationId, Panic, type TransactionPort } from "@futrob/shared-kernel";
 import { expect, it } from "vite-plus/test";
+import { InMemoryPlanCatalog } from "./plan-catalog.ts";
 
 export const CONTRACT_ORG = asOrganizationId("billing-org-a");
 export const CONTRACT_OTHER_ORG = asOrganizationId("billing-org-b");
 export const CONTRACT_SUPERUSER = asActorId("billing-superuser");
 
 export interface BillingAdapters {
+  readonly transaction: TransactionPort;
   readonly ledger: QuotaLedgerPort;
   readonly subscriptions: SubscriptionRepository;
   readonly audit: PlanChangeAuditRepository;
@@ -69,6 +72,93 @@ export function billingAdapterContract(create: () => Promise<BillingAdapters>) {
       usageKey: "job-3",
     });
     expect(await ledger.consume(request("job-4"))).toEqual({ outcome: "consumed", used: 3 });
+  });
+
+  it("replays a concurrent usage key across months without charging twice", async () => {
+    const { ledger } = await create();
+    const outcomes = await Promise.all([
+      ledger.consume(request("month-boundary", { periodKey: "2026-10", limit: 1 })),
+      ledger.consume(request("month-boundary", { periodKey: "2026-11", limit: 1 })),
+    ]);
+    expect(outcomes.map((outcome) => outcome.outcome).sort()).toEqual(["consumed", "replayed"]);
+    const counts = await Promise.all(
+      ["2026-10", "2026-11"].map((periodKey) =>
+        ledger.used({
+          organizationId: CONTRACT_ORG,
+          quota: "provider_sync_jobs",
+          periodKey,
+        }),
+      ),
+    );
+    expect(counts.reduce((sum, count) => sum + count, 0)).toBe(1);
+  });
+
+  it("serializes concurrent first assignments and records the state each actually replaced", async () => {
+    const adapters = await create();
+    let nextId = 0;
+    const assign = new AssignOrganizationPlanUseCase({
+      ...adapters,
+      catalog: new InMemoryPlanCatalog(),
+      clock: { now: () => at },
+      ids: { generate: () => `assignment-${++nextId}` },
+      authorization: {
+        decide: async ({ permission, scope }) => ({
+          allowed: true,
+          permission,
+          scope,
+          reason: "allowed",
+        }),
+        getEffectiveAccess: async () => {
+          throw new Panic("Unused in assignment contract");
+        },
+      },
+    });
+    const results = await Promise.all(
+      (["pro", "league"] as const).map((planKey) =>
+        assign.execute({
+          actorId: CONTRACT_SUPERUSER,
+          organizationId: CONTRACT_ORG,
+          planKey,
+          state: { status: "active" },
+          reason: "Concurrent change",
+        }),
+      ),
+    );
+    expect(results.every((result) => result.isOk())).toBe(true);
+    const changes = await adapters.audit.listForOrganization(CONTRACT_ORG, 10);
+    expect(changes).toHaveLength(2);
+    const first = changes.find((entry) => entry.before === null);
+    const second = changes.find((entry) => entry.before !== null);
+    expect(first).toBeDefined();
+    expect(second?.before).toEqual(first?.after);
+    const stored = await adapters.subscriptions.findForOrganization(CONTRACT_ORG);
+    expect(stored).toMatchObject(second?.after ?? {});
+    expect(results.every((result) => result.isOk() && result.value.id === stored?.id)).toBe(true);
+  });
+
+  it("sorts audit timestamps and id ties before limiting, irrespective of append order", async () => {
+    const { audit } = await create();
+    const append = (id: string, occurredAt: Date) =>
+      audit.append({
+        id,
+        occurredAt,
+        subject: { type: "organization", organizationId: CONTRACT_ORG },
+        changedByActorId: CONTRACT_SUPERUSER,
+        before: null,
+        after: { planKey: "pro", state: { status: "active" } },
+        reason: "Assignment",
+      });
+    await append("change-z", new Date("2026-10-16T00:00:00Z"));
+    await append("change-a", new Date("2026-10-16T00:00:00Z"));
+    await append("change-old", at);
+    expect((await audit.listForOrganization(CONTRACT_ORG, 1)).map((entry) => entry.id)).toEqual([
+      "change-z",
+    ]);
+    expect((await audit.listForOrganization(CONTRACT_ORG, 10)).map((entry) => entry.id)).toEqual([
+      "change-z",
+      "change-a",
+      "change-old",
+    ]);
   });
 
   it("never exceeds the limit under concurrent consumption", async () => {

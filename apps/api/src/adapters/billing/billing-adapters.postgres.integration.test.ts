@@ -5,6 +5,7 @@ import {
   migrateIsolatedSchema,
   type IsolatedSchema,
 } from "@/testing/isolated-schema.ts";
+import { PostgresTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import { seedActors } from "@/testing/seed-actors.ts";
 import {
   billingAdapterContract,
@@ -44,6 +45,7 @@ describe.skipIf(!databaseUrl)("Postgres billing adapters", () => {
       [CONTRACT_ORG, CONTRACT_OTHER_ORG, CONTRACT_SUPERUSER],
     );
     return {
+      transaction: new PostgresTransactionPort(isolated.pool),
       ledger: new PostgresQuotaLedger(isolated.pool),
       subscriptions: new PostgresSubscriptionRepository(isolated.pool),
       audit: new PostgresPlanChangeAuditRepository(isolated.pool),

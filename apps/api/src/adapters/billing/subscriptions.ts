@@ -16,12 +16,13 @@ import {
   Panic,
   type ActorId,
   type OrganizationId,
+  compareTime,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { z } from "zod";
 import { pgJsonInputSchema } from "@/adapters/persistence/parse-json-column.ts";
 import { pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
-import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
+import { getPgExecutor, runInPgAtomicScope } from "@/adapters/persistence/pg-transaction.ts";
 
 const subscriptionRowSchema = z.object({
   id: z.string(),
@@ -70,6 +71,16 @@ const UPSERT_COLUMNS = `id, subject_type, organization_id, actor_id, plan_key, s
 
 export class PostgresSubscriptionRepository implements SubscriptionRepository {
   constructor(private readonly pool: Pool) {}
+
+  withOrganizationLock<T>(organizationId: OrganizationId, operation: () => Promise<T>): Promise<T> {
+    return runInPgAtomicScope(this.pool, async () => {
+      await getPgExecutor(this.pool).query(
+        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+        [`billing-subscription:${organizationId}`],
+      );
+      return operation();
+    });
+  }
 
   async findForOrganization(organizationId: OrganizationId) {
     const result = await getPgExecutor(this.pool).query(
@@ -219,6 +230,28 @@ export class PostgresPlanChangeAuditRepository implements PlanChangeAuditReposit
 export class InMemorySubscriptionRepository implements SubscriptionRepository {
   private readonly organizations = new Map<OrganizationId, OrganizationSubscription>();
   private readonly actors = new Map<ActorId, ActorSubscription>();
+  private readonly assignmentTails = new Map<OrganizationId, Promise<void>>();
+
+  async withOrganizationLock<T>(
+    organizationId: OrganizationId,
+    operation: () => Promise<T>,
+  ): Promise<T> {
+    const previous = this.assignmentTails.get(organizationId) ?? Promise.resolve();
+    let release!: () => void;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tail = previous.then(() => hold);
+    this.assignmentTails.set(organizationId, tail);
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release();
+      if (this.assignmentTails.get(organizationId) === tail)
+        this.assignmentTails.delete(organizationId);
+    }
+  }
 
   async findForOrganization(organizationId: OrganizationId) {
     return this.organizations.get(organizationId) ?? null;
@@ -257,11 +290,11 @@ export class InMemoryPlanChangeAuditRepository implements PlanChangeAuditReposit
 
   async listForOrganization(organizationId: OrganizationId, limit: number) {
     return [...this.entries]
-      .reverse()
       .filter(
         (entry) =>
           entry.subject.type === "organization" && entry.subject.organizationId === organizationId,
       )
+      .sort((a, b) => compareTime(b.occurredAt, a.occurredAt) || b.id.localeCompare(a.id))
       .slice(0, limit);
   }
 }
