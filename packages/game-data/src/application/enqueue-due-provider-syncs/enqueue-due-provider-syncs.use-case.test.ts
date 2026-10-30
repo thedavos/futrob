@@ -1,3 +1,4 @@
+import { ok } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import type { ProviderSyncJob, ProviderSyncJobRepository } from "../../index.ts";
 import type { DueProviderSyncTarget } from "../../domain/ports/due-provider-sync-target.feed.ts";
@@ -35,6 +36,20 @@ class MemoryJobs implements ProviderSyncJobRepository {
     if (existing) return Promise.resolve(existing);
     this.jobs.push(job);
     return Promise.resolve(job);
+  }
+
+  findActiveByDedupeKey(
+    organizationId: string,
+    dedupeKey: string,
+  ): Promise<ProviderSyncJob | null> {
+    return Promise.resolve(
+      this.jobs.find(
+        (job) =>
+          job.organizationId === organizationId &&
+          job.dedupeKey === dedupeKey &&
+          (job.status === "queued" || job.status === "running" || job.status === "retry_scheduled"),
+      ) ?? null,
+    );
   }
 
   claimNext(): Promise<null> {
@@ -77,7 +92,14 @@ function harness(targets: readonly DueProviderSyncTarget[], maxEnqueues = 20) {
   let nextId = 0;
   const ids = { generate: () => `id-${++nextId}` };
   const clock = { now: () => now };
-  const enqueue = new EnqueueProviderSyncJobUseCase({ jobs, ids, clock, maxAttempts: 4 });
+  const enqueue = new EnqueueProviderSyncJobUseCase({
+    jobs,
+    ids,
+    clock,
+    maxAttempts: 4,
+    transaction: { runInTransaction: (operation) => operation() },
+    quota: { reserve: async () => ok(undefined), release: () => Promise.resolve() },
+  });
   const useCase = new EnqueueDueProviderSyncsUseCase({
     targets: { list: () => Promise.resolve(targets) },
     jobs,

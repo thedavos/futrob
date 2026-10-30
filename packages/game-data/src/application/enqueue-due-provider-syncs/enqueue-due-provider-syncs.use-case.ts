@@ -46,6 +46,7 @@ export class EnqueueDueProviderSyncsUseCase {
       limit: this.deps.scanLimit ?? PROVIDER_SYNC_DUE_SCAN_LIMIT,
     });
     let enqueued = 0;
+    let quotaDeferred = 0;
     let alreadyCovered = 0;
     let index = 0;
     const jobs: EnqueuedProviderSyncJobRef[] = [];
@@ -79,18 +80,22 @@ export class EnqueueDueProviderSyncsUseCase {
           maxResultCount: target.maxResultCount,
         },
       });
-      if (job.requestId !== requestId) {
+      if (!job.isOk()) {
+        quotaDeferred += 1;
+        continue;
+      }
+      if (job.value.requestId !== requestId) {
         alreadyCovered += 1;
         continue;
       }
       enqueued += 1;
-      jobs.push({ id: job.id, requestId: job.requestId });
+      jobs.push({ id: job.value.id, requestId: job.value.requestId });
     }
 
     return {
       enqueued,
       alreadyCovered,
-      deferred: targets.length - index,
+      deferred: targets.length - index + quotaDeferred,
       jobs,
     };
   }

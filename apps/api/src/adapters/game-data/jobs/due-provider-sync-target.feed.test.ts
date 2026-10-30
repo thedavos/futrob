@@ -1,3 +1,5 @@
+import { ok } from "@futrob/shared-kernel";
+import { NoopTransactionPort } from "@/adapters/persistence/pg-transaction.ts";
 import { describe, expect, it } from "vite-plus/test";
 import {
   DUE_PROVIDER_SYNC_MATCH_TYPES,
@@ -83,7 +85,14 @@ describe("in-memory due sync progress", () => {
     const useCase = new EnqueueDueProviderSyncsUseCase({
       targets: dueProviderSyncTargetFeedFromSlots(() => slots, jobs),
       jobs,
-      enqueue: new EnqueueProviderSyncJobUseCase({ jobs, ids, clock, maxAttempts: 4 }),
+      enqueue: new EnqueueProviderSyncJobUseCase({
+        jobs,
+        ids,
+        clock,
+        maxAttempts: 4,
+        transaction: new NoopTransactionPort(),
+        quota: { reserve: async () => ok(undefined), release: () => Promise.resolve() },
+      }),
       ids,
       clock,
     });
