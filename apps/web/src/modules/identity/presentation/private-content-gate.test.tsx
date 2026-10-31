@@ -175,7 +175,7 @@ describe("private content when the tab comes back", () => {
 
     expect(screen.queryByRole("heading", { name: "Ana Ruiz" })).toBeNull();
     expect(screen.queryByRole("textbox", { name: "Nota" })).toBeNull();
-    expect(screen.getByText("Comprobando sesión…")).toBeVisible();
+    expect(screen.getByText("Verificando tu acceso…")).toBeVisible();
 
     heldPrivateRead = hold();
     await answerSessionCheck();
@@ -194,18 +194,22 @@ describe("private content when the tab comes back", () => {
     await userEvent.type(screen.getByRole("textbox", { name: "Nota" }), "draft");
 
     setVisibility("hidden");
+    // Hidden, the content is covered but nothing is announced yet.
+    expect(screen.queryByRole("heading", { name: "Ana Ruiz" })).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+
     heldPrivateRead = hold();
     const answerSessionCheck = holdNextSessionCheck();
     setVisibility("visible");
 
     expect(screen.queryByRole("heading", { name: "Ana Ruiz" })).toBeNull();
-    expect(screen.getByText("Checking your session…")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("Checking your access…");
 
     await answerSessionCheck();
 
     expect(await screen.findByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "Nota" })).toHaveValue("draft");
-    expect(screen.queryByText("Checking your session…")).toBeNull();
+    expect(screen.queryByText("Checking your access…")).toBeNull();
   });
 
   it("drops the previous user's data when another tab signed out", async () => {
@@ -222,7 +226,7 @@ describe("private content when the tab comes back", () => {
     await answerSessionCheck();
 
     expect(screen.queryByText("Ana Ruiz")).toBeNull();
-    expect(screen.getByText("Comprobando sesión…")).toBeVisible();
+    expect(screen.getByText("Verificando tu acceso…")).toBeVisible();
   });
 
   it("keeps the data hidden when the session can't be checked, and shows it after a retry", async () => {
@@ -233,7 +237,7 @@ describe("private content when the tab comes back", () => {
     sessionStatus = 503;
     setVisibility("visible");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos comprobar tu sesión.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo verificar tu acceso");
     expect(screen.queryByRole("heading", { name: "Ana Ruiz" })).toBeNull();
 
     sessionStatus = 200;
@@ -254,7 +258,7 @@ describe("private content when the tab comes back", () => {
     await openTab();
 
     expect(await screen.findByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
-    expect(screen.queryByText("Comprobando sesión…")).toBeNull();
+    expect(screen.queryByText("Verificando tu acceso…")).toBeNull();
   });
 
   it("hides the previous user's data in a visible tab as soon as the notice arrives", async () => {
@@ -264,7 +268,7 @@ describe("private content when the tab comes back", () => {
     const answerSessionCheck = holdNextSessionCheck();
     await anotherTabSignsInAndAnnounces(BRUNO);
 
-    expect(await screen.findByText("Comprobando sesión…")).toBeVisible();
+    expect(await screen.findByText("Verificando tu acceso…")).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Ana Ruiz" })).toBeNull();
 
     await answerSessionCheck();

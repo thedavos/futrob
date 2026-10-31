@@ -35,7 +35,7 @@ describe("PlayerOnboardingGuard", () => {
 
     renderGuard();
 
-    expect(screen.getByText("Comprobando tu onboarding…")).toBeTruthy();
+    expect(screen.getByText("Cargando tus datos…")).toBeTruthy();
     expect(await screen.findByText("protected detail")).toBeTruthy();
   });
 

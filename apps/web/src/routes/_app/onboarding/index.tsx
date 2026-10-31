@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
+import { PendingScreen } from "@/shared/presentation/status-screen.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 export const Route = createFileRoute("/_app/onboarding/")({
@@ -8,5 +8,5 @@ export const Route = createFileRoute("/_app/onboarding/")({
 
 function OnboardingIndex() {
   const { t } = useI18n();
-  return <RoutePendingState message={t("onboarding.loading.progress")} />;
+  return <PendingScreen message={t("onboarding.loading.progress")} />;
 }

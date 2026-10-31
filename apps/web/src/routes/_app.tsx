@@ -6,18 +6,9 @@ import { authClient } from "@/modules/identity/auth-client.ts";
 import { PrivateContentGate } from "@/modules/identity/presentation/private-content-gate.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { AuthenticatedShell } from "@/shared/presentation/shell/authenticated-shell.tsx";
+import { PendingScreen } from "@/shared/presentation/status-screen.tsx";
 
 const styles = stylex.create({
-  pending: {
-    display: "flex",
-    minHeight: "100svh",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-    fontSize: "0.875rem",
-    lineHeight: "1.25rem",
-    color: colors.mutedForeground,
-  },
   bare: {
     minHeight: "100svh",
     backgroundColor: colors.background,
@@ -36,7 +27,7 @@ function AppLayout() {
   const bare = isBareAuthenticatedRoute(location.pathname);
 
   if (session.isPending) {
-    return <div {...applyStyles(styles.pending)}>{t("auth.session.checking")}</div>;
+    return <PendingScreen message={t("auth.session.checking")} />;
   }
 
   if (session.data?.user == null) {

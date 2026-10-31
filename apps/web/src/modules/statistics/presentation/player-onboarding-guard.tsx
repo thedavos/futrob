@@ -2,24 +2,9 @@
 
 import type { ReactNode } from "react";
 import { Navigate } from "@tanstack/react-router";
-import * as stylex from "@stylexjs/stylex";
-import { applyStyles } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useOnboardingStatusQuery } from "@/modules/identity/presentation/identity-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-
-const styles = stylex.create({
-  pending: {
-    display: "flex",
-    minHeight: "100svh",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingInline: "1.25rem",
-    fontSize: "0.875rem",
-    lineHeight: "1.25rem",
-    color: colors.mutedForeground,
-  },
-});
+import { PendingScreen } from "@/shared/presentation/status-screen.tsx";
 
 export function PlayerOnboardingGuard({ children }: { readonly children: ReactNode }) {
   const { t } = useI18n();
@@ -33,6 +18,6 @@ export function PlayerOnboardingGuard({ children }: { readonly children: ReactNo
   return allowed ? (
     children
   ) : (
-    <main {...applyStyles(styles.pending)}>{t("player.onboarding.checking")}</main>
+    <PendingScreen message={t("player.onboarding.checking")} placement="region" />
   );
 }
