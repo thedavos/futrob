@@ -9,11 +9,6 @@ import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 const styles = stylex.create({
-  section: {
-    borderTopWidth: 1,
-    borderTopStyle: "solid",
-    borderTopColor: colors.borderSubtle,
-  },
   inner: {
     marginInline: "auto",
     maxWidth: "80rem",
@@ -22,10 +17,9 @@ const styles = stylex.create({
       [media.sm]: "2rem",
     },
     paddingBlock: {
-      default: "6rem",
+      default: "5rem",
       [media.lg]: "8rem",
     },
-    textAlign: "center",
   },
   copy: {
     display: "flex",
@@ -33,12 +27,12 @@ const styles = stylex.create({
     gap: "1.5rem",
   },
   title: {
-    marginInline: "auto",
-    maxWidth: "48rem",
+    maxWidth: "16ch",
+    minWidth: 0,
+    overflowWrap: "break-word",
   },
   subtitle: {
-    marginInline: "auto",
-    maxWidth: "36rem",
+    maxWidth: "44ch",
     color: colors.mutedForeground,
     fontSize: {
       default: null,
@@ -50,10 +44,9 @@ const styles = stylex.create({
     },
   },
   actions: {
-    marginTop: "3rem",
+    marginTop: "2.5rem",
     display: "flex",
     flexWrap: "wrap",
-    justifyContent: "center",
     gap: "0.75rem",
   },
   footer: {
@@ -115,7 +108,7 @@ export function FinalCtaSection() {
   const logo = applyStyles(styles.logo);
   return (
     <>
-      <section {...applyStyles(styles.section)}>
+      <section>
         <div {...applyStyles(styles.inner)}>
           <div {...applyStyles(styles.copy)}>
             <Display as="h2" {...applyStyles(styles.title)}>
@@ -125,7 +118,7 @@ export function FinalCtaSection() {
           </div>
           <div {...applyStyles(styles.actions)}>
             <Button render={<Link to="/signup" />}>{t("landing.cta.primary")}</Button>
-            <Button render={<Link to="/login" />} variant="ghost">
+            <Button render={<Link to="/pricing" />} variant="ghost">
               {t("landing.cta.secondary")}
             </Button>
           </div>
