@@ -45,6 +45,12 @@ const styles = stylex.create({
     alignItems: "center",
     gap: "0.25rem",
   },
+  pricing: {
+    display: {
+      default: "none",
+      [media.sm]: "inline-flex",
+    },
+  },
   sections: {
     display: {
       default: "none",
@@ -75,7 +81,7 @@ export function LandingHeader() {
           </Button>
         </nav>
         <nav aria-label={t("landing.nav.aria")} {...applyStyles(styles.nav)}>
-          <Button render={<Link to="/pricing" />} variant="ghost">
+          <Button render={<Link to="/pricing" />} variant="ghost" {...applyStyles(styles.pricing)}>
             {t("landing.nav.pricing")}
           </Button>
           <Button render={<Link to="/login" />} variant="ghost">
