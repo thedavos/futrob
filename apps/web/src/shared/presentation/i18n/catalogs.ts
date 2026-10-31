@@ -220,6 +220,9 @@ const es = {
   "reschedule.proposedBy": "Propuesta de {team}",
   "reschedule.proposedStart": "Inicio propuesto",
   "reschedule.deadline": "Plazo de respuesta: {date}",
+  "reschedule.summary.encounter": "{team} propone mover todo el enfrentamiento del {from} al {to}.",
+  "reschedule.summary.slot": "{team} propone mover el partido {slot} del {from} al {to}.",
+  "reschedule.respondBy": "Responde antes del {date}.",
   "reschedule.history": "Historial de propuestas y decisiones",
   "reschedule.proposal": "Propuesta {number}",
   "reschedule.consent": "Consentimiento de {actor}",
@@ -1758,19 +1761,24 @@ const es = {
   "landing.reschedule.guarantee": "Un partido aprobado o finalizado ya no se reprograma.",
   "landing.reschedule.panel.label": "Ejemplo de solicitud de reprogramación",
   "landing.reschedule.panel.status": "En negociación",
-  "landing.reschedule.panel.requestedBy": "Solicitada por Sporting Lomas",
-  "landing.reschedule.panel.current": "Horario actual",
-  "landing.reschedule.panel.currentValue": "18 de octubre, 21:00",
-  "landing.reschedule.panel.proposed": "Inicio propuesto",
-  "landing.reschedule.panel.proposedValue": "19 de octubre, 22:00",
-  "landing.reschedule.panel.scope": "Alcance",
-  "landing.reschedule.panel.scopeValue": "Todo el enfrentamiento",
-  "landing.reschedule.panel.deadline": "Plazo de respuesta",
-  "landing.reschedule.panel.deadlineValue": "16 de octubre, 23:59",
+  "landing.reschedule.panel.sentence":
+    "Sporting Lomas propone mover todo el enfrentamiento del 18 de octubre, 21:00 al 19 de octubre, 22:00.",
+  "landing.reschedule.panel.respondBy": "Responde antes del 16 de octubre, 23:59.",
+  "landing.reschedule.panel.options": "CD Estrella puede aceptar, contraproponer o rechazar.",
   "landing.demo.title": "Pruébalo contra la API real",
   "landing.demo.subtitle":
     "Busca tu club de EA Clubs. Es la misma capa de datos que alimenta tus competiciones.",
   "gameData.clubSearch.source": "Resultados de /api/v1/game-data/clubs/search.",
+  "gameData.clubSearch.queryLabel": "Nombre del club",
+  "gameData.clubSearch.queryPlaceholder": "Ej. Cuervos",
+  "gameData.clubSearch.queryRequired": "Escribe el nombre del club.",
+  "gameData.clubSearch.platformLabel": "Plataforma",
+  "gameData.clubSearch.submit": "Buscar",
+  "gameData.clubSearch.searching": "Buscando…",
+  "gameData.clubSearch.retryIn": ({ seconds }) => `Reintentar en ${seconds} s`,
+  "gameData.clubSearch.empty": "Sin resultados para esa búsqueda.",
+  "gameData.clubSearch.error": "No pudimos buscar clubs. Inténtalo nuevamente.",
+  "gameData.clubSearch.rateLimited": "Alcanzaste el límite temporal de búsquedas.",
   "landing.players.title": "Para jugadores: tus partidos, tus números",
   "landing.players.subtitle":
     "El perfil personal existe sin organización: vincula tu club EA y sigue tu rendimiento.",
@@ -2406,6 +2414,9 @@ export interface MessageParamsByKey {
   "reschedule.requestedBy": { team: string };
   "reschedule.proposedBy": { team: string };
   "reschedule.deadline": { date: string };
+  "reschedule.summary.encounter": { team: string; from: string; to: string };
+  "reschedule.summary.slot": { team: string; slot: number; from: string; to: string };
+  "reschedule.respondBy": { date: string };
   "reschedule.proposal": { number: number };
   "reschedule.consent": { actor: string };
   "reschedule.rejection": { actor: string };
@@ -2497,6 +2508,7 @@ export interface MessageParamsByKey {
   readonly "encounter.selection.history.selected": { readonly proposal: string };
   readonly "encounter.selection.history.acknowledged": { readonly count: number };
   readonly "common.seconds": { readonly seconds: number };
+  readonly "gameData.clubSearch.retryIn": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
   readonly "competitions.setup.step": { readonly step: number; readonly total: number };
@@ -2869,6 +2881,9 @@ const en: Catalog = {
   "reschedule.proposedBy": "Proposal from {team}",
   "reschedule.proposedStart": "Proposed kickoff",
   "reschedule.deadline": "Response deadline: {date}",
+  "reschedule.summary.encounter": "{team} proposes moving the whole encounter from {from} to {to}.",
+  "reschedule.summary.slot": "{team} proposes moving match {slot} from {from} to {to}.",
+  "reschedule.respondBy": "Respond by {date}.",
   "reschedule.history": "Proposal and decision history",
   "reschedule.proposal": "Proposal {number}",
   "reschedule.consent": "Consent from {actor}",
@@ -4384,19 +4399,24 @@ const en: Catalog = {
   "landing.reschedule.guarantee": "An approved or finished match can no longer be rescheduled.",
   "landing.reschedule.panel.label": "Example reschedule request",
   "landing.reschedule.panel.status": "In negotiation",
-  "landing.reschedule.panel.requestedBy": "Requested by Sporting Lomas",
-  "landing.reschedule.panel.current": "Current time",
-  "landing.reschedule.panel.currentValue": "October 18, 21:00",
-  "landing.reschedule.panel.proposed": "Proposed start",
-  "landing.reschedule.panel.proposedValue": "October 19, 22:00",
-  "landing.reschedule.panel.scope": "Scope",
-  "landing.reschedule.panel.scopeValue": "Whole encounter",
-  "landing.reschedule.panel.deadline": "Response deadline",
-  "landing.reschedule.panel.deadlineValue": "October 16, 23:59",
+  "landing.reschedule.panel.sentence":
+    "Sporting Lomas proposes moving the whole encounter from October 18, 21:00 to October 19, 22:00.",
+  "landing.reschedule.panel.respondBy": "Respond by October 16, 23:59.",
+  "landing.reschedule.panel.options": "CD Estrella can accept, counter or reject.",
   "landing.demo.title": "Try it against the real API",
   "landing.demo.subtitle":
     "Search for your EA Clubs team. It is the same data layer that powers your competitions.",
   "gameData.clubSearch.source": "Results from /api/v1/game-data/clubs/search.",
+  "gameData.clubSearch.queryLabel": "Club name",
+  "gameData.clubSearch.queryPlaceholder": "E.g. Cuervos",
+  "gameData.clubSearch.queryRequired": "Enter the club name.",
+  "gameData.clubSearch.platformLabel": "Platform",
+  "gameData.clubSearch.submit": "Search",
+  "gameData.clubSearch.searching": "Searching…",
+  "gameData.clubSearch.retryIn": ({ seconds }) => `Retry in ${seconds} s`,
+  "gameData.clubSearch.empty": "No results for that search.",
+  "gameData.clubSearch.error": "We couldn't search clubs. Please try again.",
+  "gameData.clubSearch.rateLimited": "You reached the temporary search limit.",
   "landing.players.title": "For players: your matches, your numbers",
   "landing.players.subtitle":
     "The personal profile exists without an organization: link your EA club and track your performance.",

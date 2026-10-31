@@ -1,18 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { EA_SEARCH_PLATFORM, type ExternalClubDto } from "@futrob/api-contracts";
+import {
+  asEaSearchPlatform,
+  EA_SEARCH_PLATFORM,
+  type EaSearchPlatform,
+  type ExternalClubDto,
+} from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
-  ChoiceGroup,
-  ChoiceGroupItem,
   Field,
   FieldError,
   FieldLabel,
   Form,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   typography,
   readFormString,
 } from "@futrob/ui";
@@ -26,7 +34,7 @@ import {
   type SupportError,
 } from "@/shared/presentation/support-error-alert.tsx";
 import { GameDataClientError } from "./game-data-browser-client.ts";
-import { eaSearchPlatforms } from "./ea-club-search-meta.ts";
+import { eaPlatformLabel, eaSearchPlatforms } from "./ea-club-search-meta.ts";
 import { ClubSearchResultList } from "./club-search-result-item.tsx";
 import { useSearchClubsMutation } from "./game-data-queries.ts";
 
@@ -39,81 +47,30 @@ type ClubSearchField = keyof ClubSearchValues;
 
 const styles = stylex.create({
   panel: {
-    overflow: "hidden",
-    borderRadius: "var(--corner-xl)",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomStyle: "solid",
-    borderBottomColor: colors.border,
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "1.5rem",
-    },
-    paddingBlock: "1rem",
-  },
-  eyebrow: {
-    color: colors.mutedForeground,
-  },
-  title: {
-    marginTop: "0.25rem",
-  },
-  live: {
-    borderRadius: "var(--corner-full)",
-    backgroundColor: colors.muted,
-    paddingInline: "0.75rem",
-    paddingBlock: "0.25rem",
-    color: colors.mutedForeground,
+    display: "grid",
+    minWidth: 0,
+    gap: "1rem",
   },
   form: {
     display: "grid",
+    alignItems: "end",
     gap: "0.75rem",
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "1.5rem",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr) auto",
+      [media.sm]: "minmax(0, 1fr) auto auto",
     },
-    paddingBlock: "1.25rem",
   },
-  fieldset: {
-    margin: 0,
-    borderWidth: 0,
-    padding: 0,
-  },
-  legend: {
-    marginBottom: "0.5rem",
-  },
-  pills: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "0.5rem",
-  },
-  submit: {
-    width: {
-      default: "100%",
+  query: {
+    gridColumnStart: 1,
+    gridColumnEnd: {
+      default: -1,
       [media.sm]: "auto",
     },
   },
-  results: {
-    borderTopWidth: 1,
-    borderTopStyle: "solid",
-    borderTopColor: colors.border,
-    backgroundColor: colors.muted,
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "1.5rem",
-    },
-    paddingBlock: "1rem",
+  platform: {
+    minWidth: "9.5rem",
   },
   empty: {
-    fontSize: "0.875rem",
-    lineHeight: "1.25rem",
     color: colors.mutedForeground,
   },
   source: {
@@ -126,29 +83,27 @@ export function ClubSearchPanel() {
   const [clubs, setClubs] = useState<ExternalClubDto[]>([]);
   const [error, setError] = useState<SupportError | null>(null);
   const [searched, setSearched] = useState(false);
-  const [platform, setPlatform] = useState(EA_SEARCH_PLATFORM.NINTENDO);
+  const [platform, setPlatform] = useState<EaSearchPlatform>(EA_SEARCH_PLATFORM.NINTENDO);
   const validation = useFormValidation<ClubSearchField>();
   const searchClubs = useSearchClubsMutation();
   const retry = useRetryAfterCountdown();
   const loading = searchClubs.isPending;
   const form = applyStyles(styles.form);
-  const submit = applyStyles(styles.submit);
+  const query = applyStyles(styles.query);
+  const platformTrigger = applyStyles(styles.platform);
 
   async function handleSubmit(formValues: ClubSearchValues) {
     if (loading || retry.blocked) {
       return;
     }
 
-    const trimmed = formValues.query.trim();
-    const selectedPlatform = formValues.platform || platform;
-
     setError(null);
     validation.clearServerErrors();
 
     try {
       const result = await searchClubs.mutateAsync({
-        query: trimmed,
-        platform: selectedPlatform,
+        query: formValues.query.trim(),
+        platform: formValues.platform || platform,
       });
       setClubs(result.clubs);
       setSearched(true);
@@ -159,27 +114,19 @@ export function ClubSearchPanel() {
         retry.start(cause.retryAfterSeconds);
         setError({
           message: cause.retryAfterSeconds
-            ? "Alcanzaste el límite temporal de búsquedas."
-            : "No pudimos buscar clubs. Inténtalo nuevamente.",
+            ? t("gameData.clubSearch.rateLimited")
+            : t("gameData.clubSearch.error"),
           requestId: cause.requestId,
           retryAfterSeconds: cause.retryAfterSeconds,
         });
       } else {
-        setError({ message: "No pudimos buscar clubs. Inténtalo nuevamente." });
+        setError({ message: t("gameData.clubSearch.error") });
       }
     }
   }
 
   return (
     <div {...applyStyles(styles.panel)}>
-      <div {...applyStyles(styles.header)}>
-        <div>
-          <p {...applyStyles(typography.label, styles.eyebrow)}>Game data · EA Clubs</p>
-          <h2 {...applyStyles(typography.heading, styles.title)}>Buscar clubs</h2>
-        </div>
-        <span {...applyStyles(typography.label, styles.live)}>Live API</span>
-      </div>
-
       <Form<ClubSearchValues>
         aria-busy={loading}
         className={form.className}
@@ -187,77 +134,84 @@ export function ClubSearchPanel() {
         onFormSubmit={handleSubmit}
         style={form.style}
       >
-        <fieldset {...applyStyles(styles.fieldset)}>
-          <legend id="club-search-platform" {...applyStyles(typography.label, styles.legend)}>
-            Plataforma
-          </legend>
-          <ChoiceGroup
-            aria-labelledby="club-search-platform"
-            className={styles.pills}
-            disabled={loading}
-            onValueChange={(value) => {
-              if (value) setPlatform(value);
-            }}
-            value={platform}
-          >
-            {eaSearchPlatforms.map((option) => (
-              <ChoiceGroupItem appearance="pill" dense key={option.value} value={option.value}>
-                {option.label}
-              </ChoiceGroupItem>
-            ))}
-          </ChoiceGroup>
-          <input name="platform" type="hidden" value={platform} />
-        </fieldset>
-
         <Field
           {...validation.getFieldValidationProps("query")}
+          className={query.className}
           disabled={loading}
           name="query"
+          style={query.style}
           validate={(value) =>
-            readFormString(value).trim().length === 0 ? "Escribe el nombre del club." : null
+            readFormString(value).trim().length === 0
+              ? t("gameData.clubSearch.queryRequired")
+              : null
           }
         >
-          <FieldLabel>Nombre del club</FieldLabel>
-          <Input autoComplete="off" disabled={loading} name="query" placeholder="Ej. Cuervos" />
+          <FieldLabel>{t("gameData.clubSearch.queryLabel")}</FieldLabel>
+          <Input
+            autoComplete="off"
+            disabled={loading}
+            name="query"
+            placeholder={t("gameData.clubSearch.queryPlaceholder")}
+          />
           <FieldError />
         </Field>
 
-        <Button
-          className={submit.className}
-          disabled={loading || retry.blocked}
-          style={submit.style}
-          type="submit"
+        <Select
+          disabled={loading}
+          itemToStringLabel={(value: string | null) =>
+            value === null ? "" : eaPlatformLabel(value)
+          }
+          items={eaSearchPlatforms.map((option) => ({ label: option.label, value: option.value }))}
+          onValueChange={(value: string | null) => {
+            const next = value === null ? null : asEaSearchPlatform(value);
+            if (next) setPlatform(next);
+          }}
+          value={platform}
         >
+          <SelectTrigger
+            aria-label={t("gameData.clubSearch.platformLabel")}
+            className={platformTrigger.className}
+            style={platformTrigger.style}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            {eaSearchPlatforms.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <input name="platform" type="hidden" value={platform} />
+
+        <Button disabled={loading || retry.blocked} type="submit">
           {loading
-            ? "Buscando…"
+            ? t("gameData.clubSearch.searching")
             : retry.blocked
-              ? `Reintentar en ${retry.remainingSeconds} s`
-              : "Buscar"}
+              ? t("gameData.clubSearch.retryIn", { seconds: retry.remainingSeconds })
+              : t("gameData.clubSearch.submit")}
         </Button>
       </Form>
 
-      <div {...applyStyles(styles.results)}>
-        {error ? (
-          <SupportErrorAlert
-            error={{
-              ...error,
-              retryAfterSeconds: retry.remainingSeconds || undefined,
-            }}
-          />
-        ) : null}
+      {error ? (
+        <SupportErrorAlert
+          error={{
+            ...error,
+            retryAfterSeconds: retry.remainingSeconds || undefined,
+          }}
+        />
+      ) : null}
 
-        {!error && searched && clubs.length === 0 ? (
-          <p {...applyStyles(styles.empty)}>Sin resultados para esa búsqueda.</p>
-        ) : null}
+      {!error && searched && clubs.length === 0 ? (
+        <p {...applyStyles(typography.body, styles.empty)}>{t("gameData.clubSearch.empty")}</p>
+      ) : null}
 
-        {!error && clubs.length > 0 ? <ClubSearchResultList clubs={clubs} /> : null}
+      {!error && clubs.length > 0 ? <ClubSearchResultList clubs={clubs} /> : null}
 
-        {!searched && !error ? (
-          <p {...applyStyles(typography.caption, styles.source)}>
-            {t("gameData.clubSearch.source")}
-          </p>
-        ) : null}
-      </div>
+      {!searched && !error ? (
+        <p {...applyStyles(typography.caption, styles.source)}>{t("gameData.clubSearch.source")}</p>
+      ) : null}
     </div>
   );
 }
