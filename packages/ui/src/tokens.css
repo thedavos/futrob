@@ -118,11 +118,14 @@
   --popover-foreground: var(--foreground);
   --primary: var(--palette-lime);
   --primary-hover: var(--palette-lime-soft);
+  --primary-active: color-mix(in oklab, var(--primary-hover) 90%, var(--background));
   --primary-foreground: var(--background);
   --secondary: var(--surface);
   --secondary-hover: var(--surface-raised);
+  --secondary-active: color-mix(in oklab, var(--secondary-hover) 75%, var(--background));
   --secondary-foreground: var(--foreground);
   --muted: var(--surface-raised);
+  --muted-active: color-mix(in oklab, var(--muted) 75%, var(--background));
   --muted-foreground: var(--palette-gray-light);
   --accent: var(--palette-olive);
   --accent-foreground: var(--primary);
@@ -142,6 +145,7 @@
   --danger: var(--palette-red);
   --danger-foreground: var(--background);
   --destructive: var(--danger);
+  --destructive-active: color-mix(in oklab, var(--destructive) 88%, var(--background));
   --destructive-foreground: var(--danger-foreground);
   --info: var(--palette-blue);
   --info-foreground: var(--background);
@@ -182,11 +186,14 @@
   --popover-foreground: var(--foreground);
   --primary: var(--palette-lime);
   --primary-hover: var(--palette-lime-soft);
+  --primary-active: color-mix(in oklab, var(--primary-hover) 90%, var(--background));
   --primary-foreground: var(--background);
   --secondary: var(--surface);
   --secondary-hover: var(--surface-raised);
+  --secondary-active: color-mix(in oklab, var(--secondary-hover) 75%, var(--background));
   --secondary-foreground: var(--foreground);
   --muted: var(--surface-raised);
+  --muted-active: color-mix(in oklab, var(--muted) 75%, var(--background));
   --muted-foreground: var(--palette-gray-light);
   --accent: var(--palette-olive);
   --accent-foreground: var(--primary);
@@ -206,6 +213,7 @@
   --danger: var(--palette-red);
   --danger-foreground: var(--background);
   --destructive: var(--danger);
+  --destructive-active: color-mix(in oklab, var(--destructive) 88%, var(--background));
   --destructive-foreground: var(--danger-foreground);
   --info: var(--palette-blue);
   --info-foreground: var(--background);

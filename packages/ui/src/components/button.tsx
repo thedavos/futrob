@@ -28,7 +28,7 @@ const styles = stylex.create({
     fontWeight: 600,
     whiteSpace: "nowrap",
     textDecorationLine: "none",
-    transitionProperty: "background-color, border-color, color, scale",
+    transitionProperty: "background-color, border-color, box-shadow, color, scale",
     transitionDuration: "var(--duration-normal)",
     transitionTimingFunction: "var(--ease-emphasized)",
     outlineWidth: 0,
@@ -67,7 +67,7 @@ const styles = stylex.create({
     backgroundColor: {
       default: colors.primary,
       ":hover": colors.primaryHover,
-      ":active": colors.primaryHover,
+      ":active": colors.primaryActive,
     },
     color: colors.primaryForeground,
   },
@@ -79,6 +79,7 @@ const styles = stylex.create({
     backgroundColor: {
       default: colors.surface,
       ":hover": colors.muted,
+      ":active": colors.mutedActive,
       ':is([aria-expanded="true"])': colors.muted,
     },
     color: colors.foreground,
@@ -87,7 +88,7 @@ const styles = stylex.create({
     backgroundColor: {
       default: colors.secondary,
       ":hover": colors.secondaryHover,
-      ":active": colors.secondaryHover,
+      ":active": colors.secondaryActive,
       ':is([aria-expanded="true"])': colors.secondaryHover,
     },
     color: colors.secondaryForeground,
@@ -96,6 +97,7 @@ const styles = stylex.create({
     backgroundColor: {
       default: "transparent",
       ":hover": colors.muted,
+      ":active": colors.mutedActive,
       ':is([aria-expanded="true"])': colors.muted,
     },
     color: colors.foreground,
@@ -104,7 +106,7 @@ const styles = stylex.create({
     backgroundColor: {
       default: colors.danger,
       ":hover": colors.destructive,
-      ":active": colors.destructive,
+      ":active": colors.destructiveActive,
     },
     color: colors.dangerForeground,
     borderColor: {

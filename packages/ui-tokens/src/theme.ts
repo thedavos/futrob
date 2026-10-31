@@ -1,4 +1,4 @@
-import { ref, type TokenMap } from "./token.ts";
+import { raw, ref, type TokenMap } from "./token.ts";
 
 /** Single palette for default, light and dark selectors. A light palette is future work. */
 export const GRAPHITE_LIME_THEME: TokenMap = {
@@ -12,11 +12,14 @@ export const GRAPHITE_LIME_THEME: TokenMap = {
   "popover-foreground": ref("foreground"),
   primary: ref("palette-lime"),
   "primary-hover": ref("palette-lime-soft"),
+  "primary-active": raw("color-mix(in oklab, var(--primary-hover) 90%, var(--background))"),
   "primary-foreground": ref("background"),
   secondary: ref("surface"),
   "secondary-hover": ref("surface-raised"),
+  "secondary-active": raw("color-mix(in oklab, var(--secondary-hover) 75%, var(--background))"),
   "secondary-foreground": ref("foreground"),
   muted: ref("surface-raised"),
+  "muted-active": raw("color-mix(in oklab, var(--muted) 75%, var(--background))"),
   "muted-foreground": ref("palette-gray-light"),
   accent: ref("palette-olive"),
   "accent-foreground": ref("primary"),
@@ -36,6 +39,7 @@ export const GRAPHITE_LIME_THEME: TokenMap = {
   danger: ref("palette-red"),
   "danger-foreground": ref("background"),
   destructive: ref("danger"),
+  "destructive-active": raw("color-mix(in oklab, var(--destructive) 88%, var(--background))"),
   "destructive-foreground": ref("danger-foreground"),
   info: ref("palette-blue"),
   "info-foreground": ref("background"),
