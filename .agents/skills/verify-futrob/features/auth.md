@@ -26,7 +26,7 @@ Preconditions:
 - Use a disposable email `verify-<run-id>@example.test` that does not already exist for signup proofs.
 - Do not reuse the operator's personal account.
 
-- **Gate.** Open `/player` with no session. The URL becomes `/login` (typical search `redirectTo=%2Fplayer`, but do not require a particular `redirectTo`; `/login` in that query is unsafe and ignored by resume). The page shows `Comprobando sesión…` only briefly, then `Inicia sesión`.
+- **Gate.** Open `/player` with no session. The URL becomes `/login` (typical search `redirectTo=%2Fplayer`, but do not require a particular `redirectTo`; `/login` in that query is unsafe and ignored by resume). The page shows `Verificando tu acceso…` only briefly, then `Inicia sesión`.
 - **Cross-link.** On `/login`, choose `Crear una cuenta`. The URL is `/signup` and the heading is `Crea tu cuenta`. Choose `Iniciar sesión` in the footer. The URL is `/login`.
 - **Reject login.** On `/login`, fill the textbox named `Correo electrónico` (placeholder `ejemplo@correo.com`) with `nobody-verify@example.test` and the textbox named `Contraseña` (placeholder `Ingresa tu contraseña`) with `wrong-password-verify`. Choose `Iniciar sesión`. A `role=alert` reads `El correo o la contraseña no son correctos.` The URL stays `/login`.
 - **Signup.** On `/signup`, fill the textbox named `Nombre completo` with `Verify Player`, `Correo electrónico` with the disposable address, and `Contraseña` with a value that meets the visible hint (`Mínimo 8 caracteres, incluyendo letras y números.`). Choose `Crear cuenta`. After success the URL is `/onboarding` (or `/onboarding/intention`). The heading `¿Qué quieres hacer primero?` appears. The actor must not land on `/orgs` or `/player` yet.
@@ -36,7 +36,7 @@ Preconditions:
 ## Gotchas
 
 - After onboarding, sign-out lives in the authenticated shell: menu trigger `Abrir menú de cuenta`, item `Cerrar sesión`. Bare `/onboarding` has no account menu — reload `/login` in a fresh profile if you still need a clean session mid-onboarding.
-- A 200 login followed by `Comprobando sesión…` forever or a bounce back to `/login` is usually `BETTER_AUTH_SECRET` mismatch between web and auth, not a bad password.
+- A 200 login followed by `Verificando tu acceso…` forever or a bounce back to `/login` is usually `BETTER_AUTH_SECRET` mismatch between web and auth, not a bad password.
 - Signup validation is client-side first. An empty submit is not an auth-backend proof.
 - Auth textboxes are labelled (`Correo electrónico`, `Contraseña`, `Nombre completo`). Placeholders (`ejemplo@correo.com`, `Ingresa tu contraseña`, `Crea una contraseña`) are hints, not the accessible name. Target the FieldLabel.
 - Signup password policy is 8+ characters **and** at least one letter and one number. `12345678` fails client validation.

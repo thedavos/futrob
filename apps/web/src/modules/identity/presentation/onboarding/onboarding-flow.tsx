@@ -16,7 +16,7 @@ import {
   useSeededOnboardingStatus,
 } from "@/modules/identity/presentation/identity-queries.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
-import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
+import { PendingScreen } from "@/shared/presentation/status-screen.tsx";
 import {
   buildOnboardingFlowErrorDisplay,
   buildSupportFields,
@@ -307,7 +307,7 @@ export function OnboardingFlowProvider({
       {shouldSyncRoute ? (
         <>
           <Navigate to={expectedRoute} replace />
-          <RoutePendingState message={t("onboarding.loading.progress")} />
+          <PendingScreen message={t("onboarding.loading.progress")} />
         </>
       ) : (
         children
