@@ -6,7 +6,6 @@ import type {
   CompetitionStandingSnapshotDto,
 } from "@futrob/api-contracts";
 import {
-  applyProps,
   applyStyles,
   Caption,
   Score,
@@ -20,6 +19,7 @@ import {
   typography,
   vis,
 } from "@futrob/ui";
+import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
   playoffCut,
@@ -30,36 +30,9 @@ import {
 } from "./competition-standings-model.ts";
 import { styles } from "./competition-standings.styles.ts";
 
-type ColumnId =
-  | "played"
-  | "wins"
-  | "draws"
-  | "losses"
-  | "goalsFor"
-  | "goalsAgainst"
-  | "goalDifference"
-  | "points";
+type FigureId = "played" | "goalDifference" | "points";
 
-type Column = {
-  readonly id: ColumnId;
-  /** Moves under the team name on a narrow screen instead of taking a column. */
-  readonly secondary: boolean;
-};
-
-/**
- * Identity and the figures that rank a team stay visible on a narrow screen; the rest
- * of the record moves under the team name so no figure is lost.
- */
-const COLUMNS: readonly Column[] = [
-  { id: "played", secondary: false },
-  { id: "wins", secondary: true },
-  { id: "draws", secondary: true },
-  { id: "losses", secondary: true },
-  { id: "goalsFor", secondary: true },
-  { id: "goalsAgainst", secondary: true },
-  { id: "goalDifference", secondary: false },
-  { id: "points", secondary: false },
-];
+const FIGURES: readonly FigureId[] = ["played", "goalDifference", "points"];
 
 type FormResult = CompetitionStandingRowDto["form"][number];
 
@@ -112,20 +85,32 @@ export function CompetitionStandingsTable({
           {t("standings.table.formula", { version: snapshot.formulaVersion })}
         </Caption>
       </p>
-      <Table containerLabelledBy={headingId} dense>
-        <TableHeader>
-          <TableRow>
-            <TableHead scope="col" {...applyStyles(styles.headPosition)}>
-              <abbr title={t("standings.col.position.full")}>{t("standings.col.position")}</abbr>
+      <Table
+        className={styles.table}
+        containerClassName={styles.tableContainer}
+        containerLabelledBy={headingId}
+      >
+        <TableHeader className={styles.header}>
+          <TableRow className={styles.headerRow}>
+            <TableHead className={[styles.headCell, styles.headPosition]} scope="col">
+              <abbr title={t("standings.col.position.full")} {...applyStyles(styles.abbr)}>
+                {t("standings.col.position")}
+              </abbr>
             </TableHead>
-            <TableHead scope="col" {...applyStyles(styles.headTeam)}>
+            <TableHead className={[styles.headCell, styles.headTeam]} scope="col">
               {t("standings.col.team")}
             </TableHead>
-            <TableHead scope="col" {...applyStyles(styles.headForm, styles.secondary)}>
-              <abbr title={t("standings.col.form.full")}>{t("standings.col.form")}</abbr>
+            <TableHead className={[styles.headCell, styles.headForm]} scope="col">
+              <abbr title={t("standings.col.form.full")} {...applyStyles(styles.abbr)}>
+                {t("standings.col.form")}
+              </abbr>
             </TableHead>
-            {COLUMNS.map((column) => (
-              <NumericHead column={column} key={column.id} t={t} />
+            {FIGURES.map((figure) => (
+              <TableHead key={figure} scope="col" {...applyStyles(styles.headCell, styles.numeric)}>
+                <abbr title={t(`standings.col.${figure}.full`)} {...applyStyles(styles.abbr)}>
+                  {t(`standings.col.${figure}`)}
+                </abbr>
+              </TableHead>
             ))}
           </TableRow>
         </TableHeader>
@@ -144,17 +129,6 @@ export function CompetitionStandingsTable({
   );
 }
 
-function NumericHead({ column, t }: { readonly column: Column; readonly t: Translator }) {
-  return (
-    <TableHead
-      scope="col"
-      {...applyProps(undefined, undefined, styles.numeric, column.secondary && styles.secondary)}
-    >
-      <abbr title={t(`standings.col.${column.id}.full`)}>{t(`standings.col.${column.id}`)}</abbr>
-    </TableHead>
-  );
-}
-
 function StandingsRow({
   entry,
   formats,
@@ -165,50 +139,33 @@ function StandingsRow({
   readonly t: Translator;
 }) {
   const { row } = entry;
-  const cut = entry.startsBelowCut && styles.belowCut;
   return (
-    <TableRow>
-      <TableCell {...applyProps(undefined, undefined, styles.position, cut)}>
-        <Score as="span" size="table" {...applyStyles(row.position === 1 && styles.leader)}>
+    <TableRow className={[styles.row, entry.lastAboveCut && styles.aboveCut]}>
+      <TableCell className={[styles.cell, styles.position]}>
+        <Score
+          as="span"
+          size="table"
+          {...applyStyles(styles.positionValue, row.position === 1 && styles.leader)}
+        >
           {formats.integer.format(row.position)}
         </Score>
       </TableCell>
-      <TableCell {...applyProps(undefined, undefined, styles.teamCell, cut)}>
+      <TableCell className={[styles.cell, styles.teamCell]}>
         <TeamName team={entry.team} t={t} />
         <FormStrip form={row.form} narrow t={t} />
-        <Caption as="span" {...applyStyles(styles.record)}>
-          {t("standings.row.record", {
-            wins: formats.integer.format(row.wins),
-            draws: formats.integer.format(row.draws),
-            losses: formats.integer.format(row.losses),
-            goalsFor: formats.integer.format(row.goalsFor),
-            goalsAgainst: formats.integer.format(row.goalsAgainst),
-          })}
-        </Caption>
       </TableCell>
-      <TableCell {...applyProps(undefined, undefined, styles.formCell, styles.secondary, cut)}>
+      <TableCell className={[styles.cell, styles.formCell]}>
         <FormStrip form={row.form} t={t} />
       </TableCell>
-      {COLUMNS.map((column) => (
-        <TableCell
-          key={column.id}
-          {...applyProps(
-            undefined,
-            undefined,
-            styles.numeric,
-            column.secondary && styles.secondary,
-            cut,
-          )}
-        >
+      {FIGURES.map((figure) => (
+        <TableCell className={[styles.cell, styles.numeric]} key={figure}>
           <Score
             align="end"
             as="span"
             size="table"
-            {...applyStyles(column.id === "points" && styles.points)}
+            {...applyStyles(figure === "points" ? styles.points : styles.figure)}
           >
-            {(column.id === "goalDifference" ? formats.signed : formats.integer).format(
-              row[column.id],
-            )}
+            {(figure === "goalDifference" ? formats.signed : formats.integer).format(row[figure])}
           </Score>
         </TableCell>
       ))}
@@ -250,9 +207,20 @@ function FormStrip({
 }
 
 function TeamName({ team, t }: { readonly team: StandingsTeamName; readonly t: Translator }) {
+  const crest = applyStyles(styles.crest);
   switch (team.kind) {
     case "name":
-      return <span {...applyStyles(styles.teamName)}>{team.value}</span>;
+      return (
+        <span {...applyStyles(styles.team)}>
+          <ClubCrestAvatar
+            className={crest.className}
+            imageUrl={null}
+            name={team.value}
+            style={crest.style}
+          />
+          <span {...applyStyles(styles.teamName)}>{team.value}</span>
+        </span>
+      );
     case "loading":
       return (
         <span role="status" aria-label={t("standings.team.loading")}>
@@ -260,7 +228,12 @@ function TeamName({ team, t }: { readonly team: StandingsTeamName; readonly t: T
         </span>
       );
     case "unresolved":
-      return <span {...applyStyles(styles.teamUnresolved)}>{t("standings.team.unresolved")}</span>;
+      return (
+        <span {...applyStyles(styles.team)}>
+          <span aria-hidden="true" {...applyStyles(styles.crest, styles.crestPlaceholder)} />
+          <span {...applyStyles(styles.teamUnresolved)}>{t("standings.team.unresolved")}</span>
+        </span>
+      );
     default: {
       const exhaustive: never = team;
       return exhaustive;

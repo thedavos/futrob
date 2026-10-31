@@ -140,7 +140,7 @@ describe("Competition standings page", () => {
     expect(await screen.findByText("Maderas FC")).toBeTruthy();
     const [first] = within(screen.getByRole("table")).getAllByRole("row").slice(1);
     const cells = within(first!).getAllByRole("cell");
-    expect(cells).toHaveLength(11);
+    expect(cells).toHaveLength(6);
     const [position, , , ...numbers] = cells;
     for (const cell of [position!, ...numbers]) {
       expect(cell.querySelector('[data-slot="score"]')?.getAttribute("data-size")).toBe("table");

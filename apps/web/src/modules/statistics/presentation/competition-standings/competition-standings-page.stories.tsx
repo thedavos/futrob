@@ -251,7 +251,7 @@ export const Playoffs: Story = {
   parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText("Los 4 primeros pasan al playoff")).toBeVisible();
+    await expect(await canvas.findByText("Los cuatro primeros pasan al playoff")).toBeVisible();
   },
 };
 
