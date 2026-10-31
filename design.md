@@ -273,6 +273,7 @@ Variantes cerradas: `default`, `secondary`, `outline`, `ghost`, `destructive`, `
 ## Movimiento y accesibilidad
 
 - Animar solo `opacity`, `translate`, `scale` y, cuando es imprescindible, tamaño del indicador.
+- Excepción para controles interactivos: sus cambios de estado pueden animar `background-color`, `border-color`, `color` y `box-shadow` (solo el halo de foco), con `--duration-normal` y `--ease-emphasized`; con `prefers-reduced-motion` la duración pasa a `0ms`.
 - Respetar `prefers-reduced-motion`; los tokens de duración pasan a `0ms`.
 - Focus visible en todos los controles.
 - Objetivos táctiles de al menos 44 px.
