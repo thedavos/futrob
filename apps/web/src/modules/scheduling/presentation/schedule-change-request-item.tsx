@@ -48,39 +48,38 @@ export function ScheduleChangeRequestItem({
   const summary = useRef<HTMLDivElement>(null);
   const current = request.proposals.find((proposal) => proposal.id === request.currentProposalId)!;
   const currentStart = currentStartOf(request.scope, view);
+  const proposer = teamName(current.proposedByTeamId);
+  const from = format.format(new Date(currentStart));
+  const to = format.format(new Date(current.proposedStartAt));
+  const deadline = format.format(new Date(current.responseDeadline));
   const canResolve =
     request.status === "escalated" && request.allowedActions.includes("resolve") && !refreshFailed;
   return (
     <li {...applyStyles(styles.request)}>
-      <div ref={summary} tabIndex={-1} {...applyStyles(styles.inline)}>
-        <Badge variant={request.status === "escalated" ? "warning" : "neutral"}>
+      <div ref={summary} tabIndex={-1} {...applyStyles(styles.meta)}>
+        <Badge
+          className={styles.statusBadge}
+          variant={request.status === "escalated" ? "warning" : "neutral"}
+        >
           {t(`reschedule.status.${request.status}`)}
         </Badge>
-        <Text tone="default" weight="medium">
+        <Text className={styles.summary} tone="default">
           {request.scope.type === "entire_encounter"
-            ? t("reschedule.scope.encounter")
-            : t("reschedule.scope.slot", { slot: request.scope.officialSlot })}
+            ? t("reschedule.summary.encounter", { team: proposer, from, to })
+            : t("reschedule.summary.slot", {
+                team: proposer,
+                slot: request.scope.officialSlot,
+                from,
+                to,
+              })}
         </Text>
-        <Caption>
-          {t("reschedule.requestedBy", { team: teamName(request.requestingTeamId) })}
-        </Caption>
-      </div>
-      <div {...applyStyles(styles.meta)}>
-        <Text>
-          {t("reschedule.currentStart")}:{" "}
-          <time dateTime={currentStart}>{format.format(new Date(currentStart))}</time>
-        </Text>
-        <Text tone="default">
-          {t("reschedule.proposedStart")}:{" "}
-          <time dateTime={current.proposedStartAt}>
-            {format.format(new Date(current.proposedStartAt))}
-          </time>
-        </Text>
-        <Caption>
-          {t("reschedule.deadline", { date: format.format(new Date(current.responseDeadline)) })}
-        </Caption>
-        <Caption>{t("reschedule.zone", { zone: view.competition.timeZone })}</Caption>
+        {request.status === "open" ? (
+          <Text>{t("reschedule.respondBy", { date: deadline })}</Text>
+        ) : (
+          <Caption>{t("reschedule.deadline", { date: deadline })}</Caption>
+        )}
         <Text className={styles.reason}>{current.reason}</Text>
+        <Caption>{t("reschedule.zone", { zone: view.competition.timeZone })}</Caption>
       </div>
       {notice ? <Text role="alert">{notice}</Text> : null}
       <ScheduleChangeResponses

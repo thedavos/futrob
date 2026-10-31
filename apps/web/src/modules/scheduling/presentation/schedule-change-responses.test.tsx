@@ -103,9 +103,7 @@ describe("rival response to a reschedule proposal", () => {
         },
       },
     ]);
-    expect(item().getByText(/^Horario actual/).textContent).toBe(
-      "Horario actual: 14 sept 2026, 20:00",
-    );
+    expect(item().getByText(/propone mover/).textContent).toContain("del 14 sept 2026, 20:00 al");
     expect(screen.getByRole("status").textContent).toBe(
       "Propuesta rechazada. Se mantiene el horario actual.",
     );
