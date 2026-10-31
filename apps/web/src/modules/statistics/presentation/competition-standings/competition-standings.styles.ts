@@ -69,6 +69,69 @@ export const styles = stylex.create({
     maxWidth: "100%",
     height: "1rem",
   },
+  headForm: {
+    whiteSpace: "nowrap",
+  },
+  formCell: {
+    whiteSpace: "nowrap",
+    verticalAlign: "middle",
+  },
+  form: {
+    display: "inline-flex",
+    gap: "0.1875rem",
+    verticalAlign: "middle",
+  },
+  formNarrow: {
+    display: { default: "flex", [media.sm]: "none" },
+    marginTop: "0.375rem",
+  },
+  formResult: {
+    display: "inline-grid",
+    placeItems: "center",
+    width: "1.25rem",
+    height: "1.25rem",
+    borderRadius: "0.3125rem",
+    fontSize: "0.6875rem",
+    lineHeight: 1,
+    fontWeight: 700,
+  },
+  formWin: {
+    backgroundColor: colors.success,
+    color: colors.successForeground,
+  },
+  formDraw: {
+    backgroundColor: colors.warning,
+    color: colors.warningForeground,
+  },
+  formLoss: {
+    backgroundColor: colors.danger,
+    color: colors.dangerForeground,
+  },
+  formEmpty: {
+    display: "inline-block",
+    width: "1.25rem",
+    height: "1.25rem",
+    borderRadius: "0.3125rem",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.border,
+  },
+  leader: {
+    color: colors.primary,
+    fontWeight: 700,
+  },
+  points: {
+    fontSize: "1rem",
+    fontWeight: 700,
+  },
+  belowCut: {
+    borderTopWidth: 1,
+    borderTopStyle: "dashed",
+    borderTopColor: colors.primary,
+  },
+  cutNote: {
+    color: colors.primary,
+  },
   record: {
     display: { default: "block", [media.sm]: "none" },
     marginTop: "0.125rem",

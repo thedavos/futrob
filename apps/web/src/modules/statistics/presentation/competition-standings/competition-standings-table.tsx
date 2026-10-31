@@ -1,7 +1,10 @@
 "use client";
 
 import { useId } from "react";
-import type { CompetitionStandingSnapshotDto } from "@futrob/api-contracts";
+import type {
+  CompetitionStandingRowDto,
+  CompetitionStandingSnapshotDto,
+} from "@futrob/api-contracts";
 import {
   applyProps,
   applyStyles,
@@ -14,10 +17,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  typography,
   vis,
 } from "@futrob/ui";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
+  playoffCut,
   standingsTableRows,
   type StandingsTableRow,
   type StandingsTeamName,
@@ -56,6 +61,16 @@ const COLUMNS: readonly Column[] = [
   { id: "points", secondary: false },
 ];
 
+type FormResult = CompetitionStandingRowDto["form"][number];
+
+const FORM_SLOTS = 5;
+
+const FORM_RESULT_STYLE = {
+  win: styles.formWin,
+  draw: styles.formDraw,
+  loss: styles.formLoss,
+} as const satisfies Record<FormResult, (typeof styles)[keyof typeof styles]>;
+
 type Formats = {
   readonly integer: Intl.NumberFormat;
   readonly signed: Intl.NumberFormat;
@@ -80,6 +95,7 @@ export function CompetitionStandingsTable({
     timeStyle: "short",
   }).format(new Date(snapshot.updatedAt));
   const rows = standingsTableRows(snapshot, names);
+  const cut = playoffCut(snapshot);
 
   return (
     <section aria-labelledby={headingId} {...applyStyles(styles.section)}>
@@ -105,6 +121,9 @@ export function CompetitionStandingsTable({
             <TableHead scope="col" {...applyStyles(styles.headTeam)}>
               {t("standings.col.team")}
             </TableHead>
+            <TableHead scope="col" {...applyStyles(styles.headForm, styles.secondary)}>
+              <abbr title={t("standings.col.form.full")}>{t("standings.col.form")}</abbr>
+            </TableHead>
             {COLUMNS.map((column) => (
               <NumericHead column={column} key={column.id} t={t} />
             ))}
@@ -116,6 +135,11 @@ export function CompetitionStandingsTable({
           ))}
         </TableBody>
       </Table>
+      {cut === null ? null : (
+        <p {...applyStyles(typography.caption, styles.cutNote)}>
+          {t("standings.playoffCut", { count: cut })}
+        </p>
+      )}
     </section>
   );
 }
@@ -123,7 +147,6 @@ export function CompetitionStandingsTable({
 function NumericHead({ column, t }: { readonly column: Column; readonly t: Translator }) {
   return (
     <TableHead
-      align="end"
       scope="col"
       {...applyProps(undefined, undefined, styles.numeric, column.secondary && styles.secondary)}
     >
@@ -142,15 +165,17 @@ function StandingsRow({
   readonly t: Translator;
 }) {
   const { row } = entry;
+  const cut = entry.startsBelowCut && styles.belowCut;
   return (
     <TableRow>
-      <TableCell {...applyStyles(styles.position)}>
-        <Score as="span" size="table">
+      <TableCell {...applyProps(undefined, undefined, styles.position, cut)}>
+        <Score as="span" size="table" {...applyStyles(row.position === 1 && styles.leader)}>
           {formats.integer.format(row.position)}
         </Score>
       </TableCell>
-      <TableCell {...applyStyles(styles.teamCell)}>
+      <TableCell {...applyProps(undefined, undefined, styles.teamCell, cut)}>
         <TeamName team={entry.team} t={t} />
+        <FormStrip form={row.form} narrow t={t} />
         <Caption as="span" {...applyStyles(styles.record)}>
           {t("standings.row.record", {
             wins: formats.integer.format(row.wins),
@@ -161,22 +186,25 @@ function StandingsRow({
           })}
         </Caption>
       </TableCell>
+      <TableCell {...applyProps(undefined, undefined, styles.formCell, styles.secondary, cut)}>
+        <FormStrip form={row.form} t={t} />
+      </TableCell>
       {COLUMNS.map((column) => (
         <TableCell
-          align="end"
           key={column.id}
           {...applyProps(
             undefined,
             undefined,
             styles.numeric,
             column.secondary && styles.secondary,
+            cut,
           )}
         >
           <Score
             align="end"
             as="span"
-            className={column.id === "points" ? styles.points : undefined}
             size="table"
+            {...applyStyles(column.id === "points" && styles.points)}
           >
             {(column.id === "goalDifference" ? formats.signed : formats.integer).format(
               row[column.id],
@@ -185,6 +213,39 @@ function StandingsRow({
         </TableCell>
       ))}
     </TableRow>
+  );
+}
+
+function FormStrip({
+  form,
+  narrow = false,
+  t,
+}: {
+  readonly form: CompetitionStandingRowDto["form"];
+  readonly narrow?: boolean;
+  readonly t: Translator;
+}) {
+  const empty = Math.max(0, FORM_SLOTS - form.length);
+  return (
+    <span {...applyStyles(styles.form, narrow && styles.formNarrow)}>
+      <span {...applyStyles(vis.srOnly)}>{t("standings.col.form.full")}: </span>
+      {form.map((result, index) => (
+        <span
+          // Results are positional: the same result can repeat, and order is the meaning.
+          key={index}
+          {...applyStyles(styles.formResult, FORM_RESULT_STYLE[result])}
+        >
+          <span aria-hidden="true">{t(`standings.form.${result}.short`)}</span>
+          <span {...applyStyles(vis.srOnly)}>
+            {t(`standings.form.${result}`)}
+            {index < form.length - 1 ? ", " : ""}
+          </span>
+        </span>
+      ))}
+      {Array.from({ length: empty }, (_, index) => (
+        <span aria-hidden="true" key={`empty-${index}`} {...applyStyles(styles.formEmpty)} />
+      ))}
+    </span>
   );
 }
 

@@ -36,6 +36,7 @@ const row = (
   position: number,
   teamId: string,
   [played, wins, draws, losses, goalsFor, goalsAgainst]: readonly number[],
+  form: CompetitionStandingSnapshotDto["rows"][number]["form"] = [],
 ) => ({
   position,
   teamId,
@@ -47,6 +48,7 @@ const row = (
   goalsAgainst: goalsAgainst!,
   goalDifference: goalsFor! - goalsAgainst!,
   points: wins! * 3 + draws!,
+  form,
 });
 
 const snapshot: CompetitionStandingSnapshotDto = {
@@ -54,13 +56,26 @@ const snapshot: CompetitionStandingSnapshotDto = {
   organizationId: "org-1",
   formulaVersion: "points-gd-gf-v1",
   rows: [
-    row(1, "team-1", [4, 3, 1, 0, 11, 3]),
-    row(2, "team-2", [4, 2, 1, 1, 7, 5]),
-    row(3, "team-3", [4, 1, 0, 3, 4, 9]),
-    row(4, "team-4", [4, 0, 0, 4, 2, 12]),
+    row(1, "team-1", [4, 3, 1, 0, 11, 3], ["win", "draw", "win", "win"]),
+    row(2, "team-2", [4, 2, 1, 1, 7, 5], ["loss", "win", "draw", "win"]),
+    row(3, "team-3", [4, 1, 0, 3, 4, 9], ["win", "loss", "loss", "loss"]),
+    row(4, "team-4", [4, 0, 0, 4, 2, 12], ["loss", "loss", "loss", "loss"]),
   ],
   sourceRevisionMax: 8,
   updatedAt: "2026-10-12T01:00:00.000Z",
+  playoffSpots: null,
+};
+
+const playoffSnapshot: CompetitionStandingSnapshotDto = {
+  ...snapshot,
+  rows: [
+    row(1, "team-1", [6, 5, 1, 0, 16, 4], ["win", "win", "draw", "win", "win"]),
+    row(2, "team-2", [6, 3, 2, 1, 10, 6], ["draw", "win", "loss", "win", "draw"]),
+    row(3, "team-5", [5, 3, 0, 2, 9, 8], ["loss", "win", "win", "loss", "win"]),
+    row(4, "team-3", [6, 1, 2, 3, 6, 11], ["loss", "draw", "loss", "win", "draw"]),
+    row(5, "team-4", [3, 0, 1, 2, 2, 7], ["loss", "draw", "loss"]),
+  ],
+  playoffSpots: 4,
 };
 
 const names = {
@@ -70,11 +85,13 @@ const names = {
     { id: "team-2", name: "Maderas FC" },
     { id: "team-3", name: "Club Atlético Halcones del Pacífico" },
     { id: "team-4", name: "Sobrenaturales" },
+    { id: "team-5", name: "Real Cuervos" },
   ]),
 } as const;
 
 type Scenario =
   | "ready"
+  | "playoffs"
   | "namesLoading"
   | "namesError"
   | "refreshFailed"
@@ -89,9 +106,12 @@ type Scenario =
 
 const noop = () => undefined;
 type ReadyState = Extract<CompetitionStandingsState, { kind: "ready" }>;
-const ready = (teamNames: ReadyState["names"]): CompetitionStandingsState => ({
+const ready = (
+  teamNames: ReadyState["names"],
+  standings: CompetitionStandingSnapshotDto = snapshot,
+): CompetitionStandingsState => ({
   kind: "ready",
-  snapshot,
+  snapshot: standings,
   names: teamNames,
   refreshFailed: false,
   namesRefreshFailed: false,
@@ -101,6 +121,7 @@ const ready = (teamNames: ReadyState["names"]): CompetitionStandingsState => ({
 
 const STATES: Record<Scenario, CompetitionStandingsState> = {
   ready: ready(names),
+  playoffs: ready(names, playoffSnapshot),
   namesLoading: ready({ kind: "loading" }),
   namesError: ready({ kind: "unavailable" }),
   refreshFailed: {
@@ -192,6 +213,7 @@ const meta = {
       control: "select",
       options: [
         "ready",
+        "playoffs",
         "namesLoading",
         "namesError",
         "refreshFailed",
@@ -221,6 +243,22 @@ export const Ready: Story = {
     await expect(await canvas.findByText("Cuervos FC")).toBeVisible();
     await expect(canvas.getByText("Fórmula points-gd-gf-v1")).toBeVisible();
   },
+};
+
+export const Playoffs: Story = {
+  name: "Con corte de playoff",
+  args: { scenario: "playoffs" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("Los 4 primeros pasan al playoff")).toBeVisible();
+  },
+};
+
+export const PlayoffsEnglishNarrow: Story = {
+  name: "Con corte de playoff · EN 360",
+  args: { scenario: "playoffs", locale: "en", narrow: true },
+  parameters: { a11y: { test: "error" } },
 };
 
 export const ReadyEnglishNarrow: Story = {

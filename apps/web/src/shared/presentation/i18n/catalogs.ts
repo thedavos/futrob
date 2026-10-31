@@ -2271,6 +2271,16 @@ const es = {
   "standings.col.goalDifference.full": "Diferencia de goles",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Puntos",
+  "standings.col.form": "Forma",
+  "standings.col.form.full": "Últimos 5 partidos, el más reciente al final",
+  "standings.form.win": "Victoria",
+  "standings.form.win.short": "G",
+  "standings.form.draw": "Empate",
+  "standings.form.draw.short": "E",
+  "standings.form.loss": "Derrota",
+  "standings.form.loss.short": "P",
+  "standings.playoffCut": ({ count }) =>
+    count === 1 ? "El primero pasa al playoff" : `Los ${count} primeros pasan al playoff`,
   "competition.overview.documentTitle": "Resumen",
   "competition.overview.description":
     "Estado, equipos, próximos enfrentamientos y pendientes de la competición.",
@@ -2620,6 +2630,7 @@ export interface MessageParamsByKey {
   readonly "competition.teamStats.table.label": { readonly view: string };
   readonly "standings.table.updated": { readonly time: string };
   readonly "standings.table.formula": { readonly version: string };
+  readonly "standings.playoffCut": { readonly count: number };
   readonly "standings.row.record": {
     readonly wins: string;
     readonly draws: string;
@@ -4878,6 +4889,16 @@ const en: Catalog = {
   "standings.col.goalDifference.full": "Goal difference",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Points",
+  "standings.col.form": "Form",
+  "standings.col.form.full": "Last 5 matches, most recent last",
+  "standings.form.win": "Win",
+  "standings.form.win.short": "W",
+  "standings.form.draw": "Draw",
+  "standings.form.draw.short": "D",
+  "standings.form.loss": "Loss",
+  "standings.form.loss.short": "L",
+  "standings.playoffCut": ({ count }) =>
+    count === 1 ? "The top team advances to the playoffs" : `Top ${count} advance to the playoffs`,
   "competition.overview.documentTitle": "Overview",
   "competition.overview.description":
     "Status, teams, upcoming encounters and pending work for the competition.",
