@@ -28,6 +28,8 @@ export interface PublicCompetition {
   readonly coverPreset: CompetitionCoverPreset | null;
 }
 
+export type PublicStandingFormResult = "win" | "draw" | "loss";
+
 export interface PublicStandingRow {
   readonly position: number;
   readonly teamName: string;
@@ -39,6 +41,8 @@ export interface PublicStandingRow {
   readonly goalsAgainst: number;
   readonly goalDifference: number;
   readonly points: number;
+  /** Latest official results, oldest first. */
+  readonly form: readonly PublicStandingFormResult[];
 }
 
 export interface PublicStandings {

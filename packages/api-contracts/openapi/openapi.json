@@ -13421,6 +13421,18 @@
           },
           "points": {
             "type": "integer"
+          },
+          "form": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "win",
+                "draw",
+                "loss"
+              ]
+            },
+            "maxItems": 5
           }
         },
         "required": [
@@ -13433,7 +13445,8 @@
           "goalsFor",
           "goalsAgainst",
           "goalDifference",
-          "points"
+          "points",
+          "form"
         ]
       },
       "CompetitionStandingSnapshot": {
@@ -13495,6 +13508,18 @@
                 },
                 "points": {
                   "type": "integer"
+                },
+                "form": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "win",
+                      "draw",
+                      "loss"
+                    ]
+                  },
+                  "maxItems": 5
                 }
               },
               "required": [
@@ -13507,7 +13532,8 @@
                 "goalsFor",
                 "goalsAgainst",
                 "goalDifference",
-                "points"
+                "points",
+                "form"
               ]
             }
           },
@@ -13518,6 +13544,13 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "playoffSpots": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
           }
         },
         "required": [
@@ -13526,7 +13559,8 @@
           "formulaVersion",
           "rows",
           "sourceRevisionMax",
-          "updatedAt"
+          "updatedAt",
+          "playoffSpots"
         ]
       },
       "CompetitionTeamManagementDetail": {
@@ -19050,6 +19084,18 @@
                     },
                     "points": {
                       "type": "integer"
+                    },
+                    "form": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "win",
+                          "draw",
+                          "loss"
+                        ]
+                      },
+                      "maxItems": 5
                     }
                   },
                   "required": [
@@ -19062,7 +19108,8 @@
                     "goalsFor",
                     "goalsAgainst",
                     "goalDifference",
-                    "points"
+                    "points",
+                    "form"
                   ]
                 }
               },
@@ -19073,6 +19120,13 @@
               "updatedAt": {
                 "type": "string",
                 "format": "date-time"
+              },
+              "playoffSpots": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
               }
             },
             "required": [
@@ -19081,7 +19135,8 @@
               "formulaVersion",
               "rows",
               "sourceRevisionMax",
-              "updatedAt"
+              "updatedAt",
+              "playoffSpots"
             ]
           }
         },
@@ -24000,6 +24055,18 @@
                     },
                     "points": {
                       "type": "integer"
+                    },
+                    "form": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "win",
+                          "draw",
+                          "loss"
+                        ]
+                      },
+                      "maxItems": 5
                     }
                   },
                   "required": [
@@ -24012,7 +24079,8 @@
                     "goalsFor",
                     "goalsAgainst",
                     "goalDifference",
-                    "points"
+                    "points",
+                    "form"
                   ],
                   "additionalProperties": false
                 }
@@ -31461,6 +31529,18 @@
           },
           "points": {
             "type": "integer"
+          },
+          "form": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "win",
+                "draw",
+                "loss"
+              ]
+            },
+            "maxItems": 5
           }
         },
         "required": [
@@ -31473,7 +31553,8 @@
           "goalsFor",
           "goalsAgainst",
           "goalDifference",
-          "points"
+          "points",
+          "form"
         ],
         "additionalProperties": false
       },

@@ -54,6 +54,7 @@ export class GetPublicStandingsUseCase {
             goalsAgainst: row.goalsAgainst,
             goalDifference: row.goalDifference,
             points: row.points,
+            form: row.form,
           },
         ];
       }),

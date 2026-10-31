@@ -12,6 +12,8 @@ export {
   playerMatchContributionSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  standingFormResultSchema,
+  standingFormSchema,
   competitionStandingRowSchema,
   competitionStandingSnapshotSchema,
   getCompetitionStandingsResponseSchema,

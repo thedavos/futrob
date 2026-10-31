@@ -35,6 +35,7 @@ import {
 } from "../../domain/policies/build-competition-standings.ts";
 import { projectOfficialResultContributions } from "../project-official-result/project-official-result-projection.ts";
 import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
+import { officialSlotTimes } from "../official-slot-times.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type {
   TeamPerformanceRankingLockPort,
@@ -147,7 +148,12 @@ export class RebuildCompetitionStatisticsUseCase {
         currentTeams,
         affectedTeams,
       );
-      await this.rebuildStandings(input.competitionId, previousTeams, currentTeams);
+      await this.rebuildStandings(
+        input.competitionId,
+        previousTeams,
+        currentTeams,
+        officialSlotTimes(latestResults),
+      );
 
       return ok({
         competitionId: input.competitionId,
@@ -242,6 +248,7 @@ export class RebuildCompetitionStatisticsUseCase {
     competitionId: CompetitionId,
     previous: readonly TeamMatchContribution[],
     current: readonly TeamMatchContribution[],
+    occurredAtBySlot: ReadonlyMap<string, Date>,
   ): Promise<void> {
     const organizationId = current[0]?.organizationId ?? previous[0]?.organizationId;
     if (!organizationId) {
@@ -261,6 +268,7 @@ export class RebuildCompetitionStatisticsUseCase {
         contributions: current,
         pointsRules: DEFAULT_COMPETITION_MATCH_POINTS,
         pointsByEncounter,
+        occurredAtBySlot,
         updatedAt: this.deps.clock.now(),
       }),
     );

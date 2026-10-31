@@ -120,6 +120,11 @@ export const getMyMatchesResponseSchema = z.object({
 
 export type GetMyMatchesResponse = z.infer<typeof getMyMatchesResponseSchema>;
 
+export const standingFormResultSchema = z.enum(["win", "draw", "loss"]);
+
+/** Latest official results, oldest first. */
+export const standingFormSchema = z.array(standingFormResultSchema).max(5);
+
 export const competitionStandingRowSchema = z.object({
   position: z.number().int().positive(),
   teamId: z.string().min(1),
@@ -131,6 +136,7 @@ export const competitionStandingRowSchema = z.object({
   goalsAgainst: z.number().int().nonnegative(),
   goalDifference: z.number().int(),
   points: z.number().int(),
+  form: standingFormSchema,
 });
 
 export type CompetitionStandingRowDto = z.infer<typeof competitionStandingRowSchema>;
@@ -142,6 +148,8 @@ export const competitionStandingSnapshotSchema = z.object({
   rows: z.array(competitionStandingRowSchema),
   sourceRevisionMax: z.number().int().nonnegative(),
   updatedAt: z.string().datetime(),
+  /** Teams that reach the playoffs from this table; null when the format has no playoffs stage. */
+  playoffSpots: z.number().int().positive().nullable(),
 });
 
 export type CompetitionStandingSnapshotDto = z.infer<typeof competitionStandingSnapshotSchema>;

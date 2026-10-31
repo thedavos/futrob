@@ -18,6 +18,7 @@ import {
 } from "@futrob/statistics";
 import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
 import type { EncounterReaderPort, OfficialResultReaderPort } from "@futrob/results";
+import type { FixturePlanRepository } from "@futrob/scheduling";
 import type {
   CompetitionRosterMembershipRepository,
   PlayerGameAccountRepository,
@@ -27,6 +28,7 @@ import type { AuthorizationPort, EventPublisherPort, TransactionPort } from "@fu
 import { SystemClock } from "@/adapters/organizations/crypto-ports";
 import { CompetitionsMatchRulesReader } from "@/adapters/statistics/competition-match-rules-reader";
 import { CompetitionsRankingEligibilityReader } from "@/adapters/statistics/competition-ranking-eligibility-reader";
+import { FixturePlayoffSpotsReader } from "@/adapters/statistics/fixture-playoff-spots-reader";
 import { TeamsPlayerIdentityResolver } from "@/adapters/statistics/player-identity-resolver";
 import { TeamsPlayerProfileLookup } from "@/adapters/statistics/player-profile-lookup";
 import {
@@ -89,6 +91,7 @@ export function createStatisticsModule(deps: {
   profiles: PlayerProfileRepository;
   competitions: Pick<CompetitionRepository, "findRulesByCompetitionId" | "findById">;
   entries: CompetitionEntryRepository;
+  fixturePlans: Pick<FixturePlanRepository, "listActive">;
   authorization: AuthorizationPort;
   performanceRankingAccess: PerformanceRankingAccessPort;
   encounterReader?: EncounterReaderPort;
@@ -222,6 +225,7 @@ export function createStatisticsModule(deps: {
       }),
       getCompetitionStandings: new GetCompetitionStandingsUseCase({
         standings,
+        playoffSpots: new FixturePlayoffSpotsReader(deps.fixturePlans),
         authorization: deps.authorization,
       }),
       getCompetitionTeamStatistics: new GetCompetitionTeamStatisticsUseCase({
