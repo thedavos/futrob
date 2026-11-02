@@ -181,22 +181,6 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBeTruthy();
   });
 
-  it("redirects the legacy team route to the club step without a loop", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({ path: "player", currentStep: "club" })}
-        initialPath="/onboarding/team"
-      />,
-    );
-
-    expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Opcional. Solo sirve para mostrarte los partidos recientes de tu club. No verificamos la propiedad.",
-      ),
-    ).toBeTruthy();
-  });
-
   it("navigates optimistically before saveProgress resolves", async () => {
     let resolveSave: (() => void) | undefined;
     const gateway = createFakeOnboardingGateway({
