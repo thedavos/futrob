@@ -19,7 +19,7 @@ export {
 } from "./token.ts";
 export { BRAND_SCALE, PALETTE } from "./scales.ts";
 export { GRAPHITE_LIME_THEME } from "./theme.ts";
-export { TYPOGRAPHY_TOKENS, type TypoRole } from "./typography.ts";
+export { TYPO_ROLES, TYPOGRAPHY_TOKENS, type TypoRole } from "./typography.ts";
 export { CORNER_TOKENS, CONTROL_TOKENS, GEOMETRY_TOKENS, SPACING_TOKENS } from "./geometry.ts";
 export { LAYERING_TOKENS, MOTION_TOKENS } from "./motion.ts";
 export { LIGHT_THEME } from "./theme-light.ts";

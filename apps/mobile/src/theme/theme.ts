@@ -62,22 +62,6 @@ function fontKeyForWeight(token: TokenValue): FontKey {
   }
 }
 
-type FontWeightValue = Exclude<TextStyle["fontWeight"], undefined>;
-
-/** Numeric weight string expected by RN for non-regular keys. */
-function fontWeightFor(fontKey: FontKey): FontWeightValue | undefined {
-  switch (fontKey) {
-    case "regular":
-      return undefined;
-    case "medium":
-      return "500";
-    case "semibold":
-      return "600";
-    case "bold":
-      return "700";
-  }
-}
-
 const ROLE_CACHE = new Map<TypoRole, TextStyle>();
 
 export function typoStyle(role: TypoRole): TextStyle {
@@ -93,8 +77,10 @@ export function typoStyle(role: TypoRole): TextStyle {
 
   const style: TextStyle = {
     fontSize: size,
+    // Each Manrope face is loaded as its own family, so the family alone picks the weight.
+    // A `fontWeight` on top makes Android look for a bold variant of that family, which
+    // does not exist, and fall back to the system font.
     fontFamily: FONT_FAMILY[fontKey],
-    fontWeight: fontWeightFor(fontKey),
     lineHeight: Math.round(size * leading),
     letterSpacing: trackingEm === 0 ? undefined : Math.round(trackingEm * size * 100) / 100,
     fontVariant: role === "score" ? ["tabular-nums"] : undefined,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { TYPO_ROLES } from "@futrob/ui-tokens";
 import { theme } from "./theme.ts";
 
 describe("native typography tokens", () => {
@@ -11,29 +12,19 @@ describe("native typography tokens", () => {
   });
 
   it("maps each role weight token to the matching Manrope face", () => {
-    expect(theme.typo("display")).toMatchObject({
-      fontFamily: "Manrope_700Bold",
-      fontWeight: "700",
-    });
-    expect(theme.typo("heading")).toMatchObject({
-      fontFamily: "Manrope_700Bold",
-      fontWeight: "700",
-    });
-    expect(theme.typo("title")).toMatchObject({
-      fontFamily: "Manrope_600SemiBold",
-      fontWeight: "600",
-      fontSize: 18,
-    });
-    expect(theme.typo("score")).toMatchObject({
-      fontFamily: "Manrope_600SemiBold",
-      fontWeight: "600",
-    });
-    expect(theme.typo("label")).toMatchObject({
-      fontFamily: "Manrope_500Medium",
-      fontWeight: "500",
-    });
+    expect(theme.typo("display").fontFamily).toBe("Manrope_700Bold");
+    expect(theme.typo("heading").fontFamily).toBe("Manrope_700Bold");
+    expect(theme.typo("title").fontFamily).toBe("Manrope_600SemiBold");
+    expect(theme.typo("title").fontSize).toBe(18);
+    expect(theme.typo("score").fontFamily).toBe("Manrope_600SemiBold");
+    expect(theme.typo("label").fontFamily).toBe("Manrope_500Medium");
     expect(theme.typo("body").fontFamily).toBe("Manrope_400Regular");
-    expect(theme.typo("body").fontWeight).toBeUndefined();
+  });
+
+  it("never pairs a face family with fontWeight (Android would fall back to the system font)", () => {
+    for (const role of TYPO_ROLES) {
+      expect(theme.typo(role).fontWeight).toBeUndefined();
+    }
   });
 
   it("uses tabular figures for scores only", () => {

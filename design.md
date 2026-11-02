@@ -1002,6 +1002,9 @@ La marca y el lenguaje visual son los mismos que en web; cambia la plataforma de
 ### Tipografía
 
 - Manrope (pesos 400/500/600/700) vía `@expo-google-fonts/manrope`.
+  Cada peso se carga como una familia propia (`Manrope_700Bold`, …): el peso lo elige
+  `fontFamily` y nunca se combina con `fontWeight`, porque Android buscaría una variante
+  bold inexistente y caería a la fuente del sistema.
 - Mismos roles `typography.*`; tamaños convertidos rem→dp; `letterSpacing` derivado de
   `em × tamaño` del rol.
 - `typography.label` usa tracking ligero (`0.04em`). Mayúsculas son opt-in (p. ej. kicker de landing), no el default;

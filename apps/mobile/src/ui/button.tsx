@@ -116,7 +116,6 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
           <RNText
             style={{
               fontFamily: theme.fontFamily.semibold,
-              fontWeight: "600",
               fontSize: theme.textSizes.sm,
               lineHeight: 20,
               color: isInactive ? theme.colors["muted-foreground"] : theme.colors[skin.textColor],
