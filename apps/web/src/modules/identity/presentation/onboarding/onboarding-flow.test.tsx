@@ -13,6 +13,7 @@ import {
 } from "./onboarding-story-router.tsx";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
+import { memoryOnboardingDraftStore } from "./onboarding-draft-storage.ts";
 
 beforeEach(() => {
   vi.stubGlobal("PointerEvent", MouseEvent);
@@ -114,7 +115,7 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.queryByText("Preparando tu cuenta…")).toBeNull();
   });
 
-  it("cold-bootstraps at intention when the server has an advanced step without draft", async () => {
+  it("resumes at the stored step when no earlier step is missing data", async () => {
     const gateway = createFakeOnboardingGateway({
       path: "player",
       currentStep: "game-account",
@@ -122,17 +123,47 @@ describe("OnboardingFlowProvider initialization", () => {
 
     render(
       <StrictMode>
-        <OnboardingStoryRouter
-          bootstrap="cold"
-          gateway={gateway}
-          initialPath="/onboarding/intention"
-        />
+        <OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/intention" />
       </StrictMode>,
     );
 
     expect(
-      await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
+      await screen.findByRole("heading", { name: "Configura tus datos de juego" }),
     ).toBeTruthy();
+  });
+
+  it("restores the draft after a reload and resumes where the actor left", async () => {
+    const draftStore = memoryOnboardingDraftStore();
+    const first = render(
+      <OnboardingStoryRouter
+        draftStore={draftStore}
+        gateway={createFakeOnboardingGateway()}
+        initialPath="/onboarding/intention"
+      />,
+    );
+    fireEvent.click(await screen.findByRole("radio", { name: /Organizar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    const name = await screen.findByRole("textbox", { name: "Nombre de la organización" });
+    fireEvent.change(name, { target: { value: "Liga Norte" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continuar a competición" }));
+    await screen.findByRole("heading", { name: "Configura tu primera competición" });
+    first.unmount();
+
+    render(
+      <OnboardingStoryRouter
+        draftStore={draftStore}
+        gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "competition" })}
+        initialPath="/onboarding/intention"
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Configura tu primera competición" }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Volver" }));
+    expect(
+      await screen.findByRole("textbox", { name: "Nombre de la organización" }),
+    ).toHaveProperty("value", "Liga Norte");
   });
 
   it("edits a completed review row from its relevant step", async () => {
@@ -167,18 +198,51 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBeTruthy();
   });
 
-  it("redirects an empty advanced review resume back to intention", async () => {
+  it("keeps the draft after a reload when progress writes failed and the server has no path", async () => {
+    const draftStore = memoryOnboardingDraftStore();
+    const failing = () => createFakeOnboardingGateway({ failSave: true });
+    const first = render(
+      <OnboardingStoryRouter
+        draftStore={draftStore}
+        gateway={failing()}
+        initialPath="/onboarding/intention"
+      />,
+    );
+    fireEvent.click(await screen.findByRole("radio", { name: /Organizar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    const name = await screen.findByRole("textbox", { name: "Nombre de la organización" });
+    fireEvent.change(name, { target: { value: "Liga Norte" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continuar a competición" }));
+    await screen.findByRole("heading", { name: "Configura tu primera competición" });
+    first.unmount();
+
     render(
       <OnboardingStoryRouter
-        bootstrap="cold"
+        draftStore={draftStore}
+        gateway={failing()}
+        initialPath="/onboarding/intention"
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Configura tu primera competición" }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Volver" }));
+    expect(
+      await screen.findByRole("textbox", { name: "Nombre de la organización" }),
+    ).toHaveProperty("value", "Liga Norte");
+  });
+
+  it("sends an advanced resume without draft back to the first step missing data", async () => {
+    render(
+      <OnboardingStoryRouter
+        draftStore={memoryOnboardingDraftStore()}
         gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "review" })}
         initialPath="/onboarding/review"
       />,
     );
 
-    expect(
-      await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
-    ).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
   });
 
   it("navigates optimistically before saveProgress resolves", async () => {
@@ -206,16 +270,11 @@ describe("OnboardingFlowProvider initialization", () => {
     resolveSave?.();
   });
 
-  it("rolls back navigation when saveProgress fails", async () => {
-    const requestId = "715f6cc1-ce62-4adf-a3f1-e8bc12fa0e68";
+  it("keeps the actor moving when saving progress fails", async () => {
     render(
       <OnboardingStoryRouter
         gateway={createFakeOnboardingGateway({
-          saveError: new IdentityOnboardingClientError(
-            502,
-            "identity.onboarding_request_failed",
-            requestId,
-          ),
+          saveError: new IdentityOnboardingClientError(502, "identity.onboarding_request_failed"),
         })}
         initialPath="/onboarding/intention"
       />,
@@ -225,13 +284,9 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
 
     expect(
-      await screen.findByText("No pudimos guardar tu progreso. Inténtalo nuevamente."),
+      await screen.findByRole("heading", { name: "Configura tus datos de juego" }),
     ).toBeTruthy();
-    expect(screen.getByText(requestId)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Copiar código de soporte" })).toBeTruthy();
-    expect(
-      await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
-    ).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("shows a support code when organization name verification fails", async () => {
@@ -263,25 +318,35 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
   });
 
-  it("retranslates a visible save error when the locale changes", async () => {
+  it("retranslates a visible error when the locale changes", async () => {
     const user = userEvent.setup();
     render(
       <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({ failSave: true })}
-        initialPath="/onboarding/intention"
+        gateway={createFakeOnboardingGateway({
+          path: "organization",
+          currentStep: "organization",
+          checkNameError: new IdentityOnboardingClientError(
+            502,
+            "identity.onboarding_request_failed",
+          ),
+        })}
+        initialPath="/onboarding/organization"
       />,
     );
 
-    await user.click(await screen.findByRole("radio", { name: /Empezar como jugador/ }));
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.type(
+      await screen.findByRole("textbox", { name: "Nombre de la organización" }),
+      "Liga Norte",
+    );
+    await user.click(screen.getByRole("button", { name: "Continuar a competición" }));
     expect(
-      await screen.findByText("No pudimos guardar tu progreso. Inténtalo nuevamente."),
+      await screen.findByText("No pudimos verificar el nombre. Inténtalo nuevamente."),
     ).toBeTruthy();
 
     await user.click(screen.getByRole("combobox", { name: "Idioma" }));
     await user.click(await screen.findByRole("option", { name: "Inglés" }));
 
-    expect(await screen.findByText("We couldn't save your progress. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We couldn't check the name. Try again.")).toBeTruthy();
   });
 
   it("does not bounce a finished player back to intention when the provider stays mounted", async () => {
@@ -289,20 +354,8 @@ describe("OnboardingFlowProvider initialization", () => {
     const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "review" });
     gateway.completePlayer = completePlayer;
 
-    render(
-      <OnboardingStoryRouter
-        bootstrap="cold"
-        gateway={gateway}
-        initialPath="/onboarding/intention"
-      />,
-    );
+    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/intention" />);
 
-    fireEvent.click(await screen.findByRole("radio", { name: /Empezar como jugador/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
-    await screen.findByRole("heading", { name: "Configura tus datos de juego" });
-    fireEvent.click(screen.getByRole("button", { name: "Omitir por ahora" }));
-    await screen.findByRole("heading", { name: "Asocia tu club EA" });
-    fireEvent.click(screen.getByRole("button", { name: "Omitir por ahora" }));
     await screen.findByRole("heading", { name: "Confirma tu configuración" });
 
     fireEvent.click(screen.getByRole("button", { name: "Entrar a mi espacio" }));

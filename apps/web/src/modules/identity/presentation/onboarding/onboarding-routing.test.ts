@@ -1,28 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import {
-  isOnboardingPathname,
-  resolveOnboardingStep,
-  resolvePersistedOnboardingStep,
-  routeForOnboardingStep,
-} from "./onboarding-routing.ts";
+import { isOnboardingPathname, routeForOnboardingStep } from "./onboarding-routing.ts";
 
 describe("onboarding routing", () => {
-  it("cold-bootstraps at intention even when the server has an advanced step", () => {
-    expect(resolveOnboardingStep("player", "game-account")).toBe("intention");
-    expect(resolveOnboardingStep("player", "club")).toBe("intention");
-    expect(resolveOnboardingStep("organization", "competition")).toBe("intention");
-    expect(resolveOnboardingStep("organization", "review")).toBe("intention");
-    expect(resolveOnboardingStep(null, "intention")).toBe("intention");
-  });
-
-  it("honors persisted steps when explicitly requested", () => {
-    expect(resolvePersistedOnboardingStep("player", "game-account")).toBe("game-account");
-    expect(resolvePersistedOnboardingStep("player", "club")).toBe("club");
-    expect(resolvePersistedOnboardingStep("organization", "competition")).toBe("competition");
-    expect(resolvePersistedOnboardingStep("organization", "invitation")).toBe("intention");
-    expect(resolvePersistedOnboardingStep(null, "review")).toBe("intention");
-  });
-
   it("maps steps to routes", () => {
     expect(routeForOnboardingStep("game-account")).toBe("/onboarding/game-account");
     expect(routeForOnboardingStep("club")).toBe("/onboarding/club");

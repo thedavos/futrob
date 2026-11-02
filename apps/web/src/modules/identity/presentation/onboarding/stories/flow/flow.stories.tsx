@@ -214,7 +214,7 @@ export const InvalidProgressFallsBack: Story = {
   },
 };
 
-export const SaveError: Story = {
+export const SaveFailureKeepsMoving: Story = {
   render: () => (
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({ failSave: true })}
@@ -225,9 +225,10 @@ export const SaveError: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("radio", { name: /Organizar/ }));
     await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
-    await expect(await canvas.findByRole("alert")).toHaveTextContent(
-      "No pudimos guardar tu progreso",
-    );
+    await expect(
+      await canvas.findByRole("heading", { name: "Crea tu organización" }),
+    ).toBeVisible();
+    await expect(canvas.queryByRole("alert")).toBeNull();
   },
 };
 
