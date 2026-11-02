@@ -198,6 +198,22 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBeTruthy();
   });
 
+  it("opens the invitation path with the code from an invitation link", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ path: "player", currentStep: "game-account" })}
+        initialPath="/onboarding/invitation?invitation=invite-token"
+      />,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Únete a una competición" })).toBeTruthy();
+    expect(screen.getByLabelText("Código de invitación")).toHaveProperty("value", "invite-token");
+    fireEvent.click(screen.getByRole("button", { name: "Revisar invitación" }));
+    expect(
+      await screen.findByRole("heading", { name: "Configura tus datos de juego" }),
+    ).toBeTruthy();
+  });
+
   it("sends an advanced resume without draft back to the first step missing data", async () => {
     render(
       <OnboardingStoryRouter

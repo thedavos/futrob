@@ -33,6 +33,7 @@ import {
   type OnboardingDraftStore,
 } from "./onboarding-draft-storage.ts";
 import { resumeOnboardingStep } from "./onboarding-resume.ts";
+import { onboardingInvitationSearchSchema } from "./onboarding-invitation-handoff.ts";
 import { browserOnboardingGateway, type OnboardingGateway } from "./onboarding-flow-gateway.ts";
 import { createEmptyDraft, type OnboardingDraft } from "./onboarding-draft.ts";
 import { finishOnboardingPath } from "./onboarding-finish.ts";
@@ -88,14 +89,25 @@ export function OnboardingFlowProvider({
   >(null);
   const retry = useRetryAfterCountdown();
   const [draftStore] = useState(() => providedDraftStore ?? memoryOnboardingDraftStore());
+  const linkedInvitation = useRouterState({
+    select: (state) => onboardingInvitationSearchSchema.safeParse(state.location.search).data,
+  })?.invitation;
   const [initial] = useState(() => {
+    if (linkedInvitation) {
+      return {
+        path: "invitation" as const,
+        draft: { ...draftStore.load("invitation"), invitationToken: linkedInvitation },
+        step: "invitation" as const,
+      };
+    }
     const restored = draftStore.load(initialStatus.path);
     return {
+      path: initialStatus.path,
       draft: restored,
       step: resumeOnboardingStep(initialStatus.path, initialStatus.currentStep, restored),
     };
   });
-  const [path, setPathState] = useState<OnboardingPathDto | null>(() => initialStatus.path);
+  const [path, setPathState] = useState<OnboardingPathDto | null>(initial.path);
   const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(initial.step);
   const [draft, setDraft] = useState<OnboardingDraft>(initial.draft);
   const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());

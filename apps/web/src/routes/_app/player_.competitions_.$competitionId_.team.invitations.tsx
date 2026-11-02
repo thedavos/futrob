@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PlayerOnboardingGuard } from "@/modules/statistics/presentation/player-onboarding-guard.tsx";
 import { CaptainInvitationsPage } from "@/modules/teams/presentation/captain/captain-invitations-page.tsx";
 
 export const Route = createFileRoute(
@@ -11,9 +10,5 @@ export const Route = createFileRoute(
 
 function PlayerCaptainInvitationsPageRoute() {
   const { competitionId } = Route.useParams();
-  return (
-    <PlayerOnboardingGuard>
-      <CaptainInvitationsPage competitionId={competitionId} organizationId={null} />
-    </PlayerOnboardingGuard>
-  );
+  return <CaptainInvitationsPage competitionId={competitionId} organizationId={null} />;
 }

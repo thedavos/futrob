@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { handOffInvitationToOnboarding } from "@/modules/identity/presentation/onboarding/onboarding-invitation-handoff.ts";
 import { AcceptInvitationDeepLink } from "@/modules/organizations/presentation/accept-invitation-deep-link.tsx";
 import {
   forgetInvitationAccept,
@@ -13,7 +14,10 @@ export const Route = createFileRoute("/_app/invitations/accept/$plainToken")({
   staleTime: Infinity,
   gcTime: Infinity,
   pendingComponent: AcceptInvitationPending,
-  loader: ({ params, preload }) => loadCompetitionInvitationAccept(params.plainToken, preload),
+  loader: async ({ params, preload }) => {
+    if (!preload) await handOffInvitationToOnboarding(params.plainToken);
+    return loadCompetitionInvitationAccept(params.plainToken, preload);
+  },
   component: AcceptInvitationDeepLinkPage,
 });
 
