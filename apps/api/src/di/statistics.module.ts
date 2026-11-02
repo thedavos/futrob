@@ -225,7 +225,10 @@ export function createStatisticsModule(deps: {
       }),
       getCompetitionStandings: new GetCompetitionStandingsUseCase({
         standings,
-        playoffSpots: new FixturePlayoffSpotsReader(deps.fixturePlans),
+        playoffSpots: new FixturePlayoffSpotsReader({
+          fixturePlans: deps.fixturePlans,
+          results: deps.resultReader,
+        }),
         authorization: deps.authorization,
       }),
       getCompetitionTeamStatistics: new GetCompetitionTeamStatisticsUseCase({

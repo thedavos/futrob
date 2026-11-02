@@ -148,7 +148,10 @@ export const competitionStandingSnapshotSchema = z.object({
   rows: z.array(competitionStandingRowSchema),
   sourceRevisionMax: z.number().int().nonnegative(),
   updatedAt: z.string().datetime(),
-  /** Teams that reach the playoffs from this table; null when the format has no playoffs stage. */
+  /**
+   * Teams that reach the playoffs from this table. Null when the format has no playoffs stage,
+   * or once a playoffs result is approved and the table no longer ranks the league alone.
+   */
   playoffSpots: z.number().int().positive().nullable(),
 });
 
