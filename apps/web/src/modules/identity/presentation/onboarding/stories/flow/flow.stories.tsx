@@ -66,7 +66,7 @@ export const OrganizationPath: Story = {
       canvas.getByRole("textbox", { name: "Nombre de la organización" }),
       "Liga Norte",
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Revisar organización" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continuar a competición" }));
     await expect(
       await canvas.findByRole("heading", { name: "Configura tu primera competición" }),
     ).toBeVisible();
@@ -97,7 +97,7 @@ export const OrganizationNameUnavailable: Story = {
       await canvas.findByRole("textbox", { name: "Nombre de la organización" }),
       "Liga Norte",
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Revisar organización" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continuar a competición" }));
     await expect(await canvas.findByText("Ese nombre ya está en uso. Elige otro.")).toBeVisible();
   },
 };

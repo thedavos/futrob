@@ -307,7 +307,7 @@ export function OnboardingFlowProvider({
       {shouldSyncRoute ? (
         <>
           <Navigate to={expectedRoute} replace />
-          <PendingScreen message={t("onboarding.loading.progress")} />
+          <PendingScreen message={t("onboarding.loading.preparing")} />
         </>
       ) : (
         children

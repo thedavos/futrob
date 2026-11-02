@@ -8,5 +8,5 @@ export const Route = createFileRoute("/_app/onboarding/")({
 
 function OnboardingIndex() {
   const { t } = useI18n();
-  return <PendingScreen message={t("onboarding.loading.progress")} />;
+  return <PendingScreen message={t("onboarding.loading.preparing")} />;
 }

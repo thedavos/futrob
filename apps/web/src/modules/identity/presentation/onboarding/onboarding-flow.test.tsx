@@ -111,7 +111,7 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(
       await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
     ).toBeTruthy();
-    expect(screen.queryByText("Recuperando tu progreso…")).toBeNull();
+    expect(screen.queryByText("Preparando tu cuenta…")).toBeNull();
   });
 
   it("cold-bootstraps at intention when the server has an advanced step without draft", async () => {
@@ -150,7 +150,7 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.change(account, { target: { value: "gamer23" } });
     fireEvent.click(screen.getByRole("radio", { name: "FC 26" }));
     fireEvent.click(screen.getByRole("radio", { name: "Nintendo Switch 2" }));
-    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }));
     await screen.findByRole("heading", { name: "Asocia tu club EA" });
     const platformTrigger = screen.getByRole("combobox", {
       name: "Plataforma EA para la búsqueda",
@@ -192,7 +192,7 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
     expect(
       screen.getByText(
-        "La asociación es opcional y declarativa. No verifica propiedad, ni crea un Team de competición ni te incorpora a una plantilla.",
+        "Opcional. Solo sirve para mostrarte los partidos recientes de tu club. No verificamos la propiedad.",
       ),
     ).toBeTruthy();
   });
@@ -269,7 +269,7 @@ describe("OnboardingFlowProvider initialization", () => {
 
     const input = await screen.findByRole("textbox", { name: "Nombre de la organización" });
     fireEvent.change(input, { target: { value: "Liga Norte" } });
-    fireEvent.click(screen.getByRole("button", { name: "Revisar organización" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar a competición" }));
 
     expect(
       await screen.findByText("No pudimos verificar el nombre. Inténtalo nuevamente."),
@@ -514,7 +514,7 @@ describe("OnboardingFlowProvider initialization", () => {
     await user.type(account, "gamer23");
     await user.click(screen.getByRole("radio", { name: "FC 25" }));
     await user.click(screen.getByRole("radio", { name: "PlayStation" }));
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Guardar y continuar" }));
 
     await screen.findByRole("heading", { name: "Asocia tu club EA" });
     await user.type(screen.getByRole("textbox", { name: "Nombre del club" }), "Fera");
@@ -592,7 +592,7 @@ describe("OnboardingFlowProvider initialization", () => {
 
     const input = await screen.findByRole("textbox", { name: "Nombre de la organización" });
     fireEvent.change(input, { target: { value: "Liga Norte" } });
-    fireEvent.click(screen.getByRole("button", { name: "Revisar organización" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar a competición" }));
 
     expect(await screen.findByText("Ese nombre ya está en uso. Elige otro.")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
@@ -607,12 +607,36 @@ describe("OnboardingFlowProvider initialization", () => {
       />,
     );
     const identifier = await screen.findByRole("textbox", { name: "Identificador de EA" });
-    fireEvent.click(screen.getByRole("button", { name: "Vincular y continuar" }));
+    fireEvent.click(screen.getByRole("radio", { name: "PlayStation" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }));
 
     const error = screen.getByText("Escribe tu identificador de EA.");
     expect(error).toBeTruthy();
     expect(identifier.getAttribute("aria-describedby")).toBe(error.parentElement?.id);
     expect(document.activeElement).toBe(identifier);
+  });
+
+  it("only saves a game account once something is typed and keeps skipping available", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "game-account" })}
+        initialPath="/onboarding/game-account"
+      />,
+    );
+
+    const save = await screen.findByRole("button", { name: "Guardar y revisar" });
+    expect(save.hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "Omitir por ahora" }).hasAttribute("disabled")).toBe(
+      false,
+    );
+    expect(screen.queryByRole("button", { name: /Vincular/ })).toBeNull();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Identificador de EA" }), {
+      target: { value: "Gamer23" },
+    });
+    expect(screen.getByRole("button", { name: "Guardar y revisar" }).hasAttribute("disabled")).toBe(
+      false,
+    );
   });
 
   it("renders a recognizable logo for every game platform", async () => {

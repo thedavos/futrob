@@ -274,6 +274,9 @@ export function GameAccountStep() {
             path,
           )
         }
+        // Identity is declared, never verified (DEC-073): the CTA saves what was typed.
+        // With nothing typed, skipping is the only way forward.
+        disabled={!hasAny}
         onPrimary={continueAfterAccount}
         onSkip={() => {
           flow.clearGameAccount();
@@ -282,12 +285,8 @@ export function GameAccountStep() {
         }}
         primaryLabel={
           path === "player"
-            ? hasAny
-              ? t("onboarding.account.continue")
-              : t("onboarding.account.linkContinue")
-            : hasAny
-              ? t("onboarding.account.review")
-              : t("onboarding.account.linkReview")
+            ? t("onboarding.account.saveContinue")
+            : t("onboarding.account.saveReview")
         }
       />
     </OnboardingShell>

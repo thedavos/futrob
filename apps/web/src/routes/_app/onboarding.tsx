@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_app/onboarding")({
 
 function OnboardingPending() {
   const { t } = useI18n();
-  return <PendingScreen message={t("onboarding.loading.progress")} />;
+  return <PendingScreen message={t("onboarding.loading.preparing")} />;
 }
 
 function OnboardingLoadError(props: ErrorComponentProps) {

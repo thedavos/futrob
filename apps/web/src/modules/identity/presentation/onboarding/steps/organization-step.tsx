@@ -88,7 +88,7 @@ export function OrganizationStep() {
         loading={flow.saving}
         onBack={() => void flow.goTo("intention", "organization")}
         onPrimary={() => void continueToReview()}
-        primaryLabel={t("onboarding.organization.review")}
+        primaryLabel={t("onboarding.organization.continue")}
       />
     </OnboardingShell>
   );
