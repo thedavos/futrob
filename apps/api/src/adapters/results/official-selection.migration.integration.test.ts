@@ -96,6 +96,7 @@ suite("0045/0046 official selection and candidate migrations", () => {
           "0059_activity_entry_schedule_decision_entry_kinds.sql",
           "0060_billing_plans_and_entitlements.sql",
           "0061_retire_legacy_onboarding_game_step.sql",
+          "0062_actor_onboarding_events.sql",
         ]);
       } finally {
         client.release();

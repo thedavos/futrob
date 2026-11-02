@@ -2,6 +2,7 @@ import type { ActorId, ClockPort } from "@futrob/shared-kernel";
 import { InvalidOnboardingProgress } from "../../domain/errors/onboarding.errors.ts";
 import type { ActorOnboardingPort } from "../../domain/ports/actor-onboarding.port.ts";
 import {
+  CURRENT_ONBOARDING_VERSION,
   isOnboardingStepAllowed,
   type OnboardingPath,
   type OnboardingStatus,
@@ -39,10 +40,23 @@ export class SaveOnboardingProgressUseCase {
       };
     }
 
+    // `(null, intention)` only records the entry into onboarding: a client can send it from a
+    // stale status after the actor chose a path, and it must not rewind that progress.
+    if (input.path === null && existing?.path) {
+      return {
+        completed: false,
+        completedAt: null,
+        version: null,
+        path: existing.path,
+        currentStep: existing.currentStep,
+      };
+    }
+
     await this.actorOnboarding.saveProgress({
       actorId: input.actorId,
       path: input.path,
       currentStep: input.currentStep,
+      version: CURRENT_ONBOARDING_VERSION,
       updatedAt: this.clock.now(),
     });
 

@@ -47,6 +47,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0023: Invitaciones de inscripción de equipos](/docs/adr/0023-competition-entry-invitations.md)                           | Aceptada    | Invitación dirigida y enlace; deep link nativo y email pendientes             |
 | [ADR-0024: Lecturas públicas anónimas del portal](/docs/adr/0024-anonymous-public-portal-reads.md)                            | Aceptada    | Portada, tabla y calendario públicos; resto del portal y clave pendientes     |
 | [ADR-0025: Planes, entitlements y cupos en el BC billing](/docs/adr/0025-billing-plans-and-entitlements.md)                   | Aceptada    | Fase 0 sin pagos; revisión manual FR-09 y sync automático pendientes          |
+| [ADR-0026: Historial del embudo de onboarding en identity](/docs/adr/0026-onboarding-funnel-history.md)                       | Propuesta   | Historial append-only implementado; resultado de cuenta EA y club pendiente   |
 
 ## Consolidación de septiembre de 2026
 
