@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  useSidebar,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { CaretDownIcon } from "@phosphor-icons/react";
@@ -91,6 +92,7 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
   const session = authClient.useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { setOpenMobile } = useSidebar();
   const { t } = useI18n();
   const user = session.data?.user;
   const fallbackName = t("shell.account.fallback");
@@ -160,8 +162,10 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
             <DropdownMenuItem
               key={item.id}
               onClick={() => {
-                if (item.kind === "link") void navigate({ to: item.href });
-                else setDialog(item.id);
+                if (item.kind === "link") {
+                  setOpenMobile(false);
+                  void navigate({ to: item.href });
+                } else setDialog(item.id);
               }}
             >
               {item.label}

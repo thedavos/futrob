@@ -1,0 +1,145 @@
+// @vitest-environment jsdom
+
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+  useRouterState,
+} from "@tanstack/react-router";
+import { SidebarProvider, TooltipProvider } from "@futrob/ui";
+import { ProfileEditor } from "@/modules/identity/presentation/account/profile-editor.tsx";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
+import { MobileNav } from "./shell-sidebar-nav.tsx";
+import { buildWorkspaceSelectorModel } from "./workspace-selector-model.ts";
+
+vi.mock("@/modules/identity/auth-client.ts", () => ({
+  authClient: {
+    useSession: () => ({
+      data: { user: { id: "user-1", name: "Alex", email: "alex@example.test" } },
+    }),
+    changePassword: vi.fn(),
+  },
+}));
+vi.mock("@/shared/presentation/permissions/index.ts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/presentation/permissions/index.ts")>()),
+  useIsSuperuser: () => ({ allowed: false }),
+}));
+vi.mock("@/modules/notifications/presentation/shell-pending-queue.tsx", () => ({
+  ShellPendingQueue: () => null,
+}));
+
+beforeEach(() => {
+  vi.stubGlobal("PointerEvent", MouseEvent);
+  vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+});
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+const model = buildWorkspaceSelectorModel({
+  memberships: [],
+  competitions: [],
+  associatedClubs: [],
+});
+
+function Shell() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  return (
+    <SidebarProvider>
+      <MobileNav
+        allowedPermissions={new Set()}
+        model={model}
+        onRequestAddClub={() => undefined}
+        onSelect={() => undefined}
+        pathname={pathname}
+        selection={{ kind: "personal" }}
+        title="Alex"
+      />
+      <Outlet />
+    </SidebarProvider>
+  );
+}
+
+function renderMobileShell() {
+  const root = createRootRoute({ component: Shell });
+  const home = createRoute({
+    getParentRoute: () => root,
+    path: "/player",
+    component: () => <h1>Inicio</h1>,
+  });
+  const profile = createRoute({
+    getParentRoute: () => root,
+    path: "/player/profile",
+    component: () => (
+      <>
+        <h1>Mi perfil</h1>
+        <ProfileEditor
+          identity={{ name: "Alex", email: "alex@example.test" }}
+          save={async () => undefined}
+        />
+      </>
+    ),
+  });
+  const router = createRouter({
+    routeTree: root.addChildren([home, profile]),
+    history: createMemoryHistory({ initialEntries: ["/player"] }),
+  });
+  render(
+    <I18nProvider initialLocale="es">
+      <QueryTestProvider>
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
+      </QueryTestProvider>
+    </I18nProvider>,
+  );
+  return router;
+}
+
+async function openAccountMenu() {
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Abrir navegación" }));
+  await user.click(await screen.findByRole("button", { name: "Abrir menú de cuenta" }));
+  return user;
+}
+
+describe("account menu in mobile navigation", () => {
+  it("closes the navigation sheet when opening Profile and exposes its form", async () => {
+    const router = renderMobileShell();
+    const user = await openAccountMenu();
+    await user.click(await screen.findByRole("menuitem", { name: "Perfil" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/player/profile"));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Navegación" })).not.toBeInTheDocument(),
+    );
+    expect(await screen.findByRole("heading", { name: "Mi perfil" })).toBeVisible();
+    const name = screen.getByRole("textbox", { name: "Nombre visible" });
+    await user.click(name);
+    expect(name).toHaveFocus();
+  });
+
+  it.each([
+    ["Enviar feedback", "Enviar feedback"],
+    ["Configuración", "Configuración"],
+  ])("preserves navigation and restores account focus after closing %s", async (item, title) => {
+    const router = renderMobileShell();
+    const user = await openAccountMenu();
+    await user.click(await screen.findByRole("menuitem", { name: item }));
+    const dialog = await screen.findByRole("dialog", { name: title });
+    expect(router.state.location.pathname).toBe("/player");
+    await user.click(within(dialog).getAllByRole("button", { name: "Cerrar" })[0]);
+    expect(await screen.findByRole("dialog", { name: "Navegación" })).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Abrir menú de cuenta" })).toHaveFocus(),
+    );
+  });
+});
