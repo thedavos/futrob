@@ -5,8 +5,15 @@ import type {
   OnboardingProgress,
 } from "../value-objects/onboarding-status.ts";
 
+/**
+ * Current onboarding state plus its append-only funnel history (ADR-0026).
+ * Each write appends one history entry only when it changes the stored state, so a
+ * repeated or retried write leaves both the state and the history unchanged.
+ */
 export interface ActorOnboardingPort {
   findByActor(actorId: ActorId): Promise<ActorOnboardingState | null>;
+  /** Stores the step and records `step-entered` when path or step differ from the stored ones. */
   saveProgress(progress: OnboardingProgress): Promise<void>;
+  /** Marks completion and records `completed` once, on the transition. */
   saveCompleted(onboarding: CompletedOnboarding): Promise<void>;
 }

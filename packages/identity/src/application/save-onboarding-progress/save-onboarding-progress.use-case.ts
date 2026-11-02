@@ -2,6 +2,7 @@ import type { ActorId, ClockPort } from "@futrob/shared-kernel";
 import { InvalidOnboardingProgress } from "../../domain/errors/onboarding.errors.ts";
 import type { ActorOnboardingPort } from "../../domain/ports/actor-onboarding.port.ts";
 import {
+  CURRENT_ONBOARDING_VERSION,
   isOnboardingStepAllowed,
   type OnboardingPath,
   type OnboardingStatus,
@@ -43,6 +44,7 @@ export class SaveOnboardingProgressUseCase {
       actorId: input.actorId,
       path: input.path,
       currentStep: input.currentStep,
+      version: CURRENT_ONBOARDING_VERSION,
       updatedAt: this.clock.now(),
     });
 
