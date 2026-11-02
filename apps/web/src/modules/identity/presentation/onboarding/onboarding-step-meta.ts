@@ -1,6 +1,10 @@
 import type { StepperStep } from "@futrob/ui";
-import type { GamePlatformDto, OnboardingPathDto } from "@futrob/api-contracts";
-import { ONBOARDING_PATH } from "@futrob/identity";
+import {
+  ONBOARDING_STEPS_BY_PATH,
+  type GamePlatformDto,
+  type OnboardingPathDto,
+  type OnboardingStepDto,
+} from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import {
   competitionFormats,
@@ -32,32 +36,16 @@ export function intentionSteps(t: Translator): readonly StepperStep[] {
 }
 
 export function stepsForPath(t: Translator, path: OnboardingPathDto): readonly StepperStep[] {
-  const common = {
-    intention: { id: "intention", label: t("onboarding.step.start") },
-    account: { id: "game-account", label: t("onboarding.step.account") },
-    review: { id: "review", label: t("onboarding.step.review") },
-  } satisfies Record<string, StepperStep>;
-  return {
-    [ONBOARDING_PATH.organization]: [
-      common.intention,
-      { id: "organization", label: t("onboarding.step.organization") },
-      { id: "competition", label: t("onboarding.step.competition") },
-      common.account,
-      common.review,
-    ],
-    [ONBOARDING_PATH.invitation]: [
-      common.intention,
-      { id: "invitation", label: t("onboarding.step.invitation") },
-      common.account,
-      common.review,
-    ],
-    [ONBOARDING_PATH.player]: [
-      common.intention,
-      common.account,
-      { id: "club", label: t("onboarding.step.club") },
-      common.review,
-    ],
-  }[path];
+  const labels = {
+    intention: t("onboarding.step.start"),
+    organization: t("onboarding.step.organization"),
+    competition: t("onboarding.step.competition"),
+    invitation: t("onboarding.step.invitation"),
+    "game-account": t("onboarding.step.account"),
+    club: t("onboarding.step.club"),
+    review: t("onboarding.step.review"),
+  } satisfies Record<OnboardingStepDto, string>;
+  return ONBOARDING_STEPS_BY_PATH[path].map((id) => ({ id, label: labels[id] }));
 }
 
 export { knownGameEditions, competitionFormats, competitionRegions, competitionTimeZones };

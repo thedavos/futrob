@@ -117,10 +117,17 @@ describe("apps/api http onboarding", () => {
       currentStep: "intention",
     });
 
-    const progress = await app.request("/api/v1/identity/onboarding", {
+    const retiredStep = await app.request("/api/v1/identity/onboarding", {
       method: "PATCH",
       headers: serviceHeaders(actor),
       body: JSON.stringify({ path: "player", currentStep: "team" }),
+    });
+    expect(retiredStep.status).toBe(400);
+
+    const progress = await app.request("/api/v1/identity/onboarding", {
+      method: "PATCH",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({ path: "player", currentStep: "club" }),
     });
     expect(progress.status).toBe(200);
     expect(await progress.json()).toEqual({

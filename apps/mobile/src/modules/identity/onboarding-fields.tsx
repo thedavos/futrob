@@ -10,7 +10,7 @@ import {
 import { theme } from "@/theme/theme";
 import { Button, Input, Text } from "@/ui";
 import type { NativeOnboardingFlow } from "./onboarding-flow.ts";
-import { STEPS_BY_PATH, missingRequiredStep, stepsForPath } from "./onboarding-flow.ts";
+import { missingRequiredStep, stepsForPath } from "./onboarding-flow.ts";
 import type { MobileCopyKey, MobileLanguage } from "./mobile-copy.ts";
 
 type Props = {
@@ -52,7 +52,6 @@ const editTitleKey = {
   organization: "organization",
   competition: "competition",
   invitation: "invitation",
-  game: "account",
   "game-account": "account",
   club: "club",
   review: "review",
@@ -146,7 +145,7 @@ export function OnboardingFields({
               onPress={() =>
                 void run(async () => {
                   await change({ path });
-                  await goTo(STEPS_BY_PATH[path][1]);
+                  await goTo(stepsForPath(path)[1]);
                 })
               }
             />
@@ -386,7 +385,5 @@ export function OnboardingFields({
             ))}
         </View>
       );
-    case "game":
-      return null;
   }
 }

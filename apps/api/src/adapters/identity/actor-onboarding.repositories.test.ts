@@ -12,11 +12,9 @@ const onboardingStepSchema = z.enum([
   "intention",
   "organization",
   "competition",
-  "game",
   "invitation",
   "game-account",
   "club",
-  "team",
   "review",
 ]);
 interface StoredRow {
@@ -125,23 +123,5 @@ describe.each(repositoryCases())("actor onboarding %s repository", (_name, creat
       path: "player",
       currentStep: null,
     });
-  });
-});
-
-it("normalizes a legacy Postgres team step at the persistence boundary", async () => {
-  const pool = new FakeActorOnboardingPool();
-  pool.seed({
-    actor_id: "actor-legacy-team",
-    onboarding_completed: false,
-    onboarding_completed_at: null,
-    onboarding_version: null,
-    onboarding_path: "player",
-    onboarding_current_step: "team",
-  });
-  const repository = new PostgresActorOnboardingRepository(asPgPool(pool));
-
-  await expect(repository.findByActor(asActorId("actor-legacy-team"))).resolves.toMatchObject({
-    path: "player",
-    currentStep: "club",
   });
 });
