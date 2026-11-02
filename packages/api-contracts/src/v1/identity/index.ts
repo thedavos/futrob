@@ -13,6 +13,7 @@ export {
   inspectCompetitionInvitationResponseSchema,
   completePlayerOnboardingRequestSchema,
   completePlayerOnboardingResponseSchema,
+  externalClubAssociationOutcomeSchema,
   type OnboardingPathDto,
   type OnboardingStepDto,
   type OnboardingStatusDto,
@@ -27,4 +28,5 @@ export {
   type InspectCompetitionInvitationResponse,
   type CompletePlayerOnboardingRequest,
   type CompletePlayerOnboardingResponse,
+  type ExternalClubAssociationOutcomeDto,
 } from "./schemas.ts";

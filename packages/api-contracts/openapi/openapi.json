@@ -2928,7 +2928,7 @@
       "post": {
         "responses": {
           "200": {
-            "description": "Completed player onboarding",
+            "description": "Completed player onboarding. The optional club association is best-effort: when the game-data provider is unavailable the path still completes and `externalClubAssociation` is `failed`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2947,6 +2947,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "description": "The provider does not know the requested external club",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "409": {
             "$ref": "#/components/responses/ApiError"
@@ -14826,6 +14841,14 @@
               ]
             }
           },
+          "externalClubAssociation": {
+            "type": "string",
+            "enum": [
+              "associated",
+              "skipped",
+              "failed"
+            ]
+          },
           "destination": {
             "type": "string",
             "enum": [
@@ -14837,6 +14860,7 @@
           "profile",
           "gameAccount",
           "externalClubs",
+          "externalClubAssociation",
           "destination"
         ]
       },

@@ -49,6 +49,7 @@ export {
   type ProviderError,
 } from "./domain/errors/provider.errors.ts";
 export {
+  isProviderOutage,
   isRetryableProviderError,
   providerHealthOutcome,
   providerRetryDelayMs,

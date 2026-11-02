@@ -1959,7 +1959,9 @@ paths:
     post:
       responses:
         "200":
-          description: Completed player onboarding
+          description: "Completed player onboarding. The optional club association is
+            best-effort: when the game-data provider is unavailable the path
+            still completes and `externalClubAssociation` is `failed`."
           content:
             application/json:
               schema:
@@ -1970,6 +1972,15 @@ paths:
         "400": &a33
           $ref: "#/components/responses/ApiError"
         "401": *a33
+        "404":
+          description: The provider does not know the requested external club
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
         "409": *a33
       operationId: completePlayerOnboarding
       tags:
@@ -9841,6 +9852,12 @@ components:
               - gameEdition
               - imageUrl
               - associatedAt
+        externalClubAssociation:
+          type: string
+          enum:
+            - associated
+            - skipped
+            - failed
         destination:
           type: string
           enum:
@@ -9849,6 +9866,7 @@ components:
         - profile
         - gameAccount
         - externalClubs
+        - externalClubAssociation
         - destination
     ConfirmOfficialSelectionRequest:
       type: object

@@ -6,13 +6,14 @@ import {
   completePlayerOnboardingResponseSchema,
   getOnboardingStatusResponseSchema,
   saveOnboardingProgressResponseSchema,
+  type ExternalClubAssociationOutcomeDto,
   type OnboardingPathDto,
   type PlayerGameAccountInputDto,
 } from "@futrob/api-contracts";
 import { CompetitionNotFound } from "@futrob/competitions";
 import { InvitationInvalid } from "@futrob/organizations";
 import { organizationProfileDto } from "./organization-dto.ts";
-import type { ExternalClub } from "@futrob/game-data";
+import { isProviderOutage, type ExternalClub } from "@futrob/game-data";
 import type {
   AddPlayerGameAccountError,
   PlayerExternalClubAssociation,
@@ -20,6 +21,7 @@ import type {
   PlayerProfile,
 } from "@futrob/teams";
 import type { AppDeps } from "@/app.ts";
+import { logCorrelatedInfo } from "@/context/request-correlation.ts";
 import { apiErrorResponse, failureToHttp, isHttpMappableFailure } from "@/http/errors.ts";
 import { TaggedError } from "@futrob/shared-kernel";
 import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
@@ -216,16 +218,30 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     const conflict = await onboardingPathConflict(identity, actorId, "player");
     if (conflict) return conflict;
 
+    // The club association is optional and declarative (no ownership check), so a provider
+    // outage must not block onboarding: complete without the club and report `failed`.
+    // A locator the provider rejects (club not found, unsupported) still fails the request.
     const locator = parsed.externalClub ?? null;
     let resolvedClub: ExternalClub | null = null;
+    let externalClubAssociation: ExternalClubAssociationOutcomeDto = "skipped";
     if (locator) {
       const resolved = await gameData.getExternalClub.execute(locator.providerKey, {
         externalClubId: locator.externalClubId,
         platform: locator.platform,
         gameEdition: locator.gameEdition,
       });
-      if (!resolved.isOk()) return failureToHttp(resolved.error);
-      resolvedClub = resolved.value;
+      if (resolved.isOk()) {
+        resolvedClub = resolved.value;
+        externalClubAssociation = "associated";
+      } else if (isProviderOutage(resolved.error)) {
+        externalClubAssociation = "failed";
+        logCorrelatedInfo("onboarding.player.external_club_skipped", {
+          provider: locator.providerKey,
+          code: resolved.error.code,
+        });
+      } else {
+        return failureToHttp(resolved.error);
+      }
     }
 
     try {
@@ -249,6 +265,7 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
           profile: playerProfileDto(player.profile),
           gameAccount: player.gameAccount ? playerGameAccountDto(player.gameAccount) : null,
           externalClubs: externalClubs.map(playerExternalClubAssociationDto),
+          externalClubAssociation,
           destination: "personal",
         });
       });
