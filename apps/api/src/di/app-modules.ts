@@ -15,6 +15,7 @@ import type { CompetitionApplicationFlow } from "@/application/competitions/comp
 import type { EntryInvitationsComposition } from "./entry-invitations.composition.ts";
 import type { SchedulingModule } from "./scheduling.module.ts";
 import type { GameDataModule } from "./game-data.module.ts";
+import type { OnboardingCompletionFlow } from "@/application/identity/onboarding-completion.flow.ts";
 import type { IdentityModule } from "./identity.module.ts";
 import type { ListOrganizationMembersUseCase } from "@futrob/organizations";
 import type { OrganizationsModule } from "./organizations.module.ts";
@@ -55,6 +56,8 @@ export interface AppModules {
   readonly gameData: GameDataModule;
   readonly identity: IdentityModule;
   readonly notifications: NotificationsModule;
+  /** Finishes each onboarding path in one transaction that serializes per actor. */
+  readonly onboardingCompletion: OnboardingCompletionFlow;
   readonly organizations: OrganizationsModule & {
     readonly listOrganizationMembers: ListOrganizationMembersUseCase;
   };
