@@ -48,7 +48,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           setFocused(false);
           props.onBlur?.(event);
         }}
-        placeholderTextColor={theme.colors["muted-foreground"]}
+        placeholderTextColor={theme.colors["text-tertiary"]}
         style={[
           {
             minHeight: theme.controlHeight,

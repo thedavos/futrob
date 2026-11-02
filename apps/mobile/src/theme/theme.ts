@@ -35,10 +35,6 @@ function typographyValue(token: TokenValue): string {
   return typographyValue(referenced);
 }
 
-function refName(token: TokenValue): string | null {
-  return token.kind === "ref" ? token.name : null;
-}
-
 export const themeColors = themeToHexColors(LIGHT_THEME);
 
 export type ThemeColorName = keyof typeof themeColors;
@@ -52,13 +48,9 @@ const FONT_FAMILY = {
 
 type FontKey = keyof typeof FONT_FAMILY;
 
-/** Maps a `typo-<role>-weight` token (`var(--font-weight-bold)`) to a font key. */
+/** Maps a `typo-<role>-weight` token (`ref("font-weight-bold")`) to a font key. */
 function fontKeyForWeight(token: TokenValue): FontKey {
-  const name = refName(token);
-  if (name === null || !name.startsWith("font-weight-")) {
-    return "regular";
-  }
-  switch (name.slice("font-weight-".length)) {
+  switch (typographyValue(token)) {
     case "500":
       return "medium";
     case "600":
@@ -105,6 +97,7 @@ export function typoStyle(role: TypoRole): TextStyle {
     fontWeight: fontWeightFor(fontKey),
     lineHeight: Math.round(size * leading),
     letterSpacing: trackingEm === 0 ? undefined : Math.round(trackingEm * size * 100) / 100,
+    fontVariant: role === "score" ? ["tabular-nums"] : undefined,
   };
 
   ROLE_CACHE.set(role, style);
