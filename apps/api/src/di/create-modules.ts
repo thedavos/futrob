@@ -59,6 +59,7 @@ import {
   GetTeamRosterManagementUseCase,
   ListTeamRosterManagementUseCase,
 } from "@/application/teams/team-roster-management.use-case.ts";
+import { OnboardingCompletionFlow } from "@/application/identity/onboarding-completion.flow.ts";
 import { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
 import { RecalculateRescheduledCandidates } from "@/application/results/recalculate-rescheduled-candidates.ts";
 import { ListCompetitionDisputesQuery } from "@/application/results/list-competition-disputes.query.ts";
@@ -368,7 +369,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     teams,
   });
 
-  return {
+  const modules = {
     activityCommands: activityFeed.commands,
     authorization,
     billing: withPlanUsage(billing, competitionRepository, organizations.repositories.memberships),
@@ -415,4 +416,5 @@ export function createModules(input: CreateModulesInput): AppModules {
     transaction,
     voidOfficialResultAndUnproject,
   };
+  return { ...modules, onboardingCompletion: new OnboardingCompletionFlow(modules) };
 }

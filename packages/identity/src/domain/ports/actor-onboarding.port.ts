@@ -12,6 +12,8 @@ import type {
  */
 export interface ActorOnboardingPort {
   findByActor(actorId: ActorId): Promise<ActorOnboardingState | null>;
+  /** Serializes onboarding completion for one actor until the current transaction ends. */
+  lockActor(actorId: ActorId): Promise<void>;
   /** Stores the step and records `step-entered` when path or step differ from the stored ones. */
   saveProgress(progress: OnboardingProgress): Promise<void>;
   /** Marks completion and records `completed` once, on the transition. */

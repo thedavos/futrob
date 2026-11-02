@@ -5,7 +5,7 @@ import {
   getMyPlayerProfileResponseSchema,
   listMyMembershipsResponseSchema,
 } from "@futrob/api-contracts";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import {
   buildApp,
@@ -702,5 +702,43 @@ describe("apps/api http onboarding", () => {
       headers: serviceHeaders(actor),
     });
     expect(await mine.json()).toEqual({ memberships: [] });
+  });
+
+  it("onboarding: rejects a player finish after another path without asking EA", async () => {
+    const fetcher = vi.fn(stubFetch);
+    const app = buildApp(fetcher);
+    const actor = "actor-completed-organizer";
+    const organization = await app.request("/api/v1/identity/onboarding/organization", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({
+        name: "Liga ya creada",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    expect(organization.status).toBe(200);
+    fetcher.mockClear();
+
+    const player = await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({
+        gameAccount: null,
+        externalClub: {
+          providerKey: "ea-clubs",
+          externalClubId: "999999",
+          platform: "common-gen5",
+          gameEdition: "fc26",
+        },
+      }),
+    });
+
+    expect(player.status).toBe(409);
+    expect(await player.json()).toMatchObject({
+      code: "identity.onboarding_path_conflict",
+      details: { completedPath: "organization", requestedPath: "player" },
+    });
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });
