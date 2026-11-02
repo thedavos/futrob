@@ -74,6 +74,10 @@ una apariencia diferente. Los alias `LIGHT_THEME` y `DARK_THEME` referencian
 | MVP / reconocimiento            | `#FFD166` | `emphasis`                                              |
 | Cancelación                     | `#ADB5BD` | `status-cancelled`                                      |
 
+Los estados pulsados (`primary-active`, `secondary-active`, `muted-active`,
+`destructive-active`) no son colores de la paleta: mezclan en OKLab su token de hover (o
+`destructive`) con `background` para quedar algo más oscuros. La app nativa no los consume.
+
 Lima se concentra en botones principales, navegación activa y detalles destacados.
 Las tarjetas permanecen en grafito y los números en blanco. Los estados pueden colorear
 su texto, icono o indicador, con una etiqueta explícita; no teñir todos los valores de una stat.
@@ -269,6 +273,7 @@ Variantes cerradas: `default`, `secondary`, `outline`, `ghost`, `destructive`, `
 ## Movimiento y accesibilidad
 
 - Animar solo `opacity`, `translate`, `scale` y, cuando es imprescindible, tamaño del indicador.
+- Excepción para controles interactivos: sus cambios de estado pueden animar `background-color`, `border-color`, `color` y `box-shadow` (solo el halo de foco), con `--duration-normal` y `--ease-emphasized`; con `prefers-reduced-motion` la duración pasa a `0ms`.
 - Respetar `prefers-reduced-motion`; los tokens de duración pasan a `0ms`.
 - Focus visible en todos los controles.
 - Objetivos táctiles de al menos 44 px.
