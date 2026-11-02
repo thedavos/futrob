@@ -21,6 +21,8 @@ export const colors = stylex.defineVars({
   secondaryForeground: "var(--secondary-foreground)",
   muted: "var(--muted)",
   mutedForeground: "var(--muted-foreground)",
+  textTertiary: "var(--text-tertiary)",
+  textDisabled: "var(--text-disabled)",
   accent: "var(--accent)",
   accentForeground: "var(--accent-foreground)",
   border: "var(--border)",
@@ -55,4 +57,21 @@ export const colors = stylex.defineVars({
   brand500: "var(--brand-500)",
   brand700: "var(--brand-700)",
   neutral950: "var(--neutral-950)",
+});
+
+/**
+ * Spacing ramp from `tokens.css` (`--space-*`). Rhythm in design.md: 4 px label/value/hint,
+ * 12 px icon to text, 16 px inside panels, 24 px between related panels, 32 px between groups.
+ */
+export const space = stylex.defineVars({
+  s0: "var(--space-0)",
+  s1: "var(--space-1)",
+  s2: "var(--space-2)",
+  s3: "var(--space-3)",
+  s4: "var(--space-4)",
+  s5: "var(--space-5)",
+  s6: "var(--space-6)",
+  s8: "var(--space-8)",
+  s10: "var(--space-10)",
+  s12: "var(--space-12)",
 });

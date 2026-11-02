@@ -18,6 +18,10 @@ export const GRAPHITE_LIME_THEME: TokenMap = {
   "secondary-foreground": ref("foreground"),
   muted: ref("surface-raised"),
   "muted-foreground": ref("palette-gray-light"),
+  /** Third text tier: hints, placeholders, timestamps. AA on background, surface and raised. */
+  "text-tertiary": ref("palette-gray-mid"),
+  /** Inactive controls and their labels (WCAG 1.4.3 exempt). Replaces opacity dimming. */
+  "text-disabled": ref("palette-gray-dim"),
   accent: ref("palette-olive"),
   "accent-foreground": ref("primary"),
   "border-subtle": ref("palette-slate"),

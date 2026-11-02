@@ -6,7 +6,7 @@ import { LIGHT_THEME } from "./theme-light.ts";
 import { oklchToken, type TokenMap, type TokenValue } from "./token.ts";
 import { TYPOGRAPHY_TOKENS } from "./typography.ts";
 
-export { formatOklch, oklch, oklchToHex, type Oklch } from "./oklch.ts";
+export { formatOklch, mixOklab, oklch, oklchToHex, type Oklch } from "./oklch.ts";
 export {
   fallbackRef,
   raw,
