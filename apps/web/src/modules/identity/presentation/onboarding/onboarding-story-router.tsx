@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import {
-  Navigate,
   Outlet,
   RouterProvider,
   createMemoryHistory,
@@ -43,7 +42,6 @@ type OnboardingStoryPath =
   | "/onboarding/invitation"
   | "/onboarding/game-account"
   | "/onboarding/club"
-  | "/onboarding/team"
   | "/onboarding/review";
 
 export interface StoryOnboardingGateway extends OnboardingGateway {
@@ -269,11 +267,6 @@ function createOnboardingStoryRouter(
       getParentRoute: () => rootRoute,
       path: "/onboarding/club",
       component: ClubStep,
-    }),
-    createRoute({
-      getParentRoute: () => rootRoute,
-      path: "/onboarding/team",
-      component: () => <Navigate replace to="/onboarding/club" />,
     }),
     createRoute({
       getParentRoute: () => rootRoute,

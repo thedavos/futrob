@@ -17,7 +17,6 @@ export const onboardingStepSchema = z.enum([
   "intention",
   "organization",
   "competition",
-  "game",
   "invitation",
   "game-account",
   "club",
@@ -41,40 +40,53 @@ export const getOnboardingStatusResponseSchema = onboardingStatusSchema;
 
 export type GetOnboardingStatusResponse = z.infer<typeof getOnboardingStatusResponseSchema>;
 
-function isOnboardingStepInPath(
-  steps: readonly OnboardingStepDto[],
-  step: OnboardingStepDto,
-): boolean {
-  for (const allowed of steps) {
-    if (allowed === step) {
-      return true;
-    }
-  }
-  return false;
-}
-
-const allowedStepsByPath = {
-  organization: ["intention", "organization", "competition", "game-account", "game", "review"],
+/** Ordered steps per path. Clients derive routing, stepper order and next/previous from this. */
+export const ONBOARDING_STEPS_BY_PATH = {
+  organization: ["intention", "organization", "competition", "game-account", "review"],
   invitation: ["intention", "invitation", "game-account", "review"],
-  player: ["intention", "game", "game-account", "club", "review"],
+  player: ["intention", "game-account", "club", "review"],
 } as const satisfies Record<OnboardingPathDto, readonly OnboardingStepDto[]>;
 
-const onboardingProgressInputStepSchema = z.union([
-  onboardingStepSchema,
-  z.literal("team").transform(() => "club" as const),
-]);
+export function isOnboardingStepAllowed(
+  path: OnboardingPathDto | null,
+  step: OnboardingStepDto,
+): boolean {
+  if (path === null) return step === "intention";
+  return ONBOARDING_STEPS_BY_PATH[path].some((allowed) => allowed === step);
+}
+
+function adjacentOnboardingStep(
+  path: OnboardingPathDto,
+  step: OnboardingStepDto,
+  offset: 1 | -1,
+): OnboardingStepDto | null {
+  const steps: readonly OnboardingStepDto[] = ONBOARDING_STEPS_BY_PATH[path];
+  const index = steps.indexOf(step);
+  if (index === -1) return null;
+  return steps[index + offset] ?? null;
+}
+
+export function nextOnboardingStep(
+  path: OnboardingPathDto,
+  step: OnboardingStepDto,
+): OnboardingStepDto | null {
+  return adjacentOnboardingStep(path, step, 1);
+}
+
+export function previousOnboardingStep(
+  path: OnboardingPathDto,
+  step: OnboardingStepDto,
+): OnboardingStepDto | null {
+  return adjacentOnboardingStep(path, step, -1);
+}
 
 export const saveOnboardingProgressRequestSchema = z
   .object({
     path: onboardingPathSchema.nullable(),
-    currentStep: onboardingProgressInputStepSchema,
+    currentStep: onboardingStepSchema,
   })
   .superRefine((input, context) => {
-    const allowed =
-      input.path === null
-        ? input.currentStep === "intention"
-        : isOnboardingStepInPath(allowedStepsByPath[input.path], input.currentStep);
-    if (!allowed) {
+    if (!isOnboardingStepAllowed(input.path, input.currentStep)) {
       context.addIssue({
         code: "custom",
         path: ["currentStep"],

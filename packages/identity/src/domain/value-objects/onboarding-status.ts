@@ -10,27 +10,28 @@ export const ONBOARDING_PATH = {
 
 export type OnboardingPath = (typeof ONBOARDING_PATH)[keyof typeof ONBOARDING_PATH];
 
-export type OnboardingStep =
-  | "intention"
-  | "organization"
-  | "competition"
-  | "game"
-  | "invitation"
-  | "game-account"
-  | "club"
-  | "review";
+export const ONBOARDING_STEPS = [
+  "intention",
+  "organization",
+  "competition",
+  "invitation",
+  "game-account",
+  "club",
+  "review",
+] as const;
 
-const stepsByPath = {
+export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
+
+export const ONBOARDING_STEPS_BY_PATH = {
   [ONBOARDING_PATH.organization]: [
     "intention",
     "organization",
     "competition",
     "game-account",
-    "game",
     "review",
   ],
   [ONBOARDING_PATH.invitation]: ["intention", "invitation", "game-account", "review"],
-  [ONBOARDING_PATH.player]: ["intention", "game", "game-account", "club", "review"],
+  [ONBOARDING_PATH.player]: ["intention", "game-account", "club", "review"],
 } as const satisfies Record<OnboardingPath, readonly OnboardingStep[]>;
 
 export function isOnboardingStepAllowed(
@@ -40,12 +41,7 @@ export function isOnboardingStepAllowed(
   if (path === null) {
     return step === "intention";
   }
-  for (const allowed of stepsByPath[path]) {
-    if (allowed === step) {
-      return true;
-    }
-  }
-  return false;
+  return ONBOARDING_STEPS_BY_PATH[path].some((allowed) => allowed === step);
 }
 
 export interface OnboardingStatus {

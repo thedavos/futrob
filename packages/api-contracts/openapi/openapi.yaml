@@ -1632,20 +1632,15 @@ paths:
                     - invitation
                     - null
                 currentStep:
-                  anyOf:
-                    - type: string
-                      enum:
-                        - intention
-                        - organization
-                        - competition
-                        - game
-                        - invitation
-                        - game-account
-                        - club
-                        - review
-                    - type: string
-                      enum:
-                        - team
+                  type: string
+                  enum:
+                    - intention
+                    - organization
+                    - competition
+                    - invitation
+                    - game-account
+                    - club
+                    - review
               required:
                 - path
                 - currentStep
@@ -19355,7 +19350,6 @@ components:
             - intention
             - organization
             - competition
-            - game
             - invitation
             - game-account
             - club

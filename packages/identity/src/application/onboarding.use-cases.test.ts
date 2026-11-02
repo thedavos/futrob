@@ -75,7 +75,6 @@ describe("identity onboarding", () => {
     ["organization", "intention"],
     ["organization", "organization"],
     ["organization", "competition"],
-    ["organization", "game"],
     ["organization", "game-account"],
     ["organization", "review"],
     ["invitation", "intention"],
@@ -83,7 +82,6 @@ describe("identity onboarding", () => {
     ["invitation", "game-account"],
     ["invitation", "review"],
     ["player", "intention"],
-    ["player", "game"],
     ["player", "game-account"],
     ["player", "club"],
     ["player", "review"],
@@ -103,12 +101,10 @@ describe("identity onboarding", () => {
 
   it.each([
     ["organization", "invitation"],
-    ["invitation", "game"],
     ["invitation", "competition"],
     ["player", "invitation"],
     ["organization", "club"],
     ["invitation", "club"],
-    [null, "game"],
     [null, "invitation"],
     [null, "game-account"],
     [null, "club"],

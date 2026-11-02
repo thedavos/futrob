@@ -153,18 +153,6 @@ export const PlayerPath: Story = {
   },
 };
 
-export const ResumeLegacyGame: Story = {
-  render: () => (
-    <OnboardingStoryRouter
-      gateway={createFakeOnboardingGateway({
-        path: "organization",
-        currentStep: "game",
-      })}
-      initialPath="/onboarding/intention"
-    />
-  ),
-};
-
 export const ResumeInvitation: Story = {
   render: () => (
     <OnboardingStoryRouter

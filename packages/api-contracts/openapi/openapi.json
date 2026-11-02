@@ -2431,26 +2431,15 @@
                     ]
                   },
                   "currentStep": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "intention",
-                          "organization",
-                          "competition",
-                          "game",
-                          "invitation",
-                          "game-account",
-                          "club",
-                          "review"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "team"
-                        ]
-                      }
+                    "type": "string",
+                    "enum": [
+                      "intention",
+                      "organization",
+                      "competition",
+                      "invitation",
+                      "game-account",
+                      "club",
+                      "review"
                     ]
                   }
                 },
@@ -28224,7 +28213,6 @@
               "intention",
               "organization",
               "competition",
-              "game",
               "invitation",
               "game-account",
               "club",

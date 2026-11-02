@@ -7,7 +7,6 @@ describe("isOnboardingStepAllowed", () => {
     for (const step of [
       "organization",
       "competition",
-      "game",
       "invitation",
       "game-account",
       "club",
@@ -18,18 +17,14 @@ describe("isOnboardingStepAllowed", () => {
   });
 
   it.each([
-    [
-      "organization",
-      ["intention", "organization", "competition", "game-account", "game", "review"],
-    ],
+    ["organization", ["intention", "organization", "competition", "game-account", "review"]],
     ["invitation", ["intention", "invitation", "game-account", "review"]],
-    ["player", ["intention", "game", "game-account", "club", "review"]],
+    ["player", ["intention", "game-account", "club", "review"]],
   ] as const)("allows exactly the declared steps for the %s path", (path, allowedSteps) => {
     const allSteps = [
       "intention",
       "organization",
       "competition",
-      "game",
       "invitation",
       "game-account",
       "club",
