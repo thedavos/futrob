@@ -11,7 +11,15 @@ type TableProps = React.ComponentProps<"table"> & {
   containerClassName?: HostClassName;
   /** Accessible name for the horizontally scrollable container. */
   containerLabelledBy?: string;
+  /**
+   * Keeps the header row visible while the rows scroll. The container becomes the vertical
+   * scroller, so give it a height limit through `containerClassName` (for example `maxHeight`).
+   */
+  stickyHeader?: boolean;
 };
+
+/** `end` is for figures: it right-aligns, keeps tabular digits and never wraps. */
+export type TableAlign = "start" | "center" | "end";
 
 const styles = stylex.create({
   container: {
@@ -26,18 +34,28 @@ const styles = stylex.create({
   table: {
     width: "100%",
     captionSide: "bottom",
-    fontSize: "0.875rem",
+    fontSize: "var(--text-sm)",
     lineHeight: "1.25rem",
   },
   header: {
     backgroundColor: "color-mix(in oklab, var(--muted) 60%, transparent)",
+  },
+  containerSticky: {
+    overflowY: "auto",
+  },
+  alignStart: { textAlign: "start" },
+  alignCenter: { textAlign: "center" },
+  alignEnd: {
+    textAlign: "end",
+    whiteSpace: "nowrap",
+    fontVariantNumeric: "tabular-nums",
   },
   footer: {
     borderTopWidth: 1,
     borderTopStyle: "solid",
     borderTopColor: colors.border,
     backgroundColor: "color-mix(in oklab, var(--muted) 60%, transparent)",
-    fontWeight: 600,
+    fontWeight: "var(--font-weight-semibold)",
   },
   row: {
     borderBottomWidth: 1,
@@ -54,7 +72,6 @@ const styles = stylex.create({
   head: {
     height: "var(--control-height)",
     paddingInline: "0.75rem",
-    textAlign: "left",
     verticalAlign: "middle",
     color: colors.mutedForeground,
     paddingRight: {
@@ -76,7 +93,7 @@ const styles = stylex.create({
   },
   caption: {
     marginTop: "0.75rem",
-    fontSize: "0.875rem",
+    fontSize: "var(--text-sm)",
     lineHeight: "1.25rem",
     color: colors.mutedForeground,
   },
@@ -93,6 +110,7 @@ function Table({
   containerClassName,
   containerLabelledBy,
   dense = false,
+  stickyHeader = false,
   ...props
 }: TableProps) {
   return (
@@ -100,11 +118,17 @@ function Table({
       data-slot="table-container"
       tabIndex={0}
       aria-labelledby={containerLabelledBy}
-      {...applyProps(containerClassName, undefined, styles.container)}
+      {...applyProps(
+        containerClassName,
+        undefined,
+        styles.container,
+        stickyHeader && styles.containerSticky,
+      )}
     >
       <table
         data-slot="table"
         data-density={dense ? "dense" : "default"}
+        data-sticky-header={stickyHeader ? "true" : undefined}
         {...applyProps(className, style, styles.table)}
         {...props}
       />
@@ -136,18 +160,39 @@ function TableRow({
   return <tr data-slot="table-row" {...applyProps(className, style, styles.row)} {...props} />;
 }
 
-function TableHead({ className, style, ...props }: React.ComponentProps<"th">) {
+const alignStyles = {
+  start: styles.alignStart,
+  center: styles.alignCenter,
+  end: styles.alignEnd,
+} as const;
+
+type TableHeadProps = Omit<React.ComponentProps<"th">, "align"> & {
+  /** Match the cells below: figures and their header both use `end`. */
+  align?: TableAlign;
+};
+
+function TableHead({ className, style, align = "start", ...props }: TableHeadProps) {
   return (
     <th
       data-slot="table-head"
-      {...applyProps(className, style, typography.label, styles.head)}
+      data-align={align}
+      {...applyProps(className, style, typography.label, styles.head, alignStyles[align])}
       {...props}
     />
   );
 }
 
-function TableCell({ className, style, ...props }: React.ComponentProps<"td">) {
-  return <td data-slot="table-cell" {...applyProps(className, style, styles.cell)} {...props} />;
+type TableCellProps = Omit<React.ComponentProps<"td">, "align"> & { align?: TableAlign };
+
+function TableCell({ className, style, align = "start", ...props }: TableCellProps) {
+  return (
+    <td
+      data-slot="table-cell"
+      data-align={align}
+      {...applyProps(className, style, styles.cell, alignStyles[align])}
+      {...props}
+    />
+  );
 }
 
 function TableCaption({ className, style, ...props }: React.ComponentProps<"caption">) {
@@ -190,4 +235,4 @@ export {
   TableHeader,
   TableRow,
 };
-export type { TableProps };
+export type { TableCellProps, TableHeadProps, TableProps };

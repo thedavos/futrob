@@ -205,7 +205,7 @@ export {
   TableHeader,
   TableRow,
 } from "./components/table";
-export type { TableProps } from "./components/table";
+export type { TableAlign, TableCellProps, TableHeadProps, TableProps } from "./components/table";
 export { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "./components/tabs";
 export type { TabsProps, TabsVariant } from "./components/tabs";
 export { Textarea } from "./components/textarea";

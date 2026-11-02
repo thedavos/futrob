@@ -23,9 +23,9 @@ const styles = stylex.create({
       ':is([aria-invalid="true"]):focus-visible': colors.danger,
     },
     backgroundClip: "padding-box",
-    fontSize: "0.875rem",
+    fontSize: "var(--text-sm)",
     lineHeight: "1.25rem",
-    fontWeight: 600,
+    fontWeight: "var(--font-weight-semibold)",
     whiteSpace: "nowrap",
     textDecorationLine: "none",
     transitionProperty: "background-color, border-color, color, scale",
@@ -61,7 +61,7 @@ const styles = stylex.create({
   },
   disabledPlain: {
     opacity: 1,
-    color: colors.mutedForeground,
+    color: colors.textDisabled,
   },
   defaultVariant: {
     backgroundColor: {

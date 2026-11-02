@@ -9,26 +9,23 @@ import { textWeight, type TextWeight } from "#styles/text-weight";
 import { typography, type TextTone } from "#styles/typography";
 
 const styles = stylex.create({
-  sm: {
-    fontSize: "var(--text-xs)",
-  },
   lg: {
     fontSize: "var(--text-base)",
   },
 });
 
 const sizeStyles = {
-  sm: styles.sm,
   lg: styles.lg,
 } as const;
 
-export type BodySize = "sm" | "md" | "lg";
+/** 12 px supporting text is `Caption`, not a smaller body. */
+export type BodySize = "md" | "lg";
 
 export type BodyElement = "p" | "span";
 
 export type BodyProps = ComponentProps<"p"> & {
   as?: BodyElement;
-  /** `sm` 12px · `md` 14px (body) · `lg` 16px. Closed; no other sizes. */
+  /** `md` 14px (body) · `lg` 16px. Closed; 12 px copy uses `Caption`. */
   size?: BodySize;
   tone?: TextTone;
   weight?: TextWeight;

@@ -21,9 +21,11 @@ const styles = stylex.create({
   eyebrow: {
     gridColumnStart: 1,
   },
+  /** One ramp step (24 px) above `typography.heading` so the page h1 outranks panel h2s. */
   title: {
     gridColumnStart: 1,
     textWrap: "balance",
+    fontSize: "var(--text-2xl)",
   },
   titleLg: {
     fontSize: {
