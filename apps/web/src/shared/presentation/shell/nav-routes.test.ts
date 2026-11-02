@@ -59,8 +59,8 @@ function navigableItems(): readonly ShellNavItem[] {
     ...contextNavFor(competitionInOrg, ALL_OPERATOR).items,
     ...contextNavFor(competitionInOrg).items,
     ...contextNavFor(personalCompetition).items,
-    ...accountNavItems(),
-  ].filter((item) => !item.stub);
+    ...accountNavItems().flatMap((item) => (item.kind === "link" ? [item] : [])),
+  ].filter((item) => !("stub" in item && item.stub));
 }
 
 describe("shell navigation", () => {

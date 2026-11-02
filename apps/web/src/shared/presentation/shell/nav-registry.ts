@@ -347,12 +347,20 @@ function filterByPermission(
   );
 }
 
-export function accountNavItems(t: Translator = createTranslator("es")): readonly ShellNavItem[] {
+export type AccountNavItem =
+  | {
+      readonly id: "profile";
+      readonly label: string;
+      readonly kind: "link";
+      readonly href: "/player/profile";
+    }
+  | { readonly id: "feedback" | "settings"; readonly label: string; readonly kind: "dialog" };
+
+export function accountNavItems(t: Translator = createTranslator("es")): readonly AccountNavItem[] {
   return [
-    { id: "profile", label: t("shell.account.profile"), href: "/player/profile", stub: true },
-    { id: "feedback", label: t("shell.account.feedback"), href: "/feedback", stub: true },
-    { id: "contact", label: t("shell.account.contact"), href: "/contact", stub: true },
-    { id: "settings", label: t("shell.account.settings"), href: "/settings", stub: true },
+    { id: "profile", label: t("shell.account.profile"), kind: "link", href: "/player/profile" },
+    { id: "feedback", label: t("shell.account.feedback"), kind: "dialog" },
+    { id: "settings", label: t("shell.account.settings"), kind: "dialog" },
   ];
 }
 

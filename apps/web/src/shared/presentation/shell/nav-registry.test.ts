@@ -25,7 +25,6 @@ describe("generalNavFor", () => {
     expect(accountNavItems(english).map((item) => item.label)).toEqual([
       "Profile",
       "Send feedback",
-      "Contact us",
       "Settings",
     ]);
     expect(accountNavItems().map((item) => item.label)).toContain("Perfil");

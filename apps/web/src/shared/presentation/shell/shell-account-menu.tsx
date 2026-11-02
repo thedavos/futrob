@@ -1,12 +1,14 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useState, useRef } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +24,8 @@ import { useIsSuperuser } from "@/shared/presentation/permissions/index.ts";
 import { announceIdentityChange } from "@/shared/presentation/query/identity-change.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { accountNavItems } from "@/shared/presentation/shell/nav-registry.ts";
+import { FeedbackDialog } from "@/modules/identity/presentation/account/feedback-dialog.tsx";
+import { SettingsDialog } from "@/modules/identity/presentation/account/settings-dialog.tsx";
 
 const styles = stylex.create({
   triggerCompact: {
@@ -93,6 +97,9 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
   const name = user?.name?.trim() || user?.email || fallbackName;
   const shortName = abbreviatedDisplayName(name, fallbackName);
   const items = accountNavItems(t);
+  const [dialog, setDialog] = useState<"feedback" | "settings" | null>(null);
+  const accountTrigger = useRef<HTMLButtonElement>(null);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const superuser = useIsSuperuser();
   const trigger = applyStyles(compact ? styles.triggerCompact : styles.triggerExpanded);
   const triggerStyle = compact
@@ -105,76 +112,95 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
   const menu = applyStyles(styles.menu);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={t("shell.account.open")}
-        render={
-          <Button
-            className={trigger.className}
-            dense
-            size={compact ? "icon" : "default"}
-            style={triggerStyle}
-            variant="ghost"
-          />
-        }
-      >
-        <span {...applyStyles(styles.row, compact && styles.rowCompact)}>
-          <Avatar className={avatar.className} style={avatarStyle}>
-            <AvatarFallback className={fallback.className} style={fallback.style}>
-              {initialsFromName(name)}
-            </AvatarFallback>
-          </Avatar>
-          {compact ? null : (
-            <span {...applyStyles(styles.nameRow)}>
-              <span title={name} {...applyStyles(styles.name)}>
-                {shortName}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={t("shell.account.open")}
+          render={
+            <Button
+              ref={accountTrigger}
+              className={trigger.className}
+              dense
+              size={compact ? "icon" : "default"}
+              style={triggerStyle}
+              variant="ghost"
+            />
+          }
+        >
+          <span {...applyStyles(styles.row, compact && styles.rowCompact)}>
+            <Avatar className={avatar.className} style={avatarStyle}>
+              {user?.image ? <AvatarImage alt="" src={user.image} /> : null}
+              <AvatarFallback className={fallback.className} style={fallback.style}>
+                {initialsFromName(name)}
+              </AvatarFallback>
+            </Avatar>
+            {compact ? null : (
+              <span {...applyStyles(styles.nameRow)}>
+                <span title={name} {...applyStyles(styles.name)}>
+                  {shortName}
+                </span>
+                <CaretDownIcon
+                  aria-hidden="true"
+                  className={caret.className}
+                  data-caret="expand"
+                  style={caret.style}
+                  weight="bold"
+                />
               </span>
-              <CaretDownIcon
-                aria-hidden="true"
-                className={caret.className}
-                data-caret="expand"
-                style={caret.style}
-                weight="bold"
-              />
-            </span>
-          )}
-        </span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        className={menu.className}
-        side="bottom"
-        style={menu.style}
-      >
-        {items.map((item) => (
+            )}
+          </span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          className={menu.className}
+          side="bottom"
+          style={menu.style}
+        >
+          {items.map((item) => (
+            <DropdownMenuItem
+              key={item.id}
+              onClick={() => {
+                if (item.kind === "link") void navigate({ to: item.href });
+                else setDialog(item.id);
+              }}
+            >
+              {item.label}
+            </DropdownMenuItem>
+          ))}
+          {superuser.allowed ? (
+            <DropdownMenuItem onClick={() => void navigate({ to: "/admin/provider-health" })}>
+              {t("shell.account.providerHealth")}
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled={item.stub}
-            key={item.id}
             onClick={() => {
-              if (!item.stub) void navigate({ to: item.href });
+              void authClient.signOut().then(() => {
+                announceIdentityChange(queryClient);
+                void navigate({ to: "/login", replace: true });
+              });
             }}
           >
-            {item.label}
+            {t("shell.account.signOut")}
           </DropdownMenuItem>
-        ))}
-        {superuser.allowed ? (
-          <DropdownMenuItem onClick={() => void navigate({ to: "/admin/provider-health" })}>
-            {t("shell.account.providerHealth")}
-          </DropdownMenuItem>
-        ) : null}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            void authClient.signOut().then(() => {
-              announceIdentityChange(queryClient);
-              void navigate({ to: "/login", replace: true });
-            });
-          }}
-        >
-          {t("shell.account.signOut")}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <FeedbackDialog
+        returnFocus={accountTrigger}
+        open={dialog === "feedback"}
+        onOpenChange={(open) => {
+          if (!open) setDialog(null);
+        }}
+        pathname={pathname}
+      />
+      <SettingsDialog
+        returnFocus={accountTrigger}
+        open={dialog === "settings"}
+        onOpenChange={(open) => {
+          if (!open) setDialog(null);
+        }}
+      />
+    </>
   );
 }
 function abbreviatedDisplayName(name: string, fallback: string): string {
