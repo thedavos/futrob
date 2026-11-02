@@ -2,11 +2,12 @@ export type {
   PlayerCorrelationStatus,
   PlayerMatchContribution,
 } from "./domain/entities/player-match-contribution.ts";
-export type {
-  StandingResolutionMode,
-  TeamCorrelationStatus,
-  TeamMatchContribution,
-  TeamMatchSide,
+export {
+  officialSlotKey,
+  type StandingResolutionMode,
+  type TeamCorrelationStatus,
+  type TeamMatchContribution,
+  type TeamMatchSide,
 } from "./domain/entities/team-match-contribution.ts";
 export {
   PLAYER_STATISTIC_METRICS,
@@ -23,7 +24,9 @@ export type { TeamAggregateStats } from "./domain/entities/team-aggregate-stats.
 export type { TeamCompetitionStats } from "./domain/entities/team-competition-stats.ts";
 export {
   COMPETITION_STANDING_FORMULA_VERSION,
+  STANDING_FORM_LENGTH,
   type CompetitionStandingRow,
+  type StandingFormResult,
   type CompetitionStandingSnapshot,
 } from "./domain/entities/competition-standing-snapshot.ts";
 export {
@@ -59,6 +62,7 @@ export type {
   CompetitionMatchRulesQuery,
   CompetitionMatchRulesReaderPort,
 } from "./domain/ports/competition-match-rules-reader.port.ts";
+export type { CompetitionPlayoffSpotsReaderPort } from "./domain/ports/competition-playoff-spots-reader.port.ts";
 export type { CompetitionRankingEligibilityReaderPort } from "./domain/ports/competition-ranking-eligibility-reader.port.ts";
 export type { PlayerProfileLookupPort } from "./domain/ports/player-profile-lookup.port.ts";
 export type {
@@ -108,6 +112,7 @@ export {
 } from "./application/list-my-match-contributions/list-my-match-contributions.use-case.ts";
 export {
   GetCompetitionStandingsUseCase,
+  type CompetitionStandings,
   type GetCompetitionStandingsDependencies,
   type GetCompetitionStandingsInput,
 } from "./application/get-competition-standings/get-competition-standings.use-case.ts";

@@ -37,12 +37,14 @@ describe("competition statistics read use cases", () => {
             goalsAgainst: 0,
             goalDifference: 1,
             points: 3,
+            form: ["win"],
           },
         ],
       }),
     ]);
     const useCase = new GetCompetitionStandingsUseCase({
       standings,
+      playoffSpots: playoffSpotsReader(null),
       authorization: denyAll,
     });
 
@@ -55,7 +57,7 @@ describe("competition statistics read use cases", () => {
     ).rejects.toBeInstanceOf(StatisticsAuthorizationForbidden);
   });
 
-  it("returns the standing snapshot when the actor has read", async () => {
+  it("returns the standing snapshot with its playoff spots when the actor has read", async () => {
     const expected = snapshot({
       rows: [
         {
@@ -69,11 +71,14 @@ describe("competition statistics read use cases", () => {
           goalsAgainst: 0,
           goalDifference: 1,
           points: 3,
+          form: ["win"],
         },
       ],
     });
+    const reader = playoffSpotsReader(4);
     const useCase = new GetCompetitionStandingsUseCase({
       standings: new StandingRepo([expected]),
+      playoffSpots: reader,
       authorization: allowRead,
     });
 
@@ -83,7 +88,24 @@ describe("competition statistics read use cases", () => {
         organizationId: asOrganizationId("organization-1"),
         competitionId: asCompetitionId("competition-1"),
       }),
-    ).resolves.toEqual(expected);
+    ).resolves.toEqual({ ...expected, playoffSpots: 4 });
+    expect(reader.queries).toEqual([["organization-1", "competition-1"]]);
+  });
+
+  it("returns no standings before a snapshot exists", async () => {
+    const useCase = new GetCompetitionStandingsUseCase({
+      standings: new StandingRepo([]),
+      playoffSpots: playoffSpotsReader(4),
+      authorization: allowRead,
+    });
+
+    await expect(
+      useCase.execute({
+        actorId: asActorId("actor-1"),
+        organizationId: asOrganizationId("organization-1"),
+        competitionId: asCompetitionId("competition-1"),
+      }),
+    ).resolves.toBeNull();
   });
 
   it("denies team statistics when the actor lacks read", async () => {
@@ -309,6 +331,17 @@ class RankingRepo implements RankingSnapshotRepository {
   async deleteByCompetition(): Promise<void> {
     throw new Error("not used");
   }
+}
+
+function playoffSpotsReader(spots: number | null) {
+  const queries: [string, string][] = [];
+  return {
+    queries,
+    async find(organizationId: string, competitionId: string) {
+      queries.push([organizationId, competitionId]);
+      return spots;
+    },
+  };
 }
 
 const denyAll: AuthorizationPort = {

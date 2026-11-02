@@ -25,6 +25,7 @@ const row = (position: number, teamId: string, points: number, goalDifference: n
   goalsAgainst: 4 - goalDifference,
   goalDifference,
   points,
+  form: ["draw", "win"],
 });
 const snapshot = {
   competitionId: "competition-1",
@@ -33,6 +34,7 @@ const snapshot = {
   rows: [row(1, "t2", 4, 3), row(2, "t1", 2, -2)],
   sourceRevisionMax: 2,
   updatedAt: "2026-10-12T01:00:00.000Z",
+  playoffSpots: null,
 };
 
 const managedTeam = ([id, name]: readonly [string, string]) => ({
@@ -138,15 +140,15 @@ describe("Competition standings page", () => {
     expect(await screen.findByText("Maderas FC")).toBeTruthy();
     const [first] = within(screen.getByRole("table")).getAllByRole("row").slice(1);
     const cells = within(first!).getAllByRole("cell");
-    expect(cells).toHaveLength(10);
-    const figures = cells.filter((_, index) => index !== 1);
-    for (const cell of figures) {
+    expect(cells).toHaveLength(6);
+    const [position, , , ...numbers] = cells;
+    for (const cell of [position!, ...numbers]) {
       expect(cell.querySelector('[data-slot="score"]')?.getAttribute("data-size")).toBe("table");
     }
-    for (const cell of cells.slice(2)) {
+    for (const cell of numbers) {
       expect(cell.querySelector('[data-slot="score"]')?.getAttribute("data-align")).toBe("end");
     }
-    expect(cells[9]!.textContent).toBe("4");
+    expect(numbers.at(-1)!.textContent).toBe("4");
   });
 
   it("names the rows for competition staff who cannot read the organization teams", async () => {
@@ -171,6 +173,32 @@ describe("Competition standings page", () => {
 
     expect(await screen.findByText("Maderas FC")).toBeTruthy();
     expect(screen.getByText("Cuervos FC")).toBeTruthy();
+  });
+
+  it("reads each team's form oldest first, with a name for every result", async () => {
+    serve({});
+    renderRoute();
+    await screen.findByText("Maderas FC");
+    const leader = screen.getAllByRole("row")[1]!;
+    expect(
+      within(leader).getAllByText("Últimos 5 partidos, el más reciente al final:").length,
+    ).toBe(2);
+    expect(within(leader).getAllByText(/^Empate/).length).toBe(2);
+    expect(within(leader).getAllByText("Victoria").length).toBe(2);
+    expect(screen.queryByText(/pasan? al playoff/)).toBeNull();
+  });
+
+  it("marks the playoff cut only when the table has teams on both sides of it", async () => {
+    serve({ standings: () => Response.json({ standings: { ...snapshot, playoffSpots: 1 } }) });
+    renderRoute();
+    expect(await screen.findByText("El primero pasa al playoff")).toBeTruthy();
+  });
+
+  it("draws no cut when every team reaches the playoffs", async () => {
+    serve({ standings: () => Response.json({ standings: { ...snapshot, playoffSpots: 2 } }) });
+    renderRoute();
+    await screen.findByText("Maderas FC");
+    expect(screen.queryByText(/pasan? al playoff/)).toBeNull();
   });
 
   it("speaks English", async () => {

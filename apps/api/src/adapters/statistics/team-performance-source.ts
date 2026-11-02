@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
 import type { OfficialResult, OfficialResultReaderPort } from "@futrob/results";
 import {
+  officialSlotKey,
   TeamPerformanceScopeInvalid,
   type TeamMatchContribution,
   type TeamMatchContributionRepository,
@@ -52,7 +53,7 @@ export class OfficialTeamPerformanceSource implements TeamPerformanceSourcePort 
     const contributionsBySlot = new Map<string, TeamMatchContribution[]>();
     for (const row of stored) {
       if (Number.isNaN(row.revision)) continue;
-      const key = contributionSlotKey(row);
+      const key = officialSlotKey(row);
       const pair = contributionsBySlot.get(key);
       if (pair) pair.push(row);
       else contributionsBySlot.set(key, [row]);
@@ -70,7 +71,7 @@ export class OfficialTeamPerformanceSource implements TeamPerformanceSourcePort 
       for (const slot of result.slots) {
         const pair =
           contributionsBySlot.get(
-            contributionSlotKey({
+            officialSlotKey({
               officialResultId: result.id,
               revision: result.revision,
               officialSlot: slot.officialSlot,
@@ -169,20 +170,6 @@ export class OfficialTeamPerformanceSource implements TeamPerformanceSourcePort 
       ).length,
     };
   }
-}
-
-function contributionSlotKey(
-  row: Pick<
-    TeamMatchContribution,
-    "officialResultId" | "revision" | "officialSlot" | "encounterId"
-  >,
-): string {
-  return JSON.stringify([
-    row.officialResultId,
-    String(row.revision),
-    row.officialSlot,
-    row.encounterId,
-  ]);
 }
 
 function compare(a: string, b: string): number {

@@ -8809,6 +8809,15 @@ components:
           type: integer
         points:
           type: integer
+        form:
+          type: array
+          items:
+            type: string
+            enum:
+              - win
+              - draw
+              - loss
+          maxItems: 5
       required:
         - position
         - teamId
@@ -8820,6 +8829,7 @@ components:
         - goalsAgainst
         - goalDifference
         - points
+        - form
     CompetitionStandingSnapshot:
       type: object
       properties:
@@ -8866,6 +8876,15 @@ components:
                 type: integer
               points:
                 type: integer
+              form:
+                type: array
+                items:
+                  type: string
+                  enum:
+                    - win
+                    - draw
+                    - loss
+                maxItems: 5
             required:
               - position
               - teamId
@@ -8877,12 +8896,18 @@ components:
               - goalsAgainst
               - goalDifference
               - points
+              - form
         sourceRevisionMax:
           type: integer
           minimum: 0
         updatedAt:
           type: string
           format: date-time
+        playoffSpots:
+          type:
+            - integer
+            - "null"
+          exclusiveMinimum: 0
       required:
         - competitionId
         - organizationId
@@ -8890,6 +8915,7 @@ components:
         - rows
         - sourceRevisionMax
         - updatedAt
+        - playoffSpots
     CompetitionTeamManagementDetail:
       type: object
       properties:
@@ -12805,6 +12831,15 @@ components:
                     type: integer
                   points:
                     type: integer
+                  form:
+                    type: array
+                    items:
+                      type: string
+                      enum:
+                        - win
+                        - draw
+                        - loss
+                    maxItems: 5
                 required:
                   - position
                   - teamId
@@ -12816,12 +12851,18 @@ components:
                   - goalsAgainst
                   - goalDifference
                   - points
+                  - form
             sourceRevisionMax:
               type: integer
               minimum: 0
             updatedAt:
               type: string
               format: date-time
+            playoffSpots:
+              type:
+                - integer
+                - "null"
+              exclusiveMinimum: 0
           required:
             - competitionId
             - organizationId
@@ -12829,6 +12870,7 @@ components:
             - rows
             - sourceRevisionMax
             - updatedAt
+            - playoffSpots
       required:
         - standings
     GetCompetitionTeamStatisticsResponse:
@@ -16293,6 +16335,15 @@ components:
                     type: integer
                   points:
                     type: integer
+                  form:
+                    type: array
+                    items:
+                      type: string
+                      enum:
+                        - win
+                        - draw
+                        - loss
+                    maxItems: 5
                 required:
                   - position
                   - teamName
@@ -16304,6 +16355,7 @@ components:
                   - goalsAgainst
                   - goalDifference
                   - points
+                  - form
                 additionalProperties: false
             updatedAt:
               type:
@@ -21659,6 +21711,15 @@ components:
           type: integer
         points:
           type: integer
+        form:
+          type: array
+          items:
+            type: string
+            enum:
+              - win
+              - draw
+              - loss
+          maxItems: 5
       required:
         - position
         - teamName
@@ -21670,6 +21731,7 @@ components:
         - goalsAgainst
         - goalDifference
         - points
+        - form
       additionalProperties: false
     RankingEligibility:
       type: object

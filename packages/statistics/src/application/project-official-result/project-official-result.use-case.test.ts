@@ -1041,6 +1041,49 @@ describe("ProjectOfficialResultUseCase", () => {
     });
   });
 
+  it("orders each team's form by official slot time on projection and on rebuild", async () => {
+    const later = officialResult({
+      id: "result-later",
+      encounterId: "encounter-later",
+      homeGoals: 0,
+      awayGoals: 1,
+      occurredAt: new Date("2026-08-12T19:00:00.000Z"),
+    });
+    const earlier = officialResult({
+      id: "result-earlier",
+      encounterId: "encounter-earlier",
+      homeGoals: 2,
+      awayGoals: 2,
+      occurredAt: new Date("2026-08-05T19:00:00.000Z"),
+    });
+    const harness = makeHarness({
+      results: [later, earlier],
+      resolutions: {},
+      encounters: [defaultEncounter(later), defaultEncounter(earlier)],
+    });
+    const formByTeam = async () =>
+      Object.fromEntries(
+        ((await harness.standings.findByCompetition(later.competitionId))?.rows ?? []).map(
+          (row) => [row.teamId, row.form],
+        ),
+      );
+
+    for (const result of [later, earlier]) {
+      expect((await harness.project.execute({ officialResultId: result.id })).isOk()).toBe(true);
+    }
+    expect(await formByTeam()).toEqual({
+      "home-team": ["draw", "loss"],
+      "away-team": ["draw", "win"],
+    });
+
+    const { rebuild } = makeRebuild(harness);
+    expect((await rebuild.execute({ competitionId: later.competitionId })).isOk()).toBe(true);
+    expect(await formByTeam()).toEqual({
+      "home-team": ["draw", "loss"],
+      "away-team": ["draw", "win"],
+    });
+  });
+
   it("breaks standings ties by goal difference then goals for", async () => {
     const first = officialResult({
       id: "result-1",
@@ -1939,6 +1982,7 @@ function officialResult(
     readonly awayGoals?: number;
     readonly homeExternalClubId?: string;
     readonly awayExternalClubId?: string;
+    readonly occurredAt?: Date;
   } = {},
 ): OfficialResult {
   return {
@@ -1956,7 +2000,7 @@ function officialResult(
         awayExternalClubId: input.awayExternalClubId ?? "club-2",
         homeGoals: input.homeGoals ?? 1,
         awayGoals: input.awayGoals ?? 0,
-        occurredAt: new Date("2026-08-10T19:00:00.000Z"),
+        occurredAt: input.occurredAt ?? new Date("2026-08-10T19:00:00.000Z"),
         gameEdition: "fc26",
         platform: "playstation",
         players: input.players ?? [],

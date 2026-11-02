@@ -47,3 +47,4 @@ npm-debug.log*
 .agents/skills/verify-futrob/.run/
 .agents/skills/verify-futrob/evidence/
 apps/web/src/routeTree.gen.ts
+.hallmark/

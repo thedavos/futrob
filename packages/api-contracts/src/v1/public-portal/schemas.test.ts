@@ -33,6 +33,7 @@ const standingRow = {
   goalsAgainst: 0,
   goalDifference: 2,
   points: 3,
+  form: ["win"],
 } as const;
 
 const calendarEntry = {
@@ -60,6 +61,7 @@ describe("public portal wire schemas", () => {
     ]);
     expect(Object.keys(publicStandingRowSchema.shape).sort()).toEqual([
       "draws",
+      "form",
       "goalDifference",
       "goalsAgainst",
       "goalsFor",

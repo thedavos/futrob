@@ -45,6 +45,20 @@ const styles = stylex.create({
     alignItems: "center",
     gap: "0.25rem",
   },
+  pricing: {
+    display: {
+      default: "none",
+      [media.sm]: "inline-flex",
+    },
+  },
+  sections: {
+    display: {
+      default: "none",
+      [media.lg]: "flex",
+    },
+    alignItems: "center",
+    gap: "0.25rem",
+  },
 });
 
 export function LandingHeader() {
@@ -58,8 +72,16 @@ export function LandingHeader() {
           <Logo className={logo.className} style={logo.style} />
           <span {...applyStyles(typography.heading, styles.wordmark)}>Futrob</span>
         </Link>
+        <nav aria-label={t("landing.nav.sectionsAria")} {...applyStyles(styles.sections)}>
+          <Button render={<a href="#mecanismo" />} variant="ghost">
+            {t("landing.nav.howItWorks")}
+          </Button>
+          <Button render={<a href="#portal" />} variant="ghost">
+            {t("landing.nav.portal")}
+          </Button>
+        </nav>
         <nav aria-label={t("landing.nav.aria")} {...applyStyles(styles.nav)}>
-          <Button render={<Link to="/pricing" />} variant="ghost">
+          <Button render={<Link to="/pricing" />} variant="ghost" {...applyStyles(styles.pricing)}>
             {t("landing.nav.pricing")}
           </Button>
           <Button render={<Link to="/login" />} variant="ghost">

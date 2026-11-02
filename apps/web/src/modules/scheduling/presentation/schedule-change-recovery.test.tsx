@@ -60,9 +60,7 @@ describe("reschedule command recovery", () => {
     expect(api.reads()).toBe(2);
     expect(screen.getByRole("status").textContent).toBe("");
     expect(screen.queryByRole("heading", { name: "Aceptar la propuesta" })).toBeNull();
-    expect(screen.getByText(/^Inicio propuesto/).textContent).toBe(
-      "Inicio propuesto: 11 oct 2026, 15:00",
-    );
+    expect(screen.getByText(/propone mover/).textContent).toContain("al 11 oct 2026, 15:00.");
 
     await confirmAccept(user);
     expect((await screen.findByText("Horario aplicado por consentimiento")).textContent).toBe(

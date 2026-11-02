@@ -2,6 +2,10 @@ import type { CompetitionId, OrganizationId, TeamId } from "@futrob/shared-kerne
 
 export const COMPETITION_STANDING_FORMULA_VERSION = "points-gd-gf-v1" as const;
 
+export const STANDING_FORM_LENGTH = 5;
+
+export type StandingFormResult = "win" | "draw" | "loss";
+
 export interface CompetitionStandingRow {
   readonly position: number;
   readonly teamId: TeamId;
@@ -13,6 +17,8 @@ export interface CompetitionStandingRow {
   readonly goalsAgainst: number;
   readonly goalDifference: number;
   readonly points: number;
+  /** Latest official results, oldest first, at most `STANDING_FORM_LENGTH`. */
+  readonly form: readonly StandingFormResult[];
 }
 
 export interface CompetitionStandingSnapshot {

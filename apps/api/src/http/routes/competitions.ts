@@ -245,6 +245,7 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
               rows: standings.rows,
               sourceRevisionMax: standings.sourceRevisionMax,
               updatedAt: standings.updatedAt.toISOString(),
+              playoffSpots: standings.playoffSpots,
             }
           : null,
       }),

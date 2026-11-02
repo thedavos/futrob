@@ -271,6 +271,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     profiles: teams.repositories.profiles,
     competitions: competitions.repository,
     entries: competitions.entryRepository,
+    fixturePlans: scheduling.fixturePlans,
     authorization: authorization.port,
     performanceRankingAccess: billing.planLimits.performanceRanking,
     encounterReader,

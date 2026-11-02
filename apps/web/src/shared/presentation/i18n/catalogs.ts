@@ -6,6 +6,31 @@ export type Message = string | ((params: TranslationParams) => string);
 
 const count = (params: TranslationParams): number => Number(params.count ?? 0);
 
+/** Small counts read better as words in running copy ("los cuatro primeros"). */
+const SPANISH_SMALL_NUMBERS: Readonly<Record<number, string>> = {
+  2: "dos",
+  3: "tres",
+  4: "cuatro",
+  5: "cinco",
+  6: "seis",
+  7: "siete",
+  8: "ocho",
+  9: "nueve",
+  10: "diez",
+};
+
+const ENGLISH_SMALL_NUMBERS: Readonly<Record<number, string>> = {
+  2: "two",
+  3: "three",
+  4: "four",
+  5: "five",
+  6: "six",
+  7: "seven",
+  8: "eight",
+  9: "nine",
+  10: "ten",
+};
+
 const es = {
   "pages.organization.plan.title": "Plan y uso",
   "pages.organization.plan.subtitle":
@@ -220,6 +245,13 @@ const es = {
   "reschedule.proposedBy": "Propuesta de {team}",
   "reschedule.proposedStart": "Inicio propuesto",
   "reschedule.deadline": "Plazo de respuesta: {date}",
+  "reschedule.summary.encounter": "{team} propone mover todo el enfrentamiento del {from} al {to}.",
+  "reschedule.summary.slot": "{team} propone mover el partido {slot} del {from} al {to}.",
+  "reschedule.summary.applied.encounter": "Todo el enfrentamiento pasó del {from} al {to}.",
+  "reschedule.summary.applied.slot": "El partido {slot} pasó del {from} al {to}.",
+  "reschedule.summary.closed.encounter": "{team} propuso mover todo el enfrentamiento al {to}.",
+  "reschedule.summary.closed.slot": "{team} propuso mover el partido {slot} al {to}.",
+  "reschedule.respondBy": "Responde antes del {date}.",
   "reschedule.history": "Historial de propuestas y decisiones",
   "reschedule.proposal": "Propuesta {number}",
   "reschedule.consent": "Consentimiento de {actor}",
@@ -1718,14 +1750,13 @@ const es = {
   "landing.meta.description":
     "Opera ligas y copas de FC Clubs con datos reales de EA: selección auditable de partidos oficiales, tabla, rankings y portal público.",
   "landing.nav.aria": "Acceso",
+  "landing.nav.sectionsAria": "Secciones",
+  "landing.nav.howItWorks": "Cómo funciona",
+  "landing.nav.portal": "Portal público",
   "landing.nav.login": "Iniciar sesión",
   "landing.nav.signup": "Crear cuenta",
-  "landing.hero.eyebrow": "Competiciones FC Clubs",
-  "landing.hero.titleLead": "Del partido de EA al",
-  "landing.hero.titleHighlight": "resultado oficial",
-  "landing.hero.subtitleLead": "Los capitanes eligen los partidos que cuentan.",
-  "landing.hero.subtitleRest":
-    "Tú apruebas el resultado y Futrob actualiza la tabla automáticamente.",
+  "landing.hero.title": "Del partido de EA al resultado oficial",
+  "landing.hero.subtitle": "Los capitanes eligen qué partidos cuentan y tú apruebas el resultado.",
   "landing.hero.cta.primary": "Crear cuenta",
   "landing.hero.cta.secondary": "Ver cómo funciona",
   "landing.status.approved": "Aprobado",
@@ -1733,12 +1764,14 @@ const es = {
   "landing.status.selecting": "En selección",
   "landing.status.synced": "Sync EA",
   "landing.status.scheduled": "Programado",
-  "landing.matches.title": "La mesa de operaciones",
-  "landing.matches.subtitle":
-    "Cada enfrentamiento muestra de dónde viene su resultado y en qué estado está. Nada se publica sin pasar por la aprobación.",
-  "landing.matches.matchday": "Jornada 4 · Liga Metropolitana",
+  "landing.status.published": "Publicado",
+  "landing.board.label": "Ejemplo de jornada en Futrob",
+  "landing.board.matchday": "Jornada 4",
+  "landing.board.competition": "Liga Metropolitana",
+  "landing.board.kickoff": "sáb 21:00",
   "landing.mechanism.title": "Cómo un partido se vuelve oficial",
-  "landing.mechanism.subtitle": "El mismo recorrido para cada resultado, siempre auditable.",
+  "landing.mechanism.subtitle":
+    "Cada resultado muestra de dónde viene y en qué estado está. Nada se publica sin aprobación.",
   "landing.mechanism.sync.title": "Sync EA",
   "landing.mechanism.sync.description":
     "Futrob sincroniza los partidos de tus clubs desde EA y los guarda como candidatos, nunca como oficiales.",
@@ -1747,14 +1780,34 @@ const es = {
     "Los capitanes eligen cuáles partidos cuentan para el enfrentamiento, con vista previa de la serie.",
   "landing.mechanism.approval.title": "Aprobación",
   "landing.mechanism.approval.description":
-    "El resultado confirmado queda aprobado y auditado. El sync nunca auto-oficializa.",
+    "El resultado confirmado queda aprobado y auditado. El sync nunca oficializa por su cuenta.",
   "landing.mechanism.publication.title": "Publicación",
   "landing.mechanism.publication.description":
     "Solo lo aprobado actualiza tabla, bracket, rankings y el portal público.",
+  "landing.reschedule.title": "Reprogramar sin perder el hilo",
+  "landing.reschedule.subtitle":
+    "Un capitán propone otro horario y el rival responde. Al aceptarlo, el calendario y la búsqueda de partidos en EA se ajustan.",
+  "landing.reschedule.guarantee": "Un partido aprobado o finalizado ya no se reprograma.",
+  "landing.reschedule.panel.label": "Ejemplo de solicitud de reprogramación",
+  "landing.reschedule.panel.status": "En negociación",
+  "landing.reschedule.panel.sentence":
+    "Sporting Lomas propone mover todo el enfrentamiento del 18 de octubre, 21:00 al 19 de octubre, 22:00.",
+  "landing.reschedule.panel.respondBy": "Responde antes del 16 de octubre, 23:59.",
+  "landing.reschedule.panel.options": "CD Estrella puede aceptar, contraproponer o rechazar.",
   "landing.demo.title": "Pruébalo contra la API real",
   "landing.demo.subtitle":
     "Busca tu club de EA Clubs. Es la misma capa de datos que alimenta tus competiciones.",
   "gameData.clubSearch.source": "Resultados de /api/v1/game-data/clubs/search.",
+  "gameData.clubSearch.queryLabel": "Nombre del club",
+  "gameData.clubSearch.queryPlaceholder": "Ej. Cuervos",
+  "gameData.clubSearch.queryRequired": "Escribe el nombre del club.",
+  "gameData.clubSearch.platformLabel": "Plataforma",
+  "gameData.clubSearch.submit": "Buscar",
+  "gameData.clubSearch.searching": "Buscando…",
+  "gameData.clubSearch.retryIn": ({ seconds }) => `Reintentar en ${seconds} s`,
+  "gameData.clubSearch.empty": "Sin resultados para esa búsqueda.",
+  "gameData.clubSearch.error": "No pudimos buscar clubs. Inténtalo nuevamente.",
+  "gameData.clubSearch.rateLimited": "Alcanzaste el límite temporal de búsquedas.",
   "landing.players.title": "Para jugadores: tus partidos, tus números",
   "landing.players.subtitle":
     "El perfil personal existe sin organización: vincula tu club EA y sigue tu rendimiento.",
@@ -1768,14 +1821,17 @@ const es = {
   "landing.players.feats.description": "Hat-trick, póker y repóker se reconocen en cada aparición.",
   "landing.portal.title": "Un portal público a la altura de tu torneo",
   "landing.portal.subtitle":
-    "Publica portada, equipos, calendario, resultados, tabla, bracket y rankings — cuando tú decides.",
+    "Publica portada, equipos, calendario, resultados, tabla, bracket y rankings cuando tú decides.",
   "landing.portal.point.teams": "Equipos y calendario siempre al día",
   "landing.portal.point.results": "Resultados y tabla oficiales",
   "landing.portal.point.rankings": "Rankings de jugadores y equipos",
-  "landing.cta.title": "¿Listo para poner tu competición bajo control?",
-  "landing.cta.subtitle": "Crea tu organización y publica tu primera competición hoy.",
+  "landing.portal.podium.caption": "Ejemplo de tabla oficial de la Liga Metropolitana",
+  "landing.portal.podium.points": "puntos",
+  "landing.cta.title": "Publica tu primera jornada oficial",
+  "landing.cta.subtitle":
+    "Crea tu organización, invita a los capitanes y arma tu primera competición.",
   "landing.cta.primary": "Crear cuenta",
-  "landing.cta.secondary": "Iniciar sesión",
+  "landing.cta.secondary": "Ver precios",
   "landing.footer.tagline": "Preciso para operar. Claro para competir.",
   "landing.footer.madeBy": "Futrob es creado por Davion Software.",
   "encounter.breadcrumb": "Ruta del enfrentamiento",
@@ -2238,20 +2294,22 @@ const es = {
   "standings.col.team": "Equipo",
   "standings.col.played": "PJ",
   "standings.col.played.full": "Partidos jugados",
-  "standings.col.wins": "G",
-  "standings.col.wins.full": "Partidos ganados",
-  "standings.col.draws": "E",
-  "standings.col.draws.full": "Partidos empatados",
-  "standings.col.losses": "P",
-  "standings.col.losses.full": "Partidos perdidos",
-  "standings.col.goalsFor": "GF",
-  "standings.col.goalsFor.full": "Goles a favor",
-  "standings.col.goalsAgainst": "GC",
-  "standings.col.goalsAgainst.full": "Goles en contra",
   "standings.col.goalDifference": "DG",
   "standings.col.goalDifference.full": "Diferencia de goles",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Puntos",
+  "standings.col.form": "Forma",
+  "standings.col.form.full": "Últimos 5 partidos, el más reciente al final",
+  "standings.form.win": "Victoria",
+  "standings.form.win.short": "G",
+  "standings.form.draw": "Empate",
+  "standings.form.draw.short": "E",
+  "standings.form.loss": "Derrota",
+  "standings.form.loss.short": "P",
+  "standings.playoffCut": ({ count }) =>
+    count === 1
+      ? "El primero pasa al playoff"
+      : `Los ${SPANISH_SMALL_NUMBERS[Number(count)] ?? count} primeros pasan al playoff`,
   "competition.overview.documentTitle": "Resumen",
   "competition.overview.description":
     "Estado, equipos, próximos enfrentamientos y pendientes de la competición.",
@@ -2298,8 +2356,6 @@ const es = {
   "competition.overview.teams.roster": ({ count, max }) => `${count} de ${max} jugadores`,
   "competition.overview.teams.entry.pending": "Por revisar",
   "competition.overview.teams.entry.approved": "Aprobado",
-  "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
-    `${wins} G · ${draws} E · ${losses} P · GF ${goalsFor} · GC ${goalsAgainst}`,
   "fixture.documentTitle": "Calendario",
   "fixture.loading": "Cargando el calendario",
   "fixture.error": "No pudimos cargar el calendario.",
@@ -2377,6 +2433,13 @@ export interface MessageParamsByKey {
   "reschedule.requestedBy": { team: string };
   "reschedule.proposedBy": { team: string };
   "reschedule.deadline": { date: string };
+  "reschedule.summary.encounter": { team: string; from: string; to: string };
+  "reschedule.summary.slot": { team: string; slot: number; from: string; to: string };
+  "reschedule.summary.applied.encounter": { from: string; to: string };
+  "reschedule.summary.applied.slot": { slot: number; from: string; to: string };
+  "reschedule.summary.closed.encounter": { team: string; to: string };
+  "reschedule.summary.closed.slot": { team: string; slot: number; to: string };
+  "reschedule.respondBy": { date: string };
   "reschedule.proposal": { number: number };
   "reschedule.consent": { actor: string };
   "reschedule.rejection": { actor: string };
@@ -2468,6 +2531,7 @@ export interface MessageParamsByKey {
   readonly "encounter.selection.history.selected": { readonly proposal: string };
   readonly "encounter.selection.history.acknowledged": { readonly count: number };
   readonly "common.seconds": { readonly seconds: number };
+  readonly "gameData.clubSearch.retryIn": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
   readonly "competitions.setup.step": { readonly step: number; readonly total: number };
@@ -2601,13 +2665,7 @@ export interface MessageParamsByKey {
   readonly "competition.teamStats.table.label": { readonly view: string };
   readonly "standings.table.updated": { readonly time: string };
   readonly "standings.table.formula": { readonly version: string };
-  readonly "standings.row.record": {
-    readonly wins: string;
-    readonly draws: string;
-    readonly losses: string;
-    readonly goalsFor: string;
-    readonly goalsAgainst: string;
-  };
+  readonly "standings.playoffCut": { readonly count: number };
   readonly "fixture.timeZone": { readonly zone: string };
   readonly "fixture.round.matchday": { readonly number: number };
   readonly "fixture.round.number": { readonly number: number };
@@ -2839,6 +2897,13 @@ const en: Catalog = {
   "reschedule.proposedBy": "Proposal from {team}",
   "reschedule.proposedStart": "Proposed kickoff",
   "reschedule.deadline": "Response deadline: {date}",
+  "reschedule.summary.encounter": "{team} proposes moving the whole encounter from {from} to {to}.",
+  "reschedule.summary.slot": "{team} proposes moving match {slot} from {from} to {to}.",
+  "reschedule.summary.applied.encounter": "The whole encounter moved from {from} to {to}.",
+  "reschedule.summary.applied.slot": "Match {slot} moved from {from} to {to}.",
+  "reschedule.summary.closed.encounter": "{team} proposed moving the whole encounter to {to}.",
+  "reschedule.summary.closed.slot": "{team} proposed moving match {slot} to {to}.",
+  "reschedule.respondBy": "Respond by {date}.",
   "reschedule.history": "Proposal and decision history",
   "reschedule.proposal": "Proposal {number}",
   "reschedule.consent": "Consent from {actor}",
@@ -4314,13 +4379,13 @@ const en: Catalog = {
   "landing.meta.description":
     "Run FC Clubs leagues and cups with real EA data: auditable official-match selection, standings, rankings, and a public portal.",
   "landing.nav.aria": "Access",
+  "landing.nav.sectionsAria": "Sections",
+  "landing.nav.howItWorks": "How it works",
+  "landing.nav.portal": "Public portal",
   "landing.nav.login": "Log in",
   "landing.nav.signup": "Create account",
-  "landing.hero.eyebrow": "FC Clubs competitions",
-  "landing.hero.titleLead": "From the EA match to the",
-  "landing.hero.titleHighlight": "official result",
-  "landing.hero.subtitleLead": "Captains pick the matches that count.",
-  "landing.hero.subtitleRest": "You approve the result and Futrob updates the table automatically.",
+  "landing.hero.title": "From the EA match to the official result",
+  "landing.hero.subtitle": "Captains pick the matches that count, and you approve the result.",
   "landing.hero.cta.primary": "Create account",
   "landing.hero.cta.secondary": "See how it works",
   "landing.status.approved": "Approved",
@@ -4328,12 +4393,14 @@ const en: Catalog = {
   "landing.status.selecting": "In selection",
   "landing.status.synced": "EA sync",
   "landing.status.scheduled": "Scheduled",
-  "landing.matches.title": "The operations table",
-  "landing.matches.subtitle":
-    "Every encounter shows where its result comes from and what state it is in. Nothing is published without approval.",
-  "landing.matches.matchday": "Matchday 4 · Metropolitan League",
+  "landing.status.published": "Published",
+  "landing.board.label": "Example matchday in Futrob",
+  "landing.board.matchday": "Matchday 4",
+  "landing.board.competition": "Metropolitan League",
+  "landing.board.kickoff": "Sat 21:00",
   "landing.mechanism.title": "How a match becomes official",
-  "landing.mechanism.subtitle": "The same journey for every result, always auditable.",
+  "landing.mechanism.subtitle":
+    "Every result shows where it comes from and what state it is in. Nothing is published without approval.",
   "landing.mechanism.sync.title": "EA sync",
   "landing.mechanism.sync.description":
     "Futrob syncs your clubs' matches from EA and stores them as candidates, never as official.",
@@ -4342,14 +4409,34 @@ const en: Catalog = {
     "Captains choose which matches count for the encounter, with a series preview.",
   "landing.mechanism.approval.title": "Approval",
   "landing.mechanism.approval.description":
-    "The confirmed result is approved and audited. Sync never auto-officializes.",
+    "The confirmed result is approved and audited. Sync never makes a result official on its own.",
   "landing.mechanism.publication.title": "Publication",
   "landing.mechanism.publication.description":
     "Only approved results update the table, bracket, rankings, and public portal.",
+  "landing.reschedule.title": "Reschedule without losing track",
+  "landing.reschedule.subtitle":
+    "A captain proposes a new time and the opponent responds. Once accepted, the schedule and the EA match search window adjust.",
+  "landing.reschedule.guarantee": "An approved or finished match can no longer be rescheduled.",
+  "landing.reschedule.panel.label": "Example reschedule request",
+  "landing.reschedule.panel.status": "In negotiation",
+  "landing.reschedule.panel.sentence":
+    "Sporting Lomas proposes moving the whole encounter from October 18, 21:00 to October 19, 22:00.",
+  "landing.reschedule.panel.respondBy": "Respond by October 16, 23:59.",
+  "landing.reschedule.panel.options": "CD Estrella can accept, counter or reject.",
   "landing.demo.title": "Try it against the real API",
   "landing.demo.subtitle":
     "Search for your EA Clubs team. It is the same data layer that powers your competitions.",
   "gameData.clubSearch.source": "Results from /api/v1/game-data/clubs/search.",
+  "gameData.clubSearch.queryLabel": "Club name",
+  "gameData.clubSearch.queryPlaceholder": "E.g. Cuervos",
+  "gameData.clubSearch.queryRequired": "Enter the club name.",
+  "gameData.clubSearch.platformLabel": "Platform",
+  "gameData.clubSearch.submit": "Search",
+  "gameData.clubSearch.searching": "Searching…",
+  "gameData.clubSearch.retryIn": ({ seconds }) => `Retry in ${seconds} s`,
+  "gameData.clubSearch.empty": "No results for that search.",
+  "gameData.clubSearch.error": "We couldn't search clubs. Please try again.",
+  "gameData.clubSearch.rateLimited": "You reached the temporary search limit.",
   "landing.players.title": "For players: your matches, your numbers",
   "landing.players.subtitle":
     "The personal profile exists without an organization: link your EA club and track your performance.",
@@ -4364,14 +4451,17 @@ const en: Catalog = {
     "Hat-tricks and four- or five-goal hauls are recognized on every appearance.",
   "landing.portal.title": "A public portal worthy of your tournament",
   "landing.portal.subtitle":
-    "Publish cover, teams, schedule, results, table, bracket, and rankings — when you decide.",
+    "Publish cover, teams, schedule, results, table, bracket, and rankings when you decide.",
   "landing.portal.point.teams": "Teams and schedule always up to date",
   "landing.portal.point.results": "Official results and table",
   "landing.portal.point.rankings": "Player and team rankings",
-  "landing.cta.title": "Ready to put your competition under control?",
-  "landing.cta.subtitle": "Create your organization and publish your first competition today.",
+  "landing.portal.podium.caption": "Example official table for the Metropolitan League",
+  "landing.portal.podium.points": "points",
+  "landing.cta.title": "Publish your first official matchday",
+  "landing.cta.subtitle":
+    "Create your organization, invite the captains, and set up your first competition.",
   "landing.cta.primary": "Create account",
-  "landing.cta.secondary": "Log in",
+  "landing.cta.secondary": "See pricing",
   "landing.footer.tagline": "Precise to operate. Clear to compete.",
   "landing.footer.madeBy": "Futrob is made by Davion Software.",
   "encounter.breadcrumb": "Encounter path",
@@ -4825,20 +4915,22 @@ const en: Catalog = {
   "standings.col.team": "Team",
   "standings.col.played": "P",
   "standings.col.played.full": "Matches played",
-  "standings.col.wins": "W",
-  "standings.col.wins.full": "Matches won",
-  "standings.col.draws": "D",
-  "standings.col.draws.full": "Matches drawn",
-  "standings.col.losses": "L",
-  "standings.col.losses.full": "Matches lost",
-  "standings.col.goalsFor": "GF",
-  "standings.col.goalsFor.full": "Goals for",
-  "standings.col.goalsAgainst": "GA",
-  "standings.col.goalsAgainst.full": "Goals against",
   "standings.col.goalDifference": "GD",
   "standings.col.goalDifference.full": "Goal difference",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Points",
+  "standings.col.form": "Form",
+  "standings.col.form.full": "Last 5 matches, most recent last",
+  "standings.form.win": "Win",
+  "standings.form.win.short": "W",
+  "standings.form.draw": "Draw",
+  "standings.form.draw.short": "D",
+  "standings.form.loss": "Loss",
+  "standings.form.loss.short": "L",
+  "standings.playoffCut": ({ count }) =>
+    count === 1
+      ? "The top team advances to the playoffs"
+      : `The top ${ENGLISH_SMALL_NUMBERS[Number(count)] ?? count} advance to the playoffs`,
   "competition.overview.documentTitle": "Overview",
   "competition.overview.description":
     "Status, teams, upcoming encounters and pending work for the competition.",
@@ -4883,8 +4975,6 @@ const en: Catalog = {
   "competition.overview.teams.roster": ({ count, max }) => `${count} of ${max} players`,
   "competition.overview.teams.entry.pending": "To review",
   "competition.overview.teams.entry.approved": "Approved",
-  "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
-    `${wins} W · ${draws} D · ${losses} L · GF ${goalsFor} · GA ${goalsAgainst}`,
   "fixture.documentTitle": "Schedule",
   "fixture.loading": "Loading the schedule",
   "fixture.error": "We couldn't load the schedule.",

@@ -13,6 +13,7 @@ const row = (position: number, teamId: string) => ({
   goalsAgainst: 1,
   goalDifference: 1,
   points: 3,
+  form: [],
 });
 
 const snapshot: CompetitionStandingSnapshotDto = {
@@ -22,6 +23,7 @@ const snapshot: CompetitionStandingSnapshotDto = {
   rows: [row(1, "b"), row(2, "a"), row(3, "gone")],
   sourceRevisionMax: 1,
   updatedAt: "2026-10-12T01:00:00.000Z",
+  playoffSpots: null,
 };
 
 describe("standings rows", () => {
