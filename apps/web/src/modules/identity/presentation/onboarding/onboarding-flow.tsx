@@ -26,20 +26,16 @@ import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalog
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { finalizationError } from "./onboarding-finalization-errors.ts";
+import { useExternalSync } from "@futrob/ui";
+import { isOnboardingPathname, routeForOnboardingStep } from "./onboarding-routing.ts";
 import {
-  isOnboardingPathname,
-  resolveOnboardingStep,
-  resolvePersistedOnboardingStep,
-  routeForOnboardingStep,
-} from "./onboarding-routing.ts";
+  memoryOnboardingDraftStore,
+  type OnboardingDraftStore,
+} from "./onboarding-draft-storage.ts";
+import { resumeOnboardingStep } from "./onboarding-resume.ts";
 import { browserOnboardingGateway, type OnboardingGateway } from "./onboarding-flow-gateway.ts";
-import {
-  competitionFromDraft,
-  createEmptyDraft,
-  externalClubLocatorFromDraft,
-  playerAccountFromDraft,
-  type OnboardingDraft,
-} from "./onboarding-draft.ts";
+import { createEmptyDraft, type OnboardingDraft } from "./onboarding-draft.ts";
+import { finishOnboardingPath } from "./onboarding-finish.ts";
 
 interface OnboardingFlowValue {
   readonly saving: boolean;
@@ -67,13 +63,13 @@ export function OnboardingFlowProvider({
   children,
   initialStatus,
   gateway = browserOnboardingGateway,
-  bootstrap = "cold",
+  draftStore: providedDraftStore,
 }: Readonly<{
   children: ReactNode;
   initialStatus: OnboardingStatusDto;
   gateway?: OnboardingGateway;
-  /** Production cold-loads at intention; Storybook/harness may honor persisted step. */
-  bootstrap?: "cold" | "persisted";
+  /** Production passes the signed-in user's browser store; stories and tests keep memory. */
+  draftStore?: OnboardingDraftStore;
 }>) {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -91,16 +87,26 @@ export function OnboardingFlowProvider({
     (Omit<SupportError, "message"> & { readonly messageKey: ParameterlessMessageKey }) | null
   >(null);
   const retry = useRetryAfterCountdown();
+  const [draftStore] = useState(() => providedDraftStore ?? memoryOnboardingDraftStore());
+  const [initial] = useState(() => {
+    const restored = draftStore.load(initialStatus.path);
+    return {
+      draft: restored,
+      step: resumeOnboardingStep(initialStatus.path, initialStatus.currentStep, restored),
+    };
+  });
   const [path, setPathState] = useState<OnboardingPathDto | null>(() => initialStatus.path);
-  const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(() =>
-    bootstrap === "persisted"
-      ? resolvePersistedOnboardingStep(initialStatus.path, initialStatus.currentStep)
-      : resolveOnboardingStep(initialStatus.path, initialStatus.currentStep),
-  );
-  const [draft, setDraft] = useState<OnboardingDraft>(createEmptyDraft);
+  const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(initial.step);
+  const [draft, setDraft] = useState<OnboardingDraft>(initial.draft);
+  const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
   const draftRef = useRef(draft);
   draftRef.current = draft;
-  useSeededOnboardingStatus(initialStatus);
+  const completed = useSeededOnboardingStatus(initialStatus).data?.completed === true;
+  // A provider can remount for a moment while a finished actor leaves onboarding; it must not
+  // write the draft that finishing just cleared.
+  useExternalSync(() => {
+    if (!leaving && !completed) draftStore.save(path, draft);
+  }, [completed, draftStore, leaving, path, draft]);
 
   const value = useMemo<OnboardingFlowValue>(
     () => ({
@@ -202,27 +208,16 @@ export function OnboardingFlowProvider({
       listPublicPlans: () => gateway.listPublicPlans(),
       async goTo(step, requestedPath = path) {
         if (leaving || saving || finishingRef.current) return;
-        const previousPath = path;
-        const previousStep = currentStep;
         setError(null);
         setPathState(requestedPath);
         setCurrentStep(step);
+        // The stored step only picks where a returning actor resumes and feeds the funnel;
+        // the local draft covers a failed write, so it never blocks or rolls back the user.
+        // Writes queue so the server ends on the last step even when the user moves fast.
+        saveQueueRef.current = saveQueueRef.current
+          .then(() => saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step }))
+          .catch(() => undefined);
         await navigate({ to: routeForOnboardingStep(step) });
-        try {
-          await saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step });
-        } catch (caught) {
-          const clientError = caught instanceof IdentityOnboardingClientError ? caught : null;
-          setError({
-            messageKey: "errors.onboarding.saveProgress",
-            ...buildSupportFields({
-              requestId: clientError?.requestId,
-              retryAfterSeconds: clientError?.retryAfterSeconds,
-            }),
-          });
-          setPathState(previousPath);
-          setCurrentStep(previousStep);
-          await navigate({ to: routeForOnboardingStep(previousStep) });
-        }
       },
       async finish() {
         if (!path || saving || finishingRef.current || retry.blocked) return;
@@ -231,50 +226,10 @@ export function OnboardingFlowProvider({
         setLeaving(true);
         setError(null);
         try {
-          if (path === "organization") {
-            const competition = competitionFromDraft(draft);
-            if (!competition) throw new Error("Incomplete competition draft");
-            const created = await gateway.createOrganization({
-              name: draft.organizationName.trim(),
-              competition,
-              gameAccount: playerAccountFromDraft(draft),
-            });
-            markOnboardingCompletedInCache(queryClient, path);
-            await navigate({
-              to: "/orgs/$orgId/competitions/$competitionId/setup",
-              params: {
-                orgId: created.destination.organizationId,
-                competitionId: created.destination.competitionId,
-              },
-              replace: true,
-            });
-          } else if (path === "invitation") {
-            const accepted = await gateway.acceptInvitation({
-              token: draft.invitationToken.trim(),
-              gameAccount: playerAccountFromDraft(draft),
-            });
-            markOnboardingCompletedInCache(queryClient, path);
-            await navigate({
-              to: "/orgs/$orgId/competitions/$competitionId",
-              params: {
-                orgId: accepted.destination.organizationId,
-                competitionId: accepted.destination.competitionId,
-              },
-              replace: true,
-            });
-          } else {
-            const completed = await gateway.completePlayer({
-              gameAccount: playerAccountFromDraft(draft),
-              externalClub: externalClubLocatorFromDraft(draft),
-            });
-            markOnboardingCompletedInCache(queryClient, path);
-            await navigate({
-              to: "/player",
-              search:
-                completed.externalClubAssociation === "failed" ? { clubAssociation: "failed" } : {},
-              replace: true,
-            });
-          }
+          const destination = await finishOnboardingPath[path](gateway, draft);
+          draftStore.clear();
+          markOnboardingCompletedInCache(queryClient, path);
+          await navigate({ ...destination, replace: true });
         } catch (caught) {
           finishingRef.current = false;
           const clientError = caught instanceof IdentityOnboardingClientError ? caught : null;
@@ -289,6 +244,7 @@ export function OnboardingFlowProvider({
     [
       currentStep,
       draft,
+      draftStore,
       error,
       gateway,
       leaving,
