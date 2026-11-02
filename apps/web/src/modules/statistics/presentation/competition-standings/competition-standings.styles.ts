@@ -50,7 +50,7 @@ export const styles = stylex.create({
     paddingBlock: "0.75rem",
     paddingInline: { default: "0.375rem", [media.sm]: "0.75rem" },
     color: colors.mutedForeground,
-    fontWeight: 500,
+    fontWeight: "var(--font-weight-medium)",
     whiteSpace: "nowrap",
   },
   abbr: {
@@ -65,7 +65,6 @@ export const styles = stylex.create({
   },
   headForm: {
     display: { default: "none", [media.sm]: "table-cell" },
-    textAlign: "end",
   },
   row: {
     backgroundColor: "transparent",
@@ -84,11 +83,6 @@ export const styles = stylex.create({
     borderBottomStyle: "dashed",
     borderBottomColor: colors.borderStrong,
   },
-  numeric: {
-    textAlign: "end",
-    whiteSpace: "nowrap",
-    fontVariantNumeric: "tabular-nums",
-  },
   position: {
     whiteSpace: "nowrap",
   },
@@ -97,7 +91,7 @@ export const styles = stylex.create({
   },
   leader: {
     color: colors.primary,
-    fontWeight: 600,
+    fontWeight: "var(--font-weight-semibold)",
   },
   teamCell: {
     minWidth: 0,
@@ -121,11 +115,11 @@ export const styles = stylex.create({
     backgroundColor: colors.surfaceRaised,
   },
   teamName: {
-    fontWeight: 600,
+    fontWeight: "var(--font-weight-semibold)",
     color: colors.foreground,
   },
   teamUnresolved: {
-    fontWeight: 500,
+    fontWeight: "var(--font-weight-medium)",
     color: colors.mutedForeground,
   },
   teamSkeleton: {
@@ -136,8 +130,6 @@ export const styles = stylex.create({
   },
   formCell: {
     display: { default: "none", [media.sm]: "table-cell" },
-    textAlign: "end",
-    whiteSpace: "nowrap",
   },
   form: {
     display: "inline-flex",
@@ -156,7 +148,7 @@ export const styles = stylex.create({
     borderRadius: "0.3125rem",
     fontSize: "0.6875rem",
     lineHeight: 1,
-    fontWeight: 700,
+    fontWeight: "var(--font-weight-bold)",
   },
   formWin: {
     backgroundColor: colors.success,
@@ -184,11 +176,12 @@ export const styles = stylex.create({
     fontSize: "1rem",
     lineHeight: "1.5rem",
   },
+  /** Points rank the table, so they are the only bold figure in the row. */
   points: {
     color: colors.foreground,
     fontSize: "1.25rem",
     lineHeight: "1.75rem",
-    fontWeight: 700,
+    fontWeight: "var(--font-weight-bold)",
   },
   cutNote: {
     color: colors.primary,

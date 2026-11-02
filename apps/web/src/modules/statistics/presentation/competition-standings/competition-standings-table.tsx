@@ -100,13 +100,13 @@ export function CompetitionStandingsTable({
             <TableHead className={[styles.headCell, styles.headTeam]} scope="col">
               {t("standings.col.team")}
             </TableHead>
-            <TableHead className={[styles.headCell, styles.headForm]} scope="col">
+            <TableHead align="end" className={[styles.headCell, styles.headForm]} scope="col">
               <abbr title={t("standings.col.form.full")} {...applyStyles(styles.abbr)}>
                 {t("standings.col.form")}
               </abbr>
             </TableHead>
             {FIGURES.map((figure) => (
-              <TableHead key={figure} scope="col" {...applyStyles(styles.headCell, styles.numeric)}>
+              <TableHead align="end" className={styles.headCell} key={figure} scope="col">
                 <abbr title={t(`standings.col.${figure}.full`)} {...applyStyles(styles.abbr)}>
                   {t(`standings.col.${figure}`)}
                 </abbr>
@@ -154,16 +154,16 @@ function StandingsRow({
         <TeamName team={entry.team} t={t} />
         <FormStrip form={row.form} narrow t={t} />
       </TableCell>
-      <TableCell className={[styles.cell, styles.formCell]}>
+      <TableCell align="end" className={[styles.cell, styles.formCell]}>
         <FormStrip form={row.form} t={t} />
       </TableCell>
       {FIGURES.map((figure) => (
-        <TableCell className={[styles.cell, styles.numeric]} key={figure}>
+        <TableCell align="end" className={styles.cell} key={figure}>
           <Score
             align="end"
             as="span"
             size="table"
-            {...applyStyles(figure === "points" ? styles.points : styles.figure)}
+            className={figure === "points" ? styles.points : styles.figure}
           >
             {(figure === "goalDifference" ? formats.signed : formats.integer).format(row[figure])}
           </Score>
