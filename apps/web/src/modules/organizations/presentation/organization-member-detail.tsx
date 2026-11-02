@@ -14,6 +14,7 @@ import {
   MetaTerm,
   MetaValue,
   SectionTitle,
+  typography,
 } from "@futrob/ui";
 import memberAccessUrl from "@/assets/illustration-permissions.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -43,7 +44,7 @@ export function OrganizationMemberDetail({
   return (
     <Card aria-labelledby={headingId} className={styles.panel} id={id}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.heading} id={headingId}>
+        <Heading className={typography.title} id={headingId}>
           {t("organizations.members.detail.title")}
         </Heading>
         <Caption>{t("organizations.members.detail.description")}</Caption>
@@ -66,7 +67,7 @@ export function OrganizationMemberDetail({
                 <AvatarFallback>{member.name.slice(0, 1)}</AvatarFallback>
               </Avatar>
               <div {...applyStyles(styles.copy)}>
-                <Heading as="h3" className={styles.heading}>
+                <Heading as="h3" className={typography.title}>
                   {member.name}
                 </Heading>
                 <Caption {...applyStyles(styles.secondary)}>

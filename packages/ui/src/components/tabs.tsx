@@ -4,7 +4,7 @@ import * as stylex from "@stylexjs/stylex";
 
 import { applyProps, type HostClassName } from "#styles/apply";
 import { media } from "#styles/media.stylex";
-import { colors } from "#styles/tokens.stylex";
+import { colors, space } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
 type TabsVariant = "line" | "pills";
@@ -48,10 +48,12 @@ function Tabs({ variant = "line", className, style, ...props }: TabsProps) {
 }
 
 const styles = stylex.create({
+  // List → content is 24 px: root gap 8 px + content padding-top 16 px. The parent owns the
+  // space after the panel, so content has no bottom padding.
   root: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.5rem",
+    gap: space.s2,
   },
   list: {
     position: "relative",
@@ -94,6 +96,8 @@ const styles = stylex.create({
       default: colors.mutedForeground,
       ":hover": colors.foreground,
       ":is([data-active])": colors.foreground,
+      // Base UI keeps disabled tabs focusable, so the button never matches `:disabled`.
+      ":is([data-disabled])": colors.textDisabled,
     },
     transitionProperty: "color, background-color",
     transitionDuration: "var(--duration-normal)",
@@ -105,11 +109,7 @@ const styles = stylex.create({
     },
     pointerEvents: {
       default: null,
-      ":disabled": "none",
-    },
-    opacity: {
-      default: 1,
-      ":disabled": 0.5,
+      ":is([data-disabled])": "none",
     },
   },
   triggerLine: {
@@ -154,7 +154,7 @@ const styles = stylex.create({
   },
   content: {
     flexGrow: 1,
-    paddingBlock: "1.25rem",
+    paddingTop: space.s4,
     outlineWidth: 0,
     outlineStyle: "none",
     boxShadow: {

@@ -31,6 +31,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  typography,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
@@ -107,7 +108,7 @@ export function OrganizationMembersList({
   return (
     <Card aria-labelledby={headingId} className={styles.panel}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.heading} id={headingId}>
+        <Heading className={typography.title} id={headingId}>
           {t("organizations.members.list.title")}
         </Heading>
         <Caption>{t("organizations.members.list.description")}</Caption>

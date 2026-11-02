@@ -2,7 +2,16 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { CaretRightIcon, SoccerBallIcon, TrophyIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, Caption, Heading, Subtitle, Text, TextLink } from "@futrob/ui";
+import {
+  applyStyles,
+  Badge,
+  Caption,
+  Heading,
+  Subtitle,
+  Text,
+  TextLink,
+  typography,
+} from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { HomeCard } from "./home-card.tsx";
@@ -82,10 +91,6 @@ const styles = stylex.create({
     gap: "0.25rem",
     maxWidth: "24rem",
   },
-  emptyTitle: {
-    fontWeight: 600,
-    fontSize: "var(--text-lg)",
-  },
   emptyIcon: {
     alignSelf: "center",
   },
@@ -154,7 +159,7 @@ export function HomeCompetitionsCard({ slot }: { readonly slot: PlayerHomeBottom
               <TrophyIcon aria-hidden size={ICON_SIZE} {...applyStyles(styles.chipIcon)} />
             </span>
             <div {...applyStyles(styles.emptyCenteredCopy)}>
-              <Heading className={styles.emptyTitle}>
+              <Heading className={typography.title}>
                 {t("player.home.competitions.emptyTitle")}
               </Heading>
               <Subtitle>{t("player.home.competitions.emptySubtitle")}</Subtitle>

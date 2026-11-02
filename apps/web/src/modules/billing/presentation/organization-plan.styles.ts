@@ -16,7 +16,6 @@ export const styles = stylex.create({
   wide: { gridColumn: "1 / -1" },
   panel: { minWidth: 0, display: "flex", flexDirection: "column" },
   header: { padding: "1.25rem", gap: "0.5rem" },
-  heading: { fontSize: "var(--text-lg)", fontWeight: 600 },
   content: {
     paddingInline: "1.25rem",
     paddingBottom: "1.25rem",

@@ -18,6 +18,7 @@ describe("Heading", () => {
     const markup = renderToStaticMarkup(createElement(Heading, { as: "h3" }, "Jornada 4"));
 
     expect(markup.startsWith("<h3")).toBe(true);
+    expect(markup).toContain('data-look="title"');
   });
 
   it("exposes the full string when truncated", () => {
@@ -33,6 +34,6 @@ describe("Heading", () => {
     const markup = renderToStaticMarkup(createElement(Heading, { as: "h4" }, "Detalle"));
 
     expect(markup.startsWith("<h4")).toBe(true);
-    expect(markup).toContain('data-look="subtitle"');
+    expect(markup).toContain('data-look="strong"');
   });
 });

@@ -36,10 +36,11 @@ export const styles = stylex.create({
     minWidth: "8rem",
   },
   numeric: {
-    textAlign: "end",
-    whiteSpace: "nowrap",
-    fontVariantNumeric: "tabular-nums",
     paddingInline: { default: "0.5rem", [media.sm]: "0.75rem" },
+  },
+  /** Points rank the table, so they are the only bold figure in the row. */
+  points: {
+    fontWeight: "var(--font-weight-bold)",
   },
   secondary: {
     display: { default: "none", [media.sm]: "table-cell" },
@@ -54,12 +55,12 @@ export const styles = stylex.create({
   },
   teamName: {
     display: "block",
-    fontWeight: 600,
+    fontWeight: "var(--font-weight-semibold)",
     color: colors.foreground,
   },
   teamUnresolved: {
     display: "block",
-    fontWeight: 500,
+    fontWeight: "var(--font-weight-medium)",
     color: colors.mutedForeground,
   },
   teamSkeleton: {

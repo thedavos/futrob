@@ -61,6 +61,8 @@ una apariencia diferente. Los alias `LIGHT_THEME` y `DARK_THEME` referencian
 | Bordes y divisores, pizarra     | `#343B40` | `border`, `border-subtle`                               |
 | Texto principal, blanco frío    | `#F5F7F8` | `foreground`, `card-foreground`                         |
 | Texto secundario, gris claro    | `#ADB5BD` | `muted-foreground`                                      |
+| Texto terciario (derivado)      | `#9299A0` | `text-tertiary`                                         |
+| Texto inactivo (derivado)       | `#585D62` | `text-disabled`                                         |
 | Principal, lima                 | `#CAFF35` | `primary`, `ring`                                       |
 | Hover principal, lima suave     | `#D8FF70` | `primary-hover`                                         |
 | Fondo de selección e iconos     | `#293514` | `accent`                                                |
@@ -87,6 +89,15 @@ Los escudos de clubes mantienen sus colores originales, sin filtros ni recolorac
 salvo las marcas de agua de la [superficie de partido](#superficie-de-partido)
 (gris, opacidad 0.11).
 
+El texto tiene cuatro niveles: `foreground` (principal), `muted-foreground` (labels,
+encabezados de tabla, ayudas de campo), `text-tertiary` (hints de stat, placeholders,
+timestamps) y `text-disabled` (controles inactivos y sus labels). Los dos últimos no son
+tonos nuevos: se derivan en OKLab mezclando `#ADB5BD` hacia `#101214` (85 % y 50 %).
+`text-tertiary` cumple AA sobre `background`, `surface` y `surface-raised` (6.5 / 5.7 /
+4.9:1). `text-disabled` solo marca UI inactiva (exenta de WCAG 1.4.3) y sustituye a la
+opacidad: no atenuar controles con `opacity`. Un valor deshabilitado dentro de un input
+sigue siendo legible con `text-tertiary` sobre el relleno `muted`.
+
 Los fondos sólidos de estado usan texto grafito (`*-foreground`); las variantes sutiles
 mantienen fondo grafito y texto de estado. Los gráficos usan `chart-*` con etiquetas,
 leyendas o formas diferenciables; el color no es la única codificación.
@@ -102,7 +113,8 @@ composición. Medir el par renderizado, incluidas mezclas y opacidad, antes de d
 ### Fuente de tokens y generación
 
 - `packages/ui-tokens/src/scales.ts`: colores sRGB del brief convertidos a OKLCH con precisión
-  suficiente para recuperar el HEX exacto; solo colores de la paleta vigente.
+  suficiente para recuperar el HEX exacto; solo colores de la paleta vigente. Los pasos
+  derivados (`gray-mid`, `gray-dim`) se calculan con `mixOklab` a partir de esos colores.
 - `theme.ts`: asignación semántica única. Los alias light/dark mantienen compatibilidad.
 - `typography.ts`, `geometry.ts`, `motion.ts`: roles, medidas, duración y capas compartidos.
 - `packages/ui/src/tokens.css`: artefacto generado. Nunca editar valores aquí a mano.
@@ -123,12 +135,17 @@ Familia única autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 
 | Rol      | StyleX                | Uso principal                                                  |
 | -------- | --------------------- | -------------------------------------------------------------- |
 | Display  | `typography.display`  | Headlines de marketing                                         |
-| Heading  | `typography.heading`  | Títulos de página y panel                                      |
+| Heading  | `typography.heading`  | Títulos de panel (20 px / 700); el `h1` de página sube a 24 px |
+| Title    | `typography.title`    | Títulos de card, sub-panel y estados vacíos (18 px / 600)      |
 | Subtitle | `typography.subtitle` | Frase de apoyo bajo un heading                                 |
 | Body     | `typography.body`     | Párrafos y contenido de lectura                                |
 | Label    | `typography.label`    | Labels de formulario, navegación, columnas y estados compactos |
 | Caption  | `typography.caption`  | Hints, metadata, timestamps y texto secundario sentence-case   |
 | Score    | `typography.score`    | Marcadores y valores deportivos con cifras tabular             |
+
+Interlineado: `display` 1.1 y `score` 1.0 (tamaños grandes); `heading` 1.25
+(`--leading-heading`), porque los títulos de producto de 20 px envuelven a dos líneas;
+`title` y `label` 1.3; cuerpo y caption 1.55.
 
 `typography.label` es el contrato predeterminado para etiquetas de formulario y navegación.
 `typography.caption` cubre metadata y ayudas; el color secundario se aplica con tokens
@@ -157,10 +174,11 @@ variantes cerradas.
 Primitivas que aplican los roles `typography.*`. El elemento semántico (`as`) elige el tag;
 el look desciende con el nivel.
 
-- `Display` — headlines de marketing (`h1` por defecto; `PageHeaderTitle` es el `h1` de producto; `size="lg"` 30→36px en homes de producto)
-- `Heading` — títulos de panel (`h2`–`h6`; `h2`/`h3` usan `typography.heading`, `h4`–`h6` usan `typography.subtitle`)
+- `Display` — headlines de marketing (`h1` por defecto)
+- `PageHeaderTitle` — el `h1` de producto: `typography.heading` a `text-2xl` (24 px / 700), un paso por encima de los `h2` de panel; `size="lg"` 30→36 px en homes de producto
+- `Heading` — títulos de panel (`h2`–`h6`). Cada nivel baja por tamaño o peso: `h2` usa `typography.heading` (20 px / 700), `h3` usa `typography.title` (18 px / 600) y `h4`–`h6` usan `typography.body` en peso 600 (14 px / 600). Un `h2` con cromo de card pasa `className={typography.title}`
 - `Subtitle` — frase de apoyo; `tone` `muted` por defecto
-- `Body` — cuerpo flexible (`size` `sm` 12px · `md` 14px · `lg` 16px); `measure` opt-in para lectura (65ch); `weight` / `tone` / `align`
+- `Body` — cuerpo flexible (`size` `md` 14px · `lg` 16px; el texto de 12 px es `Caption`); `measure` opt-in para lectura (65ch); `weight` / `tone` / `align`
 - `Text` — prosa/chrome flexible (`look` `body` \| `caption` \| `label` \| `subtitle`; `as` `span` por defecto). Títulos y marcador van en `Display` / `Heading` / `SectionTitle` / `Score`
 - `Caption` — metadata y hints sentence-case; `tone` `muted` por defecto
 - `Score` — cualquier cifra que cambia (marcador, %, conteo, celda); `align` `start` \| `center` \| `end`; `tone` `muted` para no disponible (`—`). El color de estado vive en `StatValue`
@@ -171,7 +189,7 @@ el look desciende con el nivel.
 - `Label` — `<label>` de formulario. Navegación y columnas reutilizan el rol vía `FieldLabel` / `TableHead`
 
 No inventar tamaños fuera de la rampa (`text-xs`…`text-7xl`) ni un `Text` con `size` 1–9.
-`Body size` solo `sm`/`md`/`lg`. Títulos y cifras siguen en `Display` / `Heading` / `SectionTitle` / `Score`.
+`Body size` solo `md`/`lg`. Títulos y cifras siguen en `Display` / `Heading` / `SectionTitle` / `Score`.
 
 ### Formularios
 
@@ -189,7 +207,8 @@ Los formularios muestran validación junto al campo y un resumen solo cuando apo
 
 ### Navegación
 
-- `Tabs` con variantes cerradas `line` (indicador lineal, default) y `pills` (segmento relleno)
+- `Tabs` con variantes cerradas `line` (indicador lineal, default) y `pills` (segmento relleno).
+  24 px entre la lista y el contenido; el panel no añade padding inferior (el padre es dueño del gap)
 - `Breadcrumb`
 - `Sheet` para navegación móvil
 - `Stepper` para progreso secuencial no interactivo
@@ -199,9 +218,15 @@ La navegación de producto usa `typography.label`. El estado activo no depende �
 
 ### Datos
 
-- `Table` y primitivas de fila/celda
-- `Badge` con variantes `approved` (solo resultados oficiales) y `emphasis` (acento categórico; no es un estado)
-- `Card` para entidades o resúmenes autónomos
+- `Table` y primitivas de fila/celda. `TableHead` y `TableCell` aceptan `align`
+  `start` \| `center` \| `end`; `end` alinea a la derecha, mantiene `tabular-nums` y no envuelve.
+  `stickyHeader` fija la fila de encabezado: el contenedor pasa a ser el scroll vertical y
+  necesita un alto máximo vía `containerClassName`.
+- `Badge` con variantes `approved` (solo resultados oficiales) y `emphasis` (acento categórico; no es un estado).
+  `neutral` y `outline` usan peso 500 para no competir con el nombre de la fila; las variantes
+  de estado mantienen 600 porque el estado es el mensaje.
+- `Card` para entidades o resúmenes autónomos. `CardTitle` usa `typography.title`;
+  `CardDescription` usa `typography.subtitle` (14 px muted), con 4 px entre ambos
   - `variant="flat"` (default): borde estructural, sin elevación.
   - `variant="elevated"`: `elevation.md`. Sin `border`/`ring` en el mismo elemento.
     Solo entidades autónomas sobre fondo plano. No usar en grids densas, forms ni cards anidadas.
@@ -229,7 +254,9 @@ La navegación de producto usa `typography.label`. El estado activo no depende �
 - `Progress` para sync/jobs con estado explícito (texto + barra; `value={null}` = indeterminado)
 
 `Table dense` es el patrón recomendado para auditoría y operación en desktop. Las cifras usan
-`tabular-nums`. Toda tabla debe tener encabezados y una representación móvil legible.
+`tabular-nums` y `align="end"` en la celda y su encabezado. En tablas con una cifra que ordena
+(puntos en la clasificación), solo esa columna sube a peso 700; el resto de celdas `Score`
+de tabla van en 500. Toda tabla debe tener encabezados y una representación móvil legible.
 
 ### Overlays
 
@@ -307,7 +334,7 @@ Una primitiva nueva o una variante modificada requiere:
 | Apoyo al título                             | `PageHeaderDescription` / `Subtitle`   | Orientación útil, no repetición de datos ya presentes.                                                 |
 | Sección deportiva                           | `SectionTitle` h2 / `typography.label` | «Rendimiento», «Comparación», «Destacados», «Atributos».                                               |
 | Panel de lectura                            | `Heading`                              | h2–h6 según estructura; evitar saltos de nivel por apariencia.                                         |
-| Título de card de sección                   | `Heading` 18 px / peso 600             | «Último partido», «Mis competiciones». No usar `typography.heading` (20 px / 700) en este cromo.       |
+| Título de card de sección                   | `Heading` con `typography.title`       | «Último partido», «Mis competiciones». No usar `typography.heading` (20 px / 700) en este cromo.       |
 | Acción de card de sección                   | `TextLink` `caption` / peso 500        | «Ver todos», «Ver todas»; lima; chevron 16 px. No es un `Button variant="link"`.                       |
 | Filtros, pestañas, columnas, nombre de stat | `typography.label` / `StatLabel`       | Identificación compacta y consistente.                                                                 |
 | Cifra principal                             | `Score` / `StatValue`                  | Blanco, cifras tabulares y formato local; iguales escalas para métricas pares.                         |
@@ -396,7 +423,7 @@ y competiciones.
 `Card` `flat` a toda la altura del slot. Encabezado y escena no se mezclan.
 
 - **Cromo:** `CardHeader` padding 20 px, fila, `space-between`, gap 12 px, `z-index` 1,
-  fondo de card (sin foto). Título: 18 px (`text-lg`), peso 600, `foreground`. Acción:
+  fondo de card (sin foto). Título: `typography.title` (18 px, peso 600), `foreground`. Acción:
   `TextLink` `text="caption"` (12 px) peso **500**, lima (`primary`), sin subrayado,
   gap 4 px al chevron de 16 px. Copy: «Ver todos» (partidos), «Ver todas» (competiciones).
 - **Cuerpo con encabezado:** padding horizontal y inferior 20 px; sin padding-top extra
@@ -980,9 +1007,14 @@ La marca y el lenguaje visual son los mismos que en web; cambia la plataforma de
 ### Tipografía
 
 - Manrope (pesos 400/500/600/700) vía `@expo-google-fonts/manrope`.
+  Cada peso se carga como una familia propia (`Manrope_700Bold`, …): el peso lo elige
+  `fontFamily` y nunca se combina con `fontWeight`, porque Android buscaría una variante
+  bold inexistente y caería a la fuente del sistema.
 - Mismos roles `typography.*`; tamaños convertidos rem→dp; `letterSpacing` derivado de
   `em × tamaño` del rol.
-- `typography.label` usa tracking ligero (`0.04em`). Mayúsculas son opt-in (p. ej. kicker de landing), no el default.
+- `typography.label` usa tracking ligero (`0.04em`). Mayúsculas son opt-in (p. ej. kicker de landing), no el default;
+  cuando se usan, aplicar `--tracking-caps` (`0.06em`).
+- `typography.score` aplica `fontVariant: ["tabular-nums"]` también en nativo; las pantallas no lo repiten.
 
 ### Color y tema
 

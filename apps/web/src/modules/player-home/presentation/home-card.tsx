@@ -11,6 +11,7 @@ import {
   Heading,
   Subtitle,
   TextLink,
+  typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 
@@ -91,10 +92,6 @@ const styles = stylex.create({
     width: "1rem",
     height: "1rem",
   },
-  title: {
-    fontWeight: 600,
-    fontSize: "var(--text-lg)",
-  },
 });
 
 export type HomeCardLink =
@@ -134,7 +131,7 @@ export function HomeCard({
       ) : null}
       {hasHeader ? (
         <CardHeader className={styles.header}>
-          {title ? <Heading className={styles.title}>{title}</Heading> : <span />}
+          {title ? <Heading className={typography.title}>{title}</Heading> : <span />}
           {action ? (
             <TextLink className={styles.action} render={<Link to={action.to} />} text="caption">
               {action.label}
@@ -213,7 +210,7 @@ const banner = stylex.create({
     fontWeight: "var(--font-weight-medium)",
   },
   heroTitle: {
-    fontSize: 28,
+    fontSize: "var(--text-3xl)",
   },
   heroSubtitle: {
     fontWeight: "var(--font-weight-medium)",

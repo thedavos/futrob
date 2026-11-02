@@ -13,6 +13,7 @@ import {
   CardHeader,
   Heading,
   TextLink,
+  typography,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { ActivityFeedList, ActivityFeedSkeleton } from "./activity-feed-list.tsx";
@@ -33,10 +34,6 @@ const styles = stylex.create({
     justifyContent: "space-between",
     gap: "0.75rem",
     padding: "1.25rem",
-  },
-  title: {
-    fontWeight: 600,
-    fontSize: "var(--text-lg)",
   },
   action: {
     display: "inline-flex",
@@ -89,7 +86,7 @@ export function OrganizationRecentActivityView({
   return (
     <Card className={styles.card}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.title}>{t("activity.recent.title")}</Heading>
+        <Heading className={typography.title}>{t("activity.recent.title")}</Heading>
         {hasRows ? (
           <TextLink
             className={styles.action}

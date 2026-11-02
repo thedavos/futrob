@@ -11,6 +11,7 @@ import {
   EmptyStateDescription,
   Heading,
   Skeleton,
+  typography,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { MembersSectionState } from "./organization-members-model.ts";
@@ -32,7 +33,7 @@ export function MembersEmptyState({
       <EmptyState>
         {icon ? <span aria-hidden="true">{icon}</span> : null}
         <EmptyStateCopy>
-          <Heading as="h3" className={styles.emptyTitle}>
+          <Heading as="h3" className={typography.title}>
             {title}
           </Heading>
           <EmptyStateDescription className={styles.emptyCopy}>{description}</EmptyStateDescription>
