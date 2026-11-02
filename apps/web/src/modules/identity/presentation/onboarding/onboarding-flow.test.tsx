@@ -301,7 +301,7 @@ describe("OnboardingFlowProvider initialization", () => {
   });
 
   it("does not bounce a finished player back to intention when the provider stays mounted", async () => {
-    const completePlayer = vi.fn<() => Promise<void>>(async () => undefined);
+    const completePlayer = vi.fn(async () => ({ externalClubAssociation: "skipped" as const }));
     const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "review" });
     gateway.completePlayer = completePlayer;
 
@@ -463,6 +463,37 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByText(/Fera Enjaulada/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Editar club ea" }));
     expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
+  });
+
+  it("enters the personal space with a notice when EA could not associate the club", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({
+          path: "player",
+          currentStep: "club",
+          clubAssociation: "failed",
+        })}
+        initialPath="/onboarding/club"
+      />,
+    );
+
+    fireEvent.change(await screen.findByRole("textbox", { name: "Nombre del club" }), {
+      target: { value: "Fera" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar club" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Fera Enjaulada/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Revisar club" }));
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a mi espacio" }));
+
+    expect(await screen.findByRole("heading", { name: "Espacio personal" })).toBeTruthy();
+    expect(screen.getByText("Tu club quedó sin asociar")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Ir a Clubes EA" }).getAttribute("href")).toBe(
+      "/player/ea-clubs",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar aviso" }));
+    await waitFor(() => expect(screen.queryByText("Tu club quedó sin asociar")).toBeNull());
   });
 
   it("preserves the club query and enables retry after a rate-limit wait", async () => {
@@ -706,6 +737,56 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.click(knockout);
     expect(format.textContent).toContain("Eliminación directa");
     expect(format.textContent).not.toContain("knockout");
+  });
+
+  it("lists the formats outside the Free plan as Pro and does not let the user pick them", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({
+          path: "organization",
+          currentStep: "competition",
+        })}
+        initialPath="/onboarding/competition"
+      />,
+    );
+
+    expect(await screen.findByText(/Tu organización empieza en el plan Gratis\./)).toBeTruthy();
+    const plans = screen.getByRole("link", { name: "Ver planes" });
+    expect(plans.getAttribute("href")).toBe("/pricing");
+    expect(plans.getAttribute("target")).toBe("_blank");
+
+    const format = screen.getByRole("combobox", { name: "Formato inicial" });
+    fireEvent.click(format);
+    const groups = await screen.findByRole("option", { name: "Grupos + eliminación Pro" });
+    expect(groups.getAttribute("aria-disabled")).toBe("true");
+    expect(
+      screen.getByRole("option", { name: "Liga + playoffs Pro" }).getAttribute("aria-disabled"),
+    ).toBe("true");
+    expect(screen.getByRole("option", { name: "Liga" }).getAttribute("aria-disabled")).not.toBe(
+      "true",
+    );
+    fireEvent.pointerDown(groups, { pointerType: "mouse" });
+    fireEvent.click(groups);
+    expect(format.textContent).not.toContain("Grupos");
+  });
+
+  it("offers every format when the plan catalog cannot be read", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({
+          path: "organization",
+          currentStep: "competition",
+          plans: null,
+        })}
+        initialPath="/onboarding/competition"
+      />,
+    );
+
+    const format = await screen.findByRole("combobox", { name: "Formato inicial" });
+    fireEvent.click(format);
+    const groups = await screen.findByRole("option", { name: "Grupos + eliminación" });
+    expect(groups.getAttribute("aria-disabled")).not.toBe("true");
+    expect(screen.queryByText(/plan Gratis/)).toBeNull();
   });
 
   it("uses a selector for the competition time zone", async () => {

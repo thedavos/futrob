@@ -1,4 +1,8 @@
-import type { GetOrganizationPlanResponse, OrganizationEntitlements } from "@futrob/api-contracts";
+import type {
+  GetOrganizationPlanResponse,
+  OrganizationEntitlements,
+  OrganizationPlan,
+} from "@futrob/api-contracts";
 
 const MVP_FORMATS = ["league", "knockout", "groups-knockout", "league-playoffs"];
 
@@ -86,3 +90,10 @@ export const proPlanFixture: GetOrganizationPlanResponse = {
     },
   ],
 };
+
+/** The published catalog (`/public/plans`) for stories and tests. */
+export const publicPlansFixture: readonly OrganizationPlan[] = [
+  { key: "free", version: 1, entitlements: freeEntitlementsFixture },
+  { key: "pro", version: 1, entitlements: proEntitlementsFixture },
+  { key: "league", version: 1, entitlements: leagueEntitlementsFixture },
+];

@@ -2,6 +2,7 @@ import type { OnboardingPathDto } from "@futrob/api-contracts";
 import type { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { buildSupportFields } from "@/shared/presentation/support-fields.ts";
+import { planUpsellKey } from "@/modules/billing/presentation/plan-copy.ts";
 
 export interface OnboardingSupportError {
   readonly messageKey: ParameterlessMessageKey;
@@ -44,6 +45,14 @@ export function finalizationError(
   if (error && path === "organization") {
     if (error.code === "organizations.name_conflict") {
       return present("errors.organizations.name_conflict");
+    }
+    // The organization is created on the starting plan; nothing is persisted on a 402, so
+    // the user goes back to the competition step instead of changing plan.
+    if (error.code === "competitions.format_not_in_plan") {
+      return present("errors.onboarding.formatNotInPlan");
+    }
+    if (error.code === "competitions.plan_limit_reached") {
+      return present(planUpsellKey(error.code));
     }
     if (error.code.startsWith("competitions.invalid_")) {
       return present("errors.onboarding.invalidCompetition");

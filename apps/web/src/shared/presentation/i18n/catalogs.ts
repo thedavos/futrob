@@ -571,6 +571,10 @@ const es = {
   "onboarding.competition.validation.region": "Selecciona la región de la competición.",
   "onboarding.competition.validation.timeZone": "Selecciona una zona horaria válida.",
   "onboarding.competition.validation.format": "Selecciona el formato inicial de la competición.",
+  "onboarding.competition.validation.formatNotInPlan":
+    "Ese formato no entra en el plan Gratis. Elige otro para continuar.",
+  "onboarding.competition.format.planHint":
+    "Tu organización empieza en el plan Gratis. Los formatos marcados como Pro necesitan otro plan.",
   "onboarding.region.america": "América",
   "onboarding.region.southAmerica": "Sudamérica",
   "onboarding.region.northCentralAmerica": "Norte y Centroamérica",
@@ -673,6 +677,8 @@ const es = {
   "errors.organizations.name_conflict":
     "Ese nombre de organización ya está en uso. Vuelve y elige otro.",
   "errors.organizations.invalid_name": "El nombre de la organización no es válido.",
+  "errors.onboarding.formatNotInPlan":
+    "Tu organización empieza en el plan Gratis, que no incluye ese formato. Vuelve a Competición y elige otro.",
   "errors.onboarding.invalidCompetition":
     "Los datos de la competición no son válidos. Revísalos e inténtalo nuevamente.",
   "errors.onboarding.invalidGameAccount":
@@ -689,6 +695,11 @@ const es = {
   "shell.identity.loading": "Cargando tu espacio…",
   "player.home.title": "Inicio",
   "player.home.subtitle.loading": "Cargando tu actividad…",
+  "player.home.clubAssociationFailed.title": "Tu club quedó sin asociar",
+  "player.home.clubAssociationFailed.description":
+    "EA no respondió al guardar tu club. Tu perfil ya está listo y puedes añadir el club más tarde.",
+  "player.home.clubAssociationFailed.action": "Ir a Clubes EA",
+  "player.home.clubAssociationFailed.dismiss": "Cerrar aviso",
   "player.home.subtitle.activity": ({ club }) => `Tu actividad con ${club}`,
   "player.home.cta.matches": "Ver mis partidos",
   "player.home.cta.refreshMatches": "Actualizar partidos",
@@ -3180,6 +3191,10 @@ const en: Catalog = {
   "onboarding.competition.validation.region": "Select the competition region.",
   "onboarding.competition.validation.timeZone": "Select a valid time zone.",
   "onboarding.competition.validation.format": "Select the initial competition format.",
+  "onboarding.competition.validation.formatNotInPlan":
+    "That format isn't in the Free plan. Choose another one to continue.",
+  "onboarding.competition.format.planHint":
+    "Your organization starts on the Free plan. Formats marked Pro need another plan.",
   "onboarding.region.america": "Americas",
   "onboarding.region.southAmerica": "South America",
   "onboarding.region.northCentralAmerica": "North and Central America",
@@ -3281,6 +3296,8 @@ const en: Catalog = {
   "errors.organizations.name_conflict":
     "That organization name is already in use. Go back and choose another one.",
   "errors.organizations.invalid_name": "The organization name isn't valid.",
+  "errors.onboarding.formatNotInPlan":
+    "Your organization starts on the Free plan, which doesn't include that format. Go back to Competition and choose another one.",
   "errors.onboarding.invalidCompetition":
     "The competition details aren't valid. Review them and try again.",
   "errors.onboarding.invalidGameAccount":
@@ -3296,6 +3313,11 @@ const en: Catalog = {
   "shell.identity.loading": "Loading your space…",
   "player.home.title": "Home",
   "player.home.subtitle.loading": "Loading your activity…",
+  "player.home.clubAssociationFailed.title": "Your club wasn't added",
+  "player.home.clubAssociationFailed.description":
+    "EA didn't respond when we saved your club. Your profile is ready and you can add the club later.",
+  "player.home.clubAssociationFailed.action": "Go to EA Clubs",
+  "player.home.clubAssociationFailed.dismiss": "Dismiss notice",
   "player.home.subtitle.activity": ({ club }) => `Your activity with ${club}`,
   "player.home.cta.matches": "View my matches",
   "player.home.cta.refreshMatches": "Refresh matches",

@@ -295,3 +295,27 @@ export const CompleteError: Story = {
     );
   },
 };
+
+/** EA did not answer when saving the club: onboarding finishes and /player shows a notice. */
+export const ClubAssociationFailed: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({
+        path: "player",
+        currentStep: "club",
+        clubAssociation: "failed",
+      })}
+      initialPath="/onboarding/club"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByRole("textbox", { name: "Nombre del club" }), "Fera");
+    await userEvent.click(canvas.getByRole("button", { name: "Buscar club" }));
+    await userEvent.click(await canvas.findByRole("button", { name: /Fera Enjaulada/ }));
+    await userEvent.click(canvas.getByRole("button", { name: "Revisar club" }));
+    await userEvent.click(await canvas.findByRole("button", { name: "Entrar a mi espacio" }));
+    await expect(await canvas.findByText("Tu club quedó sin asociar")).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Ir a Clubes EA" })).toBeVisible();
+  },
+};

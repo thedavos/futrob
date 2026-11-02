@@ -7,19 +7,26 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  useNavigate,
+  useSearch,
 } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps, typography } from "@futrob/ui";
 import type {
+  ExternalClubAssociationOutcomeDto,
   OnboardingPathDto,
   OnboardingStatusDto,
   OnboardingStepDto,
+  OrganizationPlan,
 } from "@futrob/api-contracts";
 import { EA_SEARCH_PLATFORM } from "@futrob/api-contracts";
 import type { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
+import { publicPlansFixture } from "@/modules/billing/presentation/organization-plan.fixtures.ts";
+import { ClubAssociationNotice } from "@/modules/player-home/presentation/club-association-notice.tsx";
+import { playerHomeSearchSchema } from "@/modules/player-home/presentation/player-home-search.ts";
 import type { OnboardingGateway } from "./onboarding-flow-gateway.ts";
 import { OnboardingFlowProvider } from "./onboarding-flow.tsx";
 import { CompetitionStep } from "./steps/competition-step.tsx";
@@ -111,6 +118,10 @@ export function createFakeOnboardingGateway(input?: {
   organizationNameAvailable?: boolean;
   clubs?: readonly StoryExternalClub[];
   searchError?: boolean;
+  /** Published plan catalog; `null` simulates an unreadable catalog. Defaults to the fixture. */
+  plans?: readonly OrganizationPlan[] | null;
+  /** Outcome the player completion reports for a requested club. */
+  clubAssociation?: Extract<ExternalClubAssociationOutcomeDto, "associated" | "failed">;
   onSearchExternalClubs?: (
     request: Parameters<OnboardingGateway["searchExternalClubs"]>[0],
   ) => void;
@@ -198,8 +209,16 @@ export function createFakeOnboardingGateway(input?: {
         expiresAt: "2026-09-01T12:00:00.000Z",
       };
     },
-    async completePlayer() {
+    async completePlayer(request) {
       throwCompleteFailure();
+      return {
+        externalClubAssociation: request.externalClub
+          ? (input?.clubAssociation ?? "associated")
+          : "skipped",
+      };
+    },
+    async listPublicPlans() {
+      return input?.plans === undefined ? publicPlansFixture : input.plans;
     },
     async searchExternalClubs(request) {
       input?.onSearchExternalClubs?.(request);
@@ -283,11 +302,8 @@ function createOnboardingStoryRouter(
     createRoute({
       getParentRoute: () => rootRoute,
       path: "/player",
-      component: () => (
-        <main {...applyProps(undefined, undefined, styles.stub)}>
-          <h1 {...applyProps(undefined, undefined, typography.heading)}>Espacio personal</h1>
-        </main>
-      ),
+      validateSearch: playerHomeSearchSchema,
+      component: StoryPlayerHome,
     }),
     createRoute({
       getParentRoute: () => rootRoute,
@@ -319,6 +335,21 @@ function createOnboardingStoryRouter(
     routeTree: rootRoute.addChildren(routes),
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
+}
+
+function StoryPlayerHome() {
+  const search = useSearch({ strict: false });
+  const navigate = useNavigate();
+  return (
+    <main {...applyProps(undefined, undefined, styles.stub)}>
+      <h1 {...applyProps(undefined, undefined, typography.heading)}>Espacio personal</h1>
+      {search.clubAssociation === "failed" ? (
+        <ClubAssociationNotice
+          onDismiss={() => void navigate({ to: "/player", search: {}, replace: true })}
+        />
+      ) : null}
+    </main>
+  );
 }
 
 const storyProfile = { id: "profile-story", createdAt: "2026-07-31T12:00:00.000Z" };
