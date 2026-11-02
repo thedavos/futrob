@@ -103,7 +103,8 @@ describe("rival response to a reschedule proposal", () => {
         },
       },
     ]);
-    expect(item().getByText(/propone mover/).textContent).toContain("del 14 sept 2026, 20:00 al");
+    // Rejected: nothing moved, so the item names the proposal without claiming an origin.
+    expect(item().getByText(/propuso mover/).textContent).not.toContain(" del ");
     expect(screen.getByRole("status").textContent).toBe(
       "Propuesta rechazada. Se mantiene el horario actual.",
     );

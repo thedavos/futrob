@@ -16,15 +16,8 @@ import { ScheduleChangeHistory } from "./schedule-change-history.tsx";
 import { ScheduleChangeResponses } from "./schedule-change-responses.tsx";
 import { ScheduleResolutionForm } from "./schedule-resolution-form.tsx";
 import type { ScheduleChangeCommands } from "./schedule-changes-section.tsx";
+import { currentStartOf, scheduleChangeSummary } from "./schedule-change-summary.ts";
 import { styles } from "./schedule-changes.styles.ts";
-
-/** Where the request's scope starts now, from the Encounter the hero and slots also show. */
-export function currentStartOf(scope: ScheduleChangeRequestDto["scope"], view: EncounterViewDto) {
-  return scope.type === "entire_encounter"
-    ? view.scheduledStartAt
-    : (view.officialMatches.find((match) => match.officialSlot === scope.officialSlot)
-        ?.scheduledStartAt ?? view.scheduledStartAt);
-}
 
 export function ScheduleChangeRequestItem({
   request,
@@ -49,8 +42,13 @@ export function ScheduleChangeRequestItem({
   const current = request.proposals.find((proposal) => proposal.id === request.currentProposalId)!;
   const currentStart = currentStartOf(request.scope, view);
   const proposer = teamName(current.proposedByTeamId);
-  const from = format.format(new Date(currentStart));
-  const to = format.format(new Date(current.proposedStartAt));
+  const at = (iso: string) => format.format(new Date(iso));
+  const summaryText = summarySentence(scheduleChangeSummary(request, view), {
+    scope: request.scope,
+    team: proposer,
+    at,
+    t,
+  });
   const deadline = format.format(new Date(current.responseDeadline));
   const canResolve =
     request.status === "escalated" && request.allowedActions.includes("resolve") && !refreshFailed;
@@ -64,14 +62,7 @@ export function ScheduleChangeRequestItem({
           {t(`reschedule.status.${request.status}`)}
         </Badge>
         <Text className={styles.summary} tone="default">
-          {request.scope.type === "entire_encounter"
-            ? t("reschedule.summary.encounter", { team: proposer, from, to })
-            : t("reschedule.summary.slot", {
-                team: proposer,
-                slot: request.scope.officialSlot,
-                from,
-                to,
-              })}
+          {summaryText}
         </Text>
         {request.status === "open" ? (
           <Text>{t("reschedule.respondBy", { date: deadline })}</Text>
@@ -117,4 +108,43 @@ export function ScheduleChangeRequestItem({
       ) : null}
     </li>
   );
+}
+
+function summarySentence(
+  summary: ReturnType<typeof scheduleChangeSummary>,
+  {
+    scope,
+    team,
+    at,
+    t,
+  }: {
+    readonly scope: ScheduleChangeRequestDto["scope"];
+    readonly team: string;
+    readonly at: (iso: string) => string;
+    readonly t: ReturnType<typeof useI18n>["t"];
+  },
+): string {
+  const slot = scope.type === "official_match" ? scope.officialSlot : null;
+  switch (summary.kind) {
+    case "pending":
+      return slot === null
+        ? t("reschedule.summary.encounter", { team, from: at(summary.from), to: at(summary.to) })
+        : t("reschedule.summary.slot", { team, slot, from: at(summary.from), to: at(summary.to) });
+    case "applied":
+      return slot === null
+        ? t("reschedule.summary.applied.encounter", { from: at(summary.from), to: at(summary.to) })
+        : t("reschedule.summary.applied.slot", {
+            slot,
+            from: at(summary.from),
+            to: at(summary.to),
+          });
+    case "closed":
+      return slot === null
+        ? t("reschedule.summary.closed.encounter", { team, to: at(summary.to) })
+        : t("reschedule.summary.closed.slot", { team, slot, to: at(summary.to) });
+    default: {
+      const exhaustive: never = summary;
+      return exhaustive;
+    }
+  }
 }

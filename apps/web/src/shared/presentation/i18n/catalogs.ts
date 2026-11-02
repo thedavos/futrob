@@ -247,6 +247,10 @@ const es = {
   "reschedule.deadline": "Plazo de respuesta: {date}",
   "reschedule.summary.encounter": "{team} propone mover todo el enfrentamiento del {from} al {to}.",
   "reschedule.summary.slot": "{team} propone mover el partido {slot} del {from} al {to}.",
+  "reschedule.summary.applied.encounter": "Todo el enfrentamiento pasó del {from} al {to}.",
+  "reschedule.summary.applied.slot": "El partido {slot} pasó del {from} al {to}.",
+  "reschedule.summary.closed.encounter": "{team} propuso mover todo el enfrentamiento al {to}.",
+  "reschedule.summary.closed.slot": "{team} propuso mover el partido {slot} al {to}.",
   "reschedule.respondBy": "Responde antes del {date}.",
   "reschedule.history": "Historial de propuestas y decisiones",
   "reschedule.proposal": "Propuesta {number}",
@@ -2431,6 +2435,10 @@ export interface MessageParamsByKey {
   "reschedule.deadline": { date: string };
   "reschedule.summary.encounter": { team: string; from: string; to: string };
   "reschedule.summary.slot": { team: string; slot: number; from: string; to: string };
+  "reschedule.summary.applied.encounter": { from: string; to: string };
+  "reschedule.summary.applied.slot": { slot: number; from: string; to: string };
+  "reschedule.summary.closed.encounter": { team: string; to: string };
+  "reschedule.summary.closed.slot": { team: string; slot: number; to: string };
   "reschedule.respondBy": { date: string };
   "reschedule.proposal": { number: number };
   "reschedule.consent": { actor: string };
@@ -2891,6 +2899,10 @@ const en: Catalog = {
   "reschedule.deadline": "Response deadline: {date}",
   "reschedule.summary.encounter": "{team} proposes moving the whole encounter from {from} to {to}.",
   "reschedule.summary.slot": "{team} proposes moving match {slot} from {from} to {to}.",
+  "reschedule.summary.applied.encounter": "The whole encounter moved from {from} to {to}.",
+  "reschedule.summary.applied.slot": "Match {slot} moved from {from} to {to}.",
+  "reschedule.summary.closed.encounter": "{team} proposed moving the whole encounter to {to}.",
+  "reschedule.summary.closed.slot": "{team} proposed moving match {slot} to {to}.",
   "reschedule.respondBy": "Respond by {date}.",
   "reschedule.history": "Proposal and decision history",
   "reschedule.proposal": "Proposal {number}",
