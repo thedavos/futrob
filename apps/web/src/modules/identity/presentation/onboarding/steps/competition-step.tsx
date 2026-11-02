@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import type { CompetitionFormatDto } from "@futrob/api-contracts";
 import { CompetitionDraftFields } from "@/modules/competitions/presentation/competition-draft-fields.tsx";
 import {
   type CompetitionDraftFieldError,
@@ -8,7 +9,13 @@ import {
   validateCompetitionDraftFields,
 } from "@/modules/competitions/presentation/validate-competition-draft-input.ts";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles } from "@futrob/ui";
+import { applyStyles, TextLink } from "@futrob/ui";
+import { usePublicPlansQuery } from "@/modules/billing/presentation/billing-queries.ts";
+import { planNameKey } from "@/modules/billing/presentation/plan-copy.ts";
+import {
+  competitionFormatsOutsidePlan,
+  STARTING_ORGANIZATION_PLAN,
+} from "@/modules/billing/presentation/plan-competition-formats.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { OnboardingActions } from "../onboarding-actions.tsx";
@@ -45,7 +52,14 @@ export function CompetitionStep() {
     timeZone: draft.competitionTimeZone,
     format: draft.competitionFormat,
   };
-  const localizedFieldError = localizeValidation(fieldError, fields, t);
+  const plans = usePublicPlansQuery(flow.listPublicPlans);
+  const formats = localizedCompetitionFormats(t);
+  const formatsOutsidePlan = competitionFormatsOutsidePlan(
+    plans.data,
+    STARTING_ORGANIZATION_PLAN,
+    formats.map((option) => option.value),
+  );
+  const localizedFieldError = localizeValidation(fieldError, fields, formatsOutsidePlan, t);
 
   function invalidate(error: CompetitionDraftFieldError) {
     setFieldError(error);
@@ -68,6 +82,10 @@ export function CompetitionStep() {
     const validation = validateCompetitionDraftFields(fields);
     if (validation) {
       invalidate(validation);
+      return;
+    }
+    if (draft.competitionFormat && formatsOutsidePlan.has(draft.competitionFormat)) {
+      invalidate({ field: "format", message: "" }); // localized below
       return;
     }
 
@@ -108,9 +126,21 @@ export function CompetitionStep() {
             initialFormatLabel: t("onboarding.competition.format.initial"),
             formatPlaceholder: t("onboarding.competition.format.placeholder"),
             formatDescription: t("onboarding.competition.format.description"),
-            formats: localizedCompetitionFormats(t),
+            formats,
           }}
           fieldError={localizedFieldError}
+          formatAvailability={{
+            unavailable: formatsOutsidePlan,
+            badgeLabel: t(planNameKey("pro")),
+            hint: (
+              <>
+                {t("onboarding.competition.format.planHint")}{" "}
+                <TextLink href="/pricing" rel="noopener" target="_blank">
+                  {t("billing.plan.compare")}
+                </TextLink>
+              </>
+            ),
+          }}
           nameInputRef={nameRef}
           onChange={(patch) => {
             flow.updateDraft(competitionDraftUpdate(patch));
@@ -142,6 +172,7 @@ export function CompetitionStep() {
 function localizeValidation(
   error: CompetitionDraftFieldError | null,
   value: CompetitionDraftFieldsValue,
+  formatsOutsidePlan: ReadonlySet<CompetitionFormatDto>,
   t: Translator,
 ): CompetitionDraftFieldError | null {
   if (!error) return null;
@@ -155,7 +186,10 @@ function localizeValidation(
     platform: t("onboarding.competition.validation.platform"),
     region: t("onboarding.competition.validation.region"),
     "time-zone": t("onboarding.competition.validation.timeZone"),
-    format: t("onboarding.competition.validation.format"),
+    format:
+      value.format && formatsOutsidePlan.has(value.format)
+        ? t("onboarding.competition.validation.formatNotInPlan")
+        : t("onboarding.competition.validation.format"),
   }[error.field];
   return { ...error, message };
 }

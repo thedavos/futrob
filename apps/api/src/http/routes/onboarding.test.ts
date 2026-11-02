@@ -1,5 +1,6 @@
 import {
   completeOrganizationOnboardingResponseSchema,
+  completePlayerOnboardingResponseSchema,
   createInvitationResponseSchema,
   getMyPlayerProfileResponseSchema,
   listMyMembershipsResponseSchema,
@@ -185,6 +186,7 @@ describe("apps/api http onboarding", () => {
     expect(completed.status).toBe(200);
     expect(await completed.json()).toMatchObject({
       destination: "personal",
+      externalClubAssociation: "skipped",
       gameAccount: {
         identifier: "Gamer23",
         platform: "nintendo-switch-2",
@@ -237,6 +239,7 @@ describe("apps/api http onboarding", () => {
     expect(completed.status).toBe(200);
     expect(await completed.json()).toMatchObject({
       destination: "personal",
+      externalClubAssociation: "associated",
       externalClubs: [
         {
           externalClubId: "10754",
@@ -262,6 +265,50 @@ describe("apps/api http onboarding", () => {
         },
       ],
     });
+  });
+
+  it("onboarding: completes the player path without the club when EA is unavailable", async () => {
+    const requestedUrls: string[] = [];
+    const app = buildApp(
+      createFetch((url) => {
+        requestedUrls.push(url);
+        return new Response("upstream unavailable", { status: 503 });
+      }),
+    );
+    const actor = "actor-player-ea-down";
+
+    const completed = await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({
+        gameAccount: { identifier: "Gamer23", platform: "playstation", gameEdition: "FC 26" },
+        externalClub: {
+          providerKey: "ea-clubs",
+          externalClubId: "10754",
+          platform: "common-gen5",
+          gameEdition: "fc26",
+        },
+      }),
+    });
+    expect(requestedUrls.some((url) => url.includes("/clubs/info"))).toBe(true);
+    expect(completed.status).toBe(200);
+    const body = await parseResponse(completePlayerOnboardingResponseSchema, completed);
+    expect(body).toMatchObject({
+      destination: "personal",
+      externalClubAssociation: "failed",
+      externalClubs: [],
+      gameAccount: { identifier: "Gamer23", platform: "playstation", gameEdition: "FC 26" },
+    });
+
+    const profile = await app.request("/api/v1/players/me", { headers: serviceHeaders(actor) });
+    const profileBody = await parseResponse(getMyPlayerProfileResponseSchema, profile);
+    expect(profileBody.externalClubs).toEqual([]);
+    expect(profileBody.gameAccounts).toHaveLength(1);
+
+    const status = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await status.json()).toMatchObject({ completed: true, path: "player" });
   });
 
   it("onboarding: does not complete when the external club cannot be resolved", async () => {

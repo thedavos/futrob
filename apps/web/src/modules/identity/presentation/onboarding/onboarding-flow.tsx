@@ -56,6 +56,7 @@ interface OnboardingFlowValue {
   clearExternalClub(): void;
   checkOrganizationName(name: string): Promise<boolean | null>;
   searchExternalClubs(input: SearchClubsQueryInput): Promise<readonly ExternalClubDto[]>;
+  listPublicPlans: OnboardingGateway["listPublicPlans"];
   goTo(step: OnboardingStepDto, path?: OnboardingPathDto | null): Promise<void>;
   finish(): Promise<void>;
 }
@@ -198,6 +199,7 @@ export function OnboardingFlowProvider({
       async searchExternalClubs(input) {
         return gateway.searchExternalClubs(input);
       },
+      listPublicPlans: () => gateway.listPublicPlans(),
       async goTo(step, requestedPath = path) {
         if (leaving || saving || finishingRef.current) return;
         const previousPath = path;
@@ -261,12 +263,17 @@ export function OnboardingFlowProvider({
               replace: true,
             });
           } else {
-            await gateway.completePlayer({
+            const completed = await gateway.completePlayer({
               gameAccount: playerAccountFromDraft(draft),
               externalClub: externalClubLocatorFromDraft(draft),
             });
             markOnboardingCompletedInCache(queryClient, path);
-            await navigate({ to: "/player", replace: true });
+            await navigate({
+              to: "/player",
+              search:
+                completed.externalClubAssociation === "failed" ? { clubAssociation: "failed" } : {},
+              replace: true,
+            });
           }
         } catch (caught) {
           finishingRef.current = false;
@@ -307,7 +314,7 @@ export function OnboardingFlowProvider({
       {shouldSyncRoute ? (
         <>
           <Navigate to={expectedRoute} replace />
-          <PendingScreen message={t("onboarding.loading.progress")} />
+          <PendingScreen message={t("onboarding.loading.preparing")} />
         </>
       ) : (
         children

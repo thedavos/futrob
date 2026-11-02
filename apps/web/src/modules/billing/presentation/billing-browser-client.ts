@@ -1,8 +1,10 @@
 import {
   getOrganizationEntitlementsResponseSchema,
   getOrganizationPlanResponseSchema,
+  listPublicPlansResponseSchema,
   type GetOrganizationEntitlementsResponse,
   type GetOrganizationPlanResponse,
+  type ListPublicPlansResponse,
 } from "@futrob/api-contracts";
 import { requestBrowserJson } from "@/shared/infrastructure/http/browser-json-request.ts";
 
@@ -19,7 +21,7 @@ export class BillingClientError extends Error {
 const organizationBillingPath = (organizationId: string, resource: "plan" | "entitlements") =>
   `/api/v1/organizations/${encodeURIComponent(organizationId)}/billing/${resource}`;
 
-/** Same-origin BFF reads of the organization's plan (session cookies). */
+/** Same-origin BFF reads of the plan catalog and the organization's plan (session cookies). */
 export const billingBrowserClient = {
   getPlan(organizationId: string): Promise<GetOrganizationPlanResponse> {
     return requestBrowserJson({
@@ -27,6 +29,16 @@ export const billingBrowserClient = {
       method: "GET",
       schema: getOrganizationPlanResponseSchema,
       fallbackCode: "billing.plan_load_failed",
+      createError: (status, error) => new BillingClientError(status, error.code),
+    });
+  },
+  /** Public catalog; needs no organization, so onboarding can read it. */
+  listPublicPlans(): Promise<ListPublicPlansResponse> {
+    return requestBrowserJson({
+      path: "/api/v1/public/plans",
+      method: "GET",
+      schema: listPublicPlansResponseSchema,
+      fallbackCode: "billing.plans_load_failed",
       createError: (status, error) => new BillingClientError(status, error.code),
     });
   },

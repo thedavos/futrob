@@ -12,5 +12,5 @@ export const Route = createFileRoute("/_app/onboarding/game")({
 
 function LegacyGameStep() {
   const { t } = useI18n();
-  return <PendingScreen message={t("onboarding.loading.progress")} />;
+  return <PendingScreen message={t("onboarding.loading.preparing")} />;
 }

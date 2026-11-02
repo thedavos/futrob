@@ -161,10 +161,22 @@ export const completePlayerOnboardingRequestSchema = z.object({
 });
 export type CompletePlayerOnboardingRequest = z.infer<typeof completePlayerOnboardingRequestSchema>;
 
+/**
+ * Outcome of the optional, declarative club association requested at the end of the player
+ * path. `skipped`: no club was requested. `failed`: the game-data provider was unavailable
+ * (timeout, rate limit, outage), so onboarding completed without the club and the player can
+ * add it later. Invalid locators still fail the request.
+ */
+export const externalClubAssociationOutcomeSchema = z.enum(["associated", "skipped", "failed"]);
+export type ExternalClubAssociationOutcomeDto = z.infer<
+  typeof externalClubAssociationOutcomeSchema
+>;
+
 export const completePlayerOnboardingResponseSchema = z.object({
   profile: playerProfileSchema,
   gameAccount: playerGameAccountSchema.nullable(),
   externalClubs: z.array(playerExternalClubAssociationSchema),
+  externalClubAssociation: externalClubAssociationOutcomeSchema,
   destination: z.literal("personal"),
 });
 export type CompletePlayerOnboardingResponse = z.infer<

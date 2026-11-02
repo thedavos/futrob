@@ -110,6 +110,7 @@ describe("createFutrobClient identity", () => {
           profile,
           gameAccount: null,
           externalClubs: [],
+          externalClubAssociation: "skipped",
           destination: "personal",
         });
       }),
@@ -124,7 +125,9 @@ describe("createFutrobClient identity", () => {
       token: "invite-token",
       gameAccount: null,
     });
-    await client.identity.completePlayerOnboarding({ gameAccount: null });
+    await expect(
+      client.identity.completePlayerOnboarding({ gameAccount: null }),
+    ).resolves.toMatchObject({ externalClubAssociation: "skipped" });
 
     expect(requests).toEqual([
       {

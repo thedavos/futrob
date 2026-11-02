@@ -16,11 +16,13 @@ import type {
   AcceptCompetitionInvitationResponse,
   AcceptInvitationRequest,
 } from "@futrob/api-contracts";
+import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
 import { OrganizationsClientError } from "./organizations-browser-client.ts";
 import { AcceptInvitationDeepLink } from "./accept-invitation-deep-link.tsx";
 import {
   forgetInvitationAccept,
   loadCompetitionInvitationAccept,
+  localizeInvitationAcceptFailure,
   resetInvitationAcceptOnceForTests,
   type InvitationAcceptLoaderResult,
 } from "./accept-invitation-once.ts";
@@ -113,7 +115,8 @@ describe("loadCompetitionInvitationAccept", () => {
     expect(limited).toEqual({
       kind: "error",
       error: {
-        message: "Alcanzaste el límite temporal de invitaciones.",
+        kind: "catalog",
+        messageKey: "invitations.accept.rateLimited",
         requestId: "2170e2f6-a47e-4338-83c3-27c054630800",
         retryAfterSeconds: 2,
       },
@@ -193,7 +196,7 @@ function InvitationAcceptHarness({ token }: Readonly<{ token: string }>) {
         if (result.kind !== "error") return <AcceptInvitationDeepLink error={null} />;
         return (
           <AcceptInvitationDeepLink
-            error={result.error}
+            error={localizeInvitationAcceptFailure(result.error, createTranslator("es"))}
             onRetry={() => {
               forgetInvitationAccept(plainToken);
               void router.invalidate();

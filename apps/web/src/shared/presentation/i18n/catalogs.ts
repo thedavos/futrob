@@ -456,7 +456,7 @@ const es = {
   "onboarding.step.account": "Cuenta",
   "onboarding.step.invitation": "Invitación",
   "onboarding.step.club": "Club",
-  "onboarding.loading.progress": "Recuperando tu progreso…",
+  "onboarding.loading.preparing": "Preparando tu cuenta…",
   "onboarding.loading.error": "No se pudo recuperar tu progreso",
   "onboarding.loading.errorDescription": "Revisa tu conexión e inténtalo de nuevo.",
   "onboarding.intention.title": "¿Qué quieres hacer primero?",
@@ -466,7 +466,8 @@ const es = {
   "onboarding.intention.organization.label": "Organizar",
   "onboarding.intention.organization.description": "Crea una organización y una competición.",
   "onboarding.intention.invitation.label": "Unirme",
-  "onboarding.intention.invitation.description": "Accede a una competición con tu código.",
+  "onboarding.intention.invitation.description":
+    "Entra en una competición con el enlace o el código de tu invitación.",
   "onboarding.intention.player.label": "Empezar como jugador",
   "onboarding.intention.player.description": "Crea tu espacio personal.",
   "onboarding.intention.continue": "Continuar",
@@ -478,7 +479,7 @@ const es = {
   "onboarding.organization.name.required": "Escribe el nombre de la organización.",
   "onboarding.organization.name.max": "El nombre debe tener como máximo 120 caracteres.",
   "onboarding.organization.name.conflict": "Ese nombre ya está en uso. Elige otro.",
-  "onboarding.organization.review": "Revisar organización",
+  "onboarding.organization.continue": "Continuar a competición",
   "organizations.create.title": "Crear organización",
   "organizations.create.description": "Crea otro espacio para administrar competiciones y equipos.",
   "organizations.create.name.label": "Nombre de la organización",
@@ -570,6 +571,10 @@ const es = {
   "onboarding.competition.validation.region": "Selecciona la región de la competición.",
   "onboarding.competition.validation.timeZone": "Selecciona una zona horaria válida.",
   "onboarding.competition.validation.format": "Selecciona el formato inicial de la competición.",
+  "onboarding.competition.validation.formatNotInPlan":
+    "Ese formato no entra en el plan Gratis. Elige otro para continuar.",
+  "onboarding.competition.format.planHint":
+    "Tu organización empieza en el plan Gratis. Los formatos marcados como Pro necesitan otro plan.",
   "onboarding.region.america": "América",
   "onboarding.region.southAmerica": "Sudamérica",
   "onboarding.region.northCentralAmerica": "Norte y Centroamérica",
@@ -595,9 +600,8 @@ const es = {
   "onboarding.account.platform.required": "Selecciona la plataforma de esta cuenta.",
   "onboarding.account.edition.required": "Selecciona o escribe la edición del juego.",
   "onboarding.account.continue": "Continuar",
-  "onboarding.account.linkContinue": "Vincular y continuar",
-  "onboarding.account.review": "Revisar cuenta",
-  "onboarding.account.linkReview": "Vincular y revisar",
+  "onboarding.account.saveContinue": "Guardar y continuar",
+  "onboarding.account.saveReview": "Guardar y revisar",
   "onboarding.invitation.title": "Únete a una competición",
   "onboarding.invitation.description":
     "Escribe el código que recibiste para unirte a la competición al confirmar.",
@@ -611,7 +615,7 @@ const es = {
   "onboarding.invitation.continuePlayer": "Continuar como jugador",
   "onboarding.club.title": "Asocia tu club EA",
   "onboarding.club.description":
-    "La asociación es opcional y declarativa. No verifica propiedad, ni crea un Team de competición ni te incorpora a una plantilla.",
+    "Opcional. Solo sirve para mostrarte los partidos recientes de tu club. No verificamos la propiedad.",
   "onboarding.club.name.label": "Nombre del club",
   "onboarding.club.name.placeholder": "ej. Night Owls",
   "onboarding.club.reset": "Restablecer búsqueda",
@@ -669,9 +673,12 @@ const es = {
     "La invitación fue revocada. Solicita una nueva al organizador.",
   "errors.organizations.invitation_invalid": "La invitación ya no está disponible.",
   "errors.organizations.invitation_exhausted": "La invitación alcanzó el número máximo de usos.",
+  "invitations.accept.rateLimited": "Alcanzaste el límite temporal de invitaciones.",
   "errors.organizations.name_conflict":
     "Ese nombre de organización ya está en uso. Vuelve y elige otro.",
   "errors.organizations.invalid_name": "El nombre de la organización no es válido.",
+  "errors.onboarding.formatNotInPlan":
+    "Tu organización empieza en el plan Gratis, que no incluye ese formato. Vuelve a Competición y elige otro.",
   "errors.onboarding.invalidCompetition":
     "Los datos de la competición no son válidos. Revísalos e inténtalo nuevamente.",
   "errors.onboarding.invalidGameAccount":
@@ -688,6 +695,11 @@ const es = {
   "shell.identity.loading": "Cargando tu espacio…",
   "player.home.title": "Inicio",
   "player.home.subtitle.loading": "Cargando tu actividad…",
+  "player.home.clubAssociationFailed.title": "Tu club quedó sin asociar",
+  "player.home.clubAssociationFailed.description":
+    "EA no respondió al guardar tu club. Tu perfil ya está listo y puedes añadir el club más tarde.",
+  "player.home.clubAssociationFailed.action": "Ir a Clubes EA",
+  "player.home.clubAssociationFailed.dismiss": "Cerrar aviso",
   "player.home.subtitle.activity": ({ club }) => `Tu actividad con ${club}`,
   "player.home.cta.matches": "Ver mis partidos",
   "player.home.cta.refreshMatches": "Actualizar partidos",
@@ -3065,7 +3077,7 @@ const en: Catalog = {
   "onboarding.step.account": "Account",
   "onboarding.step.invitation": "Invitation",
   "onboarding.step.club": "Club",
-  "onboarding.loading.progress": "Restoring your progress…",
+  "onboarding.loading.preparing": "Getting your account ready…",
   "onboarding.loading.error": "Unable to restore your progress",
   "onboarding.loading.errorDescription": "Check your connection and try again.",
   "onboarding.intention.title": "What do you want to do first?",
@@ -3075,7 +3087,8 @@ const en: Catalog = {
   "onboarding.intention.organization.label": "Organize",
   "onboarding.intention.organization.description": "Create an organization and a competition.",
   "onboarding.intention.invitation.label": "Join",
-  "onboarding.intention.invitation.description": "Access a competition with your code.",
+  "onboarding.intention.invitation.description":
+    "Join a competition with your invitation link or code.",
   "onboarding.intention.player.label": "Start as a player",
   "onboarding.intention.player.description": "Create your personal space.",
   "onboarding.intention.continue": "Continue",
@@ -3087,7 +3100,7 @@ const en: Catalog = {
   "onboarding.organization.name.required": "Enter the organization name.",
   "onboarding.organization.name.max": "The name must be 120 characters or fewer.",
   "onboarding.organization.name.conflict": "That name is already in use. Choose another one.",
-  "onboarding.organization.review": "Review organization",
+  "onboarding.organization.continue": "Continue to competition",
   "organizations.create.title": "Create organization",
   "organizations.create.description": "Create another space to manage competitions and teams.",
   "organizations.create.name.label": "Organization name",
@@ -3178,6 +3191,10 @@ const en: Catalog = {
   "onboarding.competition.validation.region": "Select the competition region.",
   "onboarding.competition.validation.timeZone": "Select a valid time zone.",
   "onboarding.competition.validation.format": "Select the initial competition format.",
+  "onboarding.competition.validation.formatNotInPlan":
+    "That format isn't in the Free plan. Choose another one to continue.",
+  "onboarding.competition.format.planHint":
+    "Your organization starts on the Free plan. Formats marked Pro need another plan.",
   "onboarding.region.america": "Americas",
   "onboarding.region.southAmerica": "South America",
   "onboarding.region.northCentralAmerica": "North and Central America",
@@ -3203,9 +3220,8 @@ const en: Catalog = {
   "onboarding.account.platform.required": "Select this account's platform.",
   "onboarding.account.edition.required": "Select or enter the game edition.",
   "onboarding.account.continue": "Continue",
-  "onboarding.account.linkContinue": "Link and continue",
-  "onboarding.account.review": "Review account",
-  "onboarding.account.linkReview": "Link and review",
+  "onboarding.account.saveContinue": "Save and continue",
+  "onboarding.account.saveReview": "Save and review",
   "onboarding.invitation.title": "Join a competition",
   "onboarding.invitation.description":
     "Enter the code you received. We'll use it to join the competition when you confirm.",
@@ -3219,7 +3235,7 @@ const en: Catalog = {
   "onboarding.invitation.continuePlayer": "Continue as a player",
   "onboarding.club.title": "Link your EA club",
   "onboarding.club.description":
-    "The link is optional and declarative. It doesn't verify ownership, create a competition Team, or add you to a roster.",
+    "Optional. It's only used to show your club's recent matches. We don't verify ownership.",
   "onboarding.club.name.label": "Club name",
   "onboarding.club.name.placeholder": "e.g. Night Owls",
   "onboarding.club.reset": "Reset search",
@@ -3276,9 +3292,12 @@ const en: Catalog = {
   "errors.organizations.invitation_invalid": "The invitation is no longer available.",
   "errors.organizations.invitation_exhausted":
     "The invitation has reached its maximum number of uses.",
+  "invitations.accept.rateLimited": "You've reached the temporary invitation limit.",
   "errors.organizations.name_conflict":
     "That organization name is already in use. Go back and choose another one.",
   "errors.organizations.invalid_name": "The organization name isn't valid.",
+  "errors.onboarding.formatNotInPlan":
+    "Your organization starts on the Free plan, which doesn't include that format. Go back to Competition and choose another one.",
   "errors.onboarding.invalidCompetition":
     "The competition details aren't valid. Review them and try again.",
   "errors.onboarding.invalidGameAccount":
@@ -3294,6 +3313,11 @@ const en: Catalog = {
   "shell.identity.loading": "Loading your space…",
   "player.home.title": "Home",
   "player.home.subtitle.loading": "Loading your activity…",
+  "player.home.clubAssociationFailed.title": "Your club wasn't added",
+  "player.home.clubAssociationFailed.description":
+    "EA didn't respond when we saved your club. Your profile is ready and you can add the club later.",
+  "player.home.clubAssociationFailed.action": "Go to EA Clubs",
+  "player.home.clubAssociationFailed.dismiss": "Dismiss notice",
   "player.home.subtitle.activity": ({ club }) => `Your activity with ${club}`,
   "player.home.cta.matches": "View my matches",
   "player.home.cta.refreshMatches": "Refresh matches",
