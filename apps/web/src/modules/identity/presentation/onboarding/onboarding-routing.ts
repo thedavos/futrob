@@ -1,42 +1,20 @@
-import type { OnboardingPathDto, OnboardingStepDto } from "@futrob/api-contracts";
-
-export type OnboardingRoute =
-  | "/onboarding/intention"
-  | "/onboarding/organization"
-  | "/onboarding/competition"
-  | "/onboarding/invitation"
-  | "/onboarding/game-account"
-  | "/onboarding/club"
-  | "/onboarding/review";
+import {
+  isOnboardingStepAllowed,
+  type OnboardingPathDto,
+  type OnboardingStepDto,
+} from "@futrob/api-contracts";
 
 const routeByStep = {
   intention: "/onboarding/intention",
   organization: "/onboarding/organization",
   competition: "/onboarding/competition",
-  game: "/onboarding/game-account",
   invitation: "/onboarding/invitation",
   "game-account": "/onboarding/game-account",
   club: "/onboarding/club",
   review: "/onboarding/review",
-} satisfies Record<OnboardingStepDto, OnboardingRoute>;
+} as const satisfies Record<OnboardingStepDto, `/onboarding/${string}`>;
 
-function isOnboardingStepInPath(
-  steps: readonly OnboardingStepDto[],
-  step: OnboardingStepDto,
-): boolean {
-  for (const allowed of steps) {
-    if (allowed === step) {
-      return true;
-    }
-  }
-  return false;
-}
-
-const allowedStepsByPath = {
-  organization: ["intention", "organization", "competition", "game-account", "review"],
-  invitation: ["intention", "invitation", "game-account", "review"],
-  player: ["intention", "game-account", "club", "review"],
-} satisfies Record<OnboardingPathDto, readonly OnboardingStepDto[]>;
+export type OnboardingRoute = (typeof routeByStep)[OnboardingStepDto];
 
 /**
  * Cold bootstrap without a rehydratable draft always opens at intention.
@@ -54,25 +32,7 @@ export function resolvePersistedOnboardingStep(
   path: OnboardingPathDto | null,
   currentStep: OnboardingStepDto | null,
 ): OnboardingStepDto {
-  if (!currentStep) return "intention";
-  if (path === null) return currentStep === "intention" ? currentStep : "intention";
-  if (currentStep === "game") {
-    return path === "organization"
-      ? "organization"
-      : path === "player"
-        ? "game-account"
-        : "intention";
-  }
-  return isOnboardingStepInPath(allowedStepsByPath[path], currentStep) ? currentStep : "intention";
-}
-
-export function isOnboardingStepAllowedForPath(
-  path: OnboardingPathDto | null,
-  step: OnboardingStepDto,
-): boolean {
-  if (path === null) return step === "intention";
-  if (step === "game") return path === "organization" || path === "player";
-  return isOnboardingStepInPath(allowedStepsByPath[path], step);
+  return currentStep && isOnboardingStepAllowed(path, currentStep) ? currentStep : "intention";
 }
 
 export function routeForOnboardingStep(step: OnboardingStepDto): OnboardingRoute {

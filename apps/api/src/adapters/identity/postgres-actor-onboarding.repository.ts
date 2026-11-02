@@ -1,8 +1,9 @@
-import type {
-  ActorOnboardingPort,
-  ActorOnboardingState,
-  CompletedOnboarding,
-  OnboardingProgress,
+import {
+  ONBOARDING_STEPS,
+  type ActorOnboardingPort,
+  type ActorOnboardingState,
+  type CompletedOnboarding,
+  type OnboardingProgress,
 } from "@futrob/identity";
 import { asActorId, type ActorId } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
@@ -11,26 +12,14 @@ import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scala
 import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 const onboardingPathSchema = z.enum(["player", "organization", "invitation"]);
-const onboardingStepSchema = z.enum([
-  "intention",
-  "organization",
-  "competition",
-  "game",
-  "invitation",
-  "game-account",
-  "club",
-  "review",
-]);
+const onboardingStepSchema = z.enum(ONBOARDING_STEPS);
 const actorOnboardingRowSchema = z.object({
   actor_id: pgTextSchema,
   onboarding_completed: z.boolean(),
   onboarding_completed_at: pgTimestampSchema.nullable(),
   onboarding_version: z.coerce.number().nullable(),
   onboarding_path: onboardingPathSchema.nullable(),
-  onboarding_current_step: z
-    .union([onboardingStepSchema, z.literal("team")])
-    .nullable()
-    .transform((step) => (step === "team" ? "club" : step)),
+  onboarding_current_step: onboardingStepSchema.nullable(),
 });
 
 export class PostgresActorOnboardingRepository implements ActorOnboardingPort {
