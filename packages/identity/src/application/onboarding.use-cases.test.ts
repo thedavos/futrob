@@ -13,8 +13,14 @@ import type {
 class InMemoryActorOnboarding implements ActorOnboardingPort {
   readonly rows = new Map<string, ActorOnboardingState>();
 
+  readonly locked: string[] = [];
+
   async findByActor(actorId: CompletedOnboarding["actorId"]) {
     return this.rows.get(actorId) ?? null;
+  }
+
+  async lockActor(actorId: CompletedOnboarding["actorId"]) {
+    this.locked.push(actorId);
   }
 
   async saveProgress(progress: OnboardingProgress) {
@@ -143,5 +149,24 @@ describe("identity onboarding", () => {
       currentStep: null,
     });
     expect(second).toEqual(first);
+  });
+
+  it("prepares completion under the actor lock and rejects only a different completed path", async () => {
+    const store = new InMemoryActorOnboarding();
+    const useCase = new CompleteOnboardingUseCase(store, { now: () => new Date() });
+    const actorId = asActorId("actor-prepare");
+
+    expect((await useCase.prepare({ actorId, path: "player" })).isOk()).toBe(true);
+    await useCase.execute({ actorId, path: "player" });
+    expect((await useCase.prepare({ actorId, path: "player" })).isOk()).toBe(true);
+
+    const conflict = await useCase.prepare({ actorId, path: "organization" });
+    expect(conflict.isOk()).toBe(false);
+    expect(conflict.isOk() ? null : conflict.error).toMatchObject({
+      code: "identity.onboarding_path_conflict",
+      completedPath: "player",
+      requestedPath: "organization",
+    });
+    expect(store.locked).toEqual([actorId, actorId, actorId]);
   });
 });
