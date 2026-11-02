@@ -92,6 +92,12 @@ export class NativeOnboardingFlow {
     gateway: OnboardingGateway,
   ): Promise<NativeOnboardingFlow> {
     const stored = await loadOnboardingDraft(userId);
+    if (!status.completed && status.path === null && status.currentStep === "intention") {
+      // Records the entry into onboarding for the funnel (ADR-0026); the server ignores repeats.
+      await gateway.identity
+        .saveOnboardingProgress({ path: null, currentStep: "intention" })
+        .catch(() => undefined);
+    }
     const draft =
       status.path === stored.path ? stored : { ...emptyOnboardingDraft(), path: status.path };
     return new NativeOnboardingFlow(

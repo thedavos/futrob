@@ -60,6 +60,8 @@ export interface OnboardingProgress {
   readonly actorId: ActorId;
   readonly path: OnboardingPath | null;
   readonly currentStep: OnboardingStep;
+  /** Flow version the actor is walking, so funnel history can be split by flow revision. */
+  readonly version: number;
   readonly updatedAt: Date;
 }
 
