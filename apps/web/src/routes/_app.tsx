@@ -3,6 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { authClient } from "@/modules/identity/auth-client.ts";
+import { OnboardingCompletedGate } from "@/modules/identity/presentation/onboarding-completed-gate.tsx";
 import { PrivateContentGate } from "@/modules/identity/presentation/private-content-gate.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { AuthenticatedShell } from "@/shared/presentation/shell/authenticated-shell.tsx";
@@ -42,7 +43,9 @@ function AppLayout() {
         </div>
       ) : (
         <AuthenticatedShell>
-          <Outlet />
+          <OnboardingCompletedGate>
+            <Outlet />
+          </OnboardingCompletedGate>
         </AuthenticatedShell>
       )}
     </PrivateContentGate>

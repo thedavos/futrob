@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PlayerOnboardingGuard } from "@/modules/statistics/presentation/player-onboarding-guard.tsx";
 import { ClubAssociationNotice } from "@/modules/player-home/presentation/club-association-notice.tsx";
 import { PlayerHomePage } from "@/modules/player-home/presentation/player-home-page.tsx";
 import { playerHomeSearchSchema } from "@/modules/player-home/presentation/player-home-search.ts";
@@ -11,11 +10,7 @@ export const Route = createFileRoute("/_app/player")({
 });
 
 function PlayerRoute() {
-  return (
-    <PlayerOnboardingGuard>
-      <PlayerHomeRoutePage />
-    </PlayerOnboardingGuard>
-  );
+  return <PlayerHomeRoutePage />;
 }
 
 function PlayerHomeRoutePage() {

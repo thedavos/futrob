@@ -10,6 +10,7 @@ import {
   createRoute,
   createRouter,
   isRedirect,
+  redirect,
 } from "@tanstack/react-router";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type {
@@ -79,6 +80,29 @@ describe("loadCompetitionInvitationAccept", () => {
     await expect(afterFocus).rejects.toSatisfy((error: unknown) => isRedirect(error));
     expect(mocks.accept).toHaveBeenCalledTimes(1);
     expect(mocks.accept).toHaveBeenCalledWith({ token: "competition-token" });
+  });
+
+  it("does not redeem the link when the check before accepting fails, and retries it", async () => {
+    mocks.accept.mockResolvedValue(accepted);
+    const check = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error("status unavailable"))
+      .mockImplementationOnce(async () => {
+        throw redirect({
+          to: "/onboarding/invitation",
+          search: { invitation: "competition-token" },
+        });
+      });
+
+    await expect(
+      loadCompetitionInvitationAccept("competition-token", false, check),
+    ).resolves.toMatchObject({ kind: "error" });
+    await expect(
+      loadCompetitionInvitationAccept("competition-token", false, check),
+    ).rejects.toSatisfy(
+      (error: unknown) => isRedirect(error) && error.options.to === "/onboarding/invitation",
+    );
+    expect(mocks.accept).not.toHaveBeenCalled();
   });
 
   it("does not POST on preload", async () => {
