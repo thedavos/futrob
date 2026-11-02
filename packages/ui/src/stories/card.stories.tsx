@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "../components/card";
 import { Button } from "../components/button";
+import { Heading } from "../components/heading/heading.tsx";
 
 const styles = stylex.create({
   playground: {
@@ -136,6 +137,41 @@ export const Compare: Story = {
         <CardContent>
           <p {...applyProps(undefined, undefined, typography.body)}>
             Entidades autónomas sobre fondo plano (onboarding, resumen).
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  ),
+};
+
+/**
+ * A card that is a page section keeps its `h2` for the outline but takes the card chrome
+ * look with `className={typography.title}`, matching `CardTitle` (18/600).
+ */
+export const SectionHeadingAsTitle: Story = {
+  name: "Section heading as title",
+  parameters: { layout: "padded" },
+  render: () => (
+    <div {...applyProps(undefined, undefined, styles.compare)}>
+      <Card>
+        <CardHeader>
+          <CardTitle>CardTitle (h3)</CardTitle>
+          <CardDescription>Rol `title` por defecto.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p {...applyProps(undefined, undefined, typography.body)}>
+            Sub-panel dentro de una sección.
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Heading className={typography.title}>Último partido</Heading>
+          <CardDescription>h2 de la página con el look `title`.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p {...applyProps(undefined, undefined, typography.body)}>
+            Card de sección del inicio del jugador.
           </p>
         </CardContent>
       </Card>

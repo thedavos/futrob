@@ -22,6 +22,38 @@ const styles = stylex.create({
   },
 });
 
+const rowStyles = stylex.create({
+  list: {
+    display: "grid",
+    width: "min(32rem, calc(100vw - 2rem))",
+    margin: 0,
+    padding: 0,
+    listStyle: "none",
+    borderRadius: "var(--corner-xl)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  row: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.75rem",
+    paddingInline: "1rem",
+    paddingBlock: "0.75rem",
+    borderBottomWidth: { default: 1, ":last-child": 0 },
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.borderSubtle,
+  },
+  name: {
+    fontSize: "var(--text-sm)",
+    fontWeight: "var(--font-weight-semibold)",
+    color: colors.foreground,
+  },
+  badges: { display: "flex", gap: "0.375rem" },
+});
+
 const meta = {
   title: "Components/Data display/Badge",
   tags: ["autodocs"],
@@ -78,5 +110,42 @@ export const ClosedVariants: Story = {
         Neutral por defecto
       </Badge>
     </div>
+  ),
+};
+
+/**
+ * In dense rows the entity name leads. `neutral` and `outline` sit at 500 so they stay
+ * quieter than the name; status variants keep 600 because the status is the message.
+ */
+export const InDenseRow: Story = {
+  render: () => (
+    <ul {...applyProps(undefined, undefined, rowStyles.list)}>
+      <li {...applyProps(undefined, undefined, rowStyles.row)}>
+        <span {...applyProps(undefined, undefined, rowStyles.name)}>Liga Metropolitana</span>
+        <span {...applyProps(undefined, undefined, rowStyles.badges)}>
+          <Badge variant="neutral">Liga</Badge>
+          <Badge variant="outline">Borrador</Badge>
+        </span>
+      </li>
+      <li {...applyProps(undefined, undefined, rowStyles.row)}>
+        <span {...applyProps(undefined, undefined, rowStyles.name)}>Copa de Invierno</span>
+        <span {...applyProps(undefined, undefined, rowStyles.badges)}>
+          <Badge variant="neutral">Copa</Badge>
+          <Badge variant="warning">
+            <WarningIcon />
+            Auditar
+          </Badge>
+        </span>
+      </li>
+      <li {...applyProps(undefined, undefined, rowStyles.row)}>
+        <span {...applyProps(undefined, undefined, rowStyles.name)}>Nova FC vs Atlas</span>
+        <span {...applyProps(undefined, undefined, rowStyles.badges)}>
+          <Badge variant="approved">
+            <CheckCircleIcon />
+            Aprobado
+          </Badge>
+        </span>
+      </li>
+    </ul>
   ),
 };

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps, typography } from "@futrob/ui";
@@ -19,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/select";
+import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "../components/tabs";
 import { Textarea } from "../components/textarea";
 
 const styles = stylex.create({
@@ -85,6 +87,10 @@ const styles = stylex.create({
     backgroundColor: colors.surface,
     padding: "1.25rem",
   },
+});
+
+const disabledStyles = stylex.create({
+  row: { display: "flex", flexWrap: "wrap", gap: "0.5rem" },
 });
 
 const meta = {
@@ -194,4 +200,67 @@ export const DenseOperatorForm: Story = {
       </Field>
     </div>
   ),
+};
+
+/**
+ * Inactive controls use `text-disabled` instead of opacity, so they do not blend with the
+ * surface underneath. A disabled input keeps its value readable with `text-tertiary`.
+ */
+export const DisabledControls: Story = {
+  render: () => (
+    <div {...applyProps(undefined, undefined, styles.status)}>
+      <Field disabled name="club-name">
+        <FieldLabel>Nombre del club</FieldLabel>
+        <Input defaultValue="FC Atlas Pro" disabled />
+        <FieldDescription>Lo gestiona el capitán del club.</FieldDescription>
+      </Field>
+      <Field disabled name="platform">
+        <FieldLabel>Plataforma</FieldLabel>
+        <Select defaultValue="ps" disabled>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ps">PlayStation</SelectItem>
+            <SelectItem value="xbox">Xbox</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
+      <Tabs defaultValue="summary">
+        <TabsList>
+          <TabsTrigger value="summary">Resumen</TabsTrigger>
+          <TabsTrigger value="players">Jugadores</TabsTrigger>
+          <TabsTrigger disabled value="data">
+            Datos del partido
+          </TabsTrigger>
+          <TabsIndicator />
+        </TabsList>
+      </Tabs>
+      <div {...applyProps(undefined, undefined, disabledStyles.row)}>
+        <Button disabled>Guardar</Button>
+        <Button disabled variant="outline">
+          Cancelar
+        </Button>
+        <Button disabled variant="ghost">
+          Descartar
+        </Button>
+        <Button disabled variant="link">
+          Ver historial
+        </Button>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--text-disabled)";
+    canvasElement.append(probe);
+    const disabledColor = getComputedStyle(probe).color;
+    probe.remove();
+
+    const tab = canvasElement.querySelector("[role='tab'][data-disabled]")!;
+    await expect(getComputedStyle(tab).color).toBe(disabledColor);
+    await expect(getComputedStyle(tab).opacity).toBe("1");
+    const label = canvasElement.querySelector("[data-slot='field-label']")!;
+    await expect(getComputedStyle(label).color).toBe(disabledColor);
+  },
 };
