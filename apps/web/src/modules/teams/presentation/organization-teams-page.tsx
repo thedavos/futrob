@@ -27,6 +27,7 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
   Skeleton,
+  typography,
 } from "@futrob/ui";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import {
@@ -57,7 +58,6 @@ const styles = stylex.create({
   },
   header: { marginBottom: 0 },
   cardHeader: { padding: "1.25rem", gap: "0.25rem" },
-  heading: { fontSize: "var(--text-lg)", fontWeight: 600 },
   content: {
     display: "flex",
     minWidth: 0,
@@ -264,7 +264,7 @@ export function OrganizationTeamsPage({
       ) : null}
       <Card aria-labelledby={headingId}>
         <CardHeader className={styles.cardHeader}>
-          <Heading className={styles.heading} id={headingId}>
+          <Heading className={typography.title} id={headingId}>
             {t("org.teams.directory.title")}
           </Heading>
           <Caption aria-live="polite" role="status">

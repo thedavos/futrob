@@ -123,6 +123,7 @@ export function CompetitionStandingsTable({
 function NumericHead({ column, t }: { readonly column: Column; readonly t: Translator }) {
   return (
     <TableHead
+      align="end"
       scope="col"
       {...applyProps(undefined, undefined, styles.numeric, column.secondary && styles.secondary)}
     >
@@ -162,6 +163,7 @@ function StandingsRow({
       </TableCell>
       {COLUMNS.map((column) => (
         <TableCell
+          align="end"
           key={column.id}
           {...applyProps(
             undefined,
@@ -170,7 +172,12 @@ function StandingsRow({
             column.secondary && styles.secondary,
           )}
         >
-          <Score align="end" as="span" size="table">
+          <Score
+            align="end"
+            as="span"
+            className={column.id === "points" ? styles.points : undefined}
+            size="table"
+          >
             {(column.id === "goalDifference" ? formats.signed : formats.integer).format(
               row[column.id],
             )}

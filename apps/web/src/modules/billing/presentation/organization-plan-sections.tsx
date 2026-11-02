@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
   TextLink,
+  typography,
 } from "@futrob/ui";
 import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -83,7 +84,7 @@ export function PlanSummaryCard({ plan }: { readonly plan: Plan }) {
   return (
     <Card aria-labelledby={headingId} {...applyStyles(styles.panel)}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.heading} id={headingId}>
+        <Heading className={typography.title} id={headingId}>
           {t("billing.plan.current")}
         </Heading>
       </CardHeader>
@@ -111,7 +112,7 @@ export function PlanUsageCard({ plan }: { readonly plan: Plan }) {
   return (
     <Card aria-labelledby={headingId} {...applyStyles(styles.panel)}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.heading} id={headingId}>
+        <Heading className={typography.title} id={headingId}>
           {t("billing.usage.title")}
         </Heading>
         <Caption>{t("billing.usage.description")}</Caption>
@@ -189,7 +190,7 @@ export function PlanFeaturesCard({ plan }: { readonly plan: Plan }) {
   return (
     <Card aria-labelledby={headingId} {...applyStyles(styles.panel)}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.heading} id={headingId}>
+        <Heading className={typography.title} id={headingId}>
           {t("billing.features.title")}
         </Heading>
       </CardHeader>
@@ -254,7 +255,7 @@ export function PlanChangesCard({ changes }: { readonly changes: readonly PlanCh
   return (
     <Card aria-labelledby={headingId} {...applyStyles(styles.panel, styles.wide)}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.heading} id={headingId}>
+        <Heading className={typography.title} id={headingId}>
           {t("billing.changes.title")}
         </Heading>
       </CardHeader>

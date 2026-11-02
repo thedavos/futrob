@@ -44,11 +44,6 @@ export const styles = stylex.create({
     gap: "0.25rem",
     maxWidth: "24rem",
   },
-  setupTitle: {
-    fontSize: "var(--text-lg)",
-    lineHeight: "1.75rem",
-    fontWeight: "var(--font-weight-bold)",
-  },
   setupSubtitle: {
     fontWeight: "var(--font-weight-medium)",
   },
@@ -217,11 +212,6 @@ export const styles = stylex.create({
   headerAction: {
     flexShrink: 0,
     marginLeft: "auto",
-  },
-  title: {
-    fontSize: "var(--text-lg)",
-    lineHeight: "1.75rem",
-    fontWeight: 600,
   },
   content: {
     display: "flex",
