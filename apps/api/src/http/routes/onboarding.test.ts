@@ -174,6 +174,28 @@ describe("apps/api http onboarding", () => {
     });
   });
 
+  it("onboarding: a stale entry write does not rewind a chosen path", async () => {
+    const app = buildApp(stubFetch);
+    const actor = "actor-stale-entry";
+    const save = (path: string | null, currentStep: string) =>
+      app.request("/api/v1/identity/onboarding", {
+        method: "PATCH",
+        headers: serviceHeaders(actor),
+        body: JSON.stringify({ path, currentStep }),
+      });
+
+    await save(null, "intention");
+    await save("player", "game-account");
+    const stale = await save(null, "intention");
+
+    expect(stale.status).toBe(200);
+    expect(await stale.json()).toMatchObject({ path: "player", currentStep: "game-account" });
+    const status = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await status.json()).toMatchObject({ path: "player", currentStep: "game-account" });
+  });
+
   it("onboarding: completes the player path with an idempotent EA game account", async () => {
     const app = buildApp(stubFetch);
     const actor = "actor-player-profile";

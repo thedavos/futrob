@@ -79,6 +79,19 @@ describe("native onboarding flow", () => {
     expect(other.draft.gameAccount).toEqual({});
   });
 
+  it("records the entry into onboarding once a fresh actor opens it", async () => {
+    const api = gateway();
+    await NativeOnboardingFlow.load("ana", status(null, "intention"), api.client);
+    expect(api.saveOnboardingProgress).toHaveBeenCalledWith({
+      path: null,
+      currentStep: "intention",
+    });
+
+    api.saveOnboardingProgress.mockClear();
+    await NativeOnboardingFlow.load("ana", status("player", "club"), api.client);
+    expect(api.saveOnboardingProgress).not.toHaveBeenCalled();
+  });
+
   it("persists the draft before saving a transition", async () => {
     const api = gateway();
     const flow = await NativeOnboardingFlow.load("ana", status("player", "intention"), api.client);

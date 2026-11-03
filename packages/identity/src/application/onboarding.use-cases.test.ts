@@ -144,4 +144,20 @@ describe("identity onboarding", () => {
     });
     expect(second).toEqual(first);
   });
+
+  it("ignores an entry write that would rewind a chosen path", async () => {
+    const store = new InMemoryActorOnboarding();
+    const useCase = new SaveOnboardingProgressUseCase(store, { now: () => new Date() });
+    const actorId = asActorId("actor-stale-entry");
+
+    await useCase.execute({ actorId, path: null, currentStep: "intention" });
+    await useCase.execute({ actorId, path: "player", currentStep: "game-account" });
+    const stale = await useCase.execute({ actorId, path: null, currentStep: "intention" });
+
+    expect(stale).toMatchObject({ path: "player", currentStep: "game-account" });
+    await expect(store.findByActor(actorId)).resolves.toMatchObject({
+      path: "player",
+      currentStep: "game-account",
+    });
+  });
 });
