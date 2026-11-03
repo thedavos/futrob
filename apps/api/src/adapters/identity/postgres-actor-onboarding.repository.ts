@@ -47,6 +47,12 @@ export class PostgresActorOnboardingRepository implements ActorOnboardingPort {
     };
   }
 
+  async lockActor(actorId: ActorId): Promise<void> {
+    await getPgExecutor(this.pool).query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [
+      `identity:onboarding:${actorId}`,
+    ]);
+  }
+
   async saveProgress(progress: OnboardingProgress): Promise<void> {
     const updatedAt = progress.updatedAt.toISOString();
     await getPgExecutor(this.pool).query(

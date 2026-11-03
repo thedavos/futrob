@@ -33,6 +33,8 @@ export class InMemoryActorOnboardingRepository implements ActorOnboardingPort {
     return this.byActor.get(actorId) ?? null;
   }
 
+  async lockActor(_actorId: ActorId): Promise<void> {}
+
   async saveProgress(progress: OnboardingProgress): Promise<void> {
     const existing = this.byActor.get(progress.actorId);
     if (existing?.completed) return;
