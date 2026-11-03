@@ -10,7 +10,8 @@ After signup, a new actor picks `Empezar como jugador`, may skip EA details, con
 - `onb-player-club-unavailable` when EA fails while resolving a chosen club, finishing still lands on `/player` and shows the warning `Tu club quedó sin asociar` with link `Ir a Clubes EA` and button `Cerrar aviso`.
 - `onb-player-review` shows `Confirma tu configuración` with `Perfil de jugador listo · Datos EA para después` when skipped.
 - `onb-player-finish` submits `Entrar a mi espacio` and lands on `/player` with heading `Inicio`.
-- `onb-player-guard` sending an incomplete actor to `/player` returns them to `/onboarding`.
+- `onb-player-guard` sending an incomplete actor to `/player`, `/orgs` or any other authenticated page returns them to `/onboarding`.
+- `onb-resume` reloading mid-flow keeps the draft and reopens the step the actor reached.
 
 ## How to get to it (user POV)
 
@@ -34,6 +35,7 @@ Preconditions:
 - **Skip club.** Choose `Omitir por ahora`. The URL becomes `/onboarding/review`. The heading is `Confirma tu configuración`. Visible copy includes `Perfil de jugador listo · Datos EA para después` or `Sin club asociado por ahora`.
 - **Finish.** Choose `Entrar a mi espacio`. The URL becomes `/player`. Wait past `Cargando tus datos…`. The heading is `Inicio`. The command-bar empty identity (no club/org) is `Sin organización`; the account-menu trigger still shows the given name. After a skip-skip finish the hero is `Empieza con tus datos de juego` with button `Registrar identificador`. Sidebar links include `Mis partidos` and `Mis estadísticas`. Unused catalog strings `Abrir Mis partidos`, `Abrir tu perfil`, `Espacio personal`, and `Tu espacio en Futrob` are not on this page.
 - **Guard (separate incomplete actor).** Open `/player` before finishing review. The app must not show the completed home (`Inicio` with the player sidebar); it returns to `/onboarding`.
+- **Resume (optional).** On the club step, reload the page. The heading is still `Asocia tu club EA`; going back shows the EA identifier you typed.
 - **Proof.** Screenshot + ARIA of intention, of review before confirm, and of `/player` after finish. Record that the path was `player`, not `organization` or `invitation`.
 
 ## Gotchas
@@ -44,5 +46,7 @@ Preconditions:
 - Re-finishing must not create a second organization or competition. This recipe never creates those.
 - Organizer (`Organizar`) and invitation (`Unirme`) are other entry points. Completing the player path does not verify them.
 - `/player` shows `Cargando tus datos…` while the status request runs. Wait for the heading, not the pending copy.
-- The incomplete-actor guard lands on `/onboarding` and typically syncs to `/onboarding/intention`. The player radio may stay selected; that is not a finished workspace.
+- The incomplete-actor guard lands on `/onboarding`, which reopens the stored step, or the first earlier step whose data this browser no longer has. A fresh actor lands on `/onboarding/intention`.
+- An invitation link (`/invitations/accept/<code>`) opened by an incomplete actor goes to `/onboarding/invitation?invitation=<code>` with the code filled in; it is not accepted until the review step.
+- The draft lives in `localStorage` under `futrob:onboarding-draft:<userId>`. Clear it to test a resume from another device.
 - Command-bar empty identity is `Sin organización` (`shell.identity.empty`). Do not look for `Tu espacio en Futrob`. The account-menu trigger still shows the given name.

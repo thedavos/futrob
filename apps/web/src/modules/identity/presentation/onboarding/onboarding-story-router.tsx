@@ -51,7 +51,8 @@ type OnboardingStoryPath =
   | "/onboarding/invitation"
   | "/onboarding/game-account"
   | "/onboarding/club"
-  | "/onboarding/review";
+  | "/onboarding/review"
+  | `/onboarding/invitation?invitation=${string}`;
 
 export interface StoryOnboardingGateway extends OnboardingGateway {
   readonly initialStatus: OnboardingStatusDto;

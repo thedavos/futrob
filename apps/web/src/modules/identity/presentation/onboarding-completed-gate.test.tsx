@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
-import { PlayerOnboardingGuard } from "./player-onboarding-guard.tsx";
+import { OnboardingCompletedGate } from "./onboarding-completed-gate.tsx";
 
 const mocks = vi.hoisted(() => ({
   getOnboardingStatus: vi.fn<() => Promise<{ completed: boolean }>>(),
@@ -29,7 +29,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe("PlayerOnboardingGuard", () => {
+describe("OnboardingCompletedGate", () => {
   it("reveals the detail only after completed onboarding is confirmed", async () => {
     mocks.getOnboardingStatus.mockResolvedValue({ completed: true });
 
@@ -49,15 +49,26 @@ describe("PlayerOnboardingGuard", () => {
     });
     expect(screen.queryByText("protected detail")).toBeNull();
   });
+
+  it("offers a retry instead of redirecting when the check fails", async () => {
+    mocks.getOnboardingStatus.mockRejectedValueOnce(new Error("network"));
+    mocks.getOnboardingStatus.mockResolvedValueOnce({ completed: true });
+
+    renderGuard();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Reintentar" }));
+    expect(await screen.findByText("protected detail")).toBeTruthy();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+  });
 });
 
 function renderGuard() {
   return render(
     <QueryTestProvider>
       <I18nProvider initialLocale="es">
-        <PlayerOnboardingGuard>
+        <OnboardingCompletedGate>
           <div>protected detail</div>
-        </PlayerOnboardingGuard>
+        </OnboardingCompletedGate>
       </I18nProvider>
     </QueryTestProvider>,
   );

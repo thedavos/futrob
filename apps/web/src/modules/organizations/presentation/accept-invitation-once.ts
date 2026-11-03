@@ -74,12 +74,18 @@ export type InvitationAcceptLoaderResult =
   | { readonly kind: "preload" }
   | { readonly kind: "error"; readonly error: InvitationAcceptFailure };
 
+/**
+ * `beforeAccept` runs first and may redirect elsewhere; if it fails, the link is not redeemed
+ * and the page offers a retry.
+ */
 export async function loadCompetitionInvitationAccept(
   token: string,
   preload: boolean,
+  beforeAccept?: () => Promise<void>,
 ): Promise<InvitationAcceptLoaderResult> {
   if (preload) return { kind: "preload" };
   try {
+    await beforeAccept?.();
     const accepted = await acceptInvitationOnce(token);
     throw redirect(competitionInvitationRedirect(accepted));
   } catch (caught) {
