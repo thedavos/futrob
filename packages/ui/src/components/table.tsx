@@ -5,7 +5,8 @@ import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
-type TableProps = React.ComponentProps<"table"> & {
+type TableProps = Omit<React.ComponentProps<"table">, "className"> & {
+  className?: HostClassName;
   /** Reduces row height to 36px on desktop. Touch layouts remain comfortable. */
   dense?: boolean;
   containerClassName?: HostClassName;
@@ -136,7 +137,11 @@ function Table({
   );
 }
 
-function TableHeader({ className, style, ...props }: React.ComponentProps<"thead">) {
+function TableHeader({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"thead">, "className"> & { className?: HostClassName }) {
   return (
     <thead data-slot="table-header" {...applyProps(className, style, styles.header)} {...props} />
   );
@@ -166,9 +171,10 @@ const alignStyles = {
   end: styles.alignEnd,
 } as const;
 
-type TableHeadProps = Omit<React.ComponentProps<"th">, "align"> & {
+type TableHeadProps = Omit<React.ComponentProps<"th">, "align" | "className"> & {
   /** Match the cells below: figures and their header both use `end`. */
   align?: TableAlign;
+  className?: HostClassName;
 };
 
 function TableHead({ className, style, align = "start", ...props }: TableHeadProps) {
@@ -182,7 +188,10 @@ function TableHead({ className, style, align = "start", ...props }: TableHeadPro
   );
 }
 
-type TableCellProps = Omit<React.ComponentProps<"td">, "align"> & { align?: TableAlign };
+type TableCellProps = Omit<React.ComponentProps<"td">, "align" | "className"> & {
+  align?: TableAlign;
+  className?: HostClassName;
+};
 
 function TableCell({ className, style, align = "start", ...props }: TableCellProps) {
   return (

@@ -50,6 +50,7 @@ describe("statistics module projection", () => {
       rosters,
       profiles,
       entries: new InMemoryCompetitionEntryRepository(),
+      fixturePlans: { listActive: async () => [] },
       competitions: {
         async findById() {
           return performanceCompetition();

@@ -22,10 +22,12 @@ const standings = {
         goalsAgainst: 1,
         goalDifference: 4,
         points: 6,
+        form: ["win", "win"],
       },
     ],
     sourceRevisionMax: 3,
     updatedAt: "2026-10-12T01:00:00.000Z",
+    playoffSpots: null,
   },
 };
 

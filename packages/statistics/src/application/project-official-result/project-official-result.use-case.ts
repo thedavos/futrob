@@ -30,6 +30,7 @@ import {
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
 import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
+import { officialSlotTimes } from "../official-slot-times.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type { TeamPerformanceRankingLockPort } from "../../domain/ports/team-performance-ranking.repository.ts";
 import type { RebuildTeamPerformanceRankingUseCase } from "../rebuild-team-performance-ranking/rebuild-team-performance-ranking.use-case.ts";
@@ -256,6 +257,10 @@ export class ProjectOfficialResultUseCase {
       matchRules: this.deps.matchRules,
       encounterReader: this.deps.encounterReader,
     });
+    const officialResults = await this.deps.officialResults.listByCompetition(
+      officialResult.competitionId,
+      officialResult.organizationId,
+    );
     await this.deps.standings.upsert(
       buildCompetitionStandings({
         competitionId: officialResult.competitionId,
@@ -263,6 +268,7 @@ export class ProjectOfficialResultUseCase {
         contributions,
         pointsRules: DEFAULT_COMPETITION_MATCH_POINTS,
         pointsByEncounter,
+        occurredAtBySlot: officialSlotTimes(officialResults),
         updatedAt: this.deps.clock.now(),
       }),
     );

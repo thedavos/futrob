@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import {
-  Navigate,
   Outlet,
   RouterProvider,
   createMemoryHistory,
@@ -36,6 +35,8 @@ import { InvitationStep } from "./steps/invitation-step.tsx";
 import { OrganizationStep } from "./steps/organization-step.tsx";
 import { OnboardingReview } from "./steps/review-step.tsx";
 import { ClubStep } from "./steps/club-step.tsx";
+import type { OnboardingDraftStore } from "./onboarding-draft-storage.ts";
+import { STORY_INVITATION_PREVIEW, storyResumeDraftStore } from "./onboarding-story-draft.ts";
 
 const styles = stylex.create({
   stub: {
@@ -50,8 +51,8 @@ type OnboardingStoryPath =
   | "/onboarding/invitation"
   | "/onboarding/game-account"
   | "/onboarding/club"
-  | "/onboarding/team"
-  | "/onboarding/review";
+  | "/onboarding/review"
+  | `/onboarding/invitation?invitation=${string}`;
 
 export interface StoryOnboardingGateway extends OnboardingGateway {
   readonly initialStatus: OnboardingStatusDto;
@@ -200,14 +201,7 @@ export function createFakeOnboardingGateway(input?: {
     async inspectCompetitionInvitation(request) {
       if (input?.inspectInvitation) return input.inspectInvitation(request);
       if (input?.inspectError) throw input.inspectError;
-      return {
-        organizationId: "org-invited",
-        organizationName: "Liga invitante",
-        competitionId: "competition-invited",
-        competitionName: "Copa Invitación",
-        competitionRole: "player",
-        expiresAt: "2026-09-01T12:00:00.000Z",
-      };
+      return STORY_INVITATION_PREVIEW;
     },
     async completePlayer(request) {
       throwCompleteFailure();
@@ -239,7 +233,7 @@ export function createFakeOnboardingGateway(input?: {
 function createOnboardingStoryRouter(
   initialPath: OnboardingStoryPath,
   gateway: StoryOnboardingGateway,
-  bootstrap: "cold" | "persisted" = "persisted",
+  draftStore: OnboardingDraftStore | undefined,
   locale: Locale = "es",
 ) {
   const rootRoute = createRootRoute({
@@ -247,7 +241,7 @@ function createOnboardingStoryRouter(
       <I18nProvider initialLocale={locale} persistLocale={persistStoryLocale}>
         <QueryTestProvider>
           <OnboardingFlowProvider
-            bootstrap={bootstrap}
+            draftStore={draftStore ?? storyResumeDraftStore(gateway.initialStatus)}
             gateway={gateway}
             initialStatus={gateway.initialStatus}
           >
@@ -288,11 +282,6 @@ function createOnboardingStoryRouter(
       getParentRoute: () => rootRoute,
       path: "/onboarding/club",
       component: ClubStep,
-    }),
-    createRoute({
-      getParentRoute: () => rootRoute,
-      path: "/onboarding/team",
-      component: () => <Navigate replace to="/onboarding/club" />,
     }),
     createRoute({
       getParentRoute: () => rootRoute,
@@ -398,17 +387,18 @@ function competitionDraftResponse(input: {
 export function OnboardingStoryRouter({
   gateway,
   initialPath,
-  bootstrap = "persisted",
+  draftStore,
   locale = "es",
 }: {
   gateway: StoryOnboardingGateway;
   initialPath: OnboardingStoryPath;
-  bootstrap?: "cold" | "persisted";
+  /** Share one store across two renders to simulate a reload. */
+  draftStore?: OnboardingDraftStore;
   locale?: Locale;
 }) {
   const router = useMemo(
-    () => createOnboardingStoryRouter(initialPath, gateway, bootstrap, locale),
-    [bootstrap, gateway, initialPath, locale],
+    () => createOnboardingStoryRouter(initialPath, gateway, draftStore, locale),
+    [draftStore, gateway, initialPath, locale],
   );
   return <RouterProvider router={router} />;
 }

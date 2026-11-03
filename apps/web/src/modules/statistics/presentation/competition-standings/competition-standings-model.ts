@@ -17,6 +17,8 @@ export type StandingsTeamName =
 export type StandingsTableRow = {
   readonly row: CompetitionStandingRowDto;
   readonly team: StandingsTeamName;
+  /** Last row inside the playoff places; the cut line is drawn below it. */
+  readonly lastAboveCut: boolean;
 };
 
 export function standingsTeamName(teamId: string, names: TeamNames): StandingsTeamName {
@@ -33,7 +35,18 @@ export function standingsTableRows(
   snapshot: CompetitionStandingSnapshotDto,
   names: TeamNames,
 ): readonly StandingsTableRow[] {
-  return snapshot.rows.map((row) => ({ row, team: standingsTeamName(row.teamId, names) }));
+  const cut = playoffCut(snapshot);
+  return snapshot.rows.map((row, index) => ({
+    row,
+    team: standingsTeamName(row.teamId, names),
+    lastAboveCut: cut !== null && index === cut - 1,
+  }));
+}
+
+/** Playoff places when the table has teams on both sides of the cut. */
+export function playoffCut(snapshot: CompetitionStandingSnapshotDto): number | null {
+  const spots = snapshot.playoffSpots;
+  return spots !== null && snapshot.rows.length > spots ? spots : null;
 }
 
 export function teamNamesFrom(

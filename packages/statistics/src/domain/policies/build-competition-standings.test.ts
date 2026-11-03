@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
-import type { TeamMatchContribution } from "../entities/team-match-contribution.ts";
+import {
+  officialSlotKey,
+  type TeamMatchContribution,
+} from "../entities/team-match-contribution.ts";
 import { buildCompetitionStandings } from "./build-competition-standings.ts";
 
 describe("buildCompetitionStandings", () => {
@@ -39,6 +42,7 @@ describe("buildCompetitionStandings", () => {
         lossPoints: 0,
         resolutionMode: "independent_matches",
       },
+      occurredAtBySlot: new Map(),
       updatedAt: new Date("2026-08-13T12:00:00.000Z"),
     });
 
@@ -94,6 +98,7 @@ describe("buildCompetitionStandings", () => {
         lossPoints: 0,
         resolutionMode: "independent_matches",
       },
+      occurredAtBySlot: new Map(),
       updatedAt: new Date("2026-08-13T12:00:00.000Z"),
     });
 
@@ -188,6 +193,7 @@ describe("buildCompetitionStandings", () => {
         lossPoints: 0,
         resolutionMode: "independent_matches",
       },
+      occurredAtBySlot: new Map(),
       updatedAt: new Date("2026-08-13T12:00:00.000Z"),
     });
 
@@ -263,6 +269,7 @@ describe("buildCompetitionStandings", () => {
           },
         ],
       ]),
+      occurredAtBySlot: new Map(),
       updatedAt: new Date("2026-08-13T12:00:00.000Z"),
     });
 
@@ -272,7 +279,138 @@ describe("buildCompetitionStandings", () => {
       points: 8,
     });
   });
+
+  describe("form", () => {
+    it("lists the team's results oldest first, whatever the input order", () => {
+      const contributions = [
+        team({ encounterId: asEncounterId("e-1"), officialSlot: 1, goalsFor: 2, goalsAgainst: 0 }),
+        team({ encounterId: asEncounterId("e-2"), officialSlot: 1, goalsFor: 0, goalsAgainst: 1 }),
+        team({ encounterId: asEncounterId("e-3"), officialSlot: 1, goalsFor: 1, goalsAgainst: 1 }),
+      ];
+      const snapshot = standings(contributions, [
+        [contributions[0]!, "2026-03-03T20:00:00.000Z"],
+        [contributions[1]!, "2026-03-01T20:00:00.000Z"],
+        [contributions[2]!, "2026-03-02T20:00:00.000Z"],
+      ]);
+
+      expect(formOf(snapshot, "home-team")).toEqual(["loss", "draw", "win"]);
+    });
+
+    it("keeps only the latest five results", () => {
+      const outcomes: [number, number][] = [
+        [1, 0],
+        [1, 0],
+        [0, 3],
+        [2, 2],
+        [1, 0],
+        [0, 1],
+        [4, 1],
+      ];
+      const contributions = outcomes.map(([goalsFor, goalsAgainst], index) =>
+        team({ encounterId: asEncounterId(`e-${index}`), officialSlot: 1, goalsFor, goalsAgainst }),
+      );
+      const snapshot = standings(
+        contributions,
+        contributions.map((contribution, index) => [
+          contribution,
+          `2026-03-0${index + 1}T20:00:00.000Z`,
+        ]),
+      );
+
+      expect(formOf(snapshot, "home-team")).toEqual(["loss", "draw", "win", "loss", "win"]);
+      expect(rowOf(snapshot, "home-team")).toMatchObject({ played: 7 });
+    });
+
+    it("counts a two-leg aggregate_score encounter as one result", () => {
+      const legs = [
+        team({ officialSlot: 1, goalsFor: 1, goalsAgainst: 0, resolutionMode: "aggregate_score" }),
+        team({ officialSlot: 2, goalsFor: 0, goalsAgainst: 2, resolutionMode: "aggregate_score" }),
+      ];
+      const earlier = team({
+        encounterId: asEncounterId("e-0"),
+        officialSlot: 1,
+        goalsFor: 3,
+        goalsAgainst: 0,
+      });
+      const snapshot = standings(
+        [...legs, earlier],
+        [
+          [legs[0]!, "2026-03-01T20:00:00.000Z"],
+          [legs[1]!, "2026-03-08T20:00:00.000Z"],
+          [earlier, "2026-03-05T20:00:00.000Z"],
+        ],
+      );
+
+      expect(formOf(snapshot, "home-team")).toEqual(["win", "loss"]);
+    });
+
+    it("leaves a match without a known time out of the form but not out of the points", () => {
+      const timed = team({
+        encounterId: asEncounterId("e-1"),
+        officialSlot: 1,
+        goalsFor: 0,
+        goalsAgainst: 1,
+      });
+      const untimed = team({
+        encounterId: asEncounterId("e-2"),
+        officialSlot: 1,
+        goalsFor: 2,
+        goalsAgainst: 0,
+      });
+      const snapshot = standings([timed, untimed], [[timed, "2026-03-01T20:00:00.000Z"]]);
+
+      expect(formOf(snapshot, "home-team")).toEqual(["loss"]);
+      expect(rowOf(snapshot, "home-team")).toMatchObject({ played: 2, wins: 1, points: 3 });
+    });
+
+    it("orders equal times by encounter, then slot", () => {
+      const sameTime = "2026-03-01T20:00:00.000Z";
+      const contributions = [
+        team({ encounterId: asEncounterId("e-b"), officialSlot: 1, goalsFor: 1, goalsAgainst: 0 }),
+        team({ encounterId: asEncounterId("e-a"), officialSlot: 2, goalsFor: 1, goalsAgainst: 1 }),
+        team({ encounterId: asEncounterId("e-a"), officialSlot: 1, goalsFor: 0, goalsAgainst: 1 }),
+      ];
+      const times = contributions.map((contribution) => [contribution, sameTime] as const);
+
+      expect(formOf(standings(contributions, times), "home-team")).toEqual(["loss", "draw", "win"]);
+      expect(
+        formOf(standings([...contributions].reverse(), [...times].reverse()), "home-team"),
+      ).toEqual(["loss", "draw", "win"]);
+    });
+  });
 });
+
+function standings(
+  contributions: readonly TeamMatchContribution[],
+  times: readonly (readonly [TeamMatchContribution, string])[],
+) {
+  return buildCompetitionStandings({
+    competitionId: asCompetitionId("competition-1"),
+    organizationId: asOrganizationId("organization-1"),
+    contributions,
+    pointsRules: {
+      winPoints: 3,
+      drawPoints: 1,
+      lossPoints: 0,
+      resolutionMode: "independent_matches",
+    },
+    occurredAtBySlot: new Map(
+      times.map(([contribution, occurredAt]) => [
+        officialSlotKey(contribution),
+        new Date(occurredAt),
+      ]),
+    ),
+    updatedAt: new Date("2026-08-13T12:00:00.000Z"),
+  });
+}
+
+function rowOf(snapshot: ReturnType<typeof standings>, teamId: string) {
+  return snapshot.rows.find((row) => row.teamId === asTeamId(teamId));
+}
+
+function formOf(snapshot: ReturnType<typeof standings>, teamId: string) {
+  return rowOf(snapshot, teamId)?.form;
+}
 
 function team(input: {
   readonly encounterId?: ReturnType<typeof asEncounterId>;

@@ -7,8 +7,7 @@ import {
   TEAM_STATS_VIEWS,
 } from "@/modules/statistics/presentation/competition-team-stats/competition-team-stats-model.ts";
 import { CompetitionTeamStatsRoute } from "@/modules/statistics/presentation/competition-team-stats/competition-team-stats-page.tsx";
-import { getUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
-import { onboardingHead } from "@/shared/presentation/i18n/onboarding-head.ts";
+import { localizedHead } from "@/shared/presentation/i18n/localized-head.ts";
 
 const searchSchema = z.object({
   view: z.enum(TEAM_STATS_VIEWS).optional().catch(undefined),
@@ -18,8 +17,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_app/orgs/$orgId/competitions/$competitionId/stats")({
   validateSearch: searchSchema,
-  loader: () => getUiLocale(),
-  head: ({ loaderData }) => onboardingHead(loaderData, "competition.teamStats.documentTitle"),
+  head: localizedHead("competition.teamStats.documentTitle"),
   component: CompetitionStatsPage,
 });
 

@@ -1,5 +1,7 @@
 import {
+  ONBOARDING_STEPS_BY_PATH,
   competitionDraftInputSchema,
+  isOnboardingStepAllowed,
   playerGameAccountInputSchema,
   type CompetitionDraftInputDto,
   type ExternalClubDto,
@@ -20,14 +22,8 @@ import {
 
 export type OnboardingGateway = Pick<FutrobClient, "identity" | "organizations" | "gameData">;
 
-export const STEPS_BY_PATH = {
-  player: ["intention", "game-account", "club", "review"],
-  organization: ["intention", "organization", "competition", "game-account", "review"],
-  invitation: ["intention", "invitation", "game-account", "review"],
-} as const;
-
 export function stepsForPath(path: OnboardingPathDto): readonly OnboardingStepDto[] {
-  return STEPS_BY_PATH[path];
+  return ONBOARDING_STEPS_BY_PATH[path];
 }
 
 export type FinishResult = { readonly route: string };
@@ -65,14 +61,7 @@ function normalizedStep(
   path: OnboardingPathDto | null,
   step: OnboardingStepDto | null,
 ): OnboardingStepDto {
-  if (!path || !step) return "intention";
-  if (step === "game")
-    return path === "player"
-      ? "game-account"
-      : path === "organization"
-        ? "organization"
-        : "intention";
-  return stepsForPath(path).includes(step) ? step : "intention";
+  return step && isOnboardingStepAllowed(path, step) ? step : "intention";
 }
 
 export class NativeOnboardingFlow {
@@ -103,6 +92,12 @@ export class NativeOnboardingFlow {
     gateway: OnboardingGateway,
   ): Promise<NativeOnboardingFlow> {
     const stored = await loadOnboardingDraft(userId);
+    if (!status.completed && status.path === null && status.currentStep === "intention") {
+      // Records the entry into onboarding for the funnel (ADR-0026); the server ignores repeats.
+      await gateway.identity
+        .saveOnboardingProgress({ path: null, currentStep: "intention" })
+        .catch(() => undefined);
+    }
     const draft =
       status.path === stored.path ? stored : { ...emptyOnboardingDraft(), path: status.path };
     return new NativeOnboardingFlow(

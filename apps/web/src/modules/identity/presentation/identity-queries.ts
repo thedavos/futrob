@@ -16,8 +16,8 @@ export function useOnboardingStatusQuery(enabled = true) {
 }
 
 /** Puts the route-loaded status in the Query cache without a raw effect. */
-export function useSeededOnboardingStatus(initialStatus: OnboardingStatusDto): void {
-  useQuery({
+export function useSeededOnboardingStatus(initialStatus: OnboardingStatusDto) {
+  return useQuery({
     queryKey: queryKeys.identity.onboardingStatus(),
     queryFn: () => identityBrowserClient.getOnboardingStatus(),
     initialData: initialStatus,

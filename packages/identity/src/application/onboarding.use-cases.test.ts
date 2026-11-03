@@ -13,8 +13,14 @@ import type {
 class InMemoryActorOnboarding implements ActorOnboardingPort {
   readonly rows = new Map<string, ActorOnboardingState>();
 
+  readonly locked: string[] = [];
+
   async findByActor(actorId: CompletedOnboarding["actorId"]) {
     return this.rows.get(actorId) ?? null;
+  }
+
+  async lockActor(actorId: CompletedOnboarding["actorId"]) {
+    this.locked.push(actorId);
   }
 
   async saveProgress(progress: OnboardingProgress) {
@@ -75,7 +81,6 @@ describe("identity onboarding", () => {
     ["organization", "intention"],
     ["organization", "organization"],
     ["organization", "competition"],
-    ["organization", "game"],
     ["organization", "game-account"],
     ["organization", "review"],
     ["invitation", "intention"],
@@ -83,7 +88,6 @@ describe("identity onboarding", () => {
     ["invitation", "game-account"],
     ["invitation", "review"],
     ["player", "intention"],
-    ["player", "game"],
     ["player", "game-account"],
     ["player", "club"],
     ["player", "review"],
@@ -103,12 +107,10 @@ describe("identity onboarding", () => {
 
   it.each([
     ["organization", "invitation"],
-    ["invitation", "game"],
     ["invitation", "competition"],
     ["player", "invitation"],
     ["organization", "club"],
     ["invitation", "club"],
-    [null, "game"],
     [null, "invitation"],
     [null, "game-account"],
     [null, "club"],
@@ -147,5 +149,39 @@ describe("identity onboarding", () => {
       currentStep: null,
     });
     expect(second).toEqual(first);
+  });
+
+  it("ignores an entry write that would rewind a chosen path", async () => {
+    const store = new InMemoryActorOnboarding();
+    const useCase = new SaveOnboardingProgressUseCase(store, { now: () => new Date() });
+    const actorId = asActorId("actor-stale-entry");
+
+    await useCase.execute({ actorId, path: null, currentStep: "intention" });
+    await useCase.execute({ actorId, path: "player", currentStep: "game-account" });
+    const stale = await useCase.execute({ actorId, path: null, currentStep: "intention" });
+
+    expect(stale).toMatchObject({ path: "player", currentStep: "game-account" });
+    await expect(store.findByActor(actorId)).resolves.toMatchObject({
+      path: "player",
+      currentStep: "game-account",
+    });
+  });
+
+  it("prepares completion under the actor lock and rejects only a different completed path", async () => {
+    const store = new InMemoryActorOnboarding();
+    const useCase = new CompleteOnboardingUseCase(store, { now: () => new Date() });
+    const actorId = asActorId("actor-prepare");
+
+    expect((await useCase.prepare({ actorId, path: "player" })).isOk()).toBe(true);
+    await useCase.execute({ actorId, path: "player" });
+    expect((await useCase.prepare({ actorId, path: "player" })).isOk()).toBe(true);
+
+    const conflict = await useCase.prepare({ actorId, path: "organization" });
+    expect(conflict.isOk()).toBe(false);
+    expect(conflict.isOk() ? null : conflict.error).toMatchObject({
+      code: "identity.onboarding_path_conflict",
+      details: { completedPath: "player", requestedPath: "organization" },
+    });
+    expect(store.locked).toEqual([actorId, actorId, actorId]);
   });
 });

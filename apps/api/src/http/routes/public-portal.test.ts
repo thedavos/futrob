@@ -346,6 +346,7 @@ describe("public portal reads", () => {
         goalsAgainst: index,
         goalDifference: 4 - 2 * index,
         points: 6 - 3 * index,
+        form: index === 0 ? ["win", "win"] : ["loss", "win"],
       })),
       sourceRevisionMax: 42,
       updatedAt: new Date("2026-09-08T20:00:00.000Z"),
@@ -359,9 +360,15 @@ describe("public portal reads", () => {
     expect(body.standings.updatedAt).toBe("2026-09-08T20:00:00.000Z");
     expect(body.standings.rows.map((row) => row.position)).toEqual([1, 2, 3]);
     expect(body.standings.rows.map((row) => row.points)).toEqual([6, 3, 0]);
+    expect(body.standings.rows.map((row) => row.form)).toEqual([
+      ["win", "win"],
+      ["loss", "win"],
+      ["loss", "win"],
+    ]);
     for (const row of body.standings.rows) {
       expect(Object.keys(row).sort()).toEqual([
         "draws",
+        "form",
         "goalDifference",
         "goalsAgainst",
         "goalsFor",
@@ -405,6 +412,7 @@ describe("public portal reads", () => {
           goalsAgainst: 0,
           goalDifference: 1,
           points: 3,
+          form: ["win"],
         },
       ],
       sourceRevisionMax: 1,

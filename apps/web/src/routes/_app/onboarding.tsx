@@ -5,6 +5,8 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import type { PostAuthDestinationDto } from "@futrob/api-contracts";
+import { authClient } from "@/modules/identity/auth-client.ts";
+import { browserOnboardingDraftStore } from "@/modules/identity/presentation/onboarding/onboarding-draft-storage.ts";
 import { OnboardingFlowProvider } from "@/modules/identity/presentation/onboarding/onboarding-flow.tsx";
 import { getOnboardingBootstrap } from "@/modules/identity/server/get-onboarding-bootstrap.functions.ts";
 import { RouteLoadError } from "@/shared/presentation/route-load-state.tsx";
@@ -45,9 +47,14 @@ function OnboardingLoadError(props: ErrorComponentProps) {
 
 function OnboardingLayout() {
   const { initialStatus } = Route.useLoaderData();
+  const userId = authClient.useSession().data?.user.id;
 
   return (
-    <OnboardingFlowProvider initialStatus={initialStatus}>
+    <OnboardingFlowProvider
+      draftStore={userId ? browserOnboardingDraftStore(userId) : undefined}
+      initialStatus={initialStatus}
+      key={userId}
+    >
       <Outlet />
     </OnboardingFlowProvider>
   );

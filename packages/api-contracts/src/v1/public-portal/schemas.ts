@@ -51,6 +51,8 @@ export const publicStandingRowSchema = z.strictObject({
   goalsAgainst: z.number().int().nonnegative(),
   goalDifference: z.number().int(),
   points: z.number().int(),
+  /** Latest official results, oldest first. */
+  form: z.array(z.enum(["win", "draw", "loss"])).max(5),
 });
 export type PublicStandingRowDto = z.infer<typeof publicStandingRowSchema>;
 

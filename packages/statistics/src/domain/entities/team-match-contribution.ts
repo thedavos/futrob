@@ -37,3 +37,17 @@ export interface TeamMatchContribution {
   readonly isMvp: boolean | null;
   readonly rating: number | null;
 }
+
+export function officialSlotKey(
+  contribution: Pick<
+    TeamMatchContribution,
+    "officialResultId" | "revision" | "officialSlot" | "encounterId"
+  >,
+): string {
+  return JSON.stringify([
+    contribution.officialResultId,
+    String(contribution.revision),
+    contribution.officialSlot,
+    contribution.encounterId,
+  ]);
+}

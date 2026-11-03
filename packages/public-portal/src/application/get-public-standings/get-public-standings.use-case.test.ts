@@ -27,6 +27,7 @@ const row = (position: number, teamId: typeof BARRANCO, points: number) => ({
   goalsAgainst: points === 3 ? 0 : 2,
   goalDifference: points === 3 ? 2 : -2,
   points,
+  form: points === 3 ? (["draw", "win"] as const) : (["draw", "loss"] as const),
 });
 
 describe("GetPublicStandingsUseCase", () => {
@@ -54,6 +55,7 @@ describe("GetPublicStandingsUseCase", () => {
           goalsAgainst: 0,
           goalDifference: 2,
           points: 3,
+          form: ["draw", "win"],
         },
         {
           position: 2,
@@ -66,6 +68,7 @@ describe("GetPublicStandingsUseCase", () => {
           goalsAgainst: 2,
           goalDifference: -2,
           points: 0,
+          form: ["draw", "loss"],
         },
       ],
       updatedAt: UPDATED_AT,
@@ -87,6 +90,7 @@ describe("GetPublicStandingsUseCase", () => {
     if (!result.isOk()) return;
     expect(Object.keys(result.value.rows[0] ?? {}).sort()).toEqual([
       "draws",
+      "form",
       "goalDifference",
       "goalsAgainst",
       "goalsFor",

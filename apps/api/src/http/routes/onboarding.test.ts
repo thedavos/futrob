@@ -5,7 +5,7 @@ import {
   getMyPlayerProfileResponseSchema,
   listMyMembershipsResponseSchema,
 } from "@futrob/api-contracts";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import clubInfoFixture from "@/adapters/game-data/ea-clubs/fixtures/club-info.json";
 import {
   buildApp,
@@ -117,10 +117,17 @@ describe("apps/api http onboarding", () => {
       currentStep: "intention",
     });
 
-    const progress = await app.request("/api/v1/identity/onboarding", {
+    const retiredStep = await app.request("/api/v1/identity/onboarding", {
       method: "PATCH",
       headers: serviceHeaders(actor),
       body: JSON.stringify({ path: "player", currentStep: "team" }),
+    });
+    expect(retiredStep.status).toBe(400);
+
+    const progress = await app.request("/api/v1/identity/onboarding", {
+      method: "PATCH",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({ path: "player", currentStep: "club" }),
     });
     expect(progress.status).toBe(200);
     expect(await progress.json()).toEqual({
@@ -165,6 +172,28 @@ describe("apps/api http onboarding", () => {
     expect(await personalDestination.json()).toMatchObject({
       destination: { kind: "personal" },
     });
+  });
+
+  it("onboarding: a stale entry write does not rewind a chosen path", async () => {
+    const app = buildApp(stubFetch);
+    const actor = "actor-stale-entry";
+    const save = (path: string | null, currentStep: string) =>
+      app.request("/api/v1/identity/onboarding", {
+        method: "PATCH",
+        headers: serviceHeaders(actor),
+        body: JSON.stringify({ path, currentStep }),
+      });
+
+    await save(null, "intention");
+    await save("player", "game-account");
+    const stale = await save(null, "intention");
+
+    expect(stale.status).toBe(200);
+    expect(await stale.json()).toMatchObject({ path: "player", currentStep: "game-account" });
+    const status = await app.request("/api/v1/identity/onboarding", {
+      headers: serviceHeaders(actor),
+    });
+    expect(await status.json()).toMatchObject({ path: "player", currentStep: "game-account" });
   });
 
   it("onboarding: completes the player path with an idempotent EA game account", async () => {
@@ -673,5 +702,43 @@ describe("apps/api http onboarding", () => {
       headers: serviceHeaders(actor),
     });
     expect(await mine.json()).toEqual({ memberships: [] });
+  });
+
+  it("onboarding: rejects a player finish after another path without asking EA", async () => {
+    const fetcher = vi.fn(stubFetch);
+    const app = buildApp(fetcher);
+    const actor = "actor-completed-organizer";
+    const organization = await app.request("/api/v1/identity/onboarding/organization", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({
+        name: "Liga ya creada",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    expect(organization.status).toBe(200);
+    fetcher.mockClear();
+
+    const player = await app.request("/api/v1/identity/onboarding/player", {
+      method: "POST",
+      headers: serviceHeaders(actor),
+      body: JSON.stringify({
+        gameAccount: null,
+        externalClub: {
+          providerKey: "ea-clubs",
+          externalClubId: "999999",
+          platform: "common-gen5",
+          gameEdition: "fc26",
+        },
+      }),
+    });
+
+    expect(player.status).toBe(409);
+    expect(await player.json()).toMatchObject({
+      code: "identity.onboarding_path_conflict",
+      details: { completedPath: "organization", requestedPath: "player" },
+    });
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });

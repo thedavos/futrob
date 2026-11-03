@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 import { contributionRow, twoSlotSeriesRows } from "./team-contribution-row.fixture.ts";
-import { rehydrateTeamContribution, rehydrateTeamContributions } from "./team-postgres-rows.ts";
+import {
+  rehydrateStandingSnapshot,
+  rehydrateTeamContribution,
+  rehydrateTeamContributions,
+} from "./team-postgres-rows.ts";
 
 describe("rehydrateTeamContribution", () => {
   it("prefers a resolution_mode column over the id suffix", () => {
@@ -74,5 +78,41 @@ describe("rehydrateTeamContributions", () => {
       "independent_matches",
       "independent_matches",
     ]);
+  });
+});
+
+describe("rehydrateStandingSnapshot", () => {
+  const legacyRow = {
+    position: 1,
+    teamId: "team-1",
+    played: 2,
+    wins: 1,
+    draws: 1,
+    losses: 0,
+    goalsFor: 3,
+    goalsAgainst: 1,
+    goalDifference: 2,
+    points: 4,
+  };
+  const snapshotRow = (rows: readonly object[]) => ({
+    competition_id: "competition-1",
+    organization_id: "organization-1",
+    formula_version: "points-gd-gf-v1",
+    rows: JSON.stringify(rows),
+    source_revision_max: 1,
+    updated_at: "2026-08-13T12:00:00.000Z",
+  });
+
+  it("reads a snapshot written before form existed with an empty form", () => {
+    expect(rehydrateStandingSnapshot(snapshotRow([legacyRow])).rows).toEqual([
+      { ...legacyRow, form: [] },
+    ]);
+  });
+
+  it("keeps the stored form", () => {
+    expect(
+      rehydrateStandingSnapshot(snapshotRow([{ ...legacyRow, form: ["draw", "win"] }])).rows[0]
+        ?.form,
+    ).toEqual(["draw", "win"]);
   });
 });

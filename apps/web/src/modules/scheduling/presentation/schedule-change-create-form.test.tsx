@@ -79,11 +79,8 @@ describe("captain reschedule request", () => {
     const item = within(screen.getByRole("list", { name: "Reprogramaciones" })).getByRole(
       "listitem",
     );
-    expect(within(item).getByText(/^Inicio propuesto/).textContent).toBe(
-      "Inicio propuesto: 11 oct 2026, 15:00",
-    );
-    expect(within(item).getByText(/^Horario actual/).textContent).toBe(
-      "Horario actual: 14 sept 2026, 20:00",
+    expect(within(item).getByText(/propone mover/).textContent).toContain(
+      "del 14 sept 2026, 20:00 al 11 oct 2026, 15:00.",
     );
     expect(within(item).getByText("Hora de la competición: America/Lima").textContent).toBe(
       "Hora de la competición: America/Lima",
