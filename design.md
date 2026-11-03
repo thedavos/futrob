@@ -832,7 +832,27 @@ Web responsive: Sheet con la misma sidebar. App nativa: tabs + Más/Stack con la
 
 #### Menú de cuenta
 
-En la cabecera de la sidebar: Perfil · Enviar feedback · Contáctanos · Configuración · Cerrar sesión.
+En la cabecera de la sidebar: Perfil · Enviar feedback · Configuración · Cerrar sesión.
+
+- **Perfil** abre `/player/profile`. Permite consultar y guardar el nombre visible con
+  Better Auth, ver la identidad de acceso y el avatar existente o iniciales derivadas.
+  El correo se presenta como solo lectura. Incluye el resumen de cuentas de juego y
+  enlaces a Datos de juego y Mis estadísticas. CTA principal: «Guardar perfil».
+  No ofrece subida de avatar ni edición de campos sin soporte de backend.
+- **Enviar feedback** abre un diálogo sobre el contexto actual. Tipo problema/idea,
+  mensaje, expectativa opcional para problemas, permiso de contacto y ruta opcional
+  con vista previa, sin query ni sesión. CTA: «Enviar feedback». Mientras no exista
+  entrega real, el CTA permanece deshabilitado y un aviso explica que no se ha enviado.
+  El borrador se conserva al cerrar y reabrir dentro del shell actual.
+- **Configuración** abre un diálogo con idioma ES/EN persistido mediante cookie del
+  navegador y cambio opcional de contraseña con Better Auth. El cambio de contraseña
+  revoca las otras sesiones. CTA: «Guardar cambios». Un fallo de idioma posterior a
+  cambiar la contraseña informa de ese resultado parcial. Las preferencias de
+  notificaciones requieren persistencia y entrega operativa antes de ofrecer controles.
+- Contáctanos se retira del menú. Feedback y Configuración no crean rutas de página.
+
+La navegación y los diálogos usan destinos tipados. Abrirlos conserva el espacio activo,
+la URL y los filtros. Los overlays mantienen el contrato de foco de Base UI.
 
 La navegación General vive en el footer sticky de la sidebar.
 
