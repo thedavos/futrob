@@ -10,6 +10,8 @@ export {
 export {
   CURRENT_ONBOARDING_VERSION,
   ONBOARDING_PATH,
+  ONBOARDING_STEPS,
+  ONBOARDING_STEPS_BY_PATH,
   isOnboardingStepAllowed,
   type ActorOnboardingState,
   type CompletedOnboarding,

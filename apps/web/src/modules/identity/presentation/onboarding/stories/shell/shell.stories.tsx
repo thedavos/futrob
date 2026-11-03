@@ -23,7 +23,7 @@ const styles = stylex.create({
 
 const steps = [
   { id: "intention", label: "Inicio" },
-  { id: "game", label: "Juego" },
+  { id: "game-account", label: "Cuenta" },
   { id: "review", label: "Confirmar" },
 ] as const;
 
@@ -40,7 +40,7 @@ const meta = {
   ],
   args: {
     steps,
-    currentStepId: "game",
+    currentStepId: "game-account",
     title: "Configura tu juego",
     description: "Selecciona la edición y la plataforma donde competirás.",
     children: (
@@ -81,11 +81,11 @@ export const English: Story = {
   render: () => (
     <I18nProvider initialLocale="en" persistLocale={async () => undefined}>
       <OnboardingShell
-        currentStepId="game"
+        currentStepId="game-account"
         description="Choose the edition and platform where you compete."
         steps={[
           { id: "intention", label: "Start" },
-          { id: "game", label: "Game" },
+          { id: "game-account", label: "Account" },
           { id: "review", label: "Confirm" },
         ]}
         title="Set up your game"

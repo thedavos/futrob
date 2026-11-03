@@ -145,7 +145,6 @@ export function OnboardingScreen({ step }: { step: OnboardingStepDto }) {
       "game-account": "account",
       club: "club",
       review: "review",
-      game: "account",
     } as const satisfies Record<OnboardingStepDto, MobileCopyKey>;
     return (
       <View style={{ gap: theme.spacing[3] }}>
