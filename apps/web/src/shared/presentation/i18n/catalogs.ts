@@ -687,7 +687,6 @@ const es = {
   "onboarding.review.finish.player": "Entrar a mi espacio",
   "errors.fallback": "No pudimos completar la operación. Inténtalo nuevamente.",
   "errors.onboarding.organizationCheck": "No pudimos verificar el nombre. Inténtalo nuevamente.",
-  "errors.onboarding.saveProgress": "No pudimos guardar tu progreso. Inténtalo nuevamente.",
   "errors.api.rate_limited":
     "Alcanzaste el límite temporal. Espera antes de intentarlo nuevamente.",
   "errors.product_api.unreachable": "No pudimos conectar con el servicio. Inténtalo nuevamente.",
@@ -3340,7 +3339,6 @@ const en: Catalog = {
   "onboarding.review.finish.player": "Enter my personal space",
   "errors.fallback": "We couldn't complete the operation. Try again.",
   "errors.onboarding.organizationCheck": "We couldn't check the name. Try again.",
-  "errors.onboarding.saveProgress": "We couldn't save your progress. Try again.",
   "errors.api.rate_limited": "You reached the temporary limit. Wait before trying again.",
   "errors.product_api.unreachable": "We couldn't reach the service. Try again.",
   "errors.product_api.bff_misconfigured": "The service connection isn't configured.",
