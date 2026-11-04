@@ -80,29 +80,16 @@ suite("migration runner", () => {
     "upgrades the current 0046 schema with only the later migrations",
     async () => {
       await withSchema(async (client) => {
-        for (const file of await migrationFiles(46)) {
+        const baselineFiles = await migrationFiles(46);
+        for (const file of baselineFiles) {
           await client.query(await readFile(resolve(directory, file), "utf8"));
         }
         const upgraded = await runMigrations(client, { directory, baseline: 46 });
-        expect(upgraded.applied).toEqual([
-          "0047_team_performance_rankings.sql",
-          "0048_schedule_change_negotiation.sql",
-          "0049_provider_sync_ingestion_checkpoint.sql",
-          "0051_official_selection_confirmation_deadlines.sql",
-          "0052_schedule_change_application.sql",
-          "0053_schedule_change_application_acknowledgements.sql",
-          "0054_activity_entries.sql",
-          "0055_competition_entry_invitations.sql",
-          "0055_schedule_change_expiry_resolution.sql",
-          "0056_actor_contact_profiles.sql",
-          "0057_competition_ranking_eligibility.sql",
-          "0058_provider_sync_job_latest_lookup.sql",
-          "0059_activity_entry_schedule_decision_entry_kinds.sql",
-          "0060_billing_plans_and_entitlements.sql",
-          "0061_retire_legacy_onboarding_game_step.sql",
-          "0062_actor_onboarding_events.sql",
-        ]);
-        expect(upgraded.baselined).toHaveLength((await migrationFiles(46)).length);
+        expect(upgraded.applied).toEqual(
+          (await migrationFiles(Infinity)).filter((file) => !baselineFiles.includes(file)),
+        );
+        expect(upgraded.baselined).toEqual(baselineFiles);
+        expect(await ledger(client)).toEqual(await migrationFiles(Infinity));
         expect(await tableExists(client, "team_performance_ranking_snapshots")).toBe(true);
         expect(
           (
@@ -120,7 +107,8 @@ suite("migration runner", () => {
     "upgrades a 0047 job without inventing a completed ingestion",
     async () => {
       await withSchema(async (client) => {
-        for (const file of await migrationFiles(47)) {
+        const baselineFiles = await migrationFiles(47);
+        for (const file of baselineFiles) {
           await client.query(await readFile(resolve(directory, file), "utf8"));
         }
         await client.query(
@@ -132,23 +120,11 @@ suite("migration runner", () => {
              'legacy-dedupe', 'legacy-request', 'queued', 0, 4, NOW(), NOW(), NOW())`,
         );
         const upgraded = await runMigrations(client, { directory, baseline: 47 });
-        expect(upgraded.applied).toEqual([
-          "0048_schedule_change_negotiation.sql",
-          "0049_provider_sync_ingestion_checkpoint.sql",
-          "0051_official_selection_confirmation_deadlines.sql",
-          "0052_schedule_change_application.sql",
-          "0053_schedule_change_application_acknowledgements.sql",
-          "0054_activity_entries.sql",
-          "0055_competition_entry_invitations.sql",
-          "0055_schedule_change_expiry_resolution.sql",
-          "0056_actor_contact_profiles.sql",
-          "0057_competition_ranking_eligibility.sql",
-          "0058_provider_sync_job_latest_lookup.sql",
-          "0059_activity_entry_schedule_decision_entry_kinds.sql",
-          "0060_billing_plans_and_entitlements.sql",
-          "0061_retire_legacy_onboarding_game_step.sql",
-          "0062_actor_onboarding_events.sql",
-        ]);
+        expect(upgraded.applied).toEqual(
+          (await migrationFiles(Infinity)).filter((file) => !baselineFiles.includes(file)),
+        );
+        expect(upgraded.baselined).toEqual(baselineFiles);
+        expect(await ledger(client)).toEqual(await migrationFiles(Infinity));
         expect(
           (
             await client.query(
