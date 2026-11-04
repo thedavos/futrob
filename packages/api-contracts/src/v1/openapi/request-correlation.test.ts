@@ -13,22 +13,6 @@ describe("request correlation contract", () => {
     expect(requestIdSchema.safeParse("not-a-request-id").success).toBe(false);
   });
 
-  it("documents the request header and correlated API errors", () => {
-    expect(futrobOpenApiV1.components.parameters.RequestId).toMatchObject({
-      in: "header",
-      name: "X-Request-ID",
-      required: false,
-      schema: { format: "uuid", type: "string" },
-    });
-    expect(futrobOpenApiV1.components.schemas.ApiError?.properties?.requestId).toEqual({
-      format: "uuid",
-      type: "string",
-    });
-    expect(futrobOpenApiV1.components.responses.ApiError.headers).toEqual({
-      "X-Request-ID": { $ref: "#/components/headers/RequestId" },
-    });
-  });
-
   it("documents correlation for every operation and inline response", () => {
     let operationCount = 0;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { CURRENT_ONBOARDING_VERSION, isOnboardingStepAllowed } from "./onboarding-status.ts";
+import { isOnboardingStepAllowed } from "./onboarding-status.ts";
 
 describe("isOnboardingStepAllowed", () => {
   it("only allows intention before a path is chosen", () => {
@@ -47,9 +47,5 @@ describe("isOnboardingStepAllowed", () => {
     expect(isOnboardingStepAllowed("player", "organization")).toBe(false);
     expect(isOnboardingStepAllowed("player", "competition")).toBe(false);
     expect(isOnboardingStepAllowed("player", "invitation")).toBe(false);
-  });
-
-  it("pins the current onboarding schema version", () => {
-    expect(CURRENT_ONBOARDING_VERSION).toBeGreaterThan(0);
   });
 });

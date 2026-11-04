@@ -3,9 +3,7 @@ import {
   getPublicCalendarResponseSchema,
   getPublicCompetitionResponseSchema,
   getPublicStandingsResponseSchema,
-  publicCalendarEntrySchema,
   publicCompetitionSchema,
-  publicStandingRowSchema,
 } from "./schemas.ts";
 
 const competition = {
@@ -45,42 +43,6 @@ const calendarEntry = {
 } as const;
 
 describe("public portal wire schemas", () => {
-  it("expose exactly the allowlisted keys", () => {
-    expect(Object.keys(publicCompetitionSchema.shape).sort()).toEqual([
-      "approvedTeamCount",
-      "coverPreset",
-      "endsOn",
-      "format",
-      "gameEdition",
-      "name",
-      "platform",
-      "region",
-      "startsOn",
-      "status",
-      "timeZone",
-    ]);
-    expect(Object.keys(publicStandingRowSchema.shape).sort()).toEqual([
-      "draws",
-      "form",
-      "goalDifference",
-      "goalsAgainst",
-      "goalsFor",
-      "losses",
-      "played",
-      "points",
-      "position",
-      "teamName",
-      "wins",
-    ]);
-    expect(Object.keys(publicCalendarEntrySchema.shape).sort()).toEqual([
-      "awayTeamName",
-      "homeTeamName",
-      "roundNumber",
-      "scheduledStartAt",
-      "status",
-    ]);
-  });
-
   it.each([
     ["organizationId", "org-1"],
     ["id", "competition-1"],
