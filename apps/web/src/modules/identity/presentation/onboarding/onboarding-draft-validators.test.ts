@@ -11,13 +11,8 @@ import {
 function draft(patch: Partial<OnboardingDraft> = {}): OnboardingDraft {
   return {
     organizationName: "",
-    competitionName: "",
-    competitionPlatform: null,
-    competitionRegion: null,
-    competitionTimeZone: "UTC",
-    competitionFormat: null,
-    competitionGameEdition: "",
-    customCompetitionGameEdition: false,
+    organizationTimeZone: "UTC",
+    organizationAccountStep: false,
     invitationToken: "",
     invitationPreview: null,
     gameAccountIdentifier: "",

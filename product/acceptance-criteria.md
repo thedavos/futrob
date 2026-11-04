@@ -123,11 +123,15 @@ El recorrido operativo autenticado debe poder completarse tanto desde `apps/web`
   competición, **entonces** obtiene acceso contextual a esa competición, la membresía mínima de
   organización y un PlayerProfile, con cuenta EA opcional.
 - **y** aceptar la invitación no incorpora al actor a una plantilla ni le concede elegibilidad.
-- **Dado** un actor que elige Organizar, **cuando** confirma organización, competición y cuenta
-  opcional, **entonces** obtiene membresía `organizer`, PlayerProfile y una Competition `draft`
-  scoped a esa organización.
-- **y** reintentar la finalización no duplica organización, competición, perfil ni cuenta EA.
-- **y** el organizador navega directamente al setup de la competición devuelta por la mutación.
+- **Dado** un actor que elige Organizar, **cuando** confirma el nombre de organización,
+  **entonces** obtiene membresía `organizer` y PlayerProfile, sin crear una competición.
+- **y** la zona horaria se obtiene del navegador/dispositivo, con respaldo `UTC`.
+- **y** «Continuar» lleva de organización a confirmación; «Crea tu cuenta» abre el paso opcional
+  de cuenta de juego, que se incorpora al stepper solo al elegir ese desvío.
+- **y** desde cuenta puede volver a organización, omitirla o guardar y pasar a confirmación.
+- **y** reintentar la finalización no duplica organización, perfil ni cuenta EA.
+- **y** el organizador navega al inicio de la organización devuelta por la mutación, donde puede
+  crear su primera competición después.
 - **pero** `identity` solo conserva camino, paso, versión y finalización; no almacena los borradores.
 
 ### AC-PLAYER-002 — Invitación posterior opcional

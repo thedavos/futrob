@@ -44,14 +44,7 @@ suite("onboarding completion on Postgres", () => {
           modules.onboardingCompletion.completeOrganization({
             actorId,
             name: `Liga carrera ${round}`,
-            competition: {
-              name: "Apertura",
-              gameEdition: "FC 26",
-              platform: "playstation",
-              region: "south-america",
-              timeZone: "America/Lima",
-              format: "league",
-            },
+            timeZone: "America/Lima",
             gameAccount: null,
           }),
           modules.onboardingCompletion.completePlayer({

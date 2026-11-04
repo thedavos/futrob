@@ -44,6 +44,7 @@ describe("identity onboarding step contract", () => {
         expect(previousOnboardingStep(path, step)).toBe(steps[index - 1] ?? null);
       }
     }
-    expect(nextOnboardingStep("player", "competition")).toBeNull();
+    expect(nextOnboardingStep("player", "organization")).toBeNull();
+    expect(onboardingStepSchema.safeParse("competition").success).toBe(false);
   });
 });

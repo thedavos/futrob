@@ -108,15 +108,15 @@ describe("native onboarding flow", () => {
     const api = gateway();
     const flow = await NativeOnboardingFlow.load(
       "ana",
-      status("organization", "competition"),
+      status("organization", "organization"),
       api.client,
     );
-    const first = flow.update({ competition: { name: "Copa" } });
-    const second = flow.update({ competition: { format: "league" } });
+    const first = flow.update({ organizationName: "Liga" });
+    const second = flow.update({ organizationTimeZone: "America/Lima" });
     await Promise.all([first, second]);
-    expect((await loadOnboardingDraft("ana")).competition).toMatchObject({
-      name: "Copa",
-      format: "league",
+    expect(await loadOnboardingDraft("ana")).toMatchObject({
+      organizationName: "Liga",
+      organizationTimeZone: "America/Lima",
     });
   });
 
@@ -146,7 +146,7 @@ describe("native onboarding flow", () => {
     expect((await loadOnboardingDraft("ana")).path).toBeNull();
   });
 
-  it("creates organization and competition together, then routes to setup", async () => {
+  it("creates an organization without a competition, then opens the organization", async () => {
     const api = gateway();
     const flow = await NativeOnboardingFlow.load(
       "ana",
@@ -155,29 +155,15 @@ describe("native onboarding flow", () => {
     );
     await flow.update({
       organizationName: "Liga Lima",
-      competition: {
-        name: "Copa",
-        gameEdition: "FC 26",
-        platform: "playstation",
-        region: "south-america",
-        timeZone: "America/Lima",
-        format: "league",
-      },
+      organizationTimeZone: "America/Lima",
     });
     await expect(flow.finish()).resolves.toEqual({
-      route: "/orgs/org-1/competitions/comp-1/setup",
+      route: "/orgs/org-1",
     });
     expect(api.completeOrganizationOnboarding).toHaveBeenCalledWith({
       name: "Liga Lima",
       gameAccount: null,
-      competition: {
-        name: "Copa",
-        gameEdition: "FC 26",
-        platform: "playstation",
-        region: "south-america",
-        timeZone: "America/Lima",
-        format: "league",
-      },
+      timeZone: "America/Lima",
     });
   });
 
@@ -227,11 +213,38 @@ describe("native onboarding flow", () => {
     await saveOnboardingDraft("ana", {
       path: "player",
       organizationName: "",
-      competition: {},
+      organizationTimeZone: "UTC",
+      organizationAccountStep: false,
       invitationToken: "",
       gameAccount: {},
       club: null,
     } satisfies OnboardingDraft);
     expect((await loadOnboardingDraft("other")).path).toBeNull();
   });
+});
+
+it("keeps the organizer's game account as an optional detour and submits it on completion", async () => {
+  const api = gateway();
+  const flow = await NativeOnboardingFlow.load(
+    "organizer-optional",
+    status("organization", "organization"),
+    api.client,
+  );
+  await flow.update({
+    organizationName: "Liga opcional",
+    organizationTimeZone: "America/Lima",
+    organizationAccountStep: true,
+  });
+  await flow.goTo("game-account");
+  await flow.update({
+    gameAccount: { identifier: "CaptainEA", platform: "xbox", gameEdition: "FC 27" },
+  });
+  await flow.goTo("review");
+  expect(await flow.finish()).toEqual({ route: "/orgs/org-1" });
+  expect(api.completeOrganizationOnboarding).toHaveBeenCalledWith({
+    name: "Liga opcional",
+    timeZone: "America/Lima",
+    gameAccount: { identifier: "CaptainEA", platform: "xbox", gameEdition: "FC 27" },
+  });
+  expect((await loadOnboardingDraft("organizer-optional")).path).toBeNull();
 });

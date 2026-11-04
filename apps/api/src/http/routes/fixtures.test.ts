@@ -1,5 +1,5 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import {
-  completeOrganizationOnboardingResponseSchema,
   fixturePlanSchema,
   getCurrentCompetitionFixtureResponseSchema,
 } from "@futrob/api-contracts";
@@ -16,7 +16,7 @@ describe("apps/api http fixtures", () => {
   it("generates, replays, reads, and audits a schedule edit", async () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-fixture-organizer";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -25,7 +25,7 @@ describe("apps/api http fixtures", () => {
         gameAccount: null,
       }),
     });
-    const createdBody = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const createdBody = created;
     const { organizationId } = createdBody;
     const competitionId = createdBody.competition.competition.id;
     await app.request(`/api/v1/organizations/${organizationId}/competitions/${competitionId}`, {

@@ -1,7 +1,7 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { randomUUID } from "node:crypto";
 import {
   apiErrorSchema,
-  completeOrganizationOnboardingResponseSchema,
   encounterScheduleSnapshotSchema,
   fixturePlanSchema,
   listActivitiesResponseSchema,
@@ -134,14 +134,15 @@ describe.each([
         body: body === undefined ? undefined : JSON.stringify(body),
       });
 
-    const onboarded = await parseResponse(
-      completeOrganizationOnboardingResponseSchema,
-      await send(actors.organizer, "POST", "/identity/onboarding/organization", {
+    const onboarded = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders(actors.organizer),
+      body: JSON.stringify({
         name: `Reschedule ${tag}`,
         competition: { ...onboardingCompetition, format },
         gameAccount: null,
       }),
-    );
+    });
     const organizationId = onboarded.organizationId;
     const competitionId = onboarded.competition.competition.id;
     const competitionPath = `/organizations/${organizationId}/competitions/${competitionId}`;

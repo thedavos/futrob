@@ -1,8 +1,8 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { randomUUID } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
-import { completeOrganizationOnboardingResponseSchema } from "@futrob/api-contracts";
 import { err } from "@futrob/shared-kernel";
 import { RosterCompetitionConflict } from "@futrob/teams";
 import { createApp } from "@/app.ts";
@@ -58,7 +58,7 @@ describe.skipIf(!databaseUrl)("competition application Postgres atomicity", () =
       checkDbHealth: async () => "ok",
     });
     const organizer = "application-rollback-organizer";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -67,8 +67,7 @@ describe.skipIf(!databaseUrl)("competition application Postgres atomicity", () =
         gameAccount: null,
       }),
     });
-    expect(created.status).toBe(200);
-    const organization = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const organization = created;
     const competitionId = organization.competition.competition.id;
     const opened = await app.request(
       `/api/v1/organizations/${organization.organizationId}/competitions/${competitionId}/registration/open`,

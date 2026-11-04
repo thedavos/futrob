@@ -10,10 +10,8 @@ import type {
   ExternalClubDto,
   InspectCompetitionInvitationRequest,
   InspectCompetitionInvitationResponse,
-  OrganizationPlan,
   SearchClubsQueryInput,
 } from "@futrob/api-contracts";
-import { billingBrowserClient } from "@/modules/billing/presentation/billing-browser-client.ts";
 import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { gameDataBrowserClient } from "@/modules/game-data/presentation/game-data-browser-client.ts";
 
@@ -33,8 +31,6 @@ export interface OnboardingGateway {
     input: CompletePlayerOnboardingRequest,
   ): Promise<Pick<CompletePlayerOnboardingResponse, "externalClubAssociation">>;
   searchExternalClubs(input: SearchClubsQueryInput): Promise<readonly ExternalClubDto[]>;
-  /** Public plan catalog; `null` when it cannot be read. */
-  listPublicPlans(): Promise<readonly OrganizationPlan[] | null>;
 }
 
 export const browserOnboardingGateway: OnboardingGateway = {
@@ -51,13 +47,5 @@ export const browserOnboardingGateway: OnboardingGateway = {
       throw result.error;
     }
     return result.value.clubs;
-  },
-  async listPublicPlans() {
-    // An unreadable catalog gates nothing: the API still answers 402 for a Pro format.
-    try {
-      return (await billingBrowserClient.listPublicPlans()).plans;
-    } catch {
-      return null;
-    }
   },
 };

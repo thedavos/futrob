@@ -16,7 +16,6 @@ import {
   playerGameAccountDto,
   playerProfileDto,
 } from "@/http/mappers/player.ts";
-import { competitionDraftDto } from "@/http/mappers/competition.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
   completeInvitationOnboardingRoute,
@@ -62,22 +61,20 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
     const completed = await onboardingCompletion.completeOrganization({
       actorId: c.get("actorId"),
       name: parsed.name,
-      competition: parsed.competition,
+      timeZone: parsed.timeZone,
       gameAccount: parsed.gameAccount ?? null,
     });
     if (!completed.isOk()) return failureToHttp(completed.error);
-    const { organization, competition, profile, gameAccount } = completed.value;
+    const { organization, profile, gameAccount } = completed.value;
     return jsonResponse(
       completeOrganizationOnboardingResponseSchema.parse({
         ...organizationProfileDto(organization.organization),
         role: organization.role,
-        competition: competitionDraftDto(competition),
         profile: playerProfileDto(profile),
         gameAccount: gameAccount ? playerGameAccountDto(gameAccount) : null,
         destination: {
-          kind: "competition-setup",
+          kind: "organization",
           organizationId: organization.organization.id,
-          competitionId: competition.competition.id,
         },
       }),
     );
