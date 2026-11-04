@@ -95,6 +95,9 @@ export class NativeOnboardingFlow {
     }
     const draft =
       status.path === stored.path ? stored : { ...emptyOnboardingDraft(), path: status.path };
+    if (draft.path === "organization" && status.currentStep === "game-account") {
+      draft.organizationAccountStep = true;
+    }
     return new NativeOnboardingFlow(
       userId,
       gateway,

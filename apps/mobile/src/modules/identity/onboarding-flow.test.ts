@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   clearOnboardingDraft,
+  emptyOnboardingDraft,
   loadOnboardingDraft,
   saveOnboardingDraft,
   type OnboardingDraft,
 } from "./onboarding-draft.ts";
-import { NativeOnboardingFlow, type OnboardingGateway } from "./onboarding-flow.ts";
+import { NativeOnboardingFlow, stepsForPath, type OnboardingGateway } from "./onboarding-flow.ts";
 import type { OnboardingStatusDto } from "@futrob/api-contracts";
 
 const status = (
@@ -78,6 +79,54 @@ describe("native onboarding flow", () => {
     const other = await NativeOnboardingFlow.load("other", status("player", "club"), api.client);
     expect(other.draft.gameAccount).toEqual({});
   });
+
+  it.each(["missing", "different-path", "matching"])(
+    "resumes the optional organization account with a %s draft",
+    async (draftKind) => {
+      const api = gateway();
+      if (draftKind !== "missing") {
+        await saveOnboardingDraft("ana", {
+          ...emptyOnboardingDraft(),
+          path: draftKind === "matching" ? "organization" : "player",
+          organizationName: "Liga guardada",
+        });
+      }
+      const flow = await NativeOnboardingFlow.load(
+        "ana",
+        status("organization", "game-account"),
+        api.client,
+      );
+
+      expect(flow.step).toBe("game-account");
+      expect(flow.draft.path).toBe("organization");
+      expect(stepsForPath("organization", flow.draft.organizationAccountStep)).toEqual([
+        "intention",
+        "organization",
+        "game-account",
+        "review",
+      ]);
+      expect(flow.draft.organizationName).toBe(draftKind === "matching" ? "Liga guardada" : "");
+      await flow.goTo("organization");
+      expect(flow.step).toBe("organization");
+      await flow.update({
+        organizationName: "Liga recuperada",
+        organizationTimeZone: "America/Lima",
+      });
+      await flow.goTo("game-account");
+      expect(flow.step).toBe("game-account");
+      await flow.update({
+        gameAccount: { identifier: "CaptainEA", platform: "xbox", gameEdition: "FC 27" },
+      });
+      await flow.goTo("review");
+      expect(flow.step).toBe("review");
+      await expect(flow.finish()).resolves.toEqual({ route: "/orgs/org-1" });
+      expect(api.completeOrganizationOnboarding).toHaveBeenCalledWith({
+        name: "Liga recuperada",
+        timeZone: "America/Lima",
+        gameAccount: { identifier: "CaptainEA", platform: "xbox", gameEdition: "FC 27" },
+      });
+    },
+  );
 
   it("records the entry into onboarding once a fresh actor opens it", async () => {
     const api = gateway();
