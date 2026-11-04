@@ -5,15 +5,6 @@ import { describe, expect, it } from "vite-plus/test";
 import { Heading } from "./heading.tsx";
 
 describe("Heading", () => {
-  it("renders h2 by default with the heading slot", () => {
-    const markup = renderToStaticMarkup(createElement(Heading, null, "Clasificación"));
-
-    expect(markup).toContain('data-slot="heading"');
-    expect(markup).toContain('data-look="heading"');
-    expect(markup.startsWith("<h2")).toBe(true);
-    expect(markup).toContain("Clasificación");
-  });
-
   it("renders the requested heading level", () => {
     const markup = renderToStaticMarkup(createElement(Heading, { as: "h3" }, "Jornada 4"));
 

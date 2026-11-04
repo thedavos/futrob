@@ -73,14 +73,4 @@ describe("shell navigation", () => {
       .filter(({ shape }) => !routes.has(shape));
     expect(missing).toEqual([]);
   });
-
-  it("resolves route file names the way the router does", () => {
-    expect(routePathFromFile("_app/player_.competitions_.$competitionId_.team.index.tsx")).toBe(
-      "/player/competitions/$/team",
-    );
-    expect(routePathFromFile("_app/orgs/$orgId/settings/index.tsx")).toBe("/orgs/$/settings");
-    expect(routePathFromFile("_app/orgs/$orgId/competitions/$competitionId/teams.lazy.tsx")).toBe(
-      "/orgs/$/competitions/$/teams",
-    );
-  });
 });

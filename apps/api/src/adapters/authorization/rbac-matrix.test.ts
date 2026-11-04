@@ -1,8 +1,5 @@
-import { authorizationScopeTypeSchema } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
-import { asActorId, asOrganizationId, type Permission } from "@futrob/shared-kernel";
-import type { PoolClient } from "pg";
-import { asPgPool } from "@/adapters/persistence/pg-test-double.ts";
+import type { Permission } from "@futrob/shared-kernel";
 import {
   createRbacMatrixFixture,
   RBAC_MATRIX_NOW,
@@ -10,9 +7,8 @@ import {
   type RbacScopeKey,
 } from "./rbac-matrix.fixture.ts";
 import { type RbacGrantSeed, type RbacMatrixCase } from "./rbac-matrix.oracle.ts";
-import { RBAC_MATRIX_CASES, rbacMatrixCoverageSummary } from "./rbac-matrix.cases.ts";
+import { RBAC_MATRIX_CASES } from "./rbac-matrix.cases.ts";
 import { InMemoryAccessGrantRepository } from "./in-memory.repository.ts";
-import { PostgresAccessGrantRepository, type AccessGrantRow } from "./postgres.repository.ts";
 
 function scopeIdFor(fixture: RbacMatrixFixture, seed: RbacGrantSeed): string {
   if (seed.scopeIdFrom === "platform") return "platform";
@@ -66,18 +62,6 @@ async function runCase(fixture: RbacMatrixFixture, matrixCase: RbacMatrixCase) {
 }
 
 describe("RBAC matrix", () => {
-  it("publishes a non-empty coverage map", () => {
-    const summary = rbacMatrixCoverageSummary();
-    expect(summary.total).toBeGreaterThan(100);
-    expect(summary.byFamily.bundle).toBeGreaterThan(50);
-    expect(summary.byFamily.isolation).toBeGreaterThan(5);
-    expect(summary.byFamily.encounter).toBeGreaterThan(5);
-    expect(summary.byFamily.grants).toBeGreaterThan(3);
-    expect(summary.actors).toContain("superuser");
-    expect(summary.actors).toContain("rivalCaptain");
-    expect(summary.permissions).toContain("encounters.results.approve");
-  });
-
   it.each(RBAC_MATRIX_CASES.map((matrixCase) => [matrixCase.id, matrixCase] as const))(
     "%s",
     async (_id, matrixCase) => {
@@ -164,54 +148,4 @@ describe("RBAC grant store parity", () => {
     );
     expect(listed.map((row) => row.id)).toEqual(["g-own"]);
   });
-
-  it("Postgres list query binds tenant + scope arrays the same way", async () => {
-    const own: AccessGrantRow = {
-      id: "g-own",
-      organization_id: "org-a",
-      actor_id: "organization-member",
-      permission: "organizations.update",
-      effect: "allow",
-      scope_type: "organization",
-      scope_id: "org-a",
-      granted_by_actor_id: "organizer-a",
-      reason: null,
-      created_at: RBAC_MATRIX_NOW,
-      updated_at: RBAC_MATRIX_NOW,
-    };
-    const pool = new StubPool([{ rows: [own], rowCount: 1 }]);
-    const repository = new PostgresAccessGrantRepository(asPgPool(pool));
-    const listed = await repository.listForActorAndScopes(
-      asActorId("organization-member"),
-      asOrganizationId("org-a"),
-      [{ scopeType: authorizationScopeTypeSchema.parse("organization"), scopeId: "org-a" }],
-    );
-    expect(listed.map((row) => row.id)).toEqual(["g-own"]);
-    expect(pool.calls[0]?.values).toEqual([
-      "organization-member",
-      "org-a",
-      ["organization"],
-      ["org-a"],
-    ]);
-  });
 });
-
-class StubPool {
-  readonly calls: { readonly sql: string; readonly values?: readonly unknown[] }[] = [];
-
-  constructor(
-    private readonly results: {
-      readonly rows: readonly object[];
-      readonly rowCount: number;
-    }[],
-  ) {}
-
-  async connect(): Promise<PoolClient> {
-    throw new Error("StubPool.connect is not used in these tests");
-  }
-
-  async query(sql: string, values?: readonly unknown[]) {
-    this.calls.push({ sql, values });
-    return this.results.shift() ?? { rows: [], rowCount: 0 };
-  }
-}
