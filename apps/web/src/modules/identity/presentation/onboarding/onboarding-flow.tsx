@@ -5,6 +5,7 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import type {
   ExternalClubDto,
+  ListMyMembershipsResponse,
   OnboardingPathDto,
   OnboardingStatusDto,
   OnboardingStepDto,
@@ -36,7 +37,14 @@ import { initialOnboardingState } from "./onboarding-resume.ts";
 import { onboardingInvitationSearchSchema } from "./onboarding-invitation-handoff.ts";
 import { browserOnboardingGateway, type OnboardingGateway } from "./onboarding-flow-gateway.ts";
 import { createEmptyDraft, type OnboardingDraft } from "./onboarding-draft.ts";
-import { finishOnboardingPath } from "./onboarding-finish.ts";
+import { finishOnboardingPath, type OnboardingFinishResult } from "./onboarding-finish.ts";
+import {
+  listOrganizationCompetitions,
+  listOrganizationTeams,
+} from "@/modules/competitions/presentation/competitions-browser-client.ts";
+import { workspaceAccessQueryOptions } from "@/shared/presentation/shell/workspace-access.ts";
+import { getEffectiveAccess } from "@/context/permissions.ts";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
 
 interface OnboardingFlowValue {
   readonly saving: boolean;
@@ -232,11 +240,9 @@ export function OnboardingFlowProvider({
         setSaving(true);
         setLeaving(true);
         setError(null);
+        let result: OnboardingFinishResult;
         try {
-          const destination = await finishOnboardingPath[path](gateway, draft);
-          draftStore.clear();
-          markOnboardingCompletedInCache(queryClient, path);
-          await navigate({ ...destination, replace: true });
+          result = await finishOnboardingPath[path](gateway, draft);
         } catch (caught) {
           finishingRef.current = false;
           const clientError = caught instanceof IdentityOnboardingClientError ? caught : null;
@@ -245,6 +251,55 @@ export function OnboardingFlowProvider({
           setError(nextError);
           setLeaving(false);
           setSaving(false);
+          return;
+        }
+
+        draftStore.clear();
+        markOnboardingCompletedInCache(queryClient, path);
+        if (result.path === "organization") {
+          const { organizationId, name, slug, timeZone, logo, role } = result.created;
+          queryClient.setQueryData(queryKeys.organizations.profile(organizationId), {
+            organizationId,
+            name,
+            slug,
+            timeZone,
+            logo,
+          });
+          queryClient.setQueryData<ListMyMembershipsResponse>(
+            queryKeys.organizations.mine(),
+            (previous) => ({
+              memberships: [
+                ...(previous?.memberships ?? []).filter(
+                  (item) => item.organizationId !== organizationId,
+                ),
+                {
+                  organizationId,
+                  organizationName: name,
+                  organizationSlug: slug,
+                  organizationLogo: logo,
+                  role,
+                },
+              ],
+            }),
+          );
+        }
+        for (const queryKey of [
+          queryKeys.organizations.mine(),
+          queryKeys.players.me(),
+          queryKeys.competitions.all,
+          queryKeys.authorization.all,
+        ]) {
+          void queryClient.invalidateQueries({ queryKey });
+        }
+        if (result.path === "organization") {
+          await prepareOrganizationDashboard(queryClient, result.created.organizationId);
+        }
+        try {
+          await navigate({ ...result.destination, replace: true, viewTransition: true });
+        } catch {
+          // Completion already succeeded. The onboarding loader resolves its destination
+          // after a full reload, without offering to create the same organization again.
+          window.location.reload();
         }
       },
     }),
@@ -284,6 +339,39 @@ export function OnboardingFlowProvider({
       )}
     </OnboardingFlowContext>
   );
+}
+
+async function prepareOrganizationDashboard(queryClient: QueryClient, organizationId: string) {
+  const scope = { organizationId };
+  const permissions = [COMPETITION_PERMISSION.update];
+  const ready = Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.competitions.byOrganization(organizationId),
+      queryFn: () => listOrganizationCompetitions(organizationId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.competitions.teams(organizationId),
+      queryFn: () => listOrganizationTeams(organizationId),
+    }),
+    queryClient.prefetchQuery(workspaceAccessQueryOptions(scope)),
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.authorization.effectiveAccess(scope, permissions),
+      queryFn: () => getEffectiveAccess(scope, permissions),
+    }),
+  ]);
+  // Keep the review stable through ordinary reads, but let the dashboard handle
+  // slow/offline queries after three seconds. Prefetch failures never reject completion.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      ready,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, 3000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function markOnboardingCompletedInCache(queryClient: QueryClient, path: OnboardingPathDto): void {
