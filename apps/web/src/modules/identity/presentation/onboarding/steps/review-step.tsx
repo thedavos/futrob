@@ -11,7 +11,8 @@ const styles = stylex.create({
     maxWidth: "42rem",
   },
   content: {
-    padding: 0,
+    paddingInline: 0,
+    paddingBottom: 0,
   },
   row: {
     display: "grid",
@@ -139,10 +140,7 @@ export function OnboardingReview() {
         style={applyStyles(styles.card).style}
         variant="elevated"
       >
-        <CardContent
-          className={applyStyles(styles.content).className}
-          style={applyStyles(styles.content).style}
-        >
+        <CardContent className={styles.content}>
           <dl>
             {rows.map((row) => (
               <div key={row.label} {...applyStyles(styles.row)}>

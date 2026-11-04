@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -315,6 +316,23 @@ export const FilledPortfolio: Story = {
   render: (args) => (
     <WorkspaceSelectorStoryShell model={filledPortfolioModel} selectionKind={args.selectionKind} />
   ),
+};
+
+export const OrganizationSelected: Story = {
+  args: { selectionKind: "organization" },
+  render: (args) => (
+    <WorkspaceSelectorStoryShell model={filledPortfolioModel} selectionKind={args.selectionKind} />
+  ),
+  play: async ({ canvasElement }) => {
+    const trigger = await within(canvasElement).findByRole("button", { name: "Acme Liga" });
+    const avatar = trigger.querySelector("[data-slot='avatar']");
+    await expect(avatar).toBeVisible();
+    if (!avatar) throw new Error("The selected organization must display its avatar");
+    const buttonBounds = trigger.getBoundingClientRect();
+    const avatarBounds = avatar.getBoundingClientRect();
+    await expect(avatarBounds.top - buttonBounds.top).toBeGreaterThanOrEqual(4);
+    await expect(buttonBounds.bottom - avatarBounds.bottom).toBeGreaterThanOrEqual(4);
+  },
 };
 
 export const TriggerStates: Story = {
