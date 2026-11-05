@@ -131,6 +131,10 @@ npm run api:typecheck
 npm run api:test       # vitest smoke via Vite+ (mocks EA fetch)
 ```
 
+Demo accounts and data for manual testing (local Postgres only, password `Test123`):
+`npm run seed:demo -w @futrob/api -- --reset`. See
+[scripts/seed-demo/README.md](scripts/seed-demo/README.md).
+
 Default port is `8787`. The app boots without a database. Without
 `DATABASE_URL`, `/meta/health` reports `db: "skipped"` rather than crashing.
 
