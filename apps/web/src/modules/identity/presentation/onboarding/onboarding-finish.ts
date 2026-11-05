@@ -1,4 +1,7 @@
-import type { OnboardingPathDto } from "@futrob/api-contracts";
+import type {
+  CompleteOrganizationOnboardingResponse,
+  OnboardingPathDto,
+} from "@futrob/api-contracts";
 import type { OnboardingGateway } from "./onboarding-flow-gateway.ts";
 import {
   externalClubLocatorFromDraft,
@@ -21,10 +24,21 @@ export type OnboardingFinishDestination =
       readonly search: { readonly clubAssociation?: "failed" };
     };
 
+export type OnboardingFinishResult =
+  | {
+      readonly path: "organization";
+      readonly destination: Extract<OnboardingFinishDestination, { to: "/orgs/$orgId" }>;
+      readonly created: CompleteOrganizationOnboardingResponse;
+    }
+  | {
+      readonly path: "invitation" | "player";
+      readonly destination: Exclude<OnboardingFinishDestination, { to: "/orgs/$orgId" }>;
+    };
+
 type FinishPath = (
   gateway: OnboardingGateway,
   draft: OnboardingDraft,
-) => Promise<OnboardingFinishDestination>;
+) => Promise<OnboardingFinishResult>;
 
 /** One finishing request per path; the provider owns state, errors and navigation. */
 export const finishOnboardingPath = {
@@ -35,9 +49,11 @@ export const finishOnboardingPath = {
       gameAccount: playerAccountFromDraft(draft),
     });
     return {
-      to: "/orgs/$orgId",
-      params: {
-        orgId: created.destination.organizationId,
+      path: "organization",
+      created,
+      destination: {
+        to: "/orgs/$orgId",
+        params: { orgId: created.destination.organizationId },
       },
     };
   },
@@ -47,10 +63,13 @@ export const finishOnboardingPath = {
       gameAccount: playerAccountFromDraft(draft),
     });
     return {
-      to: "/orgs/$orgId/competitions/$competitionId",
-      params: {
-        orgId: accepted.destination.organizationId,
-        competitionId: accepted.destination.competitionId,
+      path: "invitation",
+      destination: {
+        to: "/orgs/$orgId/competitions/$competitionId",
+        params: {
+          orgId: accepted.destination.organizationId,
+          competitionId: accepted.destination.competitionId,
+        },
       },
     };
   },
@@ -60,8 +79,11 @@ export const finishOnboardingPath = {
       externalClub: externalClubLocatorFromDraft(draft),
     });
     return {
-      to: "/player",
-      search: completed.externalClubAssociation === "failed" ? { clubAssociation: "failed" } : {},
+      path: "player",
+      destination: {
+        to: "/player",
+        search: completed.externalClubAssociation === "failed" ? { clubAssociation: "failed" } : {},
+      },
     };
   },
 } satisfies Record<OnboardingPathDto, FinishPath>;

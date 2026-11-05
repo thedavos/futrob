@@ -24,6 +24,12 @@ function readEmail(payload: EmailPayload | string | undefined): string {
 }
 
 export const authClient = {
+  useSession: () => ({
+    data: {
+      user: { id: "story-user", name: "Alex Rivera", email: "alex@ejemplo.com", image: null },
+    },
+    isPending: false,
+  }),
   signIn: {
     email: async (payload?: EmailPayload | string) => {
       if (readEmail(payload) === BAD_LOGIN_EMAIL) {
