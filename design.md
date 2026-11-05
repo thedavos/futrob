@@ -1079,10 +1079,40 @@ Reglas de authoring:
 
 - Colocate `stylex.create` with the component. Do not rebuild a utility library.
 - Import `colors` from `@futrob/ui/styles/tokens.stylex` and `media` from `@futrob/ui/styles/media.stylex` inside `stylex.create`. StyleX cannot follow `defineVars` / `defineConsts` through a re-export. The package barrel is for runtime helpers (`applyProps`, `typography`).
-- Conditions require `default`. Last `applyProps` / `stylex.props` argument wins.
+- Conditions require `default`. Last `applyProps` / `stylex.props` argument wins for the same property.
 - Longhand or single-value shorthands only.
 - `stylex.when.*` + markers replace `group` / `peer`. Remaining descendant rules live in `slots.css`.
 - Elevation is `elevation.sm|md|lg`. Do not combine with border/ring.
+
+#### Overrides en primitivas
+
+En primitivas que aceptan tokens de StyleX en `className`, pasa el token directamente.
+La primitiva usa `applyProps` para componer sus estilos base con el override. Usa
+`applyStyles` al aplicar estilos a un elemento HTML que no añade otros estilos internamente.
+
+```tsx
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, CardContent } from "@futrob/ui";
+
+const styles = stylex.create({
+  content: {
+    paddingInline: 0,
+    paddingBottom: 0,
+  },
+});
+
+// CardContent compone el token con sus estilos base.
+<CardContent className={styles.content}>Resumen de tu organización</CardContent>;
+
+// En un elemento HTML, applyStyles convierte el token en props del DOM.
+<div {...applyStyles(styles.content)}>Resumen de tu organización</div>;
+```
+
+Pasar `className={applyStyles(styles.content).className}` a la primitiva convierte
+el token en un string antes de componerlo; `applyProps` solo puede concatenar esas clases.
+Para quitar el padding de `CardContent`, el ejemplo sobrescribe sus mismas propiedades:
+`paddingInline` y `paddingBottom`. La configuración actual de StyleX prioriza propiedades
+específicas sobre shorthands: `padding: 0` por sí solo no sustituye esos valores base.
 
 ### What is not StyleX
 
