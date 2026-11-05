@@ -65,9 +65,10 @@ El jugador también puede asociar uno o más `ExternalClub` a su `PlayerProfile`
 `ExternalClubConnection` pertenece a un `Team` de competición y es un concepto distinto.
 
 El onboarding asegura este perfil personal en los caminos jugador, invitación y organizador. La
-cuenta EA es opcional en los tres. El camino organizador crea además una primera competición en
-estado `draft`; plataforma y edición de esa competición permanecen separadas de las declaradas en
-la cuenta personal.
+cuenta EA es opcional en los tres. El camino organizador crea la organización sin exigir una
+competición. Desde el paso de organización puede abrir «Crea tu cuenta» para declarar una cuenta
+de juego; el flujo principal continúa directamente a la confirmación y al inicio de organización.
+Las competiciones se crean después desde la organización.
 
 La invitación de competición emitida por un organizador o staff es opcional. Al aceptarla, el actor obtiene una membresía mínima de la organización para respetar el aislamiento del tenant y una membresía contextual en la competición —por ejemplo, jugador o capitán—. Esta membresía no lo incorpora por sí sola a la plantilla de un equipo ni le concede elegibilidad competitiva. Tampoco reemplaza ni elimina el perfil personal. El espacio personal nunca expone disputas, payloads EA crudos, tokens ni datos administrativos privados de una organización.
 

@@ -80,7 +80,6 @@ describe("identity onboarding", () => {
   it.each([
     ["organization", "intention"],
     ["organization", "organization"],
-    ["organization", "competition"],
     ["organization", "game-account"],
     ["organization", "review"],
     ["invitation", "intention"],
@@ -107,7 +106,6 @@ describe("identity onboarding", () => {
 
   it.each([
     ["organization", "invitation"],
-    ["invitation", "competition"],
     ["player", "invitation"],
     ["organization", "club"],
     ["invitation", "club"],
@@ -144,7 +142,7 @@ describe("identity onboarding", () => {
     expect(first).toEqual({
       completed: true,
       completedAt: new Date("2026-07-29T10:00:00.000Z"),
-      version: 3,
+      version: 4,
       path: "player",
       currentStep: null,
     });

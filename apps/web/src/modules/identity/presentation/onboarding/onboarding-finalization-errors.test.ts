@@ -50,23 +50,6 @@ describe("finalizationError", () => {
     ).toEqual({ messageKey: "errors.onboarding.createOrganization" });
   });
 
-  it("explains plan-gated organization failures instead of the generic message", () => {
-    const requestId = "2170e2f6-a47e-4338-83c3-27c054630800";
-
-    expect(
-      finalizationError(
-        "organization",
-        new IdentityOnboardingClientError(402, "competitions.format_not_in_plan", requestId),
-      ),
-    ).toEqual({ messageKey: "errors.onboarding.formatNotInPlan", requestId });
-    expect(
-      finalizationError(
-        "organization",
-        new IdentityOnboardingClientError(402, "competitions.plan_limit_reached"),
-      ),
-    ).toEqual({ messageKey: "billing.upsell.competitions.plan_limit_reached" });
-  });
-
   it("maps player finish failures and unknown errors", () => {
     expect(
       finalizationError("player", new IdentityOnboardingClientError(502, "teams.invalid_platform")),

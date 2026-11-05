@@ -53,7 +53,6 @@ interface OnboardingFlowValue {
   clearExternalClub(): void;
   checkOrganizationName(name: string): Promise<boolean | null>;
   searchExternalClubs(input: SearchClubsQueryInput): Promise<readonly ExternalClubDto[]>;
-  listPublicPlans: OnboardingGateway["listPublicPlans"];
   goTo(step: OnboardingStepDto, path?: OnboardingPathDto | null): Promise<void>;
   finish(): Promise<void>;
 }
@@ -214,7 +213,6 @@ export function OnboardingFlowProvider({
       async searchExternalClubs(input) {
         return gateway.searchExternalClubs(input);
       },
-      listPublicPlans: () => gateway.listPublicPlans(),
       async goTo(step, requestedPath = path) {
         if (leaving || saving || finishingRef.current) return;
         setError(null);

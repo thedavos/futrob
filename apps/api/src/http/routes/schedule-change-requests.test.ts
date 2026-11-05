@@ -1,5 +1,5 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import {
-  completeOrganizationOnboardingResponseSchema,
   fixturePlanSchema,
   listScheduleChangeRequestsResponseSchema,
   scheduleChangeRequestSchema,
@@ -232,7 +232,7 @@ async function seedFixture() {
     internalJobSecret: INTERNAL_JOB_SECRET,
     correlationLogger: { info: () => undefined, error: () => undefined },
   });
-  const created = await app.request("/api/v1/identity/onboarding/organization", {
+  const created = await createOrganizationCompetitionFixture(app, {
     method: "POST",
     headers: serviceHeaders(organizer),
     body: JSON.stringify({
@@ -241,7 +241,7 @@ async function seedFixture() {
       gameAccount: null,
     }),
   });
-  const createdBody = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+  const createdBody = created;
   const { organizationId } = createdBody;
   const competitionId = createdBody.competition.competition.id;
   for (const [name, creationKey] of [

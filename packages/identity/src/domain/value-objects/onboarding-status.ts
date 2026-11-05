@@ -1,6 +1,6 @@
 import type { ActorId } from "@futrob/shared-kernel";
 
-export const CURRENT_ONBOARDING_VERSION = 3;
+export const CURRENT_ONBOARDING_VERSION = 4;
 
 export const ONBOARDING_PATH = {
   player: "player",
@@ -13,7 +13,6 @@ export type OnboardingPath = (typeof ONBOARDING_PATH)[keyof typeof ONBOARDING_PA
 export const ONBOARDING_STEPS = [
   "intention",
   "organization",
-  "competition",
   "invitation",
   "game-account",
   "club",
@@ -23,13 +22,7 @@ export const ONBOARDING_STEPS = [
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 export const ONBOARDING_STEPS_BY_PATH = {
-  [ONBOARDING_PATH.organization]: [
-    "intention",
-    "organization",
-    "competition",
-    "game-account",
-    "review",
-  ],
+  [ONBOARDING_PATH.organization]: ["intention", "organization", "review"],
   [ONBOARDING_PATH.invitation]: ["intention", "invitation", "game-account", "review"],
   [ONBOARDING_PATH.player]: ["intention", "game-account", "club", "review"],
 } as const satisfies Record<OnboardingPath, readonly OnboardingStep[]>;
@@ -41,7 +34,10 @@ export function isOnboardingStepAllowed(
   if (path === null) {
     return step === "intention";
   }
-  return ONBOARDING_STEPS_BY_PATH[path].some((allowed) => allowed === step);
+  return (
+    (path === "organization" && step === "game-account") ||
+    ONBOARDING_STEPS_BY_PATH[path].some((allowed) => allowed === step)
+  );
 }
 
 export interface OnboardingStatus {

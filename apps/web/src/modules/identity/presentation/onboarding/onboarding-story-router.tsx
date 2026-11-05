@@ -16,19 +16,16 @@ import type {
   OnboardingPathDto,
   OnboardingStatusDto,
   OnboardingStepDto,
-  OrganizationPlan,
 } from "@futrob/api-contracts";
 import { EA_SEARCH_PLATFORM } from "@futrob/api-contracts";
 import type { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
-import { publicPlansFixture } from "@/modules/billing/presentation/organization-plan.fixtures.ts";
 import { ClubAssociationNotice } from "@/modules/player-home/presentation/club-association-notice.tsx";
 import { playerHomeSearchSchema } from "@/modules/player-home/presentation/player-home-search.ts";
 import type { OnboardingGateway } from "./onboarding-flow-gateway.ts";
 import { OnboardingFlowProvider } from "./onboarding-flow.tsx";
-import { CompetitionStep } from "./steps/competition-step.tsx";
 import { GameAccountStep } from "./steps/game-account-step.tsx";
 import { IntentChoiceStep } from "./steps/intention-step.tsx";
 import { InvitationStep } from "./steps/invitation-step.tsx";
@@ -47,7 +44,6 @@ const styles = stylex.create({
 type OnboardingStoryPath =
   | "/onboarding/intention"
   | "/onboarding/organization"
-  | "/onboarding/competition"
   | "/onboarding/invitation"
   | "/onboarding/game-account"
   | "/onboarding/club"
@@ -119,8 +115,6 @@ export function createFakeOnboardingGateway(input?: {
   organizationNameAvailable?: boolean;
   clubs?: readonly StoryExternalClub[];
   searchError?: boolean;
-  /** Published plan catalog; `null` simulates an unreadable catalog. Defaults to the fixture. */
-  plans?: readonly OrganizationPlan[] | null;
   /** Outcome the player completion reports for a requested club. */
   clubAssociation?: Extract<ExternalClubAssociationOutcomeDto, "associated" | "failed">;
   onSearchExternalClubs?: (
@@ -167,16 +161,14 @@ export function createFakeOnboardingGateway(input?: {
         organizationId: "org-story",
         name: request.name,
         slug: "org-story",
-        timeZone: request.competition.timeZone,
+        timeZone: request.timeZone,
         logo: { kind: "monogram" },
         role: "organizer",
-        competition: competitionDraftResponse(request.competition),
         profile: storyProfile,
         gameAccount: null,
         destination: {
-          kind: "competition-setup",
+          kind: "organization",
           organizationId: "org-story",
-          competitionId: "competition-story",
         },
       };
     },
@@ -210,9 +202,6 @@ export function createFakeOnboardingGateway(input?: {
           ? (input?.clubAssociation ?? "associated")
           : "skipped",
       };
-    },
-    async listPublicPlans() {
-      return input?.plans === undefined ? publicPlansFixture : input.plans;
     },
     async searchExternalClubs(request) {
       input?.onSearchExternalClubs?.(request);
@@ -265,11 +254,6 @@ function createOnboardingStoryRouter(
     }),
     createRoute({
       getParentRoute: () => rootRoute,
-      path: "/onboarding/competition",
-      component: CompetitionStep,
-    }),
-    createRoute({
-      getParentRoute: () => rootRoute,
       path: "/onboarding/invitation",
       component: InvitationStep,
     }),
@@ -308,13 +292,6 @@ function createOnboardingStoryRouter(
     }),
     createRoute({
       getParentRoute: () => rootRoute,
-      path: "/orgs/$orgId/competitions/$competitionId/setup",
-      component: () => (
-        <main {...applyProps(undefined, undefined, styles.stub)}>Configurar competición</main>
-      ),
-    }),
-    createRoute({
-      getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId",
       component: () => <main {...applyProps(undefined, undefined, styles.stub)}>Competición</main>,
     }),
@@ -342,47 +319,6 @@ function StoryPlayerHome() {
 }
 
 const storyProfile = { id: "profile-story", createdAt: "2026-07-31T12:00:00.000Z" };
-
-function competitionDraftResponse(input: {
-  readonly name: string;
-  readonly gameEdition: string;
-  readonly platform: "playstation" | "xbox" | "pc" | "nintendo-switch-1" | "nintendo-switch-2";
-  readonly region:
-    | "america"
-    | "south-america"
-    | "north-central-america"
-    | "europe"
-    | "africa"
-    | "asia"
-    | "middle-east"
-    | "oceania";
-  readonly timeZone: string;
-  readonly format: "league" | "knockout" | "groups-knockout" | "league-playoffs";
-}) {
-  return {
-    competition: {
-      id: "competition-story",
-      organizationId: "org-story",
-      ...input,
-      status: "draft" as const,
-      modality: "fc-clubs" as const,
-      teams: { min: 2, max: null },
-      schedule: { startsOn: null, endsOn: null },
-      cover: { kind: "preset" as const, preset: "cup" as const },
-      createdAt: "2026-07-31T12:00:00.000Z",
-      updatedAt: "2026-07-31T12:00:00.000Z",
-    },
-    rules: {
-      version: 1,
-      regularStage: null,
-      knockoutStage: null,
-      awayGoalsEnabled: false as const,
-      maxRosterSize: null,
-      rankingEligibility: null,
-      createdAt: "2026-07-31T12:00:00.000Z",
-    },
-  };
-}
 
 export function OnboardingStoryRouter({
   gateway,

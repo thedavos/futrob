@@ -6,18 +6,13 @@ import {
   type OnboardingStepDto,
 } from "@futrob/api-contracts";
 import type { StoredOnboarding } from "./onboarding-draft-storage.ts";
-import {
-  competitionFromDraft,
-  createEmptyDraft,
-  type OnboardingDraft,
-} from "./onboarding-draft.ts";
+import { createEmptyDraft, type OnboardingDraft } from "./onboarding-draft.ts";
 import { validOptionalAccount, validOrganizationName } from "./onboarding-draft-validators.ts";
 
 /** Whether the data a step collects is present in the draft, so the flow may move past it. */
 const stepIsSatisfied = {
   intention: () => true,
   organization: (draft) => validOrganizationName(draft.organizationName),
-  competition: (draft) => competitionFromDraft(draft) !== null,
   invitation: (draft) => draft.invitationPreview !== null,
   "game-account": validOptionalAccount,
   club: () => true,
@@ -37,7 +32,11 @@ export function resumeOnboardingStep(
   if (path === null || storedStep === null || !isOnboardingStepAllowed(path, storedStep)) {
     return "intention";
   }
-  for (const step of ONBOARDING_STEPS_BY_PATH[path]) {
+  const steps =
+    path === "organization" && (draft.organizationAccountStep || storedStep === "game-account")
+      ? (["intention", "organization", "game-account", "review"] as const)
+      : ONBOARDING_STEPS_BY_PATH[path];
+  for (const step of steps) {
     if (step === storedStep || !stepIsSatisfied[step](draft)) return step;
   }
   return storedStep;

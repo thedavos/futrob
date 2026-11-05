@@ -3,6 +3,7 @@ export {
   onboardingStepSchema,
   onboardingStatusSchema,
   ONBOARDING_STEPS_BY_PATH,
+  onboardingStepsForPath,
   isOnboardingStepAllowed,
   nextOnboardingStep,
   previousOnboardingStep,

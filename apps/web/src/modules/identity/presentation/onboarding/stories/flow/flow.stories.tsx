@@ -66,13 +66,11 @@ export const OrganizationPath: Story = {
       canvas.getByRole("textbox", { name: "Nombre de la organización" }),
       "Liga Norte",
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Continuar a competición" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
     await expect(
-      await canvas.findByRole("heading", { name: "Configura tu primera competición" }),
+      await canvas.findByRole("heading", { name: "Confirma tu configuración" }),
     ).toBeVisible();
-    await expect(canvas.getByRole("listitem", { current: "step" })).toHaveTextContent(
-      "Competición",
-    );
+    await expect(canvas.getByRole("listitem", { current: "step" })).toHaveTextContent("Confirmar");
     await userEvent.click(canvas.getByRole("button", { name: "Volver" }));
     await expect(
       await canvas.findByRole("heading", { name: "Crea tu organización" }),
@@ -97,7 +95,7 @@ export const OrganizationNameUnavailable: Story = {
       await canvas.findByRole("textbox", { name: "Nombre de la organización" }),
       "Liga Norte",
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Continuar a competición" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
     await expect(await canvas.findByText("Ese nombre ya está en uso. Elige otro.")).toBeVisible();
   },
 };
@@ -201,7 +199,7 @@ export const InvalidProgressFallsBack: Story = {
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({
         path: "invitation",
-        currentStep: "competition",
+        currentStep: "organization",
       })}
       initialPath="/onboarding/game-account"
     />

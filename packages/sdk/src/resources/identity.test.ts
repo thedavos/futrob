@@ -3,38 +3,7 @@ import { createFutrobClient } from "../client.ts";
 import { mockFetch, parseMockJsonBody, requestUrl } from "../testing/mock-fetch.ts";
 
 describe("createFutrobClient identity", () => {
-  const competition = {
-    name: "Copa Inicial",
-    gameEdition: "FC 26",
-    platform: "playstation" as const,
-    region: "south-america" as const,
-    timeZone: "America/Lima",
-    format: "league" as const,
-  };
   const profile = { id: "profile-1", createdAt: "2026-07-31T12:00:00.000Z" };
-  const competitionResponse = {
-    competition: {
-      id: "competition-1",
-      organizationId: "org-1",
-      ...competition,
-      status: "draft",
-      modality: "fc-clubs",
-      teams: { min: 2, max: null },
-      schedule: { startsOn: null, endsOn: null },
-      cover: { kind: "preset", preset: "cup" },
-      createdAt: "2026-07-31T12:00:00.000Z",
-      updatedAt: "2026-07-31T12:00:00.000Z",
-    },
-    rules: {
-      version: 1,
-      regularStage: null,
-      knockoutStage: null,
-      awayGoalsEnabled: false,
-      maxRosterSize: null,
-      rankingEligibility: null,
-      createdAt: "2026-07-31T12:00:00.000Z",
-    },
-  };
   it("saves onboarding progress with PATCH and parses the resume point", async () => {
     let method: string | undefined;
     let body: unknown;
@@ -79,13 +48,11 @@ describe("createFutrobClient identity", () => {
             timeZone: "America/Lima",
             logo: { kind: "monogram" },
             role: "organizer",
-            competition: competitionResponse,
             profile,
             gameAccount: null,
             destination: {
-              kind: "competition-setup",
+              kind: "organization",
               organizationId: "org-1",
-              competitionId: "competition-1",
             },
           });
         }
@@ -118,7 +85,7 @@ describe("createFutrobClient identity", () => {
 
     await client.identity.completeOrganizationOnboarding({
       name: "Liga",
-      competition,
+      timeZone: "America/Lima",
       gameAccount: null,
     });
     await client.identity.completeInvitationOnboarding({
@@ -132,7 +99,7 @@ describe("createFutrobClient identity", () => {
     expect(requests).toEqual([
       {
         url: "https://app.example.com/api/v1/identity/onboarding/organization",
-        body: { name: "Liga", competition, gameAccount: null },
+        body: { name: "Liga", timeZone: "America/Lima", gameAccount: null },
       },
       {
         url: "https://app.example.com/api/v1/identity/onboarding/invitation",

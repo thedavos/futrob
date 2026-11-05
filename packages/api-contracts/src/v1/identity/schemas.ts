@@ -10,13 +10,11 @@ import {
   playerGameAccountSchema,
   playerProfileSchema,
 } from "../teams/schemas.ts";
-import { competitionDraftInputSchema, competitionDraftSchema } from "../competitions/schemas.ts";
 
 export const onboardingPathSchema = z.enum(["player", "organization", "invitation"]);
 export const onboardingStepSchema = z.enum([
   "intention",
   "organization",
-  "competition",
   "invitation",
   "game-account",
   "club",
@@ -42,17 +40,29 @@ export type GetOnboardingStatusResponse = z.infer<typeof getOnboardingStatusResp
 
 /** Ordered steps per path. Clients derive routing, stepper order and next/previous from this. */
 export const ONBOARDING_STEPS_BY_PATH = {
-  organization: ["intention", "organization", "competition", "game-account", "review"],
+  organization: ["intention", "organization", "review"],
   invitation: ["intention", "invitation", "game-account", "review"],
   player: ["intention", "game-account", "club", "review"],
 } as const satisfies Record<OnboardingPathDto, readonly OnboardingStepDto[]>;
+
+export function onboardingStepsForPath(
+  path: OnboardingPathDto,
+  includeAccount = false,
+): readonly OnboardingStepDto[] {
+  return path === "organization" && includeAccount
+    ? ["intention", "organization", "game-account", "review"]
+    : ONBOARDING_STEPS_BY_PATH[path];
+}
 
 export function isOnboardingStepAllowed(
   path: OnboardingPathDto | null,
   step: OnboardingStepDto,
 ): boolean {
   if (path === null) return step === "intention";
-  return ONBOARDING_STEPS_BY_PATH[path].some((allowed) => allowed === step);
+  return (
+    (path === "organization" && step === "game-account") ||
+    ONBOARDING_STEPS_BY_PATH[path].some((allowed) => allowed === step)
+  );
 }
 
 function adjacentOnboardingStep(
@@ -102,7 +112,7 @@ export type SaveOnboardingProgressResponse = z.infer<typeof saveOnboardingProgre
 
 export const completeOrganizationOnboardingRequestSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  competition: competitionDraftInputSchema,
+  timeZone: z.string().trim().min(1).max(100),
   gameAccount: playerGameAccountInputSchema.nullable().optional(),
 });
 export type CompleteOrganizationOnboardingRequest = z.infer<
@@ -111,13 +121,11 @@ export type CompleteOrganizationOnboardingRequest = z.infer<
 
 export const completeOrganizationOnboardingResponseSchema = createOrganizationResponseSchema.extend(
   {
-    competition: competitionDraftSchema,
     profile: playerProfileSchema,
     gameAccount: playerGameAccountSchema.nullable(),
     destination: z.object({
-      kind: z.literal("competition-setup"),
+      kind: z.literal("organization"),
       organizationId: z.string().min(1),
-      competitionId: z.string().min(1),
     }),
   },
 );

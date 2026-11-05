@@ -145,21 +145,19 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
     const name = await screen.findByRole("textbox", { name: "Nombre de la organización" });
     fireEvent.change(name, { target: { value: "Liga Norte" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continuar a competición" }));
-    await screen.findByRole("heading", { name: "Configura tu primera competición" });
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
     first.unmount();
 
     render(
       <OnboardingStoryRouter
         draftStore={draftStore}
-        gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "competition" })}
+        gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "review" })}
         initialPath="/onboarding/intention"
       />,
     );
 
-    expect(
-      await screen.findByRole("heading", { name: "Configura tu primera competición" }),
-    ).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Confirma tu configuración" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Volver" }));
     expect(
       await screen.findByRole("textbox", { name: "Nombre de la organización" }),
@@ -212,8 +210,8 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
     const name = await screen.findByRole("textbox", { name: "Nombre de la organización" });
     fireEvent.change(name, { target: { value: "Liga Norte" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continuar a competición" }));
-    await screen.findByRole("heading", { name: "Configura tu primera competición" });
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
     first.unmount();
 
     render(
@@ -224,9 +222,7 @@ describe("OnboardingFlowProvider initialization", () => {
       />,
     );
 
-    expect(
-      await screen.findByRole("heading", { name: "Configura tu primera competición" }),
-    ).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Confirma tu configuración" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Volver" }));
     expect(
       await screen.findByRole("textbox", { name: "Nombre de la organización" }),
@@ -324,7 +320,7 @@ describe("OnboardingFlowProvider initialization", () => {
 
     const input = await screen.findByRole("textbox", { name: "Nombre de la organización" });
     fireEvent.change(input, { target: { value: "Liga Norte" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continuar a competición" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
 
     expect(
       await screen.findByText("No pudimos verificar el nombre. Inténtalo nuevamente."),
@@ -354,7 +350,7 @@ describe("OnboardingFlowProvider initialization", () => {
       await screen.findByRole("textbox", { name: "Nombre de la organización" }),
       "Liga Norte",
     );
-    await user.click(screen.getByRole("button", { name: "Continuar a competición" }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
     expect(
       await screen.findByText("No pudimos verificar el nombre. Inténtalo nuevamente."),
     ).toBeTruthy();
@@ -676,7 +672,7 @@ describe("OnboardingFlowProvider initialization", () => {
 
     const input = await screen.findByRole("textbox", { name: "Nombre de la organización" });
     fireEvent.change(input, { target: { value: "Liga Norte" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continuar a competición" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
 
     expect(await screen.findByText("Ese nombre ya está en uso. Elige otro.")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
@@ -743,165 +739,6 @@ describe("OnboardingFlowProvider initialization", () => {
       const option = await screen.findByRole("radio", { name: label });
       expect(option.querySelector(`[data-platform-logo="${value}"]`)).toBeTruthy();
     }
-  });
-
-  it("places the fixed modality in the competition introduction and labels America", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    expect(
-      await screen.findByText(
-        "Crea un borrador de FC Clubs. Configurarás los equipos, el calendario y la publicación después.",
-      ),
-    ).toBeTruthy();
-    expect(screen.queryByText(/Modalidad: FC Clubs/)).toBeNull();
-
-    const region = screen.getByRole("combobox", { name: "Región deportiva" });
-    fireEvent.click(region);
-    const america = await screen.findByRole("option", { name: "América" });
-    fireEvent.pointerDown(america, { pointerType: "mouse" });
-    fireEvent.click(america);
-    expect(region.textContent).toContain("América");
-    expect(region.textContent).not.toContain("america");
-  });
-
-  it("shows the human label for the selected competition format", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    const format = await screen.findByRole("combobox", { name: "Formato inicial" });
-    fireEvent.click(format);
-    const knockout = await screen.findByRole("option", { name: "Eliminación directa" });
-    fireEvent.pointerDown(knockout, { pointerType: "mouse" });
-    fireEvent.click(knockout);
-    expect(format.textContent).toContain("Eliminación directa");
-    expect(format.textContent).not.toContain("knockout");
-  });
-
-  it("lists the formats outside the Free plan as Pro and does not let the user pick them", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    expect(await screen.findByText(/Tu organización empieza en el plan Gratis\./)).toBeTruthy();
-    const plans = screen.getByRole("link", { name: "Ver planes" });
-    expect(plans.getAttribute("href")).toBe("/pricing");
-    expect(plans.getAttribute("target")).toBe("_blank");
-
-    const format = screen.getByRole("combobox", { name: "Formato inicial" });
-    fireEvent.click(format);
-    const groups = await screen.findByRole("option", { name: "Grupos + eliminación Pro" });
-    expect(groups.getAttribute("aria-disabled")).toBe("true");
-    expect(
-      screen.getByRole("option", { name: "Liga + playoffs Pro" }).getAttribute("aria-disabled"),
-    ).toBe("true");
-    expect(screen.getByRole("option", { name: "Liga" }).getAttribute("aria-disabled")).not.toBe(
-      "true",
-    );
-    fireEvent.pointerDown(groups, { pointerType: "mouse" });
-    fireEvent.click(groups);
-    expect(format.textContent).not.toContain("Grupos");
-  });
-
-  it("offers every format when the plan catalog cannot be read", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-          plans: null,
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    const format = await screen.findByRole("combobox", { name: "Formato inicial" });
-    fireEvent.click(format);
-    const groups = await screen.findByRole("option", { name: "Grupos + eliminación" });
-    expect(groups.getAttribute("aria-disabled")).not.toBe("true");
-    expect(screen.queryByText(/plan Gratis/)).toBeNull();
-  });
-
-  it("uses a selector for the competition time zone", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    const timeZone = await screen.findByRole("combobox", { name: "Zona horaria" });
-    fireEvent.click(timeZone);
-    const lima = await screen.findByRole("option", { name: "Lima · UTC-5" });
-    fireEvent.pointerDown(lima, { pointerType: "mouse" });
-    fireEvent.click(lima);
-    expect(timeZone.textContent).toContain("Lima · UTC-5");
-  });
-
-  it("offers competition data as an aligned optional account action", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    fireEvent.change(await screen.findByRole("textbox", { name: "Nombre de la competición" }), {
-      target: { value: "Liga Futrob" },
-    });
-    fireEvent.click(screen.getByRole("radio", { name: "FC 26" }));
-    fireEvent.click(screen.getByRole("radio", { name: "PlayStation" }));
-
-    const region = screen.getByRole("combobox", { name: "Región deportiva" });
-    fireEvent.click(region);
-    const america = await screen.findByRole("option", { name: "América" });
-    fireEvent.pointerDown(america, { pointerType: "mouse" });
-    fireEvent.click(america);
-
-    const format = screen.getByRole("combobox", { name: "Formato inicial" });
-    fireEvent.click(format);
-    const league = await screen.findByRole("option", { name: "Liga" });
-    fireEvent.pointerDown(league, { pointerType: "mouse" });
-    fireEvent.click(league);
-
-    fireEvent.click(screen.getByRole("button", { name: "Configurar cuenta" }));
-    await screen.findByRole("heading", { name: "Configura tus datos de juego" });
-
-    const alert = screen.getByRole("alert");
-    expect(alert.textContent).toContain(
-      "La cuenta es personal, pero puedes usar la misma edición y plataforma de la competición.",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Usar datos de la competición" }));
-    expect(screen.getByRole("radio", { name: "PlayStation" }).getAttribute("aria-checked")).toBe(
-      "true",
-    );
-    expect(screen.getByRole("radio", { name: "FC 26" }).getAttribute("aria-checked")).toBe("true");
   });
 
   it("navigates while saveProgress is still pending", async () => {
