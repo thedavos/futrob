@@ -35,6 +35,14 @@ export class OfficialResultNotFound extends TaggedError("OfficialResultNotFound"
   message: string;
 }> {}
 
+/** An open selection must be cancelled but no provisioned actor can sign the audit entry. */
+export class SelectionCancelActorUnavailable extends TaggedError(
+  "SelectionCancelActorUnavailable",
+)<{
+  code: "results.selection_cancel_actor_unavailable";
+  message: string;
+}> {}
+
 export class ProviderMatchSnapshotMissing extends TaggedError("ProviderMatchSnapshotMissing")<{
   code: "results.provider_match_snapshot_missing";
   message: string;

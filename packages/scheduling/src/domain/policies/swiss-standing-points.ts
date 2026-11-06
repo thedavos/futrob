@@ -123,3 +123,31 @@ export function swissRoundProgress(
     isFinal: settled.length === rounds.length,
   };
 }
+
+function playableIds(encounters: readonly FixtureEncounter[]): readonly EncounterId[] {
+  return encounters.filter((encounter) => encounter.series).map((encounter) => encounter.id);
+}
+
+/** Encounters a withdrawal may change: the ones a selection could be racing on. */
+export function swissTeamEncounterIds(
+  plan: Pick<FixturePlan, "stages">,
+  teamId: TeamId,
+): readonly EncounterId[] {
+  return playableIds(
+    [...planEncounters(plan)].filter((encounter) =>
+      [encounter.home, encounter.away].some(
+        (slot) => slot.kind === "team" && slot.teamId === teamId,
+      ),
+    ),
+  );
+}
+
+/** Encounters closing a round may change. */
+export function swissRoundEncounterIds(
+  plan: Pick<FixturePlan, "stages">,
+  roundNumber: number,
+): readonly EncounterId[] {
+  return playableIds(
+    swissRounds(plan).find((round) => round.number === roundNumber)?.encounters ?? [],
+  );
+}

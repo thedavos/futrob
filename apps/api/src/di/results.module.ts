@@ -14,6 +14,7 @@ import {
   ReviewMatchDisputeUseCase,
   SelectOfficialMatchesUseCase,
   VoidOfficialResultUseCase,
+  CancelOpenSelectionUseCase,
   type EncounterCandidateAssociationRepository,
   type EncounterReaderPort,
   type OfficialMatchSelectionRepository,
@@ -24,6 +25,7 @@ import {
   type TeamRepresentationPort,
 } from "@futrob/results";
 import type {
+  ActorId,
   AuthorizationBatchPort,
   AuthorizationPort,
   ClockPort,
@@ -56,6 +58,8 @@ export function createResultsModule(input: {
   readonly associations?: EncounterCandidateAssociationRepository;
   readonly clock?: ClockPort;
   readonly ids?: IdGeneratorPort;
+  /** Signs a selection cancelled without an organizer behind the change. */
+  readonly resolveSystemActor?: () => Promise<ActorId | null>;
 }) {
   const clock = input.clock ?? new SystemClock();
   const ids = input.ids ?? new CryptoIdGenerator();
@@ -146,6 +150,12 @@ export function createResultsModule(input: {
       disputes: selections,
       encounterReader: input.encounterReader,
       authorization: input.authorization,
+    }),
+    cancelOpenSelection: new CancelOpenSelectionUseCase({
+      selections,
+      ids,
+      clock,
+      resolveSystemActor: input.resolveSystemActor ?? (async () => null),
     }),
     voidOfficialResult: new VoidOfficialResultUseCase({
       results,

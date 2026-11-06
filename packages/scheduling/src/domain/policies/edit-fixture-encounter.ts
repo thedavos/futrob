@@ -3,6 +3,7 @@ import type {
   FixtureEncounter,
   FixtureParticipantSlot,
   FixturePlan,
+  FixtureRoundId,
 } from "../entities/fixture-plan.ts";
 
 export function findEncounter(
@@ -26,6 +27,33 @@ export function replaceEncounter(plan: FixturePlan, replacement: FixtureEncounte
           encounter.id === replacement.id ? replacement : encounter,
         ),
       })),
+    })),
+  };
+}
+
+export function withRoundEncounters(
+  plan: FixturePlan,
+  roundId: FixtureRoundId,
+  encounters: readonly FixtureEncounter[],
+): FixturePlan {
+  return {
+    ...plan,
+    stages: plan.stages.map((stage) => ({
+      ...stage,
+      rounds: stage.rounds.map((round) =>
+        round.id === roundId ? { ...round, encounters } : round,
+      ),
+    })),
+  };
+}
+
+export function withoutRounds(plan: FixturePlan, roundIds: readonly FixtureRoundId[]): FixturePlan {
+  const removed = new Set(roundIds);
+  return {
+    ...plan,
+    stages: plan.stages.map((stage) => ({
+      ...stage,
+      rounds: stage.rounds.filter((round) => !removed.has(round.id)),
     })),
   };
 }

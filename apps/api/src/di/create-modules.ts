@@ -39,7 +39,9 @@ import { CompetitionApplicationFlow } from "@/application/competitions/competiti
 import { createAuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
 import { DeferredEncounterParticipantsChangePort } from "./deferred-encounter-participants.port.ts";
+import { DeferredEncounterOpenSelectionPort } from "./deferred-encounter-open-selection.port.ts";
 import { ResultsCandidateEligibilityAdapter } from "@/adapters/scheduling/results-candidate-eligibility.adapter.ts";
+import { ResultsOpenSelectionAdapter } from "@/adapters/scheduling/results-open-selection.adapter.ts";
 import { CompetitionFixtureSourceAdapter } from "@/adapters/scheduling/competition-fixture-source.ts";
 import {
   InMemoryEncounterMutationLock,
@@ -156,6 +158,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     planLimits: billing.planLimits.competitions,
   });
   const encounterParticipants = new DeferredEncounterParticipantsChangePort();
+  const encounterOpenSelection = new DeferredEncounterOpenSelectionPort();
   const scheduling = createSchedulingModule({
     clock,
     pool: input.pool,
@@ -166,6 +169,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     officialSelections,
     encounterMutationLock,
     encounterParticipants,
+    encounterOpenSelection,
     competitions: competitionRepository,
     fixtureSource: new CompetitionFixtureSourceAdapter({
       competitions: competitionRepository,
@@ -245,8 +249,10 @@ export function createModules(input: CreateModulesInput): AppModules {
     selections: officialSelections,
     clock,
     ids,
+    resolveSystemActor: () => findProvisionedSystemActor(input.pool, input.schedulingSystemActorId),
   });
   encounterParticipants.bind(new ResultsCandidateEligibilityAdapter(results));
+  encounterOpenSelection.bind(new ResultsOpenSelectionAdapter(results));
   const gameData = createGameDataModule({
     providers: [eaProvider, new ManualGameDataAdapter()],
     ingestion: eaProvider,

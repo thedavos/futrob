@@ -1,5 +1,7 @@
 import {
   replaceEncounter,
+  withoutRounds,
+  withRoundEncounters,
   type FixtureEncounter,
   type FixturePlan,
   type FixturePlanRepository,
@@ -102,6 +104,44 @@ export class InMemoryFixturePlanRepository implements FixturePlanRepository {
     return updated;
   }
 
+  private async write(
+    input: {
+      readonly organizationId: OrganizationId;
+      readonly competitionId: CompetitionId;
+      readonly fixturePlanId: string;
+      readonly revision: number;
+    },
+    change: (plan: FixturePlan) => FixturePlan,
+  ): Promise<FixturePlan | null> {
+    const existing = await this.findById(
+      input.organizationId,
+      input.competitionId,
+      input.fixturePlanId,
+    );
+    if (!existing || existing.revision !== input.revision) return null;
+    const updated = { ...change(existing), revision: existing.revision + 1 };
+    this.rows.set(updated.id, updated);
+    return updated;
+  }
+
+  replaceRoundEncounters(
+    input: Parameters<FixturePlanRepository["replaceRoundEncounters"]>[0],
+  ): Promise<FixturePlan | null> {
+    return this.write(input, (plan) => withRoundEncounters(plan, input.roundId, input.encounters));
+  }
+
+  removeRounds(
+    input: Parameters<FixturePlanRepository["removeRounds"]>[0],
+  ): Promise<FixturePlan | null> {
+    return this.write(input, (plan) => withoutRounds(plan, input.roundIds));
+  }
+
+  setWithdrawnTeams(
+    input: Parameters<FixturePlanRepository["setWithdrawnTeams"]>[0],
+  ): Promise<FixturePlan | null> {
+    return this.write(input, (plan) => ({ ...plan, withdrawnTeamIds: input.teamIds }));
+  }
+
   async markSuperseded(
     organizationId: OrganizationId,
     competitionId: CompetitionId,
@@ -147,7 +187,7 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
     const planResult = await executor.query(
       `SELECT id, revision, status, generation_key, generation_fingerprint, organization_id,
               competition_id, rules_version, generation_version, format, time_zone,
-              home_and_away, seed
+              home_and_away, seed, withdrawn_team_ids
        FROM fixture_plans
        WHERE id = $1 AND organization_id = $2 AND competition_id = $3`,
       [fixturePlanId, organizationId, competitionId],
@@ -169,8 +209,8 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
         `SELECT encounter.id, encounter.stage_id, encounter.round_id,
                 encounter.encounter_order, encounter.group_id, encounter.home_slot,
                 encounter.away_slot, encounter.scheduled_start_at,
-                encounter.official_match_count, series.id AS series_id,
-                series.resolution_mode
+                encounter.official_match_count, encounter.closed_without_result,
+                series.id AS series_id, series.resolution_mode
          FROM fixture_encounters encounter
          LEFT JOIN encounter_series series ON series.encounter_id = encounter.id
          WHERE encounter.fixture_plan_id = $1
@@ -290,7 +330,7 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
     if (!bumped.rows[0]) return null;
     await executor.query(
       `UPDATE fixture_encounters SET home_slot = $1::jsonb, away_slot = $2::jsonb,
-              scheduled_start_at = $3
+              scheduled_start_at = $3, closed_without_result = $8
        WHERE id = $4 AND fixture_plan_id = $5 AND organization_id = $6 AND competition_id = $7`,
       [
         JSON.stringify(input.encounter.home),
@@ -300,9 +340,74 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
         input.fixturePlanId,
         input.organizationId,
         input.competitionId,
+        input.encounter.closedWithoutResult === true,
       ],
     );
     await syncEncounterSeries(executor, input);
+    return this.findById(input.organizationId, input.competitionId, input.fixturePlanId);
+  }
+
+  async replaceRoundEncounters(
+    input: Parameters<FixturePlanRepository["replaceRoundEncounters"]>[0],
+  ): Promise<FixturePlan | null> {
+    const executor = getPgExecutor(this.pool);
+    if (!(await bumpRevision(executor, input))) return null;
+    const kept = input.encounters.map((encounter) => encounter.id);
+    await executor.query(
+      `DELETE FROM fixture_encounters
+       WHERE round_id = $1 AND fixture_plan_id = $2 AND organization_id = $3
+         AND competition_id = $4 AND NOT (id = ANY($5::text[]))`,
+      [input.roundId, input.fixturePlanId, input.organizationId, input.competitionId, kept],
+    );
+    const present = await executor.query(
+      `SELECT id FROM fixture_encounters
+       WHERE round_id = $1 AND fixture_plan_id = $2 AND organization_id = $3
+         AND competition_id = $4`,
+      [input.roundId, input.fixturePlanId, input.organizationId, input.competitionId],
+    );
+    const existing = new Set(present.rows.map((row) => idRowSchema.parse(row).id));
+    const scope = {
+      id: input.fixturePlanId,
+      organizationId: input.organizationId,
+      competitionId: input.competitionId,
+    };
+    for (const encounter of input.encounters) {
+      if (!existing.has(encounter.id)) await insertEncounter(executor, scope, encounter);
+    }
+    return this.findById(input.organizationId, input.competitionId, input.fixturePlanId);
+  }
+
+  async removeRounds(
+    input: Parameters<FixturePlanRepository["removeRounds"]>[0],
+  ): Promise<FixturePlan | null> {
+    const executor = getPgExecutor(this.pool);
+    if (!(await bumpRevision(executor, input))) return null;
+    await executor.query(
+      `DELETE FROM fixture_rounds
+       WHERE fixture_plan_id = $1 AND organization_id = $2 AND competition_id = $3
+         AND id = ANY($4::text[])`,
+      [input.fixturePlanId, input.organizationId, input.competitionId, [...input.roundIds]],
+    );
+    return this.findById(input.organizationId, input.competitionId, input.fixturePlanId);
+  }
+
+  async setWithdrawnTeams(
+    input: Parameters<FixturePlanRepository["setWithdrawnTeams"]>[0],
+  ): Promise<FixturePlan | null> {
+    const updated = await getPgExecutor(this.pool).query(
+      `UPDATE fixture_plans
+       SET withdrawn_team_ids = $5::jsonb, revision = revision + 1, updated_at = now()
+       WHERE id = $1 AND organization_id = $2 AND competition_id = $3 AND revision = $4
+       RETURNING id`,
+      [
+        input.fixturePlanId,
+        input.organizationId,
+        input.competitionId,
+        input.revision,
+        JSON.stringify(input.teamIds),
+      ],
+    );
+    if (!updated.rows[0]) return null;
     return this.findById(input.organizationId, input.competitionId, input.fixturePlanId);
   }
 
@@ -320,6 +425,24 @@ export class PostgresFixturePlanRepository implements FixturePlanRepository {
 }
 
 type Executor = ReturnType<typeof getPgExecutor>;
+
+async function bumpRevision(
+  executor: Executor,
+  input: {
+    readonly organizationId: OrganizationId;
+    readonly competitionId: CompetitionId;
+    readonly fixturePlanId: string;
+    readonly revision: number;
+  },
+): Promise<boolean> {
+  const bumped = await executor.query(
+    `UPDATE fixture_plans SET revision = revision + 1, updated_at = now()
+     WHERE id = $1 AND organization_id = $2 AND competition_id = $3 AND revision = $4
+     RETURNING revision`,
+    [input.fixturePlanId, input.organizationId, input.competitionId, input.revision],
+  );
+  return bumped.rows.length > 0;
+}
 
 /** Advancement creates the series when both slots become Teams and drops it when reverted. */
 async function syncEncounterSeries(
@@ -356,14 +479,15 @@ async function syncEncounterSeries(
 
 async function insertEncounter(
   executor: Executor,
-  plan: FixturePlan,
+  plan: Pick<FixturePlan, "id" | "organizationId" | "competitionId">,
   encounter: FixtureEncounter,
 ): Promise<void> {
   await executor.query(
     `INSERT INTO fixture_encounters (
        id, fixture_plan_id, stage_id, round_id, organization_id, competition_id,
-       encounter_order, group_id, home_slot, away_slot, scheduled_start_at, official_match_count
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11, $12)`,
+       encounter_order, group_id, home_slot, away_slot, scheduled_start_at, official_match_count,
+       closed_without_result
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11, $12, $13)`,
     [
       encounter.id,
       plan.id,
@@ -377,6 +501,7 @@ async function insertEncounter(
       JSON.stringify(encounter.away),
       encounter.scheduledStartAt.toISOString(),
       encounter.officialMatchCount,
+      encounter.closedWithoutResult === true,
     ],
   );
   if (!encounter.series) return;

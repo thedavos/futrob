@@ -46,6 +46,9 @@ export function rehydratePlan(
         })),
     } satisfies FixtureStage;
   });
+  const withdrawnTeamIds = seedArraySchema
+    .parse(parseJsonColumn(z.unknown(), row.withdrawn_team_ids))
+    .map(asTeamId);
   return {
     id: row.id,
     revision: row.revision,
@@ -60,6 +63,7 @@ export function rehydratePlan(
     timeZone: row.time_zone,
     homeAndAway: row.home_and_away,
     seed: seedArraySchema.parse(parseJsonColumn(z.unknown(), row.seed)).map(asTeamId),
+    ...(withdrawnTeamIds.length > 0 ? { withdrawnTeamIds } : {}),
     stages,
   };
 }
@@ -89,10 +93,8 @@ export function rehydrateEncounter(row: EncounterRow): FixtureEncounter {
           }
         : null,
   };
-  if (row.group_id) {
-    return { ...encounter, groupId: row.group_id };
-  }
-  return encounter;
+  const placed = row.group_id ? { ...encounter, groupId: row.group_id } : encounter;
+  return row.closed_without_result ? { ...placed, closedWithoutResult: true } : placed;
 }
 
 const advancedFromColumnSchema = z.object({
@@ -168,6 +170,7 @@ export const planRowSchema = z.object({
   time_zone: z.string(),
   home_and_away: z.coerce.boolean(),
   seed: z.unknown(),
+  withdrawn_team_ids: z.unknown(),
 });
 
 const stageRowSchema = z.object({
@@ -195,6 +198,7 @@ export const encounterRowSchema = z.object({
   official_match_count: z.coerce.number(),
   series_id: z.string().nullable(),
   resolution_mode: resolutionModeSchema.nullable(),
+  closed_without_result: z.boolean(),
 });
 
 export type PlanRow = z.infer<typeof planRowSchema>;
