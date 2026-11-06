@@ -1,9 +1,6 @@
 import {
   CompetitionNotFound,
   type CompetitionDraft,
-  type CreateCompetitionDraftError,
-  type CreateCompetitionDraftInput,
-  type CreateCompetitionDraftUseCase,
   type GetCompetitionDraftUseCase,
   type JoinCompetitionError,
   type JoinCompetitionUseCase,
@@ -57,7 +54,6 @@ export interface OnboardingPlayer {
 
 export type OrganizationCompletion = OnboardingPlayer & {
   readonly organization: CreateOrganizationResult;
-  readonly competition: CompetitionDraft;
 };
 
 export type InvitationCompletion = OnboardingPlayer & {
@@ -76,7 +72,6 @@ export type PlayerCompletion = OnboardingPlayer & {
 export type OnboardingCompletionError =
   | OnboardingPathConflict
   | CreateOrganizationError
-  | CreateCompetitionDraftError
   | AcceptInvitationError
   | JoinCompetitionError
   | AddPlayerGameAccountError
@@ -89,7 +84,7 @@ export type PlayerCompletionError = OnboardingCompletionError | ProviderError;
  * transaction that starts with `CompleteOnboardingUseCase.prepare`, which locks the actor's
  * onboarding and rejects a different completed path, so concurrent finishes serialize and a
  * loser leaves no side effects. Creation keys make a retried finish converge on the same
- * organization, competition, profile and game account.
+ * organization, profile and game account.
  */
 export class OnboardingCompletionFlow {
   /** Takes the composed modules as they are; only the use cases below are reached. */
@@ -102,7 +97,6 @@ export class OnboardingCompletionFlow {
         readonly acceptInvitation: AcceptInvitationUseCase;
       };
       readonly competitions: {
-        readonly createDraft: CreateCompetitionDraftUseCase;
         readonly getDraft: GetCompetitionDraftUseCase;
         readonly join: JoinCompetitionUseCase;
       };
@@ -119,10 +113,7 @@ export class OnboardingCompletionFlow {
   completeOrganization(input: {
     readonly actorId: ActorId;
     readonly name: string;
-    readonly competition: Omit<
-      CreateCompetitionDraftInput,
-      "organizationId" | "actorId" | "creationKey"
-    >;
+    readonly timeZone: string;
     readonly gameAccount: OnboardingGameAccountInput | null;
   }): Promise<Result<OrganizationCompletion, OnboardingCompletionError>> {
     const { actorId } = input;
@@ -130,23 +121,15 @@ export class OnboardingCompletionFlow {
       const created = await this.modules.organizations.createOrganization.execute({
         name: input.name,
         actorId,
-        timeZone: input.competition.timeZone,
+        timeZone: input.timeZone,
         creationKey: `onboarding:organization:${actorId}`,
       });
       if (!created.isOk()) return err(created.error);
 
-      const competition = await this.modules.competitions.createDraft.execute({
-        ...input.competition,
-        organizationId: created.value.organization.id,
-        actorId,
-        creationKey: `onboarding:competition:${actorId}`,
-      });
-      if (!competition.isOk()) return err(competition.error);
-
       const player = await this.ensurePlayer(actorId, input.gameAccount);
       if (!player.isOk()) return err(player.error);
 
-      return ok({ ...player.value, organization: created.value, competition: competition.value });
+      return ok({ ...player.value, organization: created.value });
     });
   }
 

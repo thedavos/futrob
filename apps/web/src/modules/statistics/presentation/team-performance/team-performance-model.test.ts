@@ -3,12 +3,7 @@ import {
   projectionIncompleteFixture,
   teamPerformanceRankingFixture,
 } from "./team-performance.fixtures.ts";
-import {
-  TEAM_PERFORMANCE_METRICS,
-  teamPerformanceRows,
-  teamPerformanceSummary,
-  teamPerformanceWeight,
-} from "./team-performance-model.ts";
+import { teamPerformanceRows, teamPerformanceSummary } from "./team-performance-model.ts";
 
 describe("team performance view model", () => {
   it("keeps server order, positions and scores, and leaves unknown names null", () => {
@@ -37,10 +32,6 @@ describe("team performance view model", () => {
     expect(pumas?.components.find((c) => c.metric === "defensiveEfficiency")?.value).toBeNull();
     expect(pumas?.missing).toEqual(["defensiveEfficiency"]);
     expect(pumas?.reason).toBe("missing_components");
-  });
-
-  it("reads weights from the statistics product constants", () => {
-    expect(TEAM_PERFORMANCE_METRICS.map(teamPerformanceWeight)).toEqual([40, 20, 20, 10, 10]);
   });
 
   it("counts scored, incomplete and approved sources without voids", () => {

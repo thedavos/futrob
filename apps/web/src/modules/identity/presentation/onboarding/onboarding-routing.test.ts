@@ -5,7 +5,7 @@ describe("onboarding routing", () => {
   it("maps steps to routes", () => {
     expect(routeForOnboardingStep("game-account")).toBe("/onboarding/game-account");
     expect(routeForOnboardingStep("club")).toBe("/onboarding/club");
-    expect(routeForOnboardingStep("competition")).toBe("/onboarding/competition");
+    expect(routeForOnboardingStep("review")).toBe("/onboarding/review");
   });
 
   it("recognizes onboarding pathnames only", () => {

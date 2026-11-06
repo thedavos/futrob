@@ -1,8 +1,6 @@
 import { View } from "react-native";
 import {
   gamePlatformSchema,
-  type CompetitionFormatDto,
-  type CompetitionRegionDto,
   type ExternalClubDto,
   type GamePlatformDto,
   type OnboardingStepDto,
@@ -30,47 +28,16 @@ type Props = {
   refresh: () => void;
 };
 
-const REGIONS: readonly CompetitionRegionDto[] = [
-  "america",
-  "south-america",
-  "north-central-america",
-  "europe",
-  "africa",
-  "asia",
-  "middle-east",
-  "oceania",
-];
-const FORMATS: readonly CompetitionFormatDto[] = [
-  "league",
-  "knockout",
-  "groups-knockout",
-  "league-playoffs",
-];
-
 const editTitleKey = {
   intention: "intention",
   organization: "organization",
-  competition: "competition",
   invitation: "invitation",
   "game-account": "account",
   club: "club",
   review: "review",
 } as const satisfies Record<OnboardingStepDto, MobileCopyKey>;
 
-const choiceTranslations = {
-  "south-america": ["Sudamérica", "South America"],
-  "north-central-america": ["Norte y Centroamérica", "North & Central America"],
-  america: ["América", "Americas"],
-  europe: ["Europa", "Europe"],
-  africa: ["África", "Africa"],
-  asia: ["Asia", "Asia"],
-  "middle-east": ["Medio Oriente", "Middle East"],
-  oceania: ["Oceanía", "Oceania"],
-  league: ["Liga", "League"],
-  knockout: ["Eliminación", "Knockout"],
-  "groups-knockout": ["Grupos y eliminación", "Groups and knockout"],
-  "league-playoffs": ["Liga con playoffs", "League with playoffs"],
-} as const;
+const choiceTranslations: Record<string, readonly [string, string]> = {};
 
 function choiceLabel(option: string, language: MobileLanguage): string {
   const labels = Object.entries(choiceTranslations).find(([key]) => key === option)?.[1];
@@ -160,49 +127,6 @@ export function OnboardingFields({
           maxLength={120}
           onChangeText={(organizationName) => void change({ organizationName })}
         />
-      );
-    case "competition":
-      return (
-        <View style={{ gap: theme.spacing[4] }}>
-          <Input
-            label={t("competitionName")}
-            value={draft.competition.name ?? ""}
-            maxLength={120}
-            onChangeText={(name) => void change({ competition: { name } })}
-          />
-          <Input
-            label={t("edition")}
-            value={draft.competition.gameEdition ?? ""}
-            maxLength={40}
-            onChangeText={(gameEdition) => void change({ competition: { gameEdition } })}
-          />
-          <ChoiceGroup<GamePlatformDto>
-            language={language}
-            label={t("platform")}
-            values={gamePlatformSchema.options}
-            value={draft.competition.platform}
-            onSelect={(platform) => void change({ competition: { platform } })}
-          />
-          <ChoiceGroup<CompetitionRegionDto>
-            language={language}
-            label={t("region")}
-            values={REGIONS}
-            value={draft.competition.region}
-            onSelect={(region) => void change({ competition: { region } })}
-          />
-          <Input
-            label={t("timezone")}
-            value={draft.competition.timeZone ?? ""}
-            onChangeText={(timeZone) => void change({ competition: { timeZone } })}
-          />
-          <ChoiceGroup<CompetitionFormatDto>
-            language={language}
-            label={t("format")}
-            values={FORMATS}
-            value={draft.competition.format}
-            onSelect={(format) => void change({ competition: { format } })}
-          />
-        </View>
       );
     case "invitation":
       return (
@@ -330,11 +254,6 @@ export function OnboardingFields({
           {draft.organizationName ? (
             <Text>
               {t("orgName")}: {draft.organizationName}
-            </Text>
-          ) : null}
-          {draft.competition.name ? (
-            <Text>
-              {t("competitionName")}: {draft.competition.name}
             </Text>
           ) : null}
           {draft.path === "invitation" ? <Text>{t("invitationToken")}: ••••</Text> : null}

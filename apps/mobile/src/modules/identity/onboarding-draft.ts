@@ -1,11 +1,9 @@
 import * as SecureStore from "expo-secure-store";
 import { z } from "zod";
 import {
-  competitionDraftInputSchema,
   externalClubSchema,
   onboardingPathSchema,
   playerGameAccountInputSchema,
-  type CompetitionDraftInputDto,
   type ExternalClubDto,
   type OnboardingPathDto,
   type PlayerGameAccountInputDto,
@@ -14,11 +12,12 @@ import {
 const DRAFT_KEY = "futrob.onboarding.draft.v1";
 const INVITATION_KEY = "futrob.onboarding.pending-invitation";
 const draftSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
   userId: z.string().min(1),
   path: onboardingPathSchema.nullable(),
   organizationName: z.string(),
-  competition: competitionDraftInputSchema.partial(),
+  organizationTimeZone: z.string(),
+  organizationAccountStep: z.boolean(),
   invitationToken: z.string(),
   gameAccount: playerGameAccountInputSchema.partial(),
   club: externalClubSchema.nullable(),
@@ -27,7 +26,8 @@ const draftSchema = z.object({
 export type OnboardingDraft = {
   path: OnboardingPathDto | null;
   organizationName: string;
-  competition: Partial<CompetitionDraftInputDto>;
+  organizationTimeZone: string;
+  organizationAccountStep: boolean;
   invitationToken: string;
   gameAccount: Partial<PlayerGameAccountInputDto>;
   club: ExternalClubDto | null;
@@ -43,7 +43,8 @@ export function emptyOnboardingDraft(): OnboardingDraft {
   return {
     path: null,
     organizationName: "",
-    competition: { timeZone },
+    organizationTimeZone: timeZone,
+    organizationAccountStep: false,
     invitationToken: "",
     gameAccount: {},
     club: null,
@@ -56,15 +57,31 @@ export async function loadOnboardingDraft(userId: string): Promise<OnboardingDra
   try {
     const parsed = draftSchema.safeParse(JSON.parse(raw));
     if (!parsed.success || parsed.data.userId !== userId) return emptyOnboardingDraft();
-    const { path, organizationName, competition, invitationToken, gameAccount, club } = parsed.data;
-    return { path, organizationName, competition, invitationToken, gameAccount, club };
+    const {
+      path,
+      organizationName,
+      organizationTimeZone,
+      organizationAccountStep,
+      invitationToken,
+      gameAccount,
+      club,
+    } = parsed.data;
+    return {
+      path,
+      organizationName,
+      organizationTimeZone,
+      organizationAccountStep,
+      invitationToken,
+      gameAccount,
+      club,
+    };
   } catch {
     return emptyOnboardingDraft();
   }
 }
 
 export async function saveOnboardingDraft(userId: string, draft: OnboardingDraft): Promise<void> {
-  await SecureStore.setItemAsync(DRAFT_KEY, JSON.stringify({ version: 1, userId, ...draft }));
+  await SecureStore.setItemAsync(DRAFT_KEY, JSON.stringify({ version: 2, userId, ...draft }));
 }
 
 export async function clearOnboardingDraft(): Promise<void> {

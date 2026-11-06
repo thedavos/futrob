@@ -1,6 +1,6 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import {
   apiErrorSchema,
-  completeOrganizationOnboardingResponseSchema,
   getPublicCalendarResponseSchema,
   getPublicCompetitionResponseSchema,
   getPublicStandingsResponseSchema,
@@ -79,17 +79,15 @@ async function setup(options: { readonly publish: boolean }) {
   const privateRequest = (path: string, init: RequestInit = {}) =>
     app.request(`/api/v1${path}`, { ...init, headers: serviceHeaders(ORGANIZER) });
 
-  const created = await parseResponse(
-    completeOrganizationOnboardingResponseSchema,
-    await privateRequest("/identity/onboarding/organization", {
-      method: "POST",
-      body: JSON.stringify({
-        name: "Organizacion Privada SAC",
-        competition: { ...onboardingCompetition, name: "Copa Barranco" },
-        gameAccount: null,
-      }),
+  const created = await createOrganizationCompetitionFixture(app, {
+    headers: serviceHeaders(ORGANIZER),
+    method: "POST",
+    body: JSON.stringify({
+      name: "Organizacion Privada SAC",
+      competition: { ...onboardingCompetition, name: "Copa Barranco" },
+      gameAccount: null,
     }),
-  );
+  });
   const { organizationId } = created;
   const competitionId = created.competition.competition.id;
   const base = `/organizations/${organizationId}/competitions/${competitionId}`;

@@ -11,7 +11,8 @@ const styles = stylex.create({
     maxWidth: "42rem",
   },
   content: {
-    padding: 0,
+    paddingInline: 0,
+    paddingBottom: 0,
   },
   row: {
     display: "grid",
@@ -85,7 +86,6 @@ import {
   ShieldIcon,
   SignpostIcon,
   TicketIcon,
-  TrophyIcon,
   UserIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react";
@@ -98,15 +98,9 @@ import {
   validOptionalAccount,
   validOrganizationName,
 } from "../onboarding-draft-validators.ts";
-import { competitionFromDraft } from "../onboarding-draft.ts";
 import { useOnboardingFlow } from "../onboarding-flow.tsx";
 import { OnboardingShell } from "../onboarding-shell.tsx";
-import {
-  eaPlatformLabel,
-  formatLabel,
-  platformLabel,
-  stepsForPath,
-} from "../onboarding-step-meta.ts";
+import { eaPlatformLabel, platformLabel, stepsForPath } from "../onboarding-step-meta.ts";
 
 export function OnboardingReview() {
   const flow = useOnboardingFlow();
@@ -115,13 +109,16 @@ export function OnboardingReview() {
   const rows = reviewRows(flow, t);
   const canFinish =
     path === "organization"
-      ? validOrganizationName(flow.draft.organizationName) &&
-        Boolean(competitionFromDraft(flow.draft)) &&
-        validOptionalAccount(flow.draft)
+      ? validOrganizationName(flow.draft.organizationName) && validOptionalAccount(flow.draft)
       : path === "invitation"
         ? Boolean(flow.draft.invitationPreview) && validOptionalAccount(flow.draft)
         : validOptionalAccount(flow.draft);
-  const previous: OnboardingStepDto = path === "player" ? "club" : "game-account";
+  const previous: OnboardingStepDto =
+    path === "player"
+      ? "club"
+      : path === "organization" && !flow.draft.organizationAccountStep
+        ? "organization"
+        : "game-account";
   const primaryLabel = flow.retryBlocked
     ? t("onboarding.review.retry", { seconds: flow.retryAfterSeconds })
     : path === "organization"
@@ -135,7 +132,7 @@ export function OnboardingReview() {
       currentStepId="review"
       description={t("onboarding.review.description")}
       error={flow.error}
-      steps={stepsForPath(t, path)}
+      steps={stepsForPath(t, path, flow.draft.organizationAccountStep)}
       title={t("onboarding.review.title")}
     >
       <Card
@@ -143,10 +140,7 @@ export function OnboardingReview() {
         style={applyStyles(styles.card).style}
         variant="elevated"
       >
-        <CardContent
-          className={applyStyles(styles.content).className}
-          style={applyStyles(styles.content).style}
-        >
+        <CardContent className={styles.content}>
           <dl>
             {rows.map((row) => (
               <div key={row.label} {...applyStyles(styles.row)}>
@@ -227,15 +221,7 @@ function reviewRows(
         icon: UsersThreeIcon,
         editStep: "organization",
       },
-      {
-        label: t("onboarding.review.competition"),
-        value: competitionFromDraft(flow.draft)
-          ? `${flow.draft.competitionName.trim()} · ${formatLabel(flow.draft.competitionFormat!, t)} · ${platformLabel(flow.draft.competitionPlatform!)}`
-          : null,
-        icon: TrophyIcon,
-        editStep: "competition",
-      },
-      accountReviewRow(flow, t),
+      ...(flow.draft.organizationAccountStep ? [accountReviewRow(flow, t)] : []),
     ];
   }
   if (flow.path === "invitation") {

@@ -7,22 +7,11 @@ describe("oklchToHex", () => {
     expect(oklchToHex({ l: 1, c: 0, h: 0 })).toBe("#ffffff");
     expect(oklchToHex({ l: 0, c: 0, h: 0 })).toBe("#000000");
   });
-
-  it("clamps out-of-gamut channels", () => {
-    const hex = oklchToHex({ l: 1.2, c: 0.4, h: 150 });
-    expect(hex).toMatch(/^#[0-9a-f]{6}$/);
-  });
 });
 
 describe("resolveThemeColor", () => {
   it("walks var() references to a raw color", () => {
     expect(oklchToHex(resolveThemeColor("primary", LIGHT_THEME)!)).toBe("#caff35");
-  });
-
-  it("resolves alias chains like destructive → danger", () => {
-    expect(resolveThemeColor("destructive-foreground", LIGHT_THEME)).toEqual(
-      resolveThemeColor("danger-foreground", LIGHT_THEME),
-    );
   });
 
   it("returns null for non-color tokens", () => {

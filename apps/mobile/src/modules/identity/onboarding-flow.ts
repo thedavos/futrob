@@ -1,9 +1,7 @@
 import {
-  ONBOARDING_STEPS_BY_PATH,
-  competitionDraftInputSchema,
+  onboardingStepsForPath,
   isOnboardingStepAllowed,
   playerGameAccountInputSchema,
-  type CompetitionDraftInputDto,
   type ExternalClubDto,
   type InspectCompetitionInvitationResponse,
   type OnboardingPathDto,
@@ -22,8 +20,11 @@ import {
 
 export type OnboardingGateway = Pick<FutrobClient, "identity" | "organizations" | "gameData">;
 
-export function stepsForPath(path: OnboardingPathDto): readonly OnboardingStepDto[] {
-  return ONBOARDING_STEPS_BY_PATH[path];
+export function stepsForPath(
+  path: OnboardingPathDto,
+  includeAccount = false,
+): readonly OnboardingStepDto[] {
+  return onboardingStepsForPath(path, includeAccount);
 }
 
 export type FinishResult = { readonly route: string };
@@ -43,15 +44,9 @@ export function accountIsValid(draft: OnboardingDraft): boolean {
   );
 }
 
-export function competitionFromDraft(draft: OnboardingDraft): CompetitionDraftInputDto | null {
-  const parsed = competitionDraftInputSchema.safeParse(draft.competition);
-  return parsed.success ? parsed.data : null;
-}
-
 export function missingRequiredStep(draft: OnboardingDraft): OnboardingStepDto | null {
   if (!draft.path) return "intention";
   if (draft.path === "organization" && !draft.organizationName.trim()) return "organization";
-  if (draft.path === "organization" && !competitionFromDraft(draft)) return "competition";
   if (draft.path === "invitation" && !draft.invitationToken.trim()) return "invitation";
   if (!accountIsValid(draft)) return "game-account";
   return null;
@@ -100,6 +95,9 @@ export class NativeOnboardingFlow {
     }
     const draft =
       status.path === stored.path ? stored : { ...emptyOnboardingDraft(), path: status.path };
+    if (draft.path === "organization" && status.currentStep === "game-account") {
+      draft.organizationAccountStep = true;
+    }
     return new NativeOnboardingFlow(
       userId,
       gateway,
@@ -114,9 +112,6 @@ export class NativeOnboardingFlow {
     this.draft = {
       ...base,
       ...patch,
-      competition: patch.competition
-        ? { ...base.competition, ...patch.competition }
-        : base.competition,
       gameAccount: patch.gameAccount
         ? Object.keys(patch.gameAccount).length === 0
           ? {}
@@ -138,7 +133,7 @@ export class NativeOnboardingFlow {
     if (this.active) throw new Error("Espera a que termine la operación actual.");
     const path = this.draft.path;
     if (path === null && step !== "intention") throw new Error("Elige cómo continuar.");
-    if (path !== null && !stepsForPath(path).includes(step)) {
+    if (path !== null && !stepsForPath(path, this.draft.organizationAccountStep).includes(step)) {
       throw new Error("Este paso no corresponde al camino elegido.");
     }
     this.active = true;
@@ -195,15 +190,14 @@ export class NativeOnboardingFlow {
       await this.writeQueue;
       const account = accountFromDraft(this.draft);
       if (this.draft.path === "organization") {
-        const competition = competitionFromDraft(this.draft)!;
         const result = await this.gateway.identity.completeOrganizationOnboarding({
           name: this.draft.organizationName.trim(),
-          competition,
+          timeZone: this.draft.organizationTimeZone,
           gameAccount: account,
         });
         await clearOnboardingDraft();
         return {
-          route: `/orgs/${encodeURIComponent(result.destination.organizationId)}/competitions/${encodeURIComponent(result.destination.competitionId)}/setup`,
+          route: `/orgs/${encodeURIComponent(result.destination.organizationId)}`,
         };
       }
       if (this.draft.path === "invitation") {

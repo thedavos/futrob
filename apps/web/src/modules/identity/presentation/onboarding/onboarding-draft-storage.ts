@@ -1,8 +1,6 @@
 import { z } from "zod";
 import {
-  competitionFormatSchema,
   competitionPlatformSchema,
-  competitionRegionSchema,
   onboardingPathSchema,
   onboardingStepSchema,
   playerExternalClubSelectionInputSchema,
@@ -26,18 +24,13 @@ export interface OnboardingDraftStore {
 }
 
 const storedDraftSchema = z.object({
-  version: z.literal(2),
+  version: z.literal(3),
   path: onboardingPathSchema.nullable(),
   step: onboardingStepSchema,
   draft: z.object({
     organizationName: z.string(),
-    competitionName: z.string(),
-    competitionPlatform: competitionPlatformSchema.nullable(),
-    competitionRegion: competitionRegionSchema.nullable(),
-    competitionTimeZone: z.string(),
-    competitionFormat: competitionFormatSchema.nullable(),
-    competitionGameEdition: z.string(),
-    customCompetitionGameEdition: z.boolean(),
+    organizationTimeZone: z.string(),
+    organizationAccountStep: z.boolean(),
     gameAccountIdentifier: z.string(),
     platform: competitionPlatformSchema.nullable(),
     gameEdition: z.string(),
@@ -52,7 +45,7 @@ type StoredDraft = z.infer<typeof storedDraftSchema>;
 
 function toStored({ path, step, draft }: StoredOnboarding): StoredDraft {
   const { invitationToken: _token, invitationPreview: _preview, ...kept } = draft;
-  return { version: 2, path, step, draft: kept };
+  return { version: 3, path, step, draft: kept };
 }
 
 function fromStored(raw: string | null): StoredOnboarding | null {

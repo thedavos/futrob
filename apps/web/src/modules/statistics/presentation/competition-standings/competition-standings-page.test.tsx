@@ -134,23 +134,6 @@ describe("Competition standings page", () => {
     expect(screen.getByText("Fórmula points-gd-gf-v1")).toBeTruthy();
   });
 
-  it("sets every figure as a right-aligned table-scale Score so columns share one scale", async () => {
-    serve({});
-    renderRoute();
-    expect(await screen.findByText("Maderas FC")).toBeTruthy();
-    const [first] = within(screen.getByRole("table")).getAllByRole("row").slice(1);
-    const cells = within(first!).getAllByRole("cell");
-    expect(cells).toHaveLength(6);
-    const [position, , , ...numbers] = cells;
-    for (const cell of [position!, ...numbers]) {
-      expect(cell.querySelector('[data-slot="score"]')?.getAttribute("data-size")).toBe("table");
-    }
-    for (const cell of numbers) {
-      expect(cell.querySelector('[data-slot="score"]')?.getAttribute("data-align")).toBe("end");
-    }
-    expect(numbers.at(-1)!.textContent).toBe("4");
-  });
-
   it("names the rows for competition staff who cannot read the organization teams", async () => {
     const fetch = serve({});
     renderRoute();

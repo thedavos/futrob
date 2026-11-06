@@ -3,7 +3,6 @@ import type { OnboardingStepDto } from "@futrob/api-contracts";
 const routeByStep = {
   intention: "/onboarding/intention",
   organization: "/onboarding/organization",
-  competition: "/onboarding/competition",
   invitation: "/onboarding/invitation",
   "game-account": "/onboarding/game-account",
   club: "/onboarding/club",

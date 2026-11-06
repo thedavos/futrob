@@ -56,6 +56,7 @@ const preview: Preview = {
               "Competition",
               "Invitation",
               "Review",
+              "Completion",
             ],
             "Organizer",
             [

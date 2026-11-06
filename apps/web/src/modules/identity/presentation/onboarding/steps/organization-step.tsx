@@ -28,7 +28,7 @@ export function OrganizationStep() {
   const validationError = validationErrorKey ? t(validationErrorKey) : null;
   const name = flow.draft.organizationName;
 
-  async function continueToReview() {
+  async function continueToReview(withAccount = false) {
     const trimmed = name.trim();
     if (trimmed.length === 0 || trimmed.length > 120) {
       setValidationErrorKey(
@@ -46,8 +46,9 @@ export function OrganizationStep() {
       inputRef.current?.focus();
       return;
     }
-    flow.updateDraft({ organizationName: trimmed });
-    void flow.goTo("competition", "organization");
+    if (!withAccount) flow.clearGameAccount();
+    flow.updateDraft({ organizationName: trimmed, organizationAccountStep: withAccount });
+    void flow.goTo(withAccount ? "game-account" : "review", "organization");
   }
 
   return (
@@ -55,7 +56,7 @@ export function OrganizationStep() {
       currentStepId="organization"
       description={t("onboarding.organization.description")}
       error={flow.error}
-      steps={stepsForPath(t, "organization")}
+      steps={stepsForPath(t, "organization", flow.draft.organizationAccountStep)}
       title={t("onboarding.organization.title")}
     >
       <div {...applyStyles(styles.body)}>
@@ -89,6 +90,8 @@ export function OrganizationStep() {
         onBack={() => void flow.goTo("intention", "organization")}
         onPrimary={() => void continueToReview()}
         primaryLabel={t("onboarding.organization.continue")}
+        onSecondary={() => void continueToReview(true)}
+        secondaryLabel={t("onboarding.organization.createAccount")}
       />
     </OnboardingShell>
   );

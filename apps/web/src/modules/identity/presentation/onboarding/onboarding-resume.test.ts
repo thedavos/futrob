@@ -5,18 +5,12 @@ import { initialOnboardingState, resumeOnboardingStep } from "./onboarding-resum
 const organizationDraft: OnboardingDraft = {
   ...createEmptyDraft(),
   organizationName: "Liga Norte",
-  competitionName: "Apertura",
-  competitionPlatform: "playstation",
-  competitionRegion: "south-america",
-  competitionTimeZone: "America/Lima",
-  competitionFormat: "league",
-  competitionGameEdition: "FC 26",
 };
 
 describe("resumeOnboardingStep", () => {
   it("starts at intention without a path or with a step outside the path", () => {
     expect(resumeOnboardingStep(null, "review", organizationDraft)).toBe("intention");
-    expect(resumeOnboardingStep("player", "competition", organizationDraft)).toBe("intention");
+    expect(resumeOnboardingStep("player", "organization", organizationDraft)).toBe("intention");
     expect(resumeOnboardingStep("player", null, organizationDraft)).toBe("intention");
   });
 
@@ -30,9 +24,8 @@ describe("resumeOnboardingStep", () => {
     expect(
       resumeOnboardingStep("organization", "review", {
         ...organizationDraft,
-        competitionFormat: null,
       }),
-    ).toBe("competition");
+    ).toBe("review");
     expect(
       resumeOnboardingStep("player", "club", { ...createEmptyDraft(), gameAccountIdentifier: "x" }),
     ).toBe("game-account");
@@ -46,13 +39,13 @@ describe("resumeOnboardingStep", () => {
 describe("initialOnboardingState", () => {
   const server = (
     path: "organization" | "player" | null,
-    currentStep: "intention" | "organization" | "competition" | "review" | "club",
+    currentStep: "intention" | "organization" | "review" | "club",
   ) => ({ path, currentStep });
 
   it("keeps the local draft when a failed write left the server without a path or on another", () => {
     const local = {
       path: "organization" as const,
-      step: "competition" as const,
+      step: "review" as const,
       draft: organizationDraft,
     };
 

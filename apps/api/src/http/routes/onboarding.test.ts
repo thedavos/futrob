@@ -1,3 +1,4 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import {
   completeOrganizationOnboardingResponseSchema,
   completePlayerOnboardingResponseSchema,
@@ -39,7 +40,7 @@ describe("apps/api http onboarding", () => {
         headers: serviceHeaders(actor),
         body: JSON.stringify({
           name: "Liga Única",
-          competition: onboardingCompetition,
+          timeZone: "America/Lima",
           gameAccount: {
             identifier: "OrganizerEA",
             platform: "xbox",
@@ -54,30 +55,15 @@ describe("apps/api http onboarding", () => {
     const retriedBody = await parseResponse(completeOrganizationOnboardingResponseSchema, retried);
     expect(retriedBody.organizationId).toBe(firstBody.organizationId);
     expect(retriedBody).toMatchObject({
-      competition: { competition: { name: "Copa Inicial", status: "draft" } },
-      destination: { kind: "competition-setup" },
-      gameAccount: {
-        identifier: "OrganizerEA",
-        platform: "xbox",
-        gameEdition: "FC 27",
-      },
+      destination: { kind: "organization" },
+      timeZone: "America/Lima",
+      gameAccount: { identifier: "OrganizerEA" },
     });
-
-    const draft = await app.request(
-      `/api/v1/organizations/${firstBody.organizationId}/competitions/${firstBody.competition.competition.id}`,
+    const competitions = await app.request(
+      `/api/v1/organizations/${firstBody.organizationId}/competitions`,
       { headers: serviceHeaders(actor) },
     );
-    expect(draft.status).toBe(200);
-    expect(await draft.json()).toMatchObject({
-      competition: { name: "Copa Inicial", organizationId: firstBody.organizationId },
-      rules: { version: 1, awayGoalsEnabled: false },
-    });
-
-    const forbidden = await app.request(
-      `/api/v1/organizations/${firstBody.organizationId}/competitions/${firstBody.competition.competition.id}`,
-      { headers: serviceHeaders("actor-outsider") },
-    );
-    expect(forbidden.status).toBe(403);
+    expect(await competitions.json()).toEqual({ competitions: [] });
 
     const mine = await app.request("/api/v1/organizations/mine", {
       headers: serviceHeaders(actor),
@@ -97,7 +83,7 @@ describe("apps/api http onboarding", () => {
     expect(await status.json()).toMatchObject({
       completed: true,
       path: "organization",
-      version: 3,
+      version: 4,
     });
   });
 
@@ -372,7 +358,7 @@ describe("apps/api http onboarding", () => {
     const organizer = "actor-inviting-organizer";
     const player = "actor-invited-player";
 
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -381,10 +367,7 @@ describe("apps/api http onboarding", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId, competition } = await parseResponse(
-      completeOrganizationOnboardingResponseSchema,
-      created,
-    );
+    const { organizationId, competition } = created;
     const competitionId = competition.competition.id;
     const organizationInvitation = await app.request(
       `/api/v1/organizations/${organizationId}/invitations`,
@@ -469,7 +452,7 @@ describe("apps/api http onboarding", () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-preview-organizer";
     const player = "actor-preview-player";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -478,10 +461,7 @@ describe("apps/api http onboarding", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId, competition } = await parseResponse(
-      completeOrganizationOnboardingResponseSchema,
-      created,
-    );
+    const { organizationId, competition } = created;
     const competitionId = competition.competition.id;
     const invitation = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/invitations`,
@@ -544,7 +524,7 @@ describe("apps/api http onboarding", () => {
     const winner = "actor-claim-winner";
     const loser = "actor-claim-loser";
 
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -553,10 +533,7 @@ describe("apps/api http onboarding", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId, competition } = await parseResponse(
-      completeOrganizationOnboardingResponseSchema,
-      created,
-    );
+    const { organizationId, competition } = created;
     const competitionId = competition.competition.id;
 
     const invitation = await app.request(
@@ -632,7 +609,7 @@ describe("apps/api http onboarding", () => {
       ).json(),
     ).toMatchObject({ completed: false });
 
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -641,10 +618,7 @@ describe("apps/api http onboarding", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId, competition } = await parseResponse(
-      completeOrganizationOnboardingResponseSchema,
-      created,
-    );
+    const { organizationId, competition } = created;
     const invitation = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competition.competition.id}/invitations`,
       {
@@ -689,7 +663,7 @@ describe("apps/api http onboarding", () => {
       headers: serviceHeaders(actor),
       body: JSON.stringify({
         name: "No debe existir",
-        competition: onboardingCompetition,
+        timeZone: "America/Lima",
         gameAccount: null,
       }),
     });
@@ -713,7 +687,7 @@ describe("apps/api http onboarding", () => {
       headers: serviceHeaders(actor),
       body: JSON.stringify({
         name: "Liga ya creada",
-        competition: onboardingCompetition,
+        timeZone: "America/Lima",
         gameAccount: null,
       }),
     });
@@ -741,4 +715,59 @@ describe("apps/api http onboarding", () => {
     });
     expect(fetcher).not.toHaveBeenCalled();
   });
+});
+
+it("finishes the main organization path without a competition or game account and allows creating a competition later", async () => {
+  const app = buildApp(stubFetch);
+  const actor = "actor-organization-main";
+  const response = await app.request("/api/v1/identity/onboarding/organization", {
+    method: "POST",
+    headers: serviceHeaders(actor),
+    body: JSON.stringify({ name: "Liga principal", timeZone: "America/Lima" }),
+  });
+  expect(response.status).toBe(200);
+  const organization = await parseResponse(completeOrganizationOnboardingResponseSchema, response);
+  expect(organization.destination).toEqual({
+    kind: "organization",
+    organizationId: organization.organizationId,
+  });
+  const read = (path: string) => app.request(`/api/v1${path}`, { headers: serviceHeaders(actor) });
+  expect(await (await read("/identity/onboarding")).json()).toMatchObject({
+    completed: true,
+    path: "organization",
+  });
+  expect(await (await read("/players/me")).json()).toMatchObject({ gameAccounts: [] });
+  const competitionPath = `/organizations/${organization.organizationId}/competitions`;
+  expect(await (await read(competitionPath)).json()).toEqual({ competitions: [] });
+  const created = await app.request(`/api/v1${competitionPath}`, {
+    method: "POST",
+    headers: serviceHeaders(actor),
+    body: JSON.stringify(onboardingCompetition),
+  });
+  expect(created.status).toBe(201);
+  expect(await (await read(competitionPath)).json()).toMatchObject({
+    competitions: [{ name: "Copa Inicial", status: "draft" }],
+  });
+});
+
+it("does not complete onboarding or create an organization when its time zone is invalid", async () => {
+  const app = buildApp(stubFetch);
+  const actor = "actor-invalid-org-zone";
+  const response = await app.request("/api/v1/identity/onboarding/organization", {
+    method: "POST",
+    headers: serviceHeaders(actor),
+    body: JSON.stringify({ name: "Liga inválida", timeZone: "Invalid/Zone" }),
+  });
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({ code: "organizations.invalid_time_zone" });
+  expect(
+    await (
+      await app.request("/api/v1/identity/onboarding", { headers: serviceHeaders(actor) })
+    ).json(),
+  ).toMatchObject({ completed: false });
+  expect(
+    await (
+      await app.request("/api/v1/organizations/mine", { headers: serviceHeaders(actor) })
+    ).json(),
+  ).toEqual({ memberships: [] });
 });

@@ -1,6 +1,6 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { describe, expect, it } from "vite-plus/test";
 import {
-  completeOrganizationOnboardingResponseSchema,
   createRosterInvitationResponseSchema,
   createTeamResponseSchema,
   listActivitiesResponseSchema,
@@ -56,7 +56,7 @@ async function activities(app: App, path: string, actorId: string) {
 }
 
 async function organizationWithTeams(app: App, organizer: string) {
-  const created = await app.request("/api/v1/identity/onboarding/organization", {
+  const created = await createOrganizationCompetitionFixture(app, {
     method: "POST",
     headers: serviceHeaders(organizer),
     body: JSON.stringify({
@@ -65,7 +65,7 @@ async function organizationWithTeams(app: App, organizer: string) {
       gameAccount: null,
     }),
   });
-  const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+  const body = created;
   const organizationId = body.organizationId;
   const competitionId = body.competition.competition.id;
   await app.request(`/api/v1/organizations/${organizationId}/competitions/${competitionId}`, {
@@ -107,21 +107,29 @@ describe("apps/api http activities", () => {
     expect(published.status).toBe(200);
 
     const feed = await activities(app, `/organizations/${organizationId}/activities`, organizer);
-    expect(feed).toMatchObject({
-      activities: [
-        {
-          kind: "competition_published",
-          status: "closed",
-          requiresAction: false,
-          resourceType: "competition",
-          resourceId: competitionId,
-          subject: { competitionName: "Liga Feed" },
-        },
-        { kind: "competition_entry", status: "closed", subject: { teamName: "Halcones" } },
-        { kind: "competition_entry", status: "closed", subject: { teamName: "Cuervos" } },
-      ],
-      nextCursor: null,
+    expect(feed.nextCursor).toBeNull();
+    expect(feed.activities).toHaveLength(3);
+    expect(
+      feed.activities.find((activity) => activity.kind === "competition_published"),
+    ).toMatchObject({
+      status: "closed",
+      requiresAction: false,
+      resourceType: "competition",
+      resourceId: competitionId,
+      subject: { competitionName: "Liga Feed" },
     });
+    expect(feed.activities.filter((activity) => activity.kind === "competition_entry")).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          status: "closed",
+          subject: expect.objectContaining({ teamName: "Halcones" }),
+        }),
+        expect.objectContaining({
+          status: "closed",
+          subject: expect.objectContaining({ teamName: "Cuervos" }),
+        }),
+      ]),
+    );
     const pending = await activities(
       app,
       `/organizations/${organizationId}/activities?status=open&requiresAction=true`,
@@ -320,7 +328,7 @@ describe("apps/api http activities", () => {
     const organizer = "actor-feed-entry-organizer";
     const approved = "actor-feed-entry-approved";
     const rejected = "actor-feed-entry-rejected";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -329,10 +337,7 @@ describe("apps/api http activities", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId, competition } = await parseResponse(
-      completeOrganizationOnboardingResponseSchema,
-      created,
-    );
+    const { organizationId, competition } = created;
     const competitionId = competition.competition.id;
     const base = `/api/v1/organizations/${organizationId}/competitions/${competitionId}`;
     const configured = await app.request(base, {

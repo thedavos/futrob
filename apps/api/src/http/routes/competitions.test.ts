@@ -1,7 +1,7 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { describe, expect, it } from "vite-plus/test";
 import {
   addCompetitionParticipantResponseSchema,
-  completeOrganizationOnboardingResponseSchema,
   getCompetitionDraftResponseSchema,
   updateCompetitionDraftResponseSchema,
 } from "@futrob/api-contracts";
@@ -38,7 +38,7 @@ describe("apps/api http competitions", () => {
   it("competitions: creates a draft with team range, dates and an uploaded cover", async () => {
     const { app, modules } = buildAppWithModules(stubFetch);
     const organizer = "actor-profile-organizer";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -47,10 +47,7 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId } = await parseResponse(
-      completeOrganizationOnboardingResponseSchema,
-      created,
-    );
+    const { organizationId } = created;
     const createPath = `/api/v1/organizations/${organizationId}/competitions`;
     // A second active competition needs a paid plan (ADR-0025).
     await assignOrganizationPlanForTest(modules, {
@@ -102,7 +99,7 @@ describe("apps/api http competitions", () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-registration-organizer";
     const outsider = "actor-registration-outsider";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -111,7 +108,7 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const body = created;
     const base = `/api/v1/organizations/${body.organizationId}/competitions/${body.competition.competition.id}`;
 
     const configured = await app.request(base, {
@@ -271,7 +268,7 @@ describe("apps/api http competitions", () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-setup-organizer";
     const outsider = "actor-setup-outsider";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -280,7 +277,7 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const body = created;
     const organizationId = body.organizationId;
     const competitionId = body.competition.competition.id;
 
@@ -380,7 +377,7 @@ describe("apps/api http competitions", () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-explore-organizer";
     const outsider = "actor-explore-outsider";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -389,7 +386,7 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const body = created;
 
     const explore = await app.request("/api/v1/competitions/explore", {
       headers: serviceHeaders(outsider),
@@ -407,7 +404,7 @@ describe("apps/api http competitions", () => {
   it("competitions: stores ranking eligibility on the draft and keeps it when a later edit omits it", async () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-eligibility-organizer";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -416,7 +413,7 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const body = created;
     expect(body.competition.rules.rankingEligibility).toBeNull();
     const path = `/api/v1/organizations/${body.organizationId}/competitions/${body.competition.competition.id}`;
     const rankingEligibility = { minimumMatches: 1, minimumTeamMinutesRatio: 0.25 };

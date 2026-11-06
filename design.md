@@ -700,7 +700,7 @@ consulta estado previo ni membresías. Después del login, la plataforma consult
 `actor_onboarding`; si está incompleto vuelve al onboarding y, solo si está completo, consulta
 membresías para resolver el destino. En onboarding puede:
 
-- crear una organización y una primera competición en borrador;
+- crear una organización y abrir su inicio, sin exigir una competición; la cuenta de juego se ofrece como desvío opcional desde «Crea tu cuenta» junto a «Continuar»;
 - aceptar una invitación a una competición y navegar directamente a ella;
 - continuar como jugador hacia `/player` sin organización.
 
@@ -958,7 +958,7 @@ Se conservan los IDs `UX-*` para trazabilidad. Son criterios de aceptación, no 
 - **UX-WIZ-003** Cambiar formato o partidos-por-enfrentamiento pide confirmación antes de borrar datos incompatibles.
 - **UX-WIZ-004** Errores junto al campo + resumen enlazable.
 - **UX-WIZ-005** La revisión muestra el resumen guardado (información, formato, reglas y participantes, cada bloque con Editar) junto a la vista previa y la lista para publicar. Las fechas son opcionales. Publicar exige reglas válidas y al menos `teams.min` equipos aprobados.
-- **UX-WIZ-006** El onboarding del organizador crea un draft con nombre, edición, plataforma, región, timezone y formato, sin generar stages ni fixture.
+- **UX-WIZ-006** El onboarding del organizador crea solo la organización (zona horaria detectada del dispositivo, respaldo `UTC`) y asegura el perfil personal. El camino principal es intención → organización → confirmación. La cuenta de juego es un desvío opcional desde «Crea tu cuenta»; el stepper incorpora Cuenta solo si se elige. La primera competición se crea después desde el inicio de organización.
 - **UX-WIZ-007** El Stepper de cinco pasos no produce scroll horizontal y en móvil anuncia número, total y nombre del paso actual.
 - **UX-WIZ-008** Continuar no aparece en revisión. Abrir o cerrar inscripciones está en participantes y en revisión; publicar solo en revisión.
 
@@ -1079,10 +1079,40 @@ Reglas de authoring:
 
 - Colocate `stylex.create` with the component. Do not rebuild a utility library.
 - Import `colors` from `@futrob/ui/styles/tokens.stylex` and `media` from `@futrob/ui/styles/media.stylex` inside `stylex.create`. StyleX cannot follow `defineVars` / `defineConsts` through a re-export. The package barrel is for runtime helpers (`applyProps`, `typography`).
-- Conditions require `default`. Last `applyProps` / `stylex.props` argument wins.
+- Conditions require `default`. Last `applyProps` / `stylex.props` argument wins for the same property.
 - Longhand or single-value shorthands only.
 - `stylex.when.*` + markers replace `group` / `peer`. Remaining descendant rules live in `slots.css`.
 - Elevation is `elevation.sm|md|lg`. Do not combine with border/ring.
+
+#### Overrides en primitivas
+
+En primitivas que aceptan tokens de StyleX en `className`, pasa el token directamente.
+La primitiva usa `applyProps` para componer sus estilos base con el override. Usa
+`applyStyles` al aplicar estilos a un elemento HTML que no añade otros estilos internamente.
+
+```tsx
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, CardContent } from "@futrob/ui";
+
+const styles = stylex.create({
+  content: {
+    paddingInline: 0,
+    paddingBottom: 0,
+  },
+});
+
+// CardContent compone el token con sus estilos base.
+<CardContent className={styles.content}>Resumen de tu organización</CardContent>;
+
+// En un elemento HTML, applyStyles convierte el token en props del DOM.
+<div {...applyStyles(styles.content)}>Resumen de tu organización</div>;
+```
+
+Pasar `className={applyStyles(styles.content).className}` a la primitiva convierte
+el token en un string antes de componerlo; `applyProps` solo puede concatenar esas clases.
+Para quitar el padding de `CardContent`, el ejemplo sobrescribe sus mismas propiedades:
+`paddingInline` y `paddingBottom`. La configuración actual de StyleX prioriza propiedades
+específicas sobre shorthands: `padding: 0` por sí solo no sustituye esos valores base.
 
 ### What is not StyleX
 

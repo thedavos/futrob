@@ -63,7 +63,7 @@ describe("onboarding HTTP contract", () => {
     await expectMatchesOpenApi(response, "post", "/identity/onboarding/player");
   });
 
-  it("refuses an organization whose first competition format is outside the Free plan", async () => {
+  it("completes organization onboarding without requiring a competition", async () => {
     const app = buildApp(createFetch(() => Response.json([])));
 
     const response = await app.request("/api/v1/identity/onboarding/organization", {
@@ -71,13 +71,13 @@ describe("onboarding HTTP contract", () => {
       headers: serviceHeaders("actor-contract-pro-format"),
       body: JSON.stringify({
         name: "Liga Grupos",
-        competition: { ...onboardingCompetition, format: "groups-knockout" },
+        timeZone: "America/Lima",
       }),
     });
 
-    expect(response.status).toBe(402);
+    expect(response.status).toBe(200);
     expect(await response.clone().json()).toMatchObject({
-      code: "competitions.format_not_in_plan",
+      destination: { kind: "organization" },
     });
     await expectMatchesOpenApi(response, "post", "/identity/onboarding/organization");
   });
