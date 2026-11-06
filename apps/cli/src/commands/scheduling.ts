@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import type { FixturePlanDto } from "@futrob/api-contracts";
 import { requirePositionals } from "../lib/args.ts";
 import { apiCall } from "../lib/futrob-client.ts";
 import type { ClientConfig } from "../lib/futrob-client.ts";
@@ -8,7 +9,9 @@ import { flagBoolean, flagString, parseCommon } from "../lib/parse-flags.ts";
 import { print, printJson } from "../lib/print.ts";
 
 const USAGE = `Uso:
-  npm run cli -- fixture-generate <orgId> <compId> [--starts-at ISO] [--interval-days 7] [--home-and-away]
+  npm run cli -- fixture-generate <orgId> <compId> [--starts-at ISO] [--interval-days 7] [--home-and-away] [--rounds N]
+  npm run cli -- swiss-withdraw <orgId> <compId> <fixturePlanId> <teamId> --reason "<motivo>" [--request-id ID]
+  npm run cli -- swiss-close-round <orgId> <compId> <fixturePlanId> <roundNumber> --reason "<motivo>" [--request-id ID]
   npm run cli -- fixture-current <orgId> <compId>
   npm run cli -- fixture-show <orgId> <compId> <fixturePlanId>
   npm run cli -- snapshot-set <encounterId> <orgId> <compId> <homeTeamId> <awayTeamId> <startISO> [--slots 1|2] [--stage-id STAGE]`;
@@ -21,11 +24,13 @@ export function fixtureGenerate(raw: string[]): Effect.Effect<number, CliError> 
   return Effect.gen(function* () {
     const common = parseCommon(raw);
     const [organizationId, competitionId] = yield* requirePositionals(common.positionals, 2, USAGE);
+    const rounds = flagString(common.flags, "rounds");
     const input = {
       generationVersion: 1,
       startsAt: flagString(common.flags, "starts-at") ?? new Date().toISOString(),
       roundIntervalDays: Number(flagString(common.flags, "interval-days") ?? 7),
       homeAndAway: flagBoolean(common.flags, "home-and-away"),
+      ...(rounds === undefined ? {} : { swiss: { rounds: Number(rounds) } }),
     };
     const plan = yield* apiCall(configOf(common), (client) =>
       client.encounters.generateFixture(organizationId, competitionId, input),
@@ -44,6 +49,67 @@ export function fixtureGenerate(raw: string[]): Effect.Effect<number, CliError> 
       }
     }
     print(`fixturePlanId: ${plan.id}`);
+    return 0;
+  });
+}
+
+function printPlanSummary(plan: FixturePlanDto): void {
+  print(`fixturePlanId: ${plan.id} revision=${plan.revision}`);
+  print(`withdrawn: ${(plan.withdrawnTeamIds ?? []).join(", ") || "-"}`);
+  for (const stage of plan.stages) {
+    for (const round of stage.rounds) {
+      print(`round ${round.number}: ${round.encounters.length} encounter(s)`);
+    }
+  }
+}
+
+export function swissWithdraw(raw: string[]): Effect.Effect<number, CliError> {
+  return Effect.gen(function* () {
+    const common = parseCommon(raw);
+    const [organizationId, competitionId, fixturePlanId, teamId] = yield* requirePositionals(
+      common.positionals,
+      4,
+      USAGE,
+    );
+    const reason = flagString(common.flags, "reason");
+    if (!reason) return yield* new UsageError({ message: "Falta --reason", usage: USAGE });
+    const requestId = flagString(common.flags, "request-id");
+    const plan = yield* apiCall(configOf(common), (client) =>
+      client.encounters.withdrawSwissTeam(organizationId, competitionId, fixturePlanId, {
+        teamId,
+        reason,
+        ...(requestId ? { requestId } : {}),
+      }),
+    );
+    if (common.json) printJson(plan);
+    else printPlanSummary(plan);
+    return 0;
+  });
+}
+
+export function swissCloseRound(raw: string[]): Effect.Effect<number, CliError> {
+  return Effect.gen(function* () {
+    const common = parseCommon(raw);
+    const [organizationId, competitionId, fixturePlanId, round] = yield* requirePositionals(
+      common.positionals,
+      4,
+      USAGE,
+    );
+    const reason = flagString(common.flags, "reason");
+    if (!reason) return yield* new UsageError({ message: "Falta --reason", usage: USAGE });
+    const roundNumber = Number(round);
+    if (!Number.isInteger(roundNumber) || roundNumber < 1) {
+      return yield* new UsageError({ message: `Ronda inválida: ${round}`, usage: USAGE });
+    }
+    const requestId = flagString(common.flags, "request-id");
+    const plan = yield* apiCall(configOf(common), (client) =>
+      client.encounters.closeSwissRound(organizationId, competitionId, fixturePlanId, roundNumber, {
+        reason,
+        ...(requestId ? { requestId } : {}),
+      }),
+    );
+    if (common.json) printJson(plan);
+    else printPlanSummary(plan);
     return 0;
   });
 }

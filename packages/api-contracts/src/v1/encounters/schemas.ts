@@ -187,6 +187,31 @@ export const editFixtureEncounterRequestSchema = z
 
 export type EditFixtureEncounterRequest = z.infer<typeof editFixtureEncounterRequestSchema>;
 
+export const withdrawSwissTeamRequestSchema = z.object({
+  teamId: z.string().min(1),
+  reason: z.string().trim().min(1).max(500),
+  requestId: requestIdSchema.optional(),
+});
+
+export type WithdrawSwissTeamRequest = z.infer<typeof withdrawSwissTeamRequestSchema>;
+
+export const closeSwissRoundRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(500),
+  requestId: requestIdSchema.optional(),
+});
+
+export type CloseSwissRoundRequest = z.infer<typeof closeSwissRoundRequestSchema>;
+
+/** Rounds a Swiss fixture of `teamCount` Teams gets unless the organizer chooses: ⌈log₂ n⌉. */
+export function defaultSwissRounds(teamCount: number): number {
+  return Math.ceil(Math.log2(teamCount));
+}
+
+/** Most rounds the API accepts for `teamCount` Teams: ⌊(n + 1) / 2⌋. */
+export function maxSwissRounds(teamCount: number): number {
+  return Math.floor((teamCount + 1) / 2);
+}
+
 export const nextEncounterSideSchema = z.object({
   teamId: z.string().min(1),
   name: z.string().min(1),

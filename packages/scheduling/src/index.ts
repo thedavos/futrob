@@ -222,7 +222,17 @@ export {
   withoutRounds,
   withRoundEncounters,
 } from "./domain/policies/edit-fixture-encounter.ts";
-export { defaultSwissRoundCount, maxSwissRoundCount } from "./domain/policies/pair-swiss-round.ts";
+export {
+  reconcileSwissRounds,
+  type SwissRoundChange,
+} from "./domain/policies/reconcile-swiss-rounds.ts";
+export {
+  defaultSwissRoundCount,
+  maxSwissRoundCount,
+  pairSwissRound,
+  type SwissPairing,
+  type SwissTable,
+} from "./domain/policies/pair-swiss-round.ts";
 export {
   swissByeTeam,
   swissPointsPerBye,

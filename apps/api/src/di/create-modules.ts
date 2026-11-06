@@ -39,6 +39,7 @@ import { CompetitionApplicationFlow } from "@/application/competitions/competiti
 import { createAuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
 import { DeferredEncounterParticipantsChangePort } from "./deferred-encounter-participants.port.ts";
+import { createSwissRoundCommands } from "./swiss-round.commands.ts";
 import { DeferredEncounterOpenSelectionPort } from "./deferred-encounter-open-selection.port.ts";
 import { ResultsCandidateEligibilityAdapter } from "@/adapters/scheduling/results-candidate-eligibility.adapter.ts";
 import { ResultsOpenSelectionAdapter } from "@/adapters/scheduling/results-open-selection.adapter.ts";
@@ -348,6 +349,13 @@ export function createModules(input: CreateModulesInput): AppModules {
     encounterLock: encounterMutationLock,
   });
 
+  const swissRoundCommands = createSwissRoundCommands({
+    scheduling,
+    statistics,
+    transaction,
+    encounterLock: encounterMutationLock,
+  });
+
   const competitionApplications = new CompetitionApplicationFlow({
     transaction,
     getDiscoverable: competitions.getDiscoverable,
@@ -386,6 +394,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     competitions,
     entryInvitations,
     officialSelection,
+    swissRoundCommands,
     runScheduleChangeExpiry: new RunScheduleChangeExpiry({
       feed: scheduling.scheduleChangeExpiryFeed,
       expire: activityFeed.commands.expireScheduleChangeProposal,

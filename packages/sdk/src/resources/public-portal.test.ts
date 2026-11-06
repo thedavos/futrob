@@ -26,7 +26,7 @@ describe("public portal SDK resource", () => {
         const url = requestUrl(input);
         requests.push({ url, authorization: new Headers(init?.headers).get("authorization") });
         if (url.endsWith("/standings")) {
-          return Response.json({ standings: { rows: [], updatedAt: null } });
+          return Response.json({ standings: { rows: [], swiss: null, updatedAt: null } });
         }
         if (url.endsWith("/calendar")) {
           return Response.json({ calendar: { timeZone: "America/Lima", entries: [] } });
