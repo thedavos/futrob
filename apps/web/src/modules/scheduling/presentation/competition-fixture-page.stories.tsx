@@ -281,7 +281,9 @@ export const SwissCloseDialog: Story = {
     const body = within(canvasElement.ownerDocument.body);
     const dialog = within(await body.findByRole("alertdialog"));
     await waitFor(() =>
-      expect(dialog.getByRole("heading", { name: "Cerrar la ronda 2 sin resultado" })).toBeVisible(),
+      expect(
+        dialog.getByRole("heading", { name: "Cerrar la ronda 2 sin resultado" }),
+      ).toBeVisible(),
     );
     await expect(dialog.getByText(/nadie suma puntos/)).toBeVisible();
   },

@@ -45,7 +45,7 @@ export async function handleGenerateCompetitionFixture(
   scope: CompetitionScope,
   connect: ConnectProductApi,
 ): Promise<Response> {
-  const body = generateCompetitionFixtureRequestSchema.safeParse(await readJson(request));
+  const body = await parseBody(request, generateCompetitionFixtureRequestSchema);
   if (!body.success) return validationError(body.error);
   return respond(async () => {
     const { client } = await connect(request);
@@ -61,7 +61,7 @@ export async function handleWithdrawSwissTeam(
   scope: FixtureScope,
   connect: ConnectProductApi,
 ): Promise<Response> {
-  const body = withdrawSwissTeamRequestSchema.safeParse(await readJson(request));
+  const body = await parseBody(request, withdrawSwissTeamRequestSchema);
   if (!body.success) return validationError(body.error);
   return respond(async () => {
     const { client } = await connect(request);
@@ -85,7 +85,7 @@ export async function handleCloseSwissRound(
 ): Promise<Response> {
   const roundNumber = roundNumberSchema.safeParse(scope.roundNumber);
   if (!roundNumber.success) return validationError(roundNumber.error);
-  const body = closeSwissRoundRequestSchema.safeParse(await readJson(request));
+  const body = await parseBody(request, closeSwissRoundRequestSchema);
   if (!body.success) return validationError(body.error);
   return respond(async () => {
     const { client } = await connect(request);
@@ -110,8 +110,11 @@ async function respond(load: () => Promise<JsonSerializable>): Promise<Response>
   }
 }
 
-function readJson(request: Request): Promise<unknown> {
-  return request.json().catch(() => null);
+async function parseBody<Body>(
+  request: Request,
+  schema: z.ZodType<Body>,
+): Promise<z.ZodSafeParseResult<Body>> {
+  return schema.safeParse(await request.json().catch(() => null));
 }
 
 function validationError(error: z.ZodError): Response {

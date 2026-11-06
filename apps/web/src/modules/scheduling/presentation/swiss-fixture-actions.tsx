@@ -231,7 +231,7 @@ function SwissActionForm({
               disabled={pending || uncertain}
               items={items}
               onValueChange={(value) => {
-                if (typeof value !== "string") return;
+                if (value === null) return;
                 setTeamId(value);
                 setInvalid((current) => current.filter((entry) => entry !== "team"));
               }}
