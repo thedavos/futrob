@@ -14,6 +14,7 @@ import {
   type TeamHandle,
 } from "./engine.ts";
 import { seededRandom, type SquadMember } from "./fake-ea.ts";
+import { openOrganization } from "./orgs.ts";
 import type { People } from "./people.ts";
 import { seedClausuraStories } from "./clausura.ts";
 import { buildCompetition, closeCompetition, playAllRounds } from "./rounds.ts";
@@ -115,41 +116,26 @@ export async function seedLigaAndina(
 
   context.log("• Liga Andina: organización, plan Pro y staff");
   const organizer = people.named.orgPro;
-  const onboarding = await context.as(organizer).identity.completeOrganizationOnboarding({
-    name: "Liga Andina",
-    competition: {
-      name: "Copa Borrador",
-      format: "league",
-      gameEdition: "fc26",
-      platform: "playstation",
-      region: "south-america",
-      timeZone: "America/Lima",
-    },
-    gameAccount: null,
-  });
-  const org: OrgHandle = { id: onboarding.organizationId, name: "Liga Andina", organizer };
   // Seeding runs competitions in parallel, which the Pro limit of 5 active competitions
   // would block. Liga Andina seeds on the League plan and moves to Pro at the end.
-  await context.as(people.named.superadmin).billing.assignOrganizationPlan(org.id, {
+  const org = await openOrganization(context, people, {
+    organizer,
+    name: "Liga Andina",
     planKey: "league",
-    state: { status: "active" },
     reason: "Demo: carga inicial de Liga Andina",
   });
   // Unfinished draft: information and rules saved, no participants yet.
-  await context
-    .as(organizer)
-    .competitions.updateDraft(org.id, onboarding.competition.competition.id, {
-      name: "Copa Borrador",
-      format: "league",
-      gameEdition: "fc26",
-      platform: "playstation",
-      region: "south-america",
-      timeZone: "America/Lima",
-      teams: { min: 4, max: 16 },
-      schedule: { startsOn: null, endsOn: null },
-      cover: { kind: "preset", preset: "cup" },
-      rules: { regularStage: matchRules(), knockoutStage: null, maxRosterSize: null },
-    });
+  await createConfiguredDraft(context, {
+    org,
+    name: "Copa Borrador",
+    format: "league",
+    cover: "cup",
+    maxTeams: 16,
+    regularStage: matchRules(),
+    knockoutStage: null,
+    startsOn: null,
+    endsOn: null,
+  });
 
   const teams: TeamHandle[] = [];
   for (const [index, spec] of specs.entries()) {

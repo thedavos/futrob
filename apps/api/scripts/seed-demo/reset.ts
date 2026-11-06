@@ -44,7 +44,7 @@ export async function resetDemoData(
   const scope = await findDemoScope(pool);
   const orgTables = await pool.query<{ table_name: string }>(
     `SELECT table_name FROM information_schema.columns
-     WHERE table_schema = 'public' AND column_name = 'organization_id'
+     WHERE table_schema = current_schema() AND column_name = 'organization_id'
        AND table_name <> 'organizations'`,
   );
   const actorColumns = await pool.query<{ table_name: string; column_name: string }>(
@@ -54,7 +54,7 @@ export async function resetDemoData(
      JOIN pg_attribute AS attribute
        ON attribute.attrelid = fk.conrelid AND attribute.attnum = ANY (fk.conkey)
      WHERE fk.contype = 'f' AND fk.confrelid = 'actors'::regclass
-       AND source.relnamespace = 'public'::regnamespace`,
+       AND source.relnamespace = current_schema()::regnamespace`,
   );
 
   const statements: Array<{ sql: string; values: unknown[] }> = [];

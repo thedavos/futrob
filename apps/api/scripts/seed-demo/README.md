@@ -46,6 +46,9 @@ npm run seed:demo -w @futrob/api -- --reset-only
 | `jugador01`…`jugador24` | Plantillas de Liga Andina; el primero de cada trío es capitán                          |
 | `barrio01`…`barrio12`   | Capitanes de Barrio FC                                                                 |
 
+`superadmin@` recibe el rol directamente, así que el seed funciona aunque la base ya tenga otros
+superusuarios. `--reset` solo quita el suyo: los administradores existentes se conservan.
+
 ## Competiciones
 
 | Organización               | Competición            | Formato                             | Estado                                                     |

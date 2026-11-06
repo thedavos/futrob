@@ -241,9 +241,15 @@ export async function seedPersonalSpace(
 /** Onboarding states that stop before completion, plus the platform superuser. */
 export async function seedAccessStates(context: SeedContext, people: People): Promise<void> {
   context.log("• Superusuario y onboardings incompletos");
-  await context.modules.authorization.bootstrapInitialSuperuser(
-    asActorId(people.named.superadmin.actorId),
-  );
+  // The bootstrap use case only works on a platform without superusers, and a dev database
+  // often has one. Grant the role directly: existing administrators stay as they are.
+  const superadminId = asActorId(people.named.superadmin.actorId);
+  await context.modules.organizations.repositories.platformRoles.assignSuperuser({
+    actorId: superadminId,
+    role: "superuser",
+    assignedByActorId: superadminId,
+    createdAt: context.now,
+  });
   await context.as(people.named.superadmin).identity.completePlayerOnboarding({
     gameAccount: null,
     externalClub: null,

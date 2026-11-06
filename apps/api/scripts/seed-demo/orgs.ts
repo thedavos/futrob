@@ -2,6 +2,7 @@ import type { DemoAccount } from "./accounts.ts";
 import type { SeedContext } from "./context.ts";
 import {
   commandKey,
+  COMPETITION_TIME_ZONE,
   createConfiguredDraft,
   createTeam,
   enrollTeams,
@@ -14,7 +15,7 @@ import {
   type TeamHandle,
 } from "./engine.ts";
 import { seededRandom } from "./fake-ea.ts";
-import { GAME_EDITION, GAME_PLATFORM, type People } from "./people.ts";
+import type { People } from "./people.ts";
 import { buildCompetition, closeCompetition, playAllRounds } from "./rounds.ts";
 
 const DAY_MS = 24 * HOURS;
@@ -39,6 +40,31 @@ const BARRIO_TEAMS = [
   "Fénix Barrial",
 ] as const;
 
+/** Onboards the organizer into a new organization and puts it on its demo plan. */
+export async function openOrganization(
+  context: SeedContext,
+  people: People,
+  input: {
+    readonly organizer: DemoAccount;
+    readonly name: string;
+    readonly planKey: "free" | "league";
+    readonly reason: string;
+  },
+): Promise<OrgHandle> {
+  const { organizer, name, planKey, reason } = input;
+  const { organizationId } = await context.as(organizer).identity.completeOrganizationOnboarding({
+    name,
+    timeZone: COMPETITION_TIME_ZONE,
+    gameAccount: null,
+  });
+  await context.as(people.named.superadmin).billing.assignOrganizationPlan(organizationId, {
+    planKey,
+    state: { status: "active" },
+    reason,
+  });
+  return { id: organizationId, name, organizer };
+}
+
 /** Barrio FC: Free plan at every limit (1 competition, 12 teams, sync quota spent). */
 export async function seedBarrioFc(
   context: SeedContext,
@@ -47,23 +73,10 @@ export async function seedBarrioFc(
 ): Promise<OrgHandle> {
   context.log("• Barrio FC (plan Free al límite)");
   const random = seededRandom(11);
-  const organizer = people.named.orgFree;
-  const onboarding = await context.as(organizer).identity.completeOrganizationOnboarding({
+  const org = await openOrganization(context, people, {
+    organizer: people.named.orgFree,
     name: "Barrio FC",
-    competition: {
-      name: "Liga Barrio",
-      format: "league",
-      gameEdition: GAME_EDITION,
-      platform: GAME_PLATFORM,
-      region: "south-america",
-      timeZone: "America/Lima",
-    },
-    gameAccount: null,
-  });
-  const org: OrgHandle = { id: onboarding.organizationId, name: "Barrio FC", organizer };
-  await context.as(people.named.superadmin).billing.assignOrganizationPlan(org.id, {
     planKey: "free",
-    state: { status: "active" },
     reason: "Demo: Barrio FC en plan Free",
   });
 
@@ -99,7 +112,6 @@ export async function seedBarrioFc(
     startsAt: limaEvening(context, -12, 21),
     fixture: { roundIntervalDays: 7 },
     maxTeams: 12,
-    existingCompetitionId: onboarding.competition.competition.id,
   });
   await playAllRounds(context, liga, random, () => "official");
 
@@ -167,23 +179,10 @@ const MEGA_CITIES = [
 export async function seedMegaLiga(context: SeedContext, people: People): Promise<OrgHandle> {
   context.log("• Mega Liga (plan Liga, 36 equipos)");
   const organizer = people.named.orgLiga;
-  const onboarding = await context.as(organizer).identity.completeOrganizationOnboarding({
+  const org = await openOrganization(context, people, {
+    organizer,
     name: "Mega Liga",
-    // Free until the League plan below: the draft starts as a league and changes format.
-    competition: {
-      name: "Superliga",
-      format: "league",
-      gameEdition: GAME_EDITION,
-      platform: GAME_PLATFORM,
-      region: "south-america",
-      timeZone: "America/Lima",
-    },
-    gameAccount: null,
-  });
-  const org: OrgHandle = { id: onboarding.organizationId, name: "Mega Liga", organizer };
-  await context.as(people.named.superadmin).billing.assignOrganizationPlan(org.id, {
     planKey: "league",
-    state: { status: "active" },
     reason: "Demo: Mega Liga en plan Liga",
   });
 
@@ -204,7 +203,6 @@ export async function seedMegaLiga(context: SeedContext, people: People): Promis
     }),
     startsOn: new Date(context.now.getTime() + 14 * DAY_MS),
     endsOn: new Date(context.now.getTime() + 120 * DAY_MS),
-    existingCompetitionId: onboarding.competition.competition.id,
   });
   await context.as(organizer).competitions.openRegistration(org.id, superligaId);
   await enrollTeams(

@@ -27,7 +27,6 @@ interface BuildCompetitionInput {
   readonly knockout: ReturnType<typeof matchRules> | null;
   readonly startsAt: Date;
   readonly maxTeams?: number;
-  readonly existingCompetitionId?: string;
   readonly fixture: {
     readonly roundIntervalDays: number;
     readonly groups?: { readonly count: number; readonly qualifiersPerGroup: number };
@@ -49,7 +48,6 @@ export async function buildCompetition(
     knockoutStage: input.knockout,
     startsOn: input.startsAt,
     endsOn: null,
-    existingCompetitionId: input.existingCompetitionId,
   });
   const captains = await enrollTeams(
     context,

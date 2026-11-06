@@ -168,10 +168,8 @@ export interface CompetitionSetup {
   readonly maxTeams: number | null;
   readonly regularStage: CompetitionMatchRulesDto | null;
   readonly knockoutStage: CompetitionMatchRulesDto | null;
-  readonly startsOn: Date;
+  readonly startsOn: Date | null;
   readonly endsOn: Date | null;
-  /** Reuses a draft created elsewhere (the organizer onboarding). */
-  readonly existingCompetitionId?: string;
 }
 
 function calendarDate(date: Date): string {
@@ -188,19 +186,17 @@ export async function createConfiguredDraft(
     format: setup.format,
     teams: { min: 2, max: setup.maxTeams },
     schedule: {
-      startsOn: calendarDate(setup.startsOn),
+      startsOn: setup.startsOn ? calendarDate(setup.startsOn) : null,
       endsOn: setup.endsOn ? calendarDate(setup.endsOn) : null,
     },
     cover: { kind: "preset", preset: setup.cover },
   });
-  const competitionId =
-    setup.existingCompetitionId ??
-    (
-      await client.competitions.createDraft(setup.org.id, {
-        ...draft,
-        creationKey: commandKey("c"),
-      })
-    ).competition.id;
+  const {
+    competition: { id: competitionId },
+  } = await client.competitions.createDraft(setup.org.id, {
+    ...draft,
+    creationKey: commandKey("c"),
+  });
   await client.competitions.updateDraft(setup.org.id, competitionId, {
     ...draft,
     rules: {
