@@ -638,6 +638,9 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 - Logo Futrob.
 - Anclas: Producto, Cómo funciona, Ejemplo público.
 - Acciones: Iniciar sesión, Crear competición.
+- Dos grupos: marca y enlaces de contenido a la izquierda; acceso a la derecha. Sin grupo central.
+- Por debajo de `lg`, los enlaces de contenido pasan a un `Sheet`; por debajo de `sm`, «Iniciar sesión»
+  también. La acción de crear permanece siempre en la barra.
 
 #### Hero
 
@@ -653,6 +656,18 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 2. Reprogramación controlada.
 3. Rankings y portal para espectadores.
 4. CTA final.
+
+#### Esqueleto de sección
+
+Toda sección se compone con `LandingSection` (`shared/presentation/landing/landing-section.tsx`);
+no redefinir contenedor, padding, columnas ni jerarquía de copy en cada sección.
+
+- Contenedor de 80 rem. Padding vertical 80 px, 112 px desde `lg`; el hero, 32 px y 48 px.
+- Copy a la izquierda y visual a la derecha, 5:6 desde `lg`, sin invertir. Sin visual, una columna
+  de copy de hasta 40 rem.
+- Tonos alternos `base` (`background`) y `band` (`sidebar`). El cambio de tono es el separador: sin bordes.
+- Copy centrado respecto al visual; `align="start"` lo fija con sticky cuando el visual es más alto.
+- `Display` más `Body` `lg` en muted con medida de 44ch; los CTA van en `LandingActions`.
 
 ### Shell autenticado
 
