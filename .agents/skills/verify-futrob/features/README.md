@@ -41,6 +41,7 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 - [Onboarding (player)](./onboarding-player.md) covers intention → optional account/club → `/player`.
 - [Player matches](./player-matches.md) covers personal matches, empty club state, and official stats separation.
 - [Competition setup](./competition-setup.md) covers org + draft + setup in the UI, with the CLI golden path as the API twin.
+- [Swiss format](./swiss-format.md) covers the Swiss setup, plan upsell, web fixture generation, rows, withdrawal, round closing and the standings.
 - [Explore competitions](./explore-competitions.md) covers the authenticated catalog, URL filters, detail and share.
 - [Results / Match Center](./results-match-center.md) covers the encounters lists, preview, Team negotiation, organizer review, conflicts, recovery and permissions.
 

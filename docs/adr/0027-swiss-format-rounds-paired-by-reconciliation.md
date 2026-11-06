@@ -2,6 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-11-06
+- Actualizado: 2026-11-06 (emparejamiento, regla de retirada y selección abierta, según lo construido)
 - Relacionado: [ADR-0016](/docs/adr/0016-official-results-transactional-projection.md) ·
   [ADR-0024](/docs/adr/0024-anonymous-public-portal-reads.md) ·
   [ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md)
@@ -74,22 +75,28 @@ No se usa el outbox porque la API sigue con `NoopEventPublisher`. El evento
 
 ### 2. Emparejamiento y número de rondas
 
-`pairSwissRound` es una política pura y determinista: grupos de puntos con búsqueda exhaustiva.
+`pairSwissRound` es una política pura y determinista: grupos de puntos en orden de preferencia, con
+una comprobación de viabilidad antes de fijar cada mesa.
 
 1. Ordena los equipos activos por puntos y luego por `seed`. Los puntos incluyen los de bye.
 2. Con número impar, prueba como bye a cada equipo de abajo hacia arriba, primero los que no han
    descansado, y se queda con el primero que deja un emparejamiento completo.
 3. Elige el mejor equipo sin pareja. Prefiere un rival de su mismo grupo de puntos, empezando por
    la mitad del grupo (1 contra n/2 + 1 en la ronda 1), y después los grupos inferiores.
-4. Retrocede si un equipo se queda sin rival y memoriza los conjuntos ya descartados.
+4. Toma el primer rival de ese orden que deja al resto emparejable. El algoritmo de blossom de Edmonds
+   responde si queda un emparejamiento perfecto entre los equipos restantes. Devuelve lo mismo que un
+   retroceso sobre el mismo orden. El retroceso con memoria se descartó porque tardaba 7,8 s con 50
+   equipos, dentro de la transacción de aprobación.
 
 **No hay revanchas: es un invariante duro.** Si no existe un emparejamiento completo sin revanchas,
 o quedan menos de dos equipos activos, la fase termina en la ronda anterior. Local es quien ha sido local menos veces y, si empatan, el
 mejor clasificado.
 
 Rondas por defecto: `⌈log₂ n⌉`. El organizador puede elegir entre 1 y `⌊(n + 1) / 2⌋`. Con ese
-máximo el teorema de Dirac garantiza que hay emparejamiento sin revanchas mientras nadie se retire,
-porque el grafo de rivales posibles conserva grado mínimo de al menos la mitad de sus vértices.
+máximo el teorema de Dirac garantiza un emparejamiento sin revanchas ni byes repetidos. El bye se
+busca como un vértice virtual que no se repite, así que el grafo tiene n + 1 vértices y, antes de
+la ronda k, grado mínimo n − k + 1, que es al menos (n + 1) / 2 para k ≤ (n + 1) / 2. Esta garantía
+no sobrevive a una retirada: con retiradas, la fase puede terminar antes.
 
 Los puntos para emparejar se calculan en scheduling a partir de los resultados oficiales y las
 reglas de la etapa regular, sumando los byes con la misma fórmula que la clasificación. No se lee
@@ -106,15 +113,19 @@ correlacionado y el emparejamiento no, porque se orienta por los slots del encue
   un hecho de emparejamiento y vive en scheduling; la inscripción sigue `approved` porque sus
   resultados históricos, nombre y permisos dependen de ella. No se reincorpora en esta entrega.
   - Sus resultados aprobados se conservan y sigue en la clasificación, marcado como retirado.
-  - Su encuentro sin resultado de la ronda actual se convierte en bye para el rival. Si su rival
-    ya descansaba, el encuentro se elimina. La reconciliación aplica esta regla, así que también
+  - Su encuentro sin resultado se convierte en bye para el rival. Se elimina si los dos equipos
+    están retirados, o si el retirado tiene un bye en una ronda que aún se está jugando. El bye de
+    una ronda liquidada es historia y se queda. La reconciliación aplica esta regla, así que también
     cubre una anulación posterior que reabra un encuentro de un equipo ya retirado.
 - **Partido sin resultado.** `CloseSwissRoundUseCase` marca los encuentros sin resultado de la
   ronda actual con `closedWithoutResult`: nadie suma puntos, no se crea resultado oficial y cuentan
   como ya enfrentados.
-- **Selección abierta.** Retirar y cerrar anulan la selección no terminal del encuentro mediante un
-  caso de uso de results, conectado por un port de scheduling. Si bloquearan, una selección
-  abandonada dejaría la competición sin salida. Un resultado aprobado nunca se toca.
+- **Selección abierta.** Retirar y cerrar anulan la selección no terminal del encuentro con
+  `CancelOpenSelectionUseCase` de results, conectado por `EncounterOpenSelectionPort` de scheduling.
+  Se registra con el actor del organizador o, si la reconciliación corre sin él, con
+  `SCHEDULING_SYSTEM_ACTOR_ID`. Si hay una disputa abierta, se resuelve como
+  `returned_to_selection`. Si bloquearan, una selección abandonada dejaría la competición sin
+  salida. Un resultado aprobado nunca se toca.
 
 Ambos comandos exigen `encounters.schedule.manage` y un motivo. Dejan rastro en `swiss_round_actions`,
 una tabla por plan, porque `fixture_encounter_audit` tiene una clave foránea en cascada al encuentro
@@ -182,8 +193,17 @@ cuando todas las rondas restantes están liquidadas.
 
 La evidencia de ejecución está en la descripción del PR que introduce este registro.
 
+Construido en API, SDK, CLI, web y copy móvil. La web genera el calendario solo para suizo; los demás
+formatos siguen sin flujo web de generación. La lectura pública devuelve los campos suizos, pero
+`apps/web` aún no tiene rutas de portal público que los muestren.
+
+Brechas: el aviso a capitanes al emparejar (cuestión pendiente arriba) y el paso automático a
+`finished`, que no existe en ningún formato.
+
 - [Política de reconciliación](/packages/scheduling/src/domain/policies/reconcile-swiss-rounds.ts) y
   [emparejamiento](/packages/scheduling/src/domain/policies/pair-swiss-round.ts).
 - [Política de clasificación](/packages/statistics/src/domain/policies/apply-swiss-standings.ts).
 - [Comandos de organizador](/apps/api/src/di/swiss-round.commands.ts).
 - [Migración](/apps/api/migrations/0064_swiss_format.sql).
+- [Calendario web](/apps/web/src/modules/scheduling/presentation/competition-fixture-page.tsx) y
+  [comandos BFF](/apps/web/src/modules/scheduling/server/competition-fixture.handler.ts).

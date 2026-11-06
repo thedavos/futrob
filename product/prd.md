@@ -97,10 +97,11 @@ El setup se guarda como borrador reanudable en cinco pasos: información, format
 - Eliminación directa.
 - Fase de grupos y eliminación.
 - Liga con playoffs.
+- Sistema suizo: rondas emparejadas por resultados, sin revanchas, con desempate Buchholz. Sin playoffs posteriores en esta entrega.
 
 ### Posteriores
 
-- Doble eliminación, sistema suizo, divisiones con ascenso/descenso, Apertura/Clausura, series al mejor de tres o cinco.
+- Doble eliminación, divisiones con ascenso/descenso, Apertura/Clausura, series al mejor de tres o cinco.
 
 ## 6–11. Modelo competitivo, EA, selección, reprogramación y resultados
 
@@ -138,7 +139,7 @@ La app nativa cubre los flujos autenticados Must aplicables al rol del actor —
 
 ### Fuera del MVP
 
-FC Temporadas/Amistosos; marketplace; fantasy; streaming; white-label completo; doble eliminación y suizo; automatización de pagos/premios; predicciones con IA; OCR de capturas como fuente primaria de resultados; WhatsApp/Telegram y push nativo como canales operativos del MVP.
+FC Temporadas/Amistosos; marketplace; fantasy; streaming; white-label completo; doble eliminación; automatización de pagos/premios; predicciones con IA; OCR de capturas como fuente primaria de resultados; WhatsApp/Telegram y push nativo como canales operativos del MVP.
 
 ## 21–23. Métricas, riesgos y roadmap
 
