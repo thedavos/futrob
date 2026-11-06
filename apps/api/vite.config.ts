@@ -23,7 +23,7 @@ export default defineConfig({
   test: {
     name: "api",
     environment: "node",
-    include: ["src/**/*.{test,spec}.ts"],
+    include: ["src/**/*.{test,spec}.ts", "scripts/**/*.{test,spec}.ts"],
     setupFiles: ["./src/http/openapi/zod-openapi-setup.ts"],
   },
 });
