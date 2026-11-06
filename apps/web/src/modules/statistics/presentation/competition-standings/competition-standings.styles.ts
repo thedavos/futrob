@@ -95,7 +95,8 @@ export const styles = stylex.create({
   },
   teamCell: {
     minWidth: 0,
-    overflowWrap: "break-word",
+    // "anywhere" lets a long name shrink the column, so it never pushes points out of view.
+    overflowWrap: "anywhere",
     hyphens: "auto",
   },
   team: {
