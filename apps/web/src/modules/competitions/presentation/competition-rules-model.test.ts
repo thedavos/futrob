@@ -16,6 +16,14 @@ describe("rulesStages", () => {
     expect(rulesStages(leagueDraft).map((stage) => stage.label)).toEqual(["league"]);
   });
 
+  it("names the one stage of a Swiss format", () => {
+    const draft = {
+      ...leagueDraft,
+      competition: { ...leagueDraft.competition, format: "swiss" as const },
+    };
+    expect(rulesStages(draft).map((stage) => stage.label)).toEqual(["swiss"]);
+  });
+
   it("names a groups + knockout format's stages", () => {
     const draft = {
       ...leaguePlayoffsDraft,

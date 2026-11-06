@@ -4,6 +4,7 @@ import {
   datesLabel,
   matchesSummary,
   pointsSummary,
+  reviewTiebreaks,
   rulesArePublishable,
   teamCountLabel,
 } from "./competition-review-model.ts";
@@ -76,6 +77,15 @@ describe("competition review copy", () => {
         ),
       ).toBe(false);
     }
+  });
+
+  it("treats Swiss like a league: regular stage only, with Buchholz in its tiebreaks", () => {
+    expect(rulesArePublishable("swiss", rules(stage(1), null))).toBe(true);
+    expect(rulesArePublishable("swiss", rules(stage(1), stage(2)))).toBe(false);
+    expect(reviewTiebreaks("swiss")).toBe(
+      "Puntos → Buchholz → Diferencia de goles → Goles a favor",
+    );
+    expect(reviewTiebreaks("league")).toBe("Puntos → Diferencia de goles → Goles a favor");
   });
 
   it("accepts only the stage shape and points a publish would accept", () => {

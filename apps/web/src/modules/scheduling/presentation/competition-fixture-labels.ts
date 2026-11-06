@@ -16,6 +16,8 @@ export function fixtureStageLabel(kind: FixtureStageKind, t: Translator): string
       return t("competitionRules.stage.knockout");
     case "playoffs":
       return t("competitionRules.stage.playoffs");
+    case "swiss":
+      return t("competitionRules.stage.swiss");
     default: {
       const exhaustive: never = kind;
       return exhaustive;
