@@ -12,123 +12,132 @@ import {
   Button,
   Caption,
   Card,
-  CardContent,
-  CardHeader,
-  Display,
-  Heading,
-  Subtitle,
+  Separator,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { colors, space } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
-import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { planNameKey } from "./plan-copy.ts";
+import { LandingActions, LandingSection } from "@/shared/presentation/landing/landing-section.tsx";
+import { PricingPlanCard } from "./pricing-plan-card.tsx";
+
+/** Product's suggested plan. A merchandising choice, not catalog data. */
+const RECOMMENDED_PLAN: OrganizationPlan["key"] = "pro";
+
+const INTEGRITY_ITEMS = [
+  "pricing.integrity.selection",
+  "pricing.integrity.confirmation",
+  "pricing.integrity.disputes",
+  "pricing.integrity.reschedule",
+  "pricing.integrity.officialization",
+] as const satisfies readonly MessageKey[];
 
 const styles = stylex.create({
-  section: {
-    marginInline: "auto",
-    width: "100%",
-    maxWidth: "80rem",
-    paddingInline: { default: "1.25rem", [media.sm]: "2rem" },
-    paddingBlock: "3rem",
+  grid: {
+    listStyle: "none",
+    margin: 0,
+    padding: 0,
+    display: "grid",
+    columnGap: space.s4,
+    rowGap: {
+      default: space.s4,
+      [media.lg]: 0,
+    },
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.lg]: "repeat(3, minmax(0, 1fr))",
+    },
+  },
+  // Passes the grid's tracks down to the card; see `pricing-plan-card.tsx`.
+  gridItem: {
+    display: {
+      default: "block",
+      [media.lg]: "grid",
+    },
+    gridRow: {
+      default: null,
+      [media.lg]: "span 18",
+    },
+    gridTemplateRows: {
+      default: null,
+      [media.lg]: "subgrid",
+    },
+  },
+  integrity: {
     display: "flex",
     flexDirection: "column",
-    gap: "2rem",
+    gap: space.s4,
+    padding: space.s6,
   },
-  intro: { display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: "48rem" },
-  muted: { color: colors.mutedForeground },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: { default: "minmax(0, 1fr)", [media.md]: "repeat(3, minmax(0, 1fr))" },
-    gap: "1rem",
-  },
-  card: { display: "flex", flexDirection: "column" },
-  header: { padding: "1.25rem", gap: "0.25rem" },
-  content: { paddingInline: "1.25rem", paddingBottom: "1.25rem" },
-  list: {
+  integrityList: {
     listStyle: "none",
     margin: 0,
     padding: 0,
     display: "flex",
     flexDirection: "column",
-    gap: "0.625rem",
+    gap: space.s3,
   },
-  item: { display: "flex", gap: "0.5rem", alignItems: "flex-start" },
-  icon: { flexShrink: 0, width: "1.25rem", height: "1.25rem", color: colors.primary },
-  actions: { display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" },
+  integrityItem: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: space.s2,
+  },
+  icon: {
+    flexShrink: 0,
+    width: "1.25rem",
+    height: "1.25rem",
+    color: colors.primary,
+  },
 });
-
-function planLines(plan: OrganizationPlan, t: Translator): readonly string[] {
-  const { limits, quotas, features } = plan.entitlements;
-  const sync = quotas.provider_sync_jobs;
-  return [
-    limits.activeCompetitions === null
-      ? t("pricing.competitionsUnlimited")
-      : limits.activeCompetitions === 1
-        ? t("pricing.competitionsOne")
-        : t("pricing.competitions", { count: limits.activeCompetitions }),
-    limits.teamsPerCompetition === null
-      ? t("billing.features.teamsUnlimited")
-      : t("billing.features.teamsPerCompetition", { count: limits.teamsPerCompetition }),
-    limits.staffMembers === null
-      ? t("pricing.staffUnlimited")
-      : t("pricing.staff", { count: limits.staffMembers }),
-    sync.amount === null
-      ? t("billing.usage.fairUse")
-      : sync.fairUse
-        ? t("pricing.fairUse", { count: sync.amount })
-        : t("pricing.perMonth", { count: sync.amount }),
-    ...(features.automaticProviderSync ? [t("billing.features.automaticProviderSync")] : []),
-    ...(features.performanceRanking ? [t("billing.features.performanceRanking")] : []),
-    ...(features.premiumAnalytics ? [t("billing.features.premiumAnalytics")] : []),
-    ...(features.organizerAnalytics === "none"
-      ? []
-      : [t(`billing.features.organizerAnalytics.${features.organizerAnalytics}`)]),
-    t(`billing.features.portalBranding.${features.portalBranding}`),
-    t("pricing.integrity"),
-  ];
-}
 
 /** Public pricing from the catalog data; no purchase until payments exist (ADR-0025). */
 export function PricingPage({ plans }: { readonly plans: readonly OrganizationPlan[] | null }) {
   const { t } = useI18n();
   return (
-    <section aria-labelledby="pricing-title" {...applyStyles(styles.section)}>
-      <div {...applyStyles(styles.intro)}>
-        <Display id="pricing-title">{t("pricing.title")}</Display>
-        <Subtitle {...applyStyles(styles.muted)}>{t("pricing.subtitle")}</Subtitle>
-      </div>
-      {plans === null ? (
-        <Alert variant="warning">
-          <AlertDescription>{t("pricing.unavailable")}</AlertDescription>
-        </Alert>
-      ) : (
-        <ul aria-label={t("pricing.title")} {...applyStyles(styles.grid, styles.list)}>
-          {plans.map((plan) => (
-            <li key={plan.key} {...applyStyles(styles.card)}>
-              <Card aria-labelledby={`plan-${plan.key}`} {...applyStyles(styles.card)}>
-                <CardHeader className={styles.header}>
-                  <Heading id={`plan-${plan.key}`}>{t(planNameKey(plan.key))}</Heading>
-                </CardHeader>
-                <CardContent className={styles.content}>
-                  <ul {...applyStyles(styles.list)}>
-                    {planLines(plan, t).map((line) => (
-                      <li key={line} {...applyStyles(styles.item)}>
-                        <CheckCircleIcon aria-hidden weight="fill" {...applyStyles(styles.icon)} />
-                        <Body as="span">{line}</Body>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div {...applyStyles(styles.actions)}>
-        <Button render={<Link to="/signup" />}>{t("pricing.start")}</Button>
-        <Caption {...applyStyles(styles.muted)}>{t("pricing.contact")}</Caption>
-      </div>
-    </section>
+    <>
+      <LandingSection
+        as="h1"
+        layout="stacked"
+        subtitle={t("pricing.subtitle")}
+        title={t("pricing.title")}
+      >
+        {plans === null ? (
+          <Alert variant="warning">
+            <AlertDescription>{t("pricing.unavailable")}</AlertDescription>
+          </Alert>
+        ) : (
+          <ul aria-label={t("pricing.title")} {...applyStyles(styles.grid)}>
+            {plans.map((plan) => (
+              <li key={plan.key} {...applyStyles(styles.gridItem)}>
+                <PricingPlanCard featured={plan.key === RECOMMENDED_PLAN} plan={plan} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </LandingSection>
+      <LandingSection
+        copy={
+          <LandingActions>
+            <Button render={<Link to="/signup" />}>{t("landing.cta.primary")}</Button>
+          </LandingActions>
+        }
+        subtitle={t("pricing.integrity.subtitle")}
+        title={t("pricing.integrity.title")}
+        tone="band"
+      >
+        <Card {...applyStyles(styles.integrity)}>
+          <ul aria-label={t("pricing.integrity.listLabel")} {...applyStyles(styles.integrityList)}>
+            {INTEGRITY_ITEMS.map((key) => (
+              <li key={key} {...applyStyles(styles.integrityItem)}>
+                <CheckCircleIcon aria-hidden weight="fill" {...applyStyles(styles.icon)} />
+                <Body as="span">{t(key)}</Body>
+              </li>
+            ))}
+          </ul>
+          <Separator />
+          <Caption>{t("pricing.integrity.note")}</Caption>
+        </Card>
+      </LandingSection>
+    </>
   );
 }

@@ -7,6 +7,7 @@ import { getPublicPlans } from "@/modules/billing/server/get-public-plans.functi
 import { DEFAULT_LOCALE } from "@/shared/presentation/i18n/locale.ts";
 import { getUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
+import { LandingFooter } from "@/shared/presentation/landing/landing-footer.tsx";
 import { LandingHeader } from "@/shared/presentation/landing/landing-header.tsx";
 
 const styles = stylex.create({
@@ -36,6 +37,7 @@ function PricingRoute() {
     <main {...applyStyles(styles.main)}>
       <LandingHeader />
       <PricingPage plans={plans} />
+      <LandingFooter />
     </main>
   );
 }
