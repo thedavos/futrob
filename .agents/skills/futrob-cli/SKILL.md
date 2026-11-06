@@ -28,6 +28,7 @@ npm run cli -- domain-smoke              # shared-kernel + scheduling/results ty
 npm run cli -- domain-smoke-game-data    # game-data pure helpers + fake provider use case
 npm run cli -- statistics-smoke          # personal stats use case with in-memory repos
 npm run cli -- results-smoke             # propose → rival confirm, and reject → review → resolve; asserts events
+npm run cli -- swiss-smoke               # 8 and 7 Teams over 3 rounds on pure policies; asserts no rematch and one bye per round
 ```
 
 Run these first when touching `packages/*` domain code. They fail fast without Postgres or Workers.
