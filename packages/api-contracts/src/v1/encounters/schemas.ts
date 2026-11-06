@@ -88,6 +88,8 @@ export const fixtureEncounterSchema = z.object({
   scheduledStartAt: z.string().datetime(),
   officialMatchCount: z.union([z.literal(1), z.literal(2)]),
   series: fixtureSeriesSchema.nullable(),
+  /** Team vs Team with `series: null`: the organizer closed it and it will never have a result. */
+  closedWithoutResult: z.literal(true).optional(),
 });
 
 export const fixtureRoundSchema = z.object({
@@ -100,7 +102,7 @@ export const fixtureRoundSchema = z.object({
 
 export const fixtureStageSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(["league", "groups", "knockout", "playoffs"]),
+  kind: z.enum(["league", "groups", "knockout", "playoffs", "swiss"]),
   order: z.number().int().positive(),
   rounds: z.array(fixtureRoundSchema),
 });
@@ -114,10 +116,12 @@ export const fixturePlanSchema = z.object({
   competitionId: z.string().min(1),
   rulesVersion: z.number().int().positive(),
   generationVersion: z.number().int().positive(),
-  format: z.enum(["league", "knockout", "groups-knockout", "league-playoffs"]),
+  format: z.enum(["league", "knockout", "groups-knockout", "league-playoffs", "swiss"]),
   timeZone: z.string().min(1),
   homeAndAway: z.boolean(),
   seed: z.array(z.string().min(1)).min(2),
+  /** Swiss only. Teams left out of later pairings; their earlier results still count. */
+  withdrawnTeamIds: z.array(z.string().min(1)).optional(),
   stages: z.array(fixtureStageSchema).min(1),
 });
 
@@ -152,6 +156,7 @@ export const generateCompetitionFixtureRequestSchema = z.object({
     })
     .optional(),
   playoffs: z.object({ teamCount: z.number().int().min(2) }).optional(),
+  swiss: z.object({ rounds: z.number().int().positive() }).optional(),
 });
 
 export type GenerateCompetitionFixtureRequest = z.infer<

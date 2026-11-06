@@ -6,7 +6,7 @@ import type {
 export const UNLIMITED_COMPETITION_PLAN: CompetitionPlanLimits = {
   maxActiveCompetitions: null,
   maxTeamsPerCompetition: null,
-  allowedFormats: ["league", "knockout", "groups-knockout", "league-playoffs"],
+  allowedFormats: ["league", "knockout", "groups-knockout", "league-playoffs", "swiss"],
 };
 
 /** Plan limits fixed for a test; defaults to unlimited so unrelated suites stay untouched. */

@@ -7,7 +7,7 @@ import type {
   TeamId,
 } from "@futrob/shared-kernel";
 
-export type FixtureFormat = "league" | "knockout" | "groups-knockout" | "league-playoffs";
+export type FixtureFormat = "league" | "knockout" | "groups-knockout" | "league-playoffs" | "swiss";
 export type FixturePlanStatus = "active" | "superseded";
 export type FixtureStageId = Brand<string, "FixtureStageId">;
 export type FixtureRoundId = Brand<string, "FixtureRoundId">;
@@ -58,6 +58,8 @@ export interface FixtureEncounter {
   readonly scheduledStartAt: Date;
   readonly officialMatchCount: 1 | 2;
   readonly series: FixtureSeries | null;
+  /** Organizer closed it unplayed: it settles its round and counts as met, but scores nothing. */
+  readonly closedWithoutResult?: true;
 }
 
 export interface FixtureRound {
@@ -70,7 +72,7 @@ export interface FixtureRound {
 
 export interface FixtureStage {
   readonly id: FixtureStageId;
-  readonly kind: "league" | "groups" | "knockout" | "playoffs";
+  readonly kind: "league" | "groups" | "knockout" | "playoffs" | "swiss";
   readonly order: number;
   readonly rounds: readonly FixtureRound[];
 }
@@ -89,6 +91,7 @@ export interface FixturePlan {
   readonly timeZone: string;
   readonly homeAndAway: boolean;
   readonly seed: readonly TeamId[];
+  readonly withdrawnTeamIds?: readonly TeamId[];
   readonly stages: readonly FixtureStage[];
 }
 
@@ -117,6 +120,9 @@ export interface FixtureGenerationSpec {
   };
   readonly playoffs?: {
     readonly teamCount: number;
+  };
+  readonly swiss?: {
+    readonly rounds: number;
   };
 }
 

@@ -141,7 +141,7 @@ function toParticipantSlot(
 }
 
 const officialMatchCountSchema = z.union([z.literal(1), z.literal(2)]);
-const fixtureStageKindSchema = z.enum(["league", "groups", "knockout", "playoffs"]);
+const fixtureStageKindSchema = z.enum(["league", "groups", "knockout", "playoffs", "swiss"]);
 const resolutionModeSchema = z.enum(["independent_matches", "aggregate_score"]);
 const fixturePlanStatusSchema = z.enum(["active", "superseded"]);
 const fixturePlanFormatSchema = z.enum([
@@ -149,6 +149,7 @@ const fixturePlanFormatSchema = z.enum([
   "knockout",
   "groups-knockout",
   "league-playoffs",
+  "swiss",
 ]);
 const seedArraySchema = z.array(z.string());
 export const idRowSchema = z.object({ id: pgTextSchema });

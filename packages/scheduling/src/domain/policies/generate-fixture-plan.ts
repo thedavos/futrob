@@ -1,4 +1,4 @@
-import { asEncounterId, asOfficialMatchSlotId, type TeamId } from "@futrob/shared-kernel";
+import { asEncounterId, asOfficialMatchSlotId, Panic, type TeamId } from "@futrob/shared-kernel";
 import {
   asFixtureRoundId,
   asFixtureStageId,
@@ -109,6 +109,8 @@ export function generateFixturePlan(spec: FixtureGenerationSpec): FixturePlan {
       stages = [leagueStage.stage, playoffStage.stage];
       break;
     }
+    case "swiss":
+      throw new Panic("Swiss fixture generation is not wired yet");
   }
 
   return {
