@@ -49,11 +49,14 @@ export function pairSwissRound(input: PairSwissRoundInput): SwissPairing {
     );
   if (ranked.length < 2) return { kind: "exhausted" };
 
+  const teamAt = (index: number): TeamId => {
+    const teamId = ranked[index];
+    if (teamId === undefined) throw new Panic("Pairing index outside the ranked Teams");
+    return teamId;
+  };
   const history = pairingHistory(input.encounters);
   const canMeet = ranked.map((teamId, index) =>
-    ranked.map(
-      (other, otherIndex) => index !== otherIndex && !history.met.get(teamId)?.has(other),
-    ),
+    ranked.map((other, otherIndex) => index !== otherIndex && !history.met.get(teamId)?.has(other)),
   );
   const points = ranked.map(pointsOf);
 
@@ -62,8 +65,8 @@ export function pairSwissRound(input: PairSwissRoundInput): SwissPairing {
     ranked.length % 2 === 0
       ? [null]
       : [
-          ...bottomUp.filter((index) => !history.byes.has(ranked[index] as TeamId)),
-          ...bottomUp.filter((index) => history.byes.has(ranked[index] as TeamId)),
+          ...bottomUp.filter((index) => !history.byes.has(teamAt(index))),
+          ...bottomUp.filter((index) => history.byes.has(teamAt(index))),
         ];
 
   for (const bye of byeCandidates) {
@@ -71,15 +74,15 @@ export function pairSwissRound(input: PairSwissRoundInput): SwissPairing {
     const pairs = searchPairs(unpaired, canMeet, points);
     if (!pairs) continue;
     const tables = pairs.map(([top, rival]) => {
-      const better = ranked[top] as TeamId;
-      const worse = ranked[rival] as TeamId;
+      const better = teamAt(top);
+      const worse = teamAt(rival);
       return history.homeGames(worse) < history.homeGames(better)
         ? { home: worse, away: better }
         : { home: better, away: worse };
     });
     return {
       kind: "paired",
-      tables: bye === null ? tables : [...tables, { home: ranked[bye] as TeamId, away: null }],
+      tables: bye === null ? tables : [...tables, { home: teamAt(bye), away: null }],
     };
   }
   return { kind: "exhausted" };
@@ -128,7 +131,8 @@ function searchPairs(
   const pairs: (readonly [number, number])[] = [];
   let remaining = unpaired;
   while (remaining.length > 0) {
-    const [top, ...rest] = remaining as [number, ...number[]];
+    const [top, ...rest] = remaining;
+    if (top === undefined) break;
     const rival = rivalsInOrder(top, rest, points).find(
       (candidate) =>
         canMeet[top]?.[candidate] &&

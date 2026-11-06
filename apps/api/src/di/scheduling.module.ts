@@ -55,10 +55,8 @@ import {
   PostgresOfficialMatchRepository,
 } from "@/adapters/scheduling/official-match.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
-import {
-  InMemoryFixturePlanRepository,
-  PostgresFixturePlanRepository,
-} from "@/adapters/scheduling/fixture-plan.repository.ts";
+import { InMemoryFixturePlanRepository } from "@/adapters/scheduling/fixture-plan.in-memory.repository.ts";
+import { PostgresFixturePlanRepository } from "@/adapters/scheduling/fixture-plan.repository.ts";
 import {
   InMemoryFixtureAuditPort,
   OfficialResultFixtureEditGuard,

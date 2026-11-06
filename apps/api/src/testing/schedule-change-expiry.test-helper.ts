@@ -140,12 +140,17 @@ export async function freshExpiryDatabase(
         `INSERT INTO official_matches (id,encounter_id,organization_id,competition_id,slot,status,scheduled_start_at,created_at) VALUES ($1,$2,$3,$4,$5,'scheduled',$6,$7)`,
         [`expiry-slot-${slot}`, encounter, org, competition, slot, at, P],
       );
-    await new PostgresFixturePlanRepository(isolated.pool).save(fixturePlan());
+    // A legacy schema predates the plan columns; those tests seed it after migrating.
+    if (!options.legacy) await seedExpiryFixturePlan(isolated.pool);
     return isolated;
   } catch (error) {
     await isolated.drop();
     throw error;
   }
+}
+
+export async function seedExpiryFixturePlan(pool: Pool): Promise<void> {
+  await new PostgresFixturePlanRepository(pool).save(fixturePlan());
 }
 
 export function expiryFlow(

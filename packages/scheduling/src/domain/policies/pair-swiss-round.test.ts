@@ -208,7 +208,12 @@ describe("pairSwissRound", () => {
     const [a, b] = teams(2) as [TeamId, TeamId];
     const closed = { ...played(a, b, 0), closedWithoutResult: true as const };
     expect(
-      pairSwissRound({ seed: [a, b], withdrawnTeamIds: [], points: new Map(), encounters: [closed] }),
+      pairSwissRound({
+        seed: [a, b],
+        withdrawnTeamIds: [],
+        points: new Map(),
+        encounters: [closed],
+      }),
     ).toEqual({ kind: "exhausted" });
   });
 
@@ -370,9 +375,7 @@ describe("pairSwissRound against plain backtracking", () => {
       const tables = tablesOf(pairing).map((table) =>
         table.away === null ? pairKey(table.home, table.home) : pairKey(table.home, table.away),
       );
-      expect(tables).toEqual(
-        reference.map(([home, away]) => pairKey(home, away ?? home)),
-      );
+      expect(tables).toEqual(reference.map(([home, away]) => pairKey(home, away ?? home)));
     }
   });
 });
@@ -397,4 +400,3 @@ describe("Swiss round count limits", () => {
     30_000,
   );
 });
-

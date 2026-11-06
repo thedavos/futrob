@@ -49,7 +49,7 @@ export function rehydratePlan(
   const withdrawnTeamIds = seedArraySchema
     .parse(parseJsonColumn(z.unknown(), row.withdrawn_team_ids))
     .map(asTeamId);
-  return {
+  const plan: FixturePlan = {
     id: row.id,
     revision: row.revision,
     status: row.status,
@@ -63,9 +63,9 @@ export function rehydratePlan(
     timeZone: row.time_zone,
     homeAndAway: row.home_and_away,
     seed: seedArraySchema.parse(parseJsonColumn(z.unknown(), row.seed)).map(asTeamId),
-    ...(withdrawnTeamIds.length > 0 ? { withdrawnTeamIds } : {}),
     stages,
   };
+  return withdrawnTeamIds.length > 0 ? { ...plan, withdrawnTeamIds } : plan;
 }
 
 export function rehydrateEncounter(row: EncounterRow): FixtureEncounter {

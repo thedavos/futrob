@@ -78,7 +78,7 @@ export class StatisticsPublicStandingsReader implements PublicStandingsReaderPor
         goalDifference: row.goalDifference,
         points: row.points,
         form: row.form,
-        ...(row.swiss ? { swiss: row.swiss } : {}),
+        swiss: row.swiss,
       })),
       updatedAt: snapshot.updatedAt,
     };

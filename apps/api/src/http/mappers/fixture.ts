@@ -15,7 +15,7 @@ export function fixturePlanDto(plan: FixturePlan): FixturePlanDto {
     timeZone: plan.timeZone,
     homeAndAway: plan.homeAndAway,
     seed: [...plan.seed],
-    ...(plan.withdrawnTeamIds?.length ? { withdrawnTeamIds: [...plan.withdrawnTeamIds] } : {}),
+    withdrawnTeamIds: plan.withdrawnTeamIds?.length ? [...plan.withdrawnTeamIds] : undefined,
     stages: plan.stages.map((stage) => ({
       id: stage.id,
       kind: stage.kind,
@@ -48,8 +48,8 @@ export function fixturePlanDto(plan: FixturePlan): FixturePlanDto {
           };
           return {
             ...dto,
-            ...(encounter.groupId ? { groupId: encounter.groupId } : {}),
-            ...(encounter.closedWithoutResult ? { closedWithoutResult: true as const } : {}),
+            groupId: encounter.groupId,
+            closedWithoutResult: encounter.closedWithoutResult,
           };
         }),
       })),

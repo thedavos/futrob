@@ -42,28 +42,29 @@ export class GetPublicStandingsUseCase {
       rows: snapshot.rows.flatMap((row): PublicStandingRow[] => {
         const teamName = names.get(row.teamId);
         if (teamName === undefined) return [];
-        return [
-          {
-            position: row.position,
-            teamName,
-            played: row.played,
-            wins: row.wins,
-            draws: row.draws,
-            losses: row.losses,
-            goalsFor: row.goalsFor,
-            goalsAgainst: row.goalsAgainst,
-            goalDifference: row.goalDifference,
-            points: row.points,
-            form: row.form,
-            ...(row.swiss
-              ? {
-                  buchholz: row.swiss.buchholz,
-                  byes: row.swiss.byes,
-                  withdrawn: row.swiss.withdrawn,
-                }
-              : {}),
-          },
-        ];
+        const publicRow: PublicStandingRow = {
+          position: row.position,
+          teamName,
+          played: row.played,
+          wins: row.wins,
+          draws: row.draws,
+          losses: row.losses,
+          goalsFor: row.goalsFor,
+          goalsAgainst: row.goalsAgainst,
+          goalDifference: row.goalDifference,
+          points: row.points,
+          form: row.form,
+        };
+        return row.swiss
+          ? [
+              {
+                ...publicRow,
+                buchholz: row.swiss.buchholz,
+                byes: row.swiss.byes,
+                withdrawn: row.swiss.withdrawn,
+              },
+            ]
+          : [publicRow];
       }),
       swiss: snapshot.swiss,
       updatedAt: snapshot.updatedAt,

@@ -84,6 +84,7 @@ export function createSwissRoundCommands(deps: {
         }),
       );
     } catch (error) {
+      // SAFETY: only this call's callback throws it, always wrapping its own Failure.
       if (error instanceof RollbackWithFailure) return err(error.failure as Failure);
       throw error;
     }

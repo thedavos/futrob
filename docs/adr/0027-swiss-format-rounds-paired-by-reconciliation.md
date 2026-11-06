@@ -36,14 +36,14 @@ usan los comandos de organizador. El caso de uso aplica cambios hasta que no que
 cambio lo decide `reconcileSwissRounds`, una política pura que recibe el plan, los marcadores
 aprobados y las reglas:
 
-| Estado observado                                                    | Cambio            |
-| ------------------------------------------------------------------- | ----------------- |
-| Un encuentro sin resultado tiene un equipo retirado                 | Convertirlo en bye o eliminarlo |
-| Hay una ronda sin liquidar y ninguna ronda posterior emparejada     | Ninguno           |
-| Hay una ronda sin liquidar y rondas posteriores ya emparejadas      | Desemparejarlas   |
-| Todas las rondas emparejadas están liquidadas y queda una vacía     | Emparejar la siguiente |
-| Lo anterior, pero no existe emparejamiento legal                    | Eliminar las rondas vacías |
-| Todas las rondas están liquidadas y no queda ninguna vacía          | Ninguno (final)   |
+| Estado observado                                                | Cambio                          |
+| --------------------------------------------------------------- | ------------------------------- |
+| Un encuentro sin resultado tiene un equipo retirado             | Convertirlo en bye o eliminarlo |
+| Hay una ronda sin liquidar y ninguna ronda posterior emparejada | Ninguno                         |
+| Hay una ronda sin liquidar y rondas posteriores ya emparejadas  | Desemparejarlas                 |
+| Todas las rondas emparejadas están liquidadas y queda una vacía | Emparejar la siguiente          |
+| Lo anterior, pero no existe emparejamiento legal                | Eliminar las rondas vacías      |
+| Todas las rondas están liquidadas y no queda ninguna vacía      | Ninguno (final)                 |
 
 Una ronda está liquidada cuando cada encuentro tiene resultado oficial aprobado, es un bye o se
 cerró sin resultado. Un partido pendiente o reprogramado solo retrasa el cambio: no hay temporizador.
@@ -162,16 +162,16 @@ cuando todas las rondas restantes están liquidadas.
 
 ## Alternativas consideradas
 
-| Alternativa                                       | Motivo del descarte                                                                                                                                       |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Slot placeholder `swiss-pairing` en cada mesa      | Reutiliza `reconcileFixtureAdvancement`, pero fija el número de mesas al generar. Una retirada dejaría mesas vacías o slots `bye` que hoy no son derivables. |
-| Un `FixturePlan` nuevo por ronda                   | `generation_version` y `markSuperseded` significan «reemplazar el calendario». Partiría encuentros, lecturas y la guarda de resultados aprobados.           |
-| Ronda emparejada por el organizador con un botón   | Evita el disparo automático, pero pierde la garantía de que el formato avanza solo y añade un paso repetitivo sin decisión real.                            |
-| Evento de outbox consumido por scheduling          | El outbox no existe aún. ADR-0016 fija el avance transaccional, y un fallo debe revertir la aprobación.                                                     |
-| Entrada `withdrawn` en `competition_entries`       | Toca capacidad, permisos y resolución de nombres en todos los formatos para un hecho que solo consume el emparejamiento.                                   |
-| Buchholz persistido en el snapshot                 | Quedaría obsoleto ante byes y retiradas, que no reconstruyen el snapshot. También mezclaría datos del plan con la proyección oficial.                       |
-| Algoritmo holandés FIDE completo                   | Sus reglas de color y flotantes no aportan en FC Clubs y son difíciles de auditar. El resultado debe ser explicable al capitán.                             |
-| Permitir revanchas al agotarse los rivales         | Contradice el requisito. Terminar antes es honesto y solo ocurre tras retiradas.                                                                           |
+| Alternativa                                      | Motivo del descarte                                                                                                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Slot placeholder `swiss-pairing` en cada mesa    | Reutiliza `reconcileFixtureAdvancement`, pero fija el número de mesas al generar. Una retirada dejaría mesas vacías o slots `bye` que hoy no son derivables. |
+| Un `FixturePlan` nuevo por ronda                 | `generation_version` y `markSuperseded` significan «reemplazar el calendario». Partiría encuentros, lecturas y la guarda de resultados aprobados.            |
+| Ronda emparejada por el organizador con un botón | Evita el disparo automático, pero pierde la garantía de que el formato avanza solo y añade un paso repetitivo sin decisión real.                             |
+| Evento de outbox consumido por scheduling        | El outbox no existe aún. ADR-0016 fija el avance transaccional, y un fallo debe revertir la aprobación.                                                      |
+| Entrada `withdrawn` en `competition_entries`     | Toca capacidad, permisos y resolución de nombres en todos los formatos para un hecho que solo consume el emparejamiento.                                     |
+| Buchholz persistido en el snapshot               | Quedaría obsoleto ante byes y retiradas, que no reconstruyen el snapshot. También mezclaría datos del plan con la proyección oficial.                        |
+| Algoritmo holandés FIDE completo                 | Sus reglas de color y flotantes no aportan en FC Clubs y son difíciles de auditar. El resultado debe ser explicable al capitán.                              |
+| Permitir revanchas al agotarse los rivales       | Contradice el requisito. Terminar antes es honesto y solo ocurre tras retiradas.                                                                             |
 
 ## Cuestiones pendientes
 

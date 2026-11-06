@@ -25,8 +25,7 @@ const actionRowSchema = z.object({
   occurred_at: pgTimestampSchema,
 });
 
-function toAction(row: unknown): SwissRoundAction {
-  const parsed = actionRowSchema.parse(row);
+function toAction(parsed: z.infer<typeof actionRowSchema>): SwissRoundAction {
   const common = {
     organizationId: asOrganizationId(parsed.organization_id),
     competitionId: asCompetitionId(parsed.competition_id),
@@ -80,7 +79,7 @@ export class PostgresSwissRoundActionLog implements SwissRoundActionLogPort {
        WHERE organization_id = $1 AND competition_id = $2 AND request_id = $3`,
       [organizationId, competitionId, requestId],
     );
-    return result.rows[0] ? toAction(result.rows[0]) : null;
+    return result.rows[0] ? toAction(actionRowSchema.parse(result.rows[0])) : null;
   }
 
   async append(action: SwissRoundAction): Promise<void> {

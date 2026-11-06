@@ -1,6 +1,12 @@
 import type { ActorAddOnPlan, OrganizationPlan } from "../entities/plan.ts";
 
-const PAID_COMPETITION_FORMATS = ["league", "knockout", "groups-knockout", "league-playoffs", "swiss"];
+const PAID_COMPETITION_FORMATS = [
+  "league",
+  "knockout",
+  "groups-knockout",
+  "league-playoffs",
+  "swiss",
+];
 
 /**
  * Seed catalog. Postgres stores the authoritative copy in `billing_plans`; this value

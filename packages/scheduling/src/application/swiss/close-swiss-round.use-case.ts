@@ -119,7 +119,7 @@ export class CloseSwissRoundUseCase {
       actorId: input.actorId,
       reason,
       correlationId: input.requestId,
-      ...(input.heldEncounterIds ? { heldEncounterIds: input.heldEncounterIds } : {}),
+      heldEncounterIds: input.heldEncounterIds,
     });
     if (reconciled.isErr()) return err(reconciled.error);
     const current = await this.deps.fixtures.findById(

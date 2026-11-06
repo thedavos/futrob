@@ -30,7 +30,7 @@ export function fixtureGenerate(raw: string[]): Effect.Effect<number, CliError> 
       startsAt: flagString(common.flags, "starts-at") ?? new Date().toISOString(),
       roundIntervalDays: Number(flagString(common.flags, "interval-days") ?? 7),
       homeAndAway: flagBoolean(common.flags, "home-and-away"),
-      ...(rounds === undefined ? {} : { swiss: { rounds: Number(rounds) } }),
+      swiss: rounds === undefined ? undefined : { rounds: Number(rounds) },
     };
     const plan = yield* apiCall(configOf(common), (client) =>
       client.encounters.generateFixture(organizationId, competitionId, input),
@@ -78,7 +78,7 @@ export function swissWithdraw(raw: string[]): Effect.Effect<number, CliError> {
       client.encounters.withdrawSwissTeam(organizationId, competitionId, fixturePlanId, {
         teamId,
         reason,
-        ...(requestId ? { requestId } : {}),
+        requestId,
       }),
     );
     if (common.json) printJson(plan);
@@ -105,7 +105,7 @@ export function swissCloseRound(raw: string[]): Effect.Effect<number, CliError> 
     const plan = yield* apiCall(configOf(common), (client) =>
       client.encounters.closeSwissRound(organizationId, competitionId, fixturePlanId, roundNumber, {
         reason,
-        ...(requestId ? { requestId } : {}),
+        requestId,
       }),
     );
     if (common.json) printJson(plan);

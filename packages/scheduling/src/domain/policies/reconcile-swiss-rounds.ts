@@ -134,7 +134,9 @@ function nextForfeit(
         kind: "forfeit",
         round,
         before,
-        after: isWithdrawn(rival) ? null : { ...before, home: rival, away: { kind: "bye" }, series: null },
+        after: isWithdrawn(rival)
+          ? null
+          : { ...before, home: rival, away: { kind: "bye" }, series: null },
       };
     }
   }

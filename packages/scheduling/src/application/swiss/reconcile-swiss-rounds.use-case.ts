@@ -135,7 +135,7 @@ export class ReconcileSwissRoundsUseCase {
               competitionId: plan.competitionId,
               encounterId: before.id,
               reason: input.reason ?? DEFAULT_CANCEL_REASON,
-              ...(input.actorId ? { actorId: input.actorId } : {}),
+              actorId: input.actorId,
             });
           }
           const updated = after

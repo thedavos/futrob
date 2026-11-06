@@ -18,7 +18,7 @@ import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 import type { ProviderMatchRepository } from "@futrob/game-data";
-import type { ClockPort, CompetitionId, OrganizationId } from "@futrob/shared-kernel";
+import type { ClockPort } from "@futrob/shared-kernel";
 import {
   InMemoryOfficialMatchSelectionRepository,
   InMemoryOfficialResultRepository,
@@ -40,6 +40,7 @@ import { createAuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
 import { DeferredEncounterParticipantsChangePort } from "./deferred-encounter-participants.port.ts";
 import { createSwissRoundCommands } from "./swiss-round.commands.ts";
+import { createTeamManagement } from "./team-management.composition.ts";
 import { DeferredEncounterOpenSelectionPort } from "./deferred-encounter-open-selection.port.ts";
 import { ResultsCandidateEligibilityAdapter } from "@/adapters/scheduling/results-candidate-eligibility.adapter.ts";
 import { ResultsOpenSelectionAdapter } from "@/adapters/scheduling/results-open-selection.adapter.ts";
@@ -58,10 +59,6 @@ import { createActivityFeed } from "./notifications.module.ts";
 import { createStatisticsModule } from "./statistics.module.ts";
 import { createPublicPortalModule } from "./public-portal.module.ts";
 import { createEncounterReads } from "./encounter-reads.composition.ts";
-import {
-  GetTeamRosterManagementUseCase,
-  ListTeamRosterManagementUseCase,
-} from "@/application/teams/team-roster-management.use-case.ts";
 import { OnboardingCompletionFlow } from "@/application/identity/onboarding-completion.flow.ts";
 import { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
 import { RecalculateRescheduledCandidates } from "@/application/results/recalculate-rescheduled-candidates.ts";
@@ -202,31 +199,11 @@ export function createModules(input: CreateModulesInput): AppModules {
   deferredAuthorization.bind(authorization.port);
   entryGate.bind(new CompetitionRosterEntryGate(competitions.entryRepository));
 
-  const teamManagementDeps = {
+  const teamManagement = createTeamManagement({
     authorization: deferredAuthorization,
-    entries: {
-      list: (organizationId: OrganizationId, competitionId: CompetitionId) =>
-        competitions.entryRepository.listByCompetition?.(organizationId, competitionId) ??
-        Promise.resolve([]),
-      find: competitions.entryRepository.findByCompetitionAndTeam.bind(
-        competitions.entryRepository,
-      ),
-    },
-    teams: { find: teams.repositories.teams.findById.bind(teams.repositories.teams) },
-    rosters: { list: teams.repositories.rosters.listByTeam.bind(teams.repositories.rosters) },
-    rosterStates: {
-      get: teams.repositories.rosterStates.get.bind(teams.repositories.rosterStates),
-    },
-    externalClubs: {
-      get: teams.repositories.connections.findByTeam.bind(teams.repositories.connections),
-    },
-    capacity: teams.repositories.capacity,
-    accounts: teams.repositories.accounts,
-  };
-  const teamManagement = {
-    list: new ListTeamRosterManagementUseCase(teamManagementDeps),
-    get: new GetTeamRosterManagementUseCase(teamManagementDeps),
-  };
+    competitions,
+    teams,
+  });
 
   const encounterReader = new SchedulingEncounterReader(
     scheduling.encounters,
