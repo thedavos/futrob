@@ -70,7 +70,7 @@ export function teamsInGroup(plan: FixturePlan, groupId: string): Set<TeamId> {
   return teams;
 }
 
-export function* planEncounters(plan: FixturePlan): Generator<FixtureEncounter> {
+export function* planEncounters(plan: Pick<FixturePlan, "stages">): Generator<FixtureEncounter> {
   for (const stage of plan.stages) {
     for (const round of stage.rounds) {
       yield* round.encounters;
