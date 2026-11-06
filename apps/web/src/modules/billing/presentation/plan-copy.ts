@@ -1,6 +1,15 @@
 import { organizationPlanKeySchema, type OrganizationPlanKey } from "@futrob/api-contracts";
 import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 
+export const PLAN_FORMAT_LABEL: ReadonlyMap<string, MessageKey> = new Map(
+  Object.entries({
+    league: "competitionRules.format.league",
+    knockout: "competitionRules.format.knockout",
+    "groups-knockout": "competitionRules.format.groups-knockout",
+    "league-playoffs": "competitionRules.format.league-playoffs",
+  } as const satisfies Record<string, MessageKey>),
+);
+
 export function planNameKey(key: OrganizationPlanKey): MessageKey {
   switch (key) {
     case "free":

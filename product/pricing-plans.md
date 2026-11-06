@@ -18,7 +18,13 @@
 | Portal público                    | Marca Futrob              | Logo y colores        | Branding avanzado (sin white-label, WONT-03) |
 | Notificaciones                    | Web                       | Web + email           | Web + email + anuncios                       |
 
-Los números son **datos del catálogo** (`billing_plans` en Postgres), no constantes de código.
+**Precios de lista (hipótesis):** Gratis 0 USD, Pro 9 USD y Liga 29 USD al mes. Solo se muestran en
+`/pricing`, viven en `pricing-model.ts` y no están en el catálogo porque no hay cobro automático.
+
+**Sistema suizo:** `/pricing` lo anuncia en Pro y Liga, pero aún no existe como formato ni está en el
+catálogo. Construirlo exige sacarlo de WONT-04 ([mvp-requirements](/product/mvp-requirements.md)).
+
+Los números de la tabla son **datos del catálogo** (`billing_plans` en Postgres), no constantes de código.
 Los cupos de sync son hipótesis de coste: cambiarlos es una actualización de datos auditable.
 
 ## Add-on personal

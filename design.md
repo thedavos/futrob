@@ -669,6 +669,17 @@ no redefinir contenedor, padding, columnas ni jerarquía de copy en cada secció
 - Copy centrado respecto al visual; `align="start"` lo fija con sticky cuando el visual es más alto.
 - `Display` más `Body` `lg` en muted con medida de 44ch; los CTA van en `LandingActions`.
 
+#### Precios
+
+`/pricing` se compone con `LandingSection` y `LandingFooter`: hero con `layout="stacked"` y las cards
+debajo; luego una banda con lo que ningún plan limita.
+
+- `PricingPlanCard`: nombre y destinatario; precio mensual en USD en `display`; CTA con nota;
+  separador y lista de filas.
+- Todas las cards listan las mismas filas en el mismo orden, con cada formato en su propia fila. Lo no
+  incluido sigue visible, con icono muted y nombre accesible «No incluido»; nunca solo color.
+- Una sola card destacada: borde `primary`, `surface-raised`, badge y el único CTA `default`. Las demás, `outline`.
+
 ### Shell autenticado
 
 #### Layout

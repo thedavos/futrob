@@ -172,19 +172,37 @@ const es = {
   "pricing.meta.description":
     "Planes Gratis, Pro y Liga para organizar competiciones de EA SPORTS FC Clubs.",
   "pricing.title": "Planes para cada competición",
-  "pricing.subtitle":
-    "Empieza gratis. La selección oficial, las disputas y la oficialización funcionan igual en todos los planes.",
+  "pricing.subtitle": "Empieza gratis y sube de plan cuando tu operación crezca.",
   "pricing.unavailable": "No pudimos cargar los planes. Vuelve a intentarlo en unos minutos.",
-  "pricing.contact": "Por ahora activamos Pro y Liga a mano. Escríbenos para cambiar de plan.",
-  "pricing.start": "Crear competición",
-  "pricing.perMonth": "{count} sincronizaciones al mes",
-  "pricing.fairUse": "{count} sincronizaciones al mes (uso justo)",
+  "pricing.recommended": "Recomendado",
+  "pricing.tagline.free": "Para tu primera competición.",
+  "pricing.tagline.pro": "Para organizaciones con varias competiciones.",
+  "pricing.tagline.league": "Para operaciones grandes y de varias ligas.",
+  "pricing.perMonthUsd": "USD al mes",
   "pricing.competitions": "{count} competiciones activas",
   "pricing.competitionsOne": "1 competición activa",
   "pricing.competitionsUnlimited": "Competiciones activas sin límite",
+  "pricing.format": "Formato: {format}",
+  "pricing.formatSwiss": "Sistema suizo",
+  "pricing.cta.free": "Empezar gratis",
+  "pricing.cta.paid": "Crear cuenta",
+  "pricing.note.free": "No necesitas tarjeta.",
+  "pricing.note.paid": "Empiezas en Gratis y activamos {plan} a mano cuando nos escribas.",
+  "pricing.perMonth": "{count} sincronizaciones al mes",
+  "pricing.fairUse": "{count} sincronizaciones al mes (uso justo)",
   "pricing.staff": "Hasta {count} personas de staff",
   "pricing.staffUnlimited": "Staff sin límite",
-  "pricing.integrity": "Integridad competitiva sin costo",
+  "pricing.integrity.title": "La integridad competitiva no depende del plan",
+  "pricing.integrity.subtitle":
+    "Todo lo que decide un resultado oficial funciona igual en Gratis, Pro y Liga.",
+  "pricing.integrity.listLabel": "Incluido en todos los planes",
+  "pricing.integrity.selection": "Selección oficial de partidos",
+  "pricing.integrity.confirmation": "Confirmación entre capitanes",
+  "pricing.integrity.disputes": "Disputas",
+  "pricing.integrity.reschedule": "Reprogramación",
+  "pricing.integrity.officialization": "Oficialización de resultados",
+  "pricing.integrity.note":
+    "Si bajas de plan o agotas el cupo, solo se bloquean las acciones nuevas. Las competiciones en curso terminan igual.",
   "landing.nav.pricing": "Precios",
   "competitions.reschedule.expiryLabel": "Plazo de respuesta de la propuesta (horas)",
   "competitions.reschedule.expiryHelp":
@@ -2461,7 +2479,9 @@ export interface MessageParamsByKey {
   readonly "billing.changes.from": { readonly after: string; readonly before: string };
   readonly "pricing.perMonth": { readonly count: number };
   readonly "pricing.fairUse": { readonly count: number };
+  readonly "pricing.note.paid": { readonly plan: string };
   readonly "pricing.competitions": { readonly count: number };
+  readonly "pricing.format": { readonly format: string };
   readonly "pricing.staff": { readonly count: number };
   readonly "competition.overview.pending.applications": { readonly count: number };
   readonly "competition.overview.pending.awaiting": { readonly count: number };
@@ -2877,19 +2897,37 @@ const en: Catalog = {
   "pricing.meta.title": "Pricing | Futrob",
   "pricing.meta.description": "Free, Pro and League plans to run EA SPORTS FC Clubs competitions.",
   "pricing.title": "Plans for every competition",
-  "pricing.subtitle":
-    "Start free. Official selection, disputes and officialization work the same on every plan.",
+  "pricing.subtitle": "Start free and move up a plan as your operation grows.",
   "pricing.unavailable": "We couldn't load the plans. Try again in a few minutes.",
-  "pricing.contact": "For now we activate Pro and League by hand. Contact us to change plans.",
-  "pricing.start": "Create competition",
-  "pricing.perMonth": "{count} syncs a month",
-  "pricing.fairUse": "{count} syncs a month (fair use)",
+  "pricing.recommended": "Recommended",
+  "pricing.tagline.free": "For your first competition.",
+  "pricing.tagline.pro": "For organizers running several competitions.",
+  "pricing.tagline.league": "For large, multi-league operations.",
+  "pricing.perMonthUsd": "USD a month",
   "pricing.competitions": "{count} active competitions",
   "pricing.competitionsOne": "1 active competition",
   "pricing.competitionsUnlimited": "No active competition limit",
+  "pricing.format": "Format: {format}",
+  "pricing.formatSwiss": "Swiss system",
+  "pricing.cta.free": "Start free",
+  "pricing.cta.paid": "Create account",
+  "pricing.note.free": "No card needed.",
+  "pricing.note.paid": "You start on Free and we activate {plan} by hand when you contact us.",
+  "pricing.perMonth": "{count} syncs a month",
+  "pricing.fairUse": "{count} syncs a month (fair use)",
   "pricing.staff": "Up to {count} staff",
   "pricing.staffUnlimited": "No staff limit",
-  "pricing.integrity": "Competitive integrity at no cost",
+  "pricing.integrity.title": "Competitive integrity doesn't depend on your plan",
+  "pricing.integrity.subtitle":
+    "Everything that decides an official result works the same on Free, Pro and League.",
+  "pricing.integrity.listLabel": "Included in every plan",
+  "pricing.integrity.selection": "Official match selection",
+  "pricing.integrity.confirmation": "Confirmation between captains",
+  "pricing.integrity.disputes": "Disputes",
+  "pricing.integrity.reschedule": "Rescheduling",
+  "pricing.integrity.officialization": "Result officialization",
+  "pricing.integrity.note":
+    "If you downgrade or run out of quota, only new actions are blocked. Competitions in progress still finish.",
   "landing.nav.pricing": "Pricing",
   "competitions.reschedule.expiryLabel": "Proposal response window (hours)",
   "competitions.reschedule.expiryHelp":
