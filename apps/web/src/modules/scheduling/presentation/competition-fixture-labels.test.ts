@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
 import {
+  fixtureByeLabel,
   fixtureRoundLabel,
+  fixtureSideAccessibleName,
   fixtureSideLabel,
   fixtureStageLabel,
 } from "./competition-fixture-labels.ts";
 import { competitionFixtureView } from "./competition-fixture-view.ts";
-import { groupsKnockoutFixture } from "./competition-fixture.fixtures.ts";
+import { groupsKnockoutFixture, swissFixture } from "./competition-fixture.fixtures.ts";
 
 describe("fixture labels", () => {
   const view = competitionFixtureView(groupsKnockoutFixture);
@@ -40,11 +42,31 @@ describe("fixture labels", () => {
     expect(final && fixtureSideLabel(final.home, t)).toBe("Winner of semifinal 1");
   });
 
+  it("names a Swiss stage, its rounds by number and who rests", () => {
+    const swiss = competitionFixtureView(swissFixture)?.stages[0];
+    const bye = swiss?.rounds[1]?.encounters[1];
+    const es = createTranslator("es");
+    const en = createTranslator("en");
+
+    expect(swiss && fixtureStageLabel(swiss.kind, es)).toBe("Fase suiza");
+    expect(swiss && fixtureStageLabel(swiss.kind, en)).toBe("Swiss stage");
+    expect(swiss && fixtureRoundLabel(swiss.rounds[0]!.name, es)).toBe("Ronda 1");
+    expect(bye && fixtureByeLabel(bye.home, bye.away, es)).toBe("Maderas FC descansa");
+    expect(bye && fixtureByeLabel(bye.home, bye.away, en)).toBe("Maderas FC has a bye");
+  });
+
+  it("says a withdrawn Team is withdrawn in the accessible name only when it is", () => {
+    const t = createTranslator("es");
+    const side = { kind: "team", teamId: "t", name: "Norte", withdrawn: true } as const;
+    expect(fixtureSideAccessibleName(side, t)).toBe("Norte (Retirado)");
+    expect(fixtureSideAccessibleName({ ...side, withdrawn: false }, t)).toBe("Norte");
+  });
+
   it("keeps a missing team, a bye and a league place distinct", () => {
     const t = createTranslator("es");
-    expect(fixtureSideLabel({ kind: "team", teamId: "team-gone", name: null }, t)).toBe(
-      "Equipo no disponible",
-    );
+    expect(
+      fixtureSideLabel({ kind: "team", teamId: "team-gone", name: null, withdrawn: false }, t),
+    ).toBe("Equipo no disponible");
     expect(fixtureSideLabel({ kind: "bye" }, t)).toBe("Descansa");
     expect(fixtureSideLabel({ kind: "stageRank", stage: "league", rank: 2 }, t)).toBe(
       "2.º de Liga",

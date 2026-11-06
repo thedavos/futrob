@@ -55,6 +55,26 @@ async function refusedAsValue<T>(read: () => Promise<T>): Promise<T | Refusal> {
   return readResult.value;
 }
 
+const standingsKey = (organizationId: string, competitionId: string) =>
+  [...queryKeys.statistics.all, "competition", organizationId, competitionId, "standings"] as const;
+
+/**
+ * Whether a Swiss competition has settled every round. Unknown reads as false: the server still
+ * refuses a command on a round that is over, so a failed read only costs an explained refusal.
+ */
+export function useSwissStandingsFinal(
+  organizationId: string,
+  competitionId: string,
+  enabled: boolean,
+): boolean {
+  const { data } = useQuery({
+    queryKey: standingsKey(organizationId, competitionId),
+    queryFn: () => refusedAsValue(() => getCompetitionStandings(organizationId, competitionId)),
+    enabled,
+  });
+  return !isRefusal(data) && data?.standings?.swiss?.isFinal === true;
+}
+
 /**
  * Standings are read only once EffectiveAccess allows `statistics.read` for the
  * competition; the server authorizes the read again.
@@ -67,13 +87,7 @@ export function useCompetitionStandings(organizationId: string, competitionId: s
   const allowed = access.allowed.has(STATISTICS_PERMISSION.read);
   const canViewEncounters = access.allowed.has(COMPETITION_PERMISSION.read);
   const standings = useQuery({
-    queryKey: [
-      ...queryKeys.statistics.all,
-      "competition",
-      organizationId,
-      competitionId,
-      "standings",
-    ] as const,
+    queryKey: standingsKey(organizationId, competitionId),
     queryFn: () => refusedAsValue(() => getCompetitionStandings(organizationId, competitionId)),
     enabled: allowed,
     retry: (failureCount) => failureCount < 2,
