@@ -183,6 +183,22 @@ export const styles = stylex.create({
     lineHeight: "1.75rem",
     fontWeight: "var(--font-weight-bold)",
   },
+  swissProgress: {
+    color: colors.foreground,
+  },
+  swissFinal: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.25rem",
+    color: colors.foreground,
+  },
+  swissDetail: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.25rem 0.5rem",
+    marginTop: "0.25rem",
+  },
   cutNote: {
     color: colors.primary,
   },

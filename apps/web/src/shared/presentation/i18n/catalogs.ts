@@ -2356,6 +2356,17 @@ const es = {
   "standings.col.goalDifference.full": "Diferencia de goles",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Puntos",
+  "standings.col.buchholz": "Buch.",
+  "standings.col.buchholz.full": "Buchholz: suma de los puntos de los rivales",
+  "standings.swiss.round": ({ current, total }) => `Ronda ${current} de ${total}`,
+  "standings.swiss.completed": ({ completed, total }) =>
+    `${completed} de ${total} rondas completadas`,
+  "standings.swiss.final": "Clasificación final",
+  "standings.swiss.tiebreak":
+    "Empates: primero Buchholz (puntos de los rivales), luego diferencia de goles y goles a favor.",
+  "standings.swiss.byes": ({ count }) =>
+    Number(count) === 1 ? "1 descanso" : `${count} descansos`,
+  "standings.swiss.withdrawn": "Retirado",
   "standings.col.form": "Forma",
   "standings.col.form.full": "Últimos 5 partidos, el más reciente al final",
   "standings.form.win": "Victoria",
@@ -2724,6 +2735,9 @@ export interface MessageParamsByKey {
   readonly "standings.table.updated": { readonly time: string };
   readonly "standings.table.formula": { readonly version: string };
   readonly "standings.playoffCut": { readonly count: number };
+  readonly "standings.swiss.round": { readonly current: number; readonly total: number };
+  readonly "standings.swiss.completed": { readonly completed: number; readonly total: number };
+  readonly "standings.swiss.byes": { readonly count: number };
   readonly "fixture.timeZone": { readonly zone: string };
   readonly "fixture.round.matchday": { readonly number: number };
   readonly "fixture.round.number": { readonly number: number };
@@ -5034,6 +5048,16 @@ const en: Catalog = {
   "standings.col.goalDifference.full": "Goal difference",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Points",
+  "standings.col.buchholz": "Buch.",
+  "standings.col.buchholz.full": "Buchholz: sum of the opponents' points",
+  "standings.swiss.round": ({ current, total }) => `Round ${current} of ${total}`,
+  "standings.swiss.completed": ({ completed, total }) =>
+    `${completed} of ${total} rounds completed`,
+  "standings.swiss.final": "Final standings",
+  "standings.swiss.tiebreak":
+    "Ties: Buchholz first (opponents' points), then goal difference and goals for.",
+  "standings.swiss.byes": ({ count }) => (Number(count) === 1 ? "1 bye" : `${count} byes`),
+  "standings.swiss.withdrawn": "Withdrawn",
   "standings.col.form": "Form",
   "standings.col.form.full": "Last 5 matches, most recent last",
   "standings.form.win": "Win",

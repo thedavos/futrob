@@ -5,8 +5,10 @@ import type {
   CompetitionStandingRowDto,
   CompetitionStandingSnapshotDto,
 } from "@futrob/api-contracts";
+import { FlagCheckeredIcon } from "@phosphor-icons/react";
 import {
   applyStyles,
+  Badge,
   Caption,
   Score,
   Skeleton,
@@ -24,15 +26,17 @@ import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
   playoffCut,
   standingsTableRows,
+  swissStandingsProgress,
   type StandingsTableRow,
   type StandingsTeamName,
   type TeamNames,
 } from "./competition-standings-model.ts";
 import { styles } from "./competition-standings.styles.ts";
 
-type FigureId = "played" | "goalDifference" | "points";
+type FigureId = "played" | "goalDifference" | "buchholz" | "points";
 
 const FIGURES: readonly FigureId[] = ["played", "goalDifference", "points"];
+const SWISS_FIGURES: readonly FigureId[] = ["played", "goalDifference", "buchholz", "points"];
 
 type FormResult = CompetitionStandingRowDto["form"][number];
 
@@ -69,6 +73,8 @@ export function CompetitionStandingsTable({
   }).format(new Date(snapshot.updatedAt));
   const rows = standingsTableRows(snapshot, names);
   const cut = playoffCut(snapshot);
+  const figures = snapshot.swiss ? SWISS_FIGURES : FIGURES;
+  const progress = swissStandingsProgress(snapshot.swiss);
 
   return (
     <section aria-labelledby={headingId} {...applyStyles(styles.section)}>
@@ -76,6 +82,7 @@ export function CompetitionStandingsTable({
         {t("standings.table.label")}
       </h2>
       <p {...applyStyles(styles.meta)}>
+        {progress ? <SwissProgress progress={progress} t={t} /> : null}
         <Caption as="span">
           <time dateTime={snapshot.updatedAt}>
             {t("standings.table.updated", { time: updated })}
@@ -85,6 +92,7 @@ export function CompetitionStandingsTable({
           {t("standings.table.formula", { version: snapshot.formulaVersion })}
         </Caption>
       </p>
+      {snapshot.swiss ? <Caption as="p">{t("standings.swiss.tiebreak")}</Caption> : null}
       <Table
         className={styles.table}
         containerClassName={styles.tableContainer}
@@ -105,7 +113,7 @@ export function CompetitionStandingsTable({
                 {t("standings.col.form")}
               </abbr>
             </TableHead>
-            {FIGURES.map((figure) => (
+            {figures.map((figure) => (
               <TableHead align="end" className={styles.headCell} key={figure} scope="col">
                 <abbr title={t(`standings.col.${figure}.full`)} {...applyStyles(styles.abbr)}>
                   {t(`standings.col.${figure}`)}
@@ -116,7 +124,13 @@ export function CompetitionStandingsTable({
         </TableHeader>
         <TableBody>
           {rows.map((entry) => (
-            <StandingsRow entry={entry} formats={formats} key={entry.row.teamId} t={t} />
+            <StandingsRow
+              entry={entry}
+              figures={figures}
+              formats={formats}
+              key={entry.row.teamId}
+              t={t}
+            />
           ))}
         </TableBody>
       </Table>
@@ -129,12 +143,71 @@ export function CompetitionStandingsTable({
   );
 }
 
+function SwissProgress({
+  progress,
+  t,
+}: {
+  readonly progress: NonNullable<ReturnType<typeof swissStandingsProgress>>;
+  readonly t: Translator;
+}) {
+  switch (progress.kind) {
+    case "final":
+      return (
+        <span {...applyStyles(typography.label, styles.swissFinal)}>
+          <FlagCheckeredIcon aria-hidden size={16} />
+          {t("standings.swiss.final")}
+        </span>
+      );
+    case "round":
+      return (
+        <span {...applyStyles(typography.label, styles.swissProgress)}>
+          {t("standings.swiss.round", { current: progress.current, total: progress.total })}
+        </span>
+      );
+    case "between":
+      return (
+        <span {...applyStyles(typography.label, styles.swissProgress)}>
+          {t("standings.swiss.completed", {
+            completed: progress.completed,
+            total: progress.total,
+          })}
+        </span>
+      );
+    default: {
+      const exhaustive: never = progress;
+      return exhaustive;
+    }
+  }
+}
+
+function figureValue(
+  figure: FigureId,
+  row: CompetitionStandingRowDto,
+  formats: Formats,
+): string | null {
+  switch (figure) {
+    case "buchholz":
+      return row.swiss ? formats.integer.format(row.swiss.buchholz) : null;
+    case "goalDifference":
+      return formats.signed.format(row.goalDifference);
+    case "played":
+    case "points":
+      return formats.integer.format(row[figure]);
+    default: {
+      const exhaustive: never = figure;
+      return exhaustive;
+    }
+  }
+}
+
 function StandingsRow({
   entry,
+  figures,
   formats,
   t,
 }: {
   readonly entry: StandingsTableRow;
+  readonly figures: readonly FigureId[];
   readonly formats: Formats;
   readonly t: Translator;
 }) {
@@ -152,12 +225,22 @@ function StandingsRow({
       </TableCell>
       <TableCell className={[styles.cell, styles.teamCell]}>
         <TeamName team={entry.team} t={t} />
+        {row.swiss && (row.swiss.byes > 0 || row.swiss.withdrawn) ? (
+          <span {...applyStyles(styles.swissDetail)}>
+            {row.swiss.withdrawn ? (
+              <Badge variant="warning">{t("standings.swiss.withdrawn")}</Badge>
+            ) : null}
+            {row.swiss.byes > 0 ? (
+              <Caption as="span">{t("standings.swiss.byes", { count: row.swiss.byes })}</Caption>
+            ) : null}
+          </span>
+        ) : null}
         <FormStrip form={row.form} narrow t={t} />
       </TableCell>
       <TableCell align="end" className={[styles.cell, styles.formCell]}>
         <FormStrip form={row.form} t={t} />
       </TableCell>
-      {FIGURES.map((figure) => (
+      {figures.map((figure) => (
         <TableCell align="end" className={styles.cell} key={figure}>
           <Score
             align="end"
@@ -165,7 +248,7 @@ function StandingsRow({
             size="table"
             className={figure === "points" ? styles.points : styles.figure}
           >
-            {(figure === "goalDifference" ? formats.signed : formats.integer).format(row[figure])}
+            {figureValue(figure, row, formats) ?? "—"}
           </Score>
         </TableCell>
       ))}

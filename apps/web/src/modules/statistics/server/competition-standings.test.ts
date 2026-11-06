@@ -28,6 +28,7 @@ const standings = {
     sourceRevisionMax: 3,
     updatedAt: "2026-10-12T01:00:00.000Z",
     playoffSpots: null,
+    swiss: null,
   },
 };
 

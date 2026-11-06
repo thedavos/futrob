@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { CompetitionStandingSnapshotDto } from "@futrob/api-contracts";
-import { standingsTableRows, teamNamesFrom } from "./competition-standings-model.ts";
+import {
+  standingsTableRows,
+  swissStandingsProgress,
+  teamNamesFrom,
+} from "./competition-standings-model.ts";
 
 const row = (position: number, teamId: string) => ({
   position,
@@ -24,7 +28,34 @@ const snapshot: CompetitionStandingSnapshotDto = {
   sourceRevisionMax: 1,
   updatedAt: "2026-10-12T01:00:00.000Z",
   playoffSpots: null,
+  swiss: null,
 };
+
+describe("swissStandingsProgress", () => {
+  const swiss = { roundsTotal: 5, roundsCompleted: 2, currentRound: 3, isFinal: false };
+
+  it("is null outside the Swiss format", () => {
+    expect(swissStandingsProgress(null)).toBeNull();
+  });
+
+  it("names the round being played", () => {
+    expect(swissStandingsProgress(swiss)).toEqual({ kind: "round", current: 3, total: 5 });
+  });
+
+  it("says final once every round is settled, even if the plan shrank", () => {
+    expect(
+      swissStandingsProgress({ ...swiss, roundsTotal: 3, roundsCompleted: 3, isFinal: true }),
+    ).toEqual({ kind: "final" });
+  });
+
+  it("does not invent a current round between two rounds", () => {
+    expect(swissStandingsProgress({ ...swiss, currentRound: null })).toEqual({
+      kind: "between",
+      completed: 2,
+      total: 5,
+    });
+  });
+});
 
 describe("standings rows", () => {
   it("keeps the server order and never shows an id as a name", () => {
