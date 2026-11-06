@@ -602,7 +602,8 @@
                     "league",
                     "knockout",
                     "groups-knockout",
-                    "league-playoffs"
+                    "league-playoffs",
+                    "swiss"
                   ]
                 },
                 {
@@ -4257,7 +4258,8 @@
                       "league",
                       "knockout",
                       "groups-knockout",
-                      "league-playoffs"
+                      "league-playoffs",
+                      "swiss"
                     ]
                   },
                   "teams": {
@@ -4469,7 +4471,8 @@
                               "league",
                               "knockout",
                               "groups-knockout",
-                              "league-playoffs"
+                              "league-playoffs",
+                              "swiss"
                             ]
                           },
                           "teams": {
@@ -11837,7 +11840,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "teams": {
@@ -12122,7 +12126,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "teams": {
@@ -12515,7 +12520,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "teams": {
@@ -13268,6 +13274,27 @@
               ]
             },
             "maxItems": 5
+          },
+          "swiss": {
+            "type": "object",
+            "properties": {
+              "buchholz": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "byes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "withdrawn": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "buchholz",
+              "byes",
+              "withdrawn"
+            ]
           }
         },
         "required": [
@@ -13298,7 +13325,8 @@
           "formulaVersion": {
             "type": "string",
             "enum": [
-              "points-gd-gf-v1"
+              "points-gd-gf-v1",
+              "swiss-points-buchholz-gd-gf-v1"
             ]
           },
           "rows": {
@@ -13355,6 +13383,27 @@
                     ]
                   },
                   "maxItems": 5
+                },
+                "swiss": {
+                  "type": "object",
+                  "properties": {
+                    "buchholz": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "byes": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "withdrawn": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "buchholz",
+                    "byes",
+                    "withdrawn"
+                  ]
                 }
               },
               "required": [
@@ -13386,6 +13435,38 @@
               "null"
             ],
             "exclusiveMinimum": 0
+          },
+          "swiss": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "roundsTotal": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "roundsCompleted": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "currentRound": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              },
+              "isFinal": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "roundsTotal",
+              "roundsCompleted",
+              "currentRound",
+              "isFinal"
+            ]
           }
         },
         "required": [
@@ -13395,7 +13476,8 @@
           "rows",
           "sourceRevisionMax",
           "updatedAt",
-          "playoffSpots"
+          "playoffSpots",
+          "swiss"
         ]
       },
       "CompetitionTeamManagementDetail": {
@@ -15794,7 +15876,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "teams": {
@@ -16027,7 +16110,8 @@
                         "league",
                         "knockout",
                         "groups-knockout",
-                        "league-playoffs"
+                        "league-playoffs",
+                        "swiss"
                       ]
                     },
                     "teams": {
@@ -16560,6 +16644,12 @@
               "resolutionMode",
               "officialMatches"
             ]
+          },
+          "closedWithoutResult": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
           }
         },
         "required": [
@@ -16727,7 +16817,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "timeZone": {
@@ -16745,6 +16836,13 @@
             },
             "minItems": 2
           },
+          "withdrawnTeamIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
           "stages": {
             "type": "array",
             "items": {
@@ -16760,7 +16858,8 @@
                     "league",
                     "groups",
                     "knockout",
-                    "playoffs"
+                    "playoffs",
+                    "swiss"
                   ]
                 },
                 "order": {
@@ -17107,6 +17206,12 @@
                                 "id",
                                 "resolutionMode",
                                 "officialMatches"
+                              ]
+                            },
+                            "closedWithoutResult": {
+                              "type": "boolean",
+                              "enum": [
+                                true
                               ]
                             }
                           },
@@ -17499,6 +17604,12 @@
                     "resolutionMode",
                     "officialMatches"
                   ]
+                },
+                "closedWithoutResult": {
+                  "type": "boolean",
+                  "enum": [
+                    true
+                  ]
                 }
               },
               "required": [
@@ -17591,7 +17702,8 @@
               "league",
               "groups",
               "knockout",
-              "playoffs"
+              "playoffs",
+              "swiss"
             ]
           },
           "order": {
@@ -17939,6 +18051,12 @@
                           "resolutionMode",
                           "officialMatches"
                         ]
+                      },
+                      "closedWithoutResult": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
                       }
                     },
                     "required": [
@@ -18026,6 +18144,18 @@
             },
             "required": [
               "teamCount"
+            ]
+          },
+          "swiss": {
+            "type": "object",
+            "properties": {
+              "rounds": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "rounds"
             ]
           }
         },
@@ -18450,7 +18580,8 @@
               "formulaVersion": {
                 "type": "string",
                 "enum": [
-                  "points-gd-gf-v1"
+                  "points-gd-gf-v1",
+                  "swiss-points-buchholz-gd-gf-v1"
                 ]
               },
               "rows": {
@@ -18507,6 +18638,27 @@
                         ]
                       },
                       "maxItems": 5
+                    },
+                    "swiss": {
+                      "type": "object",
+                      "properties": {
+                        "buchholz": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "byes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "withdrawn": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "buchholz",
+                        "byes",
+                        "withdrawn"
+                      ]
                     }
                   },
                   "required": [
@@ -18538,6 +18690,38 @@
                   "null"
                 ],
                 "exclusiveMinimum": 0
+              },
+              "swiss": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "roundsTotal": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "roundsCompleted": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "currentRound": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "isFinal": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "roundsTotal",
+                  "roundsCompleted",
+                  "currentRound",
+                  "isFinal"
+                ]
               }
             },
             "required": [
@@ -18547,7 +18731,8 @@
               "rows",
               "sourceRevisionMax",
               "updatedAt",
-              "playoffSpots"
+              "playoffSpots",
+              "swiss"
             ]
           }
         },
@@ -18863,7 +19048,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "timeZone": {
@@ -18881,6 +19067,13 @@
                 },
                 "minItems": 2
               },
+              "withdrawnTeamIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
               "stages": {
                 "type": "array",
                 "items": {
@@ -18896,7 +19089,8 @@
                         "league",
                         "groups",
                         "knockout",
-                        "playoffs"
+                        "playoffs",
+                        "swiss"
                       ]
                     },
                     "order": {
@@ -19243,6 +19437,12 @@
                                     "id",
                                     "resolutionMode",
                                     "officialMatches"
+                                  ]
+                                },
+                                "closedWithoutResult": {
+                                  "type": "boolean",
+                                  "enum": [
+                                    true
                                   ]
                                 }
                               },
@@ -23329,7 +23529,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "platform": {
@@ -23478,6 +23679,17 @@
                         ]
                       },
                       "maxItems": 5
+                    },
+                    "buchholz": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "byes": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "withdrawn": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -23496,6 +23708,39 @@
                   "additionalProperties": false
                 }
               },
+              "swiss": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "roundsTotal": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "roundsCompleted": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "currentRound": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "isFinal": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "roundsTotal",
+                  "roundsCompleted",
+                  "currentRound",
+                  "isFinal"
+                ],
+                "additionalProperties": false
+              },
               "updatedAt": {
                 "type": [
                   "string",
@@ -23506,6 +23751,7 @@
             },
             "required": [
               "rows",
+              "swiss",
               "updatedAt"
             ],
             "additionalProperties": false
@@ -24125,7 +24371,8 @@
                         "league",
                         "knockout",
                         "groups-knockout",
-                        "league-playoffs"
+                        "league-playoffs",
+                        "swiss"
                       ]
                     },
                     "teams": {
@@ -30744,7 +30991,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "platform": {
@@ -30950,6 +31198,17 @@
               ]
             },
             "maxItems": 5
+          },
+          "buchholz": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "byes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "withdrawn": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -33974,7 +34233,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "teams": {

@@ -1,5 +1,8 @@
 import type { TeamId } from "@futrob/shared-kernel";
-import type { PublicStandingFormResult } from "../entities/public-competition.ts";
+import type {
+  PublicStandingFormResult,
+  PublicSwissProgress,
+} from "../entities/public-competition.ts";
 import type { PublicCompetitionScope } from "./published-competition-reader.port.ts";
 
 export interface PublicStandingsSourceRow {
@@ -14,10 +17,16 @@ export interface PublicStandingsSourceRow {
   readonly goalDifference: number;
   readonly points: number;
   readonly form: readonly PublicStandingFormResult[];
+  readonly swiss?: {
+    readonly buchholz: number;
+    readonly byes: number;
+    readonly withdrawn: boolean;
+  };
 }
 
 export interface PublicStandingsSource {
   readonly rows: readonly PublicStandingsSourceRow[];
+  readonly swiss: PublicSwissProgress | null;
   readonly updatedAt: Date;
 }
 

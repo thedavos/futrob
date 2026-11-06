@@ -159,6 +159,10 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
   const encounterParticipants = new DeferredEncounterParticipantsChangePort();
   const encounterOpenSelection = new DeferredEncounterOpenSelectionPort();
+  const fixtureSource = new CompetitionFixtureSourceAdapter({
+    competitions: competitionRepository,
+    entries: competitions.entryRepository,
+  });
   const scheduling = createSchedulingModule({
     clock,
     pool: input.pool,
@@ -171,10 +175,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     encounterParticipants,
     encounterOpenSelection,
     competitions: competitionRepository,
-    fixtureSource: new CompetitionFixtureSourceAdapter({
-      competitions: competitionRepository,
-      entries: competitions.entryRepository,
-    }),
+    fixtureSource,
     participants: {
       async isApprovedParticipant({ organizationId, competitionId, teamId }) {
         const [team, entry] = await Promise.all([
@@ -279,6 +280,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     competitions: competitions.repository,
     entries: competitions.entryRepository,
     fixturePlans: scheduling.fixturePlans,
+    fixtureSource,
     authorization: authorization.port,
     performanceRankingAccess: billing.planLimits.performanceRanking,
     encounterReader,
@@ -290,6 +292,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     clock,
     discovery: competitions.discovery,
     standings: statistics.ports.standings,
+    swissStandings: statistics.ports.swissStandings,
     fixturePlans: scheduling.fixturePlans,
     officialResults: results.officialResultReader,
     teams: teams.repositories.teams,

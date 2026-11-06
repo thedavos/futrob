@@ -377,6 +377,7 @@ paths:
                   - knockout
                   - groups-knockout
                   - league-playoffs
+                  - swiss
               - type: string
                 enum:
                   - ""
@@ -2791,6 +2792,7 @@ paths:
                     - knockout
                     - groups-knockout
                     - league-playoffs
+                    - swiss
                 teams:
                   type: object
                   properties:
@@ -2944,6 +2946,7 @@ paths:
                             - knockout
                             - groups-knockout
                             - league-playoffs
+                            - swiss
                         teams:
                           type: object
                           properties:
@@ -7676,6 +7679,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         teams:
           type: object
           properties:
@@ -7885,6 +7889,7 @@ components:
                 - knockout
                 - groups-knockout
                 - league-playoffs
+                - swiss
             teams:
               type: object
               properties:
@@ -8168,6 +8173,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         teams:
           type: object
           properties:
@@ -8700,6 +8706,21 @@ components:
               - draw
               - loss
           maxItems: 5
+        swiss:
+          type: object
+          properties:
+            buchholz:
+              type: integer
+              minimum: 0
+            byes:
+              type: integer
+              minimum: 0
+            withdrawn:
+              type: boolean
+          required:
+            - buchholz
+            - byes
+            - withdrawn
       required:
         - position
         - teamId
@@ -8725,6 +8746,7 @@ components:
           type: string
           enum:
             - points-gd-gf-v1
+            - swiss-points-buchholz-gd-gf-v1
         rows:
           type: array
           items:
@@ -8767,6 +8789,21 @@ components:
                     - draw
                     - loss
                 maxItems: 5
+              swiss:
+                type: object
+                properties:
+                  buchholz:
+                    type: integer
+                    minimum: 0
+                  byes:
+                    type: integer
+                    minimum: 0
+                  withdrawn:
+                    type: boolean
+                required:
+                  - buchholz
+                  - byes
+                  - withdrawn
             required:
               - position
               - teamId
@@ -8790,6 +8827,29 @@ components:
             - integer
             - "null"
           exclusiveMinimum: 0
+        swiss:
+          type:
+            - object
+            - "null"
+          properties:
+            roundsTotal:
+              type: integer
+              minimum: 0
+            roundsCompleted:
+              type: integer
+              minimum: 0
+            currentRound:
+              type:
+                - integer
+                - "null"
+              exclusiveMinimum: 0
+            isFinal:
+              type: boolean
+          required:
+            - roundsTotal
+            - roundsCompleted
+            - currentRound
+            - isFinal
       required:
         - competitionId
         - organizationId
@@ -8798,6 +8858,7 @@ components:
         - sourceRevisionMax
         - updatedAt
         - playoffSpots
+        - swiss
     CompetitionTeamManagementDetail:
       type: object
       properties:
@@ -10550,6 +10611,7 @@ components:
                 - knockout
                 - groups-knockout
                 - league-playoffs
+                - swiss
             teams:
               type: object
               properties:
@@ -10724,6 +10786,7 @@ components:
                       - knockout
                       - groups-knockout
                       - league-playoffs
+                      - swiss
                   teams:
                     type: object
                     properties:
@@ -11081,6 +11144,10 @@ components:
             - id
             - resolutionMode
             - officialMatches
+        closedWithoutResult:
+          type: boolean
+          enum:
+            - true
       required:
         - id
         - stageId
@@ -11197,6 +11264,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         timeZone:
           type: string
           minLength: 1
@@ -11208,6 +11276,11 @@ components:
             type: string
             minLength: 1
           minItems: 2
+        withdrawnTeamIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
         stages:
           type: array
           items:
@@ -11223,6 +11296,7 @@ components:
                   - groups
                   - knockout
                   - playoffs
+                  - swiss
               order:
                 type: integer
                 exclusiveMinimum: 0
@@ -11452,6 +11526,10 @@ components:
                               - id
                               - resolutionMode
                               - officialMatches
+                          closedWithoutResult:
+                            type: boolean
+                            enum:
+                              - true
                         required:
                           - id
                           - stageId
@@ -11712,6 +11790,10 @@ components:
                   - id
                   - resolutionMode
                   - officialMatches
+              closedWithoutResult:
+                type: boolean
+                enum:
+                  - true
             required:
               - id
               - stageId
@@ -11777,6 +11859,7 @@ components:
             - groups
             - knockout
             - playoffs
+            - swiss
         order:
           type: integer
           exclusiveMinimum: 0
@@ -12006,6 +12089,10 @@ components:
                         - id
                         - resolutionMode
                         - officialMatches
+                    closedWithoutResult:
+                      type: boolean
+                      enum:
+                        - true
                   required:
                     - id
                     - stageId
@@ -12068,6 +12155,14 @@ components:
               minimum: 2
           required:
             - teamCount
+        swiss:
+          type: object
+          properties:
+            rounds:
+              type: integer
+              exclusiveMinimum: 0
+          required:
+            - rounds
       required:
         - generationVersion
         - startsAt
@@ -12373,6 +12468,7 @@ components:
               type: string
               enum:
                 - points-gd-gf-v1
+                - swiss-points-buchholz-gd-gf-v1
             rows:
               type: array
               items:
@@ -12415,6 +12511,21 @@ components:
                         - draw
                         - loss
                     maxItems: 5
+                  swiss:
+                    type: object
+                    properties:
+                      buchholz:
+                        type: integer
+                        minimum: 0
+                      byes:
+                        type: integer
+                        minimum: 0
+                      withdrawn:
+                        type: boolean
+                    required:
+                      - buchholz
+                      - byes
+                      - withdrawn
                 required:
                   - position
                   - teamId
@@ -12438,6 +12549,29 @@ components:
                 - integer
                 - "null"
               exclusiveMinimum: 0
+            swiss:
+              type:
+                - object
+                - "null"
+              properties:
+                roundsTotal:
+                  type: integer
+                  minimum: 0
+                roundsCompleted:
+                  type: integer
+                  minimum: 0
+                currentRound:
+                  type:
+                    - integer
+                    - "null"
+                  exclusiveMinimum: 0
+                isFinal:
+                  type: boolean
+              required:
+                - roundsTotal
+                - roundsCompleted
+                - currentRound
+                - isFinal
           required:
             - competitionId
             - organizationId
@@ -12446,6 +12580,7 @@ components:
             - sourceRevisionMax
             - updatedAt
             - playoffSpots
+            - swiss
       required:
         - standings
     GetCompetitionTeamStatisticsResponse:
@@ -12665,6 +12800,7 @@ components:
                 - knockout
                 - groups-knockout
                 - league-playoffs
+                - swiss
             timeZone:
               type: string
               minLength: 1
@@ -12676,6 +12812,11 @@ components:
                 type: string
                 minLength: 1
               minItems: 2
+            withdrawnTeamIds:
+              type: array
+              items:
+                type: string
+                minLength: 1
             stages:
               type: array
               items:
@@ -12691,6 +12832,7 @@ components:
                       - groups
                       - knockout
                       - playoffs
+                      - swiss
                   order:
                     type: integer
                     exclusiveMinimum: 0
@@ -12920,6 +13062,10 @@ components:
                                   - id
                                   - resolutionMode
                                   - officialMatches
+                              closedWithoutResult:
+                                type: boolean
+                                enum:
+                                  - true
                             required:
                               - id
                               - stageId
@@ -15805,6 +15951,7 @@ components:
                 - knockout
                 - groups-knockout
                 - league-playoffs
+                - swiss
             platform:
               type: string
               enum:
@@ -15919,6 +16066,14 @@ components:
                         - draw
                         - loss
                     maxItems: 5
+                  buchholz:
+                    type: integer
+                    minimum: 0
+                  byes:
+                    type: integer
+                    minimum: 0
+                  withdrawn:
+                    type: boolean
                 required:
                   - position
                   - teamName
@@ -15932,6 +16087,30 @@ components:
                   - points
                   - form
                 additionalProperties: false
+            swiss:
+              type:
+                - object
+                - "null"
+              properties:
+                roundsTotal:
+                  type: integer
+                  minimum: 0
+                roundsCompleted:
+                  type: integer
+                  minimum: 0
+                currentRound:
+                  type:
+                    - integer
+                    - "null"
+                  exclusiveMinimum: 0
+                isFinal:
+                  type: boolean
+              required:
+                - roundsTotal
+                - roundsCompleted
+                - currentRound
+                - isFinal
+              additionalProperties: false
             updatedAt:
               type:
                 - string
@@ -15939,6 +16118,7 @@ components:
               format: date-time
           required:
             - rows
+            - swiss
             - updatedAt
           additionalProperties: false
       required:
@@ -16403,6 +16583,7 @@ components:
                       - knockout
                       - groups-knockout
                       - league-playoffs
+                      - swiss
                   teams:
                     type: object
                     properties:
@@ -21143,6 +21324,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         platform:
           type: string
           enum:
@@ -21293,6 +21475,14 @@ components:
               - draw
               - loss
           maxItems: 5
+        buchholz:
+          type: integer
+          minimum: 0
+        byes:
+          type: integer
+          minimum: 0
+        withdrawn:
+          type: boolean
       required:
         - position
         - teamName
@@ -23439,6 +23629,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         teams:
           type: object
           properties:

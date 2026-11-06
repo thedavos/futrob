@@ -7,7 +7,10 @@ import type { CompetitionDiscoveryReader } from "@futrob/competitions";
 import type { OfficialResultReaderPort } from "@futrob/results";
 import type { FixturePlanRepository } from "@futrob/scheduling";
 import type { ClockPort } from "@futrob/shared-kernel";
-import type { CompetitionStandingSnapshotRepository } from "@futrob/statistics";
+import type {
+  CompetitionStandingSnapshotRepository,
+  CompetitionSwissStandingReaderPort,
+} from "@futrob/statistics";
 import type { TeamRepository } from "@futrob/teams";
 import {
   DiscoveryPublishedCompetitionReader,
@@ -20,6 +23,7 @@ export function createPublicPortalModule(input: {
   readonly clock: ClockPort;
   readonly discovery: CompetitionDiscoveryReader;
   readonly standings: CompetitionStandingSnapshotRepository;
+  readonly swissStandings: CompetitionSwissStandingReaderPort;
   readonly fixturePlans: Pick<FixturePlanRepository, "listActive">;
   readonly officialResults: Pick<OfficialResultReaderPort, "listByCompetition">;
   readonly teams: Pick<TeamRepository, "findById">;
@@ -30,7 +34,7 @@ export function createPublicPortalModule(input: {
     getCompetition: new GetPublicCompetitionUseCase(competitions),
     getStandings: new GetPublicStandingsUseCase({
       competitions,
-      standings: new StatisticsPublicStandingsReader(input.standings),
+      standings: new StatisticsPublicStandingsReader(input.standings, input.swissStandings),
       teams,
     }),
     getCalendar: new GetPublicCalendarUseCase({

@@ -53,12 +53,25 @@ export const publicStandingRowSchema = z.strictObject({
   points: z.number().int(),
   /** Latest official results, oldest first. */
   form: z.array(z.enum(["win", "draw", "loss"])).max(5),
+  /** Swiss only. `points` already include the rests. */
+  buchholz: z.number().int().nonnegative().optional(),
+  byes: z.number().int().nonnegative().optional(),
+  withdrawn: z.boolean().optional(),
 });
 export type PublicStandingRowDto = z.infer<typeof publicStandingRowSchema>;
 
 export const getPublicStandingsResponseSchema = z.strictObject({
   standings: z.strictObject({
     rows: z.array(publicStandingRowSchema),
+    /** Null unless the competition plays a Swiss fixture and has a table. */
+    swiss: z
+      .strictObject({
+        roundsTotal: z.number().int().nonnegative(),
+        roundsCompleted: z.number().int().nonnegative(),
+        currentRound: z.number().int().positive().nullable(),
+        isFinal: z.boolean(),
+      })
+      .nullable(),
     /** Null until the first approved result is projected. */
     updatedAt: z.string().datetime().nullable(),
   }),

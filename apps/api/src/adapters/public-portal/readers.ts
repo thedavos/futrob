@@ -13,7 +13,11 @@ import type {
 import type { OfficialResultReaderPort } from "@futrob/results";
 import type { FixturePlanRepository } from "@futrob/scheduling";
 import { asCompetitionId, type TeamId } from "@futrob/shared-kernel";
-import type { CompetitionStandingSnapshotRepository } from "@futrob/statistics";
+import {
+  applySwissStandings,
+  type CompetitionStandingSnapshotRepository,
+  type CompetitionSwissStandingReaderPort,
+} from "@futrob/statistics";
 import type { TeamRepository } from "@futrob/teams";
 import { pairedEncounters } from "@/application/scheduling/paired-encounters.ts";
 
@@ -49,14 +53,20 @@ export class DiscoveryPublishedCompetitionReader implements PublishedCompetition
 }
 
 export class StatisticsPublicStandingsReader implements PublicStandingsReaderPort {
-  constructor(private readonly standings: CompetitionStandingSnapshotRepository) {}
+  constructor(
+    private readonly standings: CompetitionStandingSnapshotRepository,
+    private readonly swissStandings: CompetitionSwissStandingReaderPort,
+  ) {}
 
   async read(scope: PublicCompetitionScope): Promise<PublicStandingsSource | null> {
     const snapshot = await this.standings.findByCompetition(scope.competitionId);
     // The snapshot is keyed by competition alone; a mismatched tenant is treated as absent.
     if (!snapshot || snapshot.organizationId !== scope.organizationId) return null;
+    const context = await this.swissStandings.find(scope.organizationId, scope.competitionId);
+    const applied = context ? applySwissStandings(snapshot, context) : null;
     return {
-      rows: snapshot.rows.map((row) => ({
+      swiss: applied?.swiss ?? null,
+      rows: (applied ?? snapshot).rows.map((row) => ({
         position: row.position,
         teamId: row.teamId,
         played: row.played,
@@ -68,6 +78,7 @@ export class StatisticsPublicStandingsReader implements PublicStandingsReaderPor
         goalDifference: row.goalDifference,
         points: row.points,
         form: row.form,
+        ...(row.swiss ? { swiss: row.swiss } : {}),
       })),
       updatedAt: snapshot.updatedAt,
     };

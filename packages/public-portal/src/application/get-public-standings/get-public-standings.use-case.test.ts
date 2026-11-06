@@ -34,6 +34,7 @@ describe("GetPublicStandingsUseCase", () => {
   it("returns the official table in snapshot order with public team names", async () => {
     const standings = countingStandings(async () => ({
       rows: [row(1, BARRANCO, 3), row(2, SURQUILLO, 0)],
+      swiss: null,
       updatedAt: UPDATED_AT,
     }));
     const result = await new GetPublicStandingsUseCase({
@@ -71,6 +72,7 @@ describe("GetPublicStandingsUseCase", () => {
           form: ["draw", "loss"],
         },
       ],
+      swiss: null,
       updatedAt: UPDATED_AT,
     });
     expect(standings.calls).toEqual([COMPETITION_ID]);
@@ -81,6 +83,7 @@ describe("GetPublicStandingsUseCase", () => {
       competitions: publishedReader(competitionSource()),
       standings: countingStandings(async () => ({
         rows: [{ ...row(1, BARRANCO, 3), organizationId: ORGANIZATION_ID }],
+        swiss: null,
         updatedAt: UPDATED_AT,
       })),
       teams: teamDirectory(TEAM_NAMES),
@@ -114,7 +117,7 @@ describe("GetPublicStandingsUseCase", () => {
       teams: teamDirectory(TEAM_NAMES),
     }).execute({ key: PUBLIC_KEY });
 
-    expect(result.isOk() && result.value).toEqual({ rows: [], updatedAt: null });
+    expect(result.isOk() && result.value).toEqual({ rows: [], swiss: null, updatedAt: null });
   });
 
   it("leaves out a row whose team has no public name instead of printing an id", async () => {
@@ -122,6 +125,7 @@ describe("GetPublicStandingsUseCase", () => {
       competitions: publishedReader(competitionSource()),
       standings: countingStandings(async () => ({
         rows: [row(1, MIRAFLORES, 3), row(2, BARRANCO, 0)],
+        swiss: null,
         updatedAt: UPDATED_AT,
       })),
       teams: teamDirectory(new Map([[BARRANCO, "Barranco FC"]])),

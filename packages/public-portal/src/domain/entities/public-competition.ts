@@ -43,10 +43,23 @@ export interface PublicStandingRow {
   readonly points: number;
   /** Latest official results, oldest first. */
   readonly form: readonly PublicStandingFormResult[];
+  /** Swiss only: tie-break, rests and withdrawal. `points` already include the rests. */
+  readonly buchholz?: number;
+  readonly byes?: number;
+  readonly withdrawn?: boolean;
+}
+
+export interface PublicSwissProgress {
+  readonly roundsTotal: number;
+  readonly roundsCompleted: number;
+  readonly currentRound: number | null;
+  readonly isFinal: boolean;
 }
 
 export interface PublicStandings {
   readonly rows: readonly PublicStandingRow[];
+  /** Null unless the competition plays a Swiss fixture and has a table. */
+  readonly swiss: PublicSwissProgress | null;
   /** Null until the first approved result is projected. */
   readonly updatedAt: Date | null;
 }
