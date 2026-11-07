@@ -1,5 +1,6 @@
 import type { OfficialResultReaderPort } from "@futrob/results";
 import {
+  isSwissRoundSettled,
   swissByeTeam,
   swissPointsPerBye,
   swissRoundProgress,
@@ -46,11 +47,14 @@ export class FixtureSwissStandingReader implements CompetitionSwissStandingReade
     const byesByTeam = new Map<TeamId, number>();
     const addOpponent = (teamId: TeamId, rival: TeamId) =>
       opponentsByTeam.set(teamId, [...(opponentsByTeam.get(teamId) ?? []), rival]);
+    const isApproved = (encounterId: EncounterId) => approved.has(encounterId);
     for (const round of swissRounds(current)) {
+      // Crediting a rest while the round is played would put a Team that just lost above its rivals.
+      const creditsByes = isSwissRoundSettled(round, isApproved);
       for (const encounter of round.encounters) {
         const byeTeam = swissByeTeam(encounter);
         if (byeTeam) {
-          byesByTeam.set(byeTeam, (byesByTeam.get(byeTeam) ?? 0) + 1);
+          if (creditsByes) byesByTeam.set(byeTeam, (byesByTeam.get(byeTeam) ?? 0) + 1);
           continue;
         }
         const { home, away } = encounter;
@@ -70,7 +74,7 @@ export class FixtureSwissStandingReader implements CompetitionSwissStandingReade
         officialMatchCount: source.officialMatchCounts.regular,
         resolutionMode: source.resolutionModes.regular,
       }),
-      ...swissRoundProgress(current, (encounterId) => approved.has(encounterId)),
+      ...swissRoundProgress(current, isApproved),
     };
   }
 }

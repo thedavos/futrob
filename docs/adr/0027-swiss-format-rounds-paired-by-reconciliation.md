@@ -141,6 +141,8 @@ leído por `CompetitionSwissStandingReaderPort`, un adapter de `apps/api` sobre 
 resultados. No se persiste nada nuevo: se aplica **al leer**, tanto en la API privada como en el
 portal público. Así un bye o una retirada, que no pasan por el rebuild, se ven al instante, y el
 snapshot oficial sigue conteniendo solo resultados aprobados.
+Un bye suma en la tabla cuando su ronda queda liquidada: acreditarlo antes pondría primero a un
+equipo que acaba de perder, solo porque descansa en la ronda en curso.
 
 Orden: puntos, Buchholz, diferencia de goles, goles a favor, `seed`. Este orden amplía DEC-014 solo
 para el suizo. Buchholz es la suma de los

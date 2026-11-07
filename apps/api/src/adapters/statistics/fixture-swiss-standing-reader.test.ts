@@ -78,7 +78,7 @@ describe("FixtureSwissStandingReader", () => {
       currentRound: 1,
       isFinal: false,
     });
-    expect(pending?.byesByTeam.get(c)).toBe(1);
+    expect(pending?.byesByTeam.get(c)).toBeUndefined();
     expect(bye?.away.kind).toBe("bye");
 
     const voided = await reader(current, [result(table!.id, "voided")]).find(
@@ -93,6 +93,7 @@ describe("FixtureSwissStandingReader", () => {
     );
     expect(Object.fromEntries(approved!.opponentsByTeam)).toEqual({ a: [b], b: [a] });
     expect(approved).toMatchObject({ roundsCompleted: 1, currentRound: null, isFinal: false });
+    expect(approved?.byesByTeam.get(c)).toBe(1);
   });
 
   it("reports final once truncation leaves only settled rounds", async () => {

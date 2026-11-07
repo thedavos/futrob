@@ -237,6 +237,7 @@ export {
   swissByeTeam,
   swissPointsPerBye,
   swissRoundEncounterIds,
+  isSwissRoundSettled,
   swissRoundProgress,
   swissRounds,
   swissTeamEncounterIds,
