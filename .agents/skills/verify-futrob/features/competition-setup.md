@@ -8,6 +8,7 @@ An organizer creates an organization, a competition draft, and continues in setu
 - `setup-draft` creates a draft from `/orgs/$orgId/competitions/new` with `Crear competición`.
 - `setup-wizard` opens `/orgs/$orgId/competitions/$competitionId/setup` with steps `information`, `format`, `rules`, `participants`, `review`.
 - `setup-cli-twin` runs `e2e-golden-path` against the live API (org → teams → entries → publish → fixture).
+- `setup-fixture-generate` generates the first fixture of a published Swiss competition from `/orgs/$orgId/competitions/$competitionId/fixture`. Recipe in [swiss-format](./swiss-format.md). Other formats have no web generate flow and show `Aún no hay calendario`.
 - `setup-forbidden` hides or disables `Crear competición` when the actor lacks `competitions.update`.
 
 ## How to get to it (user POV)

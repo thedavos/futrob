@@ -5,6 +5,10 @@ import {
   type CounterScheduleChangeProposalRequest,
   createScheduleChangeRequestSchema,
   type CreateScheduleChangeRequestBody,
+  closeSwissRoundRequestSchema,
+  type CloseSwissRoundRequest,
+  withdrawSwissTeamRequestSchema,
+  type WithdrawSwissTeamRequest,
   editFixtureEncounterRequestSchema,
   type EditFixtureEncounterRequest,
   encounterScheduleSnapshotSchema,
@@ -154,6 +158,61 @@ export function createEncountersResource(http: HttpClient) {
         method: "PATCH",
         requestId,
         body: editFixtureEncounterRequestSchema.parse({ ...input, requestId }),
+        options,
+        parse: (data) => fixturePlanSchema.parse(data),
+      });
+    },
+    async withdrawSwissTeam(
+      organizationId: string,
+      competitionId: string,
+      fixturePlanId: string,
+      input: WithdrawSwissTeamRequest,
+      options: RequestOptions = {},
+    ): Promise<FixturePlanDto> {
+      const requestId = input.requestId ?? crypto.randomUUID();
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "fixtures",
+          fixturePlanId,
+          "swiss",
+          "withdrawals",
+        ),
+        method: "POST",
+        requestId,
+        body: withdrawSwissTeamRequestSchema.parse({ ...input, requestId }),
+        options,
+        parse: (data) => fixturePlanSchema.parse(data),
+      });
+    },
+    async closeSwissRound(
+      organizationId: string,
+      competitionId: string,
+      fixturePlanId: string,
+      roundNumber: number,
+      input: CloseSwissRoundRequest,
+      options: RequestOptions = {},
+    ): Promise<FixturePlanDto> {
+      const requestId = input.requestId ?? crypto.randomUUID();
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "fixtures",
+          fixturePlanId,
+          "swiss",
+          "rounds",
+          String(roundNumber),
+          "close",
+        ),
+        method: "POST",
+        requestId,
+        body: closeSwissRoundRequestSchema.parse({ ...input, requestId }),
         options,
         parse: (data) => fixturePlanSchema.parse(data),
       });

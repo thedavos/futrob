@@ -139,3 +139,73 @@ export const groupsKnockoutFixture: GetCurrentCompetitionFixtureResponse = {
 };
 
 export const noFixture: GetCurrentCompetitionFixtureResponse = { fixture: null, teams: [] };
+
+const SWISS = `${PLAN}:stage:swiss`;
+const swissStart = (round: number) => `2026-11-${String(round * 7).padStart(2, "0")}T01:00:00.000Z`;
+
+/**
+ * Round 3 of 4 of a Swiss stage: an official or open match, a closed one, a bye,
+ * a withdrawn Team, and a last round not paired yet.
+ */
+export const swissFixture: GetCurrentCompetitionFixtureResponse = {
+  fixture: {
+    ...groupsKnockoutFixture.fixture!,
+    format: "swiss",
+    homeAndAway: false,
+    seed: ["team-cuervos", "team-maderas", "team-halcones", "team-sur", "team-norte"],
+    withdrawnTeamIds: ["team-norte"],
+    stages: [
+      {
+        id: SWISS,
+        kind: "swiss",
+        order: 1,
+        rounds: [
+          {
+            id: `${SWISS}:round:1`,
+            stageId: SWISS,
+            number: 1,
+            scheduledStartAt: swissStart(1),
+            encounters: [
+              encounter(SWISS, 1, 1, team("team-cuervos"), team("team-norte"), swissStart(1)),
+              encounter(SWISS, 1, 2, team("team-maderas"), team("team-halcones"), swissStart(1), {
+                closedWithoutResult: true,
+              }),
+              encounter(SWISS, 1, 3, team("team-sur"), { kind: "bye" }, swissStart(1)),
+            ],
+          },
+          {
+            id: `${SWISS}:round:2`,
+            stageId: SWISS,
+            number: 2,
+            scheduledStartAt: swissStart(2),
+            encounters: [
+              encounter(SWISS, 2, 1, team("team-cuervos"), team("team-sur"), swissStart(2)),
+              encounter(SWISS, 2, 2, team("team-maderas"), { kind: "bye" }, swissStart(2)),
+            ],
+          },
+          {
+            id: `${SWISS}:round:3`,
+            stageId: SWISS,
+            number: 3,
+            scheduledStartAt: swissStart(3),
+            encounters: [],
+          },
+          {
+            id: `${SWISS}:round:4`,
+            stageId: SWISS,
+            number: 4,
+            scheduledStartAt: swissStart(4),
+            encounters: [],
+          },
+        ],
+      },
+    ],
+  },
+  teams: [
+    { teamId: "team-cuervos", name: "Cuervos FC" },
+    { teamId: "team-maderas", name: "Maderas FC" },
+    { teamId: "team-halcones", name: "Club Atlético Halcones del Pacífico" },
+    { teamId: "team-sur", name: "Sur United" },
+    { teamId: "team-norte", name: "Norte Athletic" },
+  ],
+};

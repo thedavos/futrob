@@ -63,6 +63,15 @@ export type {
   CompetitionMatchRulesReaderPort,
 } from "./domain/ports/competition-match-rules-reader.port.ts";
 export type { CompetitionPlayoffSpotsReaderPort } from "./domain/ports/competition-playoff-spots-reader.port.ts";
+export type {
+  CompetitionSwissProgress,
+  CompetitionSwissStandingContext,
+  CompetitionSwissStandingReaderPort,
+} from "./domain/ports/competition-swiss-standing-reader.port.ts";
+export {
+  applySwissStandings,
+  type SwissStandingSnapshot,
+} from "./domain/policies/apply-swiss-standings.ts";
 export type { CompetitionRankingEligibilityReaderPort } from "./domain/ports/competition-ranking-eligibility-reader.port.ts";
 export type { PlayerProfileLookupPort } from "./domain/ports/player-profile-lookup.port.ts";
 export type {

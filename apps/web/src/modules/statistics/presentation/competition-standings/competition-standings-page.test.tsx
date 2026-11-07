@@ -35,6 +35,7 @@ const snapshot = {
   sourceRevisionMax: 2,
   updatedAt: "2026-10-12T01:00:00.000Z",
   playoffSpots: null,
+  swiss: null,
 };
 
 const managedTeam = ([id, name]: readonly [string, string]) => ({
@@ -274,6 +275,61 @@ describe("Competition standings page", () => {
     expect(screen.getByText("No tienes acceso a la clasificación")).toBeTruthy();
     expect(screen.queryByText("Aún no hay clasificación oficial")).toBeNull();
   }, 15_000);
+
+  it("adds Buchholz, byes, the withdrawn mark and the round to a Swiss table", async () => {
+    serve({
+      standings: () =>
+        Response.json({
+          standings: {
+            ...snapshot,
+            formulaVersion: "swiss-points-buchholz-gd-gf-v1",
+            rows: [
+              { ...row(1, "t2", 6, 3), swiss: { buchholz: 11, byes: 1, withdrawn: false } },
+              { ...row(2, "t1", 2, -2), swiss: { buchholz: 4, byes: 0, withdrawn: true } },
+            ],
+            swiss: { roundsTotal: 4, roundsCompleted: 1, currentRound: 2, isFinal: false },
+          },
+        }),
+    });
+    renderRoute();
+
+    expect(await screen.findByText("Ronda 2 de 4")).toBeTruthy();
+    expect(screen.getByTitle("Buchholz: suma de los puntos de los rivales").textContent).toBe(
+      "Buch.",
+    );
+    expect(screen.getByText("11")).toBeTruthy();
+    expect(screen.getByText("1 descanso")).toBeTruthy();
+    expect(screen.getByText("Retirado")).toBeTruthy();
+    expect(screen.getByText(/Empates: primero Buchholz/)).toBeTruthy();
+    expect(screen.queryByText("Clasificación final")).toBeNull();
+  });
+
+  it("calls a settled Swiss table final and leaves other formats untouched", async () => {
+    serve({
+      standings: () =>
+        Response.json({
+          standings: {
+            ...snapshot,
+            formulaVersion: "swiss-points-buchholz-gd-gf-v1",
+            rows: [{ ...row(1, "t2", 6, 3), swiss: { buchholz: 11, byes: 0, withdrawn: false } }],
+            swiss: { roundsTotal: 4, roundsCompleted: 4, currentRound: null, isFinal: true },
+          },
+        }),
+    });
+    renderRoute();
+
+    expect(await screen.findByText("Clasificación final")).toBeTruthy();
+    expect(screen.queryByText(/Ronda \d/)).toBeNull();
+  });
+
+  it("keeps the table of other formats free of Swiss columns", async () => {
+    serve({ standings: () => Response.json({ standings: snapshot }) });
+    renderRoute();
+
+    expect(await screen.findByText("Fórmula points-gd-gf-v1")).toBeTruthy();
+    expect(screen.queryByText("Buch.")).toBeNull();
+    expect(screen.queryByText(/Empates: primero Buchholz/)).toBeNull();
+  });
 
   it("reports a load failure with retry, distinct from empty", async () => {
     serve({ standings: fail(500, "api.unexpected") });

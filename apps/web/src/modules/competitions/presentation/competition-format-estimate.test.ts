@@ -2,6 +2,12 @@ import { describe, expect, it } from "vite-plus/test";
 import { estimateFixtureCounts } from "./competition-format-estimate.ts";
 
 describe("estimateFixtureCounts", () => {
+  it("estimates a Swiss field as ⌈log₂ n⌉ rounds of ⌊n/2⌋ encounters, whatever the legs", () => {
+    expect(estimateFixtureCounts("swiss", 8, "double")).toEqual({ rounds: 3, encounters: 12 });
+    expect(estimateFixtureCounts("swiss", 9, "single")).toEqual({ rounds: 4, encounters: 16 });
+    expect(estimateFixtureCounts("swiss", 2, "single")).toEqual({ rounds: 1, encounters: 1 });
+  });
+
   it("counts a single round robin", () => {
     expect(estimateFixtureCounts("league", 8, "single")).toEqual({
       rounds: 7,

@@ -192,6 +192,10 @@ function statusForFailureCode(code: string): number {
     code.includes("limit_reached") ||
     code.includes("rescheduling_disabled") ||
     code === "scheduling.reschedule_notice_not_met" ||
+    code === "scheduling.advancement_not_reversible" ||
+    code === "scheduling.not_swiss_fixture" ||
+    code === "scheduling.swiss_round_not_current" ||
+    code === "scheduling.swiss_team_already_withdrawn" ||
     code.includes("active_schedule_change_request_exists") ||
     code === "scheduling.schedule_change_request_closed" ||
     code === "scheduling.schedule_change_proposal_stale" ||
@@ -203,6 +207,7 @@ function statusForFailureCode(code: string): number {
     return 409;
   }
   if (
+    code === "scheduling.swiss_team_not_participant" ||
     code.includes("schema") ||
     code.includes("unsupported") ||
     code.includes("validation") ||

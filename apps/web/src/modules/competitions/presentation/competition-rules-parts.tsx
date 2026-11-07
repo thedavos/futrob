@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { CompetitionFormatDto } from "@futrob/api-contracts";
 import {
   applyStyles,
   Caption,
@@ -16,9 +17,16 @@ import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { styles } from "./competition-rules-page.styles.ts";
 
 /** Fixed platform behavior (standings order, 24 h confirmation); not stored per competition. */
-export function PlatformRules({ t }: { readonly t: Translator }) {
+export function PlatformRules({
+  format,
+  t,
+}: {
+  readonly format: CompetitionFormatDto;
+  readonly t: Translator;
+}) {
   const tiebreaks = [
     t("competitionRules.tiebreaks.points"),
+    ...(format === "swiss" ? [t("competitionRules.tiebreaks.buchholz")] : []),
     t("competitionRules.tiebreaks.goalDifference"),
     t("competitionRules.tiebreaks.goalsFor"),
   ];

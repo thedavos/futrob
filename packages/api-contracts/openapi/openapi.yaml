@@ -377,6 +377,7 @@ paths:
                   - knockout
                   - groups-knockout
                   - league-playoffs
+                  - swiss
               - type: string
                 enum:
                   - ""
@@ -2791,6 +2792,7 @@ paths:
                     - knockout
                     - groups-knockout
                     - league-playoffs
+                    - swiss
                 teams:
                   type: object
                   properties:
@@ -2944,6 +2946,7 @@ paths:
                             - knockout
                             - groups-knockout
                             - league-playoffs
+                            - swiss
                         teams:
                           type: object
                           properties:
@@ -3780,6 +3783,124 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/EditFixtureEncounterRequest"
+  /organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}/swiss/rounds/{roundNumber}/close:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: fixturePlanId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: roundNumber
+          in: path
+      responses:
+        "200":
+          description: Updated competition fixture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixturePlan"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400": &a69
+          $ref: "#/components/responses/ApiError"
+        "401": *a69
+        "403": *a69
+        "404": *a69
+        "409": *a69
+      operationId: closeSwissRound
+      tags:
+        - fixtures
+      summary: Close the unplayed encounters of the current Swiss round
+      description: "Requires encounters.schedule.manage. Each unplayed encounter
+        becomes Team vs Team with `series: null` and `closedWithoutResult:
+        true`: nobody scores, no official result is created and the pair counts
+        as already met. Open selections on them are voided. The next round is
+        paired in the same request. Repeating `requestId` returns the fixture
+        without applying anything. Failures carry a stable `code`: 400
+        `api.validation_error`, `scheduling.invalid_fixture_configuration`; 403
+        `authorization.forbidden`; 404 `scheduling.fixture_plan_not_found`; 409
+        `scheduling.not_swiss_fixture`, `scheduling.swiss_round_not_current`,
+        `scheduling.fixture_update_conflict`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloseSwissRoundRequest"
+  /organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}/swiss/withdrawals:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: fixturePlanId
+          in: path
+      responses:
+        "200":
+          description: Updated competition fixture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixturePlan"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400": &a70
+          $ref: "#/components/responses/ApiError"
+        "401": *a70
+        "403": *a70
+        "404": *a70
+        "409": *a70
+      operationId: withdrawSwissTeam
+      tags:
+        - fixtures
+      summary: Withdraw a Team from the later rounds of a Swiss fixture
+      description: "Requires encounters.schedule.manage. The Team keeps its approved
+        results and stays in the table, marked as withdrawn. Its unplayed
+        encounter becomes a bye for the rival, or is removed if the rival is
+        gone too or the Team was the one resting; an open selection on it is
+        voided. An approved result is never touched. Repeating `requestId`
+        returns the fixture without applying anything. Failures carry a stable
+        `code`: 400 `api.validation_error`,
+        `scheduling.invalid_fixture_configuration`,
+        `scheduling.swiss_team_not_participant`; 403 `authorization.forbidden`;
+        404 `scheduling.fixture_plan_not_found`; 409
+        `scheduling.not_swiss_fixture`,
+        `scheduling.swiss_team_already_withdrawn`,
+        `scheduling.fixture_update_conflict`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawSwissTeamRequest"
   /organizations/{organizationId}/competitions/{competitionId}/invitations:
     post:
       parameters:
@@ -3804,11 +3925,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a69
+        "400": &a71
           $ref: "#/components/responses/ApiError"
-        "401": *a69
-        "403": *a69
-        "404": *a69
+        "401": *a71
+        "403": *a71
+        "404": *a71
       operationId: createCompetitionInvitation
       tags:
         - competitions
@@ -3872,9 +3993,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a70
+        "403": &a72
           $ref: "#/components/responses/ApiError"
-        "404": *a70
+        "404": *a72
       operationId: changeCompetitionRole
       tags:
         - authorization
@@ -3909,7 +4030,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a71
+        "400": &a73
           $ref: "#/components/responses/ApiError"
         "402":
           description: The organization's plan does not include this action, or its
@@ -3921,8 +4042,8 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a71
-        "409": *a71
+        "403": *a73
+        "409": *a73
       operationId: addCompetitionParticipant
       tags:
         - competitions
@@ -4023,10 +4144,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a72
+        "403": &a74
           $ref: "#/components/responses/ApiError"
-        "404": *a72
-        "409": *a72
+        "404": *a74
+        "409": *a74
       operationId: removeCompetitionParticipant
       tags:
         - competitions
@@ -4055,10 +4176,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a73
+        "403": &a75
           $ref: "#/components/responses/ApiError"
-        "404": *a73
-        "409": *a73
+        "404": *a75
+        "409": *a75
       operationId: publishCompetition
       tags:
         - competitions
@@ -4099,9 +4220,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a74
+        "401": &a76
           $ref: "#/components/responses/ApiError"
-        "403": *a74
+        "403": *a76
       operationId: getCompetitionRankings
       tags:
         - statistics
@@ -4130,10 +4251,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a75
+        "403": &a77
           $ref: "#/components/responses/ApiError"
-        "404": *a75
-        "409": *a75
+        "404": *a77
+        "409": *a77
       operationId: closeCompetitionRegistration
       tags:
         - competitions
@@ -4162,10 +4283,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a76
+        "403": &a78
           $ref: "#/components/responses/ApiError"
-        "404": *a76
-        "409": *a76
+        "404": *a78
+        "409": *a78
       operationId: openCompetitionRegistration
       tags:
         - competitions
@@ -4195,9 +4316,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a77
+        "401": &a79
           $ref: "#/components/responses/ApiError"
-        "403": *a77
+        "403": *a79
       operationId: getCompetitionStandings
       tags:
         - statistics
@@ -4367,9 +4488,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a78
+        "400": &a80
           $ref: "#/components/responses/ApiError"
-        "403": *a78
+        "403": *a80
       operationId: listCompetitionTeamManagement
       tags:
         - teams
@@ -4403,9 +4524,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a79
+        "403": &a81
           $ref: "#/components/responses/ApiError"
-        "404": *a79
+        "404": *a81
       operationId: getCompetitionTeamManagement
       tags:
         - teams
@@ -4435,7 +4556,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a80
+        "401": &a82
           $ref: "#/components/responses/ApiError"
         "402":
           description: The organization's plan does not include this action, or its
@@ -4447,7 +4568,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a80
+        "403": *a82
       operationId: getTeamPerformanceRanking
       tags:
         - statistics
@@ -4477,9 +4598,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a81
+        "401": &a83
           $ref: "#/components/responses/ApiError"
-        "403": *a81
+        "403": *a83
       operationId: getCompetitionTeamStatistics
       tags:
         - statistics
@@ -4513,11 +4634,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a82
+        "400": &a84
           $ref: "#/components/responses/ApiError"
-        "401": *a82
-        "403": *a82
-        "404": *a82
+        "401": *a84
+        "403": *a84
+        "404": *a84
       operationId: connectCompetitionTeamExternalClub
       tags:
         - teams
@@ -4556,9 +4677,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a83
+        "401": &a85
           $ref: "#/components/responses/ApiError"
-        "403": *a83
+        "403": *a85
       operationId: getCompetitionTeamExternalClub
       tags:
         - teams
@@ -4592,12 +4713,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a84
+        "400": &a86
           $ref: "#/components/responses/ApiError"
-        "401": *a84
-        "403": *a84
-        "404": *a84
-        "409": *a84
+        "401": *a86
+        "403": *a86
+        "404": *a86
+        "409": *a86
       operationId: addToTeamRoster
       tags:
         - teams
@@ -4636,9 +4757,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a85
+        "401": &a87
           $ref: "#/components/responses/ApiError"
-        "403": *a85
+        "403": *a87
       operationId: listTeamRoster
       tags:
         - teams
@@ -4672,11 +4793,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a86
+        "400": &a88
           $ref: "#/components/responses/ApiError"
-        "401": *a86
-        "403": *a86
-        "409": *a86
+        "401": *a88
+        "403": *a88
+        "409": *a88
       operationId: createRosterInvitation
       tags:
         - teams
@@ -4721,11 +4842,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a87
+        "400": &a89
           $ref: "#/components/responses/ApiError"
-        "401": *a87
-        "403": *a87
-        "404": *a87
+        "401": *a89
+        "403": *a89
+        "404": *a89
       operationId: changeRosterRole
       tags:
         - teams
@@ -4765,10 +4886,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a88
+        "401": &a90
           $ref: "#/components/responses/ApiError"
-        "403": *a88
-        "409": *a88
+        "403": *a90
+        "409": *a90
       operationId: closeTeamRoster
       tags:
         - teams
@@ -4802,10 +4923,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a89
+        "401": &a91
           $ref: "#/components/responses/ApiError"
-        "403": *a89
-        "409": *a89
+        "403": *a91
+        "409": *a91
       operationId: openTeamRoster
       tags:
         - teams
@@ -4834,9 +4955,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a90
+        "401": &a92
           $ref: "#/components/responses/ApiError"
-        "404": *a90
+        "404": *a92
       operationId: getEncounterView
       tags:
         - encounters
@@ -4872,11 +4993,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a91
+        "400": &a93
           $ref: "#/components/responses/ApiError"
-        "401": *a91
-        "403": *a91
-        "404": *a91
+        "401": *a93
+        "403": *a93
+        "404": *a93
       operationId: getTeamOfficialSelection
       tags:
         - results
@@ -4907,10 +5028,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a92
+        "401": &a94
           $ref: "#/components/responses/ApiError"
-        "403": *a92
-        "404": *a92
+        "403": *a94
+        "404": *a94
       operationId: getOperatorOfficialSelection
       tags:
         - results
@@ -4943,12 +5064,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a93
+        "400": &a95
           $ref: "#/components/responses/ApiError"
-        "401": *a93
-        "403": *a93
-        "404": *a93
-        "409": *a93
+        "401": *a95
+        "403": *a95
+        "404": *a95
+        "409": *a95
       operationId: openMatchDispute
       tags:
         - results
@@ -5001,12 +5122,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a94
+        "400": &a96
           $ref: "#/components/responses/ApiError"
-        "401": *a94
-        "403": *a94
-        "404": *a94
-        "409": *a94
+        "401": *a96
+        "403": *a96
+        "404": *a96
+        "409": *a96
       operationId: resolveMatchDispute
       tags:
         - results
@@ -5068,12 +5189,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a95
+        "400": &a97
           $ref: "#/components/responses/ApiError"
-        "401": *a95
-        "403": *a95
-        "404": *a95
-        "409": *a95
+        "401": *a97
+        "403": *a97
+        "404": *a97
+        "409": *a97
       operationId: reviewMatchDispute
       tags:
         - results
@@ -5134,12 +5255,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a96
+        "400": &a98
           $ref: "#/components/responses/ApiError"
-        "401": *a96
-        "403": *a96
-        "404": *a96
-        "409": *a96
+        "401": *a98
+        "403": *a98
+        "404": *a98
+        "409": *a98
       operationId: proposeOfficialSelection
       tags:
         - results
@@ -5197,12 +5318,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a97
+        "400": &a99
           $ref: "#/components/responses/ApiError"
-        "401": *a97
-        "403": *a97
-        "404": *a97
-        "409": *a97
+        "401": *a99
+        "403": *a99
+        "404": *a99
+        "409": *a99
       operationId: proposeAlternativeOfficialSelection
       tags:
         - results
@@ -5260,12 +5381,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a98
+        "400": &a100
           $ref: "#/components/responses/ApiError"
-        "401": *a98
-        "403": *a98
-        "404": *a98
-        "409": *a98
+        "401": *a100
+        "403": *a100
+        "404": *a100
+        "409": *a100
       operationId: confirmOfficialSelection
       tags:
         - results
@@ -5323,12 +5444,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a99
+        "400": &a101
           $ref: "#/components/responses/ApiError"
-        "401": *a99
-        "403": *a99
-        "404": *a99
-        "409": *a99
+        "401": *a101
+        "403": *a101
+        "404": *a101
+        "409": *a101
       operationId: rejectOfficialSelection
       tags:
         - results
@@ -5376,9 +5497,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a100
+        "400": &a102
           $ref: "#/components/responses/ApiError"
-        "401": *a100
+        "401": *a102
         "402":
           description: The organization's plan does not include this action, or its
             monthly quota is used
@@ -5389,9 +5510,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a100
-        "404": *a100
-        "409": *a100
+        "403": *a102
+        "404": *a102
+        "409": *a102
       operationId: createOrganizationInvitation
       tags:
         - organizations
@@ -5421,11 +5542,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a101
+        "400": &a103
           $ref: "#/components/responses/ApiError"
-        "401": *a101
-        "403": *a101
-        "404": *a101
+        "401": *a103
+        "403": *a103
+        "404": *a103
       operationId: setOrganizationLogo
       tags:
         - organizations
@@ -5616,12 +5737,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a102
+        "400": &a104
           $ref: "#/components/responses/ApiError"
-        "401": *a102
-        "403": *a102
-        "404": *a102
-        "409": *a102
+        "401": *a104
+        "403": *a104
+        "404": *a104
+        "409": *a104
       operationId: listOrganizationMembers
       tags:
         - organizations
@@ -5653,7 +5774,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a103
+        "400": &a105
           $ref: "#/components/responses/ApiError"
         "402":
           description: The organization's plan does not include this action, or its
@@ -5665,9 +5786,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a103
-        "404": *a103
-        "409": *a103
+        "403": *a105
+        "404": *a105
+        "409": *a105
       operationId: changeOrganizationRole
       tags:
         - authorization
@@ -5697,11 +5818,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a104
+        "400": &a106
           $ref: "#/components/responses/ApiError"
-        "401": *a104
-        "403": *a104
-        "409": *a104
+        "401": *a106
+        "403": *a106
+        "409": *a106
       operationId: createOrganizationTeam
       tags:
         - teams
@@ -5755,9 +5876,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a105
+        "401": &a107
           $ref: "#/components/responses/ApiError"
-        "403": *a105
+        "403": *a107
       operationId: listOrganizationTeams
       tags:
         - teams
@@ -5786,11 +5907,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a106
+        "400": &a108
           $ref: "#/components/responses/ApiError"
-        "401": *a106
-        "403": *a106
-        "404": *a106
+        "401": *a108
+        "403": *a108
+        "404": *a108
       operationId: connectOrganizationTeamExternalClub
       tags:
         - teams
@@ -5824,9 +5945,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a107
+        "401": &a109
           $ref: "#/components/responses/ApiError"
-        "403": *a107
+        "403": *a109
       operationId: getOrganizationTeamExternalClub
       tags:
         - teams
@@ -5874,9 +5995,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a108
+        "400": &a110
           $ref: "#/components/responses/ApiError"
-        "401": *a108
+        "401": *a110
         "402":
           description: The organization's plan does not include this action, or its
             monthly quota is used
@@ -5887,8 +6008,8 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "404": *a108
-        "409": *a108
+        "404": *a110
+        "409": *a110
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptOrganizationInvitation
@@ -5998,9 +6119,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a109
+        "400": &a111
           $ref: "#/components/responses/ApiError"
-        "401": *a109
+        "401": *a111
       operationId: checkOrganizationNameAvailability
       tags:
         - organizations
@@ -6066,9 +6187,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a110
+        "400": &a112
           $ref: "#/components/responses/ApiError"
-        "401": *a110
+        "401": *a112
       operationId: checkOrganizationSlugAvailability
       tags:
         - organizations
@@ -6123,11 +6244,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a111
+        "400": &a113
           $ref: "#/components/responses/ApiError"
-        "401": *a111
-        "403": *a111
-        "404": *a111
+        "401": *a113
+        "403": *a113
+        "404": *a113
       operationId: setMyActiveTeam
       tags:
         - teams
@@ -6198,9 +6319,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a112
+        "400": &a114
           $ref: "#/components/responses/ApiError"
-        "401": *a112
+        "401": *a114
       operationId: listMyActivities
       tags:
         - notifications
@@ -6240,10 +6361,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a113
+        "400": &a115
           $ref: "#/components/responses/ApiError"
-        "401": *a113
-        "404": *a113
+        "401": *a115
+        "404": *a115
       operationId: associateMyPlayerExternalClub
       tags:
         - players
@@ -6268,9 +6389,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a114
+        "400": &a116
           $ref: "#/components/responses/ApiError"
-        "401": *a114
+        "401": *a116
       operationId: addMyPlayerGameAccount
       tags:
         - players
@@ -6303,11 +6424,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a115
+        "400": &a117
           $ref: "#/components/responses/ApiError"
-        "401": *a115
-        "404": *a115
-        "409": *a115
+        "401": *a117
+        "404": *a117
+        "409": *a117
       operationId: updateMyPlayerGameAccount
       tags:
         - players
@@ -6350,10 +6471,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a116
+        "400": &a118
           $ref: "#/components/responses/ApiError"
-        "401": *a116
-        "503": *a116
+        "401": *a118
+        "503": *a118
       operationId: getMyGameProfile
       tags:
         - players
@@ -6419,10 +6540,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a117
+        "400": &a119
           $ref: "#/components/responses/ApiError"
-        "401": *a117
-        "403": *a117
+        "401": *a119
+        "403": *a119
       operationId: getMyMatches
       tags:
         - players
@@ -6472,11 +6593,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a118
+        "400": &a120
           $ref: "#/components/responses/ApiError"
-        "401": *a118
-        "403": *a118
-        "502": *a118
+        "401": *a120
+        "403": *a120
+        "502": *a120
       operationId: getMyRecentMatches
       tags:
         - players
@@ -6518,12 +6639,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a119
+        "400": &a121
           $ref: "#/components/responses/ApiError"
-        "401": *a119
-        "403": *a119
-        "502": *a119
-        "503": *a119
+        "401": *a121
+        "403": *a121
+        "502": *a121
+        "503": *a121
       operationId: getMyRecentMatch
       tags:
         - players
@@ -6701,9 +6822,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a120
+        "401": &a122
           $ref: "#/components/responses/ApiError"
-        "403": *a120
+        "403": *a122
       operationId: getMyStatistics
       tags:
         - players
@@ -6937,12 +7058,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a121
+        "400": &a123
           $ref: "#/components/responses/ApiError"
-        "401": *a121
-        "403": *a121
-        "404": *a121
-        "409": *a121
+        "401": *a123
+        "403": *a123
+        "404": *a123
+        "409": *a123
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: respondToRosterInvitation
@@ -6976,11 +7097,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a122
+        "400": &a124
           $ref: "#/components/responses/ApiError"
-        "401": *a122
-        "404": *a122
-        "409": *a122
+        "401": *a124
+        "404": *a124
+        "409": *a124
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptRosterInvitation
@@ -7619,6 +7740,18 @@ components:
             - vice_captain
       required:
         - role
+    CloseSwissRoundRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+        requestId:
+          type: string
+          format: uuid
+      required:
+        - reason
     Competition:
       type: object
       properties:
@@ -7676,6 +7809,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         teams:
           type: object
           properties:
@@ -7885,6 +8019,7 @@ components:
                 - knockout
                 - groups-knockout
                 - league-playoffs
+                - swiss
             teams:
               type: object
               properties:
@@ -8168,6 +8303,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         teams:
           type: object
           properties:
@@ -8700,6 +8836,21 @@ components:
               - draw
               - loss
           maxItems: 5
+        swiss:
+          type: object
+          properties:
+            buchholz:
+              type: integer
+              minimum: 0
+            byes:
+              type: integer
+              minimum: 0
+            withdrawn:
+              type: boolean
+          required:
+            - buchholz
+            - byes
+            - withdrawn
       required:
         - position
         - teamId
@@ -8725,6 +8876,7 @@ components:
           type: string
           enum:
             - points-gd-gf-v1
+            - swiss-points-buchholz-gd-gf-v1
         rows:
           type: array
           items:
@@ -8767,6 +8919,21 @@ components:
                     - draw
                     - loss
                 maxItems: 5
+              swiss:
+                type: object
+                properties:
+                  buchholz:
+                    type: integer
+                    minimum: 0
+                  byes:
+                    type: integer
+                    minimum: 0
+                  withdrawn:
+                    type: boolean
+                required:
+                  - buchholz
+                  - byes
+                  - withdrawn
             required:
               - position
               - teamId
@@ -8790,6 +8957,29 @@ components:
             - integer
             - "null"
           exclusiveMinimum: 0
+        swiss:
+          type:
+            - object
+            - "null"
+          properties:
+            roundsTotal:
+              type: integer
+              minimum: 0
+            roundsCompleted:
+              type: integer
+              minimum: 0
+            currentRound:
+              type:
+                - integer
+                - "null"
+              exclusiveMinimum: 0
+            isFinal:
+              type: boolean
+          required:
+            - roundsTotal
+            - roundsCompleted
+            - currentRound
+            - isFinal
       required:
         - competitionId
         - organizationId
@@ -8798,6 +8988,7 @@ components:
         - sourceRevisionMax
         - updatedAt
         - playoffSpots
+        - swiss
     CompetitionTeamManagementDetail:
       type: object
       properties:
@@ -10550,6 +10741,7 @@ components:
                 - knockout
                 - groups-knockout
                 - league-playoffs
+                - swiss
             teams:
               type: object
               properties:
@@ -10724,6 +10916,7 @@ components:
                       - knockout
                       - groups-knockout
                       - league-playoffs
+                      - swiss
                   teams:
                     type: object
                     properties:
@@ -11081,6 +11274,10 @@ components:
             - id
             - resolutionMode
             - officialMatches
+        closedWithoutResult:
+          type: boolean
+          enum:
+            - true
       required:
         - id
         - stageId
@@ -11197,6 +11394,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         timeZone:
           type: string
           minLength: 1
@@ -11208,6 +11406,11 @@ components:
             type: string
             minLength: 1
           minItems: 2
+        withdrawnTeamIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
         stages:
           type: array
           items:
@@ -11223,6 +11426,7 @@ components:
                   - groups
                   - knockout
                   - playoffs
+                  - swiss
               order:
                 type: integer
                 exclusiveMinimum: 0
@@ -11452,6 +11656,10 @@ components:
                               - id
                               - resolutionMode
                               - officialMatches
+                          closedWithoutResult:
+                            type: boolean
+                            enum:
+                              - true
                         required:
                           - id
                           - stageId
@@ -11712,6 +11920,10 @@ components:
                   - id
                   - resolutionMode
                   - officialMatches
+              closedWithoutResult:
+                type: boolean
+                enum:
+                  - true
             required:
               - id
               - stageId
@@ -11777,6 +11989,7 @@ components:
             - groups
             - knockout
             - playoffs
+            - swiss
         order:
           type: integer
           exclusiveMinimum: 0
@@ -12006,6 +12219,10 @@ components:
                         - id
                         - resolutionMode
                         - officialMatches
+                    closedWithoutResult:
+                      type: boolean
+                      enum:
+                        - true
                   required:
                     - id
                     - stageId
@@ -12068,6 +12285,14 @@ components:
               minimum: 2
           required:
             - teamCount
+        swiss:
+          type: object
+          properties:
+            rounds:
+              type: integer
+              exclusiveMinimum: 0
+          required:
+            - rounds
       required:
         - generationVersion
         - startsAt
@@ -12373,6 +12598,7 @@ components:
               type: string
               enum:
                 - points-gd-gf-v1
+                - swiss-points-buchholz-gd-gf-v1
             rows:
               type: array
               items:
@@ -12415,6 +12641,21 @@ components:
                         - draw
                         - loss
                     maxItems: 5
+                  swiss:
+                    type: object
+                    properties:
+                      buchholz:
+                        type: integer
+                        minimum: 0
+                      byes:
+                        type: integer
+                        minimum: 0
+                      withdrawn:
+                        type: boolean
+                    required:
+                      - buchholz
+                      - byes
+                      - withdrawn
                 required:
                   - position
                   - teamId
@@ -12438,6 +12679,29 @@ components:
                 - integer
                 - "null"
               exclusiveMinimum: 0
+            swiss:
+              type:
+                - object
+                - "null"
+              properties:
+                roundsTotal:
+                  type: integer
+                  minimum: 0
+                roundsCompleted:
+                  type: integer
+                  minimum: 0
+                currentRound:
+                  type:
+                    - integer
+                    - "null"
+                  exclusiveMinimum: 0
+                isFinal:
+                  type: boolean
+              required:
+                - roundsTotal
+                - roundsCompleted
+                - currentRound
+                - isFinal
           required:
             - competitionId
             - organizationId
@@ -12446,6 +12710,7 @@ components:
             - sourceRevisionMax
             - updatedAt
             - playoffSpots
+            - swiss
       required:
         - standings
     GetCompetitionTeamStatisticsResponse:
@@ -12665,6 +12930,7 @@ components:
                 - knockout
                 - groups-knockout
                 - league-playoffs
+                - swiss
             timeZone:
               type: string
               minLength: 1
@@ -12676,6 +12942,11 @@ components:
                 type: string
                 minLength: 1
               minItems: 2
+            withdrawnTeamIds:
+              type: array
+              items:
+                type: string
+                minLength: 1
             stages:
               type: array
               items:
@@ -12691,6 +12962,7 @@ components:
                       - groups
                       - knockout
                       - playoffs
+                      - swiss
                   order:
                     type: integer
                     exclusiveMinimum: 0
@@ -12920,6 +13192,10 @@ components:
                                   - id
                                   - resolutionMode
                                   - officialMatches
+                              closedWithoutResult:
+                                type: boolean
+                                enum:
+                                  - true
                             required:
                               - id
                               - stageId
@@ -15805,6 +16081,7 @@ components:
                 - knockout
                 - groups-knockout
                 - league-playoffs
+                - swiss
             platform:
               type: string
               enum:
@@ -15919,6 +16196,14 @@ components:
                         - draw
                         - loss
                     maxItems: 5
+                  buchholz:
+                    type: integer
+                    minimum: 0
+                  byes:
+                    type: integer
+                    minimum: 0
+                  withdrawn:
+                    type: boolean
                 required:
                   - position
                   - teamName
@@ -15932,6 +16217,30 @@ components:
                   - points
                   - form
                 additionalProperties: false
+            swiss:
+              type:
+                - object
+                - "null"
+              properties:
+                roundsTotal:
+                  type: integer
+                  minimum: 0
+                roundsCompleted:
+                  type: integer
+                  minimum: 0
+                currentRound:
+                  type:
+                    - integer
+                    - "null"
+                  exclusiveMinimum: 0
+                isFinal:
+                  type: boolean
+              required:
+                - roundsTotal
+                - roundsCompleted
+                - currentRound
+                - isFinal
+              additionalProperties: false
             updatedAt:
               type:
                 - string
@@ -15939,6 +16248,7 @@ components:
               format: date-time
           required:
             - rows
+            - swiss
             - updatedAt
           additionalProperties: false
       required:
@@ -16403,6 +16713,7 @@ components:
                       - knockout
                       - groups-knockout
                       - league-playoffs
+                      - swiss
                   teams:
                     type: object
                     properties:
@@ -21143,6 +21454,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         platform:
           type: string
           enum:
@@ -21293,6 +21605,14 @@ components:
               - draw
               - loss
           maxItems: 5
+        buchholz:
+          type: integer
+          minimum: 0
+        byes:
+          type: integer
+          minimum: 0
+        withdrawn:
+          type: boolean
       required:
         - position
         - teamName
@@ -23439,6 +23759,7 @@ components:
             - knockout
             - groups-knockout
             - league-playoffs
+            - swiss
         teams:
           type: object
           properties:
@@ -23825,6 +24146,22 @@ components:
         - approvalBasis
         - proposalId
         - approvedAt
+    WithdrawSwissTeamRequest:
+      type: object
+      properties:
+        teamId:
+          type: string
+          minLength: 1
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+        requestId:
+          type: string
+          format: uuid
+      required:
+        - teamId
+        - reason
   securitySchemes:
     bearerAuth:
       type: http
@@ -23846,7 +24183,7 @@ components:
     ApiError:
       description: API error
       headers:
-        X-Request-ID: &a123
+        X-Request-ID: &a125
           $ref: "#/components/headers/RequestId"
       content:
         application/json:
@@ -23855,7 +24192,7 @@ components:
     RateLimited:
       description: Rate limit exceeded
       headers:
-        X-Request-ID: *a123
+        X-Request-ID: *a125
         Retry-After:
           $ref: "#/components/headers/RetryAfter"
       content:

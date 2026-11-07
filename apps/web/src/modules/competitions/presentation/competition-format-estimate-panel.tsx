@@ -84,13 +84,19 @@ export function FormatPlayEstimate({
       />
       <dl {...applyStyles(styles.facts)}>
         <Fact label="Formato" value={formatLabel} />
-        <Fact label="Vueltas" value={format === "knockout" ? "—" : legsLabel} />
+        <Fact
+          label="Vueltas"
+          value={format === "knockout" || format === "swiss" ? "—" : legsLabel}
+        />
         <Fact label="Equipos" value={teams === null ? "—" : String(teams)} />
         <Fact label="Partidos por enfrentamiento" value={matchesLabel} />
       </dl>
       <Separator />
       <div {...applyStyles(styles.counts)}>
-        <CountStat label="Jornada" value={estimate === null ? null : String(estimate.rounds)} />
+        <CountStat
+          label={format === "swiss" ? "Rondas" : "Jornada"}
+          value={estimate === null ? null : String(estimate.rounds)}
+        />
         <div {...applyStyles(styles.divider)}>
           <Separator orientation="vertical" />
         </div>

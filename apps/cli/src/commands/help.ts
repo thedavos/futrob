@@ -22,6 +22,7 @@ Comandos base:
   statistics-smoke        Smoke de GetMyPersonalStatisticsUseCase con fakes
   result-void <officialResultId> [--reason <text>] [--actor <id>] — Anular resultado aprobado
   results-smoke           Select → Confirm con fakes en memoria (@futrob/results)
+  swiss-smoke             Torneo suizo con políticas puras: sin revanchas y bye con impares
 
 Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor):
   api-health              GET /meta/health (estado API + DB)
@@ -58,7 +59,9 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   roster-close <orgId> <compId> <teamId>
   roster-open <orgId> <compId> <teamId>
   club-link <orgId> <compId> <teamId> <externalClubId> <externalClubName> [--platform p] [--edition e]
-  fixture-generate <orgId> <compId> [--starts-at ISO] [--interval-days 7]
+  fixture-generate <orgId> <compId> [--starts-at ISO] [--interval-days 7] [--rounds N]
+  swiss-withdraw <orgId> <compId> <fixturePlanId> <teamId> --reason "<motivo>" [--request-id ID]
+  swiss-close-round <orgId> <compId> <fixturePlanId> <round> --reason "<motivo>" [--request-id ID]
   fixture-current <orgId> <compId>
   fixture-show <orgId> <compId> <fixturePlanId>
   snapshot-set <encounterId> <orgId> <compId> <homeTeamId> <awayTeamId> <startISO> [--slots 1|2]
@@ -79,6 +82,7 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   my-matches
   my-next-encounter
   e2e-golden-path         Org → comp → team → entry → publish → fixture (smoke completo)
+                          [--format league|swiss] [--superuser <id>] (suizo exige plan Pro)
 
 Flags comunes: --json, --base-url URL, --actor ID
 Env: FUTROB_API_BASE_URL, FUTROB_ACTOR_ID, FUTROB_ACCESS_TOKEN | FUTROB_INTERNAL_JOB_SECRET

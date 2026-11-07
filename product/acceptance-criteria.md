@@ -210,6 +210,74 @@ El recorrido operativo autenticado debe poder completarse tanto desde `apps/web`
 - **cuando** el modo es independientes, cada partido puntúa por separado,
 - **y cuando** el modo es agregado, el clasificado/ganador se decide por 3-4 a favor de B (salvo desempate configurado).
 
+### AC-FIX-003 — Crear un sistema suizo
+
+**Cubre:** FR-03, FR-05, FTR-SWISS-001.
+
+- **Dado** un organizador en un plan Pro o Liga,
+- **cuando** elige «Sistema suizo», publica con al menos dos equipos aprobados y genera el calendario,
+- **entonces** el plan tiene una etapa suiza con todas sus rondas y su fecha prevista, solo la ronda 1 tiene enfrentamientos, y las reglas definen solo la etapa regular, sin vueltas.
+
+### AC-FIX-004 — Plan Gratis
+
+**Cubre:** FR-17, FTR-SWISS-001.
+
+- **Dado** una organización en el plan Gratis,
+- **cuando** crea una competición suiza o cambia un borrador a suizo,
+- **entonces** la API responde 402 `competitions.format_not_in_plan` y la UI muestra el aviso del plan con su enlace, no un error de permiso.
+
+### AC-FIX-005 — Emparejar tras resultados oficiales
+
+**Cubre:** FTR-SWISS-001, FR-13.
+
+- **Dado** una ronda suiza con un enfrentamiento sin oficializar,
+- **cuando** se sincronizan partidos, se propone o se confirma una selección sin aprobar,
+- **entonces** la ronda siguiente sigue sin emparejar,
+- **y cuando** se aprueba el último resultado de la ronda, la siguiente se empareja en la misma transacción.
+
+### AC-FIX-006 — Sin revanchas
+
+**Cubre:** FTR-SWISS-001.
+
+- **Dado** un suizo con cualquier número de equipos,
+- **cuando** se empareja una ronda,
+- **entonces** nunca se repite una pareja ya enfrentada, incluidas las de partidos no disputados,
+- **y si** no existe un emparejamiento completo sin revanchas, la fase termina en la ronda anterior y se eliminan las rondas vacías.
+
+### AC-FIX-007 — Bye
+
+**Cubre:** FR-05, FTR-SWISS-001.
+
+- **Dado** un número impar de equipos activos,
+- **cuando** se empareja la ronda,
+- **entonces** un equipo descansa, primero quienes aún no descansaron; el bye no tiene marcador, estadísticas ni página de enfrentamiento, y suma los puntos de una victoria en la clasificación suiza.
+
+### AC-FIX-008 — Retirar un equipo
+
+**Cubre:** FTR-SWISS-001, NFR-05.
+
+- **Dado** un equipo retirado con motivo por quien tiene `encounters.schedule.manage`,
+- **cuando** tenía un partido sin resultado en la ronda en curso,
+- **entonces** su selección abierta se cancela, el rival recibe un bye (o el enfrentamiento se elimina si el rival también está retirado), sus resultados aprobados se conservan y sigue en la tabla marcado como retirado,
+- **y** repetir el mismo `requestId` no aplica nada de nuevo.
+
+### AC-FIX-009 — Cerrar una ronda sin resultado
+
+**Cubre:** FTR-SWISS-001, NFR-05.
+
+- **Dado** una ronda en curso con partidos sin resultado,
+- **cuando** el organizador la cierra con motivo,
+- **entonces** esos partidos quedan como no disputados, nadie suma, se cancelan sus selecciones abiertas, salen de la lista de enfrentamientos y la ronda siguiente se empareja,
+- **y** cerrar una ronda que no es la actual responde 409 `scheduling.swiss_round_not_current`.
+
+### AC-FIX-010 — Clasificación final
+
+**Cubre:** FR-14, FTR-SWISS-001.
+
+- **Dado** un suizo con todas sus rondas liquidadas,
+- **cuando** se consulta la tabla,
+- **entonces** ordena por puntos, Buchholz, diferencia de goles, goles a favor y seed, muestra Buchholz, descansos y retiradas, y se identifica como «Clasificación final»; antes de eso indica «Ronda X de Y».
+
 ## 6. Reprogramación
 
 ### AC-SCH-001 — Reprogramar partido individual

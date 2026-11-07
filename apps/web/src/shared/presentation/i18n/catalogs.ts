@@ -218,6 +218,7 @@ const es = {
   "competitionRules.format.knockout": "Eliminación directa",
   "competitionRules.format.groups-knockout": "Grupos + eliminación",
   "competitionRules.format.league-playoffs": "Liga + playoffs",
+  "competitionRules.format.swiss": "Sistema suizo",
   "competitionRules.format.teams": "Equipos",
   "competitionRules.format.teamsRange": "De {min} a {max}",
   "competitionRules.format.teamsAtLeast": "Desde {min}",
@@ -225,6 +226,7 @@ const es = {
   "competitionRules.stage.groups": "Grupos",
   "competitionRules.stage.knockout": "Eliminación",
   "competitionRules.stage.playoffs": "Playoffs",
+  "competitionRules.stage.swiss": "Fase suiza",
   "competitionRules.stage.description": "Reglas de partido de esta etapa.",
   "competitionRules.scoring.title": "Puntuación",
   "competitionRules.scoring.win": "Victoria",
@@ -261,6 +263,7 @@ const es = {
   "competitionRules.tiebreaks.title": "Criterios de desempate",
   "competitionRules.tiebreaks.description": "Se aplican en este orden.",
   "competitionRules.tiebreaks.points": "Puntos",
+  "competitionRules.tiebreaks.buchholz": "Buchholz",
   "competitionRules.tiebreaks.goalDifference": "Diferencia de goles",
   "competitionRules.tiebreaks.goalsFor": "Goles a favor",
   "competitionRules.awayGoals": "Gol de visitante",
@@ -864,6 +867,7 @@ const es = {
   "player.home.competitions.format.knockout": "Eliminatoria",
   "player.home.competitions.format.groups-knockout": "Grupos y eliminatoria",
   "player.home.competitions.format.league-playoffs": "Liga y playoffs",
+  "player.home.competitions.format.swiss": "Sistema suizo",
   "player.competitions.title": "Mis competiciones",
   "player.competitions.description": "Competiciones en las que participas con un equipo.",
   "player.competitions.loading": "Cargando competiciones…",
@@ -2352,6 +2356,17 @@ const es = {
   "standings.col.goalDifference.full": "Diferencia de goles",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Puntos",
+  "standings.col.buchholz": "Buch.",
+  "standings.col.buchholz.full": "Buchholz: suma de los puntos de los rivales",
+  "standings.swiss.round": ({ current, total }) => `Ronda ${current} de ${total}`,
+  "standings.swiss.completed": ({ completed, total }) =>
+    `${completed} de ${total} rondas completadas`,
+  "standings.swiss.final": "Clasificación final",
+  "standings.swiss.tiebreak":
+    "Empates: primero Buchholz (puntos de los rivales), luego diferencia de goles y goles a favor.",
+  "standings.swiss.byes": ({ count }) =>
+    Number(count) === 1 ? "1 descanso" : `${count} descansos`,
+  "standings.swiss.withdrawn": "Retirado",
   "standings.col.form": "Forma",
   "standings.col.form.full": "Últimos 5 partidos, el más reciente al final",
   "standings.form.win": "Victoria",
@@ -2420,6 +2435,73 @@ const es = {
   "fixture.empty.title": "Aún no hay calendario",
   "fixture.empty.description": "Cuando se genere el fixture, verás aquí cada etapa y sus rondas.",
   "fixture.timeZone": ({ zone }) => `Horarios en ${zone}`,
+  "fixture.round.pending": ({ number }) => `Se empareja cuando se oficialice la ronda ${number}`,
+  "fixture.round.expected": ({ date }) => `Fecha prevista: ${date}`,
+  "fixture.bye": ({ team }) => `${team} descansa`,
+  "fixture.closed": "No disputado",
+  "fixture.side.withdrawn": "Retirado",
+  "fixture.swiss.progress": ({ paired, total }) => `Rondas emparejadas: ${paired} de ${total}`,
+  "fixture.swiss.withdrawn": ({ teams }) => `Retirados: ${teams}`,
+  "fixture.generate.title": "Genera el calendario",
+  "fixture.generate.description": ({ count }) =>
+    `La ronda 1 se empareja ahora con los ${count} equipos aprobados. Las siguientes se emparejan solas cuando se oficializa la anterior.`,
+  "fixture.generate.start": "Inicio de la ronda 1",
+  "fixture.generate.startInvalid": "Indica una fecha y hora futuras.",
+  "fixture.generate.interval": "Días entre rondas",
+  "fixture.generate.intervalInvalid": "Indica un número entero de días, desde 1.",
+  "fixture.generate.rounds": "Número de rondas",
+  "fixture.generate.roundsHint": ({ recommended, max }) =>
+    `Recomendadas: ${recommended}. Máximo: ${max}.`,
+  "fixture.generate.roundsInvalid": ({ max }) => `Indica entre 1 y ${max} rondas.`,
+  "fixture.generate.submit": "Generar calendario",
+  "fixture.generate.done": "Calendario generado.",
+  "fixture.generate.needTeams":
+    "Para generar el calendario hacen falta al menos 2 equipos aprobados.",
+  "fixture.action.reason": "Motivo",
+  "fixture.action.reasonRequired": "Escribe el motivo.",
+  "fixture.close.trigger": "Cerrar ronda sin resultado",
+  "fixture.close.title": ({ number }) => `Cerrar la ronda ${number} sin resultado`,
+  "fixture.close.description":
+    "Los enfrentamientos de esta ronda sin resultado oficial quedan como no disputados: se cancela su selección abierta, nadie suma puntos y esos equipos cuentan como ya enfrentados. La ronda siguiente se empareja enseguida. No se puede deshacer.",
+  "fixture.close.confirm": "Confirmar cierre",
+  "fixture.close.done": ({ number }) => `Ronda ${number} cerrada sin resultado.`,
+  "fixture.withdraw.trigger": "Retirar equipo",
+  "fixture.withdraw.title": "Retirar un equipo",
+  "fixture.withdraw.description":
+    "El equipo deja de emparejarse y no se puede reincorporar. En su partido sin resultado se cancela la selección abierta y el rival recibe un descanso, que suma como una victoria. Sus resultados oficiales se conservan y sigue en la clasificación, marcado como retirado.",
+  "fixture.withdraw.team": "Equipo",
+  "fixture.withdraw.teamPlaceholder": "Selecciona un equipo",
+  "fixture.withdraw.teamRequired": "Selecciona el equipo.",
+  "fixture.withdraw.confirm": "Confirmar retirada",
+  "fixture.withdraw.done": ({ team }) => `${team} queda retirado.`,
+  "fixture.recovery.unknown":
+    "No sabemos si se aplicó. Vuelve a intentarlo: si ya se aplicó, no se repetirá.",
+  "fixture.recovery.roundNotCurrent":
+    "Esa ronda ya no es la que se está jugando. Revisa el calendario actualizado.",
+  "fixture.recovery.alreadyWithdrawn": "Ese equipo ya estaba retirado.",
+  "fixture.recovery.notParticipant": "Ese equipo no juega este calendario.",
+  "fixture.recovery.notSwiss": "Este calendario no es de sistema suizo.",
+  "fixture.recovery.conflict":
+    "El calendario cambió mientras enviabas la acción. Revísalo y vuelve a intentarlo.",
+  "fixture.recovery.planGone": "Este calendario ya no está vigente. Revisa el actual.",
+  "fixture.recovery.generationConflict":
+    "Ya existe un calendario generado con otros datos. Revisa el calendario actual.",
+  "fixture.recovery.notPublished": "Publica la competición para generar su calendario.",
+  "fixture.recovery.permission": "Ya no tienes permiso para gestionar este calendario.",
+  "fixture.recovery.invalidGenerate":
+    "El servidor rechazó estos datos. Revisa el número de rondas y que haya al menos 2 equipos aprobados.",
+  "fixture.recovery.invalidCommand":
+    "No pudimos aceptar esta acción. Ciérrala, abre de nuevo el diálogo y vuelve a intentarlo.",
+  "errors.scheduling.not_swiss_fixture": "Este calendario no es de sistema suizo.",
+  "errors.scheduling.swiss_round_not_current": "Esa ronda ya no es la que se está jugando.",
+  "errors.scheduling.swiss_team_already_withdrawn": "Ese equipo ya estaba retirado.",
+  "errors.scheduling.swiss_team_not_participant": "Ese equipo no juega este calendario.",
+  "errors.scheduling.invalid_fixture_configuration":
+    "La configuración del calendario no es válida.",
+  "errors.scheduling.fixture_source_not_published":
+    "Publica la competición para generar su calendario.",
+  "errors.scheduling.fixture_generation_conflict":
+    "Ya existe un calendario generado con otros datos.",
   "fixture.round.matchday": ({ number }) => `Jornada ${number}`,
   "fixture.round.final": "Final",
   "fixture.round.semifinal": "Semifinales",
@@ -2720,6 +2802,9 @@ export interface MessageParamsByKey {
   readonly "standings.table.updated": { readonly time: string };
   readonly "standings.table.formula": { readonly version: string };
   readonly "standings.playoffCut": { readonly count: number };
+  readonly "standings.swiss.round": { readonly current: number; readonly total: number };
+  readonly "standings.swiss.completed": { readonly completed: number; readonly total: number };
+  readonly "standings.swiss.byes": { readonly count: number };
   readonly "fixture.timeZone": { readonly zone: string };
   readonly "fixture.round.matchday": { readonly number: number };
   readonly "fixture.round.number": { readonly number: number };
@@ -2733,6 +2818,17 @@ export interface MessageParamsByKey {
   readonly "fixture.slots": { readonly count: number };
   readonly "fixture.group": { readonly group: string };
   readonly "fixture.open": { readonly home: string; readonly away: string };
+  readonly "fixture.round.pending": { readonly number: number };
+  readonly "fixture.round.expected": { readonly date: string };
+  readonly "fixture.bye": { readonly team: string };
+  readonly "fixture.swiss.progress": { readonly paired: number; readonly total: number };
+  readonly "fixture.swiss.withdrawn": { readonly teams: string };
+  readonly "fixture.generate.description": { readonly count: number };
+  readonly "fixture.generate.roundsHint": { readonly recommended: number; readonly max: number };
+  readonly "fixture.generate.roundsInvalid": { readonly max: number };
+  readonly "fixture.close.title": { readonly number: number };
+  readonly "fixture.close.done": { readonly number: number };
+  readonly "fixture.withdraw.done": { readonly team: string };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -2923,6 +3019,7 @@ const en: Catalog = {
   "competitionRules.format.knockout": "Knockout",
   "competitionRules.format.groups-knockout": "Groups + knockout",
   "competitionRules.format.league-playoffs": "League + playoffs",
+  "competitionRules.format.swiss": "Swiss system",
   "competitionRules.format.teams": "Teams",
   "competitionRules.format.teamsRange": "{min} to {max}",
   "competitionRules.format.teamsAtLeast": "From {min}",
@@ -2930,6 +3027,7 @@ const en: Catalog = {
   "competitionRules.stage.groups": "Groups",
   "competitionRules.stage.knockout": "Knockout",
   "competitionRules.stage.playoffs": "Playoffs",
+  "competitionRules.stage.swiss": "Swiss stage",
   "competitionRules.stage.description": "Match rules for this stage.",
   "competitionRules.scoring.title": "Scoring",
   "competitionRules.scoring.win": "Win",
@@ -2966,6 +3064,7 @@ const en: Catalog = {
   "competitionRules.tiebreaks.title": "Tiebreakers",
   "competitionRules.tiebreaks.description": "Applied in this order.",
   "competitionRules.tiebreaks.points": "Points",
+  "competitionRules.tiebreaks.buchholz": "Buchholz",
   "competitionRules.tiebreaks.goalDifference": "Goal difference",
   "competitionRules.tiebreaks.goalsFor": "Goals for",
   "competitionRules.awayGoals": "Away goals",
@@ -3565,6 +3664,7 @@ const en: Catalog = {
   "player.home.competitions.format.knockout": "Knockout",
   "player.home.competitions.format.groups-knockout": "Groups and knockout",
   "player.home.competitions.format.league-playoffs": "League and playoffs",
+  "player.home.competitions.format.swiss": "Swiss system",
   "player.competitions.title": "My competitions",
   "player.competitions.description": "Competitions you play in with a team.",
   "player.competitions.loading": "Loading competitions…",
@@ -5026,6 +5126,16 @@ const en: Catalog = {
   "standings.col.goalDifference.full": "Goal difference",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Points",
+  "standings.col.buchholz": "Buch.",
+  "standings.col.buchholz.full": "Buchholz: sum of the opponents' points",
+  "standings.swiss.round": ({ current, total }) => `Round ${current} of ${total}`,
+  "standings.swiss.completed": ({ completed, total }) =>
+    `${completed} of ${total} rounds completed`,
+  "standings.swiss.final": "Final standings",
+  "standings.swiss.tiebreak":
+    "Ties: Buchholz first (opponents' points), then goal difference and goals for.",
+  "standings.swiss.byes": ({ count }) => (Number(count) === 1 ? "1 bye" : `${count} byes`),
+  "standings.swiss.withdrawn": "Withdrawn",
   "standings.col.form": "Form",
   "standings.col.form.full": "Last 5 matches, most recent last",
   "standings.form.win": "Win",
@@ -5094,6 +5204,70 @@ const en: Catalog = {
   "fixture.empty.description":
     "Once the fixture is generated, each stage and its rounds will show up here.",
   "fixture.timeZone": ({ zone }) => `Times in ${zone}`,
+  "fixture.round.pending": ({ number }) => `Paired once round ${number} is official`,
+  "fixture.round.expected": ({ date }) => `Expected date: ${date}`,
+  "fixture.bye": ({ team }) => `${team} has a bye`,
+  "fixture.closed": "Not played",
+  "fixture.side.withdrawn": "Withdrawn",
+  "fixture.swiss.progress": ({ paired, total }) => `Rounds paired: ${paired} of ${total}`,
+  "fixture.swiss.withdrawn": ({ teams }) => `Withdrawn: ${teams}`,
+  "fixture.generate.title": "Generate the schedule",
+  "fixture.generate.description": ({ count }) =>
+    `Round 1 is paired now with the ${count} approved teams. Later rounds pair themselves once the previous one is official.`,
+  "fixture.generate.start": "Round 1 start",
+  "fixture.generate.startInvalid": "Enter a future date and time.",
+  "fixture.generate.interval": "Days between rounds",
+  "fixture.generate.intervalInvalid": "Enter a whole number of days, from 1.",
+  "fixture.generate.rounds": "Number of rounds",
+  "fixture.generate.roundsHint": ({ recommended, max }) =>
+    `Recommended: ${recommended}. Maximum: ${max}.`,
+  "fixture.generate.roundsInvalid": ({ max }) => `Enter between 1 and ${max} rounds.`,
+  "fixture.generate.submit": "Generate schedule",
+  "fixture.generate.done": "Schedule generated.",
+  "fixture.generate.needTeams": "Generating the schedule takes at least 2 approved teams.",
+  "fixture.action.reason": "Reason",
+  "fixture.action.reasonRequired": "Enter the reason.",
+  "fixture.close.trigger": "Close round without result",
+  "fixture.close.title": ({ number }) => `Close round ${number} without result`,
+  "fixture.close.description":
+    "Encounters in this round without an official result become not played: their open selection is cancelled, nobody scores and those teams count as having met. The next round is paired right away. This cannot be undone.",
+  "fixture.close.confirm": "Confirm closing",
+  "fixture.close.done": ({ number }) => `Round ${number} closed without result.`,
+  "fixture.withdraw.trigger": "Withdraw team",
+  "fixture.withdraw.title": "Withdraw a team",
+  "fixture.withdraw.description":
+    "The team stops being paired and cannot rejoin. In its match without a result the open selection is cancelled and the rival gets a bye, which scores like a win. Its official results stay and it remains in the standings, marked as withdrawn.",
+  "fixture.withdraw.team": "Team",
+  "fixture.withdraw.teamPlaceholder": "Select a team",
+  "fixture.withdraw.teamRequired": "Select the team.",
+  "fixture.withdraw.confirm": "Confirm withdrawal",
+  "fixture.withdraw.done": ({ team }) => `${team} is withdrawn.`,
+  "fixture.recovery.unknown":
+    "We don't know whether it applied. Try again: if it already applied, it won't repeat.",
+  "fixture.recovery.roundNotCurrent":
+    "That round is no longer the one being played. Check the updated schedule.",
+  "fixture.recovery.alreadyWithdrawn": "That team was already withdrawn.",
+  "fixture.recovery.notParticipant": "That team doesn't play this schedule.",
+  "fixture.recovery.notSwiss": "This schedule isn't a Swiss system.",
+  "fixture.recovery.conflict":
+    "The schedule changed while you were sending the action. Review it and try again.",
+  "fixture.recovery.planGone": "This schedule is no longer current. Check the current one.",
+  "fixture.recovery.generationConflict":
+    "A schedule with different data already exists. Check the current schedule.",
+  "fixture.recovery.notPublished": "Publish the competition to generate its schedule.",
+  "fixture.recovery.permission": "You no longer have permission to manage this schedule.",
+  "fixture.recovery.invalidGenerate":
+    "The server rejected this data. Check the number of rounds and that at least 2 teams are approved.",
+  "fixture.recovery.invalidCommand":
+    "We couldn't accept this action. Close it, open the dialog again and retry.",
+  "errors.scheduling.not_swiss_fixture": "This schedule isn't a Swiss system.",
+  "errors.scheduling.swiss_round_not_current": "That round is no longer the one being played.",
+  "errors.scheduling.swiss_team_already_withdrawn": "That team was already withdrawn.",
+  "errors.scheduling.swiss_team_not_participant": "That team doesn't play this schedule.",
+  "errors.scheduling.invalid_fixture_configuration": "The schedule configuration isn't valid.",
+  "errors.scheduling.fixture_source_not_published":
+    "Publish the competition to generate its schedule.",
+  "errors.scheduling.fixture_generation_conflict": "A schedule with different data already exists.",
   "fixture.round.matchday": ({ number }) => `Matchday ${number}`,
   "fixture.round.final": "Final",
   "fixture.round.semifinal": "Semifinals",

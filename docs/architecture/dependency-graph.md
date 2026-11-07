@@ -29,6 +29,8 @@ flowchart TD
   Teams --> Identity["identity"]
   Scheduling --> Competitions
   Scheduling --> Teams
+  Scheduling -.->|"EncounterOpenSelectionPort"| Results
+  Statistics -.->|"CompetitionSwissStandingReaderPort"| Scheduling
   Notifications["notifications"] --> SharedEvents["shared/contracts/events"]
   PublicPortal["public-portal"] --> Statistics
   PublicPortal --> Competitions
@@ -46,6 +48,8 @@ flowchart TD
 ```
 
 Los edges entre módulos son **APIs públicas / ports / eventos**, nunca imports de adapters.
+
+Los dos ports del sistema suizo ([ADR-0027](/docs/adr/0027-swiss-format-rounds-paired-by-reconciliation.md)) no añaden dependencias de package: los implementa `apps/api`, igual que los bridges de abajo.
 
 `billing` es una hoja: ningún BC importa `@futrob/billing`. Las flechas punteadas son ports declarados por cada consumidor e implementados por bridges en `apps/api/src/di/` ([ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md)).
 

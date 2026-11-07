@@ -5,18 +5,18 @@
 
 ## Planes de organización
 
-| Entitlement                       | Gratis (`free`)           | Pro (`pro`)           | Liga (`league`)                              |
-| --------------------------------- | ------------------------- | --------------------- | -------------------------------------------- |
-| Competiciones activas             | 1                         | 5                     | Ilimitadas                                   |
-| Equipos por competición           | 12                        | 32                    | Ilimitados                                   |
-| Formatos                          | Liga, eliminación directa | Todos los del MVP     | Todos                                        |
-| Sync con el proveedor (jobs/mes)  | 60                        | 600 + sync automático | 5000 de uso justo, prioritario               |
-| Staff por organización            | 2                         | 10                    | Ilimitado                                    |
-| Ranking de rendimiento 0–100      | No                        | Sí                    | Sí                                           |
-| Analíticas premium equipo/jugador | No                        | Sí                    | Sí                                           |
-| Analítica de organizador          | No                        | Básica                | Completa                                     |
-| Portal público                    | Marca Futrob              | Logo y colores        | Branding avanzado (sin white-label, WONT-03) |
-| Notificaciones                    | Web                       | Web + email           | Web + email + anuncios                       |
+| Entitlement                       | Gratis (`free`)           | Pro (`pro`)                               | Liga (`league`)                              |
+| --------------------------------- | ------------------------- | ----------------------------------------- | -------------------------------------------- |
+| Competiciones activas             | 1                         | 5                                         | Ilimitadas                                   |
+| Equipos por competición           | 12                        | 32                                        | Ilimitados                                   |
+| Formatos                          | Liga, eliminación directa | Todos los del MVP, sistema suizo incluido | Todos, sistema suizo incluido                |
+| Sync con el proveedor (jobs/mes)  | 60                        | 600 + sync automático                     | 5000 de uso justo, prioritario               |
+| Staff por organización            | 2                         | 10                                        | Ilimitado                                    |
+| Ranking de rendimiento 0–100      | No                        | Sí                                        | Sí                                           |
+| Analíticas premium equipo/jugador | No                        | Sí                                        | Sí                                           |
+| Analítica de organizador          | No                        | Básica                                    | Completa                                     |
+| Portal público                    | Marca Futrob              | Logo y colores                            | Branding avanzado (sin white-label, WONT-03) |
+| Notificaciones                    | Web                       | Web + email                               | Web + email + anuncios                       |
 
 Los números son **datos del catálogo** (`billing_plans` en Postgres), no constantes de código.
 Los cupos de sync son hipótesis de coste: cambiarlos es una actualización de datos auditable.

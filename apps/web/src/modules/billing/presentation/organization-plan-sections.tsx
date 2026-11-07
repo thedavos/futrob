@@ -51,6 +51,7 @@ const FORMAT_LABEL: ReadonlyMap<string, MessageKey> = new Map(
     knockout: "competitionRules.format.knockout",
     "groups-knockout": "competitionRules.format.groups-knockout",
     "league-playoffs": "competitionRules.format.league-playoffs",
+    swiss: "competitionRules.format.swiss",
   } as const satisfies Record<string, MessageKey>),
 );
 

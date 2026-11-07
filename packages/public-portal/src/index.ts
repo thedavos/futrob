@@ -19,6 +19,7 @@ export type {
   PublicEncounterStatus,
   PublicStandingRow,
   PublicStandings,
+  PublicSwissProgress,
 } from "./domain/entities/public-competition.ts";
 export type {
   PublicCompetitionScope,

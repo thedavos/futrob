@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vite-plus/test";
 import {
   freshExpiryDatabase,
   expiryFlow,
+  seedExpiryFixturePlan,
   durableSchedule,
   durableCounts,
   unwrap,
@@ -387,6 +388,7 @@ suite("DEC-032/033 durable outcomes on isolated Postgres", { timeout: 60_000 }, 
       const migrated = await migrateIsolatedSchema(pool);
       expect(migrated.applied).toContain("0055_schedule_change_expiry_resolution.sql");
       expect((await migrateIsolatedSchema(pool)).applied).toEqual([]);
+      await seedExpiryFixturePlan(pool);
       const flow = expiryFlow(pool);
       const legacy = (await flow.requests.findById(org, "legacy-open"))!;
       expect(legacy.proposals[0]!.responseDeadline.toISOString()).toBe(

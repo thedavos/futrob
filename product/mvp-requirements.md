@@ -46,7 +46,7 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 | ID           | Requisito verificable                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | FR-02        | Crear competiciones vinculadas a edición del juego, modalidad (FC Clubs en MVP), plataforma/generación, región y zona horaria. Esos vínculos no cambian tras iniciar la competición.                                                                                                                                                                                                                                                        |
-| FR-03        | Configurar formatos MVP (liga, eliminación directa, grupos + eliminación, liga con playoffs), etapas, jornadas/rondas y criterios de desempate.                                                                                                                                                                                                                                                                                             |
+| FR-03        | Configurar formatos MVP (liga, eliminación directa, grupos + eliminación, liga con playoffs, sistema suizo), etapas, jornadas/rondas y criterios de desempate.                                                                                                                                                                                                                                                                              |
 | FTR-COMP-001 | Un organizador debe poder guardar y reanudar identidad, formato, reglas y participantes de una competición en borrador; publicarla con al menos dos participantes aprobados; y, desde ese momento, tratar su estructura como no editable.                                                                                                                                                                                                   |
 | FTR-COMP-002 | Un organizador puede abrir inscripciones desde un borrador válido: la competición aparece en Explorar como «Inscripciones abiertas», su estructura queda congelada y los participantes siguen editables. Cerrar inscripciones vuelve a borrador sin perder inscripciones.                                                                                                                                                                   |
 | FTR-COMP-003 | Con inscripciones abiertas, un actor autenticado puede postular un equipo nuevo: la inscripción queda pendiente, el actor es su capitán y ve el estado de su solicitud. Un actor solo puede tener un equipo por competición.                                                                                                                                                                                                                |
@@ -64,14 +64,15 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 ### 3.4 Fixtures, enfrentamientos y partidos oficiales
 
-| ID          | Requisito verificable                                                                                                                                                    |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| FR-05       | Generar y modificar fixtures con jornadas/rondas, enfrentamientos y byes determinísticos.                                                                                |
-| FR-06       | Configurar uno o dos partidos oficiales por enfrentamiento.                                                                                                              |
-| FR-07       | Resolver el enfrentamiento por partidos independientes (puntos/resultado por partido) o por marcador agregado.                                                           |
-| FTR-DOM-001 | Jerarquía obligatoria: `Competition → Stage → Round → Encounter → OfficialMatch`. La `Series` es la regla de resolución del enfrentamiento sobre sus partidos oficiales. |
-| FTR-DOM-002 | Distinguir `Encounter`, `OfficialMatch`, `ProviderMatch` y `Series`. No son intercambiables.                                                                             |
-| FTR-FIX-002 | Motores de fixture, standings, desempates y bracket son puros, determinísticos e idempotentes.                                                                           |
+| ID            | Requisito verificable                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-05         | Generar y modificar fixtures con jornadas/rondas, enfrentamientos y byes determinísticos.                                                                                                                                                                                                                                                                                                                                           |
+| FR-06         | Configurar uno o dos partidos oficiales por enfrentamiento.                                                                                                                                                                                                                                                                                                                                                                         |
+| FR-07         | Resolver el enfrentamiento por partidos independientes (puntos/resultado por partido) o por marcador agregado.                                                                                                                                                                                                                                                                                                                      |
+| FTR-SWISS-001 | En un sistema suizo, cada ronda se empareja sola después de oficializar la anterior, sin revanchas y con un bye por ronda si los equipos activos son impares. El organizador puede retirar un equipo o cerrar sin resultado la ronda en curso, con motivo auditado. La clasificación ordena por puntos, Buchholz, diferencia de goles y goles a favor ([ADR-0027](/docs/adr/0027-swiss-format-rounds-paired-by-reconciliation.md)). |
+| FTR-DOM-001   | Jerarquía obligatoria: `Competition → Stage → Round → Encounter → OfficialMatch`. La `Series` es la regla de resolución del enfrentamiento sobre sus partidos oficiales.                                                                                                                                                                                                                                                            |
+| FTR-DOM-002   | Distinguir `Encounter`, `OfficialMatch`, `ProviderMatch` y `Series`. No son intercambiables.                                                                                                                                                                                                                                                                                                                                        |
+| FTR-FIX-002   | Motores de fixture, standings, desempates y bracket son puros, determinísticos e idempotentes.                                                                                                                                                                                                                                                                                                                                      |
 
 ### 3.5 Reprogramación
 
@@ -138,16 +139,16 @@ El MVP se considera funcional cuando se puede completar el recorrido E2E descrit
 
 `WONT-01` se retiró al incorporar `apps/mobile` al MVP. Los demás identificadores no se renumeran para preservar referencias estables.
 
-| ID      | Exclusión                                                          |
-| ------- | ------------------------------------------------------------------ |
-| WONT-02 | FC Temporadas y FC Amistosos como modalidades operativas.          |
-| WONT-03 | Marketplace, fantasy, streaming propio, white-label completo.      |
-| WONT-04 | Doble eliminación, sistema suizo, divisiones con ascenso/descenso. |
-| WONT-05 | Automatización de pagos y premios.                                 |
-| WONT-06 | Predicciones con IA.                                               |
-| WONT-07 | OCR de capturas como fuente primaria de resultados.                |
-| WONT-08 | WhatsApp/Telegram/push nativo como canales operativos del MVP.     |
-| WONT-09 | API pública de terceros.                                           |
+| ID      | Exclusión                                                      |
+| ------- | -------------------------------------------------------------- |
+| WONT-02 | FC Temporadas y FC Amistosos como modalidades operativas.      |
+| WONT-03 | Marketplace, fantasy, streaming propio, white-label completo.  |
+| WONT-04 | Doble eliminación, divisiones con ascenso/descenso.            |
+| WONT-05 | Automatización de pagos y premios.                             |
+| WONT-06 | Predicciones con IA.                                           |
+| WONT-07 | OCR de capturas como fuente primaria de resultados.            |
+| WONT-08 | WhatsApp/Telegram/push nativo como canales operativos del MVP. |
+| WONT-09 | API pública de terceros.                                       |
 
 ## 6. Requisitos no funcionales
 

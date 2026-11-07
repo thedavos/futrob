@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { groupsKnockoutFixture, noFixture } from "./competition-fixture.fixtures.ts";
+import { groupsKnockoutFixture, noFixture, swissFixture } from "./competition-fixture.fixtures.ts";
 import { competitionFixturePageState } from "./competition-fixture-state.ts";
 
 const retry = () => undefined;
@@ -29,6 +29,34 @@ describe("competitionFixturePageState", () => {
       retry,
     });
     expect(stale.kind === "empty" && stale.refreshFailed).toBe(true);
+  });
+
+  it("offers generation only when asked and Swiss commands only on a Swiss plan", () => {
+    const generate = { timeZone: "America/Lima", teamCount: 6 };
+    const empty = competitionFixturePageState({
+      data: noFixture,
+      failed: false,
+      refused: false,
+      retry,
+      generate,
+    });
+    expect(empty.kind === "empty" && empty.generate).toEqual(generate);
+    const swiss = competitionFixturePageState({
+      data: swissFixture,
+      failed: false,
+      refused: false,
+      retry,
+      canManageSwiss: true,
+    });
+    expect(swiss.kind === "ready" && swiss.canManageSwiss).toBe(true);
+    const league = competitionFixturePageState({
+      data: groupsKnockoutFixture,
+      failed: false,
+      refused: false,
+      retry,
+      canManageSwiss: true,
+    });
+    expect(league.kind === "ready" && league.canManageSwiss).toBe(false);
   });
 
   it("keeps the last fixture when a refresh fails", () => {

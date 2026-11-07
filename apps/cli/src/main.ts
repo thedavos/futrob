@@ -7,6 +7,7 @@ import { run as domainSmoke } from "./commands/domain-smoke.ts";
 import { run as domainSmokeGameData } from "./commands/domain-smoke-game-data.ts";
 import { run as statisticsSmoke } from "./commands/statistics-smoke.ts";
 import { run as resultsSmoke } from "./commands/results-smoke.ts";
+import { run as swissSmoke } from "./commands/swiss-smoke.ts";
 import { run as apiHealth } from "./commands/api-health.ts";
 import { run as clubSearch } from "./commands/search-clubs.ts";
 import {
@@ -51,6 +52,8 @@ import {
   fixtureGenerate,
   fixtureShow,
   snapshotSet,
+  swissCloseRound,
+  swissWithdraw,
 } from "./commands/scheduling.ts";
 import {
   clubGet,
@@ -85,6 +88,7 @@ const commands = {
   "statistics-rebuild": (args) => statisticsRebuild(args),
   "statistics-smoke": () => statisticsSmoke(),
   "results-smoke": () => resultsSmoke(),
+  "swiss-smoke": () => swissSmoke(),
 
   "api-health": (args) => apiHealth(args),
 
@@ -128,6 +132,8 @@ const commands = {
   "fixture-generate": (args) => fixtureGenerate(args),
   "fixture-current": (args) => fixtureCurrent(args),
   "fixture-show": (args) => fixtureShow(args),
+  "swiss-withdraw": (args) => swissWithdraw(args),
+  "swiss-close-round": (args) => swissCloseRound(args),
   "snapshot-set": (args) => snapshotSet(args),
 
   "club-search": (args) => clubSearch(args),

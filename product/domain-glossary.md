@@ -63,16 +63,21 @@ Competition
             └── Series (regla de resolución sobre los OfficialMatch)
 ```
 
-| Término                 | Definición canónica                                        | Invariante                                                     |
-| ----------------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
-| **Encounter**           | Cita programada entre dos Teams.                           | Contiene uno o más espacios de partido oficial.                |
-| **OfficialMatch**       | Unidad competitiva que cuenta para el Encounter.           | Puede asociarse a cero o un `ProviderMatch` aprobado.          |
-| **Series**              | Regla de resolución del Encounter sobre sus OfficialMatch. | Modos MVP: partidos independientes o marcador agregado.        |
-| **Independent matches** | Cada OfficialMatch produce su propio resultado/puntos.     | En liga, cada partido puede puntuar por separado.              |
-| **Aggregate score**     | Suma de goles de los OfficialMatch para decidir la serie.  | Desempates según CompetitionRules; no asumir gol de visitante. |
-| **Bye**                 | Avance sin rival.                                          | No crea marcador ni estadísticas ficticias.                    |
-| **Standing**            | Tabla/proyección derivada de resultados oficiales.         | Reconstruible e idempotente.                                   |
-| **Bracket**             | Grafo de avance en eliminación.                            | Proyección; el layout visual pertenece a presentación.         |
+| Término                  | Definición canónica                                        | Invariante                                                                                 |
+| ------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Encounter**            | Cita programada entre dos Teams.                           | Contiene uno o más espacios de partido oficial.                                            |
+| **OfficialMatch**        | Unidad competitiva que cuenta para el Encounter.           | Puede asociarse a cero o un `ProviderMatch` aprobado.                                      |
+| **Series**               | Regla de resolución del Encounter sobre sus OfficialMatch. | Modos MVP: partidos independientes o marcador agregado.                                    |
+| **Independent matches**  | Cada OfficialMatch produce su propio resultado/puntos.     | En liga, cada partido puede puntuar por separado.                                          |
+| **Aggregate score**      | Suma de goles de los OfficialMatch para decidir la serie.  | Desempates según CompetitionRules; no asumir gol de visitante.                             |
+| **Bye**                  | Avance sin rival.                                          | No crea marcador ni estadísticas ficticias.                                                |
+| **Sistema suizo**        | Formato de rondas emparejadas por resultados acumulados.   | Sin revanchas; cada ronda se empareja tras oficializar la anterior.                        |
+| **Bye en suizo**         | Ronda en la que un equipo descansa porque son impares.     | Sin marcador; suma los puntos de una victoria en la clasificación suiza.                   |
+| **Buchholz**             | Suma de los puntos finales de los rivales de un equipo.    | Segundo criterio suizo. Un bye cuenta los puntos propios; un partido no disputado no suma. |
+| **Retirada**             | Salida de un equipo de las rondas futuras de un suizo.     | Conserva resultados y fila en la tabla; no se reincorpora. La inscripción sigue aprobada.  |
+| **Partido no disputado** | Encuentro suizo cerrado por el organizador sin resultado.  | Nadie suma, no hay resultado oficial y la pareja cuenta como ya enfrentada.                |
+| **Standing**             | Tabla/proyección derivada de resultados oficiales.         | Reconstruible e idempotente.                                                               |
+| **Bracket**              | Grafo de avance en eliminación.                            | Proyección; el layout visual pertenece a presentación.                                     |
 
 ## 5. Capa game-data (proveedores externos)
 

@@ -16,6 +16,7 @@ const COMPETITION_FORMATS: readonly CompetitionFormat[] = [
   "knockout",
   "groups-knockout",
   "league-playoffs",
+  "swiss",
 ];
 
 /** Catalog formats are data; only those competitions knows become allowed formats. */

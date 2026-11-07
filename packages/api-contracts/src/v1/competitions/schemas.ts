@@ -18,6 +18,7 @@ export const competitionFormatSchema = z.enum([
   "knockout",
   "groups-knockout",
   "league-playoffs",
+  "swiss",
 ]);
 export type CompetitionFormatDto = z.infer<typeof competitionFormatSchema>;
 
