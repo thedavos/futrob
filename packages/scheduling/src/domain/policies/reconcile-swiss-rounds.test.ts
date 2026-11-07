@@ -52,8 +52,10 @@ function reconcile(
   current: FixturePlan,
   scores: ReadonlyMap<EncounterId, OfficialEncounterScore>,
   at: Date = now,
+  withdrawingTeamId: TeamId | null = null,
 ) {
   return reconcileSwissRounds({
+    withdrawingTeamId,
     plan: current,
     scores,
     standingPoints: { winPoints: 3, drawPoints: 1, lossPoints: 0 },
@@ -164,7 +166,7 @@ describe("reconcileSwissRounds", () => {
     const generated = plan([a, b, c, d], 2);
     const before = encountersOf(generated, 0)[0]!;
 
-    const change = reconcile({ ...generated, withdrawnTeamIds: [a] }, new Map());
+    const change = reconcile({ ...generated, withdrawnTeamIds: [a] }, new Map(), now, a);
 
     expect(change).toMatchObject({
       kind: "forfeit",
@@ -175,7 +177,7 @@ describe("reconcileSwissRounds", () => {
 
   it("removes the encounter when both Teams have withdrawn", () => {
     const generated = plan([a, b, c, d], 2);
-    const change = reconcile({ ...generated, withdrawnTeamIds: [a, c] }, new Map());
+    const change = reconcile({ ...generated, withdrawnTeamIds: [a, c] }, new Map(), now, a);
     expect(change).toMatchObject({ kind: "forfeit", after: null });
   });
 
@@ -184,7 +186,7 @@ describe("reconcileSwissRounds", () => {
     const bye = encountersOf(generated, 0).at(-1)!;
     expect(bye.away.kind).toBe("bye");
 
-    const change = reconcile({ ...generated, withdrawnTeamIds: [c] }, new Map());
+    const change = reconcile({ ...generated, withdrawnTeamIds: [c] }, new Map(), now, c);
 
     expect(change).toMatchObject({ kind: "forfeit", before: { id: bye.id }, after: null });
   });
@@ -197,14 +199,14 @@ describe("reconcileSwissRounds", () => {
     const paired = withRound(generated, change.round);
     const withdrawn: FixturePlan = { ...paired, withdrawnTeamIds: [c] };
 
-    const next = reconcile(withdrawn, scores);
+    const next = reconcile(withdrawn, scores, now, c);
 
     if (next.kind !== "forfeit") throw new Error(`Expected a forfeit, got ${next.kind}`);
     expect(next.round.number).toBe(2);
     expect(next.before.home).not.toEqual({ kind: "bye" });
   });
 
-  it("converts a voided encounter of an already withdrawn Team instead of unpairing", () => {
+  it("unpairs after a void of a withdrawn Team's result, so the later round stays guarded", () => {
     const { paired, scores } = secondRoundPaired();
     const reopened = encountersOf(paired, 0)[0]!;
     const voided = new Map(scores);
@@ -212,11 +214,31 @@ describe("reconcileSwissRounds", () => {
 
     const change = reconcile({ ...paired, withdrawnTeamIds: [a] }, voided);
 
-    expect(change).toMatchObject({
-      kind: "forfeit",
-      before: { id: reopened.id },
-      after: { home: { teamId: c }, away: { kind: "bye" } },
-    });
+    expect(change).toMatchObject({ kind: "unpair", rounds: [{ number: 2 }] });
+  });
+
+  it("keeps a voided encounter of a withdrawn Team open for a corrected result", () => {
+    const generated = plan([a, b, c, d], 2);
+    const [first, second] = encountersOf(generated, 0) as [FixtureEncounter, FixtureEncounter];
+
+    const change = reconcile(
+      { ...generated, withdrawnTeamIds: [a] },
+      new Map([[second.id, score()]]),
+    );
+
+    expect(first.series).not.toBeNull();
+    expect(change).toEqual({ kind: "none" });
+  });
+
+  it("keeps the bye of a withdrawn Team when a void reopens its round", () => {
+    const generated = plan([a, b, c], 2);
+    const [table, bye] = encountersOf(generated, 0) as [FixtureEncounter, FixtureEncounter];
+    expect(bye.away.kind).toBe("bye");
+
+    const change = reconcile({ ...generated, withdrawnTeamIds: [c] }, new Map());
+
+    expect(table.series).not.toBeNull();
+    expect(change).toEqual({ kind: "none" });
   });
 
   it("never touches an approved or closed encounter of a withdrawn Team", () => {
@@ -231,7 +253,7 @@ describe("reconcileSwissRounds", () => {
       withdrawnTeamIds: [a, b],
     };
 
-    expect(reconcile(current, new Map([[first.id, score()]])).kind).toBe("pair");
+    expect(reconcile(current, new Map([[first.id, score()]]), now, a).kind).toBe("pair");
   });
 
   it("drops the empty rounds when no legal pairing is left", () => {

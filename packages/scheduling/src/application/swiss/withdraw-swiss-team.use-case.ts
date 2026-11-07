@@ -98,8 +98,7 @@ export class WithdrawSwissTeamUseCase {
 
     const reconciled = await this.deps.reconcile.execute({
       ...scope,
-      actorId: input.actorId,
-      reason,
+      withdrawal: { teamId: input.teamId, actorId: input.actorId, reason },
       correlationId: input.requestId,
       heldEncounterIds: input.heldEncounterIds,
     });

@@ -228,7 +228,6 @@ export function createModules(input: CreateModulesInput): AppModules {
     selections: officialSelections,
     clock,
     ids,
-    resolveSystemActor: () => findProvisionedSystemActor(input.pool, input.schedulingSystemActorId),
   });
   encounterParticipants.bind(new ResultsCandidateEligibilityAdapter(results));
   encounterOpenSelection.bind(new ResultsOpenSelectionAdapter(results));

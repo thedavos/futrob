@@ -6,7 +6,11 @@ import {
   type TeamId,
 } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
-import type { FixturePlan, FixtureRound } from "../../domain/entities/fixture-plan.ts";
+import type {
+  FixtureEncounter,
+  FixturePlan,
+  FixtureRound,
+} from "../../domain/entities/fixture-plan.ts";
 import type { OfficialEncounterScore } from "../../domain/ports/official-encounter-score-reader.port.ts";
 import type { SwissRoundAction } from "../../domain/ports/swiss-round-action-log.port.ts";
 import { swissRounds } from "../../domain/policies/swiss-standing-points.ts";
@@ -255,7 +259,7 @@ describe("ReconcileSwissRoundsUseCase", () => {
     expect(fixture.snapshots.rows.has(later)).toBe(true);
   });
 
-  it("gives the rival a bye when a void reopens an encounter of a withdrawn Team", async () => {
+  it("keeps a voided encounter of a withdrawn Team open and correctable", async () => {
     const fixture = await setup();
     const reopened = fixture.round(1).encounters[0]!;
     fixture.approveRound(1);
@@ -266,18 +270,46 @@ describe("ReconcileSwissRoundsUseCase", () => {
     const outcome = await fixture.advance.execute({ ...scope, encounterId: reopened.id });
 
     expect(outcome.isOk()).toBe(true);
-    expect(fixture.round(1).encounters[0]).toMatchObject({
-      id: reopened.id,
-      home: { kind: "team", teamId: teamC },
-      away: { kind: "bye" },
-      series: null,
-    });
-    expect(fixture.snapshots.rows.has(reopened.id)).toBe(false);
-    // The void path has no organizer: the owner signs with a system actor.
-    expect(fixture.cancelled.at(-1)).toEqual({
-      encounterId: reopened.id,
-      reason: expect.any(String),
-    });
+    expect(fixture.round(1).encounters[0]).toEqual(reopened);
+    expect(fixture.snapshots.rows.has(reopened.id)).toBe(true);
+    expect(fixture.round(2).encounters).toEqual([]);
+
+    fixture.approve(reopened.id);
+    await fixture.advance.execute({ ...scope, encounterId: reopened.id });
+    const teams = fixture.round(2).encounters.flatMap(({ home, away }) => [home, away]);
+    expect(teams.length).toBeGreaterThan(0);
+    expect(teams).not.toContainEqual({ kind: "team", teamId: teamA });
+  });
+
+  it("blocks the void of a withdrawn Team's result once a later round has a selection", async () => {
+    const fixture = await setup();
+    const reopened = fixture.round(1).encounters[0]!;
+    fixture.approveRound(1);
+    await fixture.reconcile.execute(scope);
+    await fixture.withdraw.execute({ ...fixture.command, teamId: teamA });
+    const playable = fixture.round(2).encounters.find((encounter) => encounter.series)!;
+    fixture.selections.add(playable.id);
+    fixture.scores.delete(reopened.id);
+
+    const outcome = await fixture.advance.execute({ ...scope, encounterId: reopened.id });
+
+    expect(outcome.isErr() && outcome.error.code).toBe("scheduling.advancement_not_reversible");
+  });
+
+  it("keeps a settled bye of a withdrawn Team through a void and a new approval", async () => {
+    const fixture = await setup({ seed: [teamA, teamB, teamC] });
+    const [table, bye] = fixture.round(1).encounters as [FixtureEncounter, FixtureEncounter];
+    const resting = (bye.home as { teamId: TeamId }).teamId;
+    fixture.approveRound(1);
+    await fixture.reconcile.execute(scope);
+    await fixture.withdraw.execute({ ...fixture.command, teamId: resting });
+    fixture.scores.delete(table.id);
+
+    await fixture.advance.execute({ ...scope, encounterId: table.id });
+    fixture.approve(table.id);
+    await fixture.advance.execute({ ...scope, encounterId: table.id });
+
+    expect(fixture.round(1).encounters).toContainEqual(bye);
   });
 
   it("drops the empty rounds when the only Teams left have already met", async () => {

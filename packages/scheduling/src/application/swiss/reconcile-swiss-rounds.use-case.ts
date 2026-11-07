@@ -1,6 +1,7 @@
 import {
   err,
   ok,
+  Panic,
   type ActorId,
   type ClockPort,
   type CompetitionId,
@@ -8,6 +9,7 @@ import {
   type EventPublisherPort,
   type OrganizationId,
   type Result,
+  type TeamId,
 } from "@futrob/shared-kernel";
 import type { FixtureEncounter, FixturePlan } from "../../domain/entities/fixture-plan.ts";
 import {
@@ -39,17 +41,18 @@ export interface ReconcileSwissRoundsInput {
   readonly competitionId: CompetitionId;
   /** Encounter locks the caller already holds; they are not taken again. */
   readonly heldEncounterIds?: readonly EncounterId[];
-  /** Organizer behind the change. Approvals and voids have none: the owner records a system actor. */
-  readonly actorId?: ActorId;
-  readonly reason?: string;
+  /** Present only for a withdrawal, the one change that converts encounters. */
+  readonly withdrawal?: {
+    readonly teamId: TeamId;
+    readonly actorId: ActorId;
+    readonly reason: string;
+  };
   readonly correlationId?: string;
 }
 
 export interface ReconcileSwissRoundsOutput {
   readonly changedEncounterIds: readonly EncounterId[];
 }
-
-const DEFAULT_CANCEL_REASON = "The Encounter no longer applies after a Swiss team withdrawal";
 
 export interface ReconcileSwissRoundsDependencies {
   readonly clock: ClockPort;
@@ -100,6 +103,7 @@ export class ReconcileSwissRoundsUseCase {
         officialMatchCount: source.officialMatchCounts.regular,
         resolutionMode: source.resolutionModes.regular,
         now: this.deps.clock.now(),
+        withdrawingTeamId: input.withdrawal?.teamId ?? null,
       });
       if (change.kind === "none") return ok({ changedEncounterIds });
       const applied = await this.apply(input, plan, change);
@@ -129,13 +133,15 @@ export class ReconcileSwissRoundsUseCase {
       case "forfeit":
         return this.withLocks(input, [change.before], async () => {
           const { before, after, round } = change;
+          const { withdrawal } = input;
+          if (!withdrawal) throw new Panic("A forfeit only comes from a withdrawal");
           if (before.series) {
             await this.deps.openSelections.cancelOpen({
               organizationId: plan.organizationId,
               competitionId: plan.competitionId,
               encounterId: before.id,
-              reason: input.reason ?? DEFAULT_CANCEL_REASON,
-              actorId: input.actorId,
+              reason: withdrawal.reason,
+              actorId: withdrawal.actorId,
             });
           }
           const updated = after

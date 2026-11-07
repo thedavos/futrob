@@ -7,13 +7,13 @@ import type { ActorId, CompetitionId, EncounterId, OrganizationId } from "@futro
 export interface EncounterOpenSelectionPort {
   /**
    * Voids the Encounter's non-terminal selection; a no-op without one. An approved official result
-   * is never touched. Without `actorId` the owner records a system actor.
+   * is never touched.
    */
   cancelOpen(input: {
     readonly organizationId: OrganizationId;
     readonly competitionId: CompetitionId;
     readonly encounterId: EncounterId;
-    readonly actorId?: ActorId;
+    readonly actorId: ActorId;
     readonly reason: string;
   }): Promise<void>;
 }

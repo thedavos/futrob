@@ -116,8 +116,6 @@ export class CloseSwissRoundUseCase {
 
     const reconciled = await this.deps.reconcile.execute({
       ...scope,
-      actorId: input.actorId,
-      reason,
       correlationId: input.requestId,
       heldEncounterIds: input.heldEncounterIds,
     });

@@ -115,15 +115,16 @@ correlacionado y el emparejamiento no, porque se orienta por los slots del encue
   - Sus resultados aprobados se conservan y sigue en la clasificación, marcado como retirado.
   - Su encuentro sin resultado se convierte en bye para el rival. Se elimina si los dos equipos
     están retirados, o si el retirado tiene un bye en una ronda que aún se está jugando. El bye de
-    una ronda liquidada es historia y se queda. La reconciliación aplica esta regla, así que también
-    cubre una anulación posterior que reabra un encuentro de un equipo ya retirado.
+    una ronda liquidada es historia y se queda. Solo el comando de retirada convierte encuentros.
+  - Anular después un resultado de un equipo retirado no convierte nada: el encuentro queda abierto
+    para aprobar un resultado corregido o cerrar la ronda, y las rondas posteriores pasan por la
+    guarda de reversibilidad normal. Convertirlo haría irreversible una anulación equivocada.
 - **Partido sin resultado.** `CloseSwissRoundUseCase` marca los encuentros sin resultado de la
   ronda actual con `closedWithoutResult`: nadie suma puntos, no se crea resultado oficial y cuentan
   como ya enfrentados.
 - **Selección abierta.** Retirar y cerrar anulan la selección no terminal del encuentro con
   `CancelOpenSelectionUseCase` de results, conectado por `EncounterOpenSelectionPort` de scheduling.
-  Se registra con el actor del organizador o, si la reconciliación corre sin él, con
-  `SCHEDULING_SYSTEM_ACTOR_ID`. Si hay una disputa abierta, se resuelve como
+  Se registra con el actor del organizador. Si hay una disputa abierta, se resuelve como
   `returned_to_selection`. Si bloquearan, una selección abandonada dejaría la competición sin
   salida. Un resultado aprobado nunca se toca.
 

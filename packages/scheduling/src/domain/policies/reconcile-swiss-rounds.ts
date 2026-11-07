@@ -34,6 +34,8 @@ export interface ReconcileSwissRoundsInput {
   readonly officialMatchCount: 1 | 2;
   readonly resolutionMode: SeriesResolutionMode;
   readonly now: Date;
+  /** Only a withdrawal converts encounters. A void of a withdrawn Team's result stays correctable. */
+  readonly withdrawingTeamId: TeamId | null;
 }
 
 export type SwissRoundChange =
@@ -58,7 +60,9 @@ export function reconcileSwissRounds(input: ReconcileSwissRoundsInput): SwissRou
   const rounds = swissRounds(plan);
   const hasResult = (encounterId: EncounterId) => scores.has(encounterId);
 
-  const forfeit = nextForfeit(plan, rounds, hasResult);
+  const forfeit = input.withdrawingTeamId
+    ? nextForfeit(plan, rounds, hasResult, input.withdrawingTeamId)
+    : null;
   if (forfeit) return forfeit;
 
   const lastPaired = rounds.map((round) => round.encounters.length > 0).lastIndexOf(true);
@@ -107,11 +111,13 @@ function nextForfeit(
   plan: FixturePlan,
   rounds: readonly FixtureRound[],
   hasResult: (encounterId: EncounterId) => boolean,
+  withdrawing: TeamId,
 ): SwissRoundChange | null {
   const withdrawn = new Set(plan.withdrawnTeamIds ?? []);
-  if (withdrawn.size === 0) return null;
   const isWithdrawn = (slot: FixtureParticipantSlot) =>
     slot.kind === "team" && withdrawn.has(slot.teamId);
+  const isWithdrawing = (slot: FixtureParticipantSlot) =>
+    slot.kind === "team" && slot.teamId === withdrawing;
   const lastPaired = rounds.filter((round) => round.encounters.length > 0).at(-1);
 
   for (const round of rounds) {
@@ -121,15 +127,15 @@ function nextForfeit(
         const stillPlaying =
           round === lastPaired &&
           round.encounters.some((other) => !isSwissEncounterSettled(other, hasResult));
-        if (stillPlaying && (isWithdrawn(before.home) || isWithdrawn(before.away))) {
+        if (stillPlaying && (isWithdrawing(before.home) || isWithdrawing(before.away))) {
           return { kind: "forfeit", round, before, after: null };
         }
         continue;
       }
       if (isSwissEncounterSettled(before, hasResult)) continue;
       const { home, away } = before;
-      if (!isWithdrawn(home) && !isWithdrawn(away)) continue;
-      const rival = isWithdrawn(home) ? away : home;
+      if (!isWithdrawing(home) && !isWithdrawing(away)) continue;
+      const rival = isWithdrawing(home) ? away : home;
       return {
         kind: "forfeit",
         round,

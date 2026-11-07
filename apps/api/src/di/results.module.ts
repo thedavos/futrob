@@ -25,7 +25,6 @@ import {
   type TeamRepresentationPort,
 } from "@futrob/results";
 import type {
-  ActorId,
   AuthorizationBatchPort,
   AuthorizationPort,
   ClockPort,
@@ -59,7 +58,6 @@ export function createResultsModule(input: {
   readonly clock?: ClockPort;
   readonly ids?: IdGeneratorPort;
   /** Signs a selection cancelled without an organizer behind the change. */
-  readonly resolveSystemActor?: () => Promise<ActorId | null>;
 }) {
   const clock = input.clock ?? new SystemClock();
   const ids = input.ids ?? new CryptoIdGenerator();
@@ -155,7 +153,6 @@ export function createResultsModule(input: {
       selections,
       ids,
       clock,
-      resolveSystemActor: input.resolveSystemActor ?? (async () => null),
     }),
     voidOfficialResult: new VoidOfficialResultUseCase({
       results,

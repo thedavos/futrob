@@ -105,6 +105,7 @@ function playTournament(count: number, rounds: number, seed: number): FixturePla
       });
     }
     const change = reconcileSwissRounds({
+      withdrawingTeamId: null,
       plan,
       scores,
       standingPoints: { winPoints: 3, drawPoints: 1, lossPoints: 0 },

@@ -18,7 +18,7 @@ const competitionId = asCompetitionId("competition-1");
 const encounterId = asEncounterId("encounter-1");
 const now = new Date("2026-11-01T12:00:00.000Z");
 
-function create(status: SelectionStatus | null, systemActor: ActorId | null = null) {
+function create(status: SelectionStatus | null) {
   const selections = new MemoryOfficialSelections();
   if (status) {
     const selection: OfficialMatchSelection = {
@@ -40,7 +40,6 @@ function create(status: SelectionStatus | null, systemActor: ActorId | null = nu
     selections,
     ids: { generate: () => `id-${++ids}` },
     clock: { now: () => now },
-    resolveSystemActor: async () => systemActor,
   });
   const input = { organizationId, competitionId, encounterId, reason: "  Team withdrew " };
   return { selections, useCase, input };
@@ -83,29 +82,10 @@ describe("CancelOpenSelectionUseCase", () => {
     expect(selections.actions).toEqual([]);
   });
 
-  it("needs no actor when nothing is open", async () => {
+  it("does nothing when nothing is open", async () => {
     const { useCase, input } = create(null);
-    const outcome = await useCase.execute(input);
+    const outcome = await useCase.execute({ ...input, actorId: asActorId("organizer") });
     expect(outcome.isOk() && outcome.value).toEqual({ status: "nothing_open" });
-  });
-
-  it("records the system actor when no organizer is behind the change", async () => {
-    const { selections, useCase, input } = create("selection_in_progress", asActorId("system"));
-
-    await useCase.execute(input);
-
-    expect(selections.actions).toMatchObject([{ actorId: "system", capacity: "system" }]);
-  });
-
-  it("fails without writing when an open selection has no actor to record", async () => {
-    const { selections, useCase, input } = create("selection_in_progress");
-
-    const outcome = await useCase.execute(input);
-
-    expect(outcome.isErr() && outcome.error.code).toBe(
-      "results.selection_cancel_actor_unavailable",
-    );
-    expect(selections.selections.get(encounterId)?.status).toBe("selection_in_progress");
   });
 
   it("resolves an open dispute with the selection", async () => {

@@ -9,7 +9,6 @@ import {
   type OrganizationId,
   type Result,
 } from "@futrob/shared-kernel";
-import { SelectionCancelActorUnavailable } from "../../domain/errors/official-result.errors.ts";
 import type { SelectionVersionConflict } from "../../domain/errors/official-selection.errors.ts";
 import type { OfficialMatchSelectionRepository } from "../../domain/ports/official-result.repository.ts";
 import {
@@ -23,8 +22,8 @@ export interface CancelOpenSelectionInput {
   readonly organizationId: OrganizationId;
   readonly competitionId: CompetitionId;
   readonly encounterId: EncounterId;
-  /** Organizer behind the cancellation. Absent, a provisioned system actor is recorded. */
-  readonly actorId?: ActorId;
+  /** Organizer behind the cancellation. */
+  readonly actorId: ActorId;
   readonly reason: string;
 }
 
@@ -43,15 +42,12 @@ export class CancelOpenSelectionUseCase {
       readonly selections: OfficialMatchSelectionRepository;
       readonly ids: IdGeneratorPort;
       readonly clock: ClockPort;
-      readonly resolveSystemActor: () => Promise<ActorId | null>;
     },
   ) {}
 
   async execute(
     input: CancelOpenSelectionInput,
-  ): Promise<
-    Result<CancelOpenSelectionOutput, SelectionCancelActorUnavailable | SelectionVersionConflict>
-  > {
+  ): Promise<Result<CancelOpenSelectionOutput, SelectionVersionConflict>> {
     const selection = await this.deps.selections.findLatestByEncounter(input.encounterId);
     if (
       !selection ||
@@ -63,21 +59,7 @@ export class CancelOpenSelectionUseCase {
       return ok({ status: "nothing_open" });
     }
 
-    const systemActor = input.actorId ? null : await this.deps.resolveSystemActor();
-    const actor = input.actorId
-      ? ({ capacity: "operator", actorId: input.actorId } as const)
-      : systemActor
-        ? ({ capacity: "system", actorId: systemActor } as const)
-        : null;
-    if (!actor) {
-      return err(
-        new SelectionCancelActorUnavailable({
-          code: "results.selection_cancel_actor_unavailable",
-          message: "SCHEDULING_SYSTEM_ACTOR_ID must reference an actor provisioned by identity",
-        }),
-      );
-    }
-
+    const actor = { capacity: "operator", actorId: input.actorId } as const;
     const now = this.deps.clock.now();
     const reason = normalizeReason(input.reason);
     const version = selection.version + 1;

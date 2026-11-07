@@ -52,7 +52,7 @@ function play(teamCount: number, rounds: number): FixturePlan {
         });
       }
     }
-    const change = reconcileSwissRounds({ plan, scores, ...RULES, now });
+    const change = reconcileSwissRounds({ plan, scores, withdrawingTeamId: null, ...RULES, now });
     switch (change.kind) {
       case "none":
         return plan;
