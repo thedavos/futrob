@@ -382,9 +382,11 @@ describe("competition standings of a Swiss fixture", () => {
 
     expect(applied?.formulaVersion).toBe("swiss-points-buchholz-gd-gf-v1");
     expect(applied?.swiss?.currentRound).toBe(2);
-    expect(applied?.rows.map((row) => [row.teamId, row.points, row.played])).toEqual([
-      ["team-1", 3, 1],
-      ["team-2", 3, 0],
+    expect(
+      applied?.rows.map((row) => [row.teamId, row.points, row.played, row.swiss?.buchholz]),
+    ).toEqual([
+      ["team-2", 3, 0, 3],
+      ["team-1", 3, 1, 0],
     ]);
     expect(stored.formulaVersion).toBe("points-gd-gf-v1");
   });
