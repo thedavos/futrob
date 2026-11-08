@@ -9,6 +9,7 @@ packages/*/dist/
 storybook-static/
 packages/*/storybook-static/
 .wrangler/
+.demo/
 .dev.vars
 coverage/
 playwright-report/

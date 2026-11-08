@@ -12,7 +12,9 @@
     "check": "vp check",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vp test",
-    "generate:openapi": "tsx scripts/generate-openapi.ts"
+    "generate:openapi": "tsx scripts/generate-openapi.ts",
+    "seed:demo": "tsx scripts/seed-demo/main.ts",
+    "demo:ea": "tsx scripts/seed-demo/fake-ea-server.ts"
   },
   "dependencies": {
     "@futrob/analytics": "0.1.0",
@@ -39,6 +41,7 @@
     "zod": "4.6.6"
   },
   "devDependencies": {
+    "@futrob/sdk": "0.1.0",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "ajv": "^8.20.0",
