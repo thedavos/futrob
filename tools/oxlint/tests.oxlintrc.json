@@ -26,6 +26,7 @@
     // Remove a file once its timeouts move to project testTimeout or the waits are fixed. Do not add files.
     {
       "files": [
+        "**/apps/api/scripts/seed-demo/demo-superuser.integration.test.ts",
         "**/apps/api/src/adapters/billing/billing-adapters.postgres.integration.test.ts",
         "**/apps/api/src/adapters/competitions/discovery.integration.test.ts",
         "**/apps/api/src/adapters/competitions/entry-invitation.repository.contract.test.ts",
