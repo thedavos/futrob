@@ -9,8 +9,11 @@ import {
   type OrganizationId,
   type Result,
 } from "@futrob/shared-kernel";
+import type { MatchDispute } from "../../domain/entities/match-dispute.ts";
+import type { OfficialMatchSelection } from "../../domain/entities/official-match-selection.ts";
 import type { SelectionVersionConflict } from "../../domain/errors/official-selection.errors.ts";
 import type { OfficialMatchSelectionRepository } from "../../domain/ports/official-result.repository.ts";
+import type { OfficialSelectionCommandOutput } from "../official-selection-output.ts";
 import {
   activeDispute,
   buildAction,
@@ -27,9 +30,10 @@ export interface CancelOpenSelectionInput {
   readonly reason: string;
 }
 
-export interface CancelOpenSelectionOutput {
-  readonly status: "voided" | "nothing_open";
-}
+export type CancelOpenSelectionOutput =
+  | { readonly status: "nothing_open" }
+  /** `output` lets the caller project activity like any selection command. */
+  | { readonly status: "voided"; readonly output: OfficialSelectionCommandOutput };
 
 /**
  * Voids a selection that was still being negotiated because its Encounter will no longer be played.
@@ -65,55 +69,69 @@ export class CancelOpenSelectionUseCase {
     const version = selection.version + 1;
     const disputes = await this.deps.selections.listDisputes(selection.id);
     const open = activeDispute(disputes);
+    const voided: OfficialMatchSelection = {
+      ...selection,
+      status: "voided",
+      version,
+      updatedAt: now,
+    };
+    const action = buildAction(
+      {
+        ids: this.deps.ids,
+        clock: this.deps.clock,
+        organizationId: selection.organizationId,
+        competitionId: selection.competitionId,
+        encounterId: selection.encounterId,
+        actor,
+        commandKey: null,
+        fingerprint: null,
+      },
+      {
+        type: "voided",
+        selectionId: selection.id,
+        proposalId: selection.currentProposalId,
+        fromStatus: selection.status,
+        toStatus: "voided",
+        versionBefore: selection.version,
+        versionAfter: version,
+        reason,
+        details: open ? { disputeId: open.id } : null,
+        occurredAt: now,
+      },
+    );
+    const resolved: MatchDispute | null = open
+      ? {
+          ...open,
+          status: "resolved",
+          resolvedByActorId: actor.actorId,
+          resolvedAt: now,
+          resolution: "returned_to_selection",
+          resolutionProposalId: null,
+          resolutionReason: reason,
+        }
+      : null;
     const committed = await this.deps.selections.commitTransition({
       expectedVersion: selection.version,
-      selection: { ...selection, status: "voided", version, updatedAt: now },
+      selection: voided,
       newProposals: [],
-      actions: [
-        buildAction(
-          {
-            ids: this.deps.ids,
-            clock: this.deps.clock,
-            organizationId: selection.organizationId,
-            competitionId: selection.competitionId,
-            encounterId: selection.encounterId,
-            actor,
-            commandKey: null,
-            fingerprint: null,
-          },
-          {
-            type: "voided",
-            selectionId: selection.id,
-            proposalId: selection.currentProposalId,
-            fromStatus: selection.status,
-            toStatus: "voided",
-            versionBefore: selection.version,
-            versionAfter: version,
-            reason,
-            details: open ? { disputeId: open.id } : null,
-            occurredAt: now,
-          },
-        ),
-      ],
-      dispute: open
-        ? {
-            kind: "update",
-            dispute: {
-              ...open,
-              status: "resolved",
-              resolvedByActorId: actor.actorId,
-              resolvedAt: now,
-              resolution: "returned_to_selection",
-              resolutionProposalId: null,
-              resolutionReason: reason,
-            },
-          }
-        : null,
+      actions: [action],
+      dispute: resolved ? { kind: "update", dispute: resolved } : null,
       references: { acquire: [], release: "all" },
     });
     if (committed.status === "version_conflict") {
       return err(versionConflict(selection.version, committed.currentVersion));
     }
-    return ok({ status: "voided" });
+    return ok({
+      status: "voided",
+      output: {
+        selection: voided,
+        proposal: null,
+        actions: [action],
+        dispute: resolved,
+        approvedResult: null,
+        integrityFlags: [],
+        replayed: false,
+      },
+    });
   }
 }

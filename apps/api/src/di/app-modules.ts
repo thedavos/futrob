@@ -1,3 +1,4 @@
+import type { EncounterOpenSelectionPort } from "@futrob/scheduling";
 import type { TransactionPort } from "@futrob/shared-kernel";
 import type { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
 import type { RunScheduleChangeExpiry } from "@/application/scheduling/run-schedule-change-expiry.ts";
@@ -66,6 +67,7 @@ export interface AppModules {
   };
   readonly publicPortal: PublicPortalModule;
   readonly results: ResultsModule;
+  readonly encounterOpenSelection: EncounterOpenSelectionPort;
   readonly scheduling: SchedulingModule;
   readonly statistics: StatisticsModule;
   readonly teams: TeamsModule;

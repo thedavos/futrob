@@ -230,7 +230,6 @@ export function createModules(input: CreateModulesInput): AppModules {
     ids,
   });
   encounterParticipants.bind(new ResultsCandidateEligibilityAdapter(results));
-  encounterOpenSelection.bind(new ResultsOpenSelectionAdapter(results));
   const gameData = createGameDataModule({
     providers: [eaProvider, new ManualGameDataAdapter()],
     ingestion: eaProvider,
@@ -285,6 +284,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     teams,
     scheduling,
   });
+  encounterOpenSelection.bind(new ResultsOpenSelectionAdapter(results, activityFeed.selection));
   const officialSelection = createOfficialSelectionCommands({
     results,
     scheduling,
@@ -403,6 +403,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     },
     publicPortal,
     results,
+    encounterOpenSelection,
     scheduling,
     statistics,
     teams,

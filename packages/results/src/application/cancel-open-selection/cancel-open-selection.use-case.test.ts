@@ -58,7 +58,10 @@ describe("CancelOpenSelectionUseCase", () => {
 
     const outcome = await useCase.execute({ ...input, actorId: asActorId("organizer") });
 
-    expect(outcome.isOk() && outcome.value).toEqual({ status: "voided" });
+    expect(outcome.isOk() && outcome.value).toMatchObject({
+      status: "voided",
+      output: { selection: { status: "voided" }, actions: [{ type: "voided" }] },
+    });
     expect(selections.selections.get(encounterId)).toMatchObject({ status: "voided", version: 4 });
     expect(selections.actions).toMatchObject([
       {
