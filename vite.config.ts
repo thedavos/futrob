@@ -89,6 +89,7 @@ export default defineConfig({
       "**/routeTree.gen.ts",
       "**/paraglide/**",
       // Size budget applies to production code only; test/story suites grow freely.
+      // Test discipline (skip/timeout/retry/only) is linted by `npm run lint:tests`.
       "**/*.test.ts",
       "**/*.test.tsx",
       "**/*.stories.tsx",
