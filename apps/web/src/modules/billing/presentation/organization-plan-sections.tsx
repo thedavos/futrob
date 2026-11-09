@@ -24,12 +24,18 @@ import {
   TableRow,
   TextLink,
   typography,
+  vis,
 } from "@futrob/ui";
 import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { nextPlan, planStatus, usageRows, type UsageRow } from "./organization-plan-model.ts";
 import { styles } from "./organization-plan.styles.ts";
-import { formatPlanDate, isOrganizationPlanKey, planNameKey } from "./plan-copy.ts";
+import {
+  formatPlanDate,
+  isOrganizationPlanKey,
+  PLAN_FORMAT_LABEL,
+  planNameKey,
+} from "./plan-copy.ts";
 
 type Plan = GetOrganizationPlanResponse;
 
@@ -44,16 +50,6 @@ const USAGE_REACHED = {
   staffMembers: "billing.usage.reached.staffMembers",
   providerSyncJobs: "billing.usage.reached.providerSyncJobs",
 } as const satisfies Record<UsageRow["id"], MessageKey>;
-
-const FORMAT_LABEL: ReadonlyMap<string, MessageKey> = new Map(
-  Object.entries({
-    league: "competitionRules.format.league",
-    knockout: "competitionRules.format.knockout",
-    "groups-knockout": "competitionRules.format.groups-knockout",
-    "league-playoffs": "competitionRules.format.league-playoffs",
-    swiss: "competitionRules.format.swiss",
-  } as const satisfies Record<string, MessageKey>),
-);
 
 const CHANNEL_LABEL: ReadonlyMap<string, MessageKey> = new Map(
   Object.entries({
@@ -168,7 +164,7 @@ function Feature({ included, label }: { readonly included: boolean; readonly lab
       />
       <Body as="span" {...applyStyles(included ? null : styles.excludedText)}>
         {label}
-        <span className="sr-only">
+        <span {...applyStyles(vis.srOnly)}>
           {" "}
           ({included ? t("billing.features.included") : t("billing.features.notIncluded")})
         </span>
@@ -200,7 +196,7 @@ export function PlanFeaturesCard({ plan }: { readonly plan: Plan }) {
           <Feature
             included
             label={t("billing.features.formats", {
-              formats: list(features.competitionFormats, FORMAT_LABEL),
+              formats: list(features.competitionFormats, PLAN_FORMAT_LABEL),
             })}
           />
           <Feature

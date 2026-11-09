@@ -1,11 +1,12 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Caption, Display, Subtitle } from "@futrob/ui";
+import { applyStyles, Caption } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LandingSection } from "@/shared/presentation/landing/landing-section.tsx";
 
 interface StandingRow {
   readonly team: string;
@@ -27,46 +28,6 @@ const REST = CHASERS.slice(2);
 const POINT_KEYS = ["teams", "results", "rankings"] as const;
 
 const styles = stylex.create({
-  inner: {
-    marginInline: "auto",
-    display: "grid",
-    maxWidth: "80rem",
-    scrollMarginTop: "2rem",
-    alignItems: "center",
-    gap: {
-      default: "3rem",
-      [media.lg]: "4rem",
-    },
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.lg]: "minmax(0, 5fr) minmax(0, 6fr)",
-    },
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "2rem",
-    },
-    paddingBlock: {
-      default: "5rem",
-      [media.lg]: "8rem",
-    },
-  },
-  copy: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1.5rem",
-  },
-  subtitle: {
-    maxWidth: "40ch",
-    color: colors.mutedForeground,
-    fontSize: {
-      default: null,
-      [media.sm]: "var(--text-base)",
-    },
-    lineHeight: {
-      default: null,
-      [media.sm]: "1.5rem",
-    },
-  },
   points: {
     borderTopWidth: 1,
     borderTopStyle: "solid",
@@ -203,83 +164,84 @@ export function PortalSection() {
   const crest = applyStyles(styles.crest);
   const pointsLabel = t("landing.portal.podium.points");
   return (
-    <section id="portal">
-      <div {...applyStyles(styles.inner)}>
-        <div {...applyStyles(styles.copy)}>
-          <Display as="h2">{t("landing.portal.title")}</Display>
-          <Subtitle {...applyStyles(styles.subtitle)}>{t("landing.portal.subtitle")}</Subtitle>
-          <ul {...applyStyles(styles.points)}>
-            {POINT_KEYS.map((key) => (
-              <li key={key} {...applyStyles(styles.point)}>
-                {t(`landing.portal.point.${key}`)}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <figure {...applyStyles(styles.podium)}>
-          <div {...applyStyles(styles.leader)}>
-            <span aria-hidden="true" {...applyStyles(styles.leaderRank)}>
-              1
+    <LandingSection
+      copy={
+        <ul {...applyStyles(styles.points)}>
+          {POINT_KEYS.map((key) => (
+            <li key={key} {...applyStyles(styles.point)}>
+              {t(`landing.portal.point.${key}`)}
+            </li>
+          ))}
+        </ul>
+      }
+      id="portal"
+      subtitle={t("landing.portal.subtitle")}
+      title={t("landing.portal.title")}
+      tone="band"
+    >
+      <figure {...applyStyles(styles.podium)}>
+        <div {...applyStyles(styles.leader)}>
+          <span aria-hidden="true" {...applyStyles(styles.leaderRank)}>
+            1
+          </span>
+          <div {...applyStyles(styles.leaderFoot)}>
+            <span {...applyStyles(styles.team, styles.leaderName)}>
+              <ClubCrestAvatar
+                className={crest.className}
+                imageUrl={null}
+                name={LEADER.team}
+                style={crest.style}
+              />
+              {LEADER.team}
             </span>
-            <div {...applyStyles(styles.leaderFoot)}>
-              <span {...applyStyles(styles.team, styles.leaderName)}>
+            <span {...applyStyles(styles.leaderPoints)}>
+              <span {...applyStyles(styles.leaderPointsValue)}>{LEADER.points}</span>
+              <Caption as="span">{pointsLabel}</Caption>
+            </span>
+          </div>
+        </div>
+        <ol start={2} {...applyStyles(styles.chasers)}>
+          {PODIUM_CHASERS.map((row, index) => (
+            <li key={row.team} {...applyStyles(styles.chaser)}>
+              <span aria-hidden="true" {...applyStyles(styles.chaserRank)}>
+                {index + 2}
+              </span>
+              <span {...applyStyles(styles.team)}>
                 <ClubCrestAvatar
                   className={crest.className}
                   imageUrl={null}
-                  name={LEADER.team}
+                  name={row.team}
                   style={crest.style}
                 />
-                {LEADER.team}
+                {row.team}
               </span>
-              <span {...applyStyles(styles.leaderPoints)}>
-                <span {...applyStyles(styles.leaderPointsValue)}>{LEADER.points}</span>
-                <Caption as="span">{pointsLabel}</Caption>
+              <span {...applyStyles(styles.chaserPoints)}>{row.points}</span>
+            </li>
+          ))}
+        </ol>
+        <ol start={PODIUM_CHASERS.length + 2} {...applyStyles(styles.rest)}>
+          {REST.map((row, index) => (
+            <li key={row.team} {...applyStyles(styles.restRow)}>
+              <span aria-hidden="true" {...applyStyles(styles.restRank)}>
+                {index + PODIUM_CHASERS.length + 2}
               </span>
-            </div>
-          </div>
-          <ol start={2} {...applyStyles(styles.chasers)}>
-            {PODIUM_CHASERS.map((row, index) => (
-              <li key={row.team} {...applyStyles(styles.chaser)}>
-                <span aria-hidden="true" {...applyStyles(styles.chaserRank)}>
-                  {index + 2}
-                </span>
-                <span {...applyStyles(styles.team)}>
-                  <ClubCrestAvatar
-                    className={crest.className}
-                    imageUrl={null}
-                    name={row.team}
-                    style={crest.style}
-                  />
-                  {row.team}
-                </span>
-                <span {...applyStyles(styles.chaserPoints)}>{row.points}</span>
-              </li>
-            ))}
-          </ol>
-          <ol start={PODIUM_CHASERS.length + 2} {...applyStyles(styles.rest)}>
-            {REST.map((row, index) => (
-              <li key={row.team} {...applyStyles(styles.restRow)}>
-                <span aria-hidden="true" {...applyStyles(styles.restRank)}>
-                  {index + PODIUM_CHASERS.length + 2}
-                </span>
-                <span {...applyStyles(styles.team)}>
-                  <ClubCrestAvatar
-                    className={crest.className}
-                    imageUrl={null}
-                    name={row.team}
-                    style={crest.style}
-                  />
-                  {row.team}
-                </span>
-                <span {...applyStyles(styles.restPoints)}>{row.points}</span>
-              </li>
-            ))}
-          </ol>
-          <figcaption {...applyStyles(styles.caption)}>
-            <Caption as="span">{t("landing.portal.podium.caption")}</Caption>
-          </figcaption>
-        </figure>
-      </div>
-    </section>
+              <span {...applyStyles(styles.team)}>
+                <ClubCrestAvatar
+                  className={crest.className}
+                  imageUrl={null}
+                  name={row.team}
+                  style={crest.style}
+                />
+                {row.team}
+              </span>
+              <span {...applyStyles(styles.restPoints)}>{row.points}</span>
+            </li>
+          ))}
+        </ol>
+        <figcaption {...applyStyles(styles.caption)}>
+          <Caption as="span">{t("landing.portal.podium.caption")}</Caption>
+        </figcaption>
+      </figure>
+    </LandingSection>
   );
 }

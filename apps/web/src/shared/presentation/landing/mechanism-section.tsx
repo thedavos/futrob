@@ -1,11 +1,12 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, Body, Display, Subtitle } from "@futrob/ui";
+import { applyStyles, Badge, Body } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LandingSection } from "@/shared/presentation/landing/landing-section.tsx";
 
 interface MechanismStep {
   readonly key: "sync" | "selection" | "approval" | "publication";
@@ -21,56 +22,6 @@ const STEPS: readonly MechanismStep[] = [
 ];
 
 const styles = stylex.create({
-  section: {
-    borderTopWidth: 1,
-    borderTopStyle: "solid",
-    borderTopColor: colors.borderSubtle,
-  },
-  inner: {
-    marginInline: "auto",
-    display: "grid",
-    maxWidth: "80rem",
-    scrollMarginTop: "2rem",
-    alignItems: "start",
-    gap: {
-      default: "3rem",
-      [media.lg]: "4rem",
-    },
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.lg]: "minmax(0, 5fr) minmax(0, 6fr)",
-    },
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "2rem",
-    },
-    paddingBlock: {
-      default: "5rem",
-      [media.lg]: "8rem",
-    },
-  },
-  copy: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1.5rem",
-    position: {
-      default: "static",
-      [media.lg]: "sticky",
-    },
-    top: "2rem",
-  },
-  subtitle: {
-    maxWidth: "36ch",
-    color: colors.mutedForeground,
-    fontSize: {
-      default: null,
-      [media.sm]: "var(--text-base)",
-    },
-    lineHeight: {
-      default: null,
-      [media.sm]: "1.5rem",
-    },
-  },
   list: {
     borderTopWidth: 1,
     borderTopStyle: "solid",
@@ -109,28 +60,28 @@ export function MechanismSection() {
   const { t } = useI18n();
   const badge = applyStyles(styles.badge);
   return (
-    <section id="mecanismo" {...applyStyles(styles.section)}>
-      <div {...applyStyles(styles.inner)}>
-        <div {...applyStyles(styles.copy)}>
-          <Display as="h2">{t("landing.mechanism.title")}</Display>
-          <Subtitle {...applyStyles(styles.subtitle)}>{t("landing.mechanism.subtitle")}</Subtitle>
-        </div>
-        <ol {...applyStyles(styles.list)}>
-          {STEPS.map((step) => (
-            <li key={step.key} {...applyStyles(styles.step)}>
-              <Badge className={badge.className} style={badge.style} variant={step.badge}>
-                {t(`landing.status.${step.status}`)}
-              </Badge>
-              <div>
-                <h3 {...applyStyles(styles.title)}>{t(`landing.mechanism.${step.key}.title`)}</h3>
-                <Body tone="muted" {...applyStyles(styles.body)}>
-                  {t(`landing.mechanism.${step.key}.description`)}
-                </Body>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
+    <LandingSection
+      align="start"
+      id="mecanismo"
+      subtitle={t("landing.mechanism.subtitle")}
+      title={t("landing.mechanism.title")}
+      tone="band"
+    >
+      <ol {...applyStyles(styles.list)}>
+        {STEPS.map((step) => (
+          <li key={step.key} {...applyStyles(styles.step)}>
+            <Badge className={badge.className} style={badge.style} variant={step.badge}>
+              {t(`landing.status.${step.status}`)}
+            </Badge>
+            <div>
+              <h3 {...applyStyles(styles.title)}>{t(`landing.mechanism.${step.key}.title`)}</h3>
+              <Body tone="muted" {...applyStyles(styles.body)}>
+                {t(`landing.mechanism.${step.key}.description`)}
+              </Body>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </LandingSection>
   );
 }
