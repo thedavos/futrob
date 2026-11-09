@@ -32,7 +32,7 @@ export class GetPublicStandingsUseCase {
     const { scope } = resolved.value;
 
     const snapshot = await this.deps.standings.read(scope);
-    if (!snapshot) return ok({ rows: [], updatedAt: null });
+    if (!snapshot) return ok({ rows: [], swiss: null, updatedAt: null });
 
     const names = await this.deps.teams.namesByIds(
       scope,
@@ -42,22 +42,31 @@ export class GetPublicStandingsUseCase {
       rows: snapshot.rows.flatMap((row): PublicStandingRow[] => {
         const teamName = names.get(row.teamId);
         if (teamName === undefined) return [];
-        return [
-          {
-            position: row.position,
-            teamName,
-            played: row.played,
-            wins: row.wins,
-            draws: row.draws,
-            losses: row.losses,
-            goalsFor: row.goalsFor,
-            goalsAgainst: row.goalsAgainst,
-            goalDifference: row.goalDifference,
-            points: row.points,
-            form: row.form,
-          },
-        ];
+        const publicRow: PublicStandingRow = {
+          position: row.position,
+          teamName,
+          played: row.played,
+          wins: row.wins,
+          draws: row.draws,
+          losses: row.losses,
+          goalsFor: row.goalsFor,
+          goalsAgainst: row.goalsAgainst,
+          goalDifference: row.goalDifference,
+          points: row.points,
+          form: row.form,
+        };
+        return row.swiss
+          ? [
+              {
+                ...publicRow,
+                buchholz: row.swiss.buchholz,
+                byes: row.swiss.byes,
+                withdrawn: row.swiss.withdrawn,
+              },
+            ]
+          : [publicRow];
       }),
+      swiss: snapshot.swiss,
       updatedAt: snapshot.updatedAt,
     });
   }

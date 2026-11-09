@@ -14,6 +14,7 @@ import {
   ReviewMatchDisputeUseCase,
   SelectOfficialMatchesUseCase,
   VoidOfficialResultUseCase,
+  CancelOpenSelectionUseCase,
   type EncounterCandidateAssociationRepository,
   type EncounterReaderPort,
   type OfficialMatchSelectionRepository,
@@ -56,6 +57,7 @@ export function createResultsModule(input: {
   readonly associations?: EncounterCandidateAssociationRepository;
   readonly clock?: ClockPort;
   readonly ids?: IdGeneratorPort;
+  /** Signs a selection cancelled without an organizer behind the change. */
 }) {
   const clock = input.clock ?? new SystemClock();
   const ids = input.ids ?? new CryptoIdGenerator();
@@ -146,6 +148,11 @@ export function createResultsModule(input: {
       disputes: selections,
       encounterReader: input.encounterReader,
       authorization: input.authorization,
+    }),
+    cancelOpenSelection: new CancelOpenSelectionUseCase({
+      selections,
+      ids,
+      clock,
     }),
     voidOfficialResult: new VoidOfficialResultUseCase({
       results,

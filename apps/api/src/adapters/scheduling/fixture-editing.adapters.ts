@@ -182,10 +182,8 @@ function fixtureEncounter(value: PgJsonInput): FixtureEncounter {
     officialMatchCount: parsed.officialMatchCount,
     series: parsed.series ? fixtureSeries(parsed.series) : null,
   };
-  if (parsed.groupId) {
-    return { ...encounter, groupId: parsed.groupId };
-  }
-  return encounter;
+  const placed = parsed.groupId ? { ...encounter, groupId: parsed.groupId } : encounter;
+  return parsed.closedWithoutResult ? { ...placed, closedWithoutResult: true } : placed;
 }
 
 export class OfficialResultFixtureEditGuard

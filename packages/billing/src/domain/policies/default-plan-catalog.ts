@@ -1,6 +1,12 @@
 import type { ActorAddOnPlan, OrganizationPlan } from "../entities/plan.ts";
 
-const MVP_COMPETITION_FORMATS = ["league", "knockout", "groups-knockout", "league-playoffs"];
+const PAID_COMPETITION_FORMATS = [
+  "league",
+  "knockout",
+  "groups-knockout",
+  "league-playoffs",
+  "swiss",
+];
 
 /**
  * Seed catalog. Postgres stores the authoritative copy in `billing_plans`; this value
@@ -31,14 +37,14 @@ export const DEFAULT_ORGANIZATION_PLANS: readonly OrganizationPlan[] = [
   {
     subject: "organization",
     key: "pro",
-    version: 1,
+    version: 2,
     entitlements: {
       limits: { activeCompetitions: 5, teamsPerCompetition: 32, staffMembers: 10 },
       quotas: {
         provider_sync_jobs: { amount: 600, period: "calendar_month_utc", fairUse: false },
       },
       features: {
-        competitionFormats: MVP_COMPETITION_FORMATS,
+        competitionFormats: PAID_COMPETITION_FORMATS,
         automaticProviderSync: true,
         priorityProviderSync: false,
         performanceRanking: true,
@@ -52,14 +58,14 @@ export const DEFAULT_ORGANIZATION_PLANS: readonly OrganizationPlan[] = [
   {
     subject: "organization",
     key: "league",
-    version: 1,
+    version: 2,
     entitlements: {
       limits: { activeCompetitions: null, teamsPerCompetition: null, staffMembers: null },
       quotas: {
         provider_sync_jobs: { amount: 5000, period: "calendar_month_utc", fairUse: true },
       },
       features: {
-        competitionFormats: MVP_COMPETITION_FORMATS,
+        competitionFormats: PAID_COMPETITION_FORMATS,
         automaticProviderSync: true,
         priorityProviderSync: true,
         performanceRanking: true,

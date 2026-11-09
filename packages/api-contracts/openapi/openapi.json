@@ -602,7 +602,8 @@
                     "league",
                     "knockout",
                     "groups-knockout",
-                    "league-playoffs"
+                    "league-playoffs",
+                    "swiss"
                   ]
                 },
                 {
@@ -4257,7 +4258,8 @@
                       "league",
                       "knockout",
                       "groups-knockout",
-                      "league-playoffs"
+                      "league-playoffs",
+                      "swiss"
                     ]
                   },
                   "teams": {
@@ -4469,7 +4471,8 @@
                               "league",
                               "knockout",
                               "groups-knockout",
-                              "league-playoffs"
+                              "league-playoffs",
+                              "swiss"
                             ]
                           },
                           "teams": {
@@ -5863,6 +5866,176 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/EditFixtureEncounterRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}/swiss/rounds/{roundNumber}/close": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "fixturePlanId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "roundNumber",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated competition fixture",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixturePlan"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "closeSwissRound",
+        "tags": [
+          "fixtures"
+        ],
+        "summary": "Close the unplayed encounters of the current Swiss round",
+        "description": "Requires encounters.schedule.manage. Each unplayed encounter becomes Team vs Team with `series: null` and `closedWithoutResult: true`: nobody scores, no official result is created and the pair counts as already met. Open selections on them are voided. The next round is paired in the same request. Repeating `requestId` returns the fixture without applying anything. Failures carry a stable `code`: 400 `api.validation_error`, `scheduling.invalid_fixture_configuration`; 403 `authorization.forbidden`; 404 `scheduling.fixture_plan_not_found`; 409 `scheduling.not_swiss_fixture`, `scheduling.swiss_round_not_current`, `scheduling.fixture_update_conflict`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseSwissRoundRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}/swiss/withdrawals": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "fixturePlanId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated competition fixture",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixturePlan"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "withdrawSwissTeam",
+        "tags": [
+          "fixtures"
+        ],
+        "summary": "Withdraw a Team from the later rounds of a Swiss fixture",
+        "description": "Requires encounters.schedule.manage. The Team keeps its approved results and stays in the table, marked as withdrawn. Its unplayed encounter becomes a bye for the rival, or is removed if the rival is gone too or the Team was the one resting; an open selection on it is voided. An approved result is never touched. Repeating `requestId` returns the fixture without applying anything. Failures carry a stable `code`: 400 `api.validation_error`, `scheduling.invalid_fixture_configuration`, `scheduling.swiss_team_not_participant`; 403 `authorization.forbidden`; 404 `scheduling.fixture_plan_not_found`; 409 `scheduling.not_swiss_fixture`, `scheduling.swiss_team_already_withdrawn`, `scheduling.fixture_update_conflict`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawSwissTeamRequest"
               }
             }
           }
@@ -11768,6 +11941,23 @@
           "role"
         ]
       },
+      "CloseSwissRoundRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
       "Competition": {
         "type": "object",
         "properties": {
@@ -11837,7 +12027,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "teams": {
@@ -12122,7 +12313,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "teams": {
@@ -12515,7 +12707,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "teams": {
@@ -13268,6 +13461,27 @@
               ]
             },
             "maxItems": 5
+          },
+          "swiss": {
+            "type": "object",
+            "properties": {
+              "buchholz": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "byes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "withdrawn": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "buchholz",
+              "byes",
+              "withdrawn"
+            ]
           }
         },
         "required": [
@@ -13298,7 +13512,8 @@
           "formulaVersion": {
             "type": "string",
             "enum": [
-              "points-gd-gf-v1"
+              "points-gd-gf-v1",
+              "swiss-points-buchholz-gd-gf-v1"
             ]
           },
           "rows": {
@@ -13355,6 +13570,27 @@
                     ]
                   },
                   "maxItems": 5
+                },
+                "swiss": {
+                  "type": "object",
+                  "properties": {
+                    "buchholz": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "byes": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "withdrawn": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "buchholz",
+                    "byes",
+                    "withdrawn"
+                  ]
                 }
               },
               "required": [
@@ -13386,6 +13622,38 @@
               "null"
             ],
             "exclusiveMinimum": 0
+          },
+          "swiss": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "roundsTotal": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "roundsCompleted": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "currentRound": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              },
+              "isFinal": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "roundsTotal",
+              "roundsCompleted",
+              "currentRound",
+              "isFinal"
+            ]
           }
         },
         "required": [
@@ -13395,7 +13663,8 @@
           "rows",
           "sourceRevisionMax",
           "updatedAt",
-          "playoffSpots"
+          "playoffSpots",
+          "swiss"
         ]
       },
       "CompetitionTeamManagementDetail": {
@@ -15794,7 +16063,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "teams": {
@@ -16027,7 +16297,8 @@
                         "league",
                         "knockout",
                         "groups-knockout",
-                        "league-playoffs"
+                        "league-playoffs",
+                        "swiss"
                       ]
                     },
                     "teams": {
@@ -16560,6 +16831,12 @@
               "resolutionMode",
               "officialMatches"
             ]
+          },
+          "closedWithoutResult": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
           }
         },
         "required": [
@@ -16727,7 +17004,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "timeZone": {
@@ -16745,6 +17023,13 @@
             },
             "minItems": 2
           },
+          "withdrawnTeamIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
           "stages": {
             "type": "array",
             "items": {
@@ -16760,7 +17045,8 @@
                     "league",
                     "groups",
                     "knockout",
-                    "playoffs"
+                    "playoffs",
+                    "swiss"
                   ]
                 },
                 "order": {
@@ -17107,6 +17393,12 @@
                                 "id",
                                 "resolutionMode",
                                 "officialMatches"
+                              ]
+                            },
+                            "closedWithoutResult": {
+                              "type": "boolean",
+                              "enum": [
+                                true
                               ]
                             }
                           },
@@ -17499,6 +17791,12 @@
                     "resolutionMode",
                     "officialMatches"
                   ]
+                },
+                "closedWithoutResult": {
+                  "type": "boolean",
+                  "enum": [
+                    true
+                  ]
                 }
               },
               "required": [
@@ -17591,7 +17889,8 @@
               "league",
               "groups",
               "knockout",
-              "playoffs"
+              "playoffs",
+              "swiss"
             ]
           },
           "order": {
@@ -17939,6 +18238,12 @@
                           "resolutionMode",
                           "officialMatches"
                         ]
+                      },
+                      "closedWithoutResult": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
                       }
                     },
                     "required": [
@@ -18026,6 +18331,18 @@
             },
             "required": [
               "teamCount"
+            ]
+          },
+          "swiss": {
+            "type": "object",
+            "properties": {
+              "rounds": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "rounds"
             ]
           }
         },
@@ -18450,7 +18767,8 @@
               "formulaVersion": {
                 "type": "string",
                 "enum": [
-                  "points-gd-gf-v1"
+                  "points-gd-gf-v1",
+                  "swiss-points-buchholz-gd-gf-v1"
                 ]
               },
               "rows": {
@@ -18507,6 +18825,27 @@
                         ]
                       },
                       "maxItems": 5
+                    },
+                    "swiss": {
+                      "type": "object",
+                      "properties": {
+                        "buchholz": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "byes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "withdrawn": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "buchholz",
+                        "byes",
+                        "withdrawn"
+                      ]
                     }
                   },
                   "required": [
@@ -18538,6 +18877,38 @@
                   "null"
                 ],
                 "exclusiveMinimum": 0
+              },
+              "swiss": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "roundsTotal": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "roundsCompleted": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "currentRound": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "isFinal": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "roundsTotal",
+                  "roundsCompleted",
+                  "currentRound",
+                  "isFinal"
+                ]
               }
             },
             "required": [
@@ -18547,7 +18918,8 @@
               "rows",
               "sourceRevisionMax",
               "updatedAt",
-              "playoffSpots"
+              "playoffSpots",
+              "swiss"
             ]
           }
         },
@@ -18863,7 +19235,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "timeZone": {
@@ -18881,6 +19254,13 @@
                 },
                 "minItems": 2
               },
+              "withdrawnTeamIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
               "stages": {
                 "type": "array",
                 "items": {
@@ -18896,7 +19276,8 @@
                         "league",
                         "groups",
                         "knockout",
-                        "playoffs"
+                        "playoffs",
+                        "swiss"
                       ]
                     },
                     "order": {
@@ -19243,6 +19624,12 @@
                                     "id",
                                     "resolutionMode",
                                     "officialMatches"
+                                  ]
+                                },
+                                "closedWithoutResult": {
+                                  "type": "boolean",
+                                  "enum": [
+                                    true
                                   ]
                                 }
                               },
@@ -23329,7 +23716,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "platform": {
@@ -23478,6 +23866,17 @@
                         ]
                       },
                       "maxItems": 5
+                    },
+                    "buchholz": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "byes": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "withdrawn": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -23496,6 +23895,39 @@
                   "additionalProperties": false
                 }
               },
+              "swiss": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "roundsTotal": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "roundsCompleted": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "currentRound": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "isFinal": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "roundsTotal",
+                  "roundsCompleted",
+                  "currentRound",
+                  "isFinal"
+                ],
+                "additionalProperties": false
+              },
               "updatedAt": {
                 "type": [
                   "string",
@@ -23506,6 +23938,7 @@
             },
             "required": [
               "rows",
+              "swiss",
               "updatedAt"
             ],
             "additionalProperties": false
@@ -24125,7 +24558,8 @@
                         "league",
                         "knockout",
                         "groups-knockout",
-                        "league-playoffs"
+                        "league-playoffs",
+                        "swiss"
                       ]
                     },
                     "teams": {
@@ -30744,7 +31178,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "platform": {
@@ -30950,6 +31385,17 @@
               ]
             },
             "maxItems": 5
+          },
+          "buchholz": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "byes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "withdrawn": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -33974,7 +34420,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "teams": {
@@ -34513,6 +34960,28 @@
           "approvalBasis",
           "proposalId",
           "approvedAt"
+        ]
+      },
+      "WithdrawSwissTeamRequest": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "teamId",
+          "reason"
         ]
       }
     },

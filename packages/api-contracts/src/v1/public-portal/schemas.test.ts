@@ -58,7 +58,7 @@ describe("public portal wire schemas", () => {
   });
 
   it("rejects private statistics keys on a standings row", () => {
-    const body = (row: object) => ({ standings: { rows: [row], updatedAt: null } });
+    const body = (row: object) => ({ standings: { rows: [row], swiss: null, updatedAt: null } });
     expect(getPublicStandingsResponseSchema.safeParse(body(standingRow)).success).toBe(true);
     for (const extra of [
       { organizationId: "org-1" },
@@ -69,6 +69,22 @@ describe("public portal wire schemas", () => {
         getPublicStandingsResponseSchema.safeParse(body({ ...standingRow, ...extra })).success,
       ).toBe(false);
     }
+  });
+
+  it("admits the Swiss tie-break fields and progress, but no team ids on them", () => {
+    const body = (swiss: object | null) => ({
+      standings: {
+        rows: [{ ...standingRow, buchholz: 6, byes: 1, withdrawn: true }],
+        swiss,
+        updatedAt: null,
+      },
+    });
+    const progress = { roundsTotal: 3, roundsCompleted: 1, currentRound: 2, isFinal: false };
+    expect(getPublicStandingsResponseSchema.safeParse(body(progress)).success).toBe(true);
+    expect(
+      getPublicStandingsResponseSchema.safeParse(body({ ...progress, withdrawnTeamIds: ["t"] }))
+        .success,
+    ).toBe(false);
   });
 
   it("rejects candidates, slots and provider payloads on a calendar entry", () => {

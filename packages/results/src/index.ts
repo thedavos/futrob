@@ -189,6 +189,11 @@ export {
   type ConfirmOfficialSelectionInput,
 } from "./application/confirm-official-selection/confirm-official-selection.use-case.ts";
 export {
+  CancelOpenSelectionUseCase,
+  type CancelOpenSelectionInput,
+  type CancelOpenSelectionOutput,
+} from "./application/cancel-open-selection/cancel-open-selection.use-case.ts";
+export {
   VoidOfficialResultUseCase,
   type VoidOfficialResultDependencies,
   type VoidOfficialResultInput,

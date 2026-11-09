@@ -138,6 +138,11 @@ async function setup() {
     participants: { participantsChanged: async () => undefined },
     scores: { listApproved: async () => scores },
     source: { load: async () => source },
+    swissRounds: {
+      execute: async () => {
+        throw new Error("Only a Swiss plan delegates to the Swiss reconciliation");
+      },
+    },
   });
   const advance = async (encounterId: EncounterId) => {
     const outcome = await useCase.execute({ organizationId, competitionId, encounterId });

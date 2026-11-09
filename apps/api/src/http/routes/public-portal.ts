@@ -39,10 +39,10 @@ export function registerPublicPortalRoutes(app: Hono, deps: AppDeps): void {
       key: asPublicCompetitionKey(c.req.valid("param").publicKey),
     });
     if (!result.isOk()) return failureToHttp(result.error);
-    const { rows, updatedAt } = result.value;
+    const { rows, swiss, updatedAt } = result.value;
     return publicJsonResponse(
       getPublicStandingsResponseSchema.parse({
-        standings: { rows, updatedAt: updatedAt ? updatedAt.toISOString() : null },
+        standings: { rows, swiss, updatedAt: updatedAt ? updatedAt.toISOString() : null },
       }),
     );
   });

@@ -215,7 +215,11 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
     if (outcome.isErr())
       return failureToHttp(
         outcome.error,
-        outcome.error.code === "results.official_result_forbidden" ? 403 : 404,
+        outcome.error.code === "results.official_result_forbidden"
+          ? 403
+          : outcome.error.code === "scheduling.advancement_not_reversible"
+            ? 409
+            : 404,
       );
     const result = outcome.value;
     return jsonResponse({

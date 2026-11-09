@@ -62,11 +62,6 @@ export function planFeatureRows(plan: OrganizationPlan, t: Translator): readonly
       included: features.competitionFormats.includes(format),
       label: t("pricing.format", { format: t(key) }),
     })),
-    // Announced, not built: no domain format or catalog entry yet (WONT-04 in the MVP scope).
-    {
-      included: plan.key !== "free",
-      label: t("pricing.format", { format: t("pricing.formatSwiss") }),
-    },
     {
       included: features.automaticProviderSync,
       label: t("billing.features.automaticProviderSync"),
