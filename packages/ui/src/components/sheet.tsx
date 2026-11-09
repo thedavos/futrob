@@ -3,7 +3,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
@@ -159,7 +159,11 @@ function SheetContent({
   side = "right",
   closeLabel = "Cerrar",
   ...props
-}: DialogPrimitive.Popup.Props & { side?: SheetSide; closeLabel?: string }) {
+}: Omit<DialogPrimitive.Popup.Props, "className"> & {
+  side?: SheetSide;
+  closeLabel?: string;
+  className?: HostClassName;
+}) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop {...applyProps(undefined, undefined, styles.backdrop)} />
@@ -180,23 +184,39 @@ function SheetContent({
   );
 }
 
-function SheetHeader({ className, style, ...props }: ComponentProps<"div">) {
+function SheetHeader({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return (
     <div data-slot="sheet-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
-function SheetBody({ className, style, ...props }: ComponentProps<"div">) {
+function SheetBody({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return <div data-slot="sheet-body" {...applyProps(className, style, styles.body)} {...props} />;
 }
 
-function SheetFooter({ className, style, ...props }: ComponentProps<"div">) {
+function SheetFooter({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return (
     <div data-slot="sheet-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
 }
 
-function SheetTitle({ className, style, ...props }: DialogPrimitive.Title.Props) {
+function SheetTitle({
+  className,
+  style,
+  ...props
+}: Omit<DialogPrimitive.Title.Props, "className"> & { className?: HostClassName }) {
   return (
     <DialogPrimitive.Title
       data-slot="sheet-title"
