@@ -41,6 +41,7 @@ import {
 } from "./competition-fixture-state.ts";
 import type { CompetitionFixtureView } from "./competition-fixture-view.ts";
 import { styles } from "./competition-fixture-page.styles.ts";
+import { FixtureCalendar, type FixtureCalendarViewKind } from "./fixture-calendar.tsx";
 import { SwissRoundActions } from "./swiss-fixture-actions.tsx";
 import type { SwissFixtureCommands } from "./swiss-fixture-commands.ts";
 import { SwissFixtureGenerateForm, type FixtureNotice } from "./swiss-fixture-generate-form.tsx";
@@ -96,13 +97,18 @@ export function CompetitionFixtureRoute({ competitionId, organizationId }: Scope
 export function CompetitionFixturePageView({
   commands,
   competitionId,
+  initialView,
+  now,
   organizationId,
   state,
 }: Scope & {
   readonly commands?: SwissFixtureCommands;
+  readonly initialView?: FixtureCalendarViewKind;
+  readonly now?: Date;
   readonly state: CompetitionFixturePageState;
 }) {
   const { locale, t } = useI18n();
+  const [openedAt] = useState(() => new Date());
   // Page-level: a generated fixture swaps the form for the list, and the outcome must survive it.
   const [notice, setNotice] = useState<FixtureNotice | null>(null);
   return (
@@ -173,6 +179,18 @@ export function CompetitionFixturePageView({
               </div>
             );
           case "ready":
+            if (!state.view.swiss)
+              return (
+                <FixtureCalendar
+                  competitionId={competitionId}
+                  organizationId={organizationId}
+                  initialView={initialView}
+                  now={now ?? openedAt}
+                  refreshFailed={state.refreshFailed}
+                  retry={state.retry}
+                  view={state.view}
+                />
+              );
             return (
               <FixtureList
                 commands={state.canManageSwiss ? commands : undefined}

@@ -32,6 +32,46 @@ const ENGLISH_SMALL_NUMBERS: Readonly<Record<number, string>> = {
 };
 
 const es = {
+  "bracket.documentTitle": "Bracket",
+  "bracket.loading": "Cargando el cuadro",
+  "bracket.error": "No pudimos cargar el cuadro.",
+  "bracket.refreshError": "No pudimos actualizar el cuadro. Ves la última lectura correcta.",
+  "bracket.empty.title": "Aún no hay cuadro",
+  "bracket.empty.description":
+    "Cuando se genere el fixture, verás aquí las eliminatorias de la primera ronda a la final.",
+  "bracket.noBracket.title": "Esta competición no tiene eliminatorias",
+  "bracket.noBracket.description":
+    "Su formato se juega por jornadas. Consulta cada enfrentamiento en el calendario.",
+  "bracket.calendarLink": "Ver calendario",
+  "bracket.facts": "Resumen de la etapa",
+  "bracket.rounds.one": "1 ronda",
+  "bracket.rounds.other": ({ count }) => `${count} rondas`,
+  "bracket.encounters.one": "1 cruce",
+  "bracket.encounters.other": ({ count }) => `${count} cruces`,
+  "bracket.byes.one": "1 descanso",
+  "bracket.byes.other": ({ count }) => `${count} descansos`,
+  "bracket.twoLegs": "Ida y vuelta",
+  "bracket.hint": "De izquierda a derecha. Desliza el cuadro o abre la lista por rondas.",
+  "bracket.canvasLabel": ({ stage }) => `Cuadro desplazable: ${stage}`,
+  "bracket.unlinked.one": "1 plaza no indica de qué cruce llega, así que no tiene línea.",
+  "bracket.unlinked.other": ({ count }) =>
+    `${count} plazas no indican de qué cruce llegan, así que no tienen línea.`,
+  "bracket.node.number": ({ number }) => `Cruce ${number}`,
+  "bracket.node.label": ({ away, home, kickoff, number, round, status }) =>
+    `${round}, cruce ${number}: ${home} contra ${away}. ${kickoff}. ${status}.`,
+  "bracket.node.outsideFilter": "Fuera del filtro.",
+  "bracket.status.scheduled": "Programado",
+  "bracket.status.pending": "Rival por definir",
+  "bracket.status.bye": "Sin rival",
+  "bracket.filter.team": "Seguir a un equipo",
+  "bracket.filter.allTeams": "Todos los equipos",
+  "bracket.filter.summary": ({ shown, total }) =>
+    `${shown} de ${total} cruces destacados. El cuadro conserva su estructura.`,
+  "bracket.filter.clear": "Quitar filtro",
+  "bracket.list.toggle": "Ver eliminatorias en lista",
+  "bracket.list.matchup": ({ away, home }) => `${home} vs ${away}`,
+  "bracket.list.noneForTeam": "Este equipo no juega cruces de esta ronda.",
+
   "profile.title": "Mi perfil",
   "profile.description": "Tu identidad en Futrob y tus cuentas de juego.",
   "profile.name": "Nombre visible",
@@ -2541,12 +2581,70 @@ const es = {
   "fixture.slots": ({ count }) => (Number(count) === 1 ? "1 partido" : `${count} partidos`),
   "fixture.group": ({ group }) => `Grupo ${group}`,
   "fixture.open": ({ home, away }) => `Abrir ${home} vs ${away}`,
+  "fixture.openAt": ({ home, away, date }) => `Abrir ${home} vs ${away}, ${date}`,
+  "fixture.views.label": "Vista del calendario",
+  "fixture.views.agenda": "Agenda",
+  "fixture.views.month": "Calendario",
+  "fixture.views.rounds": "Jornadas",
+  "fixture.filters.label": "Filtrar enfrentamientos",
+  "fixture.filters.team": "Equipo",
+  "fixture.filters.allTeams": "Todos los equipos",
+  "fixture.filters.round": "Ronda",
+  "fixture.filters.allRounds": "Todas las rondas",
+  "fixture.filters.roundOption": ({ stage, round }) => `${stage} · ${round}`,
+  "fixture.filters.reset": "Limpiar filtros",
+  "fixture.filtered.title": "Sin enfrentamientos con estos filtros",
+  "fixture.filtered.description": "Prueba con otro equipo o muestra todas las rondas.",
+  "fixture.encounters": ({ count }) =>
+    Number(count) === 1 ? "1 enfrentamiento" : `${count} enfrentamientos`,
+  "fixture.summary": ({ count, dates }) =>
+    `${Number(count) === 1 ? "1 enfrentamiento" : `${count} enfrentamientos`} en ${
+      Number(dates) === 1 ? "1 fecha" : `${dates} fechas`
+    }`,
+  "fixture.agenda.label": "Enfrentamientos por fecha",
+  "fixture.agenda.nextDate": "Próxima fecha",
+  "fixture.agenda.overview": "Resumen del calendario",
+  "fixture.agenda.noNextDate": "Sin fechas pendientes",
+  "fixture.agenda.dates": "Fechas",
+  "fixture.agenda.encounters": "Enfrentamientos",
+  "fixture.agenda.timeZone": "Zona horaria",
+  "fixture.month.label": "Mes del calendario",
+  "fixture.month.previous": "Mes anterior",
+  "fixture.month.next": "Mes siguiente",
+  "fixture.month.goToNext": "Próxima fecha",
+  "fixture.month.day": ({ date, count }) =>
+    `${date}: ${Number(count) === 1 ? "1 enfrentamiento" : `${count} enfrentamientos`}`,
+  "fixture.month.more": ({ count }) => `+${count} más`,
+  "fixture.month.selectedDay": "Día seleccionado",
+  "fixture.month.emptyDay": "No hay enfrentamientos este día.",
+  "fixture.month.emptyMonth": "No hay enfrentamientos este mes.",
+  "fixture.month.goTo": ({ month }) => `Ver ${month}`,
+  "fixture.rounds.current": "Próxima",
+  "fixture.rounds.emptyRound": "Sin enfrentamientos con estos filtros.",
+  "fixture.rounds.scroll": ({ stage }) => `Jornadas de ${stage}`,
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "bracket.rounds.other": { readonly count: number };
+  readonly "bracket.encounters.other": { readonly count: number };
+  readonly "bracket.byes.other": { readonly count: number };
+  readonly "bracket.canvasLabel": { readonly stage: string };
+  readonly "bracket.unlinked.other": { readonly count: number };
+  readonly "bracket.node.number": { readonly number: number };
+  readonly "bracket.node.label": {
+    readonly away: string;
+    readonly home: string;
+    readonly kickoff: string;
+    readonly number: number;
+    readonly round: string;
+    readonly status: string;
+  };
+  readonly "bracket.filter.summary": { readonly shown: number; readonly total: number };
+  readonly "bracket.list.matchup": { readonly away: string; readonly home: string };
+
   readonly "billing.plan.status.trialing": { readonly date: string };
   readonly "billing.plan.status.lapsed": { readonly plan: string };
   readonly "billing.plan.upgrade": { readonly plan: string };
@@ -2837,6 +2935,18 @@ export interface MessageParamsByKey {
   readonly "fixture.slots": { readonly count: number };
   readonly "fixture.group": { readonly group: string };
   readonly "fixture.open": { readonly home: string; readonly away: string };
+  readonly "fixture.openAt": {
+    readonly home: string;
+    readonly away: string;
+    readonly date: string;
+  };
+  readonly "fixture.filters.roundOption": { readonly stage: string; readonly round: string };
+  readonly "fixture.encounters": { readonly count: number };
+  readonly "fixture.summary": { readonly count: number; readonly dates: number };
+  readonly "fixture.month.day": { readonly date: string; readonly count: number };
+  readonly "fixture.month.more": { readonly count: number };
+  readonly "fixture.month.goTo": { readonly month: string };
+  readonly "fixture.rounds.scroll": { readonly stage: string };
   readonly "fixture.round.pending": { readonly number: number };
   readonly "fixture.round.expected": { readonly date: string };
   readonly "fixture.bye": { readonly team: string };
@@ -2854,6 +2964,46 @@ export type ParameterizedMessageKey = keyof MessageParamsByKey;
 export type ParameterlessMessageKey = Exclude<MessageKey, ParameterizedMessageKey>;
 
 const en: Catalog = {
+  "bracket.documentTitle": "Bracket",
+  "bracket.loading": "Loading the bracket",
+  "bracket.error": "We couldn't load the bracket.",
+  "bracket.refreshError": "We couldn't refresh the bracket. You're seeing the last good read.",
+  "bracket.empty.title": "No bracket yet",
+  "bracket.empty.description":
+    "Once the fixture is generated, you'll see every knockout round here, through to the final.",
+  "bracket.noBracket.title": "This competition has no knockout rounds",
+  "bracket.noBracket.description":
+    "Its format is played by matchday. Check each encounter in the schedule.",
+  "bracket.calendarLink": "View schedule",
+  "bracket.facts": "Stage summary",
+  "bracket.rounds.one": "1 round",
+  "bracket.rounds.other": ({ count }) => `${count} rounds`,
+  "bracket.encounters.one": "1 tie",
+  "bracket.encounters.other": ({ count }) => `${count} ties`,
+  "bracket.byes.one": "1 bye",
+  "bracket.byes.other": ({ count }) => `${count} byes`,
+  "bracket.twoLegs": "Two legs",
+  "bracket.hint": "Left to right. Swipe the bracket or open the list by round.",
+  "bracket.canvasLabel": ({ stage }) => `Scrollable bracket: ${stage}`,
+  "bracket.unlinked.one": "1 place doesn't say which tie it comes from, so it has no line.",
+  "bracket.unlinked.other": ({ count }) =>
+    `${count} places don't say which tie they come from, so they have no line.`,
+  "bracket.node.number": ({ number }) => `Tie ${number}`,
+  "bracket.node.label": ({ away, home, kickoff, number, round, status }) =>
+    `${round}, tie ${number}: ${home} vs ${away}. ${kickoff}. ${status}.`,
+  "bracket.node.outsideFilter": "Outside the filter.",
+  "bracket.status.scheduled": "Scheduled",
+  "bracket.status.pending": "Opponent to be decided",
+  "bracket.status.bye": "No opponent",
+  "bracket.filter.team": "Follow a team",
+  "bracket.filter.allTeams": "All teams",
+  "bracket.filter.summary": ({ shown, total }) =>
+    `${shown} of ${total} ties highlighted. The bracket keeps its shape.`,
+  "bracket.filter.clear": "Clear filter",
+  "bracket.list.toggle": "View ties as a list",
+  "bracket.list.matchup": ({ away, home }) => `${home} vs ${away}`,
+  "bracket.list.noneForTeam": "This team has no ties in this round.",
+
   "profile.title": "My profile",
   "profile.description": "Your Futrob identity and game accounts.",
   "profile.name": "Display name",
@@ -5325,6 +5475,47 @@ const en: Catalog = {
   "fixture.slots": ({ count }) => (Number(count) === 1 ? "1 match" : `${count} matches`),
   "fixture.group": ({ group }) => `Group ${group}`,
   "fixture.open": ({ home, away }) => `Open ${home} vs ${away}`,
+  "fixture.openAt": ({ home, away, date }) => `Open ${home} vs ${away}, ${date}`,
+  "fixture.views.label": "Schedule view",
+  "fixture.views.agenda": "Agenda",
+  "fixture.views.month": "Calendar",
+  "fixture.views.rounds": "Rounds",
+  "fixture.filters.label": "Filter encounters",
+  "fixture.filters.team": "Team",
+  "fixture.filters.allTeams": "All teams",
+  "fixture.filters.round": "Round",
+  "fixture.filters.allRounds": "All rounds",
+  "fixture.filters.roundOption": ({ stage, round }) => `${stage} · ${round}`,
+  "fixture.filters.reset": "Clear filters",
+  "fixture.filtered.title": "No encounters match these filters",
+  "fixture.filtered.description": "Try another team or show every round.",
+  "fixture.encounters": ({ count }) =>
+    Number(count) === 1 ? "1 encounter" : `${count} encounters`,
+  "fixture.summary": ({ count, dates }) =>
+    `${Number(count) === 1 ? "1 encounter" : `${count} encounters`} on ${
+      Number(dates) === 1 ? "1 date" : `${dates} dates`
+    }`,
+  "fixture.agenda.label": "Encounters by date",
+  "fixture.agenda.nextDate": "Next date",
+  "fixture.agenda.overview": "Schedule overview",
+  "fixture.agenda.noNextDate": "No dates ahead",
+  "fixture.agenda.dates": "Dates",
+  "fixture.agenda.encounters": "Encounters",
+  "fixture.agenda.timeZone": "Time zone",
+  "fixture.month.label": "Schedule month",
+  "fixture.month.previous": "Previous month",
+  "fixture.month.next": "Next month",
+  "fixture.month.goToNext": "Next date",
+  "fixture.month.day": ({ date, count }) =>
+    `${date}: ${Number(count) === 1 ? "1 encounter" : `${count} encounters`}`,
+  "fixture.month.more": ({ count }) => `+${count} more`,
+  "fixture.month.selectedDay": "Selected day",
+  "fixture.month.emptyDay": "No encounters on this day.",
+  "fixture.month.emptyMonth": "No encounters this month.",
+  "fixture.month.goTo": ({ month }) => `Go to ${month}`,
+  "fixture.rounds.current": "Up next",
+  "fixture.rounds.emptyRound": "No encounters match these filters.",
+  "fixture.rounds.scroll": ({ stage }) => `${stage} rounds`,
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;
