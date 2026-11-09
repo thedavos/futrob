@@ -1,15 +1,7 @@
 "use client";
 
 import { useRouterState } from "@tanstack/react-router";
-import {
-  createContext,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { FeedbackDialog } from "@/modules/identity/presentation/account/feedback-dialog.tsx";
 import { SettingsDialog } from "@/modules/identity/presentation/account/settings-dialog.tsx";
 
