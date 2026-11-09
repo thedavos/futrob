@@ -12,7 +12,6 @@ import { PostgresActorPreferencesRepository } from "./postgres-actor-preferences
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const migrationsDirectory = resolve(import.meta.dirname, "../../../migrations");
 const pools: Pool[] = [];
-const TEST_TIMEOUT_MS = 60_000;
 
 afterAll(async () => {
   for (const pool of pools.splice(0)) {
@@ -42,28 +41,24 @@ const cases: Array<[string, () => Promise<ActorPreferencesPort> | ActorPreferenc
 ];
 if (databaseUrl) cases.push(["Postgres", postgresRepository]);
 
-describe.each(cases)(
-  "actor preferences %s repository",
-  { timeout: TEST_TIMEOUT_MS },
-  (_name, createRepository) => {
-    it("stores one replaceable layout per actor", async () => {
-      const repository = await createRepository();
-      const actorA = asActorId("actor-a");
-      const actorB = asActorId("actor-b");
-      const updatedAt = new Date("2026-11-06T10:00:00.000Z");
+describe.each(cases)("actor preferences %s repository", (_name, createRepository) => {
+  it("stores one replaceable layout per actor", async () => {
+    const repository = await createRepository();
+    const actorA = asActorId("actor-a");
+    const actorB = asActorId("actor-b");
+    const updatedAt = new Date("2026-11-06T10:00:00.000Z");
 
-      await expect(repository.findByActor(actorA)).resolves.toBeNull();
+    await expect(repository.findByActor(actorA)).resolves.toBeNull();
 
-      await repository.save({ actorId: actorA, sidebarLayout: "pending-queue", updatedAt });
-      await repository.save({ actorId: actorA, sidebarLayout: "navigation", updatedAt });
-      await repository.save({ actorId: actorB, sidebarLayout: "pending-queue", updatedAt });
+    await repository.save({ actorId: actorA, sidebarLayout: "pending-queue", updatedAt });
+    await repository.save({ actorId: actorA, sidebarLayout: "navigation", updatedAt });
+    await repository.save({ actorId: actorB, sidebarLayout: "pending-queue", updatedAt });
 
-      await expect(repository.findByActor(actorA)).resolves.toEqual({
-        sidebarLayout: "navigation",
-      });
-      await expect(repository.findByActor(actorB)).resolves.toEqual({
-        sidebarLayout: "pending-queue",
-      });
+    await expect(repository.findByActor(actorA)).resolves.toEqual({
+      sidebarLayout: "navigation",
     });
-  },
-);
+    await expect(repository.findByActor(actorB)).resolves.toEqual({
+      sidebarLayout: "pending-queue",
+    });
+  });
+});

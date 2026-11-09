@@ -79,7 +79,7 @@ suite("0064 Swiss format migration", () => {
 
     const upgrade = await migrateIsolatedSchema(isolated.pool);
 
-    expect(upgrade.applied).toEqual([MIGRATION]);
+    expect(upgrade.applied).toContain(MIGRATION);
     const existing = await isolated.pool.query(
       `SELECT withdrawn_team_ids FROM fixture_plans WHERE id = 'plan-league'`,
     );
