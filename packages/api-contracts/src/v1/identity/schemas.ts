@@ -11,6 +11,23 @@ import {
   playerProfileSchema,
 } from "../teams/schemas.ts";
 
+export const sidebarLayoutSchema = z.enum(["navigation", "pending-queue"]);
+export type SidebarLayoutDto = z.infer<typeof sidebarLayoutSchema>;
+
+export const actorPreferencesSchema = z.object({
+  sidebarLayout: sidebarLayoutSchema,
+});
+export type ActorPreferencesDto = z.infer<typeof actorPreferencesSchema>;
+
+export const getActorPreferencesResponseSchema = actorPreferencesSchema;
+export type GetActorPreferencesResponse = z.infer<typeof getActorPreferencesResponseSchema>;
+
+export const saveActorPreferencesRequestSchema = actorPreferencesSchema;
+export type SaveActorPreferencesRequest = z.infer<typeof saveActorPreferencesRequestSchema>;
+
+export const saveActorPreferencesResponseSchema = actorPreferencesSchema;
+export type SaveActorPreferencesResponse = z.infer<typeof saveActorPreferencesResponseSchema>;
+
 export const onboardingPathSchema = z.enum(["player", "organization", "invitation"]);
 export const onboardingStepSchema = z.enum([
   "intention",

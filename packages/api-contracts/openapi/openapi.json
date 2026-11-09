@@ -26,6 +26,10 @@
       "description": "Provider observations (neutral DTOs; EA stays server-side)"
     },
     {
+      "name": "identity",
+      "description": "Actor account preferences"
+    },
+    {
       "name": "onboarding",
       "description": "Actor onboarding state and path completion"
     },
@@ -2891,6 +2895,97 @@
                     ]
                   }
                 }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
+    "/identity/preferences": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Current preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorPreferences"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "getActorPreferences",
+        "tags": [
+          "identity"
+        ],
+        "summary": "Get the authenticated actor interface preferences",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Saved preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorPreferences"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "saveActorPreferences",
+        "tags": [
+          "identity"
+        ],
+        "summary": "Replace the authenticated actor interface preferences",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sidebarLayout": {
+                    "type": "string",
+                    "enum": [
+                      "navigation",
+                      "pending-queue"
+                    ]
+                  }
+                },
+                "required": [
+                  "sidebarLayout"
+                ]
               }
             }
           }
@@ -11358,6 +11453,21 @@
           "reason",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "ActorPreferences": {
+        "type": "object",
+        "properties": {
+          "sidebarLayout": {
+            "type": "string",
+            "enum": [
+              "navigation",
+              "pending-queue"
+            ]
+          }
+        },
+        "required": [
+          "sidebarLayout"
         ]
       },
       "AddMyPlayerGameAccountResponse": {

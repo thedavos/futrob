@@ -1,5 +1,6 @@
 import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import {
+  ActorPreferences,
   CompleteInvitationOnboardingResponse,
   CompleteOrganizationOnboardingResponse,
   CompletePlayerOnboardingResponse,
@@ -11,8 +12,30 @@ import {
   completeOrganizationOnboardingRequestSchema,
   completePlayerOnboardingRequestSchema,
   inspectCompetitionInvitationRequestSchema,
+  saveActorPreferencesRequestSchema,
   saveOnboardingProgressRequestSchema,
 } from "@futrob/api-contracts";
+
+export const getActorPreferencesRoute = defineRoute({
+  method: "get",
+  path: "/identity/preferences",
+  operationId: "getActorPreferences",
+  tags: ["identity"],
+  summary: "Get the authenticated actor interface preferences",
+  success: { status: 200, description: "Current preferences", schema: ActorPreferences },
+  errors: [401],
+});
+
+export const saveActorPreferencesRoute = defineRoute({
+  method: "put",
+  path: "/identity/preferences",
+  operationId: "saveActorPreferences",
+  tags: ["identity"],
+  summary: "Replace the authenticated actor interface preferences",
+  body: saveActorPreferencesRequestSchema,
+  success: { status: 200, description: "Saved preferences", schema: ActorPreferences },
+  errors: [400, 401],
+});
 
 export const getOnboardingStatusRoute = defineRoute({
   method: "get",

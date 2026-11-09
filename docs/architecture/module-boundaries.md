@@ -7,7 +7,7 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 | Módulo          | Responsabilidad                                                                                                                     |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                                                                  |
+| `identity`      | Usuarios, sesiones, autenticación, estado de onboarding y preferencias del actor                                                    |
 | `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación                                                       |
 | `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC, membresías contextuales y descubrimiento autenticado de competiciones publicadas |
 | `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes y asociaciones a clubes externos                              |
