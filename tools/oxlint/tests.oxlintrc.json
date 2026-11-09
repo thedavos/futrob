@@ -49,6 +49,7 @@
         "**/apps/api/src/adapters/scheduling/schedule-change-expiry.postgres.integration.test.ts",
         "**/apps/api/src/adapters/scheduling/schedule-change-negotiation.postgres.integration.test.ts",
         "**/apps/api/src/adapters/scheduling/schedule-change-read-coherence.postgres.integration.test.ts",
+        "**/apps/api/src/adapters/scheduling/swiss-format.migration.integration.test.ts",
         "**/apps/api/src/adapters/statistics/team-performance-ranking.integration.test.ts",
         "**/apps/api/src/application/competitions/competition-application.integration.test.ts",
         "**/apps/api/src/di/billing-sync-transaction.postgres.integration.test.ts",
@@ -61,6 +62,7 @@
         "**/apps/api/src/di/onboarding-completion.postgres.integration.test.ts",
         "**/apps/api/src/di/provider-sync-candidate-association.integration.test.ts",
         "**/apps/api/src/di/reschedule-candidate-recalculation.integration.test.ts",
+        "**/apps/api/src/di/swiss-format.postgres.integration.test.ts",
         "**/apps/api/src/http/routes/official-selection-operator.integration.test.ts",
         "**/apps/api/src/http/routes/official-selection.integration.test.ts",
         "**/apps/api/src/http/routes/schedule-change-responses.test.ts",
@@ -71,7 +73,8 @@
         "**/apps/web/src/modules/scheduling/presentation/schedule-change-recovery.test.tsx",
         "**/apps/web/src/modules/statistics/presentation/competition-standings/competition-standings-page.test.tsx",
         "**/apps/web/src/modules/statistics/presentation/team-performance/team-performance-page.test.tsx",
-        "**/packages/api-contracts/src/v1/openapi/document.validity.test.ts"
+        "**/packages/api-contracts/src/v1/openapi/document.validity.test.ts",
+        "**/packages/scheduling/src/domain/policies/pair-swiss-round.test.ts"
       ],
       "rules": {
         "futrob/no-test-timeout": "off"
