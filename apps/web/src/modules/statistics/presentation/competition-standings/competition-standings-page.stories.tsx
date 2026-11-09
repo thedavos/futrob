@@ -64,6 +64,32 @@ const snapshot: CompetitionStandingSnapshotDto = {
   sourceRevisionMax: 8,
   updatedAt: "2026-10-12T01:00:00.000Z",
   playoffSpots: null,
+  swiss: null,
+};
+
+const swissRow = (
+  position: number,
+  teamId: string,
+  figures: readonly number[],
+  swiss: NonNullable<CompetitionStandingSnapshotDto["rows"][number]["swiss"]>,
+  points: number,
+) => ({ ...row(position, teamId, figures), points, swiss });
+
+const swissSnapshot: CompetitionStandingSnapshotDto = {
+  ...snapshot,
+  formulaVersion: "swiss-points-buchholz-gd-gf-v1",
+  rows: [
+    swissRow(1, "team-1", [3, 3, 0, 0, 9, 2], { buchholz: 12, byes: 0, withdrawn: false }, 9),
+    swissRow(2, "team-3", [2, 2, 0, 0, 5, 1], { buchholz: 9, byes: 1, withdrawn: false }, 9),
+    swissRow(3, "team-2", [3, 1, 0, 2, 4, 6], { buchholz: 7, byes: 0, withdrawn: false }, 3),
+    swissRow(4, "team-4", [2, 0, 0, 2, 1, 7], { buchholz: 6, byes: 1, withdrawn: true }, 3),
+  ],
+  swiss: { roundsTotal: 5, roundsCompleted: 3, currentRound: 4, isFinal: false },
+};
+
+const swissFinalSnapshot: CompetitionStandingSnapshotDto = {
+  ...swissSnapshot,
+  swiss: { roundsTotal: 5, roundsCompleted: 5, currentRound: null, isFinal: true },
 };
 
 const playoffSnapshot: CompetitionStandingSnapshotDto = {
@@ -92,6 +118,8 @@ const names = {
 type Scenario =
   | "ready"
   | "playoffs"
+  | "swiss"
+  | "swissFinal"
   | "namesLoading"
   | "namesError"
   | "refreshFailed"
@@ -122,6 +150,8 @@ const ready = (
 const STATES: Record<Scenario, CompetitionStandingsState> = {
   ready: ready(names),
   playoffs: ready(names, playoffSnapshot),
+  swiss: ready(names, swissSnapshot),
+  swissFinal: ready(names, swissFinalSnapshot),
   namesLoading: ready({ kind: "loading" }),
   namesError: ready({ kind: "unavailable" }),
   refreshFailed: {
@@ -214,6 +244,8 @@ const meta = {
       options: [
         "ready",
         "playoffs",
+        "swiss",
+        "swissFinal",
         "namesLoading",
         "namesError",
         "refreshFailed",
@@ -259,6 +291,41 @@ export const PlayoffsEnglishNarrow: Story = {
   name: "Con corte de playoff · EN 360",
   args: { scenario: "playoffs", locale: "en", narrow: true },
   parameters: { a11y: { test: "error" } },
+};
+
+export const Swiss: Story = {
+  name: "Suizo · en curso",
+  args: { scenario: "swiss" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("Ronda 4 de 5")).toBeVisible();
+    await expect(canvas.getByTitle("Buchholz: suma de los puntos de los rivales")).toBeVisible();
+    await expect(canvas.getByText("Retirado")).toBeVisible();
+    await expect(canvas.getAllByText("1 descanso")).toHaveLength(2);
+  },
+};
+
+export const SwissFinal: Story = {
+  name: "Suizo · final",
+  args: { scenario: "swissFinal" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("Clasificación final")).toBeVisible();
+    await expect(canvas.queryByText(/Ronda \d/)).toBeNull();
+  },
+};
+
+export const SwissEnglishNarrow: Story = {
+  name: "Suizo · EN 360",
+  args: { scenario: "swiss", locale: "en", narrow: true },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("Round 4 of 5")).toBeVisible();
+    await expect(canvas.getByText("Withdrawn")).toBeVisible();
+  },
 };
 
 export const ReadyEnglishNarrow: Story = {

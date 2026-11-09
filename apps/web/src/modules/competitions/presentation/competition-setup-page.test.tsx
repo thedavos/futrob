@@ -12,6 +12,7 @@ import {
 } from "@/shared/presentation/shell/shell-action-bar.tsx";
 import { leagueDraft } from "./competition-rules-fixtures.ts";
 import { CompetitionSetupPage, type CompetitionSetupStep } from "./competition-setup-page.tsx";
+import { CompetitionsClientError } from "./competitions-browser-client.ts";
 
 const updateCompetitionDraft =
   vi.fn<
@@ -25,6 +26,10 @@ vi.mock("./competitions-browser-client.ts", async (importOriginal) => ({
   listOrganizationTeams: async () => ({ teams: [] }),
   updateCompetitionDraft: (org: string, id: string, input: UpdateCompetitionDraftRequest) =>
     updateCompetitionDraft(org, id, input),
+}));
+
+vi.mock("@/modules/billing/presentation/plan-upsell-alert.tsx", () => ({
+  PlanUpsellAlert: ({ code }: { readonly code: string }) => <p>upsell {code}</p>,
 }));
 
 vi.mock("@/shared/presentation/permissions/index.ts", () => ({
@@ -96,6 +101,18 @@ afterEach(() => {
 });
 
 describe("continuing through the competition setup", () => {
+  it("shows the plan upsell, not a generic failure, when the plan leaves out the format", async () => {
+    updateCompetitionDraft.mockRejectedValue(
+      new CompetitionsClientError(402, "competitions.format_not_in_plan"),
+    );
+    renderSetup("format");
+
+    await continueFromStep();
+
+    expect(await screen.findByText("upsell competitions.format_not_in_plan")).toBeTruthy();
+    expect(screen.queryByText(/No se pudo completar la operación/)).toBeNull();
+  });
+
   it("moves from information to format while the draft is still saving", async () => {
     deferredSave();
     renderSetup("information");

@@ -59,20 +59,21 @@ se propone de nuevo sobre una selección anulada. Solo las propuestas de la rond
 
 ## Transiciones
 
-| Desde                                            | Comando (quién)                                        | Hacia                            | Efecto oficial                     |
-| ------------------------------------------------ | ------------------------------------------------------ | -------------------------------- | ---------------------------------- |
-| sin selección, `selection_in_progress`, `voided` | proponer (capitán/subcapitán de un Team del Encounter) | `awaiting_opponent_confirmation` | ninguno                            |
-| `awaiting_opponent_confirmation`                 | confirmar la versión exacta (rival)                    | `confirmed` → `approved`         | un resultado; revisión N+1         |
-| `awaiting_opponent_confirmation`                 | confirmar con flag de integridad bloqueante            | `confirmed` → `organizer_review` | ninguno                            |
-| `awaiting_opponent_confirmation`                 | rechazar con motivo (rival)                            | `disputed`                       | ninguno                            |
-| `awaiting_opponent_confirmation`                 | alternativa incompatible con motivo (rival)            | `disputed`                       | ninguno                            |
-| `awaiting_opponent_confirmation`                 | alternativa equivalente (mismos pares slot→ref)        | como confirmar                   | como confirmar                     |
-| `awaiting_opponent_confirmation`                 | abrir disputa con motivo (cualquiera de los Teams)     | `disputed`                       | ninguno                            |
-| `disputed`                                       | tomar el caso (`encounters.results.approve`)           | `organizer_review`               | ninguno                            |
-| `organizer_review`                               | resolver: aprobar una propuesta (motivo)               | `approved`                       | un resultado; revisión N+1         |
-| `organizer_review`                               | resolver: devolver a selección (motivo)                | `selection_in_progress`          | ninguno; libera referencias        |
-| `approved`                                       | anular (`encounters.results.approve`)                  | `voided`                         | el resultado pasa a `voided`       |
-| `approved`                                       | rechazar, alternativa, disputa, confirmar              | `approved`                       | error `selection_already_approved` |
+| Desde                                            | Comando (quién)                                        | Hacia                            | Efecto oficial                           |
+| ------------------------------------------------ | ------------------------------------------------------ | -------------------------------- | ---------------------------------------- |
+| sin selección, `selection_in_progress`, `voided` | proponer (capitán/subcapitán de un Team del Encounter) | `awaiting_opponent_confirmation` | ninguno                                  |
+| `awaiting_opponent_confirmation`                 | confirmar la versión exacta (rival)                    | `confirmed` → `approved`         | un resultado; revisión N+1               |
+| `awaiting_opponent_confirmation`                 | confirmar con flag de integridad bloqueante            | `confirmed` → `organizer_review` | ninguno                                  |
+| `awaiting_opponent_confirmation`                 | rechazar con motivo (rival)                            | `disputed`                       | ninguno                                  |
+| `awaiting_opponent_confirmation`                 | alternativa incompatible con motivo (rival)            | `disputed`                       | ninguno                                  |
+| `awaiting_opponent_confirmation`                 | alternativa equivalente (mismos pares slot→ref)        | como confirmar                   | como confirmar                           |
+| `awaiting_opponent_confirmation`                 | abrir disputa con motivo (cualquiera de los Teams)     | `disputed`                       | ninguno                                  |
+| `disputed`                                       | tomar el caso (`encounters.results.approve`)           | `organizer_review`               | ninguno                                  |
+| `organizer_review`                               | resolver: aprobar una propuesta (motivo)               | `approved`                       | un resultado; revisión N+1               |
+| `organizer_review`                               | resolver: devolver a selección (motivo)                | `selection_in_progress`          | ninguno; libera referencias              |
+| `approved`                                       | anular (`encounters.results.approve`)                  | `voided`                         | el resultado pasa a `voided`             |
+| cualquier estado no terminal                     | retirar equipo o cerrar ronda suiza (ADR-0027)         | `voided`                         | ninguno; disputa `returned_to_selection` |
+| `approved`                                       | rechazar, alternativa, disputa, confirmar              | `approved`                       | error `selection_already_approved`       |
 
 La matriz vive en `selection-transitions.ts` con un tipo mapeado: añadir un `SelectionStatus` sin decidir
 sus comandos no compila. `confirmed` es transitorio dentro del comando que aprueba; la auditoría lo

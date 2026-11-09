@@ -60,6 +60,16 @@ scheduling
   → CompetitionScheduleRulesReaderPort
   → competitions public API
 
+scheduling (retirar o cerrar una ronda suiza)
+  → EncounterOpenSelectionPort
+  → DeferredEncounterOpenSelectionPort (apps/api; rompe el ciclo de composición)
+  → CancelOpenSelectionUseCase (results public API)
+
+statistics (clasificación suiza al leer)
+  → CompetitionSwissStandingReaderPort
+  → FixtureSwissStandingReader (apps/api)
+  → FixturePlanRepository + resultados aprobados
+
 competition discovery (apps/api)
   → CompetitionDiscoveryReader
   → OrganizationRepository.getByIds (nombres de organizador por lote)

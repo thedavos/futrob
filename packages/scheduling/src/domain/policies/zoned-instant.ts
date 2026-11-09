@@ -66,3 +66,22 @@ export function zonedPartsEqual(left: ZonedParts, right: ZonedParts): boolean {
 function partsAsUtc(parts: ZonedParts): number {
   return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
 }
+
+/** Same local wall-clock `days` calendar days later, across any daylight-saving change. */
+export function addZonedDays(instant: Date, days: number, timeZone: string): Date {
+  const parts = zonedParts(instant, timeZone);
+  const calendar = new Date(
+    Date.UTC(parts.year, parts.month - 1, parts.day + days, parts.hour, parts.minute, parts.second),
+  );
+  return instantForZonedParts(
+    {
+      year: calendar.getUTCFullYear(),
+      month: calendar.getUTCMonth() + 1,
+      day: calendar.getUTCDate(),
+      hour: calendar.getUTCHours(),
+      minute: calendar.getUTCMinutes(),
+      second: calendar.getUTCSeconds(),
+    },
+    timeZone,
+  );
+}

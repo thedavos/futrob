@@ -16,6 +16,8 @@ export function fixtureStageLabel(kind: FixtureStageKind, t: Translator): string
       return t("competitionRules.stage.knockout");
     case "playoffs":
       return t("competitionRules.stage.playoffs");
+    case "swiss":
+      return t("competitionRules.stage.swiss");
     default: {
       const exhaustive: never = kind;
       return exhaustive;
@@ -42,6 +44,20 @@ export function fixtureRoundLabel(name: FixtureRoundName, t: Translator): string
       return exhaustive;
     }
   }
+}
+
+/** The side's name as a link's accessible name, which replaces the visible withdrawn mark. */
+export function fixtureSideAccessibleName(side: FixtureSide, t: Translator): string {
+  const label = fixtureSideLabel(side, t);
+  return side.kind === "team" && side.withdrawn
+    ? `${label} (${t("fixture.side.withdrawn")})`
+    : label;
+}
+
+/** «{team} descansa»: the side that is not the bye. */
+export function fixtureByeLabel(home: FixtureSide, away: FixtureSide, t: Translator): string {
+  const resting = home.kind === "bye" ? away : home;
+  return t("fixture.bye", { team: fixtureSideLabel(resting, t) });
 }
 
 export function fixtureSideLabel(side: FixtureSide, t: Translator): string {

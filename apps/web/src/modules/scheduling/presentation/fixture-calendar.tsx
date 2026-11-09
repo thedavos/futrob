@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useRef } from "react";
 import { CalendarBlankIcon, ClockIcon, ColumnsIcon, ListBulletsIcon } from "@phosphor-icons/react";
 import {
   applyStyles,
@@ -29,7 +30,7 @@ import {
   fixtureStageLabel,
 } from "./competition-fixture-labels.ts";
 import type { CompetitionFixtureView } from "./competition-fixture-view.ts";
-import { monthOf, zonedDateKey, type DateKey, type MonthKey } from "./fixture-calendar-dates.ts";
+import { monthOf, zonedDateKey } from "./fixture-calendar-dates.ts";
 import {
   currentFixtureRoundId,
   defaultFixtureDay,
@@ -52,6 +53,10 @@ import { FixtureCalendarRounds } from "./fixture-calendar-rounds.tsx";
 import { fixtureCalendarFormat, type FixtureCalendarScope } from "./fixture-calendar-parts.tsx";
 import { useFixtureMonthViewFits } from "./fixture-calendar-viewport.ts";
 import { styles } from "./fixture-calendar.styles.ts";
+import {
+  fixtureCalendarSearchSchema,
+  type FixtureCalendarSearch,
+} from "./fixture-calendar-search.ts";
 
 export type FixtureCalendarViewKind = "agenda" | "month" | "rounds";
 
@@ -80,10 +85,20 @@ export function FixtureCalendar({
   const { locale, t } = useI18n();
   const monthFits = useFixtureMonthViewFits();
   const teamTrigger = useRef<HTMLButtonElement>(null);
-  const [chosenView, setChosenView] = useState<FixtureCalendarViewKind>(initialView);
-  const [chosenFilters, setFilters] = useState<FixtureCalendarFilters>(NO_FIXTURE_FILTERS);
-  const [chosenMonth, setMonth] = useState<MonthKey | null>(null);
-  const [chosenDay, setDay] = useState<DateKey | null>(null);
+  const locationSearch = useRouterState({ select: (state) => state.location.search });
+  const selection = fixtureCalendarSearchSchema.parse(locationSearch);
+  const navigate = useNavigate({ from: "/orgs/$orgId/competitions/$competitionId/fixture" });
+  const changeSelection = (patch: Partial<FixtureCalendarSearch>) => {
+    void navigate({
+      replace: true,
+      resetScroll: false,
+      search: (previous) => ({ ...previous, ...patch }),
+    });
+  };
+  const chosenView = selection.view ?? initialView;
+  const chosenFilters = { teamId: selection.team ?? null, roundId: selection.round ?? null };
+  const chosenMonth = selection.month;
+  const chosenDay = selection.day;
 
   const activeView = chosenView === "month" && !monthFits ? "agenda" : chosenView;
   const today = zonedDateKey(now.toISOString(), view.timeZone);
@@ -101,9 +116,12 @@ export function FixtureCalendar({
 
   // The month and day follow the filters: a new filter reopens on its next date.
   const changeFilters = (next: FixtureCalendarFilters) => {
-    setFilters(next);
-    setMonth(null);
-    setDay(null);
+    changeSelection({
+      team: next.teamId ?? undefined,
+      round: next.roundId ?? undefined,
+      month: undefined,
+      day: undefined,
+    });
   };
 
   const resetFilters = () => {
@@ -115,7 +133,9 @@ export function FixtureCalendar({
     { value: ALL, label: t("fixture.filters.allTeams") },
     ...teams.map((team) => ({
       value: team.teamId,
-      label: team.name ?? fixtureSideLabel({ kind: "team", teamId: team.teamId, name: null }, t),
+      label:
+        team.name ??
+        fixtureSideLabel({ kind: "team", teamId: team.teamId, name: null, withdrawn: false }, t),
     })),
   ];
   const roundItems = [
@@ -177,12 +197,10 @@ export function FixtureCalendar({
             month={month}
             nextDate={nextDate}
             onMonthChange={(next) => {
-              setMonth(next);
-              setDay(null);
+              changeSelection({ month: next, day: undefined });
             }}
             onSelectDay={(day) => {
-              setMonth(monthOf(day));
-              setDay(day);
+              changeSelection({ month: monthOf(day), day });
             }}
             selectedDay={selectedDay}
             timeZone={view.timeZone}
@@ -214,7 +232,8 @@ export function FixtureCalendar({
       <Tabs
         className={styles.tabs}
         onValueChange={(value) => {
-          if (value === "agenda" || value === "month" || value === "rounds") setChosenView(value);
+          if (value === "agenda" || value === "month" || value === "rounds")
+            changeSelection({ view: value });
         }}
         value={activeView}
         variant="pills"

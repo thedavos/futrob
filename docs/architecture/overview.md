@@ -113,6 +113,8 @@ ConfirmOfficialSelection
 
 Estado actual: `apps/api/src/di/create-modules.ts` usa `NoopEventPublisher` para eventos de dominio y compone los comandos de selección (propuesta, confirmación rival, rechazo, alternativa, disputa, resolución) y la anulación con proyección de estadísticas dentro de una transacción. El outbox y los consumidores de notificaciones/analytics del diagrama son objetivo; no están conectados por ese publisher. La cola y Cron de sync de proveedores sí tienen handlers en `apps/web/src/workers/`.
 
+El avance suizo usa esta misma vía transaccional. Scheduling cancela selecciones abiertas con `EncounterOpenSelectionPort` y statistics lee el plan con `CompetitionSwissStandingReaderPort`; ambos los conecta `apps/api` ([ADR-0027](/docs/adr/0027-swiss-format-rounds-paired-by-reconciliation.md)).
+
 ## Composition roots
 
 | Scope           | Archivo                                                                    | Rol                    |
@@ -165,7 +167,7 @@ Proveedores MVP: `ea-clubs`, `manual`. Extensiones futuras (`screenshot-ocr`, co
 | organizations | organizations, normalized names, tenant memberships, grants, platform roles, authorization audit, invitation tokens |
 | competitions  | competitions, rules, stages, entries, competition memberships                                                       |
 | teams         | teams, player profiles, player game accounts, rosters, external club connections                                    |
-| scheduling    | rounds, encounters, official slots, reschedules                                                                     |
+| scheduling    | rounds, encounters, official slots, reschedules, Swiss withdrawals and round actions                                |
 | game-data     | raw observations, provider matches/clubs, sync jobs, health                                                         |
 | results       | candidates, selections, confirmations, disputes, official results                                                   |
 | statistics    | standings, official player/team stats, personal player projections, rankings                                        |

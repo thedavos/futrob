@@ -5,7 +5,7 @@ import {
   STARTING_ORGANIZATION_PLAN,
 } from "./plan-competition-formats.ts";
 
-const ALL_FORMATS = ["league", "knockout", "groups-knockout", "league-playoffs"] as const;
+const ALL_FORMATS = ["league", "knockout", "groups-knockout", "league-playoffs", "swiss"] as const;
 
 function plan(key: OrganizationPlan["key"], competitionFormats: string[]): OrganizationPlan {
   return {
@@ -39,6 +39,7 @@ describe("competitionFormatsOutsidePlan", () => {
     expect([...competitionFormatsOutsidePlan(plans, "free", ALL_FORMATS)]).toEqual([
       "groups-knockout",
       "league-playoffs",
+      "swiss",
     ]);
     expect(competitionFormatsOutsidePlan(plans, "pro", ALL_FORMATS).size).toBe(0);
   });

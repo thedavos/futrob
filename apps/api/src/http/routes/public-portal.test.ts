@@ -312,7 +312,7 @@ describe("public portal reads", () => {
     const empty = await anonymous(app, `/${competitionId}/standings`);
     expect(empty.status).toBe(200);
     await expectMatchesOpenApi(empty, "get", "/public/competitions/{publicKey}/standings");
-    expect(await empty.json()).toEqual({ standings: { rows: [], updatedAt: null } });
+    expect(await empty.json()).toEqual({ standings: { rows: [], swiss: null, updatedAt: null } });
 
     const plans = await modules.scheduling.fixturePlans.listActive(
       asOrganizationId(organizationId),
@@ -419,7 +419,9 @@ describe("public portal reads", () => {
 
     const response = await anonymous(app, `/${competitionId}/standings`);
 
-    expect(await response.json()).toEqual({ standings: { rows: [], updatedAt: null } });
+    expect(await response.json()).toEqual({
+      standings: { rows: [], swiss: null, updatedAt: null },
+    });
   });
 
   it("keeps the private statistics and competition routes behind service auth", async () => {

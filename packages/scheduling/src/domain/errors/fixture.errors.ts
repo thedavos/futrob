@@ -3,6 +3,7 @@ import {
   type CompetitionId,
   type EncounterId,
   type Permission,
+  type TeamId,
 } from "@futrob/shared-kernel";
 
 export class FixtureAuthorizationForbidden extends TaggedError("FixtureAuthorizationForbidden")<{
@@ -96,3 +97,46 @@ export type AdvanceFixtureFromOfficialResultError =
   | TieRequiresOrganizerReview
   | AdvancementNotReversible
   | FixtureUpdateConflict;
+
+export class NotSwissFixture extends TaggedError("NotSwissFixture")<{
+  code: "scheduling.not_swiss_fixture";
+  message: string;
+  fixturePlanId: string;
+}> {}
+
+export class SwissTeamNotParticipant extends TaggedError("SwissTeamNotParticipant")<{
+  code: "scheduling.swiss_team_not_participant";
+  message: string;
+  teamId: TeamId;
+}> {}
+
+export class SwissTeamAlreadyWithdrawn extends TaggedError("SwissTeamAlreadyWithdrawn")<{
+  code: "scheduling.swiss_team_already_withdrawn";
+  message: string;
+  teamId: TeamId;
+}> {}
+
+export class SwissRoundNotCurrent extends TaggedError("SwissRoundNotCurrent")<{
+  code: "scheduling.swiss_round_not_current";
+  message: string;
+  roundNumber: number;
+}> {}
+
+export type ReconcileSwissRoundsError =
+  | FixtureSourceNotFound
+  | AdvancementNotReversible
+  | FixtureUpdateConflict;
+
+type SwissCommandError =
+  | FixtureAuthorizationForbidden
+  | FixturePlanNotFound
+  | InvalidFixtureConfiguration
+  | NotSwissFixture
+  | ReconcileSwissRoundsError;
+
+export type WithdrawSwissTeamError =
+  | SwissCommandError
+  | SwissTeamNotParticipant
+  | SwissTeamAlreadyWithdrawn;
+
+export type CloseSwissRoundError = SwissCommandError | SwissRoundNotCurrent;

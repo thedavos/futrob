@@ -220,6 +220,7 @@ async function wiredScheduling() {
     officialSelections: { findLatestByEncounter: async () => null },
     encounterMutationLock: new InMemoryEncounterMutationLock(),
     encounterParticipants: { participantsChanged: async () => undefined },
+    encounterOpenSelection: { cancelOpen: async () => undefined },
     competitions,
   });
   const snapshot = {

@@ -4,7 +4,7 @@ import type {
   OrganizationPlan,
 } from "@futrob/api-contracts";
 
-const MVP_FORMATS = ["league", "knockout", "groups-knockout", "league-playoffs"];
+const MVP_FORMATS = ["league", "knockout", "groups-knockout", "league-playoffs", "swiss"];
 
 export const freeEntitlementsFixture: OrganizationEntitlements = {
   limits: { activeCompetitions: 1, teamsPerCompetition: 12, staffMembers: 2 },

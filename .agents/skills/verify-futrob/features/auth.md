@@ -37,6 +37,7 @@ Preconditions:
 
 - After onboarding, sign-out lives in the authenticated shell: menu trigger `Abrir menú de cuenta`, item `Cerrar sesión`. Bare `/onboarding` has no account menu — reload `/login` in a fresh profile if you still need a clean session mid-onboarding.
 - A 200 login followed by `Verificando tu acceso…` forever or a bounce back to `/login` is usually `BETTER_AUTH_SECRET` mismatch between web and auth, not a bad password.
+- The first anonymous `/player` visit can stall on `Verificando tu acceso…` or the renderer can Aw Snap (Chrome error 5) before the client `Navigate` to `/login`. That is **not** a passing gate and is **not** the secret-mismatch case above (mismatch is after a 200 login). Retry `/player` once, or open `/login` directly and still prove the login form. A pass remains: URL `/login` and heading `Inicia sesión`.
 - Signup validation is client-side first. An empty submit is not an auth-backend proof.
 - Auth textboxes are labelled (`Correo electrónico`, `Contraseña`, `Nombre completo`). Placeholders (`ejemplo@correo.com`, `Ingresa tu contraseña`, `Crea una contraseña`) are hints, not the accessible name. Target the FieldLabel.
 - Signup password policy is 8+ characters **and** at least one letter and one number. `12345678` fails client validation.

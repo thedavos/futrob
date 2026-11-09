@@ -1,10 +1,24 @@
 import * as stylex from "@stylexjs/stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 
 export const styles = stylex.create({
   stack: {
     display: "flex",
     flexDirection: "column",
     gap: "2rem",
+    minWidth: 0,
+  },
+  stage: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+    minWidth: 0,
+  },
+  round: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
     minWidth: 0,
   },
   list: {
@@ -14,6 +28,139 @@ export const styles = stylex.create({
     margin: 0,
     padding: 0,
     listStyle: "none",
+  },
+  row: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+    minHeight: "var(--control-height)",
+    padding: { default: "1rem", [media.sm]: "1rem 1.5rem" },
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: { default: colors.border, ":hover": colors.borderStrong },
+    borderRadius: "var(--corner-xl)",
+    backgroundColor: colors.surface,
+    color: "inherit",
+    textDecoration: "none",
+    minWidth: 0,
+    outlineColor: colors.ring,
+    outlineStyle: { default: "none", ":focus-visible": "solid" },
+    outlineWidth: 2,
+    outlineOffset: 2,
+  },
+  /** Same frame as a linked row, for what has no Encounter page to open. */
+  rowStatic: {
+    borderColor: colors.border,
+  },
+  stateRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.75rem",
+    minHeight: "var(--control-height)",
+    padding: { default: "0.75rem 1rem", [media.sm]: "0.75rem 1.5rem" },
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    borderRadius: "var(--corner-xl)",
+    minWidth: 0,
+  },
+  stateIcon: {
+    color: colors.mutedForeground,
+    flexShrink: 0,
+  },
+  stateCopy: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+    minWidth: 0,
+    flexGrow: 1,
+    flexBasis: 0,
+    overflowWrap: "anywhere",
+  },
+  roundHeader: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.75rem",
+    minWidth: 0,
+  },
+  roundActions: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.5rem",
+  },
+  swissSummary: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  notice: {
+    marginBottom: "1rem",
+  },
+  sideHome: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: "0.25rem",
+    minWidth: 0,
+  },
+  sideAway: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "0.25rem",
+    minWidth: 0,
+  },
+  generateCard: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+    padding: { default: "1.25rem", [media.sm]: "1.5rem" },
+  },
+  generateCopy: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+  },
+  generateForm: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+    minWidth: 0,
+  },
+  generateFields: {
+    display: "grid",
+    gap: "1rem",
+    alignItems: "start",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.md]: "repeat(3, minmax(0, 1fr))",
+    },
+  },
+  dialogFields: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    marginTop: "1rem",
+  },
+  rowMeta: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.5rem 0.75rem",
+  },
+  matchup: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
+    alignItems: "center",
+    gap: "0.75rem",
+  },
+  side: {
+    overflowWrap: "anywhere",
+    minWidth: 0,
   },
   skeleton: {
     minHeight: "7.5rem",

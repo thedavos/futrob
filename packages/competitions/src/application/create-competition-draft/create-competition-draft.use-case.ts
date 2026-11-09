@@ -199,7 +199,8 @@ function rulesPreset(
   format: CompetitionFormat,
 ): Pick<CompetitionRules, "regularStage" | "knockoutStage"> {
   const regularStage = format === "knockout" ? null : matchRules(1, "independent_matches");
-  const knockoutStage = format === "league" ? null : matchRules(2, "aggregate_score");
+  const knockoutStage =
+    format === "league" || format === "swiss" ? null : matchRules(2, "aggregate_score");
   return { regularStage, knockoutStage };
 }
 

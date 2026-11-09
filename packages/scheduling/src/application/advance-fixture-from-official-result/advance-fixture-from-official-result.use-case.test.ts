@@ -101,6 +101,11 @@ function setup(options: {
     },
     scores: { listApproved: async () => scores },
     source: { load: async () => source },
+    swissRounds: {
+      execute: async () => {
+        throw new Error("Only a Swiss plan delegates to the Swiss reconciliation");
+      },
+    },
   });
   const occupancy = {
     hasApprovedOfficialResult: async (ids: readonly EncounterId[]) =>

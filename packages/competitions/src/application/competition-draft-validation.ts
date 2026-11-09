@@ -10,7 +10,7 @@ export function isValidCompetitionRules(
   rules: CompetitionRules,
 ): boolean {
   const needsRegular = format !== "knockout";
-  const needsKnockout = format !== "league";
+  const needsKnockout = format !== "league" && format !== "swiss";
   if (Boolean(rules.regularStage) !== needsRegular) return false;
   if (Boolean(rules.knockoutStage) !== needsKnockout) return false;
   if (

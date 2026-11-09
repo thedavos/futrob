@@ -56,8 +56,8 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Control | Handle |
 | --- | --- |
 | Brand home | link `Futrob` on landing only (auth tunnel logo is not a link) |
-| Landing login | button/link `Iniciar sesión` |
-| Landing signup | button/link `Crear cuenta` |
+| Landing login | button `Iniciar sesión` (header `Acceso` and the below-fold final CTA) |
+| Landing signup | button `Crear cuenta` (header, hero, and the below-fold final CTA) |
 | Hero primary CTA | `Crear cuenta` → `/signup` |
 | Hero secondary CTA | button `Ver cómo funciona` → `#mecanismo` |
 | Landing nav landmark | `Acceso` |

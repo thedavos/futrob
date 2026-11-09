@@ -8,6 +8,7 @@ An organizer creates an organization, a competition draft, and continues in setu
 - `setup-draft` creates a draft from `/orgs/$orgId/competitions/new` with `Crear competición`.
 - `setup-wizard` opens `/orgs/$orgId/competitions/$competitionId/setup` with steps `information`, `format`, `rules`, `participants`, `review`.
 - `setup-cli-twin` runs `e2e-golden-path` against the live API (org → teams → entries → publish → fixture).
+- `setup-fixture-generate` generates the first fixture of a published Swiss competition from `/orgs/$orgId/competitions/$competitionId/fixture`. Recipe in [swiss-format](./swiss-format.md). Other formats have no web generate flow and show `Aún no hay calendario`.
 - `setup-forbidden` hides or disables `Crear competición` when the actor lacks `competitions.update`.
 
 ## How to get to it (user POV)
@@ -52,9 +53,9 @@ Preconditions:
 - On Postgres, `--actor` must be a real `actors.id` from signup. Invented ids such as `actor_demo` fail the actor foreign key.
 - Unique org names: reuse of `Verify Org <run-id>` can fail. Always include the run id.
 - The draft form also has `Edición del juego` and a teams/dates/cover section. Defaults (FC 27, min 2 teams) allow submit without touching those extras.
-- After `Crear competición`, the URL is `/orgs/$orgId/competitions/$competitionId/setup` without `?step=`. The wizard defaults to `information`. The header title is `Configurar competición` (not the competition name). Assert the stepper `Información`, the body heading `Información general`, and field `Nombre de la competición`.
+- After `Crear competición`, the URL is `/orgs/$orgId/competitions/$competitionId/setup` without `?step=`. The wizard defaults to `information`. The header title is `Configurar competición` (not the competition name). Assert the stepper `Información`, the body heading `Información general`, and field `Nombre de la competición`. The same information step also shows capacity (`Mínimo de equipos` / `Máximo de equipos`), optional `Fechas`, and `Identidad visual` / portada — those belong here, not on a later step.
+- A mistyped organization or competition id on setup (`?step=review` and `?step=participants` included) yields a load error (`No se pudo cargar el borrador de la competición`). Paste ids from the address bar or from `comp-show` / Postgres. Screenshot OCR commonly swaps hex lookalikes (`8`/`9`, `0`/`1`, `a`/`e`, `b`/`c`, `f`/`7`); that is the same 404 `authorization.scope_not_found`, not wizard-enforced sequencing. Re-entry with the real ids loads `Configurar competición` and `Borrador`.
 - The competitions index empty CTA is `Nueva competición`. A non-empty index lists rows only (no header create button). Org home `/orgs/$orgId` still exposes `Crear competición` when the actor has `competitions.update`. The draft form submit label remains `Crear competición`.
 - `Guardar borrador` sits on the setup action bar with `Continuar` (steps 1–4) or with registration/publish (review). It is not a substitute for `Crear competición` or `Publicar competición`.
-- A mistyped organization or competition id on setup (`?step=review` and `?step=participants` included) yields a load error (`No se pudo cargar el borrador de la competición`). Paste ids from the address bar or from `comp-show` / Postgres. Screenshot OCR commonly swaps `8`/`9` in UUIDs (`b88e` vs `b89e`, `a8d0` vs `a9d0`); that is the same 404 `authorization.scope_not_found`, not wizard-enforced sequencing. Re-entry with the real ids loads `Configurar competición` and `Borrador`.
 - A mistyped organization id on `/orgs/<id>/competitions/new` yields `scope-not-found` and the same forbidden copy as a real permission miss. Always paste the id from the address bar after `Crear organización`.
 - Never treat the CLI twin as a substitute for the UI entry points listed above.

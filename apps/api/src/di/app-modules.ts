@@ -1,3 +1,4 @@
+import type { EncounterOpenSelectionPort } from "@futrob/scheduling";
 import type { TransactionPort } from "@futrob/shared-kernel";
 import type { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
 import type { RunScheduleChangeExpiry } from "@/application/scheduling/run-schedule-change-expiry.ts";
@@ -5,6 +6,7 @@ import type { RecalculateRescheduledCandidates } from "@/application/results/rec
 import type { GetEncounterViewUseCase } from "@/application/scheduling/get-encounter-view.use-case.ts";
 import type { GetMyNextEncounterUseCase } from "@/application/scheduling/get-my-next-encounter.use-case.ts";
 import type { ListCompetitionEncountersUseCase } from "@/application/scheduling/list-competition-encounters.use-case.ts";
+import type { SwissRoundCommands } from "./swiss-round.commands.ts";
 import type { GetCurrentCompetitionFixtureViewUseCase } from "@/application/scheduling/get-current-competition-fixture-view.use-case.ts";
 import type { ListCompetitionDisputesQuery } from "@/application/results/list-competition-disputes.query.ts";
 import type {
@@ -42,6 +44,8 @@ export interface AppModules {
   readonly entryInvitations: EntryInvitationsComposition;
   /** Every selection command composed with its transaction, lock and projection. */
   readonly officialSelection: OfficialSelectionCommands;
+  /** Withdrawal and round closing composed with their transaction and locks (ADR-0027). */
+  readonly swissRoundCommands: SwissRoundCommands;
   readonly runConfirmationExpiry: RunConfirmationExpiry;
   readonly runScheduleChangeExpiry: RunScheduleChangeExpiry;
   /** Consumes applied schedule changes; recovery is the Cron calling it again. */
@@ -63,6 +67,7 @@ export interface AppModules {
   };
   readonly publicPortal: PublicPortalModule;
   readonly results: ResultsModule;
+  readonly encounterOpenSelection: EncounterOpenSelectionPort;
   readonly scheduling: SchedulingModule;
   readonly statistics: StatisticsModule;
   readonly teams: TeamsModule;

@@ -1,46 +1,93 @@
 "use client";
 
 import { useState } from "react";
+import { ENCOUNTER_PERMISSION } from "@futrob/scheduling";
 import {
+  Alert,
+  AlertDescription,
   applyStyles,
+  Caption,
   EmptyState,
   EmptyStateCopy,
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
+  Heading,
   Skeleton,
+  Text,
 } from "@futrob/ui";
 import emptyFixturesUrl from "@/assets/illustration-pending-fixtures.png";
 import accessUrl from "@/assets/illustration-permissions.png";
+import {
+  useCompetitionDraftQuery,
+  useCompetitionParticipantsQuery,
+} from "@/modules/competitions/presentation/competition-queries.ts";
+import { useSwissStandingsFinal } from "@/modules/statistics/presentation/competition-standings/competition-standings-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
+import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
-import { isFixtureRefusal, useCurrentCompetitionFixture } from "./competition-fixture-queries.ts";
+import { fixtureRoundLabel, fixtureStageLabel } from "./competition-fixture-labels.ts";
+import { ByeRow, ClosedRow, EncounterRow, UnpairedRound } from "./competition-fixture-rows.tsx";
+import {
+  isFixtureRefusal,
+  useCurrentCompetitionFixture,
+  useSwissFixtureCommands,
+} from "./competition-fixture-queries.ts";
 import {
   competitionFixturePageState,
   type CompetitionFixturePageState,
 } from "./competition-fixture-state.ts";
 import type { CompetitionFixtureView } from "./competition-fixture-view.ts";
-import { FixtureCalendar, type FixtureCalendarViewKind } from "./fixture-calendar.tsx";
 import { styles } from "./competition-fixture-page.styles.ts";
+import { FixtureCalendar, type FixtureCalendarViewKind } from "./fixture-calendar.tsx";
+import { SwissRoundActions } from "./swiss-fixture-actions.tsx";
+import type { SwissFixtureCommands } from "./swiss-fixture-commands.ts";
+import { SwissFixtureGenerateForm, type FixtureNotice } from "./swiss-fixture-generate-form.tsx";
 
 type Scope = { readonly organizationId: string; readonly competitionId: string };
 
+const CAPABILITIES = { manageSchedule: ENCOUNTER_PERMISSION.scheduleManage } as const;
+
 export function CompetitionFixtureRoute({ competitionId, organizationId }: Scope) {
   const query = useCurrentCompetitionFixture(organizationId, competitionId);
-  // Read once per visit: "today" and the next date stay put while the page is open.
-  const [now] = useState(() => new Date());
+  const access = useCapabilities({ organizationId, competitionId }, CAPABILITIES);
+  const commands = useSwissFixtureCommands(organizationId, competitionId);
   const retry = () => void query.refetch();
+  const canGenerateCheck = access.manageSchedule && query.data?.fixture === null;
+  const draft = useCompetitionDraftQuery(organizationId, competitionId, canGenerateCheck);
+  const participants = useCompetitionParticipantsQuery(
+    organizationId,
+    competitionId,
+    canGenerateCheck,
+  );
+  const swissFinal = useSwissStandingsFinal(
+    organizationId,
+    competitionId,
+    access.manageSchedule && query.data?.fixture?.format === "swiss",
+  );
+  const competition = canGenerateCheck ? draft.data?.competition : undefined;
   const state = competitionFixturePageState({
     data: query.data,
     failed: query.isError,
     refused: isFixtureRefusal(query.error),
     retry,
+    generate:
+      competition?.format === "swiss" && competition.status === "published" && participants.data
+        ? {
+            timeZone: competition.timeZone,
+            teamCount: participants.data.participants.filter((entry) => entry.status === "approved")
+              .length,
+          }
+        : null,
+    // Over means nothing is left to close or withdraw from; the plan alone cannot tell.
+    canManageSwiss: access.manageSchedule && !swissFinal,
   });
   return (
     <CompetitionFixturePageView
+      commands={commands}
       competitionId={competitionId}
-      now={now}
       organizationId={organizationId}
       state={state}
     />
@@ -48,19 +95,31 @@ export function CompetitionFixtureRoute({ competitionId, organizationId }: Scope
 }
 
 export function CompetitionFixturePageView({
+  commands,
   competitionId,
   initialView,
   now,
   organizationId,
   state,
 }: Scope & {
-  readonly state: CompetitionFixturePageState;
-  readonly now: Date;
+  readonly commands?: SwissFixtureCommands;
   readonly initialView?: FixtureCalendarViewKind;
+  readonly now?: Date;
+  readonly state: CompetitionFixturePageState;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
+  const [openedAt] = useState(() => new Date());
+  // Page-level: a generated fixture swaps the form for the list, and the outcome must survive it.
+  const [notice, setNotice] = useState<FixtureNotice | null>(null);
   return (
     <PageScaffold page="competition.fixture">
+      {notice ? (
+        <div role="status" {...applyStyles(styles.notice)}>
+          <Alert variant={notice.tone}>
+            <AlertDescription>{notice.text}</AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
       {(() => {
         switch (state.kind) {
           case "loading":
@@ -90,21 +149,60 @@ export function CompetitionFixturePageView({
               </EmptyState>
             );
           case "empty":
-            return <FixtureEmpty refreshFailed={state.refreshFailed} retry={state.retry} />;
+            return (
+              <div {...applyStyles(styles.stack)}>
+                {state.refreshFailed ? (
+                  <RetryAlert message={t("fixture.refreshError")} retry={state.retry} t={t} />
+                ) : null}
+                {state.generate && commands && state.generate.teamCount >= 2 ? (
+                  <SwissFixtureGenerateForm
+                    commands={commands}
+                    context={state.generate}
+                    onNotice={setNotice}
+                    organizationId={organizationId}
+                  />
+                ) : (
+                  <EmptyState>
+                    <EmptyStateIcon>
+                      <img alt="" data-outline="none" src={emptyFixturesUrl} />
+                    </EmptyStateIcon>
+                    <EmptyStateCopy>
+                      <EmptyStateTitle>{t("fixture.empty.title")}</EmptyStateTitle>
+                      <EmptyStateDescription>
+                        {state.generate
+                          ? t("fixture.generate.needTeams")
+                          : t("fixture.empty.description")}
+                      </EmptyStateDescription>
+                    </EmptyStateCopy>
+                  </EmptyState>
+                )}
+              </div>
+            );
           case "ready":
-            // A fixture whose rounds hold no Encounter reads as no schedule yet.
-            return hasEncounters(state.view) ? (
-              <FixtureCalendar
+            if (!state.view.swiss)
+              return (
+                <FixtureCalendar
+                  competitionId={competitionId}
+                  organizationId={organizationId}
+                  initialView={initialView}
+                  now={now ?? openedAt}
+                  refreshFailed={state.refreshFailed}
+                  retry={state.retry}
+                  view={state.view}
+                />
+              );
+            return (
+              <FixtureList
+                commands={state.canManageSwiss ? commands : undefined}
                 competitionId={competitionId}
-                initialView={initialView}
-                now={now}
+                locale={locale}
+                onNotice={setNotice}
                 organizationId={organizationId}
                 refreshFailed={state.refreshFailed}
                 retry={state.retry}
+                t={t}
                 view={state.view}
               />
-            ) : (
-              <FixtureEmpty refreshFailed={state.refreshFailed} retry={state.retry} />
             );
           default: {
             const exhaustive: never = state;
@@ -116,32 +214,107 @@ export function CompetitionFixturePageView({
   );
 }
 
-function FixtureEmpty({
+function FixtureList({
+  commands,
+  competitionId,
+  locale,
+  onNotice,
+  organizationId,
   refreshFailed,
   retry,
-}: {
+  t,
+  view,
+}: Scope & {
+  readonly commands: SwissFixtureCommands | undefined;
+  readonly locale: string;
+  readonly onNotice: (notice: FixtureNotice) => void;
   readonly refreshFailed: boolean;
   readonly retry: () => void;
+  readonly t: Translator;
+  readonly view: CompetitionFixtureView;
 }) {
-  const { t } = useI18n();
+  const kickoff = new Intl.DateTimeFormat(locale, {
+    timeZone: view.timeZone,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   return (
     <div {...applyStyles(styles.stack)}>
       {refreshFailed ? (
         <RetryAlert message={t("fixture.refreshError")} retry={retry} t={t} />
       ) : null}
-      <EmptyState>
-        <EmptyStateIcon>
-          <img alt="" data-outline="none" src={emptyFixturesUrl} />
-        </EmptyStateIcon>
-        <EmptyStateCopy>
-          <EmptyStateTitle>{t("fixture.empty.title")}</EmptyStateTitle>
-          <EmptyStateDescription>{t("fixture.empty.description")}</EmptyStateDescription>
-        </EmptyStateCopy>
-      </EmptyState>
+      <Caption as="p">{t("fixture.timeZone", { zone: view.timeZone })}</Caption>
+      {view.swiss ? (
+        <div {...applyStyles(styles.swissSummary)}>
+          <Text look="label">
+            {t("fixture.swiss.progress", {
+              paired: view.swiss.roundsPaired,
+              total: view.swiss.roundsTotal,
+            })}
+          </Text>
+          {view.swiss.withdrawn.length > 0 ? (
+            <Caption as="p">
+              {t("fixture.swiss.withdrawn", {
+                teams: view.swiss.withdrawn
+                  .map((team) => team.name ?? t("fixture.side.unknownTeam"))
+                  .join(", "),
+              })}
+            </Caption>
+          ) : null}
+        </div>
+      ) : null}
+      {view.stages.map((stage) => (
+        <section key={stage.id} aria-labelledby={stage.id} {...applyStyles(styles.stage)}>
+          <Heading as="h2" id={stage.id}>
+            {fixtureStageLabel(stage.kind, t)}
+          </Heading>
+          {stage.rounds.map((round) => (
+            <section key={round.id} aria-labelledby={round.id} {...applyStyles(styles.round)}>
+              <div {...applyStyles(styles.roundHeader)}>
+                <Heading as="h3" id={round.id}>
+                  {fixtureRoundLabel(round.name, t)}
+                </Heading>
+                {commands && view.swiss && round.number === view.swiss.currentRoundNumber ? (
+                  <SwissRoundActions
+                    canClose={round.encounters.some((encounter) => encounter.kind === "match")}
+                    commands={commands}
+                    onNotice={onNotice}
+                    organizationId={organizationId}
+                    roundNumber={round.number}
+                    swiss={view.swiss}
+                  />
+                ) : null}
+              </div>
+              {view.swiss && round.encounters.length === 0 ? (
+                <UnpairedRound kickoff={kickoff} round={round} t={t} />
+              ) : (
+                <ol {...applyStyles(styles.list)}>
+                  {round.encounters.map((encounter) => (
+                    <li key={encounter.id}>
+                      {encounter.kind === "bye" ? (
+                        <ByeRow encounter={encounter} t={t} />
+                      ) : encounter.kind === "closed" ? (
+                        <ClosedRow encounter={encounter} kickoff={kickoff} t={t} />
+                      ) : (
+                        <EncounterRow
+                          competitionId={competitionId}
+                          encounter={encounter}
+                          kickoff={kickoff}
+                          organizationId={organizationId}
+                          t={t}
+                        />
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          ))}
+        </section>
+      ))}
     </div>
   );
-}
-
-function hasEncounters(view: CompetitionFixtureView): boolean {
-  return view.stages.some((stage) => stage.rounds.some((round) => round.encounters.length > 0));
 }

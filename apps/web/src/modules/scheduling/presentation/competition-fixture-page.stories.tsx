@@ -8,14 +8,14 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { groupsKnockoutFixture, noFixture } from "./competition-fixture.fixtures.ts";
+import { groupsKnockoutFixture, noFixture, swissFixture } from "./competition-fixture.fixtures.ts";
 import { CompetitionFixturePageView } from "./competition-fixture-page.tsx";
 import {
   competitionFixturePageState,
@@ -23,6 +23,8 @@ import {
 } from "./competition-fixture-state.ts";
 import { FIXTURE_CALENDAR_NOW, leagueFixture } from "./fixture-calendar.fixtures.ts";
 import type { FixtureCalendarViewKind } from "./fixture-calendar.tsx";
+import type { SwissFixtureCommands } from "./swiss-fixture-commands.ts";
+import { fixtureCalendarSearchSchema } from "./fixture-calendar-search.ts";
 
 const styles = stylex.create({
   frame: {
@@ -35,7 +37,33 @@ const styles = stylex.create({
 
 const retry = () => undefined;
 
-type Scenario = "league" | "knockout" | "stale" | "empty" | "loading" | "notFound" | "error";
+type Scenario =
+  | "league"
+  | "knockout"
+  | "stale"
+  | "empty"
+  | "loading"
+  | "notFound"
+  | "error"
+  | "swiss"
+  | "swissManage"
+  | "swissGenerate"
+  | "swissNeedsTeams";
+
+const generateState = (teamCount: number) =>
+  competitionFixturePageState({
+    data: noFixture,
+    failed: false,
+    refused: false,
+    retry,
+    generate: { timeZone: "America/Lima", teamCount },
+  });
+
+const swissCommands: SwissFixtureCommands = {
+  generate: async () => undefined,
+  withdraw: async () => undefined,
+  closeRound: async () => undefined,
+};
 
 const STATES: Record<Scenario, CompetitionFixturePageState> = {
   league: competitionFixturePageState({
@@ -55,6 +83,21 @@ const STATES: Record<Scenario, CompetitionFixturePageState> = {
   loading: { kind: "loading" },
   notFound: { kind: "not_found" },
   error: { kind: "error", retry },
+  swiss: competitionFixturePageState({
+    data: swissFixture,
+    failed: false,
+    refused: false,
+    retry,
+  }),
+  swissManage: competitionFixturePageState({
+    data: swissFixture,
+    failed: false,
+    refused: false,
+    retry,
+    canManageSwiss: true,
+  }),
+  swissGenerate: generateState(8),
+  swissNeedsTeams: generateState(1),
 };
 
 type StoryArgs = {
@@ -69,8 +112,10 @@ function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
     const fixtureRoute = createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId/fixture",
+      validateSearch: fixtureCalendarSearchSchema,
       component: () => (
         <CompetitionFixturePageView
+          commands={swissCommands}
           competitionId="competition-1"
           initialView={initialView}
           now={FIXTURE_CALENDAR_NOW}
@@ -108,6 +153,10 @@ const SCENARIOS = [
   "loading",
   "notFound",
   "error",
+  "swiss",
+  "swissManage",
+  "swissGenerate",
+  "swissNeedsTeams",
 ] satisfies Scenario[];
 
 const meta = {
@@ -311,3 +360,91 @@ export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } 
 export const NotFound: Story = { name: "No disponible", args: { scenario: "notFound" } };
 
 export const LoadError: Story = { name: "Error", args: { scenario: "error" } };
+
+export const Swiss: Story = {
+  name: "Suizo · espectador",
+  args: { scenario: "swiss" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { name: "Fase suiza" })).toBeVisible();
+    await expect(canvas.getByText("Rondas emparejadas: 2 de 4")).toBeVisible();
+    await expect(canvas.getByText("Se empareja cuando se oficialice la ronda 2")).toBeVisible();
+    await expect(canvas.getByText("Sur United descansa").closest("a")).toBeNull();
+    await expect(canvas.getByText("No disputado").closest("a")).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Retirar equipo" })).toBeNull();
+  },
+};
+
+export const SwissEnglishNarrow: Story = {
+  name: "Suizo · EN 360",
+  args: { scenario: "swissManage", locale: "en" },
+  parameters: { ...narrow, a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { name: "Swiss stage" })).toBeVisible();
+    await expect(canvas.getByText("Maderas FC has a bye")).toBeVisible();
+    const close = canvas.getByRole("button", { name: "Close round without result" });
+    await expect(close.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+  },
+};
+
+export const SwissWithdrawDialog: Story = {
+  name: "Suizo · retirar equipo",
+  args: { scenario: "swissManage" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Retirar equipo" }));
+    const body = within(canvasElement.ownerDocument.body);
+    const dialog = within(await body.findByRole("alertdialog"));
+    await userEvent.click(dialog.getByRole("button", { name: "Confirmar retirada" }));
+    await expect(await dialog.findByText("Selecciona el equipo.")).toBeVisible();
+    await userEvent.click(dialog.getByRole("combobox", { name: "Equipo" }));
+    await userEvent.click(await body.findByRole("option", { name: "Sur United" }));
+    await userEvent.type(dialog.getByRole("textbox", { name: "Motivo" }), "Abandona el torneo");
+    await userEvent.click(dialog.getByRole("button", { name: "Confirmar retirada" }));
+    await expect(await canvas.findByText("Sur United queda retirado.")).toBeVisible();
+    await waitFor(() => expect(body.queryByRole("alertdialog")).toBeNull());
+  },
+};
+
+export const SwissCloseDialog: Story = {
+  name: "Suizo · cerrar ronda",
+  args: { scenario: "swissManage" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Cerrar ronda sin resultado" }));
+    const body = within(canvasElement.ownerDocument.body);
+    const dialog = within(await body.findByRole("alertdialog"));
+    await waitFor(() =>
+      expect(
+        dialog.getByRole("heading", { name: "Cerrar la ronda 2 sin resultado" }),
+      ).toBeVisible(),
+    );
+    await expect(dialog.getByText(/nadie suma puntos/)).toBeVisible();
+  },
+};
+
+export const SwissGenerate: Story = {
+  name: "Suizo · generar calendario",
+  args: { scenario: "swissGenerate" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { name: "Genera el calendario" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Generar calendario" }));
+    await expect(await canvas.findByText("Indica una fecha y hora futuras.")).toBeVisible();
+  },
+};
+
+export const SwissNeedsTeams: Story = {
+  name: "Suizo · faltan equipos",
+  args: { scenario: "swissNeedsTeams" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { name: "Aún no hay calendario" })).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Generar calendario" })).toBeNull();
+  },
+};

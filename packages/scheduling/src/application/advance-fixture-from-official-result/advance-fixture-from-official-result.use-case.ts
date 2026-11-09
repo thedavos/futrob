@@ -33,6 +33,7 @@ import {
   type FixtureAdvancementChange,
 } from "../../domain/policies/reconcile-fixture-advancement.ts";
 import { projectFixtureEncounter } from "../project-fixture-encounters.ts";
+import type { ReconcileSwissRoundsUseCase } from "../swiss/reconcile-swiss-rounds.use-case.ts";
 
 export interface AdvanceFixtureFromOfficialResultInput {
   readonly organizationId: OrganizationId;
@@ -67,6 +68,7 @@ export class AdvanceFixtureFromOfficialResultUseCase {
       readonly participants: EncounterParticipantsChangePort;
       readonly scores: OfficialEncounterScoreReaderPort;
       readonly source: CompetitionFixtureSourcePort;
+      readonly swissRounds: Pick<ReconcileSwissRoundsUseCase, "execute">;
     },
   ) {}
 
@@ -78,7 +80,15 @@ export class AdvanceFixtureFromOfficialResultUseCase {
     const plans = await this.deps.fixtures.listActive(input.organizationId, input.competitionId);
     const plan = plans.find((candidate) => findEncounter(candidate, input.encounterId));
     const trigger = plan ? findEncounter(plan, input.encounterId) : null;
-    if (!plan || !trigger || !hasAdvancementSlots(plan)) return ok({ changedEncounterIds: [] });
+    if (!plan || !trigger) return ok({ changedEncounterIds: [] });
+    if (plan.format === "swiss") {
+      return this.deps.swissRounds.execute({
+        organizationId: input.organizationId,
+        competitionId: input.competitionId,
+        heldEncounterIds: [input.encounterId],
+      });
+    }
+    if (!hasAdvancementSlots(plan)) return ok({ changedEncounterIds: [] });
 
     const source = await this.deps.source.load(input);
     if (!source) {

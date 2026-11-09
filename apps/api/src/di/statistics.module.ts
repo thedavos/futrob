@@ -15,10 +15,11 @@ import {
   type PlayerIdentityResolverPort,
   type PlayerProfileLookupPort,
   type PerformanceRankingAccessPort,
+  type CompetitionSwissStandingReaderPort,
 } from "@futrob/statistics";
 import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
 import type { EncounterReaderPort, OfficialResultReaderPort } from "@futrob/results";
-import type { FixturePlanRepository } from "@futrob/scheduling";
+import type { CompetitionFixtureSourcePort, FixturePlanRepository } from "@futrob/scheduling";
 import type {
   CompetitionRosterMembershipRepository,
   PlayerGameAccountRepository,
@@ -29,6 +30,7 @@ import { SystemClock } from "@/adapters/organizations/crypto-ports";
 import { CompetitionsMatchRulesReader } from "@/adapters/statistics/competition-match-rules-reader";
 import { CompetitionsRankingEligibilityReader } from "@/adapters/statistics/competition-ranking-eligibility-reader";
 import { FixturePlayoffSpotsReader } from "@/adapters/statistics/fixture-playoff-spots-reader";
+import { FixtureSwissStandingReader } from "@/adapters/statistics/fixture-swiss-standing-reader";
 import { TeamsPlayerIdentityResolver } from "@/adapters/statistics/player-identity-resolver";
 import { TeamsPlayerProfileLookup } from "@/adapters/statistics/player-profile-lookup";
 import {
@@ -76,6 +78,7 @@ export type StatisticsModule = {
     getCompetitionRankings: GetCompetitionRankingsUseCase;
   };
   ports: {
+    swissStandings: CompetitionSwissStandingReaderPort;
     teamPerformanceLock: TeamPerformanceRankingLockPort;
     identities: PlayerIdentityResolverPort;
     profiles: PlayerProfileLookupPort;
@@ -92,6 +95,7 @@ export function createStatisticsModule(deps: {
   competitions: Pick<CompetitionRepository, "findRulesByCompetitionId" | "findById">;
   entries: CompetitionEntryRepository;
   fixturePlans: Pick<FixturePlanRepository, "listActive">;
+  fixtureSource: CompetitionFixtureSourcePort;
   authorization: AuthorizationPort;
   performanceRankingAccess: PerformanceRankingAccessPort;
   encounterReader?: EncounterReaderPort;
@@ -181,6 +185,11 @@ export function createStatisticsModule(deps: {
     clock,
   });
 
+  const swissStandings = new FixtureSwissStandingReader({
+    fixturePlans: deps.fixturePlans,
+    results: deps.resultReader,
+    source: deps.fixtureSource,
+  });
   return {
     useCases: {
       getTeamPerformanceRanking: new GetTeamPerformanceRankingUseCase({
@@ -229,6 +238,7 @@ export function createStatisticsModule(deps: {
           fixturePlans: deps.fixturePlans,
           results: deps.resultReader,
         }),
+        swissStandings,
         authorization: deps.authorization,
       }),
       getCompetitionTeamStatistics: new GetCompetitionTeamStatisticsUseCase({
@@ -241,6 +251,7 @@ export function createStatisticsModule(deps: {
       }),
     },
     ports: {
+      swissStandings,
       teamPerformanceLock,
       identities,
       profiles,

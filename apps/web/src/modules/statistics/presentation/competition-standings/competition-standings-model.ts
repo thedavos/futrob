@@ -49,6 +49,22 @@ export function playoffCut(snapshot: CompetitionStandingSnapshotDto): number | n
   return spots !== null && snapshot.rows.length > spots ? spots : null;
 }
 
+/** Where a Swiss table stands. Null in every other format. */
+export type SwissStandingsProgress =
+  | { readonly kind: "final" }
+  | { readonly kind: "round"; readonly current: number; readonly total: number }
+  | { readonly kind: "between"; readonly completed: number; readonly total: number };
+
+export function swissStandingsProgress(
+  swiss: CompetitionStandingSnapshotDto["swiss"],
+): SwissStandingsProgress | null {
+  if (!swiss) return null;
+  if (swiss.isFinal) return { kind: "final" };
+  return swiss.currentRound === null
+    ? { kind: "between", completed: swiss.roundsCompleted, total: swiss.roundsTotal }
+    : { kind: "round", current: swiss.currentRound, total: swiss.roundsTotal };
+}
+
 export function teamNamesFrom(
   teams: readonly { readonly id: string; readonly name: string }[],
 ): ReadonlyMap<string, string> {

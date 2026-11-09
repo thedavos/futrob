@@ -10,7 +10,7 @@ import {
 import { describe, expect, it } from "vite-plus/test";
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { CompetitionRescheduleRulesAdapter } from "./competition-reschedule-rules.adapter.ts";
-import { InMemoryFixturePlanRepository } from "./fixture-plan.repository.ts";
+import { InMemoryFixturePlanRepository } from "./fixture-plan.in-memory.repository.ts";
 import { InMemoryScheduleChangeRequestRepository } from "./schedule-change-request.repository.ts";
 
 const organizationId = asOrganizationId("org-1");
