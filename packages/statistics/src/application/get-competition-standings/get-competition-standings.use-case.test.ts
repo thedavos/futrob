@@ -37,12 +37,15 @@ describe("competition statistics read use cases", () => {
             goalsAgainst: 0,
             goalDifference: 1,
             points: 3,
+            form: ["win"],
           },
         ],
       }),
     ]);
     const useCase = new GetCompetitionStandingsUseCase({
       standings,
+      playoffSpots: playoffSpotsReader(null),
+      swissStandings: { find: async () => null },
       authorization: denyAll,
     });
 
@@ -55,7 +58,7 @@ describe("competition statistics read use cases", () => {
     ).rejects.toBeInstanceOf(StatisticsAuthorizationForbidden);
   });
 
-  it("returns the standing snapshot when the actor has read", async () => {
+  it("returns the standing snapshot with its playoff spots when the actor has read", async () => {
     const expected = snapshot({
       rows: [
         {
@@ -69,11 +72,15 @@ describe("competition statistics read use cases", () => {
           goalsAgainst: 0,
           goalDifference: 1,
           points: 3,
+          form: ["win"],
         },
       ],
     });
+    const reader = playoffSpotsReader(4);
     const useCase = new GetCompetitionStandingsUseCase({
       standings: new StandingRepo([expected]),
+      playoffSpots: reader,
+      swissStandings: { find: async () => null },
       authorization: allowRead,
     });
 
@@ -83,7 +90,25 @@ describe("competition statistics read use cases", () => {
         organizationId: asOrganizationId("organization-1"),
         competitionId: asCompetitionId("competition-1"),
       }),
-    ).resolves.toEqual(expected);
+    ).resolves.toEqual({ ...expected, playoffSpots: 4, swiss: null });
+    expect(reader.queries).toEqual([["organization-1", "competition-1"]]);
+  });
+
+  it("returns no standings before a snapshot exists", async () => {
+    const useCase = new GetCompetitionStandingsUseCase({
+      standings: new StandingRepo([]),
+      playoffSpots: playoffSpotsReader(4),
+      swissStandings: { find: async () => null },
+      authorization: allowRead,
+    });
+
+    await expect(
+      useCase.execute({
+        actorId: asActorId("actor-1"),
+        organizationId: asOrganizationId("organization-1"),
+        competitionId: asCompetitionId("competition-1"),
+      }),
+    ).resolves.toBeNull();
   });
 
   it("denies team statistics when the actor lacks read", async () => {
@@ -310,6 +335,78 @@ class RankingRepo implements RankingSnapshotRepository {
     throw new Error("not used");
   }
 }
+
+describe("competition standings of a Swiss fixture", () => {
+  it("applies the Swiss table on read and leaves the stored snapshot alone", async () => {
+    const stored = snapshot({
+      rows: [
+        {
+          position: 1,
+          teamId: asTeamId("team-1"),
+          played: 1,
+          wins: 1,
+          draws: 0,
+          losses: 0,
+          goalsFor: 2,
+          goalsAgainst: 0,
+          goalDifference: 2,
+          points: 3,
+          form: ["win"],
+        },
+      ],
+    });
+    const useCase = new GetCompetitionStandingsUseCase({
+      standings: new StandingRepo([stored]),
+      playoffSpots: playoffSpotsReader(null),
+      swissStandings: {
+        find: async () => ({
+          seed: [asTeamId("team-1"), asTeamId("team-2")],
+          opponentsByTeam: new Map(),
+          byesByTeam: new Map([[asTeamId("team-2"), 1]]),
+          withdrawnTeamIds: [],
+          pointsPerBye: 3,
+          roundsTotal: 2,
+          roundsCompleted: 1,
+          currentRound: 2,
+          isFinal: false,
+        }),
+      },
+      authorization: allowAll,
+    });
+
+    const applied = await useCase.execute({
+      actorId: asActorId("actor"),
+      organizationId: stored.organizationId,
+      competitionId: stored.competitionId,
+    });
+
+    expect(applied?.formulaVersion).toBe("swiss-points-buchholz-gd-gf-v1");
+    expect(applied?.swiss?.currentRound).toBe(2);
+    expect(
+      applied?.rows.map((row) => [row.teamId, row.points, row.played, row.swiss?.buchholz]),
+    ).toEqual([
+      ["team-2", 3, 0, 3],
+      ["team-1", 3, 1, 0],
+    ]);
+    expect(stored.formulaVersion).toBe("points-gd-gf-v1");
+  });
+});
+
+function playoffSpotsReader(spots: number | null) {
+  const queries: [string, string][] = [];
+  return {
+    queries,
+    async find(organizationId: string, competitionId: string) {
+      queries.push([organizationId, competitionId]);
+      return spots;
+    },
+  };
+}
+
+const allowAll: AuthorizationPort = {
+  decide: async (request) => ({ ...request, allowed: true, reason: "allowed" }),
+  getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
+};
 
 const denyAll: AuthorizationPort = {
   async decide(request) {

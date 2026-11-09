@@ -1,8 +1,11 @@
 import type { ActivityEntryDto } from "@futrob/api-contracts";
 import type { Icon } from "@futrob/ui";
 import {
+  CalendarDotsIcon,
   CheckSquareIcon,
+  ClipboardTextIcon,
   EnvelopeSimpleIcon,
+  GavelIcon,
   MegaphoneSimpleIcon,
   ShieldPlusIcon,
   WarningCircleIcon,
@@ -72,6 +75,41 @@ function titleKey(entry: ActivityEntryDto, now: Date): ParameterlessMessageKey {
       return entry.requiresAction
         ? "activity.entryInvitation.pending"
         : "activity.entryInvitation.watching";
+    case "schedule_change":
+      if (!open) return "activity.scheduleChange.closed";
+      if (isExpired(entry, now)) return "activity.scheduleChange.expired";
+      if (entry.audience === "organization" && entry.requiresAction) {
+        return "activity.scheduleChange.decide";
+      }
+      return entry.requiresAction
+        ? "activity.scheduleChange.pending"
+        : "activity.scheduleChange.watching";
+    case "organizer_decision":
+      return decisionTitleKey(entry.subject.outcome);
+    case "competition_entry":
+      if (!open) return "activity.competitionEntry.closed";
+      return entry.requiresAction
+        ? "activity.competitionEntry.pending"
+        : "activity.competitionEntry.watching";
+  }
+}
+
+function decisionTitleKey(
+  outcome: ActivityEntryDto["subject"]["outcome"],
+): ParameterlessMessageKey {
+  switch (outcome) {
+    case "entry_approved":
+      return "activity.decision.entryApproved";
+    case "entry_rejected":
+      return "activity.decision.entryRejected";
+    case "schedule_set":
+      return "activity.decision.scheduleSet";
+    case "schedule_kept":
+      return "activity.decision.scheduleKept";
+    case "walkover_intended":
+      return "activity.decision.walkoverIntended";
+    case null:
+      return "activity.decision.generic";
   }
 }
 
@@ -87,6 +125,12 @@ function icon(entry: ActivityEntryDto): Icon {
       return MegaphoneSimpleIcon;
     case "entry_invitation":
       return ShieldPlusIcon;
+    case "schedule_change":
+      return CalendarDotsIcon;
+    case "organizer_decision":
+      return GavelIcon;
+    case "competition_entry":
+      return ClipboardTextIcon;
   }
 }
 
@@ -96,14 +140,30 @@ function tone(entry: ActivityEntryDto, now: Date): ActivityTone {
   return entry.requiresAction ? "default" : "waiting";
 }
 
+/** The part of the snapshot a row leads with: the match, or the Team, it is about. */
+function aboutOf(
+  kind: ActivityEntryDto["kind"],
+  subject: Pick<ActivityEntryDto["subject"], "encounterLabel" | "teamName">,
+): string | null {
+  switch (kind) {
+    case "selection_confirmation":
+    case "match_dispute":
+    case "schedule_change":
+      return subject.encounterLabel;
+    case "organizer_decision":
+      return subject.encounterLabel ?? subject.teamName;
+    case "roster_invitation":
+    case "competition_entry":
+      return subject.teamName;
+    case "competition_published":
+    case "entry_invitation":
+      return null;
+  }
+}
+
 function subtitle(entry: ActivityEntryDto): string | null {
   const { competitionName, encounterLabel, teamName } = entry.subject;
-  const about =
-    entry.kind === "selection_confirmation" || entry.kind === "match_dispute"
-      ? encounterLabel
-      : entry.kind === "roster_invitation"
-        ? teamName
-        : null;
+  const about = aboutOf(entry.kind, { encounterLabel, teamName });
   const parts = [about, competitionName].filter((part): part is string => Boolean(part));
   return parts.length > 0 ? parts.join(" · ") : null;
 }
@@ -125,8 +185,14 @@ function destination(entry: ActivityEntryDto): ActivityDestination | null {
     case "match_dispute":
       return { to: "/orgs/$orgId/competitions/$competitionId/disputes", params };
     case "selection_confirmation":
+    case "schedule_change":
       return { to: "/orgs/$orgId/competitions/$competitionId/encounters", params };
+    case "organizer_decision":
+      return entry.resourceType === "encounter"
+        ? { to: "/orgs/$orgId/competitions/$competitionId/encounters", params }
+        : { to: "/orgs/$orgId/competitions/$competitionId/teams", params };
     case "roster_invitation":
+    case "competition_entry":
       return { to: "/orgs/$orgId/competitions/$competitionId/teams", params };
     case "competition_published":
     case "entry_invitation":

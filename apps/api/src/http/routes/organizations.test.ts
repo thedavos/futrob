@@ -3,7 +3,14 @@ import {
   createOrganizationResponseSchema,
 } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
-import { buildApp, serviceHeaders, stubFetch } from "@/http/http-app.harness.ts";
+import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
+import {
+  buildApp,
+  buildAppWithModules,
+  serviceHeaders,
+  stubFetch,
+} from "@/http/http-app.harness.ts";
+import { assignOrganizationPlanForTest } from "@/testing/organization-plan.fixture.ts";
 import { parseResponse } from "@/http/parse-response.ts";
 
 describe("apps/api http organizations", () => {
@@ -75,7 +82,7 @@ describe("apps/api http organizations", () => {
   });
 
   it("organization invitations: a multi redeemPolicy invitation admits up to maxRedemptions distinct actors", async () => {
-    const app = buildApp(stubFetch);
+    const { app, modules } = buildAppWithModules(stubFetch);
     const organizer = "actor-multi-organizer";
 
     const created = await app.request("/api/v1/organizations", {
@@ -85,6 +92,11 @@ describe("apps/api http organizations", () => {
     });
     expect(created.status).toBe(201);
     const { organizationId } = await parseResponse(createOrganizationResponseSchema, created);
+    // Three staff seats exceed the free plan (ADR-0025).
+    await assignOrganizationPlanForTest(modules, {
+      organizationId: asOrganizationId(organizationId),
+      actorId: asActorId(organizer),
+    });
 
     const invite = await app.request(`/api/v1/organizations/${organizationId}/invitations`, {
       method: "POST",

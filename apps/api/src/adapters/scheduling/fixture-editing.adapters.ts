@@ -8,6 +8,8 @@ import {
   type FixtureOccupancyGuardPort,
   type FixtureParticipantSlot,
   type FixtureSeries,
+  type OfficialEncounterScore,
+  type OfficialEncounterScoreReaderPort,
   type OfficialMatch,
   type OfficialMatchRepository,
   type ScheduleChangeRequestEditGuardPort,
@@ -18,6 +20,7 @@ import {
   asActorId,
   asCompetitionId,
   asEncounterId,
+  type EncounterId,
   asOfficialMatchSlotId,
   asOrganizationId,
   asTeamId,
@@ -179,10 +182,8 @@ function fixtureEncounter(value: PgJsonInput): FixtureEncounter {
     officialMatchCount: parsed.officialMatchCount,
     series: parsed.series ? fixtureSeries(parsed.series) : null,
   };
-  if (parsed.groupId) {
-    return { ...encounter, groupId: parsed.groupId };
-  }
-  return encounter;
+  const placed = parsed.groupId ? { ...encounter, groupId: parsed.groupId } : encounter;
+  return parsed.closedWithoutResult ? { ...placed, closedWithoutResult: true } : placed;
 }
 
 export class OfficialResultFixtureEditGuard
@@ -246,5 +247,32 @@ export class OfficialResultOccupancyGuard implements FixtureOccupancyGuardPort {
       encounterIds.map((encounterId) => this.results.findApprovedByEncounter(encounterId)),
     );
     return approved.some((result) => result !== null);
+  }
+}
+
+/** Bridges the latest approved revision of each Encounter's OfficialResult into scheduling. */
+export class OfficialResultScoreReader implements OfficialEncounterScoreReaderPort {
+  constructor(private readonly results: Pick<OfficialResultRepository, "listByCompetition">) {}
+
+  async listApproved(
+    input: Parameters<OfficialEncounterScoreReaderPort["listApproved"]>[0],
+  ): Promise<ReadonlyMap<EncounterId, OfficialEncounterScore>> {
+    const scores = new Map<EncounterId, OfficialEncounterScore>();
+    const results = await this.results.listByCompetition(input.competitionId, input.organizationId);
+    for (const result of results) {
+      if (result.status !== "approved") continue;
+      const current = scores.get(result.encounterId);
+      if (current && current.revision > result.revision) continue;
+      scores.set(result.encounterId, {
+        officialResultId: result.id,
+        revision: result.revision,
+        slots: result.slots.map((slot) => ({
+          officialSlot: slot.officialSlot,
+          homeGoals: slot.homeGoals,
+          awayGoals: slot.awayGoals,
+        })),
+      });
+    }
+    return scores;
   }
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { Alert, AlertDescription, applyStyles, Button, Form, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { PlanUpsellAlert } from "@/modules/billing/presentation/plan-upsell-alert.tsx";
 import { useNavigate } from "@tanstack/react-router";
 import { resolveCompetitionTimeZone } from "@/modules/competitions/presentation/competition-time-zone.ts";
 import { CompetitionDraftFields } from "@/modules/competitions/presentation/competition-draft-fields.tsx";
@@ -104,6 +105,7 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
   const createDraft = useCreateCompetitionDraftMutation(organizationId);
   const create = useCan({ organizationId }, COMPETITION_PERMISSION.update);
   const [error, setError] = useState<string | null>(null);
+  const [planGate, setPlanGate] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<CompetitionDraftFieldError | null>(null);
   const [fields, setFields] = useState<CompetitionDraftFieldsValue>(emptyDraftFields);
   const [profile, setProfile] = useState<CompetitionProfileFieldsValue>(DEFAULT_PROFILE_FIELDS);
@@ -127,6 +129,7 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
 
   async function handleSubmit() {
     setError(null);
+    setPlanGate(null);
     if (organizationZone.blocked !== null) return;
     const validation = validateCompetitionDraftFields(draft);
     if (validation) {
@@ -162,6 +165,10 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
       });
     } catch (caught) {
       if (caught instanceof CompetitionsClientError) {
+        if (caught.status === 402) {
+          setPlanGate(caught.code);
+          return;
+        }
         if (caught.code.includes("invalid_name")) {
           setFieldError({ field: "name", message: "El nombre no es válido." });
           return;
@@ -200,6 +207,7 @@ export function CreateCompetitionForm({ organizationId }: { readonly organizatio
           {error}
         </div>
       ) : null}
+      {planGate ? <PlanUpsellAlert code={planGate} organizationId={organizationId} /> : null}
       {organizationZone.blocked === "error" ? (
         <Alert variant="destructive">
           <AlertDescription>

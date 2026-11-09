@@ -1,8 +1,5 @@
-import {
-  completeOrganizationOnboardingResponseSchema,
-  fixturePlanSchema,
-  type FixtureEncounterDto,
-} from "@futrob/api-contracts";
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
+import { fixturePlanSchema, type FixtureEncounterDto } from "@futrob/api-contracts";
 import { createApp } from "@/app.ts";
 import { createModules } from "@/di/create-modules.ts";
 import {
@@ -27,7 +24,7 @@ export async function publishLeagueWithFixture() {
     internalJobSecret: INTERNAL_JOB_SECRET,
     correlationLogger: { info: () => undefined, error: () => undefined },
   });
-  const created = await app.request("/api/v1/identity/onboarding/organization", {
+  const created = await createOrganizationCompetitionFixture(app, {
     method: "POST",
     headers: serviceHeaders(LEAGUE_ORGANIZER),
     body: JSON.stringify({
@@ -36,7 +33,7 @@ export async function publishLeagueWithFixture() {
       gameAccount: null,
     }),
   });
-  const createdBody = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+  const createdBody = created;
   const { organizationId } = createdBody;
   const competitionId = createdBody.competition.competition.id;
   for (const [name, creationKey] of [

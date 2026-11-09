@@ -27,41 +27,100 @@ export const styles = stylex.create({
     minHeight: "3rem",
     borderRadius: "var(--corner-lg)",
   },
-  headPosition: {
-    width: "3.5rem",
-    paddingInline: { default: "0.5rem", [media.sm]: "0.75rem" },
+  tableContainer: {
+    borderWidth: 0,
+    borderRadius: 0,
+  },
+  table: {
+    borderCollapse: "collapse",
+    fontSize: "1rem",
+    lineHeight: "1.5rem",
+  },
+  header: {
+    backgroundColor: "transparent",
+  },
+  headerRow: {
+    backgroundColor: "transparent",
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.border,
+  },
+  headCell: {
+    height: "auto",
+    paddingBlock: "0.75rem",
+    paddingInline: { default: "0.375rem", [media.sm]: "0.75rem" },
+    color: colors.mutedForeground,
+    fontWeight: "var(--font-weight-medium)",
     whiteSpace: "nowrap",
+  },
+  abbr: {
+    textDecorationLine: "none",
+    cursor: "help",
+  },
+  headPosition: {
+    width: { default: "2rem", [media.sm]: "3rem" },
   },
   headTeam: {
-    minWidth: "8rem",
+    textAlign: "start",
   },
-  numeric: {
-    textAlign: "end",
-    whiteSpace: "nowrap",
-    fontVariantNumeric: "tabular-nums",
-    paddingInline: { default: "0.5rem", [media.sm]: "0.75rem" },
-  },
-  secondary: {
+  headForm: {
     display: { default: "none", [media.sm]: "table-cell" },
+  },
+  row: {
+    backgroundColor: "transparent",
+    borderBottomWidth: { default: 1, ":last-child": 0 },
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.border,
+  },
+  cell: {
+    height: "auto",
+    paddingBlock: "0.875rem",
+    paddingInline: { default: "0.375rem", [media.sm]: "0.75rem" },
+    verticalAlign: "middle",
+  },
+  aboveCut: {
+    borderBottomWidth: 1,
+    borderBottomStyle: "dashed",
+    borderBottomColor: colors.borderStrong,
   },
   position: {
     whiteSpace: "nowrap",
-    fontWeight: 600,
+  },
+  positionValue: {
     color: colors.mutedForeground,
-    paddingInline: { default: "0.5rem", [media.sm]: "0.75rem" },
+  },
+  leader: {
+    color: colors.primary,
+    fontWeight: "var(--font-weight-semibold)",
   },
   teamCell: {
     minWidth: 0,
+    // "anywhere" lets a long name shrink the column, so it never pushes points out of view.
     overflowWrap: "anywhere",
+    hyphens: "auto",
+  },
+  team: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    gap: "0.75rem",
+  },
+  crest: {
+    width: "1.75rem",
+    height: "1.75rem",
+    flexShrink: 0,
+  },
+  crestPlaceholder: {
+    display: "inline-block",
+    borderRadius: "var(--corner-full)",
+    backgroundColor: colors.surfaceRaised,
   },
   teamName: {
-    display: "block",
-    fontWeight: 600,
+    fontWeight: "var(--font-weight-semibold)",
     color: colors.foreground,
   },
   teamUnresolved: {
-    display: "block",
-    fontWeight: 500,
+    fontWeight: "var(--font-weight-medium)",
     color: colors.mutedForeground,
   },
   teamSkeleton: {
@@ -70,13 +129,78 @@ export const styles = stylex.create({
     maxWidth: "100%",
     height: "1rem",
   },
-  record: {
-    display: { default: "block", [media.sm]: "none" },
-    marginTop: "0.125rem",
-    color: colors.mutedForeground,
+  formCell: {
+    display: { default: "none", [media.sm]: "table-cell" },
   },
+  form: {
+    display: "inline-flex",
+    gap: { default: "0.125rem", [media.sm]: "0.25rem" },
+    verticalAlign: "middle",
+  },
+  formNarrow: {
+    display: { default: "flex", [media.sm]: "none" },
+    marginTop: "0.5rem",
+  },
+  formResult: {
+    display: "inline-grid",
+    placeItems: "center",
+    width: { default: "1.125rem", [media.sm]: "1.375rem" },
+    height: { default: "1.125rem", [media.sm]: "1.375rem" },
+    borderRadius: "0.3125rem",
+    fontSize: "0.6875rem",
+    lineHeight: 1,
+    fontWeight: "var(--font-weight-bold)",
+  },
+  formWin: {
+    backgroundColor: colors.success,
+    color: colors.successForeground,
+  },
+  formDraw: {
+    backgroundColor: colors.warning,
+    color: colors.warningForeground,
+  },
+  formLoss: {
+    backgroundColor: colors.danger,
+    color: colors.dangerForeground,
+  },
+  formEmpty: {
+    display: "inline-block",
+    width: { default: "1.125rem", [media.sm]: "1.375rem" },
+    height: { default: "1.125rem", [media.sm]: "1.375rem" },
+    borderRadius: "0.3125rem",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.border,
+  },
+  figure: {
+    color: colors.mutedForeground,
+    fontSize: "1rem",
+    lineHeight: "1.5rem",
+  },
+  /** Points rank the table, so they are the only bold figure in the row. */
   points: {
-    fontWeight: 700,
     color: colors.foreground,
+    fontSize: "1.25rem",
+    lineHeight: "1.75rem",
+    fontWeight: "var(--font-weight-bold)",
+  },
+  swissProgress: {
+    color: colors.foreground,
+  },
+  swissFinal: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.25rem",
+    color: colors.foreground,
+  },
+  swissDetail: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.25rem 0.5rem",
+    marginTop: "0.25rem",
+  },
+  cutNote: {
+    color: colors.primary,
   },
 });

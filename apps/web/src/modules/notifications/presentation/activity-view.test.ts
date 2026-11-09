@@ -19,6 +19,7 @@ function entry(overrides: Partial<ActivityEntryDto>): ActivityEntryDto {
       competitionName: "Liga A",
       encounterLabel: "Cuervos vs Halcones",
       teamName: "Halcones",
+      outcome: null,
     },
     openedAt: "2026-10-07T10:00:00.000Z",
     closedAt: null,
@@ -69,6 +70,86 @@ describe("activity row view", () => {
       tone: "resolved",
       subtitle: "Liga A",
       destination: { to: "/orgs/$orgId/competitions/$competitionId" },
+    });
+  });
+
+  it("tells apart the schedule change a Team answers, the organizer watches and the organizer decides", () => {
+    const rival = entry({ kind: "schedule_change", audience: "team" });
+    expect(activityRowView(rival, NOW)).toMatchObject({
+      titleKey: "activity.scheduleChange.pending",
+      tone: "default",
+      subtitle: "Cuervos vs Halcones · Liga A",
+      destination: { to: "/player/competitions/$competitionId/matches" },
+    });
+    expect(
+      activityRowView(entry({ kind: "schedule_change", requiresAction: false }), NOW),
+    ).toMatchObject({
+      titleKey: "activity.scheduleChange.watching",
+      tone: "waiting",
+    });
+    expect(activityRowView(entry({ kind: "schedule_change" }), NOW)).toMatchObject({
+      titleKey: "activity.scheduleChange.decide",
+      destination: { to: "/orgs/$orgId/competitions/$competitionId/encounters" },
+    });
+    expect(activityRowView({ ...rival, expiresAt: "2026-10-07T11:00:00.000Z" }, NOW)).toMatchObject(
+      { titleKey: "activity.scheduleChange.expired", tone: "resolved" },
+    );
+    expect(activityRowView({ ...rival, status: "closed" }, NOW)).toMatchObject({
+      titleKey: "activity.scheduleChange.closed",
+    });
+  });
+
+  it("names an organizer decision by its outcome and sends it where it was taken", () => {
+    const decision = (
+      outcome: ActivityEntryDto["subject"]["outcome"],
+      resourceType: "encounter" | "competition",
+    ) =>
+      activityRowView(
+        entry({
+          kind: "organizer_decision",
+          status: "closed",
+          requiresAction: false,
+          resourceType,
+          subject: {
+            competitionName: "Liga A",
+            encounterLabel: null,
+            teamName: "Halcones",
+            outcome,
+          },
+        }),
+        NOW,
+      );
+    expect(decision("entry_approved", "competition")).toMatchObject({
+      titleKey: "activity.decision.entryApproved",
+      tone: "resolved",
+      subtitle: "Halcones · Liga A",
+      destination: { to: "/orgs/$orgId/competitions/$competitionId/teams" },
+    });
+    expect(decision("entry_rejected", "competition").titleKey).toBe(
+      "activity.decision.entryRejected",
+    );
+    expect(decision("schedule_set", "encounter")).toMatchObject({
+      titleKey: "activity.decision.scheduleSet",
+      destination: { to: "/orgs/$orgId/competitions/$competitionId/encounters" },
+    });
+    expect(decision("schedule_kept", "encounter").titleKey).toBe("activity.decision.scheduleKept");
+    expect(decision("walkover_intended", "encounter").titleKey).toBe(
+      "activity.decision.walkoverIntended",
+    );
+    expect(decision(null, "encounter").titleKey).toBe("activity.decision.generic");
+  });
+
+  it("asks the organizer to review a pending entry and keeps it as a Team entry once closed", () => {
+    const pending = entry({ kind: "competition_entry", resourceType: "competition" });
+    expect(activityRowView(pending, NOW)).toMatchObject({
+      titleKey: "activity.competitionEntry.pending",
+      tone: "default",
+      subtitle: "Halcones · Liga A",
+      destination: { to: "/orgs/$orgId/competitions/$competitionId/teams" },
+    });
+    expect(activityRowView({ ...pending, status: "closed" }, NOW)).toMatchObject({
+      titleKey: "activity.competitionEntry.closed",
+      tone: "resolved",
     });
   });
 

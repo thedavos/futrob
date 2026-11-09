@@ -519,6 +519,7 @@ async function saveCompetition(
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: 11,
+      rankingEligibility: null,
       createdAt: now,
     },
   });

@@ -3,6 +3,7 @@ import type {
   CompetitionDraft,
   CompetitionMatchRules,
   CompetitionRepository,
+  CompetitionRankingEligibility,
   CompetitionRules,
   CompetitionStatus,
 } from "@futrob/competitions";
@@ -108,13 +109,15 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     const rulesResult = await executor.query(
       `INSERT INTO competition_rules (
          competition_id, version, regular_stage, knockout_stage, away_goals_enabled,
-         max_roster_size, created_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+         max_roster_size, ranking_minimum_matches, ranking_minimum_team_minutes_ratio, created_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT (competition_id, version) DO UPDATE SET
          regular_stage = EXCLUDED.regular_stage,
          knockout_stage = EXCLUDED.knockout_stage,
          away_goals_enabled = EXCLUDED.away_goals_enabled,
-         max_roster_size = EXCLUDED.max_roster_size
+         max_roster_size = EXCLUDED.max_roster_size,
+         ranking_minimum_matches = EXCLUDED.ranking_minimum_matches,
+         ranking_minimum_team_minutes_ratio = EXCLUDED.ranking_minimum_team_minutes_ratio
        RETURNING *`,
       [
         competition.id,
@@ -123,6 +126,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         draft.rules.knockoutStage,
         draft.rules.awayGoalsEnabled,
         draft.rules.maxRosterSize,
+        draft.rules.rankingEligibility?.minimumMatches ?? null,
+        draft.rules.rankingEligibility?.minimumTeamMinutesRatio ?? null,
         draft.rules.createdAt.toISOString(),
       ],
     );
@@ -202,7 +207,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
   async findRulesByCompetitionId(competitionId: CompetitionId): Promise<CompetitionRules | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT competition_id, version, regular_stage, knockout_stage, away_goals_enabled,
-              max_roster_size, created_at
+              max_roster_size, ranking_minimum_matches, ranking_minimum_team_minutes_ratio,
+              created_at
        FROM competition_rules
        WHERE competition_id = $1 AND version = 1`,
       [competitionId],
@@ -249,6 +255,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
               r.knockout_stage,
               r.away_goals_enabled,
               r.max_roster_size,
+              r.ranking_minimum_matches,
+              r.ranking_minimum_team_minutes_ratio,
               r.created_at AS rules_created_at
        FROM competitions c
        INNER JOIN competition_rules r ON r.competition_id = c.id AND r.version = 1
@@ -266,6 +274,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         knockout_stage: row.knockout_stage,
         away_goals_enabled: row.away_goals_enabled,
         max_roster_size: row.max_roster_size,
+        ranking_minimum_matches: row.ranking_minimum_matches,
+        ranking_minimum_team_minutes_ratio: row.ranking_minimum_team_minutes_ratio,
         created_at: row.rules_created_at,
       }),
     };
@@ -302,6 +312,8 @@ export interface CompetitionRulesRow {
   knockout_stage: CompetitionMatchRules | null;
   away_goals_enabled?: boolean;
   max_roster_size: number | null;
+  ranking_minimum_matches?: number | null;
+  ranking_minimum_team_minutes_ratio?: number | null;
   created_at: Date | string;
 }
 
@@ -335,6 +347,19 @@ function rehydrateRules(row: CompetitionRulesRow): CompetitionRules {
     knockoutStage: row.knockout_stage ?? null,
     awayGoalsEnabled: false,
     maxRosterSize: row.max_roster_size ?? null,
+    rankingEligibility: rehydrateRankingEligibility(row),
     createdAt: new Date(row.created_at),
+  };
+}
+
+function rehydrateRankingEligibility(
+  row: CompetitionRulesRow,
+): CompetitionRankingEligibility | null {
+  if (row.ranking_minimum_matches == null || row.ranking_minimum_team_minutes_ratio == null) {
+    return null;
+  }
+  return {
+    minimumMatches: Number(row.ranking_minimum_matches),
+    minimumTeamMinutesRatio: Number(row.ranking_minimum_team_minutes_ratio),
   };
 }

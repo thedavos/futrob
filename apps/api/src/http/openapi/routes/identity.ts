@@ -1,4 +1,4 @@
-import { defineRoute } from "@/http/openapi/define-route.ts";
+import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import {
   CompleteInvitationOnboardingResponse,
   CompleteOrganizationOnboardingResponse,
@@ -47,7 +47,8 @@ export const completeOrganizationOnboardingRoute = defineRoute({
     description: "Completed organization onboarding",
     schema: CompleteOrganizationOnboardingResponse,
   },
-  errors: [400, 401, 409],
+  errors: [400, 401, 402, 409],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const completeInvitationOnboardingRoute = defineRoute({
@@ -62,7 +63,8 @@ export const completeInvitationOnboardingRoute = defineRoute({
     description: "Completed invitation onboarding",
     schema: CompleteInvitationOnboardingResponse,
   },
-  errors: [400, 401, 404, 409, 429],
+  errors: [400, 401, 402, 404, 409, 429],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const inspectCompetitionInvitationRoute = defineRoute({
@@ -89,8 +91,10 @@ export const completePlayerOnboardingRoute = defineRoute({
   body: completePlayerOnboardingRequestSchema,
   success: {
     status: 200,
-    description: "Completed player onboarding",
+    description:
+      "Completed player onboarding. The optional club association is best-effort: when the game-data provider is unavailable the path still completes and `externalClubAssociation` is `failed`.",
     schema: CompletePlayerOnboardingResponse,
   },
-  errors: [400, 401, 409],
+  errors: [400, 401, 404, 409],
+  errorDescriptions: { 404: "The provider does not know the requested external club" },
 });

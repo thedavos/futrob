@@ -1,4 +1,15 @@
-import { providerSyncJobResponseSchema } from "@futrob/api-contracts";
+import {
+  enqueueDueProviderSyncsResponseSchema,
+  providerSyncJobResponseSchema,
+} from "@futrob/api-contracts";
+import { asFixtureStageId } from "@futrob/scheduling";
+import {
+  asCompetitionId,
+  asEncounterId,
+  asOfficialMatchSlotId,
+  asOrganizationId,
+  asTeamId,
+} from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import clubMatchesFixture from "@/adapters/game-data/ea-clubs/fixtures/club-matches.json";
 import { createApp } from "@/app.ts";
@@ -119,5 +130,117 @@ describe("provider sync job routes", () => {
     expect(await run.json()).toMatchObject({ status: "succeeded" });
     expect(empty.status).toBe(204);
     expect(providerCalls).toBe(1);
+  });
+
+  it("enqueues connected clubs inside the candidate window without calling EA or duplicating", async () => {
+    const now = new Date("2026-10-10T20:00:00.000Z");
+    let providerCalls = 0;
+    const modules = createModules({
+      fetcher: createFetch(() => {
+        providerCalls += 1;
+        return Response.json(clubMatchesFixture);
+      }),
+      eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
+      pool: undefined,
+      clock: { now: () => now },
+    });
+    const organizationId = asOrganizationId("org-due");
+    const competitionId = asCompetitionId("competition-due");
+    const homeTeamId = asTeamId("team-due-home");
+    const awayTeamId = asTeamId("team-due-away");
+    const encounterId = asEncounterId("encounter-due");
+    await modules.scheduling.encounters.upsert({
+      encounterId,
+      organizationId,
+      competitionId,
+      stageId: asFixtureStageId("stage-due"),
+      homeTeamId,
+      awayTeamId,
+      scheduledStartAt: now,
+      officialMatchCount: 1,
+    });
+    await modules.scheduling.officialMatches.upsertMany([
+      {
+        id: asOfficialMatchSlotId("slot-due"),
+        encounterId,
+        organizationId,
+        competitionId,
+        slot: 1,
+        status: "scheduled",
+        scheduledStartAt: now,
+        createdAt: now,
+      },
+    ]);
+    await modules.teams.externalClubConnections.upsert({
+      teamId: homeTeamId,
+      providerKey: "ea-clubs",
+      externalClubId: "10754",
+      externalClubName: "Owls",
+      gameEdition: "fc26",
+      platform: "common-gen5",
+    });
+    const outsideTeamId = asTeamId("team-due-outside");
+    const outsideEncounterId = asEncounterId("encounter-outside");
+    const outsideStart = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    await modules.scheduling.encounters.upsert({
+      encounterId: outsideEncounterId,
+      organizationId,
+      competitionId,
+      stageId: asFixtureStageId("stage-outside"),
+      homeTeamId: outsideTeamId,
+      awayTeamId,
+      scheduledStartAt: outsideStart,
+      officialMatchCount: 1,
+    });
+    await modules.scheduling.officialMatches.upsertMany([
+      {
+        id: asOfficialMatchSlotId("slot-outside"),
+        encounterId: outsideEncounterId,
+        organizationId,
+        competitionId,
+        slot: 1,
+        status: "scheduled",
+        scheduledStartAt: outsideStart,
+        createdAt: now,
+      },
+    ]);
+    await modules.teams.externalClubConnections.upsert({
+      teamId: outsideTeamId,
+      providerKey: "ea-clubs",
+      externalClubId: "99999",
+      externalClubName: "Late",
+      gameEdition: "fc26",
+      platform: "common-gen5",
+    });
+    const app = createApp({
+      modules,
+      checkDbHealth: () => Promise.resolve("skipped"),
+      internalJobSecret: secret,
+      correlationLogger: { info: () => undefined, error: () => undefined },
+    });
+
+    const denied = await app.request("/api/v1/internal/game-data/sync-jobs/enqueue-due", {
+      method: "POST",
+    });
+    const first = await app.request("/api/v1/internal/game-data/sync-jobs/enqueue-due", {
+      method: "POST",
+      headers: headers(),
+    });
+    const second = await app.request("/api/v1/internal/game-data/sync-jobs/enqueue-due", {
+      method: "POST",
+      headers: headers(),
+    });
+    const created = enqueueDueProviderSyncsResponseSchema.parse(await first.json());
+    const replay = enqueueDueProviderSyncsResponseSchema.parse(await second.json());
+    const stored = await Promise.all(
+      created.jobs.map((job) => modules.gameData.jobs.findById(job.id)),
+    );
+
+    expect(denied.status).toBe(401);
+    expect(first.status).toBe(200);
+    expect(created.enqueued).toBe(3);
+    expect(stored.map((job) => job?.sync.externalClubId)).toEqual(["10754", "10754", "10754"]);
+    expect(providerCalls).toBe(0);
+    expect(replay).toMatchObject({ enqueued: 0, alreadyCovered: 0, jobs: [] });
   });
 });

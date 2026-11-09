@@ -32,6 +32,7 @@ function draft(
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: competition.createdAt,
     },
   };

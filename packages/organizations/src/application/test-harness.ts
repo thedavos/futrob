@@ -1,3 +1,4 @@
+import type { OrgMembershipRole } from "../domain/value-objects/organization-membership-role.ts";
 import {
   asActorId,
   compareTime,
@@ -237,7 +238,7 @@ export class FakeMembershipRepository implements MembershipRepository {
     return this.updateRole(membership);
   }
 
-  async countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number> {
+  async countByRole(organizationId: OrganizationId, role: OrgMembershipRole): Promise<number> {
     return this.rows.filter((row) => row.organizationId === organizationId && row.role === role)
       .length;
   }
@@ -365,6 +366,8 @@ export function createOrgTestHarness() {
     },
   };
 
+  let staffSeatLimit: number | null = null;
+
   return {
     clock,
     ids,
@@ -373,6 +376,10 @@ export function createOrgTestHarness() {
     memberships,
     invitations,
     authorization,
+    staffSeats: { staffSeatLimit: async () => staffSeatLimit },
+    setStaffSeatLimit(limit: number | null) {
+      staffSeatLimit = limit;
+    },
     actor: (value: string) => asActorId(value),
   };
 }

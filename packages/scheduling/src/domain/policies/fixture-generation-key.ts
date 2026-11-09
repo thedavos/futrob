@@ -19,6 +19,8 @@ export function fixtureSpecFingerprint(spec: FixtureGenerationSpec): string {
       spec.seed.join(","),
       groups,
       playoffs,
+      // Appended only for Swiss: an extra separator would change the hash of every stored plan.
+      ...(spec.swiss ? [`s${spec.swiss.rounds}`] : []),
     ].join("|"),
   );
 }

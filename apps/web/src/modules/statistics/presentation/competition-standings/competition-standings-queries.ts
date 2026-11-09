@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { CompetitionsClientError } from "@/modules/competitions/presentation/competitions-browser-client.ts";
 import { TeamsClientError } from "@/modules/teams/presentation/teams-browser-client.ts";
@@ -54,6 +55,26 @@ async function refusedAsValue<T>(read: () => Promise<T>): Promise<T | Refusal> {
   return readResult.value;
 }
 
+const standingsKey = (organizationId: string, competitionId: string) =>
+  [...queryKeys.statistics.all, "competition", organizationId, competitionId, "standings"] as const;
+
+/**
+ * Whether a Swiss competition has settled every round. Unknown reads as false: the server still
+ * refuses a command on a round that is over, so a failed read only costs an explained refusal.
+ */
+export function useSwissStandingsFinal(
+  organizationId: string,
+  competitionId: string,
+  enabled: boolean,
+): boolean {
+  const { data } = useQuery({
+    queryKey: standingsKey(organizationId, competitionId),
+    queryFn: () => refusedAsValue(() => getCompetitionStandings(organizationId, competitionId)),
+    enabled,
+  });
+  return !isRefusal(data) && data?.standings?.swiss?.isFinal === true;
+}
+
 /**
  * Standings are read only once EffectiveAccess allows `statistics.read` for the
  * competition; the server authorizes the read again.
@@ -61,21 +82,17 @@ async function refusedAsValue<T>(read: () => Promise<T>): Promise<T | Refusal> {
 export function useCompetitionStandings(organizationId: string, competitionId: string) {
   const access = useEffectivePermissions({ organizationId, competitionId }, [
     STATISTICS_PERMISSION.read,
+    COMPETITION_PERMISSION.read,
   ]);
   const allowed = access.allowed.has(STATISTICS_PERMISSION.read);
+  const canViewEncounters = access.allowed.has(COMPETITION_PERMISSION.read);
   const standings = useQuery({
-    queryKey: [
-      ...queryKeys.statistics.all,
-      "competition",
-      organizationId,
-      competitionId,
-      "standings",
-    ] as const,
+    queryKey: standingsKey(organizationId, competitionId),
     queryFn: () => refusedAsValue(() => getCompetitionStandings(organizationId, competitionId)),
     enabled: allowed,
     retry: (failureCount) => failureCount < 2,
   });
-  return { access, allowed, standings };
+  return { access, allowed, canViewEncounters, standings };
 }
 
 /**

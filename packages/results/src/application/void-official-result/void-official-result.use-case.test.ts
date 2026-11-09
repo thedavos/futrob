@@ -85,6 +85,22 @@ describe("VoidOfficialResultUseCase", () => {
     expect(events.map((event) => event.eventName)).toEqual(["results.official-result-voided"]);
   });
 
+  it("replays a voided revision without voiding a later approval or publishing again", async () => {
+    const { results, events, useCase } = create();
+    const first = officialResult({ id: "result-1", revision: 1 });
+    await results.append(first);
+    await useCase.execute({ actorId: asActorId("actor-2"), officialResultId: first.id });
+    const second = officialResult({ id: "result-2", revision: 2 });
+    await results.append(second);
+    const replay = await useCase.execute({
+      actorId: asActorId("actor-2"),
+      officialResultId: first.id,
+    });
+    expect(replay.isOk() && replay.value).toEqual({ ...first, status: "voided" });
+    expect(await results.findById(second.id)).toEqual(second);
+    expect(events.map((event) => event.eventName)).toEqual(["results.official-result-voided"]);
+  });
+
   it("keeps the slots and approval metadata of a voided revision", async () => {
     const { results, useCase } = create();
     const approved = officialResult();

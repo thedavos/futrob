@@ -1,6 +1,6 @@
 import { COMPETITION_PERMISSION, type Competition } from "@futrob/competitions";
 import type { OfficialResult } from "@futrob/results";
-import { ENCOUNTER_PERMISSION, type FixtureEncounter, type FixturePlan } from "@futrob/scheduling";
+import { ENCOUNTER_PERMISSION, type FixturePlan } from "@futrob/scheduling";
 import type {
   ActorId,
   AuthorizationBatchPort,
@@ -13,6 +13,7 @@ import type {
 } from "@futrob/shared-kernel";
 import { compareTime } from "@futrob/shared-kernel";
 import type { Team } from "@futrob/teams";
+import { pairedEncounters, type PairedEncounter } from "./paired-encounters.ts";
 
 export type CompetitionEncounterStatus = "scheduled" | "awaiting_result" | "official";
 
@@ -59,13 +60,6 @@ export type ListCompetitionEncountersDependencies = {
       organizationId?: OrganizationId,
     ): Promise<readonly Pick<OfficialResult, "encounterId" | "status">[]>;
   };
-};
-
-type PairedEncounter = {
-  readonly encounter: FixtureEncounter;
-  readonly homeTeamId: TeamId;
-  readonly awayTeamId: TeamId;
-  readonly roundNumber: number;
 };
 
 /**
@@ -165,23 +159,4 @@ export class ListCompetitionEncountersUseCase {
       teams.flatMap((team): [TeamId, string][] => (team ? [[team.id, team.name]] : [])),
     );
   }
-}
-
-function pairedEncounters(plan: FixturePlan): PairedEncounter[] {
-  return plan.stages.flatMap((stage) =>
-    stage.rounds.flatMap((round) =>
-      round.encounters.flatMap((encounter): PairedEncounter[] =>
-        encounter.home.kind === "team" && encounter.away.kind === "team"
-          ? [
-              {
-                encounter,
-                homeTeamId: encounter.home.teamId,
-                awayTeamId: encounter.away.teamId,
-                roundNumber: round.number,
-              },
-            ]
-          : [],
-      ),
-    ),
-  );
 }

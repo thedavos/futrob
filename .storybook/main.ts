@@ -40,6 +40,11 @@ const browserClientMocks: readonly BrowserClientMock[] = [
     names: ["game-data-browser-client"],
   },
   {
+    file: webPresentation("modules/game-data/presentation/provider-health-story-client.ts"),
+    skip: "provider-health-story-client",
+    names: ["provider-health-browser-client"],
+  },
+  {
     file: webPresentation("modules/organizations/presentation/organizations-story-client.ts"),
     skip: "organizations-story-client",
     names: ["organizations-browser-client"],

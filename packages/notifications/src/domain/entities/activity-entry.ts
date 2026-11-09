@@ -15,6 +15,9 @@ export const ACTIVITY_KIND = {
   rosterInvitation: "roster_invitation",
   competitionPublished: "competition_published",
   entryInvitation: "entry_invitation",
+  scheduleChange: "schedule_change",
+  organizerDecision: "organizer_decision",
+  competitionEntry: "competition_entry",
 } as const;
 
 export type ActivityKind = (typeof ACTIVITY_KIND)[keyof typeof ACTIVITY_KIND];
@@ -30,6 +33,12 @@ export const ACTIVITY_SOURCE = {
   rosterInvitation: "roster_invitation",
   competition: "competition",
   entryInvitation: "entry_invitation",
+  /** A proposal of a schedule change: the Team that must answer it, and the watching organizer. */
+  scheduleChangeProposal: "schedule_change_proposal",
+  /** A schedule change nobody answered in time: the organizer must decide it. */
+  scheduleChangeEscalation: "schedule_change_escalation",
+  organizerDecision: "organizer_decision",
+  competitionEntry: "competition_entry",
 } as const;
 
 export type ActivitySourceName = (typeof ACTIVITY_SOURCE)[keyof typeof ACTIVITY_SOURCE];
@@ -62,6 +71,17 @@ export interface ActivityAudienceScope extends ActivityAudienceRef {
   readonly competitionId?: string;
 }
 
+/** What an organizer decided, as a closed vocabulary: the reason stays in the audit trail. */
+export const ACTIVITY_OUTCOME = {
+  entryApproved: "entry_approved",
+  entryRejected: "entry_rejected",
+  scheduleSet: "schedule_set",
+  scheduleKept: "schedule_kept",
+  walkoverIntended: "walkover_intended",
+} as const;
+
+export type ActivityOutcome = (typeof ACTIVITY_OUTCOME)[keyof typeof ACTIVITY_OUTCOME];
+
 /**
  * Display snapshot taken when the fact happened. It names things; it never carries
  * free-text reasons, which stay redacted in their owning audit trail.
@@ -70,6 +90,8 @@ export interface ActivitySubject {
   readonly competitionName: string | null;
   readonly encounterLabel: string | null;
   readonly teamName: string | null;
+  /** Set by `organizer_decision` only. */
+  readonly outcome: ActivityOutcome | null;
 }
 
 /** One fact for one audience. Closing keeps the first `closedAt`. */

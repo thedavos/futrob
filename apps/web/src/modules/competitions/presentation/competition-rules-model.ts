@@ -5,7 +5,7 @@ import type {
 } from "@futrob/api-contracts";
 
 export type RulesStageKey = "regularStage" | "knockoutStage";
-export type RulesStageLabel = "league" | "groups" | "knockout" | "playoffs";
+export type RulesStageLabel = "league" | "groups" | "knockout" | "playoffs" | "swiss";
 
 export type RulesStage = {
   readonly key: RulesStageKey;
@@ -18,6 +18,7 @@ const STAGE_LABELS = {
   knockout: { regularStage: "league", knockoutStage: "knockout" },
   "groups-knockout": { regularStage: "groups", knockoutStage: "knockout" },
   "league-playoffs": { regularStage: "league", knockoutStage: "playoffs" },
+  swiss: { regularStage: "swiss", knockoutStage: "knockout" },
 } as const satisfies Record<CompetitionFormatDto, Record<RulesStageKey, RulesStageLabel>>;
 
 /** Stages the persisted rules actually define, in play order. */

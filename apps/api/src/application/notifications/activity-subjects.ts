@@ -43,7 +43,7 @@ export async function encounterSubject(
     readonly homeTeamId: TeamId;
     readonly awayTeamId: TeamId;
   },
-): Promise<Omit<ActivitySubject, "teamName">> {
+): Promise<Pick<ActivitySubject, "competitionName" | "encounterLabel">> {
   const [competition, home, away] = await Promise.all([
     competitionName(readers, encounter.organizationId, encounter.competitionId),
     teamName(readers, encounter.organizationId, encounter.homeTeamId),

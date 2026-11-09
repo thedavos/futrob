@@ -7,12 +7,7 @@ import { theme } from "@/theme/theme";
 import { Button, EmptyState, Logo, Screen, Text } from "@/ui";
 import { GateBoundary } from "./gate-boundary.tsx";
 import type { NativeOnboardingFlow } from "./onboarding-flow.ts";
-import {
-  stepsForPath,
-  accountIsValid,
-  competitionFromDraft,
-  missingRequiredStep,
-} from "./onboarding-flow.ts";
+import { stepsForPath, accountIsValid, missingRequiredStep } from "./onboarding-flow.ts";
 import { useMobileCopy, type MobileCopyKey, type MobileLanguage } from "./mobile-copy.ts";
 import { OnboardingFields } from "./onboarding-fields.tsx";
 import { nativeRoute } from "./native-route.ts";
@@ -105,18 +100,18 @@ export function OnboardingScreen({ step }: { step: OnboardingStepDto }) {
 
   function previousStep(): OnboardingStepDto | null {
     if (!flow?.draft.path) return null;
-    const steps = stepsForPath(flow.draft.path);
+    const steps = stepsForPath(flow.draft.path, flow.draft.organizationAccountStep);
     const index = steps.indexOf(step);
     return index > 0 ? steps[index - 1]! : null;
   }
 
   function nextStep(): OnboardingStepDto | null {
     if (!flow?.draft.path) return null;
-    const steps = stepsForPath(flow.draft.path);
+    const steps = stepsForPath(flow.draft.path, flow.draft.organizationAccountStep);
     return steps[steps.indexOf(step) + 1] ?? null;
   }
 
-  async function continueFlow() {
+  async function continueFlow(withAccount = false) {
     if (!flow) return;
     if (step === "organization") {
       if (!flow.draft.organizationName.trim()) throw new Error(t("required"));
@@ -125,12 +120,19 @@ export function OnboardingScreen({ step }: { step: OnboardingStepDto }) {
       });
       if (!available.available) throw new Error(t("organizationTaken"));
     }
-    if (step === "competition" && !competitionFromDraft(flow.draft)) throw new Error(t("required"));
     if (step === "game-account" && !accountIsValid(flow.draft))
       throw new Error(t("incompleteAccount"));
     if (step === "invitation" && (!flow.preview || !flow.draft.invitationToken.trim())) {
       await flow.inspectInvitation();
       refresh();
+    }
+    if (step === "organization") {
+      await change({
+        organizationAccountStep: withAccount,
+        gameAccount: withAccount ? flow.draft.gameAccount : {},
+      });
+      await goTo(withAccount ? "game-account" : "review");
+      return;
     }
     const next = nextStep();
     if (next) await goTo(next);
@@ -140,12 +142,10 @@ export function OnboardingScreen({ step }: { step: OnboardingStepDto }) {
     const titleKey = {
       intention: "intention",
       organization: "organization",
-      competition: "competition",
       invitation: "invitation",
       "game-account": "account",
       club: "club",
       review: "review",
-      game: "account",
     } as const satisfies Record<OnboardingStepDto, MobileCopyKey>;
     return (
       <View style={{ gap: theme.spacing[3] }}>
@@ -155,8 +155,8 @@ export function OnboardingScreen({ step }: { step: OnboardingStepDto }) {
         </Text>
         {flow?.draft.path ? (
           <Text role="caption" color="muted-foreground">
-            {stepsForPath(flow.draft.path).indexOf(step) + 1} /{" "}
-            {stepsForPath(flow.draft.path).length}
+            {stepsForPath(flow.draft.path, flow.draft.organizationAccountStep).indexOf(step) + 1} /{" "}
+            {stepsForPath(flow.draft.path, flow.draft.organizationAccountStep).length}
           </Text>
         ) : null}
         <Button variant="ghost" label={t("language")} onPress={toggleLanguage} />
@@ -206,28 +206,45 @@ export function OnboardingScreen({ step }: { step: OnboardingStepDto }) {
           )}
           {flow && step !== "intention" ? (
             <View style={{ gap: theme.spacing[2] }}>
-              {step === "review" ? (
-                <Button
-                  label={t("confirm")}
-                  loading={busy}
-                  disabled={
-                    missingRequiredStep(flow.draft) !== null ||
-                    (flow.draft.path === "invitation" && !flow.preview)
-                  }
-                  onPress={() =>
-                    void run(async () => {
-                      const result = await flow.finish();
-                      router.replace(nativeRoute(result.route));
-                    })
-                  }
-                />
-              ) : (
-                <Button
-                  label={t("continue")}
-                  loading={busy}
-                  onPress={() => void run(continueFlow)}
-                />
-              )}
+              <View
+                style={{
+                  flexDirection: step === "organization" ? "row" : "column",
+                  gap: theme.spacing[2],
+                }}
+              >
+                {step === "review" ? (
+                  <Button
+                    label={t("confirm")}
+                    loading={busy}
+                    disabled={
+                      missingRequiredStep(flow.draft) !== null ||
+                      (flow.draft.path === "invitation" && !flow.preview)
+                    }
+                    onPress={() =>
+                      void run(async () => {
+                        const result = await flow.finish();
+                        router.replace(nativeRoute(result.route));
+                      })
+                    }
+                  />
+                ) : (
+                  <Button
+                    style={step === "organization" ? { flex: 1 } : undefined}
+                    label={t("continue")}
+                    loading={busy}
+                    onPress={() => void run(() => continueFlow())}
+                  />
+                )}
+                {step === "organization" ? (
+                  <Button
+                    variant="outline"
+                    style={{ flex: 1 }}
+                    label={t("createGameAccount")}
+                    disabled={busy}
+                    onPress={() => void run(() => continueFlow(true))}
+                  />
+                ) : null}
+              </View>
               {previousStep() ? (
                 <Button
                   variant="ghost"

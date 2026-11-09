@@ -126,7 +126,7 @@ describe("session gate", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("legacy and inconsistent steps fall back safely", async () => {
+  it("a step outside the persisted path falls back to welcome", async () => {
     await saveSession({
       token: "bearer-token-1",
       user: { id: "user-1", name: "Ana", email: "ana@club.mx" },
@@ -138,14 +138,14 @@ describe("session gate", () => {
           completedAt: null,
           version: null,
           path: "organization",
-          currentStep: "game",
+          currentStep: "club",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     );
     expect(await resolveSessionGate()).toMatchObject({
       kind: "onboarding",
-      route: "/(onboarding)/organization",
+      route: "/(onboarding)/welcome",
     });
   });
 });

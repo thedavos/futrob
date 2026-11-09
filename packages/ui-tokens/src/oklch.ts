@@ -8,6 +8,24 @@ export function oklch(l: number, c: number, h: number): Oklch {
   return { l, c, h };
 }
 
+/**
+ * Mixes two colors in OKLab, the same space as CSS `color-mix(in oklab, a t, b)`.
+ * Used to derive palette steps from existing palette colors instead of new hues.
+ */
+export function mixOklab(a: Oklch, b: Oklch, weightOfA: number): Oklch {
+  const toLab = (color: Oklch) => {
+    const radians = (color.h * Math.PI) / 180;
+    return [color.l, color.c * Math.cos(radians), color.c * Math.sin(radians)] as const;
+  };
+  const [la, aa, ba] = toLab(a);
+  const [lb, ab, bb] = toLab(b);
+  const l = la * weightOfA + lb * (1 - weightOfA);
+  const x = aa * weightOfA + ab * (1 - weightOfA);
+  const y = ba * weightOfA + bb * (1 - weightOfA);
+  const hue = (Math.atan2(y, x) * 180) / Math.PI;
+  return { l, c: Math.hypot(x, y), h: (hue + 360) % 360 };
+}
+
 /** Renders an Oklch color using the same notation as `packages/ui/src/tokens.css`. */
 export function formatOklch(color: Oklch): string {
   return `oklch(${color.l} ${color.c} ${color.h})`;

@@ -1,5 +1,9 @@
+import type { EffectiveAccessDto } from "@futrob/api-contracts";
+import { BILLING_PERMISSION } from "@futrob/billing";
+import { SHELL_PERMISSIONS, allowedPermissionSet } from "@/context/permissions.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { RESULT_PERMISSION } from "@futrob/results";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
@@ -21,7 +25,6 @@ describe("generalNavFor", () => {
     expect(accountNavItems(english).map((item) => item.label)).toEqual([
       "Profile",
       "Send feedback",
-      "Contact us",
       "Settings",
     ]);
     expect(accountNavItems().map((item) => item.label)).toContain("Perfil");
@@ -136,6 +139,31 @@ describe("contextNavFor", () => {
     expect([...player.items, ...operator.items].filter((item) => item.stub)).toEqual([]);
   });
 
+  it("lists disputes only for actors who can approve results", () => {
+    const competition = {
+      kind: WORKSPACE_SELECTION_KIND.competition,
+      competitionId: "c1",
+      organizationId: "org-1",
+    } as const;
+    const editor = contextNavFor(
+      competition,
+      new Set([COMPETITION_PERMISSION.update, COMPETITION_PERMISSION.read]),
+    );
+    const approver = contextNavFor(
+      competition,
+      new Set([
+        COMPETITION_PERMISSION.update,
+        COMPETITION_PERMISSION.read,
+        RESULT_PERMISSION.resultApprove,
+      ]),
+    );
+
+    expect(editor.items.map((item) => item.id)).not.toContain("disputes");
+    expect(approver.items.find((item) => item.id === "disputes")).toMatchObject({
+      href: "/orgs/org-1/competitions/c1/disputes",
+    });
+  });
+
   it("hides Mi equipo without teams.read", () => {
     const section = contextNavFor(
       {
@@ -165,5 +193,39 @@ describe("contextNavFor", () => {
     for (const item of [...player.items, ...operator.items]) {
       expect(item.icon, item.id).toBeTruthy();
     }
+  });
+});
+
+describe("plan navigation from shell bootstrap permissions", () => {
+  const selection = {
+    kind: WORKSPACE_SELECTION_KIND.organization,
+    organizationId: "org-1",
+  } as const;
+  const effectiveAccess = (role: string, billingAllowed: boolean): EffectiveAccessDto => ({
+    actorId: "actor-1",
+    scope: { organizationId: "org-1" },
+    roles: [{ scopeType: "organization", scopeId: "org-1", role }],
+    permissions: SHELL_PERMISSIONS.map((permission) => ({
+      permission,
+      allowed: permission === BILLING_PERMISSION.read && billingAllowed,
+      decidedAt: "organization",
+    })),
+  });
+  it.each(["organizer", "staff"])(
+    "shows Plan y uso for an authorized %s using the actual probes",
+    (role) => {
+      const permissions = allowedPermissionSet(effectiveAccess(role, true));
+      expect(
+        generalNavFor(selection, permissions).items.find((item) => item.id === "plan"),
+      ).toMatchObject({
+        href: "/orgs/org-1/settings/plan",
+      });
+    },
+  );
+  it("hides Plan y uso when billing.read is denied", () => {
+    const permissions = allowedPermissionSet(effectiveAccess("staff", false));
+    expect(generalNavFor(selection, permissions).items.map((item) => item.id)).not.toContain(
+      "plan",
+    );
   });
 });

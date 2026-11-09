@@ -12,6 +12,7 @@ import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
 import type { CanQuery } from "@/shared/presentation/permissions/use-can.ts";
 import { OrganizationMemberInvitationDialog } from "./organization-member-invitation-dialog.tsx";
 import type {
+  MemberAccessManagement,
   MembersSectionState,
   OrganizationMemberChange,
   OrganizationMemberView,
@@ -25,6 +26,8 @@ const CAPABILITIES = {
   invite: ORGANIZATION_PERMISSION.invitationsManage,
   members: ORGANIZATION_PERMISSION.membershipsRead,
   changes: ORGANIZATION_PERMISSION.auditRead,
+  roles: ORGANIZATION_PERMISSION.rolesManage,
+  grants: ORGANIZATION_PERMISSION.grantsManage,
 };
 
 const styles = stylex.create({
@@ -80,6 +83,11 @@ export function OrganizationMembersPage({ organizationId }: { readonly organizat
         loading: access.loading,
         unavailable: access.unavailable,
       }}
+      manage={{
+        organizationId,
+        roles: !access.loading && !access.unavailable && access.roles,
+        grants: !access.loading && !access.unavailable && access.grants,
+      }}
       members={members}
       organizationId={organizationId}
     />
@@ -91,9 +99,11 @@ export function OrganizationMembersView({
   invite,
   members = { kind: "unavailable" },
   changes = { kind: "unavailable" },
+  manage,
 }: {
   readonly organizationId: string;
   readonly invite: CanQuery;
+  readonly manage?: MemberAccessManagement;
   readonly members?: MembersSectionState<OrganizationMemberView>;
   readonly changes?: MembersSectionState<OrganizationMemberChange>;
 }) {
@@ -112,7 +122,12 @@ export function OrganizationMembersView({
           </PageHeaderActions>
         ) : null}
       </PageHeader>
-      <OrganizationMembersSections key={organizationId} changes={changes} members={members} />
+      <OrganizationMembersSections
+        key={organizationId}
+        changes={changes}
+        manage={manage}
+        members={members}
+      />
     </main>
   );
 }

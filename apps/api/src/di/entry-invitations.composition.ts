@@ -8,6 +8,7 @@ import {
   type EntryInvitationCommands,
 } from "@/application/notifications/entry-invitation-activity.ts";
 import type { CompetitionsModule } from "./competitions.module.ts";
+import type { CompetitionEntryActivity } from "@/application/notifications/competition-entry-activity.ts";
 import type { ActivityWriter } from "./notifications.module.ts";
 import type { TeamsModule } from "./teams.module.ts";
 
@@ -21,6 +22,7 @@ export interface EntryInvitationsComposition {
 export function createEntryInvitations(input: {
   readonly transaction: TransactionPort;
   readonly writer: ActivityWriter;
+  readonly entryActivity: CompetitionEntryActivity;
   readonly competitions: CompetitionsModule;
   readonly teams: TeamsModule;
   readonly organizations: OrganizationRepository;
@@ -54,6 +56,7 @@ export function createEntryInvitations(input: {
       rosters: input.teams.repositories.rosters,
       clubs: input.teams.repositories.associations,
       activity,
+      entryActivity: input.entryActivity,
     }),
   };
 }

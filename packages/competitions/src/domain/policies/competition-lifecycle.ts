@@ -13,3 +13,15 @@ export function canEditParticipants(status: CompetitionStatus): boolean {
 export function canPublish(status: CompetitionStatus): boolean {
   return PUBLISHABLE_STATUSES.some((value) => value === status);
 }
+
+/** Statuses that count against the plan's active competitions; finished ones stop counting. */
+export const ACTIVE_COMPETITION_STATUSES = [
+  "draft",
+  "registration",
+  "published",
+  "paused",
+] as const;
+
+export function isActiveCompetitionStatus(status: CompetitionStatus): boolean {
+  return ACTIVE_COMPETITION_STATUSES.some((value) => value === status);
+}

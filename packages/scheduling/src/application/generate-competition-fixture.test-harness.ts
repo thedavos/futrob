@@ -17,6 +17,11 @@ import type {
   FixturePlanRepository,
 } from "../domain/ports/fixture-plan.repository.ts";
 import type { OfficialMatchRepository } from "../domain/ports/official-match.repository.ts";
+import {
+  replaceEncounter,
+  withoutRounds,
+  withRoundEncounters,
+} from "../domain/policies/edit-fixture-encounter.ts";
 import { GenerateCompetitionFixtureUseCase } from "./generate-competition-fixture.use-case.ts";
 
 export const sourceSnapshot: CompetitionFixtureSourceSnapshot = {
@@ -31,6 +36,7 @@ export const sourceSnapshot: CompetitionFixtureSourceSnapshot = {
     regular: "independent_matches",
     knockout: "aggregate_score",
   },
+  standingPoints: { winPoints: 3, drawPoints: 1, lossPoints: 0 },
   approvedParticipants: [asTeamId("team-a"), asTeamId("team-b")],
 };
 
@@ -81,8 +87,40 @@ export class FixturePlans implements FixturePlanRepository {
     return { plan, created: true } as const;
   }
 
-  async updateEncounter() {
-    return null;
+  async updateEncounter(input: Parameters<FixturePlanRepository["updateEncounter"]>[0]) {
+    const existing = this.rows.get(input.fixturePlanId);
+    if (!existing || existing.revision !== input.revision) return null;
+    const updated = {
+      ...replaceEncounter(existing, input.encounter),
+      revision: existing.revision + 1,
+    };
+    this.rows.set(updated.id, updated);
+    return updated;
+  }
+
+  private write(
+    input: { readonly fixturePlanId: string; readonly revision: number },
+    change: (plan: FixturePlan) => FixturePlan,
+  ) {
+    const existing = this.rows.get(input.fixturePlanId);
+    if (!existing || existing.revision !== input.revision) return null;
+    const updated = { ...change(existing), revision: existing.revision + 1 };
+    this.rows.set(updated.id, updated);
+    return updated;
+  }
+
+  async replaceRoundEncounters(
+    input: Parameters<FixturePlanRepository["replaceRoundEncounters"]>[0],
+  ) {
+    return this.write(input, (plan) => withRoundEncounters(plan, input.roundId, input.encounters));
+  }
+
+  async removeRounds(input: Parameters<FixturePlanRepository["removeRounds"]>[0]) {
+    return this.write(input, (plan) => withoutRounds(plan, input.roundIds));
+  }
+
+  async setWithdrawnTeams(input: Parameters<FixturePlanRepository["setWithdrawnTeams"]>[0]) {
+    return this.write(input, (plan) => ({ ...plan, withdrawnTeamIds: input.teamIds }));
   }
 
   async markSuperseded(organizationId: string, competitionId: string, exceptPlanId: string) {

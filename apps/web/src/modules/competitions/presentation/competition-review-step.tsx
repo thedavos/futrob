@@ -192,7 +192,7 @@ export function ReviewStep({
           <Separator />
           <SummaryBlock title="Reglas" onEdit={() => onEdit("rules")}>
             <Fact label="Puntuación" value={pointsSummary(competition.format, draft.rules)} />
-            <Fact label="Desempate" value={reviewTiebreaks()} />
+            <Fact label="Desempate" value={reviewTiebreaks(competition.format)} />
             <Fact label="Validación" value="El rival confirma · 24 horas" />
           </SummaryBlock>
           <Separator />

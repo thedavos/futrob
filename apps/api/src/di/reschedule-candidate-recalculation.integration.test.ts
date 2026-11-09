@@ -483,6 +483,7 @@ async function seed(
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: 11,
+      rankingEligibility: null,
       createdAt: SEEDED_AT,
     },
   });

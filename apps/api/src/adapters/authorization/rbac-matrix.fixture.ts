@@ -177,6 +177,7 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
         knockoutStage: null,
         awayGoalsEnabled: false,
         maxRosterSize: 11,
+        rankingEligibility: null,
         createdAt: RBAC_MATRIX_NOW,
       },
     });

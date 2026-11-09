@@ -12,10 +12,14 @@
     "check": "vp check",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vp test",
-    "generate:openapi": "tsx scripts/generate-openapi.ts"
+    "generate:openapi": "tsx scripts/generate-openapi.ts",
+    "seed:demo": "tsx scripts/seed-demo/main.ts",
+    "demo:ea": "tsx scripts/seed-demo/fake-ea-server.ts"
   },
   "dependencies": {
+    "@futrob/analytics": "0.1.0",
     "@futrob/api-contracts": "0.1.0",
+    "@futrob/billing": "0.1.0",
     "@futrob/competitions": "0.1.0",
     "@futrob/ea-clubs": "0.1.0",
     "@futrob/game-data": "0.1.0",
@@ -23,24 +27,26 @@
     "@futrob/logger": "0.1.0",
     "@futrob/notifications": "0.1.0",
     "@futrob/organizations": "0.1.0",
+    "@futrob/public-portal": "0.1.0",
     "@futrob/results": "0.1.0",
     "@futrob/scheduling": "0.1.0",
     "@futrob/shared-kernel": "0.1.0",
     "@futrob/statistics": "0.1.0",
     "@futrob/teams": "0.1.0",
-    "@hono/node-server": "^2.1.4",
+    "@hono/node-server": "^2.1.6",
     "@hono/zod-openapi": "^1.6.3",
-    "hono": "^4.13.13",
+    "hono": "^4.13.16",
     "pg": "^8.23.1",
     "yaml": "^2.8.0",
-    "zod": "4.6.6"
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@futrob/sdk": "0.1.0",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
-    "tsx": "4.23.15",
+    "tsx": "^4.23.13",
     "typescript": "6.0.2",
     "vite-plus": "0.3.3"
   }

@@ -4,6 +4,19 @@
 
 Build Futrob MVP (FC Clubs) per `product/`. Architecture: hexagonal bounded-context packages; web/auth on Cloudflare Workers, product API on Node/Railway, native client on Expo.
 
+## Ways to hurt yourself
+
+This VM runs T3 Code, Claude Code, Codex and several worktree dev servers at the same time.
+
+- **Processes:** never kill by name or pattern (`pkill -f`, `killall`, `pgrep … | xargs kill`).
+  Kill only PIDs you spawned, or a port's owner (`ss -ltnp 'sport = :3000'`) after
+  `readlink /proc/<pid>/cwd` shows it is inside your worktree.
+- **Databases:** never migrate, seed, reset or delete against shared or real Postgres (Neon dev,
+  Railway) or another worktree's database. Check where `DATABASE_URL` points first; see
+  [Test data](#test-data).
+- **Secrets:** never commit or print `.env`, `.env.local`, `.dev.vars` or tokens. Refer to
+  variables by name.
+
 ## Read first
 
 1. `product/prd.md`, requirements, glossary, open-decisions
@@ -55,7 +68,7 @@ contract, including Grafito + Lima for both theme selectors and the canonical st
 - Workers: `apps/web/src/workers/`
 - Packages también: `api-contracts`, `sdk`, `ui`, `ui-tokens`, `ea-clubs`, `logger`, `shared-kernel`, `test-support` — ver `/packages/README.md`
 
-MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**, results, statistics, analytics, notifications, public-portal. `billing` out of MVP.
+MVP BCs: identity, organizations, competitions, teams, scheduling, **game-data**, results, statistics, analytics, notifications, public-portal, billing (plans and entitlements; automated payments out of MVP, see ADR-0025).
 
 ## Rules
 
@@ -121,6 +134,47 @@ npm run cli -- help
 
 `apps/cli` has no local Vite+ app config — only root fmt/lint. Do not claim Workers/EA integrations work without direct evidence.
 
+## Test data
+
+- A worktree runs against its own database or schema, seeded with the demo seed:
+  `npm run seed:demo -w @futrob/api -- --reset` (about 55 accounts, password `Test123`,
+  `@demo.futrob.test`; see `apps/api/scripts/seed-demo/README.md`). The seed lands with PR #247
+  (`t3/testing-cuentas-demo-data`); until it merges, the command is not on `main`.
+- Copy in, never write back: data flows from the seed or a snapshot into your worktree database,
+  never from a worktree into a shared database or back into the seed.
+- TODO: provision the worktree database automatically. `scripts/setup-worktree.sh` (run by
+  `t3.json`) copies the main checkout's `apps/api/.env`, so a new worktree starts on the shared
+  `DATABASE_URL`. Until then, point `DATABASE_URL` and both Hyperdrive local connection strings at
+  your own database before `migrate` or `seed:demo`. Setup does not seed yet: it cannot create the
+  target database, and the seed takes about 22 minutes.
+
+## Hit every surface
+
+Before finishing, walk this list and cite each item in the final summary as applied (what changed)
+or not applicable (why):
+
+- **Clients:** web and mobile. Shared client logic lives in `@futrob/sdk`, not in one app.
+- **Contract:** `/api/v1` in `@futrob/api-contracts`, OpenAPI artifacts and route coverage.
+- **Access:** every role and permission in `EffectiveAccess`
+  (`packages/shared-kernel/src/authorization.port.ts`), including the denied path.
+- **Entry points:** every route, link, notification, deep link and CLI command that reaches it.
+- **Reverse states:** every way in has a way out and a way to see the current state
+  (invite → cancel, approve → revoke).
+- **States:** empty, loading and error, plus filtered-empty and permission states.
+- **Docs:** `docs/`, `.agents/skills/`, ADRs and this file, wherever guidance became inaccurate.
+
+## Test rules
+
+- Logic bug: write the failing test first, at the lowest layer that fails on `main`.
+- Extend an existing test or fixture before adding a new file.
+- No sleeps, per-test or per-hook timeouts, retries, or `Date.now()` deltas. Await the specific
+  event, inject `ClockPort`, and put a slow suite's `testTimeout` in its Vitest project config.
+- `it.skip` / `describe.skip` / `.todo` need a tracking issue in a comment on the line directly
+  above (`// TODO(#123): …`). Use `skipIf`/`runIf` only for missing env prerequisites.
+- Visual bugs: attach before/after captures; do not add UI tests that pin pixels or markup.
+- `npm run lint:tests` (part of `npm run check`) enforces the timeout, retry, skip and `.only`
+  rules ([config](tools/oxlint/tests.oxlintrc.json)). Its legacy timeout allowlist only shrinks.
+
 ## Verification by change type
 
 - **Code:** run `npm run check`, affected typechecks and relevant tests. `check`
@@ -147,7 +201,7 @@ npm run cli -- help
   `npm run build` then `npm run bundle:budget`. Use
   [release-check](.cursor/commands/release-check.md) for release-wide validation.
 
-Finish with checks run, pass/fail/blocked results and evidence paths. Distinguish
+Finish with the [surface checklist](#hit-every-surface), checks run, pass/fail/blocked results and evidence paths. Distinguish
 unit/contract results from live integration proof; skipped checks remain unverified.
 
 ## Cursor Cloud specific instructions
@@ -157,7 +211,8 @@ Standard commands live in the `## Commands` section above and in `README.md` / `
 - **Node 24 is required** (`engines.node >=24`). `.cursor/cloud-install.sh` bootstraps nvm if it is missing, installs/selects Node 24, and **exits** if `node --version` is still below 24 (the Cloud image may also expose Node 22 at `/exec-daemon/node`). New shells source `~/.bashrc` for nvm's Node 24; if `node --version` ever shows 22, run `source ~/.bashrc`.
 - **`vp` is not installed globally.** Run tooling through the root `npm run` scripts (`dev`, `check`, `test`, `build`, `web`, `api`); npm puts `node_modules/.bin/vp` on `PATH` for them. For a direct call use `./node_modules/.bin/vp`, never `npx vp`.
 - **Local env files are gitignored and must exist to run the app**: `apps/web/.dev.vars`, `apps/auth/.dev.vars`, `apps/api/.env`, and `apps/auth/.env` + `apps/web/.env` (Hyperdrive target, below). Web and API `INTERNAL_JOB_SECRET` values **must match**, or the web BFF → API org/onboarding calls fail with 401. Web and auth `BETTER_AUTH_SECRET` values **must match**, or login 200s and BFF/SSR stay unauthenticated. Set `FUTROB_API_BASE_URL=http://localhost:8787/api/v1` in `apps/web/.dev.vars`. Auth uses the `AUTH_SERVICE` service binding in production and local development. The Cloud install script copies the examples and aligns the secrets.
-- **Auth data lives in the product Postgres** (ADR-0021), reached from the Workers through Hyperdrive. `wrangler dev` and the `vp dev` Cloudflare plugin need a local target: put `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=<same value as apps/api DATABASE_URL>` in `apps/auth/.env` and `apps/web/.env` (both gitignored; `.dev.vars` is not read for this). Apply the single migration history with `npm run migrate -w @futrob/api` (it records applied files in `schema_migrations`; a database that already has the schema but no ledger needs `-- --baseline <N>` once). Web has no auth schema: `get-session` from `apps/auth` already returns `actorId`.
+- **Worktrees**: `.worktreeinclude` lists those env files so Claude Code and Codex copy them from the main checkout into each new worktree. Keep it in sync when you add a gitignored env file. T3 Code does not read it; `t3.json` runs `scripts/setup-worktree.sh` on worktree creation to copy the same files from `$T3CODE_PROJECT_ROOT`.
+- **Auth data lives in the product Postgres** (ADR-0021), reached from the Workers through Hyperdrive. `wrangler dev` and the `vp dev` Cloudflare plugin need a local target: put `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=<same value as apps/api DATABASE_URL>` in `apps/auth/.env` and `apps/web/.env` (both gitignored; `.dev.vars` is not read for this). Apply the single migration history to your own database (see [Test data](#test-data)) with `npm run migrate -w @futrob/api` (it records applied files in `schema_migrations`; a database that already has the schema but no ledger needs `-- --baseline <N>` once). Web has no auth schema: `get-session` from `apps/auth` already returns `actorId`.
 - **Auth serving**: `/api/auth/*` is served by the `apps/auth` worker; web reaches it only through the `AUTH_SERVICE` service binding (browser proxy and BFF/SSR `get-session`). `npm run dev` starts auth on `:8788`, and Wrangler connects the separately running local Workers by service name.
 - **Postgres is required to sign in.** Auth, actors and BFF rate limits need `DATABASE_URL` (Neon in development, Railway in production) with every migration applied. `apps/api` alone still runs without it on process-local in-memory stores (`/api/v1/meta/health` reports `db: "skipped"`), which are lost whenever the API restarts — `apps/api` runs under `tsx watch`, so editing API files hot-restarts it. Because every `ActorId` column references `actors`, a durable API only accepts actors that `apps/auth` has provisioned (sign up first; `INITIAL_SUPERUSER_ACTOR_ID` must be an existing actor or the bootstrap is skipped with a warning).
 - **Native install scripts**: only `esbuild`, `sharp`, and `workerd` are allowlisted (by name) in `package.json` `allowScripts` so they can fetch platform binaries. Cloud `npm ci` uses `--strict-allow-scripts` so any other lifecycle script fails the install instead of being skipped. Do not use `dangerously-allow-all-scripts`.

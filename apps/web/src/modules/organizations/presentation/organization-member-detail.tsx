@@ -14,26 +14,37 @@ import {
   MetaTerm,
   MetaValue,
   SectionTitle,
+  typography,
 } from "@futrob/ui";
 import memberAccessUrl from "@/assets/illustration-permissions.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import {
+  OrganizationMemberGrants,
+  OrganizationMemberRoleEditor,
+} from "./organization-member-access-controls.tsx";
 import { MembersEmptyState } from "./organization-members-feedback.tsx";
-import { formatMemberDate, type OrganizationMemberView } from "./organization-members-model.ts";
+import {
+  formatMemberDate,
+  type MemberAccessManagement,
+  type OrganizationMemberView,
+} from "./organization-members-model.ts";
 import { styles } from "./organization-members-sections.styles.ts";
 
 export function OrganizationMemberDetail({
   member,
   id,
+  manage,
 }: {
   readonly member: OrganizationMemberView | null;
   readonly id: string;
+  readonly manage?: MemberAccessManagement;
 }) {
   const { t, locale } = useI18n();
   const headingId = `${id}-title`;
   return (
     <Card aria-labelledby={headingId} className={styles.panel} id={id}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.heading} id={headingId}>
+        <Heading className={typography.title} id={headingId}>
           {t("organizations.members.detail.title")}
         </Heading>
         <Caption>{t("organizations.members.detail.description")}</Caption>
@@ -56,7 +67,7 @@ export function OrganizationMemberDetail({
                 <AvatarFallback>{member.name.slice(0, 1)}</AvatarFallback>
               </Avatar>
               <div {...applyStyles(styles.copy)}>
-                <Heading as="h3" className={styles.heading}>
+                <Heading as="h3" className={typography.title}>
                   {member.name}
                 </Heading>
                 <Caption {...applyStyles(styles.secondary)}>
@@ -84,6 +95,20 @@ export function OrganizationMemberDetail({
                 </MetaValue>
               </MetaItem>
             </MetaList>
+            {manage?.roles ? (
+              <OrganizationMemberRoleEditor
+                actorId={member.id}
+                key={member.id}
+                organizationId={manage.organizationId}
+                role={member.role}
+              />
+            ) : null}
+            {manage?.grants ? (
+              <OrganizationMemberGrants
+                actorId={member.id}
+                organizationId={manage.organizationId}
+              />
+            ) : null}
             <div {...applyStyles(styles.copy)}>
               <SectionTitle as="h3">{t("organizations.members.competitionAccess")}</SectionTitle>
               {member.access.kind === "inherited" ? (

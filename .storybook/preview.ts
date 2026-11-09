@@ -56,6 +56,7 @@ const preview: Preview = {
               "Competition",
               "Invitation",
               "Review",
+              "Completion",
             ],
             "Organizer",
             [
@@ -76,6 +77,7 @@ const preview: Preview = {
             ],
             "Competition",
             [
+              "Overview",
               "Rules",
               "Teams console",
               "Entry invitation",

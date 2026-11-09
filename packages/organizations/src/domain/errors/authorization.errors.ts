@@ -1,3 +1,4 @@
+import type { OrganizationStaffLimitReached } from "./staff-seat.errors.ts";
 import { TaggedError, type Permission } from "@futrob/shared-kernel";
 
 export class AuthorizationForbidden extends TaggedError("AuthorizationForbidden")<{
@@ -50,4 +51,5 @@ export type ManageSuperuserError =
 export type ManageOrganizationRoleError =
   | AuthorizationForbidden
   | OrganizationMembershipNotFound
-  | LastOrganizerProtected;
+  | LastOrganizerProtected
+  | OrganizationStaffLimitReached;

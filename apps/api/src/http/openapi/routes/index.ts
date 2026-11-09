@@ -1,4 +1,5 @@
 import * as authorization from "@/http/openapi/routes/authorization.ts";
+import * as billing from "@/http/openapi/routes/billing.ts";
 import * as competitions from "@/http/openapi/routes/competitions.ts";
 import * as entryInvitations from "@/http/openapi/routes/entry-invitations.ts";
 import * as encounters from "@/http/openapi/routes/encounters.ts";
@@ -9,11 +10,13 @@ import * as meta from "@/http/openapi/routes/meta.ts";
 import * as notifications from "@/http/openapi/routes/notifications.ts";
 import * as organizations from "@/http/openapi/routes/organizations.ts";
 import * as players from "@/http/openapi/routes/players.ts";
+import * as publicPortal from "@/http/openapi/routes/public-portal.ts";
 import * as results from "@/http/openapi/routes/results.ts";
 import * as statistics from "@/http/openapi/routes/statistics.ts";
 import * as teams from "@/http/openapi/routes/teams.ts";
 
 export * from "@/http/openapi/routes/authorization.ts";
+export * from "@/http/openapi/routes/billing.ts";
 export * from "@/http/openapi/routes/competitions.ts";
 export * from "@/http/openapi/routes/encounters.ts";
 export * from "@/http/openapi/routes/entry-invitations.ts";
@@ -24,6 +27,7 @@ export * from "@/http/openapi/routes/meta.ts";
 export * from "@/http/openapi/routes/notifications.ts";
 export * from "@/http/openapi/routes/organizations.ts";
 export * from "@/http/openapi/routes/players.ts";
+export * from "@/http/openapi/routes/public-portal.ts";
 export * from "@/http/openapi/routes/results.ts";
 export * from "@/http/openapi/routes/statistics.ts";
 export * from "@/http/openapi/routes/teams.ts";
@@ -41,6 +45,8 @@ export const openApiRoutes = [
   ...Object.values(statistics),
   ...Object.values(notifications),
   ...Object.values(teams),
+  ...Object.values(publicPortal),
   ...Object.values(encounters),
   ...Object.values(authorization),
+  ...Object.values(billing),
 ] as const;

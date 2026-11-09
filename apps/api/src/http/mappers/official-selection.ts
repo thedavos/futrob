@@ -1,6 +1,8 @@
 import {
+  listCompetitionDisputesResponseSchema,
   officialSelectionCommandResponseSchema,
   officialSelectionViewSchema,
+  type ListCompetitionDisputesResponse,
   type MatchDisputeDto,
   type OfficialSelectionActionDto,
   type OfficialSelectionCommandResponse,
@@ -23,6 +25,7 @@ import type {
   ResolveMatchDisputeError,
   ReviewMatchDisputeError,
 } from "@futrob/results";
+import type { CompetitionDisputes } from "@/application/results/list-competition-disputes.query.ts";
 import { failureToHttp } from "@/http/errors.ts";
 
 export type TeamOfficialSelectionError =
@@ -193,5 +196,30 @@ export function toOfficialSelectionCommandResponse(
       : null,
     integrityFlags: output.integrityFlags,
     replayed: output.replayed,
+  });
+}
+
+export function toCompetitionDisputesDto(
+  list: CompetitionDisputes,
+): ListCompetitionDisputesResponse {
+  return listCompetitionDisputesResponseSchema.parse({
+    competition: list.competition,
+    disputes: list.disputes.map((row) => ({
+      encounterId: row.encounterId,
+      status: row.status,
+      home: row.home,
+      away: row.away,
+      scheduledStartAt: row.scheduledStartAt.toISOString(),
+      since: row.since.toISOString(),
+      dispute: row.dispute
+        ? {
+            id: row.dispute.id,
+            status: row.dispute.status,
+            openedByTeamId: row.dispute.openedByTeamId,
+            openedAt: row.dispute.openedAt.toISOString(),
+            reviewStartedAt: row.dispute.reviewStartedAt?.toISOString() ?? null,
+          }
+        : null,
+    })),
   });
 }

@@ -73,7 +73,7 @@ export function registerCompetitionParticipantRoutes(app: Hono, deps: AppDeps): 
           teamId: asTeamId(parsed.teamId),
         });
         if (!team) return null;
-        return deps.modules.competitions.registerTeamEntry.execute({
+        return deps.modules.activityCommands.registerTeamEntry.execute({
           actorId: c.get("actorId"),
           organizationId,
           competitionId,
@@ -88,7 +88,7 @@ export function registerCompetitionParticipantRoutes(app: Hono, deps: AppDeps): 
         creationKey: parsed.creationKey,
       });
       if (!team.isOk()) return team;
-      return deps.modules.competitions.registerTeamEntry.execute({
+      return deps.modules.activityCommands.registerTeamEntry.execute({
         actorId: c.get("actorId"),
         organizationId,
         competitionId,
@@ -221,7 +221,7 @@ export function registerCompetitionParticipantRoutes(app: Hono, deps: AppDeps): 
       });
     }
 
-    const result = await deps.modules.competitions.registerTeamEntry.execute({
+    const result = await deps.modules.activityCommands.registerTeamEntry.execute({
       actorId: c.get("actorId"),
       organizationId,
       competitionId,
@@ -237,7 +237,7 @@ export function registerCompetitionParticipantRoutes(app: Hono, deps: AppDeps): 
 
   secured.openapi(approveTeamEntryRoute, async (c) => {
     const params = c.req.valid("param");
-    const result = await deps.modules.competitions.approveTeamEntry.execute({
+    const result = await deps.modules.activityCommands.approveTeamEntry.execute({
       actorId: c.get("actorId"),
       organizationId: asOrganizationId(params.organizationId),
       competitionId: asCompetitionId(params.competitionId),
@@ -249,7 +249,7 @@ export function registerCompetitionParticipantRoutes(app: Hono, deps: AppDeps): 
 
   secured.openapi(rejectTeamEntryRoute, async (c) => {
     const params = c.req.valid("param");
-    const result = await deps.modules.competitions.rejectTeamEntry.execute({
+    const result = await deps.modules.activityCommands.rejectTeamEntry.execute({
       actorId: c.get("actorId"),
       organizationId: asOrganizationId(params.organizationId),
       competitionId: asCompetitionId(params.competitionId),

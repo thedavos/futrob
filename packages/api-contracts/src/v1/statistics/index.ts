@@ -12,7 +12,10 @@ export {
   playerMatchContributionSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
+  standingFormResultSchema,
+  standingFormSchema,
   competitionStandingRowSchema,
+  swissProgressSchema,
   competitionStandingSnapshotSchema,
   getCompetitionStandingsResponseSchema,
   teamCompetitionStatsSchema,
@@ -30,6 +33,7 @@ export {
   type GetMyMatchesQuery,
   type GetMyMatchesResponse,
   type CompetitionStandingRowDto,
+  type SwissProgressDto,
   type CompetitionStandingSnapshotDto,
   type GetCompetitionStandingsResponse,
   type TeamCompetitionStatsDto,
@@ -50,3 +54,5 @@ export {
   type TeamPerformanceRankingSnapshotDto,
   type GetTeamPerformanceRankingResponse,
 } from "./team-performance.schemas.ts";
+
+export { rebuildCompetitionStatisticsResponseSchema } from "./schemas.ts";

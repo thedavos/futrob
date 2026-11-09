@@ -7,13 +7,20 @@ import { createConsoleLogger } from "@futrob/logger";
 const logger = createConsoleLogger({ format: "plain", scope: "worker" });
 import { recoverCandidateRecalculation } from "@/workers/results-candidate-recalculation.worker.ts";
 import { recoverConfirmationExpiry } from "@/workers/results-confirmation-expiry.worker.ts";
-import { recoverNextProviderSyncJob } from "@/workers/game-data-sync.worker.ts";
+import {
+  enqueueDueProviderSyncs,
+  recoverNextProviderSyncJob,
+  type GameDataSyncQueueMessage,
+} from "@/workers/game-data-sync.worker.ts";
 
 interface WorkerEnv {
   readonly FUTROB_API_BASE_URL: string;
   readonly INTERNAL_JOB_SECRET: string;
   readonly NODE_ENV?: string;
   readonly SENTRY_DSN?: string;
+  readonly JOB_QUEUE?: {
+    send(message: GameDataSyncQueueMessage): Promise<void>;
+  };
 }
 
 interface ExecutionContext {
@@ -75,6 +82,21 @@ const worker = {
         captureWorkerError(cause, {
           handler: "scheduled",
           job: "candidate_recalculation",
+          cron: controller.cron,
+        });
+      }),
+    );
+    const jobQueue = env.JOB_QUEUE;
+    context.waitUntil(
+      enqueueDueProviderSyncs({
+        fetcher: fetch,
+        apiBaseUrl: env.FUTROB_API_BASE_URL,
+        internalJobSecret: env.INTERNAL_JOB_SECRET,
+        publish: jobQueue ? (message) => jobQueue.send(message) : undefined,
+      }).catch((cause) => {
+        captureWorkerError(cause, {
+          handler: "scheduled",
+          job: "enqueue_due_provider_syncs",
           cron: controller.cron,
         });
       }),

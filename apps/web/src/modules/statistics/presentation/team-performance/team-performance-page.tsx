@@ -45,6 +45,7 @@ type Scope = { readonly organizationId: string; readonly competitionId: string }
 export type TeamPerformanceState =
   | { readonly kind: "loading" }
   | { readonly kind: "forbidden" }
+  | { readonly kind: "notInPlan" }
   | { readonly kind: "error"; readonly cause: "access" | "load"; readonly retry: () => void }
   | {
       readonly kind: "ready";
@@ -72,6 +73,7 @@ export function TeamPerformanceRoute(scope: Scope) {
     }
     if (!access.allowed) return { kind: "forbidden" };
     const result = query.data;
+    if (result?.kind === "notInPlan") return { kind: "notInPlan" };
     if (result?.kind === "refused") {
       return result.status === 401
         ? { kind: "error", cause: "load", retry: () => void query.refetch() }
@@ -159,6 +161,45 @@ export function TeamPerformancePageView({
                     variant="outline"
                   >
                     {t("teamPerformance.backToCompetition")}
+                  </Button>
+                </EmptyStateActions>
+              </EmptyState>
+            );
+          case "notInPlan":
+            return (
+              <EmptyState>
+                <EmptyStateIcon>
+                  <img alt="" data-outline="none" src={emptyStandingsUrl} />
+                </EmptyStateIcon>
+                <EmptyStateCopy>
+                  <EmptyStateTitle>{t("billing.rankingUpsell.title")}</EmptyStateTitle>
+                  <EmptyStateDescription>
+                    {t("billing.rankingUpsell.description")}
+                  </EmptyStateDescription>
+                </EmptyStateCopy>
+                <EmptyStateActions>
+                  <Button
+                    nativeButton={false}
+                    role="link"
+                    render={
+                      <Link
+                        params={{ orgId: organizationId, competitionId }}
+                        to="/orgs/$orgId/competitions/$competitionId/standings"
+                      />
+                    }
+                    variant="outline"
+                  >
+                    {t("teamPerformance.viewStandings")}
+                  </Button>
+                  <Button
+                    nativeButton={false}
+                    role="link"
+                    render={
+                      <Link params={{ orgId: organizationId }} to="/orgs/$orgId/settings/plan" />
+                    }
+                    variant="ghost"
+                  >
+                    {t("billing.upsell.action")}
                   </Button>
                 </EmptyStateActions>
               </EmptyState>

@@ -34,7 +34,7 @@ No se agrupa programación, datos de proveedor, selección oficial y stats en un
 - API de producto Hono/Node en Railway, con Postgres. Auth, actores y rate limits BFF en ese mismo Postgres, accedido desde los Workers por Hyperdrive ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); una sola historia de migraciones en `apps/api/migrations` y FK a `actors` en toda columna de actor. R2 / Queues / Cron en web. Tenancy scoped en aplicación, sin depender de RLS.
 - shadcn/Base UI, StyleX, Vite+, Sentry en boundaries.
 - `apps/cli` para ejercitar dominio/use cases en local (no es deployable de producto).
-- `billing` queda fuera del MVP inicial.
+- `billing` entra al MVP sin pagos automatizados: planes, entitlements y cupos asignados por superusuario ([ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md)).
 
 ## Forma del sistema
 
@@ -113,6 +113,8 @@ ConfirmOfficialSelection
 
 Estado actual: `apps/api/src/di/create-modules.ts` usa `NoopEventPublisher` para eventos de dominio y compone los comandos de selección (propuesta, confirmación rival, rechazo, alternativa, disputa, resolución) y la anulación con proyección de estadísticas dentro de una transacción. El outbox y los consumidores de notificaciones/analytics del diagrama son objetivo; no están conectados por ese publisher. La cola y Cron de sync de proveedores sí tienen handlers en `apps/web/src/workers/`.
 
+El avance suizo usa esta misma vía transaccional. Scheduling cancela selecciones abiertas con `EncounterOpenSelectionPort` y statistics lee el plan con `CompetitionSwissStandingReaderPort`; ambos los conecta `apps/api` ([ADR-0027](/docs/adr/0027-swiss-format-rounds-paired-by-reconciliation.md)).
+
 ## Composition roots
 
 | Scope           | Archivo                                                                    | Rol                    |
@@ -165,7 +167,7 @@ Proveedores MVP: `ea-clubs`, `manual`. Extensiones futuras (`screenshot-ocr`, co
 | organizations | organizations, normalized names, tenant memberships, grants, platform roles, authorization audit, invitation tokens |
 | competitions  | competitions, rules, stages, entries, competition memberships                                                       |
 | teams         | teams, player profiles, player game accounts, rosters, external club connections                                    |
-| scheduling    | rounds, encounters, official slots, reschedules                                                                     |
+| scheduling    | rounds, encounters, official slots, reschedules, Swiss withdrawals and round actions                                |
 | game-data     | raw observations, provider matches/clubs, sync jobs, health                                                         |
 | results       | candidates, selections, confirmations, disputes, official results                                                   |
 | statistics    | standings, official player/team stats, personal player projections, rankings                                        |

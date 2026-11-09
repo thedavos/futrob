@@ -1,4 +1,4 @@
-import { asEncounterId, asOfficialMatchSlotId, type TeamId } from "@futrob/shared-kernel";
+import { asEncounterId, asOfficialMatchSlotId, Panic, type TeamId } from "@futrob/shared-kernel";
 import {
   asFixtureRoundId,
   asFixtureStageId,
@@ -13,6 +13,8 @@ import {
 } from "../entities/fixture-plan.ts";
 import { arrangeOpeningKnockoutSlots } from "./arrange-opening-knockout-slots.ts";
 import { fixtureGenerationKey, fixtureSpecFingerprint } from "./fixture-generation-key.ts";
+import { defaultSwissRoundCount, pairSwissRound } from "./pair-swiss-round.ts";
+import { swissRoundEncounters } from "./reconcile-swiss-rounds.ts";
 import { instantForZonedParts, zonedParts } from "./zoned-instant.ts";
 
 export {
@@ -109,6 +111,9 @@ export function generateFixturePlan(spec: FixtureGenerationSpec): FixturePlan {
       stages = [leagueStage.stage, playoffStage.stage];
       break;
     }
+    case "swiss":
+      stages = [generateSwissStage(common)];
+      break;
   }
 
   return {
@@ -231,6 +236,47 @@ function generateKnockoutStage(input: {
     stage: { id: stageId, kind: input.kind, order: input.stageOrder, rounds },
     nextRoundOffset: input.roundOffset + rounds.length,
   };
+}
+
+function generateSwissStage(input: {
+  readonly spec: FixtureGenerationSpec;
+  readonly planId: string;
+}): FixtureStage {
+  const { spec } = input;
+  const stageId = asFixtureStageId(`${input.planId}:stage:1`);
+  const pairing = pairSwissRound({
+    seed: spec.seed,
+    withdrawnTeamIds: [],
+    points: new Map(),
+    encounters: [],
+  });
+  if (pairing.kind === "exhausted") {
+    throw new Panic("A Swiss fixture needs at least two Teams");
+  }
+  const roundCount = spec.swiss?.rounds ?? defaultSwissRoundCount(spec.seed.length);
+  const rounds = Array.from({ length: roundCount }, (_, index): FixtureRound => {
+    const number = index + 1;
+    const id = asFixtureRoundId(`${stageId}:round:${number}`);
+    const scheduledStartAt = roundStart(spec, index);
+    return {
+      id,
+      stageId,
+      number,
+      scheduledStartAt,
+      encounters:
+        index > 0
+          ? []
+          : swissRoundEncounters({
+              round: { id, stageId },
+              revision: 1,
+              tables: pairing.tables,
+              scheduledStartAt,
+              officialMatchCount: spec.officialMatchCounts.regular,
+              resolutionMode: spec.resolutionModes.regular,
+            }),
+    };
+  });
+  return { id: stageId, kind: "swiss", order: 1, rounds };
 }
 
 function fixtureEncounter(input: {

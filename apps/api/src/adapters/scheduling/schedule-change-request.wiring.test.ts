@@ -63,6 +63,7 @@ function competitionDraft(): CompetitionDraft {
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: new Date("2026-07-31T12:00:00.000Z"),
     },
   };
@@ -212,9 +213,14 @@ async function wiredScheduling() {
       },
     },
     transaction: new NoopTransactionPort(),
-    officialResults: { findApprovedByEncounter: async () => null },
+    officialResults: {
+      findApprovedByEncounter: async () => null,
+      listByCompetition: async () => [],
+    },
     officialSelections: { findLatestByEncounter: async () => null },
     encounterMutationLock: new InMemoryEncounterMutationLock(),
+    encounterParticipants: { participantsChanged: async () => undefined },
+    encounterOpenSelection: { cancelOpen: async () => undefined },
     competitions,
   });
   const snapshot = {

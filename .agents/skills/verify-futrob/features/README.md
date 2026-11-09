@@ -35,11 +35,13 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 
 ## Features
 
+- [Plan y uso](./billing-plan.md) covers the organization plan page, 402 upsell states and `/pricing`.
 - [Landing](./landing.md) covers the public marketing page, CTAs, and the mechanism section. **Seed proof target.**
 - [Auth](./auth.md) covers login, signup, session gate, and secret-mismatch failure.
 - [Onboarding (player)](./onboarding-player.md) covers intention → optional account/club → `/player`.
 - [Player matches](./player-matches.md) covers personal matches, empty club state, and official stats separation.
 - [Competition setup](./competition-setup.md) covers org + draft + setup in the UI, with the CLI golden path as the API twin.
+- [Swiss format](./swiss-format.md) covers the Swiss setup, plan upsell, web fixture generation, rows, withdrawal, round closing and the standings.
 - [Explore competitions](./explore-competitions.md) covers the authenticated catalog, URL filters, detail and share.
 - [Results / Match Center](./results-match-center.md) covers the encounters lists, preview, Team negotiation, organizer review, conflicts, recovery and permissions.
 
@@ -54,5 +56,5 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 - Official competition reads after publish: standings `/orgs/$orgId/competitions/$competitionId/standings` (`Clasificación`), rankings `.../rankings`, team performance `.../team-performance` (`Rendimiento de equipos`), rules `.../rules` (`Reglamento`). Sidebar entries on a competition; not this seed.
 - Encounter reschedule (`Solicitar reprogramación` on the Encounter). Visible from `results-match-center`; driving it is not that feature's seed.
 - Public entry-invitation link `/entry-invitations/link/$code` (`apps/web/src/routes/entry-invitations/link.$code.tsx`). Signed-out preview; not the authenticated accept routes already listed above.
-- Player competition matches `/player/competitions/$competitionId/matches` — `PageScaffold` only. The working Team list is `/orgs/$orgId/competitions/$competitionId/matches` (`results-match-center`).
+- Player competition matches `/player/competitions/$competitionId/matches` — same Encounter list as the Team route in `results-match-center`, after resolving the organization from the viewer's accessible competitions. The competitions index still opens `/orgs/$orgId/competitions/$competitionId/matches`.
 - Team invitations from setup participants (`Invitar equipo`) — visible on the mapped wizard; driving invitations is not this seed.

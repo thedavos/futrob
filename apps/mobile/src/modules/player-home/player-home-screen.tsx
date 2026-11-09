@@ -16,6 +16,7 @@ import {
   LastMatch,
   Performance,
 } from "./player-home-sections";
+import { RosterInvitationActions } from "./roster-invitation-actions";
 import { usePlayerHome } from "./use-player-home";
 
 function competitionRoute(organizationId: string, competitionId: string): string {
@@ -101,6 +102,13 @@ export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
         {...slot}
       />
       <Invitations slot={model.invitations} {...slot} />
+      {home.snapshot.invitations.kind === "ready" ? (
+        <RosterInvitationActions
+          invitations={home.snapshot.invitations.data.invitations}
+          language={language}
+          refresh={home.retry}
+        />
+      ) : null}
       <EaCard slot={model.eaCard} {...slot} />
       <Performance slot={model.performance} {...slot} />
       <LastMatch slot={model.bottomLeft} {...slot} />

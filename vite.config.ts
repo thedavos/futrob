@@ -89,6 +89,7 @@ export default defineConfig({
       "**/routeTree.gen.ts",
       "**/paraglide/**",
       // Size budget applies to production code only; test/story suites grow freely.
+      // Test discipline (skip/timeout/retry/only) is linted by `npm run lint:tests`.
       "**/*.test.ts",
       "**/*.test.tsx",
       "**/*.stories.tsx",
@@ -358,6 +359,9 @@ export default defineConfig({
     projects: [
       "apps/web",
       "apps/api",
+      {
+        test: { name: "cli", root: "apps/cli", environment: "node", include: ["src/**/*.test.ts"] },
+      },
       "apps/auth",
       "packages/api-contracts",
       "packages/sdk",
@@ -371,8 +375,11 @@ export default defineConfig({
       "packages/results",
       "packages/scheduling",
       "packages/statistics",
+      "packages/public-portal",
       "packages/teams",
       "packages/notifications",
+      "packages/billing",
+      "packages/analytics",
       "apps/mobile",
       // Storybook component tests (stories as tests) in a real browser.
       storybookVitestProject(),

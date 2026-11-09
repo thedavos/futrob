@@ -12,11 +12,18 @@ import {
   EditFixtureEncounterUseCase,
   GenerateCompetitionFixtureUseCase,
   GetCompetitionFixtureUseCase,
+  GetCurrentCompetitionFixtureUseCase,
   ListScheduleChangeRequestsUseCase,
+  AdvanceFixtureFromOfficialResultUseCase,
+  CloseSwissRoundUseCase,
+  ReconcileSwissRoundsUseCase,
+  WithdrawSwissTeamUseCase,
   MaterializeOfficialMatchesForEncounterUseCase,
   RejectScheduleChangeProposalUseCase,
   UpsertEncounterScheduleSnapshotUseCase,
   type EncounterMutationLockPort,
+  type EncounterOpenSelectionPort,
+  type EncounterParticipantsChangePort,
   type EncounterParticipantValidationPort,
   type EncounterScheduleRepository,
   type EncounterWindowReaderPort,
@@ -48,16 +55,19 @@ import {
   PostgresOfficialMatchRepository,
 } from "@/adapters/scheduling/official-match.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
-import {
-  InMemoryFixturePlanRepository,
-  PostgresFixturePlanRepository,
-} from "@/adapters/scheduling/fixture-plan.repository.ts";
+import { InMemoryFixturePlanRepository } from "@/adapters/scheduling/fixture-plan.in-memory.repository.ts";
+import { PostgresFixturePlanRepository } from "@/adapters/scheduling/fixture-plan.repository.ts";
 import {
   InMemoryFixtureAuditPort,
   OfficialResultFixtureEditGuard,
   OfficialResultOccupancyGuard,
+  OfficialResultScoreReader,
   PostgresFixtureAuditPort,
 } from "@/adapters/scheduling/fixture-editing.adapters.ts";
+import {
+  InMemorySwissRoundActionLog,
+  PostgresSwissRoundActionLog,
+} from "@/adapters/scheduling/swiss-round-actions.ts";
 import { CompetitionRescheduleRulesAdapter } from "@/adapters/scheduling/competition-reschedule-rules.adapter.ts";
 import type { EncounterAuthorizationReader } from "@/adapters/authorization/contextual-authorization.adapter.ts";
 import { CompetitionTimeZoneAdapter } from "@/adapters/scheduling/competition-time-zone.adapter.ts";
@@ -74,9 +84,14 @@ export function createSchedulingModule(input: {
   readonly fixtureSource: CompetitionFixtureSourcePort;
   readonly eventPublisher: EventPublisherPort;
   readonly transaction: TransactionPort;
-  readonly officialResults: Pick<OfficialResultRepository, "findApprovedByEncounter">;
+  readonly officialResults: Pick<
+    OfficialResultRepository,
+    "findApprovedByEncounter" | "listByCompetition"
+  >;
   readonly officialSelections: Pick<OfficialMatchSelectionRepository, "findLatestByEncounter">;
   readonly encounterMutationLock: EncounterMutationLockPort;
+  readonly encounterParticipants: EncounterParticipantsChangePort;
+  readonly encounterOpenSelection: EncounterOpenSelectionPort;
   readonly competitions: Pick<CompetitionRepository, "findById">;
 }) {
   const encounterStore = input.pool
@@ -114,6 +129,23 @@ export function createSchedulingModule(input: {
     requests: scheduleChangeRequests,
   });
   const timeZones = new CompetitionTimeZoneAdapter(input.competitions);
+  const officialScores = new OfficialResultScoreReader(input.officialResults);
+  const swissActions = input.pool
+    ? new PostgresSwissRoundActionLog(input.pool)
+    : new InMemorySwissRoundActionLog();
+  const reconcileSwissRounds = new ReconcileSwissRoundsUseCase({
+    clock,
+    editGuard,
+    encounters,
+    eventPublisher: input.eventPublisher,
+    fixtures: fixturePlans,
+    matches: officialMatches,
+    mutationLock: input.encounterMutationLock,
+    openSelections: input.encounterOpenSelection,
+    participants: input.encounterParticipants,
+    scores: officialScores,
+    source: input.fixtureSource,
+  });
   const negotiation = {
     authorization: input.authorization,
     clock,
@@ -133,6 +165,7 @@ export function createSchedulingModule(input: {
     officialMatches,
     fixturePlans,
     scheduleChangeRequests,
+    rescheduleRules,
     scheduleChangeApplications,
     scheduleChangeExpiryFeed: input.pool
       ? new PostgresScheduleChangeExpiryFeed(input.pool)
@@ -197,6 +230,10 @@ export function createSchedulingModule(input: {
       authorization: input.authorization,
       fixtures: fixturePlans,
     }),
+    getCurrentFixture: new GetCurrentCompetitionFixtureUseCase({
+      authorization: input.authorization,
+      fixtures: fixturePlans,
+    }),
     upsertEncounterSchedule: new UpsertEncounterScheduleSnapshotUseCase({
       authorization: input.authorization,
       encounters,
@@ -205,6 +242,37 @@ export function createSchedulingModule(input: {
       mutationLock: input.encounterMutationLock,
       participants: input.participants,
       transaction: input.transaction,
+    }),
+    advanceFixtureFromOfficialResult: new AdvanceFixtureFromOfficialResultUseCase({
+      clock,
+      editGuard,
+      encounters,
+      fixtures: fixturePlans,
+      matches: officialMatches,
+      mutationLock: input.encounterMutationLock,
+      participants: input.encounterParticipants,
+      scores: officialScores,
+      source: input.fixtureSource,
+      swissRounds: reconcileSwissRounds,
+    }),
+    reconcileSwissRounds,
+    withdrawSwissTeam: new WithdrawSwissTeamUseCase({
+      actions: swissActions,
+      authorization: input.authorization,
+      clock,
+      fixtures: fixturePlans,
+      reconcile: reconcileSwissRounds,
+    }),
+    closeSwissRound: new CloseSwissRoundUseCase({
+      actions: swissActions,
+      authorization: input.authorization,
+      clock,
+      encounters,
+      fixtures: fixturePlans,
+      openSelections: input.encounterOpenSelection,
+      participants: input.encounterParticipants,
+      reconcile: reconcileSwissRounds,
+      scores: officialScores,
     }),
     materializeOfficialMatches: new MaterializeOfficialMatchesForEncounterUseCase({
       authorization: input.authorization,

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  ChangeOrganizationRoleRequest,
   AcceptInvitationRequest,
   CreateInvitationRequest,
   CreateOrganizationInvitationRequest,
@@ -127,6 +128,53 @@ export function organizationMembersQueryOptions(organizationId: string) {
   };
 }
 
+type OrganizationMembersQueryData = Awaited<
+  ReturnType<ReturnType<typeof organizationMembersQueryOptions>["queryFn"]>
+>;
+
 export function useOrganizationMembersQuery(organizationId: string, enabled: boolean) {
   return useQuery({ ...organizationMembersQueryOptions(organizationId), enabled });
+}
+
+export function useChangeMemberRoleMutation(organizationId: string, actorId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: ChangeOrganizationRoleRequest) =>
+      organizationsBrowserClient.changeMemberRole(organizationId, actorId, input),
+    onSuccess: async (assignment) => {
+      // Keep the confirmed role even if the refresh below fails; access is left to the refresh.
+      queryClient.setQueryData(
+        queryKeys.organizations.members(organizationId),
+        (current: OrganizationMembersQueryData | undefined) =>
+          current?.kind === "data"
+            ? {
+                ...current,
+                members: current.members.map((member) =>
+                  member.actorId === assignment.actorId
+                    ? { ...member, role: assignment.role }
+                    : member,
+                ),
+              }
+            : current,
+      );
+      // A role change can alter the manager's own capabilities and workspace list.
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.organizations.members(organizationId),
+        }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.organizations.mine() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.authorization.all }),
+      ]);
+    },
+  });
+}
+
+export function useMemberGrantsQuery(organizationId: string, actorId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.organizations.memberGrants(organizationId, actorId),
+    queryFn: ({ signal }) =>
+      organizationsBrowserClient.listMemberGrants(organizationId, actorId, { signal }),
+    enabled,
+  });
 }

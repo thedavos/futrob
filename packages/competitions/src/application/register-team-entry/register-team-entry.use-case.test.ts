@@ -1,3 +1,4 @@
+import { fixedPlanLimits } from "../plan-limits.test-helper.ts";
 import { FakeCompetitionRepository } from "../fake-competition-repository.test-helper.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
@@ -65,6 +66,7 @@ describe("RegisterTeamEntryUseCase", () => {
       authorization: allowAllAuthorization,
     };
     const draft = await new CreateCompetitionDraftUseCase({
+      planLimits: fixedPlanLimits(),
       competitions,
       ...shared,
     }).execute({
@@ -81,6 +83,7 @@ describe("RegisterTeamEntryUseCase", () => {
     if (!draft.isOk()) return;
 
     const useCase = new RegisterTeamEntryUseCase({
+      planLimits: fixedPlanLimits(),
       competitions,
       entries,
       ...shared,
@@ -103,6 +106,7 @@ describe("RegisterTeamEntryUseCase", () => {
 
   it("rejects registration when the competition is missing", async () => {
     const result = await new RegisterTeamEntryUseCase({
+      planLimits: fixedPlanLimits(),
       competitions: new FakeCompetitionRepository(),
       entries: new FakeEntryRepository(),
       clock: { now: () => new Date() },

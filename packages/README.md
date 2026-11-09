@@ -17,7 +17,7 @@ Documento canónico: [`/docs/architecture/packages-and-sdk.md`](/docs/architectu
 
 Packages de soporte adicionales: `@futrob/ui-tokens` (tokens compartidos), `@futrob/ea-clubs` (schemas/mappers puros del proveedor) y `@futrob/logger` (logging).
 
-BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `game-data`, `results`, `statistics`, `analytics`, `notifications`, `public-portal`.
+BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `game-data`, `results`, `statistics`, `analytics`, `notifications`, `public-portal`, `billing`.
 
 ## Reglas
 

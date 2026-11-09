@@ -12,6 +12,7 @@ import {
   type InvitationRepository,
   type MembershipRepository,
   type OrganizationRepository,
+  type StaffSeatLimitPort,
 } from "@futrob/organizations";
 import type { AuthorizationPort } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
@@ -37,6 +38,7 @@ import {
 export interface OrganizationsModuleDependencies {
   readonly pool: Pool | undefined;
   readonly authorization: AuthorizationPort;
+  readonly staffSeats: StaffSeatLimitPort;
 }
 
 export function createOrganizationsModule(deps: OrganizationsModuleDependencies) {
@@ -72,6 +74,7 @@ export function createOrganizationsModule(deps: OrganizationsModuleDependencies)
     memberships,
     invitations,
     authorization: deps.authorization,
+    staffSeats: deps.staffSeats,
     clock,
     ids,
     tokens,

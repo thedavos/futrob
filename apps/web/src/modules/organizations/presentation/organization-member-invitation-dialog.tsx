@@ -31,6 +31,8 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { buildInvitationShareUrl } from "./invitation-share-url.ts";
 import { useCreateOrganizationInvitationMutation } from "./organization-queries.ts";
 import { styles as memberStyles } from "./organization-members-sections.styles.ts";
+import { PlanUpsellAlert } from "@/modules/billing/presentation/plan-upsell-alert.tsx";
+import { OrganizationsClientError } from "./organizations-browser-client.ts";
 
 const styles = stylex.create({
   fields: {
@@ -87,7 +89,9 @@ function OrganizationMemberInvitationForm({ organizationId }: { readonly organiz
         <DialogDescription>{t("organizations.members.inviteDescription")}</DialogDescription>
       </DialogHeader>
       <div {...applyStyles(styles.fields)}>
-        {invitation.isError ? (
+        {invitation.error instanceof OrganizationsClientError && invitation.error.status === 402 ? (
+          <PlanUpsellAlert code={invitation.error.code} organizationId={organizationId} />
+        ) : invitation.isError ? (
           <Alert variant="destructive">
             <AlertDescription>{t("organizations.members.inviteFailed")}</AlertDescription>
           </Alert>

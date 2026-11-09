@@ -138,6 +138,7 @@ function competitionRepository(found: boolean): CompetitionRepository {
     knockoutStage: null,
     awayGoalsEnabled: false,
     maxRosterSize: null,
+    rankingEligibility: null,
     createdAt: new Date("2026-08-07T00:00:00.000Z"),
   } satisfies CompetitionRules;
 

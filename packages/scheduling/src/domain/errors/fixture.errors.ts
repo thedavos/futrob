@@ -3,6 +3,7 @@ import {
   type CompetitionId,
   type EncounterId,
   type Permission,
+  type TeamId,
 } from "@futrob/shared-kernel";
 
 export class FixtureAuthorizationForbidden extends TaggedError("FixtureAuthorizationForbidden")<{
@@ -76,3 +77,66 @@ export type EditFixtureEncounterError =
   | FixtureEncounterNotEditable
   | InvalidFixtureConfiguration
   | FixtureUpdateConflict;
+
+/** DEC-017: a tie without configured tie-break data never advances by seed. */
+export class TieRequiresOrganizerReview extends TaggedError("TieRequiresOrganizerReview")<{
+  code: "scheduling.tie_requires_organizer_review";
+  message: string;
+  encounterId: EncounterId;
+}> {}
+
+/** The destination already has a selection or official result, so its Team cannot change. */
+export class AdvancementNotReversible extends TaggedError("AdvancementNotReversible")<{
+  code: "scheduling.advancement_not_reversible";
+  message: string;
+  encounterId: EncounterId;
+}> {}
+
+export type AdvanceFixtureFromOfficialResultError =
+  | FixtureSourceNotFound
+  | TieRequiresOrganizerReview
+  | AdvancementNotReversible
+  | FixtureUpdateConflict;
+
+export class NotSwissFixture extends TaggedError("NotSwissFixture")<{
+  code: "scheduling.not_swiss_fixture";
+  message: string;
+  fixturePlanId: string;
+}> {}
+
+export class SwissTeamNotParticipant extends TaggedError("SwissTeamNotParticipant")<{
+  code: "scheduling.swiss_team_not_participant";
+  message: string;
+  teamId: TeamId;
+}> {}
+
+export class SwissTeamAlreadyWithdrawn extends TaggedError("SwissTeamAlreadyWithdrawn")<{
+  code: "scheduling.swiss_team_already_withdrawn";
+  message: string;
+  teamId: TeamId;
+}> {}
+
+export class SwissRoundNotCurrent extends TaggedError("SwissRoundNotCurrent")<{
+  code: "scheduling.swiss_round_not_current";
+  message: string;
+  roundNumber: number;
+}> {}
+
+export type ReconcileSwissRoundsError =
+  | FixtureSourceNotFound
+  | AdvancementNotReversible
+  | FixtureUpdateConflict;
+
+type SwissCommandError =
+  | FixtureAuthorizationForbidden
+  | FixturePlanNotFound
+  | InvalidFixtureConfiguration
+  | NotSwissFixture
+  | ReconcileSwissRoundsError;
+
+export type WithdrawSwissTeamError =
+  | SwissCommandError
+  | SwissTeamNotParticipant
+  | SwissTeamAlreadyWithdrawn;
+
+export type CloseSwissRoundError = SwissCommandError | SwissRoundNotCurrent;

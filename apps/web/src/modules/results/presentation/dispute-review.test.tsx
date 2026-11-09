@@ -343,6 +343,29 @@ describe("Operator dispute review in the Match Center", () => {
     expect(review().queryByRole("button", { name: "Tomar el caso" })).toBeNull();
   });
 
+  it("brings the review into view once it loads when arriving through the dispute queue link", async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      serve({ approves: true, dossier: { current: disputeCase() } });
+      const direct = renderEncounter();
+      await findReview();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      direct.unmount();
+
+      window.history.replaceState(null, "", "#encounter-review");
+      renderEncounter();
+      await findReview();
+      const heading = screen.getByRole("heading", { name: REVIEW });
+      await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1));
+      expect(scrollIntoView.mock.contexts[0]).toBe(heading);
+      expect(document.activeElement).toBe(heading);
+    } finally {
+      window.history.replaceState(null, "", window.location.pathname);
+      Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+    }
+  });
+
   it("collapses to a forbidden state that reveals nothing when the server refuses the dossier", async () => {
     serve({
       approves: true,

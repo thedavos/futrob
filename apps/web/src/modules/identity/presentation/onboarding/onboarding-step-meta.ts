@@ -1,12 +1,11 @@
 import type { StepperStep } from "@futrob/ui";
-import type { GamePlatformDto, OnboardingPathDto } from "@futrob/api-contracts";
-import { ONBOARDING_PATH } from "@futrob/identity";
-import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import {
-  competitionFormats,
-  competitionRegions,
-  competitionTimeZones,
-} from "@/modules/competitions/presentation/competition-draft-meta.ts";
+  onboardingStepsForPath,
+  type GamePlatformDto,
+  type OnboardingPathDto,
+  type OnboardingStepDto,
+} from "@futrob/api-contracts";
+import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import {
   eaPlatformLabel,
   eaSearchPlatforms,
@@ -31,57 +30,24 @@ export function intentionSteps(t: Translator): readonly StepperStep[] {
   ];
 }
 
-export function stepsForPath(t: Translator, path: OnboardingPathDto): readonly StepperStep[] {
-  const common = {
-    intention: { id: "intention", label: t("onboarding.step.start") },
-    account: { id: "game-account", label: t("onboarding.step.account") },
-    review: { id: "review", label: t("onboarding.step.review") },
-  } satisfies Record<string, StepperStep>;
-  return {
-    [ONBOARDING_PATH.organization]: [
-      common.intention,
-      { id: "organization", label: t("onboarding.step.organization") },
-      { id: "competition", label: t("onboarding.step.competition") },
-      common.account,
-      common.review,
-    ],
-    [ONBOARDING_PATH.invitation]: [
-      common.intention,
-      { id: "invitation", label: t("onboarding.step.invitation") },
-      common.account,
-      common.review,
-    ],
-    [ONBOARDING_PATH.player]: [
-      common.intention,
-      common.account,
-      { id: "club", label: t("onboarding.step.club") },
-      common.review,
-    ],
-  }[path];
-}
-
-export { knownGameEditions, competitionFormats, competitionRegions, competitionTimeZones };
-
-export function localizedCompetitionRegions(t: Translator): typeof competitionRegions {
+export function stepsForPath(
+  t: Translator,
+  path: OnboardingPathDto,
+  includeAccount = false,
+): readonly StepperStep[] {
   const labels = {
-    america: t("onboarding.region.america"),
-    "south-america": t("onboarding.region.southAmerica"),
-    "north-central-america": t("onboarding.region.northCentralAmerica"),
-    europe: t("onboarding.region.europe"),
-    africa: t("onboarding.region.africa"),
-    asia: t("onboarding.region.asia"),
-    "middle-east": t("onboarding.region.middleEast"),
-    oceania: t("onboarding.region.oceania"),
-  } satisfies Record<(typeof competitionRegions)[number]["value"], string>;
-  return competitionRegions.map((option) => ({ ...option, label: labels[option.value] }));
+    intention: t("onboarding.step.start"),
+    organization: t("onboarding.step.organization"),
+    invitation: t("onboarding.step.invitation"),
+    "game-account": t("onboarding.step.account"),
+    club: t("onboarding.step.club"),
+    review: t("onboarding.step.review"),
+  } satisfies Record<OnboardingStepDto, string>;
+  const steps = onboardingStepsForPath(path, includeAccount);
+  return steps.map((id) => ({ id, label: labels[id] }));
 }
 
-export function localizedCompetitionFormats(t: Translator): typeof competitionFormats {
-  return competitionFormats.map((option) => ({
-    ...option,
-    label: formatLabel(option.value, t),
-  }));
-}
+export { knownGameEditions };
 
 export function platformLabel(platform: GamePlatformDto): string {
   return {
@@ -91,16 +57,4 @@ export function platformLabel(platform: GamePlatformDto): string {
     [GAME_PLATFORM.NINTENDO_SWITCH_1]: "Nintendo Switch 1",
     [GAME_PLATFORM.NINTENDO_SWITCH_2]: "Nintendo Switch 2",
   }[platform];
-}
-
-export function formatLabel(
-  format: (typeof competitionFormats)[number]["value"],
-  t: Translator,
-): string {
-  return {
-    league: t("onboarding.format.league"),
-    knockout: t("onboarding.format.knockout"),
-    "groups-knockout": t("onboarding.format.groupsKnockout"),
-    "league-playoffs": t("onboarding.format.leaguePlayoffs"),
-  }[format];
 }

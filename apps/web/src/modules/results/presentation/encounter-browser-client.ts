@@ -1,8 +1,10 @@
 import {
   encounterViewSchema,
+  listCompetitionDisputesResponseSchema,
   listCompetitionEncountersResponseSchema,
   listEncounterCandidatesResponseSchema,
   type EncounterViewDto,
+  type ListCompetitionDisputesResponse,
   type ListCompetitionEncountersResponse,
   type ListEncounterCandidatesResponse,
   type RequestId,
@@ -42,6 +44,18 @@ export const encounterBrowserClient = {
       method: "GET",
       schema: listCompetitionEncountersResponseSchema,
       fallbackCode: "scheduling.encounters_load_failed",
+      createError,
+    });
+  },
+  listCompetitionDisputes(
+    organizationId: string,
+    competitionId: string,
+  ): Promise<ListCompetitionDisputesResponse> {
+    return requestBrowserJson({
+      path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/disputes`,
+      method: "GET",
+      schema: listCompetitionDisputesResponseSchema,
+      fallbackCode: "results.disputes_load_failed",
       createError,
     });
   },

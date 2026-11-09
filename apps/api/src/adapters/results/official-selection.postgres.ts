@@ -7,9 +7,16 @@ import type {
   OfficialMatchSelection,
   OfficialMatchSelectionRepository,
   OfficialSelectionProposal,
+  SelectionDisputeReaderPort,
   SelectionTransition,
+  SelectionUnderDispute,
 } from "@futrob/results";
-import { type ActorId, type EncounterId } from "@futrob/shared-kernel";
+import {
+  type ActorId,
+  type CompetitionId,
+  type EncounterId,
+  type OrganizationId,
+} from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { getPgExecutor, runInPgAtomicScope } from "@/adapters/persistence/pg-transaction.ts";
 import {
@@ -34,7 +41,9 @@ import {
   transitionTime,
 } from "./official-selection-transition.ts";
 
-export class PostgresOfficialMatchSelectionRepository implements OfficialMatchSelectionRepository {
+export class PostgresOfficialMatchSelectionRepository
+  implements OfficialMatchSelectionRepository, SelectionDisputeReaderPort
+{
   constructor(private readonly pool: Pool) {}
 
   async listDueConfirmations(input: { readonly dueAt: Date; readonly limit: number }) {
@@ -63,6 +72,43 @@ export class PostgresOfficialMatchSelectionRepository implements OfficialMatchSe
     );
     const row = result.rows[0];
     return row ? rehydrateSelection(selectionRowSchema.parse(row)) : null;
+  }
+
+  async listUnderDispute(input: {
+    readonly organizationId: OrganizationId;
+    readonly competitionId: CompetitionId;
+  }): Promise<readonly SelectionUnderDispute[]> {
+    const db = getPgExecutor(this.pool);
+    const selections = await db.query(
+      `SELECT id, encounter_id, organization_id, competition_id, status, version, round,
+              current_proposal_id, created_at, updated_at
+       FROM official_match_selections
+       WHERE organization_id = $1 AND competition_id = $2 AND superseded_at IS NULL
+         AND status IN ('disputed', 'organizer_review')
+       ORDER BY updated_at, encounter_id`,
+      [input.organizationId, input.competitionId],
+    );
+    const rows = selections.rows.map((row) => rehydrateSelection(selectionRowSchema.parse(row)));
+    if (rows.length === 0) return [];
+    const disputes = await db.query(
+      `SELECT id, selection_id, organization_id, competition_id, encounter_id, status,
+              opened_by_actor_id, opened_by_team_id, opened_reason, opened_at,
+              review_started_by_actor_id, review_started_at, resolved_by_actor_id, resolved_at,
+              resolution, resolution_proposal_id, resolution_reason
+       FROM match_disputes
+       WHERE organization_id = $1 AND selection_id = ANY($2::text[]) AND status <> 'resolved'`,
+      [input.organizationId, rows.map((row) => row.id)],
+    );
+    const active = new Map(
+      disputes.rows.map((row) => {
+        const dispute = rehydrateDispute(disputeRowSchema.parse(row));
+        return [dispute.selectionId, dispute] as const;
+      }),
+    );
+    return rows.map((selection) => ({
+      selection,
+      activeDispute: active.get(selection.id) ?? null,
+    }));
   }
 
   async listProposals(selectionId: string): Promise<readonly OfficialSelectionProposal[]> {

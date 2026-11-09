@@ -9,7 +9,8 @@ import {
 } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "../../domain/entities/competition-entry.ts";
 import {
-  CompetitionCapacityReached,
+  type CompetitionCapacityReached,
+  type CompetitionPlanLimitReached,
   CompetitionNotEditable,
   CompetitionNotFound,
   type EntryCreationKeyConflict,
@@ -17,13 +18,15 @@ import {
 import { canEditParticipants } from "../../domain/policies/competition-lifecycle.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
-import { hasCapacityFor } from "../../domain/value-objects/team-range.ts";
+import type { CompetitionPlanLimitsPort } from "../../domain/ports/competition-plan-limits.port.ts";
+import { approvedTeamCapacityError } from "../team-capacity.ts";
 import { registerTeamEntryUnchecked } from "../register-team-entry/register-team-entry.use-case.ts";
 
 export type RegisterInvitedEntryError =
   | CompetitionNotFound
   | CompetitionNotEditable
   | CompetitionCapacityReached
+  | CompetitionPlanLimitReached
   | EntryCreationKeyConflict;
 
 /**
@@ -36,6 +39,7 @@ export class RegisterInvitedEntryUseCase {
     private readonly deps: {
       readonly competitions: CompetitionRepository;
       readonly entries: CompetitionEntryRepository;
+      readonly planLimits: CompetitionPlanLimitsPort;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
     },
@@ -70,14 +74,8 @@ export class RegisterInvitedEntryUseCase {
       input.organizationId,
       input.competitionId,
     );
-    if (!hasCapacityFor(draft.competition.teams, approved)) {
-      return err(
-        new CompetitionCapacityReached({
-          code: "competitions.capacity_reached",
-          message: "Competition has reached its team capacity",
-        }),
-      );
-    }
+    const full = await approvedTeamCapacityError(this.deps.planLimits, draft.competition, approved);
+    if (full) return err(full);
     return registerTeamEntryUnchecked(this.deps, { ...input, approved: true });
   }
 }

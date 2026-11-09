@@ -12,6 +12,7 @@ import {
   getMyRecentMatchResponseSchema,
   getMyGameProfileResponseSchema,
   enqueueProviderSyncJobRequestSchema,
+  enqueueDueProviderSyncsResponseSchema,
   providerSyncJobResponseSchema,
   providerHealthResponseSchema,
 } from "@futrob/api-contracts";
@@ -57,6 +58,10 @@ export const EnqueueProviderSyncJobRequest = namedSchema(
 export const ProviderSyncJobResponse = namedSchema(
   "ProviderSyncJobResponse",
   providerSyncJobResponseSchema,
+);
+export const EnqueueDueProviderSyncsResponse = namedSchema(
+  "EnqueueDueProviderSyncsResponse",
+  enqueueDueProviderSyncsResponseSchema,
 );
 export const ProviderHealthResponse = namedSchema(
   "ProviderHealthResponse",

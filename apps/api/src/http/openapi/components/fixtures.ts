@@ -7,6 +7,9 @@ import {
   fixturePlanSchema,
   generateCompetitionFixtureRequestSchema,
   editFixtureEncounterRequestSchema,
+  closeSwissRoundRequestSchema,
+  withdrawSwissTeamRequestSchema,
+  getCurrentCompetitionFixtureResponseSchema,
 } from "@futrob/api-contracts";
 import { namedSchema } from "@/http/openapi/named-schema.ts";
 
@@ -23,7 +26,19 @@ export const GenerateCompetitionFixtureRequest = namedSchema(
   "GenerateCompetitionFixtureRequest",
   generateCompetitionFixtureRequestSchema,
 );
+export const WithdrawSwissTeamRequest = namedSchema(
+  "WithdrawSwissTeamRequest",
+  withdrawSwissTeamRequestSchema,
+);
+export const CloseSwissRoundRequest = namedSchema(
+  "CloseSwissRoundRequest",
+  closeSwissRoundRequestSchema,
+);
 export const EditFixtureEncounterRequest = namedSchema(
   "EditFixtureEncounterRequest",
   editFixtureEncounterRequestSchema,
+);
+export const GetCurrentCompetitionFixtureResponse = namedSchema(
+  "GetCurrentCompetitionFixtureResponse",
+  getCurrentCompetitionFixtureResponseSchema,
 );

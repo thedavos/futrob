@@ -41,6 +41,8 @@ import type {
 } from "@/modules/identity/presentation/auth-form-state.ts";
 import {
   validateSignupField,
+  validatePasswordConfirmation,
+  type SignupFormField,
   type SignupValues,
 } from "@/modules/identity/presentation/signup-form-validation.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
@@ -163,7 +165,9 @@ export function SignupForm() {
   const { redirectTo, afterAuthenticated } = useAuthResume();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const validation = useFormValidation<AuthFormField>();
+  const validation = useFormValidation<SignupFormField>();
+  const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
+  const confirmationValidation = validation.getFieldValidationProps("confirmPassword");
 
   const isSubmitting = state.status === "submitting" || state.status === "success";
   const form = applyStyles(styles.form);
@@ -180,7 +184,7 @@ export function SignupForm() {
   const link = applyStyles(styles.link);
 
   async function handleSubmit(formValues: SignupValues) {
-    const values: SignupValues = {
+    const values = {
       name: formValues.name.trim(),
       email: formValues.email.trim(),
       password: formValues.password,
@@ -299,6 +303,9 @@ export function SignupForm() {
             }
             id="password"
             name="password"
+            onChange={() => {
+              setTimeout(() => confirmationValidation.actionsRef.current?.validate(), 0);
+            }}
             placeholder="Crea una contraseña"
             startIcon={LockIcon}
             type={isPasswordVisible ? "text" : "password"}
@@ -310,6 +317,47 @@ export function SignupForm() {
               )
             }
           </FieldValidity>
+          <FieldError />
+        </Field>
+
+        <Field
+          {...confirmationValidation}
+          disabled={isSubmitting}
+          name="confirmPassword"
+          validate={(value, values) =>
+            validatePasswordConfirmation(readFormString(value), readFormString(values.password))
+          }
+        >
+          <FieldLabel htmlFor="confirmPassword">Repetir contraseña</FieldLabel>
+          <InputWithIcon
+            autoComplete="new-password"
+            disabled={isSubmitting}
+            endAction={
+              <Button
+                aria-label={
+                  isConfirmationVisible
+                    ? "Ocultar contraseña repetida"
+                    : "Mostrar contraseña repetida"
+                }
+                aria-pressed={isConfirmationVisible}
+                className={toggle.className}
+                disabled={isSubmitting}
+                onClick={() => setIsConfirmationVisible((isVisible) => !isVisible)}
+                size="icon"
+                static
+                style={toggle.style}
+                type="button"
+                variant="ghost"
+              >
+                {isConfirmationVisible ? <EyeSlashIcon /> : <EyeIcon />}
+              </Button>
+            }
+            id="confirmPassword"
+            name="confirmPassword"
+            placeholder="Repite tu contraseña"
+            startIcon={LockIcon}
+            type={isConfirmationVisible ? "text" : "password"}
+          />
           <FieldError />
         </Field>
       </div>

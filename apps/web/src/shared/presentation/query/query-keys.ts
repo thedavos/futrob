@@ -32,6 +32,9 @@ export const queryKeys = {
       [...queryKeys.encounters.all, "competition", organizationId, competitionId] as const,
     candidates: (encounterId: string) =>
       [...queryKeys.encounters.all, "candidates", encounterId] as const,
+    /** Operator dispute queue; under `encounters` so selection commands refresh it. */
+    disputes: (organizationId: string, competitionId: string) =>
+      [...queryKeys.encounters.all, "disputes", organizationId, competitionId] as const,
     officialSelection: (organizationId: string, encounterId: string, actingTeamId: string) =>
       [
         ...queryKeys.encounters.all,
@@ -60,8 +63,16 @@ export const queryKeys = {
     mine: () => [...queryKeys.organizations.all, "mine"] as const,
     members: (organizationId: string) =>
       [...queryKeys.organizations.all, "members", organizationId] as const,
+    memberGrants: (organizationId: string, actorId: string) =>
+      [...queryKeys.organizations.all, "member-grants", organizationId, actorId] as const,
     profile: (organizationId: string) =>
       [...queryKeys.organizations.all, "profile", organizationId] as const,
+  },
+  billing: {
+    all: ["billing"] as const,
+    plan: (organizationId: string) => [...queryKeys.billing.all, "plan", organizationId] as const,
+    /** Anonymous plan catalog (`/public/plans`); the same for every actor. */
+    publicPlans: () => [...queryKeys.billing.all, "public-plans"] as const,
   },
   authorization: {
     all: ["authorization"] as const,
@@ -126,6 +137,11 @@ export const queryKeys = {
         teamId,
       ] as const,
   },
+  scheduling: {
+    all: ["scheduling"] as const,
+    currentFixture: (organizationId: string, competitionId: string) =>
+      [...queryKeys.scheduling.all, "current-fixture", organizationId, competitionId] as const,
+  },
   statistics: {
     all: ["statistics"] as const,
     me: (query: GetMyStatisticsQuery = {}) =>
@@ -154,6 +170,8 @@ export const queryKeys = {
         readonly externalClubId?: string;
       },
     ) => [...queryKeys.gameData.meRecentMatches(), "detail", input] as const,
+    providerHealth: (providerKey: string) =>
+      [...queryKeys.gameData.all, "providers", providerKey, "health"] as const,
     club: (input: {
       readonly externalClubId: string;
       readonly platform: string;

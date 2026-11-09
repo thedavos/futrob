@@ -1,15 +1,24 @@
 import { randomUUID } from "node:crypto";
 import { externalReferenceKey, type ExternalReference } from "@futrob/game-data";
-import type {
-  CommitSelectionTransitionResult,
-  ConfirmationAction,
-  MatchDispute,
-  OfficialMatchSelection,
-  OfficialMatchSelectionRepository,
-  OfficialSelectionProposal,
-  SelectionTransition,
+import {
+  isUnderDispute,
+  type CommitSelectionTransitionResult,
+  type ConfirmationAction,
+  type MatchDispute,
+  type OfficialMatchSelection,
+  type OfficialMatchSelectionRepository,
+  type OfficialSelectionProposal,
+  type SelectionDisputeReaderPort,
+  type SelectionTransition,
+  type SelectionUnderDispute,
 } from "@futrob/results";
-import { compareTime, type ActorId, type EncounterId } from "@futrob/shared-kernel";
+import {
+  compareTime,
+  type ActorId,
+  type CompetitionId,
+  type EncounterId,
+  type OrganizationId,
+} from "@futrob/shared-kernel";
 import {
   assertNextVersion,
   commandKeyIdentity,
@@ -31,7 +40,9 @@ export interface InMemoryReferenceClaim {
   releaseReason: string | null;
 }
 
-export class InMemoryOfficialMatchSelectionRepository implements OfficialMatchSelectionRepository {
+export class InMemoryOfficialMatchSelectionRepository
+  implements OfficialMatchSelectionRepository, SelectionDisputeReaderPort
+{
   selections: OfficialMatchSelection[] = [];
   proposals: OfficialSelectionProposal[] = [];
   actions: ConfirmationAction[] = [];
@@ -54,6 +65,31 @@ export class InMemoryOfficialMatchSelectionRepository implements OfficialMatchSe
 
   async findLatestByEncounter(encounterId: EncounterId): Promise<OfficialMatchSelection | null> {
     return this.selections.find((row) => row.encounterId === encounterId) ?? null;
+  }
+
+  async listUnderDispute(input: {
+    readonly organizationId: OrganizationId;
+    readonly competitionId: CompetitionId;
+  }): Promise<readonly SelectionUnderDispute[]> {
+    return this.selections
+      .filter(
+        (row) =>
+          row.organizationId === input.organizationId &&
+          row.competitionId === input.competitionId &&
+          isUnderDispute(row.status),
+      )
+      .sort(
+        (left, right) =>
+          compareTime(left.updatedAt, right.updatedAt) ||
+          left.encounterId.localeCompare(right.encounterId),
+      )
+      .map((selection) => ({
+        selection,
+        activeDispute:
+          this.disputes.find(
+            (row) => row.selectionId === selection.id && row.status !== "resolved",
+          ) ?? null,
+      }));
   }
 
   async listProposals(selectionId: string): Promise<readonly OfficialSelectionProposal[]> {

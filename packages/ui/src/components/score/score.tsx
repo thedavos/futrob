@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import * as stylex from "@stylexjs/stylex";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { textTone } from "#styles/text-tone";
 import { typography, type TextTone } from "#styles/typography";
 
@@ -10,6 +10,11 @@ const styles = stylex.create({
   start: { textAlign: "start" },
   center: { textAlign: "center" },
   end: { textAlign: "end" },
+  table: {
+    fontSize: "var(--text-sm)",
+    lineHeight: "1.25rem",
+    fontWeight: "var(--font-weight-medium)",
+  },
 });
 
 const alignStyles = {
@@ -19,11 +24,15 @@ const alignStyles = {
 } as const;
 
 export type ScoreAlign = keyof typeof alignStyles;
+/** `table` is the row scale (14/20 px, weight 500 so a key column can step up to bold); `default` is the KPI scale and never belongs in a row. */
+export type ScoreSize = "default" | "table";
 export type ScoreElement = "p" | "span";
 
-export type ScoreProps = ComponentProps<"p"> & {
+export type ScoreProps = Omit<ComponentProps<"p">, "className"> & {
+  className?: HostClassName;
   as?: ScoreElement;
   align?: ScoreAlign;
+  size?: ScoreSize;
   /** `muted` for unavailable values (`—`). Status color lives on `StatValue`. */
   tone?: TextTone;
   truncate?: boolean;
@@ -38,6 +47,7 @@ function Score({
   className,
   style,
   align = "start",
+  size = "default",
   tone = "default",
   truncate = false,
   title,
@@ -48,6 +58,7 @@ function Score({
     <Tag
       data-slot="score"
       data-align={align}
+      data-size={size}
       data-tone={tone}
       data-truncate={truncate ? "true" : undefined}
       title={titleWhenTruncated(truncate, children, title)}
@@ -58,6 +69,7 @@ function Score({
         typography.score,
         textTone[tone],
         alignStyles[align],
+        size === "table" && styles.table,
         truncate && typography.truncate,
       )}
       {...props}

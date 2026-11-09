@@ -40,7 +40,8 @@ const styles = stylex.create({
     },
     color: {
       default: colors.foreground,
-      ":is([data-placeholder])": colors.mutedForeground,
+      ":is([data-placeholder])": colors.textTertiary,
+      ":disabled": colors.textTertiary,
     },
     transitionProperty: "background-color, border-color, box-shadow",
     transitionDuration: "var(--duration-normal)",
@@ -57,10 +58,6 @@ const styles = stylex.create({
     cursor: {
       default: null,
       ":disabled": "not-allowed",
-    },
-    opacity: {
-      default: 1,
-      ":disabled": 0.6,
     },
   },
   heightDefault: {
@@ -126,14 +123,11 @@ const styles = stylex.create({
     color: {
       default: null,
       ":is([data-highlighted])": colors.accentForeground,
+      ":is([data-disabled])": colors.textDisabled,
     },
     pointerEvents: {
       default: null,
       ":is([data-disabled])": "none",
-    },
-    opacity: {
-      default: 1,
-      ":is([data-disabled])": 0.5,
     },
   },
   itemIndicator: {

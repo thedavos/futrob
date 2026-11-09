@@ -1,3 +1,4 @@
+import { fixedPlanLimits } from "../plan-limits.test-helper.ts";
 import { FakeCompetitionRepository } from "../fake-competition-repository.test-helper.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { unwrapErr } from "@futrob/test-support";
@@ -57,7 +58,7 @@ class FakeEntryRepository implements CompetitionEntryRepository {
   }
 }
 
-function createHarness() {
+function createHarness(planLimits = fixedPlanLimits()) {
   const competitions = new FakeCompetitionRepository();
   const entries = new FakeEntryRepository();
   let nextId = 0;
@@ -70,6 +71,7 @@ function createHarness() {
     entries,
     shared,
     approve: new ApproveCompetitionEntryUseCase({
+      planLimits,
       entries,
       competitions,
       authorization: {
@@ -79,6 +81,7 @@ function createHarness() {
     }),
     seedEntry: async () => {
       const draft = await new CreateCompetitionDraftUseCase({
+        planLimits: fixedPlanLimits(),
         competitions,
         authorization: allowAllAuthorization,
         ...shared,
@@ -150,5 +153,29 @@ describe("ApproveCompetitionEntryUseCase", () => {
 
     expect(unwrapErr(result).code).toBe("competitions.entry_not_found");
     expect((await entries.findById(entry.organizationId, entry.id))?.status).toBe("pending");
+  });
+});
+
+describe("ApproveCompetitionEntryUseCase plan limits", () => {
+  it("stops approving once the plan's teams per competition are used", async () => {
+    const planLimits = fixedPlanLimits({ maxTeamsPerCompetition: 0 });
+    const { approve, seedEntry } = createHarness(planLimits);
+    const entry = await seedEntry();
+    const input = {
+      actorId: asActorId("actor-1"),
+      organizationId: asOrganizationId("org-1"),
+      competitionId: entry.competitionId,
+      entryId: entry.id,
+    };
+
+    const denied = await approve.execute(input);
+    expect(!denied.isOk() && denied.error).toMatchObject({
+      code: "competitions.plan_limit_reached",
+      limit: "teams_per_competition",
+      max: 0,
+    });
+
+    planLimits.set({ maxTeamsPerCompetition: 12 });
+    expect((await approve.execute(input)).isOk()).toBe(true);
   });
 });

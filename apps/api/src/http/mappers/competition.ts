@@ -43,6 +43,7 @@ export function competitionDraftDto(draft: CompetitionDraft): CompetitionDraftDt
       knockoutStage: draft.rules.knockoutStage,
       awayGoalsEnabled: draft.rules.awayGoalsEnabled,
       maxRosterSize: draft.rules.maxRosterSize,
+      rankingEligibility: draft.rules.rankingEligibility ?? null,
       createdAt: draft.rules.createdAt.toISOString(),
     },
   };

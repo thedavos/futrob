@@ -1,4 +1,7 @@
-import { fixturePlanSchema } from "@futrob/api-contracts";
+import {
+  fixturePlanSchema,
+  getCurrentCompetitionFixtureResponseSchema,
+} from "@futrob/api-contracts";
 import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
@@ -7,9 +10,12 @@ import { failureToHttp } from "@/http/errors.ts";
 import { fixturePlanDto } from "@/http/mappers/fixture.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
+  closeSwissRoundRoute,
   editFixtureEncounterRoute,
+  withdrawSwissTeamRoute,
   generateCompetitionFixtureRoute,
   getCompetitionFixtureRoute,
+  getCurrentCompetitionFixtureRoute,
 } from "@/http/openapi/routes/fixtures.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 
@@ -31,9 +37,26 @@ export function registerFixtureRoutes(app: Hono, deps: AppDeps): void {
       seed: parsed.seed?.map(asTeamId),
       groups: parsed.groups,
       playoffs: parsed.playoffs,
+      swiss: parsed.swiss,
     });
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));
+  });
+
+  secured.openapi(getCurrentCompetitionFixtureRoute, async (c) => {
+    const params = c.req.valid("param");
+    const result = await deps.modules.getCurrentCompetitionFixture.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+    });
+    if (result.isErr()) return failureToHttp(result.error);
+    return jsonResponse(
+      getCurrentCompetitionFixtureResponseSchema.parse({
+        fixture: result.value.fixture ? fixturePlanDto(result.value.fixture) : null,
+        teams: result.value.teams,
+      }),
+    );
   });
 
   secured.openapi(getCompetitionFixtureRoute, async (c) => {
@@ -62,6 +85,39 @@ export function registerFixtureRoutes(app: Hono, deps: AppDeps): void {
       scheduledStartAt: parsed.scheduledStartAt ? new Date(parsed.scheduledStartAt) : undefined,
       homeTeamId: parsed.homeTeamId && parsed.awayTeamId ? asTeamId(parsed.homeTeamId) : undefined,
       awayTeamId: parsed.homeTeamId && parsed.awayTeamId ? asTeamId(parsed.awayTeamId) : undefined,
+    });
+    if (result.isErr()) return failureToHttp(result.error);
+    return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));
+  });
+
+  secured.openapi(withdrawSwissTeamRoute, async (c) => {
+    const parsed = c.req.valid("json");
+    const params = c.req.valid("param");
+    const result = await deps.modules.swissRoundCommands.withdraw.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+      fixturePlanId: params.fixturePlanId,
+      teamId: asTeamId(parsed.teamId),
+      reason: parsed.reason,
+      requestId: parsed.requestId ?? currentRequestCorrelation()?.requestId ?? crypto.randomUUID(),
+    });
+    if (result.isErr()) return failureToHttp(result.error);
+    return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));
+  });
+
+  secured.openapi(closeSwissRoundRoute, async (c) => {
+    const parsed = c.req.valid("json");
+    const params = c.req.valid("param");
+    const result = await deps.modules.swissRoundCommands.closeRound.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+      fixturePlanId: params.fixturePlanId,
+      // A number no round has falls out as scheduling.swiss_round_not_current.
+      roundNumber: Number(params.roundNumber),
+      reason: parsed.reason,
+      requestId: parsed.requestId ?? currentRequestCorrelation()?.requestId ?? crypto.randomUUID(),
     });
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(fixturePlanSchema.parse(fixturePlanDto(result.value)));

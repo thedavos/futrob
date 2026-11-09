@@ -32,7 +32,7 @@ Keep these responsibilities separate:
 | analytics | Interpretation and analytical snapshots |
 
 Use the module-boundaries document for identity, organizations, competitions, teams,
-notifications and public-portal ownership. Billing remains outside the MVP.
+notifications, public-portal and billing ownership. Billing is a leaf: consumers declare their own plan-limit ports and `apps/api/src/di/` bridges them ([ADR-0025](../../../docs/adr/0025-billing-plans-and-entitlements.md)).
 
 When adding a use case, a bridge or an official-result effect, read the matching
 [worked example](references/examples.md). The examples link to executable code and

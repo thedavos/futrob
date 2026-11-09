@@ -20,7 +20,6 @@ export const styles = stylex.create({
   panel: { minWidth: 0, display: "flex", flexDirection: "column" },
   history: { gridColumn: "1 / -1" },
   header: { padding: "1.25rem", gap: "0.5rem" },
-  heading: { fontSize: "var(--text-lg)", fontWeight: 600 },
   content: {
     paddingInline: "1.25rem",
     paddingBottom: "1.25rem",
@@ -37,7 +36,6 @@ export const styles = stylex.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  emptyTitle: { fontSize: "var(--text-lg)", fontWeight: 600 },
   emptyCopy: { fontSize: "var(--text-sm)" },
   icon: { width: "2rem", height: "2rem", color: colors.mutedForeground },
   feedback: { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "0.75rem" },

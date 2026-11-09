@@ -17,6 +17,8 @@ export type StandingsTeamName =
 export type StandingsTableRow = {
   readonly row: CompetitionStandingRowDto;
   readonly team: StandingsTeamName;
+  /** Last row inside the playoff places; the cut line is drawn below it. */
+  readonly lastAboveCut: boolean;
 };
 
 export function standingsTeamName(teamId: string, names: TeamNames): StandingsTeamName {
@@ -33,7 +35,34 @@ export function standingsTableRows(
   snapshot: CompetitionStandingSnapshotDto,
   names: TeamNames,
 ): readonly StandingsTableRow[] {
-  return snapshot.rows.map((row) => ({ row, team: standingsTeamName(row.teamId, names) }));
+  const cut = playoffCut(snapshot);
+  return snapshot.rows.map((row, index) => ({
+    row,
+    team: standingsTeamName(row.teamId, names),
+    lastAboveCut: cut !== null && index === cut - 1,
+  }));
+}
+
+/** Playoff places when the table has teams on both sides of the cut. */
+export function playoffCut(snapshot: CompetitionStandingSnapshotDto): number | null {
+  const spots = snapshot.playoffSpots;
+  return spots !== null && snapshot.rows.length > spots ? spots : null;
+}
+
+/** Where a Swiss table stands. Null in every other format. */
+export type SwissStandingsProgress =
+  | { readonly kind: "final" }
+  | { readonly kind: "round"; readonly current: number; readonly total: number }
+  | { readonly kind: "between"; readonly completed: number; readonly total: number };
+
+export function swissStandingsProgress(
+  swiss: CompetitionStandingSnapshotDto["swiss"],
+): SwissStandingsProgress | null {
+  if (!swiss) return null;
+  if (swiss.isFinal) return { kind: "final" };
+  return swiss.currentRound === null
+    ? { kind: "between", completed: swiss.roundsCompleted, total: swiss.roundsTotal }
+    : { kind: "round", current: swiss.currentRound, total: swiss.roundsTotal };
 }
 
 export function teamNamesFrom(

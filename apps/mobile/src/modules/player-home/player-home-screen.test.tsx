@@ -351,3 +351,25 @@ describe("player home on /player", () => {
     expect(await getSession()).toMatchObject({ token: "session-token" });
   });
 });
+
+describe("roster invitation responses", () => {
+  it.each([
+    ["Aceptar", "accept"],
+    ["Rechazar", "decline"],
+  ])("sends %s through the SDK", async (label, action) => {
+    const api = playerApi();
+    const respond = vi.fn((_url: URL, init?: RequestInit) => {
+      expect(JSON.parse(String(init?.body))).toEqual({ action });
+      return Response.json({
+        status: action === "accept" ? "accepted" : "declined",
+        membership: null,
+      });
+    });
+    api.routes["/roster-invitations/invite-1/respond"] = respond;
+    renderApp("/player?club=club-cuervos");
+    const user = userEvent.setup();
+    const buttons = await screen.findAllByRole("button", { name: label });
+    await user.click(buttons[0]!);
+    await waitFor(() => expect(respond).toHaveBeenCalledTimes(1));
+  });
+});

@@ -228,6 +228,7 @@ export async function createCompetitionDraft(
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: "2026-09-28T12:00:00.000Z",
     },
   };

@@ -1,4 +1,4 @@
-import { defineRoute } from "@/http/openapi/define-route.ts";
+import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
 import {
   GetCompetitionRankingsResponse,
@@ -6,7 +6,10 @@ import {
   GetCompetitionTeamStatisticsResponse,
   GetTeamPerformanceRankingResponse,
 } from "@/http/openapi/components.ts";
-import { getCompetitionRankingsQuerySchema } from "@futrob/api-contracts";
+import {
+  rebuildCompetitionStatisticsResponseSchema,
+  getCompetitionRankingsQuerySchema,
+} from "@futrob/api-contracts";
 
 export const getTeamPerformanceRankingRoute = defineRoute({
   method: "get",
@@ -21,7 +24,8 @@ export const getTeamPerformanceRankingRoute = defineRoute({
       "Ranking with component coverage, or null before the first rebuild. Incomplete rows have no score or position.",
     schema: GetTeamPerformanceRankingResponse,
   },
-  errors: [401, 403],
+  errors: [401, 402, 403],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const getCompetitionStandingsRoute = defineRoute({
@@ -68,4 +72,19 @@ export const getCompetitionRankingsRoute = defineRoute({
     schema: GetCompetitionRankingsResponse,
   },
   errors: [401, 403],
+});
+
+export const rebuildCompetitionStatisticsRoute = defineRoute({
+  method: "post",
+  path: "/internal/organizations/{organizationId}/competitions/{competitionId}/statistics/rebuild",
+  operationId: "rebuildCompetitionStatistics",
+  tags: ["statistics"],
+  summary: "Rebuild official statistics, standings and rankings (superuser only)",
+  params: pathParams(["organizationId", "competitionId"]),
+  success: {
+    status: 200,
+    description: "Reconstruction completed",
+    schema: rebuildCompetitionStatisticsResponseSchema,
+  },
+  errors: [400, 401, 403, 404, 409],
 });

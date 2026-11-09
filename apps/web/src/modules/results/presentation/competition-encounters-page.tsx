@@ -71,6 +71,20 @@ export function CompetitionEncountersRoute({ page, ...scope }: Scope & ListPage)
   return <CompetitionEncountersPageView {...scope} page={page} state={state} />;
 }
 
+type UnresolvedEncountersState = Exclude<CompetitionEncountersState, { kind: "ready" }>;
+
+export function CompetitionEncountersStatus({
+  page = "competition.encounters",
+  state,
+}: ListPage & { readonly state: UnresolvedEncountersState }) {
+  const { t } = useI18n();
+  return (
+    <PageScaffold page={page}>
+      <EncountersStatusBody state={state} t={t} />
+    </PageScaffold>
+  );
+}
+
 export function CompetitionEncountersPageView({
   competitionId,
   organizationId,
@@ -78,68 +92,75 @@ export function CompetitionEncountersPageView({
   state,
 }: Scope & ListPage & { readonly state: CompetitionEncountersState }) {
   const { locale, t } = useI18n();
+  if (state.kind !== "ready") {
+    return <CompetitionEncountersStatus page={page} state={state} />;
+  }
   return (
     <PageScaffold page={page}>
-      {(() => {
-        switch (state.kind) {
-          case "loading":
-            return (
-              <div
-                aria-busy="true"
-                aria-label={t("encounters.list.loading")}
-                role="status"
-                {...applyStyles(styles.list)}
-              >
-                <Skeleton {...applyStyles(styles.skeleton)} />
-                <Skeleton {...applyStyles(styles.skeleton)} />
-              </div>
-            );
-          case "error":
-            return <RetryAlert message={t("encounters.list.error")} retry={state.retry} t={t} />;
-          case "not_found":
-            return (
-              <EmptyState>
-                <EmptyStateIcon>
-                  <img alt="" data-outline="none" src={accessUrl} />
-                </EmptyStateIcon>
-                <EmptyStateCopy>
-                  <EmptyStateTitle>{t("encounters.list.notFound.title")}</EmptyStateTitle>
-                  <EmptyStateDescription>
-                    {t("encounters.list.notFound.description")}
-                  </EmptyStateDescription>
-                </EmptyStateCopy>
-              </EmptyState>
-            );
-          case "ready":
-            return state.data.encounters.length === 0 ? (
-              <EmptyState>
-                <EmptyStateIcon>
-                  <img alt="" data-outline="none" src={emptyFixturesUrl} />
-                </EmptyStateIcon>
-                <EmptyStateCopy>
-                  <EmptyStateTitle>{t("encounters.list.empty.title")}</EmptyStateTitle>
-                  <EmptyStateDescription>
-                    {t("encounters.list.empty.description")}
-                  </EmptyStateDescription>
-                </EmptyStateCopy>
-              </EmptyState>
-            ) : (
-              <EncounterList
-                competitionId={competitionId}
-                data={state.data}
-                locale={locale}
-                organizationId={organizationId}
-                t={t}
-              />
-            );
-          default: {
-            const exhaustive: never = state;
-            return exhaustive;
-          }
-        }
-      })()}
+      {state.data.encounters.length === 0 ? (
+        <EmptyState>
+          <EmptyStateIcon>
+            <img alt="" data-outline="none" src={emptyFixturesUrl} />
+          </EmptyStateIcon>
+          <EmptyStateCopy>
+            <EmptyStateTitle>{t("encounters.list.empty.title")}</EmptyStateTitle>
+            <EmptyStateDescription>{t("encounters.list.empty.description")}</EmptyStateDescription>
+          </EmptyStateCopy>
+        </EmptyState>
+      ) : (
+        <EncounterList
+          competitionId={competitionId}
+          data={state.data}
+          locale={locale}
+          organizationId={organizationId}
+          t={t}
+        />
+      )}
     </PageScaffold>
   );
+}
+
+function EncountersStatusBody({
+  state,
+  t,
+}: {
+  readonly state: UnresolvedEncountersState;
+  readonly t: Translator;
+}) {
+  switch (state.kind) {
+    case "loading":
+      return (
+        <div
+          aria-busy="true"
+          aria-label={t("encounters.list.loading")}
+          role="status"
+          {...applyStyles(styles.list)}
+        >
+          <Skeleton {...applyStyles(styles.skeleton)} />
+          <Skeleton {...applyStyles(styles.skeleton)} />
+        </div>
+      );
+    case "error":
+      return <RetryAlert message={t("encounters.list.error")} retry={state.retry} t={t} />;
+    case "not_found":
+      return (
+        <EmptyState>
+          <EmptyStateIcon>
+            <img alt="" data-outline="none" src={accessUrl} />
+          </EmptyStateIcon>
+          <EmptyStateCopy>
+            <EmptyStateTitle>{t("encounters.list.notFound.title")}</EmptyStateTitle>
+            <EmptyStateDescription>
+              {t("encounters.list.notFound.description")}
+            </EmptyStateDescription>
+          </EmptyStateCopy>
+        </EmptyState>
+      );
+    default: {
+      const exhaustive: never = state;
+      return exhaustive;
+    }
+  }
 }
 
 function EncounterList({

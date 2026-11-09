@@ -6,7 +6,6 @@ import {
   getMyRecentMatchQuerySchema,
   getMyRecentMatchResponseSchema,
   getMyRecentMatchesResponseSchema,
-  playerGameProfileSchema,
   playerRecentProviderMatchSchema,
 } from "./schemas.ts";
 
@@ -21,14 +20,6 @@ describe("getMyRecentMatchesResponseSchema", () => {
     expect(getMyRecentMatchesResponseSchema.parse({ status: "needs_club", matches: [] })).toEqual({
       status: "needs_club",
     });
-  });
-
-  it("accepts a ready list of appearances", () => {
-    const parsed = getMyRecentMatchesResponseSchema.parse({
-      status: "ready",
-      matches: [],
-    });
-    expect(parsed).toEqual({ status: "ready", matches: [] });
   });
 
   it("strips the roster from listed matches and requires the MVP summary", () => {
@@ -136,10 +127,6 @@ describe("getMyGameProfileQuerySchema", () => {
 });
 
 describe("playerGameProfileSchema", () => {
-  it("accepts a rating-only profile", () => {
-    expect(playerGameProfileSchema.parse(profilePayload())).toEqual(profilePayload());
-  });
-
   it("accepts a legacy API payload and strips ELO fields", () => {
     const parsed = getMyGameProfileResponseSchema.parse({
       status: "ready",

@@ -8,6 +8,7 @@ import { useMyTeamsQuery } from "../player-queries.ts";
 import { resolveCaptainTeamAccess, type CaptainTeamAccess } from "./captain-team-access.ts";
 
 const CAPTAIN_CAPABILITIES = {
+  readRoster: TEAM_PERMISSION.rosterRead,
   manageRoster: TEAM_PERMISSION.rosterManage,
   manageRoles: TEAM_PERMISSION.rosterRolesManage,
   manageInvitations: TEAM_PERMISSION.invitationsManage,
@@ -16,7 +17,9 @@ const CAPTAIN_CAPABILITIES = {
 
 export type CaptainCapability = keyof typeof CAPTAIN_CAPABILITIES;
 
-export type CaptainCapabilities = { readonly [K in CaptainCapability]: boolean };
+export type CaptainCapabilities = {
+  readonly [K in Exclude<CaptainCapability, "readRoster">]: boolean;
+};
 
 export type CaptainTeam = {
   readonly access: CaptainTeamAccess;

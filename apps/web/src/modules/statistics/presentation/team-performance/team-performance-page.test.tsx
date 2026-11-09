@@ -106,6 +106,18 @@ afterEach(() => {
 });
 
 describe("team performance page", () => {
+  it("explains that the plan does not include the ranking on a 402", async () => {
+    renderWith({
+      ranking: [() => failure(402, "statistics.performance_ranking_not_in_plan")],
+    });
+
+    expect(await screen.findByText("El ranking de rendimiento es de Pro y Liga")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Ver plan y uso" }).getAttribute("href")).toBe(
+      "/orgs/org-1/settings/plan",
+    );
+    expect(screen.queryByRole("table")).toBeNull();
+  });
+
   it("shows the server ranking with names, scores and incomplete coverage", async () => {
     const body: GetTeamPerformanceRankingResponse = { ranking: teamPerformanceRankingFixture() };
     serve({ ranking: [() => Response.json(body)] });

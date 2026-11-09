@@ -40,7 +40,7 @@ export const Complete: Story = {
     );
     await userEvent.click(await canvas.findByRole("radio", { name: "FC 26" }));
     await userEvent.click(canvas.getByRole("radio", { name: "Nintendo Switch 2" }));
-    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Guardar y continuar" }));
     await userEvent.type(await canvas.findByRole("textbox", { name: "Nombre del club" }), "Fera");
     await userEvent.click(canvas.getByRole("button", { name: "Buscar club" }));
     await userEvent.click(await canvas.findByRole("button", { name: /Fera Enjaulada/ }));
@@ -70,7 +70,7 @@ export const EditNavigation: Story = {
     );
     await userEvent.click(await canvas.findByRole("radio", { name: "FC 26" }));
     await userEvent.click(canvas.getByRole("radio", { name: "Nintendo Switch 2" }));
-    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Guardar y continuar" }));
     await userEvent.click(await canvas.findByRole("button", { name: "Omitir por ahora" }));
     await userEvent.click(await canvas.findByRole("button", { name: "Editar cuenta de juego" }));
     await expect(

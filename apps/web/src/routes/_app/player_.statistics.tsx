@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PlayerOnboardingGuard } from "@/modules/statistics/presentation/player-onboarding-guard.tsx";
 import { PlayerStatisticsPage } from "@/modules/statistics/presentation/player-profile/player-statistics-page.tsx";
 import {
   normalizePlayerStatisticsSearch,
@@ -16,17 +15,15 @@ function ProtectedPlayerStatistics() {
   const period = normalizePlayerStatisticsSearch(Route.useSearch());
 
   return (
-    <PlayerOnboardingGuard>
-      <PlayerStatisticsPage
-        onPeriodChange={(next) => {
-          void navigate({
-            to: "/player/statistics",
-            search: next,
-            replace: true,
-          });
-        }}
-        period={period}
-      />
-    </PlayerOnboardingGuard>
+    <PlayerStatisticsPage
+      onPeriodChange={(next) => {
+        void navigate({
+          to: "/player/statistics",
+          search: next,
+          replace: true,
+        });
+      }}
+      period={period}
+    />
   );
 }

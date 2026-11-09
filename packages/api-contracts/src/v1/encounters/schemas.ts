@@ -88,6 +88,8 @@ export const fixtureEncounterSchema = z.object({
   scheduledStartAt: z.string().datetime(),
   officialMatchCount: z.union([z.literal(1), z.literal(2)]),
   series: fixtureSeriesSchema.nullable(),
+  /** Team vs Team with `series: null`: the organizer closed it and it will never have a result. */
+  closedWithoutResult: z.literal(true).optional(),
 });
 
 export const fixtureRoundSchema = z.object({
@@ -100,7 +102,7 @@ export const fixtureRoundSchema = z.object({
 
 export const fixtureStageSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(["league", "groups", "knockout", "playoffs"]),
+  kind: z.enum(["league", "groups", "knockout", "playoffs", "swiss"]),
   order: z.number().int().positive(),
   rounds: z.array(fixtureRoundSchema),
 });
@@ -114,15 +116,32 @@ export const fixturePlanSchema = z.object({
   competitionId: z.string().min(1),
   rulesVersion: z.number().int().positive(),
   generationVersion: z.number().int().positive(),
-  format: z.enum(["league", "knockout", "groups-knockout", "league-playoffs"]),
+  format: z.enum(["league", "knockout", "groups-knockout", "league-playoffs", "swiss"]),
   timeZone: z.string().min(1),
   homeAndAway: z.boolean(),
   seed: z.array(z.string().min(1)).min(2),
+  /** Swiss only. Teams left out of later pairings; their earlier results still count. */
+  withdrawnTeamIds: z.array(z.string().min(1)).optional(),
   stages: z.array(fixtureStageSchema).min(1),
 });
 
 export type FixturePlanDto = z.infer<typeof fixturePlanSchema>;
 export type FixtureEncounterDto = z.infer<typeof fixtureEncounterSchema>;
+export type FixtureParticipantSlotDto = z.infer<typeof fixtureParticipantSlotSchema>;
+export type FixtureStageDto = z.infer<typeof fixtureStageSchema>;
+
+/**
+ * The competition's current fixture with the name of every Team it places. `fixture`
+ * is null until one is generated; a Team missing from `teams` no longer resolves.
+ */
+export const getCurrentCompetitionFixtureResponseSchema = z.object({
+  fixture: fixturePlanSchema.nullable(),
+  teams: z.array(z.object({ teamId: z.string().min(1), name: z.string().min(1) })),
+});
+
+export type GetCurrentCompetitionFixtureResponse = z.infer<
+  typeof getCurrentCompetitionFixtureResponseSchema
+>;
 
 export const generateCompetitionFixtureRequestSchema = z.object({
   generationVersion: z.number().int().positive(),
@@ -137,6 +156,7 @@ export const generateCompetitionFixtureRequestSchema = z.object({
     })
     .optional(),
   playoffs: z.object({ teamCount: z.number().int().min(2) }).optional(),
+  swiss: z.object({ rounds: z.number().int().positive() }).optional(),
 });
 
 export type GenerateCompetitionFixtureRequest = z.infer<
@@ -166,6 +186,31 @@ export const editFixtureEncounterRequestSchema = z
   });
 
 export type EditFixtureEncounterRequest = z.infer<typeof editFixtureEncounterRequestSchema>;
+
+export const withdrawSwissTeamRequestSchema = z.object({
+  teamId: z.string().min(1),
+  reason: z.string().trim().min(1).max(500),
+  requestId: requestIdSchema.optional(),
+});
+
+export type WithdrawSwissTeamRequest = z.infer<typeof withdrawSwissTeamRequestSchema>;
+
+export const closeSwissRoundRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(500),
+  requestId: requestIdSchema.optional(),
+});
+
+export type CloseSwissRoundRequest = z.infer<typeof closeSwissRoundRequestSchema>;
+
+/** Rounds a Swiss fixture of `teamCount` Teams gets unless the organizer chooses: ⌈log₂ n⌉. */
+export function defaultSwissRounds(teamCount: number): number {
+  return Math.ceil(Math.log2(teamCount));
+}
+
+/** Most rounds the API accepts for `teamCount` Teams: ⌊(n + 1) / 2⌋. */
+export function maxSwissRounds(teamCount: number): number {
+  return Math.floor((teamCount + 1) / 2);
+}
 
 export const nextEncounterSideSchema = z.object({
   teamId: z.string().min(1),

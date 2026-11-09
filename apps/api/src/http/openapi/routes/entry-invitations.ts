@@ -1,4 +1,4 @@
-import { defineRoute } from "@/http/openapi/define-route.ts";
+import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
 import {
   AcceptEntryInvitationRequest,
@@ -131,7 +131,8 @@ export const acceptEntryInvitationRoute = defineRoute({
   params: pathParams(["invitationId"]),
   body: AcceptEntryInvitationRequest,
   success: { status: 201, description: "Team entered", schema: AcceptEntryInvitationResponse },
-  errors: [400, 401, 403, 404, 409, 429],
+  errors: [400, 401, 402, 403, 404, 409, 429],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const declineEntryInvitationRoute = defineRoute({
@@ -183,5 +184,6 @@ export const acceptEntryInvitationLinkRoute = defineRoute({
   params: pathParams(["code"]),
   body: AcceptEntryInvitationRequest,
   success: { status: 201, description: "Team entered", schema: AcceptEntryInvitationResponse },
-  errors: [400, 401, 403, 404, 409, 429],
+  errors: [400, 401, 402, 403, 404, 409, 429],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });

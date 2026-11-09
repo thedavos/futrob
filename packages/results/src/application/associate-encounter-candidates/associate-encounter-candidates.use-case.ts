@@ -93,6 +93,10 @@ export async function persistEncounterCandidateAssociations(
         encounter.organizationId,
         encounter.encounterId,
       );
+      // A change of Teams or slots between the first read and this generation would let
+      // the CAS publish candidates of the previous pairing; read the Encounter again.
+      const current = await deps.encounterReader.getById(input.encounterId);
+      if (!current || candidateBasis(current) !== candidateBasis(encounter)) continue;
       const replaced = await deps.associations.replaceForEncounter(
         encounter.organizationId,
         encounter.encounterId,
@@ -134,6 +138,18 @@ export async function persistEncounterCandidateAssociations(
       }),
     );
   }
+}
+
+/** What candidate search depends on: the Teams, their clubs and every slot window. */
+function candidateBasis(encounter: EncounterScheduleSnapshot): string {
+  return JSON.stringify([
+    encounter.homeTeamId,
+    encounter.awayTeamId,
+    encounter.homeExternalClubId,
+    encounter.awayExternalClubId,
+    encounter.providerKey,
+    candidateWindowsFor(encounter),
+  ]);
 }
 
 export class AssociateEncounterCandidatesUseCase {

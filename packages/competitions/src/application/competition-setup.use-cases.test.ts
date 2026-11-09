@@ -1,3 +1,4 @@
+import { fixedPlanLimits } from "./plan-limits.test-helper.ts";
 import { describe, expect, it } from "vite-plus/test";
 import type { asCompetitionId } from "@futrob/shared-kernel";
 import { asActorId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
@@ -139,6 +140,7 @@ async function harness() {
   const clock = { now: () => new Date("2026-08-07T12:00:00.000Z") };
   const ids = { generate: () => `id-${++id}` };
   const created = await new CreateCompetitionDraftUseCase({
+    planLimits: fixedPlanLimits(),
     competitions,
     clock,
     ids,
@@ -164,6 +166,7 @@ describe("competition setup", () => {
       const { competitions, entries, clock, draft } = await harness();
       const input = updateInput(draft);
       const result = await new UpdateCompetitionDraftUseCase({
+        planLimits: fixedPlanLimits(),
         competitions,
         entries,
         clock,
@@ -197,6 +200,7 @@ describe("competition setup", () => {
       const { competitions, entries, clock, draft } = await harness();
       const input = updateInput(draft);
       const result = await new UpdateCompetitionDraftUseCase({
+        planLimits: fixedPlanLimits(),
         competitions,
         entries,
         clock,
@@ -226,7 +230,7 @@ describe("competition setup", () => {
       competitionId: input.competitionId,
     };
     const deps = { competitions, entries, clock, ids, authorization: allowAllAuthorization };
-    const update = new UpdateCompetitionDraftUseCase(deps);
+    const update = new UpdateCompetitionDraftUseCase({ ...deps, planLimits: fixedPlanLimits() });
     const changedRules = {
       ...input.rules,
       regularStage: { ...draft.rules.regularStage!, rescheduleProposalExpiryHours: 6 },
@@ -238,7 +242,10 @@ describe("competition setup", () => {
       "competitions.not_editable",
     );
     for (const teamId of ["team-1", "team-2"]) {
-      const entry = await new RegisterTeamEntryUseCase(deps).execute({
+      const entry = await new RegisterTeamEntryUseCase({
+        ...deps,
+        planLimits: fixedPlanLimits(),
+      }).execute({
         ...scope,
         teamId: asTeamId(teamId),
         approved: true,
@@ -259,6 +266,7 @@ describe("competition setup", () => {
   it("rejects incompatible stage and points rules", async () => {
     const { competitions, entries, clock, draft } = await harness();
     const result = await new UpdateCompetitionDraftUseCase({
+      planLimits: fixedPlanLimits(),
       competitions,
       entries,
       clock,
@@ -282,6 +290,61 @@ describe("competition setup", () => {
     expect(!result.isOk() && InvalidCompetitionRules.is(result.error)).toBe(true);
   });
 
+  it("stores valid ranking eligibility, keeps it across edits that omit it and rejects invalid values", async () => {
+    const { competitions, entries, clock, draft } = await harness();
+    const update = (rules: {
+      readonly rankingEligibility?: { minimumMatches: number; minimumTeamMinutesRatio: number };
+    }) =>
+      new UpdateCompetitionDraftUseCase({
+        planLimits: fixedPlanLimits(),
+        competitions,
+        entries,
+        clock,
+        authorization: allowAllAuthorization,
+      }).execute({
+        actorId: asActorId("actor-1"),
+        organizationId: draft.competition.organizationId,
+        competitionId: draft.competition.id,
+        name: draft.competition.name,
+        gameEdition: draft.competition.gameEdition,
+        platform: draft.competition.platform,
+        region: draft.competition.region,
+        timeZone: draft.competition.timeZone,
+        format: draft.competition.format,
+        rules: {
+          regularStage: draft.rules.regularStage,
+          knockoutStage: draft.rules.knockoutStage,
+          maxRosterSize: draft.rules.maxRosterSize,
+          ...rules,
+        },
+      });
+    const rankingEligibility = { minimumMatches: 1, minimumTeamMinutesRatio: 0.25 };
+
+    const saved = await update({ rankingEligibility });
+    expect(saved.isOk() && saved.value.rules.rankingEligibility).toEqual(rankingEligibility);
+
+    const unrelatedEdit = await update({});
+    expect(unrelatedEdit.isOk() && unrelatedEdit.value.rules.rankingEligibility).toEqual(
+      rankingEligibility,
+    );
+
+    for (const invalid of [
+      { minimumMatches: -1, minimumTeamMinutesRatio: 0.5 },
+      { minimumMatches: 1.5, minimumTeamMinutesRatio: 0.5 },
+      { minimumMatches: 1, minimumTeamMinutesRatio: 1.01 },
+      { minimumMatches: 1, minimumTeamMinutesRatio: -0.1 },
+      { minimumMatches: 1, minimumTeamMinutesRatio: Number.NaN },
+    ]) {
+      const result = await update({ rankingEligibility: invalid });
+      expect(!result.isOk() && InvalidCompetitionRules.is(result.error)).toBe(true);
+    }
+    const stored = await competitions.findById(
+      draft.competition.organizationId,
+      draft.competition.id,
+    );
+    expect(stored?.rules.rankingEligibility).toEqual(rankingEligibility);
+  });
+
   it("requires two approved participants and locks structure after publishing", async () => {
     const { competitions, entries, clock, ids, draft } = await harness();
     const publish = new PublishCompetitionUseCase({
@@ -297,6 +360,7 @@ describe("competition setup", () => {
     });
     expect(!blocked.isOk() && CompetitionPublishBlocked.is(blocked.error)).toBe(true);
     const register = new RegisterTeamEntryUseCase({
+      planLimits: fixedPlanLimits(),
       competitions,
       entries,
       clock,
@@ -340,7 +404,11 @@ describe("competition setup", () => {
     const opened = await new OpenCompetitionRegistrationUseCase(deps).execute(scope);
     expect(opened.isOk() && opened.value.competition.status).toBe("registration");
 
-    const edit = await new UpdateCompetitionDraftUseCase({ ...deps, entries }).execute({
+    const edit = await new UpdateCompetitionDraftUseCase({
+      planLimits: fixedPlanLimits(),
+      ...deps,
+      entries,
+    }).execute({
       ...scope,
       name: "Liga renombrada",
       gameEdition: draft.competition.gameEdition,
@@ -356,7 +424,12 @@ describe("competition setup", () => {
     });
     expect(!edit.isOk() && CompetitionNotEditable.is(edit.error)).toBe(true);
 
-    const register = new RegisterTeamEntryUseCase({ ...deps, entries, ids });
+    const register = new RegisterTeamEntryUseCase({
+      planLimits: fixedPlanLimits(),
+      ...deps,
+      entries,
+      ids,
+    });
     for (const teamId of ["team-1", "team-2"]) {
       const added = await register.execute({ ...scope, teamId: asTeamId(teamId), approved: true });
       expect(added.isOk() && added.value.status).toBe("approved");
@@ -415,6 +488,7 @@ describe("competition setup", () => {
   it("creates a draft with teams, schedule and cover, or with defaults when omitted", async () => {
     const competitions = new Competitions();
     const create = new CreateCompetitionDraftUseCase({
+      planLimits: fixedPlanLimits(),
       competitions,
       clock: { now: () => new Date("2026-08-07T12:00:00.000Z") },
       ids: { generate: () => "comp-profile" },
@@ -454,6 +528,7 @@ describe("competition setup", () => {
   it("rejects impossible team ranges, dates and foreign covers", async () => {
     const { competitions, entries, clock, draft } = await harness();
     const update = new UpdateCompetitionDraftUseCase({
+      planLimits: fixedPlanLimits(),
       competitions,
       entries,
       clock,
@@ -489,11 +564,11 @@ describe("competition setup", () => {
       competitionId: draft.competition.id,
     };
     const deps = { competitions, entries, clock, ids, authorization: allowAllAuthorization };
-    await new UpdateCompetitionDraftUseCase(deps).execute({
+    await new UpdateCompetitionDraftUseCase({ ...deps, planLimits: fixedPlanLimits() }).execute({
       ...updateInput(draft),
       teams: { min: 4, max: null },
     });
-    const register = new RegisterTeamEntryUseCase(deps);
+    const register = new RegisterTeamEntryUseCase({ ...deps, planLimits: fixedPlanLimits() });
     const publish = new PublishCompetitionUseCase(deps);
     for (const teamId of ["team-1", "team-2", "team-3"]) {
       await register.execute({ ...scope, teamId: asTeamId(teamId), approved: true });
@@ -522,12 +597,12 @@ describe("competition setup", () => {
       competitionId: draft.competition.id,
     };
     const deps = { competitions, entries, clock, ids, authorization: allowAllAuthorization };
-    const update = new UpdateCompetitionDraftUseCase(deps);
+    const update = new UpdateCompetitionDraftUseCase({ ...deps, planLimits: fixedPlanLimits() });
     await update.execute({ ...updateInput(draft), teams: { min: 2, max: 2 } });
     const kept = await update.execute(updateInput(draft));
     expect(kept.isOk() && kept.value.competition.teams).toEqual({ min: 2, max: 2 });
 
-    const register = new RegisterTeamEntryUseCase(deps);
+    const register = new RegisterTeamEntryUseCase({ ...deps, planLimits: fixedPlanLimits() });
     for (const teamId of ["team-1", "team-2"]) {
       await register.execute({ ...scope, teamId: asTeamId(teamId), approved: true });
     }
@@ -538,7 +613,10 @@ describe("competition setup", () => {
 
     const pending = await register.execute({ ...scope, teamId: asTeamId("team-4") });
     if (!pending.isOk()) throw pending.error;
-    const approve = await new ApproveCompetitionEntryUseCase(deps).execute({
+    const approve = await new ApproveCompetitionEntryUseCase({
+      ...deps,
+      planLimits: fixedPlanLimits(),
+    }).execute({
       ...scope,
       entryId: pending.value.id,
     });

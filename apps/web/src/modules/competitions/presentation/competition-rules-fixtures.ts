@@ -45,6 +45,7 @@ export const leaguePlayoffsDraft: CompetitionDraftDto = {
     },
     awayGoalsEnabled: false,
     maxRosterSize: 11,
+    rankingEligibility: null,
     createdAt: "2026-10-01T10:00:00.000Z",
   },
 };

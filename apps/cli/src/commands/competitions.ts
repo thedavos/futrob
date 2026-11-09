@@ -14,6 +14,7 @@ import { flagString, parseCommon } from "../lib/parse-flags.ts";
 import { print, printJson } from "../lib/print.ts";
 
 const USAGE = `Uso:
+  npm run cli -- statistics-rebuild <orgId> <compId>
   npm run cli -- comp-create <orgId> <name> [--edition fc27] [--platform playstation] [--region america] [--tz UTC] [--format league]
   npm run cli -- comp-list <orgId>
   npm run cli -- comp-show <orgId> <compId>
@@ -343,6 +344,18 @@ export function compApplication(raw: string[]): Effect.Effect<number, CliError> 
           : "Sin solicitud en esta competición",
       );
     }
+    return 0;
+  });
+}
+
+export function statisticsRebuild(raw: string[]): Effect.Effect<number, CliError> {
+  return Effect.gen(function* () {
+    const common = parseCommon(raw);
+    const [organizationId, competitionId] = yield* requirePositionals(common.positionals, 2, USAGE);
+    const result = yield* apiCall(configOf(common), (client) =>
+      client.statistics.rebuildCompetitionStatistics({ organizationId, competitionId }),
+    );
+    printJson(result);
     return 0;
   });
 }

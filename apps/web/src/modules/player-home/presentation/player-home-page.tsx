@@ -113,15 +113,24 @@ const styles = stylex.create({
 export function PlayerHomePage({
   externalClubId,
   profileReady,
+  notice,
 }: {
   readonly externalClubId?: string;
   readonly profileReady: boolean;
+  /** One-off message above the grid, e.g. a club onboarding could not associate. */
+  readonly notice?: ReactNode;
 }) {
   const home = usePlayerHome(externalClubId, profileReady);
-  return <PlayerHomeViewPage home={home} />;
+  return <PlayerHomeViewPage home={home} notice={notice} />;
 }
 
-export function PlayerHomeViewPage({ home }: { readonly home: PlayerHomeView }) {
+export function PlayerHomeViewPage({
+  home,
+  notice,
+}: {
+  readonly home: PlayerHomeView;
+  readonly notice?: ReactNode;
+}) {
   const { t } = useI18n();
   const clubName =
     home.phase === "ready" && home.facts.club.kind === "selected" ? home.facts.club.name : null;
@@ -145,6 +154,7 @@ export function PlayerHomeViewPage({ home }: { readonly home: PlayerHomeView }) 
           />
         </PageHeaderActions>
       </PageHeader>
+      {notice}
       {home.phase === "loading" ? (
         <LoadingGrid variant={home.loadingGrid} />
       ) : (

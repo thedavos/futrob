@@ -16,12 +16,17 @@ import { useCaptainTeamDetail } from "./use-captain-team-detail.ts";
 export function CaptainRosterPage({
   competitionId,
   organizationId,
-}: Readonly<{ competitionId: string; organizationId: string | null }>) {
+  page = "captain.roster",
+}: Readonly<{
+  competitionId: string;
+  organizationId: string | null;
+  page?: "captain.roster" | "competitionPlayer.team";
+}>) {
   const { t } = useI18n();
   const { access, capabilities, retry } = useCaptainTeam({
     competitionId,
     organizationId,
-    required: "manageRoster",
+    required: page === "competitionPlayer.team" ? "readRoster" : "manageRoster",
   });
   const { scope, detail } = useCaptainTeamDetail(access);
   const changeRole = useChangeRosterRoleMutation(scope);
@@ -45,6 +50,7 @@ export function CaptainRosterPage({
 
   return (
     <CaptainRosterPageView
+      page={page}
       access={access}
       busy={changeRole.isPending || setRosterOpen.isPending || connectClub.isPending}
       capabilities={capabilities}

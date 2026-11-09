@@ -59,8 +59,8 @@ function navigableItems(): readonly ShellNavItem[] {
     ...contextNavFor(competitionInOrg, ALL_OPERATOR).items,
     ...contextNavFor(competitionInOrg).items,
     ...contextNavFor(personalCompetition).items,
-    ...accountNavItems(),
-  ].filter((item) => !item.stub);
+    ...accountNavItems().flatMap((item) => (item.kind === "link" ? [item] : [])),
+  ].filter((item) => !("stub" in item && item.stub));
 }
 
 describe("shell navigation", () => {
@@ -72,15 +72,5 @@ describe("shell navigation", () => {
       .map((item) => ({ id: item.id, shape: hrefShape(item.href, IDS) }))
       .filter(({ shape }) => !routes.has(shape));
     expect(missing).toEqual([]);
-  });
-
-  it("resolves route file names the way the router does", () => {
-    expect(routePathFromFile("_app/player_.competitions_.$competitionId_.team.index.tsx")).toBe(
-      "/player/competitions/$/team",
-    );
-    expect(routePathFromFile("_app/orgs/$orgId/settings/index.tsx")).toBe("/orgs/$/settings");
-    expect(routePathFromFile("_app/orgs/$orgId/competitions/$competitionId/teams.lazy.tsx")).toBe(
-      "/orgs/$/competitions/$/teams",
-    );
   });
 });

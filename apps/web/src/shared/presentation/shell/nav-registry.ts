@@ -1,6 +1,8 @@
+import { BILLING_PERMISSION } from "@futrob/billing";
 import type { Permission } from "@futrob/shared-kernel";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
+import { RESULT_PERMISSION } from "@futrob/results";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { createTranslator, type Translator } from "@/shared/presentation/i18n/translate.ts";
@@ -25,6 +27,7 @@ export type ShellNavIconId =
   | "players"
   | "organization"
   | "settings"
+  | "plan"
   | "overview"
   | "fixture"
   | "encounters"
@@ -126,6 +129,13 @@ function organizationGeneralNav(organizationId: string, t: Translator): readonly
       href: `${base}/settings/members`,
       icon: "organization",
       requiredPermission: ORGANIZATION_PERMISSION.membershipsRead,
+    },
+    {
+      id: "plan",
+      label: t("pages.organization.plan.title"),
+      href: `${base}/settings/plan`,
+      icon: "plan",
+      requiredPermission: BILLING_PERMISSION.read,
     },
     {
       id: "settings",
@@ -258,7 +268,7 @@ function organizationCompetitionContext(
       label: t("pages.competition.disputes.title"),
       href: `${base}/disputes`,
       icon: "disputes",
-      requiredPermission: COMPETITION_PERMISSION.read,
+      requiredPermission: RESULT_PERMISSION.resultApprove,
     },
     {
       id: "analytics",
@@ -337,12 +347,20 @@ function filterByPermission(
   );
 }
 
-export function accountNavItems(t: Translator = createTranslator("es")): readonly ShellNavItem[] {
+export type AccountNavItem =
+  | {
+      readonly id: "profile";
+      readonly label: string;
+      readonly kind: "link";
+      readonly href: "/player/profile";
+    }
+  | { readonly id: "feedback" | "settings"; readonly label: string; readonly kind: "dialog" };
+
+export function accountNavItems(t: Translator = createTranslator("es")): readonly AccountNavItem[] {
   return [
-    { id: "profile", label: t("shell.account.profile"), href: "/player/profile", stub: true },
-    { id: "feedback", label: t("shell.account.feedback"), href: "/feedback", stub: true },
-    { id: "contact", label: t("shell.account.contact"), href: "/contact", stub: true },
-    { id: "settings", label: t("shell.account.settings"), href: "/settings", stub: true },
+    { id: "profile", label: t("shell.account.profile"), kind: "link", href: "/player/profile" },
+    { id: "feedback", label: t("shell.account.feedback"), kind: "dialog" },
+    { id: "settings", label: t("shell.account.settings"), kind: "dialog" },
   ];
 }
 

@@ -38,6 +38,7 @@ export function competitionMark(format: CompetitionFormatDto): CompetitionMark {
   switch (format) {
     case "league":
     case "league-playoffs":
+    case "swiss":
       return "league";
     case "knockout":
     case "groups-knockout":
@@ -100,6 +101,8 @@ function competitionFormatKey(format: CompetitionFormatDto): ParameterlessMessag
       return "player.home.competitions.format.groups-knockout";
     case "league-playoffs":
       return "player.home.competitions.format.league-playoffs";
+    case "swiss":
+      return "player.home.competitions.format.swiss";
     default: {
       const _exhaustive: never = format;
       return _exhaustive;

@@ -93,6 +93,10 @@ export class EntryInvitationAcceptanceFlow {
       readonly activity: {
         answered(invitation: EntryInvitation, actorId: ActorId): Promise<void>;
       };
+      /** Records the approved entry the invitation created. */
+      readonly entryActivity: {
+        registered(entry: CompetitionEntry, actorId: ActorId): Promise<void>;
+      };
     },
   ) {}
 
@@ -193,6 +197,7 @@ export class EntryInvitationAcceptanceFlow {
       creationKey: `${input.creationKey}:entry`,
     });
     if (!entry.isOk()) return err(entry.error);
+    await this.deps.entryActivity.registered(entry.value, input.actorId);
 
     const captain = await this.deps.claimCaptaincy.execute({
       actorId: input.actorId,

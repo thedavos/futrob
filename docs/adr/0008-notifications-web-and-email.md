@@ -39,7 +39,8 @@ El canal in-app/web existe como proyección transaccional. El package
 ([migración 0054](/apps/api/migrations/0054_activity_entries.sql)): una fila por hecho y
 audiencia (`organization`, `team`, `actor`), única por origen y audiencia. La composición en
 `apps/api` la escribe dentro de la transacción del comando que produce el hecho (selección
-oficial, publicación de competición, invitaciones dirigidas), igual que la proyección de
+oficial, publicación de competición, invitaciones dirigidas, reprogramaciones, inscripciones
+y decisiones del organizador), igual que la proyección de
 [ADR-0016](/docs/adr/0016-official-results-transactional-projection.md): si la escritura falla,
 el comando revierte; cerrar un origen inexistente no falla. Esta tabla es el intent persistido
 del canal web; no hay consumer ni entrega asíncrona.

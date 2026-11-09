@@ -50,6 +50,7 @@ function commandResponse(
 export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): void {
   const secured = createServiceOpenApiRouter(deps.internalJobSecret);
   const scheduling = deps.modules.scheduling;
+  const { activityCommands } = deps.modules;
 
   /**
    * Scope every response command shares: the actor comes from service auth and the
@@ -92,7 +93,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     const encounter = await scheduling.encounters.findById(encounterId);
     if (!encounter) return encounterNotFound();
 
-    const result = await scheduling.createScheduleChangeRequest.execute({
+    const result = await activityCommands.createScheduleChangeRequest.execute({
       actorId: c.get("actorId"),
       organizationId: encounter.organizationId,
       competitionId: encounter.competitionId,
@@ -130,7 +131,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     if (!scope) return encounterNotFound();
     const resolution = body.resolution;
     return commandResponse(
-      await scheduling.resolveScheduleChangeRequest.execute({
+      await activityCommands.resolveScheduleChangeRequest.execute({
         ...scope,
         proposalId: body.proposalId,
         resolution:
@@ -148,7 +149,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
     return commandResponse(
-      await scheduling.acceptScheduleChangeProposal.execute({
+      await activityCommands.acceptScheduleChangeProposal.execute({
         ...scope,
         responder: toResponder(body.responder),
       }),
@@ -160,7 +161,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
     return commandResponse(
-      await scheduling.rejectScheduleChangeProposal.execute({
+      await activityCommands.rejectScheduleChangeProposal.execute({
         ...scope,
         responder: toResponder(body.responder),
         reason: body.reason,
@@ -173,7 +174,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
     return commandResponse(
-      await scheduling.counterScheduleChangeProposal.execute({
+      await activityCommands.counterScheduleChangeProposal.execute({
         ...scope,
         teamId: asTeamId(body.teamId),
         timeZone: body.timeZone,

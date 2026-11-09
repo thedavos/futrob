@@ -1,4 +1,8 @@
 import {
+  voidOfficialResultRequestSchema,
+  voidOfficialResultResponseSchema,
+  type VoidOfficialResultRequest,
+  type VoidOfficialResultResponse,
   reviewMatchDisputeRequestSchema,
   resolveMatchDisputeRequestSchema,
   type ReviewMatchDisputeRequest,
@@ -21,12 +25,40 @@ import {
   type OfficialSelectionCommandResponse,
   listEncounterCandidatesResponseSchema,
   type ListEncounterCandidatesResponse,
+  listCompetitionDisputesResponseSchema,
+  type ListCompetitionDisputesResponse,
 } from "@futrob/api-contracts";
 import type { HttpClient, RequestOptions } from "../http.ts";
 import { apiPath } from "../internal/path.ts";
 
 export function createResultsResource(http: HttpClient) {
   return {
+    async voidOfficialResult(
+      officialResultId: string,
+      input: VoidOfficialResultRequest = {},
+      options: RequestOptions = {},
+    ): Promise<VoidOfficialResultResponse> {
+      return http.request({
+        path: apiPath("official-results", officialResultId, "void"),
+        method: "POST",
+        body: voidOfficialResultRequestSchema.parse(input),
+        options,
+        parse: (data) => voidOfficialResultResponseSchema.parse(data),
+      });
+    },
+    /** Operator queue: selections in `disputed` or `organizer_review`, longest waiting first. */
+    async listCompetitionDisputes(
+      organizationId: string,
+      competitionId: string,
+      options: RequestOptions = {},
+    ): Promise<ListCompetitionDisputesResponse> {
+      return http.request({
+        path: apiPath("organizations", organizationId, "competitions", competitionId, "disputes"),
+        method: "GET",
+        options,
+        parse: (data) => listCompetitionDisputesResponseSchema.parse(data),
+      });
+    },
     async getOperatorOfficialSelection(
       organizationId: string,
       encounterId: string,

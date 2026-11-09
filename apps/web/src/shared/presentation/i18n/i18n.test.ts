@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { catalogs, type Locale, type MessageParamsByKey } from "./catalogs.ts";
 import { resolveLocale } from "./locale.ts";
 import { createTranslator } from "./translate.ts";
-import { onboardingHead } from "./onboarding-head.ts";
+import { localizedHead } from "./localized-head.ts";
 
 describe("onboarding i18n", () => {
   it("keeps the English catalog in exact key parity with Spanish", () => {
@@ -49,11 +49,15 @@ describe("onboarding i18n", () => {
   });
 
   it("builds localized route titles for server rendering", () => {
-    expect(onboardingHead("es", "onboarding.account.title")).toEqual({
+    const head = localizedHead("onboarding.account.title");
+    expect(head({ matches: [{ loaderData: "es" }] })).toEqual({
       meta: [{ title: "Configura tus datos de juego | Futrob" }],
     });
-    expect(onboardingHead("en", "onboarding.account.title")).toEqual({
+    expect(head({ matches: [{ loaderData: "en" }] })).toEqual({
       meta: [{ title: "Set up your game details | Futrob" }],
+    });
+    expect(head({ matches: [] })).toEqual({
+      meta: [{ title: "Configura tus datos de juego | Futrob" }],
     });
   });
 });

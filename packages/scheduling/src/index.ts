@@ -30,6 +30,7 @@ export {
   type FixtureFormat,
   type FixtureGenerationSpec,
   type FixtureParticipantSlot,
+  type FixturePlaceholderSlot,
   type FixturePlan,
   type FixturePlanStatus,
   type FixtureRound,
@@ -73,6 +74,17 @@ export type {
   CompetitionFixtureSourceSnapshot,
   FixturePlanRepository,
 } from "./domain/ports/fixture-plan.repository.ts";
+export type {
+  OfficialEncounterScore,
+  OfficialEncounterScoreReaderPort,
+} from "./domain/ports/official-encounter-score-reader.port.ts";
+export type { StandingPoints } from "./domain/policies/reconcile-fixture-advancement.ts";
+export type { EncounterParticipantsChangePort } from "./domain/ports/encounter-participants-change.port.ts";
+export {
+  AdvanceFixtureFromOfficialResultUseCase,
+  type AdvanceFixtureFromOfficialResultInput,
+  type AdvanceFixtureFromOfficialResultOutput,
+} from "./application/advance-fixture-from-official-result/advance-fixture-from-official-result.use-case.ts";
 export type {
   FixtureAuditEntry,
   FixtureAuditPort,
@@ -134,6 +146,7 @@ export type {
   ScheduleChangeCommandOutput,
 } from "./application/schedule-change-command.ts";
 export { GetCompetitionFixtureUseCase } from "./application/get-competition-fixture.use-case.ts";
+export { GetCurrentCompetitionFixtureUseCase } from "./application/get-current-competition-fixture.use-case.ts";
 export {
   EncounterScheduleAuthorizationForbidden,
   InvalidEncounterSchedule,
@@ -154,6 +167,16 @@ export {
   FixtureSupersedeConflict,
   InvalidFixtureConfiguration,
   type EditFixtureEncounterError,
+  AdvancementNotReversible,
+  TieRequiresOrganizerReview,
+  type AdvanceFixtureFromOfficialResultError,
+  NotSwissFixture,
+  SwissRoundNotCurrent,
+  SwissTeamAlreadyWithdrawn,
+  SwissTeamNotParticipant,
+  type CloseSwissRoundError,
+  type ReconcileSwissRoundsError,
+  type WithdrawSwissTeamError,
   type GenerateCompetitionFixtureError,
 } from "./domain/errors/fixture.errors.ts";
 export {
@@ -194,7 +217,50 @@ export {
 } from "./domain/policies/select-reschedule-stage-rules.ts";
 export { requiredScheduleChangeAuthorities } from "./domain/policies/schedule-change-approval.ts";
 export type { CompetitionWallTime } from "./domain/policies/interpret-competition-wall-time.ts";
-export { replaceEncounter } from "./domain/policies/edit-fixture-encounter.ts";
+export {
+  replaceEncounter,
+  withoutRounds,
+  withRoundEncounters,
+} from "./domain/policies/edit-fixture-encounter.ts";
+export {
+  reconcileSwissRounds,
+  type SwissRoundChange,
+} from "./domain/policies/reconcile-swiss-rounds.ts";
+export {
+  defaultSwissRoundCount,
+  maxSwissRoundCount,
+  pairSwissRound,
+  type SwissPairing,
+  type SwissTable,
+} from "./domain/policies/pair-swiss-round.ts";
+export {
+  swissByeTeam,
+  swissPointsPerBye,
+  swissRoundEncounterIds,
+  isSwissRoundSettled,
+  swissRoundProgress,
+  swissRounds,
+  swissTeamEncounterIds,
+  type SwissRoundProgress,
+} from "./domain/policies/swiss-standing-points.ts";
+export type { EncounterOpenSelectionPort } from "./domain/ports/encounter-open-selection.port.ts";
+export type {
+  SwissRoundAction,
+  SwissRoundActionLogPort,
+} from "./domain/ports/swiss-round-action-log.port.ts";
+export {
+  ReconcileSwissRoundsUseCase,
+  type ReconcileSwissRoundsInput,
+  type ReconcileSwissRoundsOutput,
+} from "./application/swiss/reconcile-swiss-rounds.use-case.ts";
+export {
+  WithdrawSwissTeamUseCase,
+  type WithdrawSwissTeamInput,
+} from "./application/swiss/withdraw-swiss-team.use-case.ts";
+export {
+  CloseSwissRoundUseCase,
+  type CloseSwissRoundInput,
+} from "./application/swiss/close-swiss-round.use-case.ts";
 export {
   rescheduleScopesConflict,
   type RescheduleScope,

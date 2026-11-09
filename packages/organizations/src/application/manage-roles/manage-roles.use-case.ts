@@ -29,6 +29,8 @@ import type {
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import { ORGANIZATION_PERMISSION } from "../../domain/policies/organization-permissions.ts";
 import type { OrgMembershipRole } from "../../domain/value-objects/organization-membership-role.ts";
+import type { StaffSeatLimitPort } from "../../domain/ports/staff-seat-limit.port.ts";
+import { occupiesStaffSeat, staffSeatError } from "../staff-seats.ts";
 
 interface SharedDependencies {
   readonly authorization: AuthorizationPort;
@@ -48,6 +50,7 @@ export class ChangeOrganizationRoleUseCase {
   constructor(
     private readonly deps: SharedDependencies & {
       readonly memberships: MembershipRepository;
+      readonly staffSeats: StaffSeatLimitPort;
       readonly roleCapabilities: OrganizationRoleCapabilityPort;
     },
   ) {}
@@ -89,22 +92,6 @@ export class ChangeOrganizationRoleUseCase {
         }),
       );
     }
-    for (const permission of this.deps.roleCapabilities.permissionsForRole(input.role)) {
-      const delegated = await this.deps.authorization.decide({
-        actorId: input.actorId,
-        permission,
-        scope: { organizationId: input.organizationId },
-      });
-      if (!delegated.allowed) {
-        return err(
-          new AuthorizationForbidden({
-            code: "authorization.forbidden",
-            message: "Cannot assign a role with capabilities outside the actor's authority",
-            permission,
-          }),
-        );
-      }
-    }
     const current = await this.deps.memberships.findByOrgAndActor(
       input.organizationId,
       input.targetActorId,
@@ -116,6 +103,32 @@ export class ChangeOrganizationRoleUseCase {
           message: "Organization membership not found",
         }),
       );
+    }
+    // Both the role being removed and the role being assigned must sit within the
+    // actor's authority, so a delegated manager cannot demote someone above them.
+    const capabilities = new Set([
+      ...this.deps.roleCapabilities.permissionsForRole(current.role),
+      ...this.deps.roleCapabilities.permissionsForRole(input.role),
+    ]);
+    for (const permission of capabilities) {
+      const delegated = await this.deps.authorization.decide({
+        actorId: input.actorId,
+        permission,
+        scope: { organizationId: input.organizationId },
+      });
+      if (!delegated.allowed) {
+        return err(
+          new AuthorizationForbidden({
+            code: "authorization.forbidden",
+            message: "Cannot change a role with capabilities outside the actor's authority",
+            permission,
+          }),
+        );
+      }
+    }
+    if (occupiesStaffSeat(input.role) && !occupiesStaffSeat(current.role)) {
+      const seats = await staffSeatError(this.deps, input.organizationId);
+      if (seats) return err(seats);
     }
     const updated = await this.deps.memberships.updateRoleProtectingLastOrganizer({
       ...current,

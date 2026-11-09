@@ -17,9 +17,10 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 | `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                                                                 |
 | `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                                                   |
 | `notifications` | Web, email (WhatsApp/push como ampliación)                                                                                          |
-| `public-portal` | Lecturas públicas sanitizadas                                                                                                       |
+| `public-portal` | Lecturas públicas anónimas y sanitizadas de competiciones publicadas ([ADR-0024](/docs/adr/0024-anonymous-public-portal-reads.md))  |
+| `billing`       | Catálogo de planes, suscripciones, entitlements y ledger de cupos ([ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md))    |
 
-`billing` está fuera del MVP.
+`billing` es una hoja: ningún BC lo importa. Cada consumidor declara su port de límites con su vocabulario y `apps/api/src/di/` lo conecta con billing. Los pagos automatizados siguen fuera del MVP (WONT-05).
 
 ## Capas dentro de un BC
 
@@ -59,10 +60,27 @@ scheduling
   → CompetitionScheduleRulesReaderPort
   → competitions public API
 
+scheduling (retirar o cerrar una ronda suiza)
+  → EncounterOpenSelectionPort
+  → DeferredEncounterOpenSelectionPort (apps/api; rompe el ciclo de composición)
+  → CancelOpenSelectionUseCase (results public API)
+
+statistics (clasificación suiza al leer)
+  → CompetitionSwissStandingReaderPort
+  → FixtureSwissStandingReader (apps/api)
+  → FixturePlanRepository + resultados aprobados
+
 competition discovery (apps/api)
   → CompetitionDiscoveryReader
   → OrganizationRepository.getByIds (nombres de organizador por lote)
   → no abre public-portal ni lectura anónima
+
+public portal (apps/api)
+  → PublishedCompetitionReaderPort (CompetitionDiscoveryReader)
+  → PublicStandingsReaderPort (CompetitionStandingSnapshotRepository)
+  → PublicCalendarReaderPort (FixturePlanRepository + OfficialResultReaderPort, solo "existe resultado")
+  → PublicTeamDirectoryPort (TeamRepository)
+  → proyección por allowlist; sin ActorId, organizationId, ids de equipo ni OfficialResult.slots
 
 onboarding HTTP orchestration
   → organizations / competitions / teams public application APIs

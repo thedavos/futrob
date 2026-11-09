@@ -5,9 +5,11 @@ import { createGameDataResource } from "./resources/game-data.ts";
 import { createIdentityResource } from "./resources/identity.ts";
 import { createMetaResource } from "./resources/meta.ts";
 import { createOrganizationsResource } from "./resources/organizations.ts";
+import { createPublicPortalResource } from "./resources/public-portal.ts";
 import { createResultsResource } from "./resources/results.ts";
 import { createTeamsResource } from "./resources/teams.ts";
 import { createAuthorizationResource } from "./resources/authorization.ts";
+import { createBillingResource } from "./resources/billing.ts";
 import { createStatisticsResource } from "./resources/statistics.ts";
 import { createPlayersResource } from "./resources/players.ts";
 import { createActivitiesResource } from "./resources/activities.ts";
@@ -26,8 +28,10 @@ export function createFutrobClient(options: CreateFutrobClientOptions) {
     competitions: createCompetitionsResource(http),
     teams: createTeamsResource(http),
     encounters: createEncountersResource(http),
+    publicPortal: createPublicPortalResource(http),
     results: createResultsResource(http),
     authorization: createAuthorizationResource(http),
+    billing: createBillingResource(http),
     statistics: createStatisticsResource(http),
     players: createPlayersResource(http),
     activities: createActivitiesResource(http),

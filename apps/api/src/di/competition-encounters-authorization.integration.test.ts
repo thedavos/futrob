@@ -318,6 +318,7 @@ async function competition(app: AppModules, id: CompetitionId) {
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: 11,
+      rankingEligibility: null,
       createdAt: SEEDED_AT,
     },
   });

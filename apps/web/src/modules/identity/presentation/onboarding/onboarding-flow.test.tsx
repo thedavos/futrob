@@ -13,6 +13,7 @@ import {
 } from "./onboarding-story-router.tsx";
 import { IdentityOnboardingClientError } from "@/modules/identity/presentation/identity-browser-client.ts";
 import { GameDataClientError } from "@/modules/game-data/presentation/game-data-browser-client.ts";
+import { memoryOnboardingDraftStore } from "./onboarding-draft-storage.ts";
 
 beforeEach(() => {
   vi.stubGlobal("PointerEvent", MouseEvent);
@@ -111,10 +112,10 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(
       await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
     ).toBeTruthy();
-    expect(screen.queryByText("Recuperando tu progreso…")).toBeNull();
+    expect(screen.queryByText("Preparando tu cuenta…")).toBeNull();
   });
 
-  it("cold-bootstraps at intention when the server has an advanced step without draft", async () => {
+  it("resumes at the stored step when no earlier step is missing data", async () => {
     const gateway = createFakeOnboardingGateway({
       path: "player",
       currentStep: "game-account",
@@ -122,17 +123,45 @@ describe("OnboardingFlowProvider initialization", () => {
 
     render(
       <StrictMode>
-        <OnboardingStoryRouter
-          bootstrap="cold"
-          gateway={gateway}
-          initialPath="/onboarding/intention"
-        />
+        <OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/intention" />
       </StrictMode>,
     );
 
     expect(
-      await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
+      await screen.findByRole("heading", { name: "Configura tus datos de juego" }),
     ).toBeTruthy();
+  });
+
+  it("restores the draft after a reload and resumes where the actor left", async () => {
+    const draftStore = memoryOnboardingDraftStore();
+    const first = render(
+      <OnboardingStoryRouter
+        draftStore={draftStore}
+        gateway={createFakeOnboardingGateway()}
+        initialPath="/onboarding/intention"
+      />,
+    );
+    fireEvent.click(await screen.findByRole("radio", { name: /Organizar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    const name = await screen.findByRole("textbox", { name: "Nombre de la organización" });
+    fireEvent.change(name, { target: { value: "Liga Norte" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
+    first.unmount();
+
+    render(
+      <OnboardingStoryRouter
+        draftStore={draftStore}
+        gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "review" })}
+        initialPath="/onboarding/intention"
+      />,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Confirma tu configuración" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Volver" }));
+    expect(
+      await screen.findByRole("textbox", { name: "Nombre de la organización" }),
+    ).toHaveProperty("value", "Liga Norte");
   });
 
   it("edits a completed review row from its relevant step", async () => {
@@ -150,7 +179,7 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.change(account, { target: { value: "gamer23" } });
     fireEvent.click(screen.getByRole("radio", { name: "FC 26" }));
     fireEvent.click(screen.getByRole("radio", { name: "Nintendo Switch 2" }));
-    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }));
     await screen.findByRole("heading", { name: "Asocia tu club EA" });
     const platformTrigger = screen.getByRole("combobox", {
       name: "Plataforma EA para la búsqueda",
@@ -167,34 +196,65 @@ describe("OnboardingFlowProvider initialization", () => {
     ).toBeTruthy();
   });
 
-  it("redirects an empty advanced review resume back to intention", async () => {
+  it("keeps the draft after a reload when progress writes failed and the server has no path", async () => {
+    const draftStore = memoryOnboardingDraftStore();
+    const failing = () => createFakeOnboardingGateway({ failSave: true });
+    const first = render(
+      <OnboardingStoryRouter
+        draftStore={draftStore}
+        gateway={failing()}
+        initialPath="/onboarding/intention"
+      />,
+    );
+    fireEvent.click(await screen.findByRole("radio", { name: /Organizar/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    const name = await screen.findByRole("textbox", { name: "Nombre de la organización" });
+    fireEvent.change(name, { target: { value: "Liga Norte" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
+    first.unmount();
+
     render(
       <OnboardingStoryRouter
-        bootstrap="cold"
+        draftStore={draftStore}
+        gateway={failing()}
+        initialPath="/onboarding/intention"
+      />,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Confirma tu configuración" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Volver" }));
+    expect(
+      await screen.findByRole("textbox", { name: "Nombre de la organización" }),
+    ).toHaveProperty("value", "Liga Norte");
+  });
+
+  it("opens the invitation path with the code from an invitation link", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ path: "player", currentStep: "game-account" })}
+        initialPath="/onboarding/invitation?invitation=invite-token"
+      />,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Únete a una competición" })).toBeTruthy();
+    expect(screen.getByLabelText("Código de invitación")).toHaveProperty("value", "invite-token");
+    fireEvent.click(screen.getByRole("button", { name: "Revisar invitación" }));
+    expect(
+      await screen.findByRole("heading", { name: "Configura tus datos de juego" }),
+    ).toBeTruthy();
+  });
+
+  it("sends an advanced resume without draft back to the first step missing data", async () => {
+    render(
+      <OnboardingStoryRouter
+        draftStore={memoryOnboardingDraftStore()}
         gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "review" })}
         initialPath="/onboarding/review"
       />,
     );
 
-    expect(
-      await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
-    ).toBeTruthy();
-  });
-
-  it("redirects the legacy team route to the club step without a loop", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({ path: "player", currentStep: "club" })}
-        initialPath="/onboarding/team"
-      />,
-    );
-
-    expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
-    expect(
-      screen.getByText(
-        "La asociación es opcional y declarativa. No verifica propiedad, ni crea un Team de competición ni te incorpora a una plantilla.",
-      ),
-    ).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
   });
 
   it("navigates optimistically before saveProgress resolves", async () => {
@@ -222,16 +282,11 @@ describe("OnboardingFlowProvider initialization", () => {
     resolveSave?.();
   });
 
-  it("rolls back navigation when saveProgress fails", async () => {
-    const requestId = "715f6cc1-ce62-4adf-a3f1-e8bc12fa0e68";
+  it("keeps the actor moving when saving progress fails", async () => {
     render(
       <OnboardingStoryRouter
         gateway={createFakeOnboardingGateway({
-          saveError: new IdentityOnboardingClientError(
-            502,
-            "identity.onboarding_request_failed",
-            requestId,
-          ),
+          saveError: new IdentityOnboardingClientError(502, "identity.onboarding_request_failed"),
         })}
         initialPath="/onboarding/intention"
       />,
@@ -241,13 +296,9 @@ describe("OnboardingFlowProvider initialization", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
 
     expect(
-      await screen.findByText("No pudimos guardar tu progreso. Inténtalo nuevamente."),
+      await screen.findByRole("heading", { name: "Configura tus datos de juego" }),
     ).toBeTruthy();
-    expect(screen.getByText(requestId)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Copiar código de soporte" })).toBeTruthy();
-    expect(
-      await screen.findByRole("heading", { name: "¿Qué quieres hacer primero?" }),
-    ).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("shows a support code when organization name verification fails", async () => {
@@ -269,7 +320,7 @@ describe("OnboardingFlowProvider initialization", () => {
 
     const input = await screen.findByRole("textbox", { name: "Nombre de la organización" });
     fireEvent.change(input, { target: { value: "Liga Norte" } });
-    fireEvent.click(screen.getByRole("button", { name: "Revisar organización" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
 
     expect(
       await screen.findByText("No pudimos verificar el nombre. Inténtalo nuevamente."),
@@ -279,46 +330,44 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
   });
 
-  it("retranslates a visible save error when the locale changes", async () => {
+  it("retranslates a visible error when the locale changes", async () => {
     const user = userEvent.setup();
     render(
       <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({ failSave: true })}
-        initialPath="/onboarding/intention"
+        gateway={createFakeOnboardingGateway({
+          path: "organization",
+          currentStep: "organization",
+          checkNameError: new IdentityOnboardingClientError(
+            502,
+            "identity.onboarding_request_failed",
+          ),
+        })}
+        initialPath="/onboarding/organization"
       />,
     );
 
-    await user.click(await screen.findByRole("radio", { name: /Empezar como jugador/ }));
+    await user.type(
+      await screen.findByRole("textbox", { name: "Nombre de la organización" }),
+      "Liga Norte",
+    );
     await user.click(screen.getByRole("button", { name: "Continuar" }));
     expect(
-      await screen.findByText("No pudimos guardar tu progreso. Inténtalo nuevamente."),
+      await screen.findByText("No pudimos verificar el nombre. Inténtalo nuevamente."),
     ).toBeTruthy();
 
     await user.click(screen.getByRole("combobox", { name: "Idioma" }));
     await user.click(await screen.findByRole("option", { name: "Inglés" }));
 
-    expect(await screen.findByText("We couldn't save your progress. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We couldn't check the name. Try again.")).toBeTruthy();
   });
 
   it("does not bounce a finished player back to intention when the provider stays mounted", async () => {
-    const completePlayer = vi.fn<() => Promise<void>>(async () => undefined);
+    const completePlayer = vi.fn(async () => ({ externalClubAssociation: "skipped" as const }));
     const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "review" });
     gateway.completePlayer = completePlayer;
 
-    render(
-      <OnboardingStoryRouter
-        bootstrap="cold"
-        gateway={gateway}
-        initialPath="/onboarding/intention"
-      />,
-    );
+    render(<OnboardingStoryRouter gateway={gateway} initialPath="/onboarding/intention" />);
 
-    fireEvent.click(await screen.findByRole("radio", { name: /Empezar como jugador/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
-    await screen.findByRole("heading", { name: "Configura tus datos de juego" });
-    fireEvent.click(screen.getByRole("button", { name: "Omitir por ahora" }));
-    await screen.findByRole("heading", { name: "Asocia tu club EA" });
-    fireEvent.click(screen.getByRole("button", { name: "Omitir por ahora" }));
     await screen.findByRole("heading", { name: "Confirma tu configuración" });
 
     fireEvent.click(screen.getByRole("button", { name: "Entrar a mi espacio" }));
@@ -465,6 +514,37 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
   });
 
+  it("enters the personal space with a notice when EA could not associate the club", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({
+          path: "player",
+          currentStep: "club",
+          clubAssociation: "failed",
+        })}
+        initialPath="/onboarding/club"
+      />,
+    );
+
+    fireEvent.change(await screen.findByRole("textbox", { name: "Nombre del club" }), {
+      target: { value: "Fera" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar club" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Fera Enjaulada/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Revisar club" }));
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a mi espacio" }));
+
+    expect(await screen.findByRole("heading", { name: "Espacio personal" })).toBeTruthy();
+    expect(screen.getByText("Tu club quedó sin asociar")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Ir a Clubes EA" }).getAttribute("href")).toBe(
+      "/player/ea-clubs",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar aviso" }));
+    await waitFor(() => expect(screen.queryByText("Tu club quedó sin asociar")).toBeNull());
+  });
+
   it("preserves the club query and enables retry after a rate-limit wait", async () => {
     const gateway = createFakeOnboardingGateway({ path: "player", currentStep: "club" });
     gateway.searchExternalClubs = async () => {
@@ -514,7 +594,7 @@ describe("OnboardingFlowProvider initialization", () => {
     await user.type(account, "gamer23");
     await user.click(screen.getByRole("radio", { name: "FC 25" }));
     await user.click(screen.getByRole("radio", { name: "PlayStation" }));
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Guardar y continuar" }));
 
     await screen.findByRole("heading", { name: "Asocia tu club EA" });
     await user.type(screen.getByRole("textbox", { name: "Nombre del club" }), "Fera");
@@ -592,7 +672,7 @@ describe("OnboardingFlowProvider initialization", () => {
 
     const input = await screen.findByRole("textbox", { name: "Nombre de la organización" });
     fireEvent.change(input, { target: { value: "Liga Norte" } });
-    fireEvent.click(screen.getByRole("button", { name: "Revisar organización" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
 
     expect(await screen.findByText("Ese nombre ya está en uso. Elige otro.")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Crea tu organización" })).toBeTruthy();
@@ -607,12 +687,36 @@ describe("OnboardingFlowProvider initialization", () => {
       />,
     );
     const identifier = await screen.findByRole("textbox", { name: "Identificador de EA" });
-    fireEvent.click(screen.getByRole("button", { name: "Vincular y continuar" }));
+    fireEvent.click(screen.getByRole("radio", { name: "PlayStation" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }));
 
     const error = screen.getByText("Escribe tu identificador de EA.");
     expect(error).toBeTruthy();
     expect(identifier.getAttribute("aria-describedby")).toBe(error.parentElement?.id);
     expect(document.activeElement).toBe(identifier);
+  });
+
+  it("only saves a game account once something is typed and keeps skipping available", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway({ path: "organization", currentStep: "game-account" })}
+        initialPath="/onboarding/game-account"
+      />,
+    );
+
+    const save = await screen.findByRole("button", { name: "Guardar y revisar" });
+    expect(save.hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "Omitir por ahora" }).hasAttribute("disabled")).toBe(
+      false,
+    );
+    expect(screen.queryByRole("button", { name: /Vincular/ })).toBeNull();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Identificador de EA" }), {
+      target: { value: "Gamer23" },
+    });
+    expect(screen.getByRole("button", { name: "Guardar y revisar" }).hasAttribute("disabled")).toBe(
+      false,
+    );
   });
 
   it("renders a recognizable logo for every game platform", async () => {
@@ -635,115 +739,6 @@ describe("OnboardingFlowProvider initialization", () => {
       const option = await screen.findByRole("radio", { name: label });
       expect(option.querySelector(`[data-platform-logo="${value}"]`)).toBeTruthy();
     }
-  });
-
-  it("places the fixed modality in the competition introduction and labels America", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    expect(
-      await screen.findByText(
-        "Crea un borrador de FC Clubs. Configurarás los equipos, el calendario y la publicación después.",
-      ),
-    ).toBeTruthy();
-    expect(screen.queryByText(/Modalidad: FC Clubs/)).toBeNull();
-
-    const region = screen.getByRole("combobox", { name: "Región deportiva" });
-    fireEvent.click(region);
-    const america = await screen.findByRole("option", { name: "América" });
-    fireEvent.pointerDown(america, { pointerType: "mouse" });
-    fireEvent.click(america);
-    expect(region.textContent).toContain("América");
-    expect(region.textContent).not.toContain("america");
-  });
-
-  it("shows the human label for the selected competition format", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    const format = await screen.findByRole("combobox", { name: "Formato inicial" });
-    fireEvent.click(format);
-    const knockout = await screen.findByRole("option", { name: "Eliminación directa" });
-    fireEvent.pointerDown(knockout, { pointerType: "mouse" });
-    fireEvent.click(knockout);
-    expect(format.textContent).toContain("Eliminación directa");
-    expect(format.textContent).not.toContain("knockout");
-  });
-
-  it("uses a selector for the competition time zone", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    const timeZone = await screen.findByRole("combobox", { name: "Zona horaria" });
-    fireEvent.click(timeZone);
-    const lima = await screen.findByRole("option", { name: "Lima · UTC-5" });
-    fireEvent.pointerDown(lima, { pointerType: "mouse" });
-    fireEvent.click(lima);
-    expect(timeZone.textContent).toContain("Lima · UTC-5");
-  });
-
-  it("offers competition data as an aligned optional account action", async () => {
-    render(
-      <OnboardingStoryRouter
-        gateway={createFakeOnboardingGateway({
-          path: "organization",
-          currentStep: "competition",
-        })}
-        initialPath="/onboarding/competition"
-      />,
-    );
-
-    fireEvent.change(await screen.findByRole("textbox", { name: "Nombre de la competición" }), {
-      target: { value: "Liga Futrob" },
-    });
-    fireEvent.click(screen.getByRole("radio", { name: "FC 26" }));
-    fireEvent.click(screen.getByRole("radio", { name: "PlayStation" }));
-
-    const region = screen.getByRole("combobox", { name: "Región deportiva" });
-    fireEvent.click(region);
-    const america = await screen.findByRole("option", { name: "América" });
-    fireEvent.pointerDown(america, { pointerType: "mouse" });
-    fireEvent.click(america);
-
-    const format = screen.getByRole("combobox", { name: "Formato inicial" });
-    fireEvent.click(format);
-    const league = await screen.findByRole("option", { name: "Liga" });
-    fireEvent.pointerDown(league, { pointerType: "mouse" });
-    fireEvent.click(league);
-
-    fireEvent.click(screen.getByRole("button", { name: "Configurar cuenta" }));
-    await screen.findByRole("heading", { name: "Configura tus datos de juego" });
-
-    const alert = screen.getByRole("alert");
-    expect(alert.textContent).toContain(
-      "La cuenta es personal, pero puedes usar la misma edición y plataforma de la competición.",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Usar datos de la competición" }));
-    expect(screen.getByRole("radio", { name: "PlayStation" }).getAttribute("aria-checked")).toBe(
-      "true",
-    );
-    expect(screen.getByRole("radio", { name: "FC 26" }).getAttribute("aria-checked")).toBe("true");
   });
 
   it("navigates while saveProgress is still pending", async () => {

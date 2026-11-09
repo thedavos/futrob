@@ -1,7 +1,7 @@
 import {
-  competitionDraftInputSchema,
+  onboardingStepsForPath,
+  isOnboardingStepAllowed,
   playerGameAccountInputSchema,
-  type CompetitionDraftInputDto,
   type ExternalClubDto,
   type InspectCompetitionInvitationResponse,
   type OnboardingPathDto,
@@ -20,14 +20,11 @@ import {
 
 export type OnboardingGateway = Pick<FutrobClient, "identity" | "organizations" | "gameData">;
 
-export const STEPS_BY_PATH = {
-  player: ["intention", "game-account", "club", "review"],
-  organization: ["intention", "organization", "competition", "game-account", "review"],
-  invitation: ["intention", "invitation", "game-account", "review"],
-} as const;
-
-export function stepsForPath(path: OnboardingPathDto): readonly OnboardingStepDto[] {
-  return STEPS_BY_PATH[path];
+export function stepsForPath(
+  path: OnboardingPathDto,
+  includeAccount = false,
+): readonly OnboardingStepDto[] {
+  return onboardingStepsForPath(path, includeAccount);
 }
 
 export type FinishResult = { readonly route: string };
@@ -47,15 +44,9 @@ export function accountIsValid(draft: OnboardingDraft): boolean {
   );
 }
 
-export function competitionFromDraft(draft: OnboardingDraft): CompetitionDraftInputDto | null {
-  const parsed = competitionDraftInputSchema.safeParse(draft.competition);
-  return parsed.success ? parsed.data : null;
-}
-
 export function missingRequiredStep(draft: OnboardingDraft): OnboardingStepDto | null {
   if (!draft.path) return "intention";
   if (draft.path === "organization" && !draft.organizationName.trim()) return "organization";
-  if (draft.path === "organization" && !competitionFromDraft(draft)) return "competition";
   if (draft.path === "invitation" && !draft.invitationToken.trim()) return "invitation";
   if (!accountIsValid(draft)) return "game-account";
   return null;
@@ -65,14 +56,7 @@ function normalizedStep(
   path: OnboardingPathDto | null,
   step: OnboardingStepDto | null,
 ): OnboardingStepDto {
-  if (!path || !step) return "intention";
-  if (step === "game")
-    return path === "player"
-      ? "game-account"
-      : path === "organization"
-        ? "organization"
-        : "intention";
-  return stepsForPath(path).includes(step) ? step : "intention";
+  return step && isOnboardingStepAllowed(path, step) ? step : "intention";
 }
 
 export class NativeOnboardingFlow {
@@ -103,8 +87,17 @@ export class NativeOnboardingFlow {
     gateway: OnboardingGateway,
   ): Promise<NativeOnboardingFlow> {
     const stored = await loadOnboardingDraft(userId);
+    if (!status.completed && status.path === null && status.currentStep === "intention") {
+      // Records the entry into onboarding for the funnel (ADR-0026); the server ignores repeats.
+      await gateway.identity
+        .saveOnboardingProgress({ path: null, currentStep: "intention" })
+        .catch(() => undefined);
+    }
     const draft =
       status.path === stored.path ? stored : { ...emptyOnboardingDraft(), path: status.path };
+    if (draft.path === "organization" && status.currentStep === "game-account") {
+      draft.organizationAccountStep = true;
+    }
     return new NativeOnboardingFlow(
       userId,
       gateway,
@@ -119,9 +112,6 @@ export class NativeOnboardingFlow {
     this.draft = {
       ...base,
       ...patch,
-      competition: patch.competition
-        ? { ...base.competition, ...patch.competition }
-        : base.competition,
       gameAccount: patch.gameAccount
         ? Object.keys(patch.gameAccount).length === 0
           ? {}
@@ -143,7 +133,7 @@ export class NativeOnboardingFlow {
     if (this.active) throw new Error("Espera a que termine la operación actual.");
     const path = this.draft.path;
     if (path === null && step !== "intention") throw new Error("Elige cómo continuar.");
-    if (path !== null && !stepsForPath(path).includes(step)) {
+    if (path !== null && !stepsForPath(path, this.draft.organizationAccountStep).includes(step)) {
       throw new Error("Este paso no corresponde al camino elegido.");
     }
     this.active = true;
@@ -200,15 +190,14 @@ export class NativeOnboardingFlow {
       await this.writeQueue;
       const account = accountFromDraft(this.draft);
       if (this.draft.path === "organization") {
-        const competition = competitionFromDraft(this.draft)!;
         const result = await this.gateway.identity.completeOrganizationOnboarding({
           name: this.draft.organizationName.trim(),
-          competition,
+          timeZone: this.draft.organizationTimeZone,
           gameAccount: account,
         });
         await clearOnboardingDraft();
         return {
-          route: `/orgs/${encodeURIComponent(result.destination.organizationId)}/competitions/${encodeURIComponent(result.destination.competitionId)}/setup`,
+          route: `/orgs/${encodeURIComponent(result.destination.organizationId)}`,
         };
       }
       if (this.draft.path === "invitation") {

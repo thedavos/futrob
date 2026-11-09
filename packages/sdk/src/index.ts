@@ -17,6 +17,12 @@ export { buildEntryInvitationShareUrl, buildWhatsAppShareUrl } from "./entry-inv
 
 export type { ActivitiesResource, ListActivitiesInput } from "./resources/activities.ts";
 export type { AuthorizationResource } from "./resources/authorization.ts";
+export {
+  isPlanGatedErrorCode,
+  PLAN_GATED_ERROR_CODES,
+  type BillingResource,
+  type PlanGatedErrorCode,
+} from "./resources/billing.ts";
 export type { CompetitionsResource } from "./resources/competitions.ts";
 export type {
   EntryInvitationsResource,
@@ -28,6 +34,7 @@ export type { IdentityResource } from "./resources/identity.ts";
 export type { MetaResource } from "./resources/meta.ts";
 export type { OrganizationsResource } from "./resources/organizations.ts";
 export type { PlayersResource } from "./resources/players.ts";
+export type { PublicPortalResource } from "./resources/public-portal.ts";
 export type { ResultsResource } from "./resources/results.ts";
 export type { RosterInvitationsResource } from "./resources/roster-invitations.ts";
 export type { RostersResource } from "./resources/rosters.ts";

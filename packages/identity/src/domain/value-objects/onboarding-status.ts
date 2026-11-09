@@ -1,6 +1,6 @@
 import type { ActorId } from "@futrob/shared-kernel";
 
-export const CURRENT_ONBOARDING_VERSION = 3;
+export const CURRENT_ONBOARDING_VERSION = 4;
 
 export const ONBOARDING_PATH = {
   player: "player",
@@ -10,27 +10,21 @@ export const ONBOARDING_PATH = {
 
 export type OnboardingPath = (typeof ONBOARDING_PATH)[keyof typeof ONBOARDING_PATH];
 
-export type OnboardingStep =
-  | "intention"
-  | "organization"
-  | "competition"
-  | "game"
-  | "invitation"
-  | "game-account"
-  | "club"
-  | "review";
+export const ONBOARDING_STEPS = [
+  "intention",
+  "organization",
+  "invitation",
+  "game-account",
+  "club",
+  "review",
+] as const;
 
-const stepsByPath = {
-  [ONBOARDING_PATH.organization]: [
-    "intention",
-    "organization",
-    "competition",
-    "game-account",
-    "game",
-    "review",
-  ],
+export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
+
+export const ONBOARDING_STEPS_BY_PATH = {
+  [ONBOARDING_PATH.organization]: ["intention", "organization", "review"],
   [ONBOARDING_PATH.invitation]: ["intention", "invitation", "game-account", "review"],
-  [ONBOARDING_PATH.player]: ["intention", "game", "game-account", "club", "review"],
+  [ONBOARDING_PATH.player]: ["intention", "game-account", "club", "review"],
 } as const satisfies Record<OnboardingPath, readonly OnboardingStep[]>;
 
 export function isOnboardingStepAllowed(
@@ -40,12 +34,10 @@ export function isOnboardingStepAllowed(
   if (path === null) {
     return step === "intention";
   }
-  for (const allowed of stepsByPath[path]) {
-    if (allowed === step) {
-      return true;
-    }
-  }
-  return false;
+  return (
+    (path === "organization" && step === "game-account") ||
+    ONBOARDING_STEPS_BY_PATH[path].some((allowed) => allowed === step)
+  );
 }
 
 export interface OnboardingStatus {
@@ -64,6 +56,8 @@ export interface OnboardingProgress {
   readonly actorId: ActorId;
   readonly path: OnboardingPath | null;
   readonly currentStep: OnboardingStep;
+  /** Flow version the actor is walking, so funnel history can be split by flow revision. */
+  readonly version: number;
   readonly updatedAt: Date;
 }
 

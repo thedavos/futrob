@@ -33,6 +33,7 @@ import {
   DeclineEntryInvitationUseCase,
   RegisterInvitedEntryUseCase,
   type CompetitionDiscoveryReader,
+  type CompetitionPlanLimitsPort,
   type EntryInvitationRepository,
   type CompetitionEntryRepository,
   type CompetitionMembershipRepository,
@@ -77,6 +78,7 @@ export function createCompetitionsModule(input: {
   readonly transaction: TransactionPort;
   readonly mutationLock: AuthorizationMutationLockPort;
   readonly organizations: OrganizationRepository;
+  readonly planLimits: CompetitionPlanLimitsPort;
 }) {
   const competitions: CompetitionRepository =
     input.competitions ??
@@ -101,6 +103,7 @@ export function createCompetitionsModule(input: {
   const listDiscoverable = new ListDiscoverableCompetitionsUseCase(discovery);
   const getDiscoverable = new GetDiscoverableCompetitionUseCase(discovery);
   const shared = { clock: { now: () => new Date() }, ids: { generate: () => randomUUID() } };
+  const planLimits = input.planLimits;
   const invitations: EntryInvitationRepository = input.pool
     ? new PostgresEntryInvitationRepository(input.pool)
     : new InMemoryEntryInvitationRepository();
@@ -113,10 +116,12 @@ export function createCompetitionsModule(input: {
   };
   return {
     repository: competitions,
+    discovery,
     membershipRepository: memberships,
     entryRepository: entries,
     createDraft: new CreateCompetitionDraftUseCase({
       competitions,
+      planLimits,
       authorization: input.authorization,
       ...shared,
     }),
@@ -128,6 +133,7 @@ export function createCompetitionsModule(input: {
     updateDraft: new UpdateCompetitionDraftUseCase({
       competitions,
       entries,
+      planLimits,
       authorization: input.authorization,
       clock: shared.clock,
     }),
@@ -149,6 +155,7 @@ export function createCompetitionsModule(input: {
     registerTeamEntry: new RegisterTeamEntryUseCase({
       competitions,
       entries,
+      planLimits,
       authorization: input.authorization,
       ...shared,
     }),
@@ -180,6 +187,7 @@ export function createCompetitionsModule(input: {
     approveTeamEntry: new ApproveCompetitionEntryUseCase({
       entries,
       competitions,
+      planLimits,
       authorization: input.authorization,
     }),
     rejectTeamEntry: new RejectCompetitionEntryUseCase({
@@ -198,7 +206,12 @@ export function createCompetitionsModule(input: {
       resolvePublicLink: new ResolvePublicEntryInvitationLinkUseCase(invitationDeps),
       recordAcceptance: new RecordEntryInvitationAcceptanceUseCase(invitationDeps),
       decline: new DeclineEntryInvitationUseCase(invitationDeps),
-      registerEntry: new RegisterInvitedEntryUseCase({ competitions, entries, ...shared }),
+      registerEntry: new RegisterInvitedEntryUseCase({
+        competitions,
+        entries,
+        planLimits,
+        ...shared,
+      }),
     },
     explore: new ExploreCompetitionsQuery({
       list: listDiscoverable,

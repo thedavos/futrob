@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vite-plus/test";
 import {
   apiErrorSchema,
+  listCompetitionDisputesResponseSchema,
   officialSelectionCommandResponseSchema,
   officialSelectionViewSchema,
 } from "@futrob/api-contracts";
@@ -11,6 +12,7 @@ import { createApp } from "@/app.ts";
 import {
   AWAY,
   AWAY_CAPTAIN,
+  COMPETITION,
   ENCOUNTER,
   HOME,
   HOME_CAPTAIN,
@@ -34,6 +36,7 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = describe.skipIf(!databaseUrl);
 const BASE = `/api/v1/organizations/${ORG}/encounters/${ENCOUNTER}/official-selection`;
 const DISPUTES = `${BASE}/disputes`;
+const QUEUE = `/api/v1/organizations/${ORG}/competitions/${COMPETITION}/disputes`;
 const TIMEOUT = 180_000;
 const commandOf = async (response: Response) =>
   officialSelectionCommandResponseSchema.parse(await response.json());
@@ -663,6 +666,39 @@ suite("operator disputes over live HTTP and Postgres", () => {
         approvalBasis: "operator_resolution",
       });
       await expectProjection(approved.approvedResult!.id);
+    },
+    TIMEOUT,
+  );
+  it(
+    "lists the competition's disputed and organizer-review cases to operators only",
+    async () => {
+      const ctx = await fresh();
+      await disputed(ctx);
+      const queue = async () => {
+        const response = await send(ctx, OPERATOR, QUEUE);
+        expect(response.status).toBe(200);
+        return listCompetitionDisputesResponseSchema.parse(await response.json());
+      };
+      expect((await queue()).disputes).toEqual([
+        expect.objectContaining({
+          encounterId: ENCOUNTER,
+          status: "disputed",
+          home: { teamId: HOME, name: "Home" },
+          away: { teamId: AWAY, name: "Away" },
+          dispute: expect.objectContaining({ status: "open", openedByTeamId: AWAY }),
+        }),
+      ]);
+      const captain = await send(ctx, HOME_CAPTAIN, QUEUE);
+      expect(captain.status).toBe(404);
+      expect(await errorOf(captain)).toMatchObject({ code: "competitions.not_found" });
+
+      await review(ctx);
+      expect((await queue()).disputes).toEqual([
+        expect.objectContaining({
+          status: "organizer_review",
+          dispute: expect.objectContaining({ status: "under_review" }),
+        }),
+      ]);
     },
     TIMEOUT,
   );

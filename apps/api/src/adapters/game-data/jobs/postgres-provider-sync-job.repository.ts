@@ -50,6 +50,19 @@ export class PostgresProviderSyncJobRepository implements ProviderSyncJobReposit
     return rehydrateJob(providerSyncJobRowSchema.parse(existing.rows[0]));
   }
 
+  async findActiveByDedupeKey(
+    organizationId: string,
+    dedupeKey: string,
+  ): Promise<ProviderSyncJob | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT * FROM provider_sync_jobs
+       WHERE organization_id = $1 AND dedupe_key = $2
+         AND status IN ('queued', 'running', 'retry_scheduled')`,
+      [organizationId, dedupeKey],
+    );
+    return result.rows[0] ? rehydrateJob(providerSyncJobRowSchema.parse(result.rows[0])) : null;
+  }
+
   async claimNext(input: Parameters<ProviderSyncJobRepository["claimNext"]>[0]) {
     const result = await getPgExecutor(this.pool).query(
       `WITH claimable AS (
@@ -82,6 +95,20 @@ export class PostgresProviderSyncJobRepository implements ProviderSyncJobReposit
     const result = await getPgExecutor(this.pool).query(
       "SELECT * FROM provider_sync_jobs WHERE id = $1",
       [id],
+    );
+    return result.rows[0] ? rehydrateJob(providerSyncJobRowSchema.parse(result.rows[0])) : null;
+  }
+
+  async findLatest(input: {
+    readonly organizationId: string;
+    readonly dedupeKey: string;
+  }): Promise<ProviderSyncJob | null> {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT * FROM provider_sync_jobs
+       WHERE organization_id = $1 AND dedupe_key = $2
+       ORDER BY created_at DESC, id DESC
+       LIMIT 1`,
+      [input.organizationId, input.dedupeKey],
     );
     return result.rows[0] ? rehydrateJob(providerSyncJobRowSchema.parse(result.rows[0])) : null;
   }

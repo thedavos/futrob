@@ -8,6 +8,7 @@ import type {
   OfficialResult,
   OfficialResultRepository,
   OfficialSelectionProposal,
+  SelectionDisputeReaderPort,
   SelectionTransition,
 } from "@futrob/results";
 import {
@@ -34,7 +35,7 @@ export interface ContractClaim {
 }
 
 export interface SelectionContractHarness {
-  readonly selections: OfficialMatchSelectionRepository;
+  readonly selections: OfficialMatchSelectionRepository & SelectionDisputeReaderPort;
   readonly results: OfficialResultRepository;
   readonly transaction: TransactionPort;
   /** Two distinct organizations, each with a competition. */

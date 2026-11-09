@@ -23,6 +23,12 @@ export type {
   ProviderHealthSnapshot,
 } from "./domain/entities/provider-health.ts";
 export { providerSyncDedupeKey } from "./domain/entities/provider-sync-job.ts";
+export {
+  PROVIDER_SYNC_DUE_ENQUEUE_LIMIT,
+  PROVIDER_SYNC_DUE_SCAN_LIMIT,
+  PROVIDER_SYNC_ENQUEUE_COOLDOWN_MS,
+  providerSyncStillCovered,
+} from "./domain/policies/provider-sync-enqueue-coverage.ts";
 
 export type { GameDataProviderKey } from "./domain/value-objects/provider-key.ts";
 export { isGameDataProviderKey } from "./domain/value-objects/provider-key.ts";
@@ -43,6 +49,7 @@ export {
   type ProviderError,
 } from "./domain/errors/provider.errors.ts";
 export {
+  isProviderOutage,
   isRetryableProviderError,
   providerHealthOutcome,
   providerRetryDelayMs,
@@ -61,11 +68,19 @@ export type { ProviderMatchRepository } from "./domain/ports/provider-match.repo
 export type { RawObservationRepository } from "./domain/ports/raw-observation.repository.ts";
 export type { ProviderSyncJobRepository } from "./domain/ports/provider-sync-job.repository.ts";
 export type {
+  DueProviderSyncTarget,
+  DueProviderSyncTargetFeed,
+} from "./domain/ports/due-provider-sync-target.feed.ts";
+export type {
   ProviderSyncCompletionFailure,
   ProviderSyncCompletionPort,
   ProviderSyncMatchTarget,
 } from "./domain/ports/provider-sync-completion.port.ts";
-export { ProviderSyncIngestionLeaseLost } from "./domain/errors/provider-sync-job.errors.ts";
+export {
+  ProviderSyncIngestionLeaseLost,
+  ProviderSyncQuotaExhausted,
+} from "./domain/errors/provider-sync-job.errors.ts";
+export type { ProviderSyncQuotaPort } from "./domain/ports/provider-sync-quota.port.ts";
 export type { ProviderHealthPort } from "./domain/ports/provider-health.port.ts";
 export type {
   ProviderMatchIngestionPort,
@@ -123,5 +138,10 @@ export {
   EnqueueProviderSyncJobUseCase,
   type EnqueueProviderSyncJobInput,
 } from "./application/enqueue-provider-sync-job/enqueue-provider-sync-job.use-case.ts";
+export {
+  EnqueueDueProviderSyncsUseCase,
+  type EnqueueDueProviderSyncsResult,
+  type EnqueuedProviderSyncJobRef,
+} from "./application/enqueue-due-provider-syncs/enqueue-due-provider-syncs.use-case.ts";
 export { ExecuteProviderSyncJobUseCase } from "./application/execute-provider-sync-job/execute-provider-sync-job.use-case.ts";
 export { GetProviderHealthUseCase } from "./application/get-provider-health/get-provider-health.use-case.ts";

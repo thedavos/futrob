@@ -6,7 +6,203 @@ export type Message = string | ((params: TranslationParams) => string);
 
 const count = (params: TranslationParams): number => Number(params.count ?? 0);
 
+/** Small counts read better as words in running copy ("los cuatro primeros"). */
+const SPANISH_SMALL_NUMBERS: Readonly<Record<number, string>> = {
+  2: "dos",
+  3: "tres",
+  4: "cuatro",
+  5: "cinco",
+  6: "seis",
+  7: "siete",
+  8: "ocho",
+  9: "nueve",
+  10: "diez",
+};
+
+const ENGLISH_SMALL_NUMBERS: Readonly<Record<number, string>> = {
+  2: "two",
+  3: "three",
+  4: "four",
+  5: "five",
+  6: "six",
+  7: "seven",
+  8: "eight",
+  9: "nine",
+  10: "ten",
+};
+
 const es = {
+  "profile.title": "Mi perfil",
+  "profile.description": "Tu identidad en Futrob y tus cuentas de juego.",
+  "profile.name": "Nombre visible",
+  "profile.email": "Correo de la cuenta",
+  "profile.identityHint": "Este correo identifica tu cuenta de acceso.",
+  "profile.initialsHint": "Tus iniciales se generan a partir del nombre visible.",
+  "profile.save": "Guardar perfil",
+  "profile.saved": "Perfil guardado.",
+  "profile.error": "No pudimos guardar el perfil. Tus cambios siguen aquí.",
+  "profile.loading": "Cargando tu perfil…",
+  "profile.loadError": "No pudimos cargar tu cuenta. Vuelve a intentarlo.",
+  "profile.games": "Cuentas de juego",
+  "profile.gamesEmpty": "Todavía no has añadido una cuenta de juego.",
+  "profile.gamesError": "No pudimos cargar tus cuentas de juego.",
+  "profile.gameData": "Gestionar datos de juego",
+  "profile.statistics": "Ver mis estadísticas",
+  "account.retry": "Reintentar",
+  "account.saving": "Guardando…",
+  "account.close": "Cerrar",
+  "settings.title": "Configuración",
+  "settings.description": "Elige el idioma y gestiona tu contraseña.",
+  "settings.language": "Idioma",
+  "settings.languageHint": "Se recuerda en este navegador.",
+  "settings.password": "Cambiar contraseña",
+  "settings.passwordHint": "Opcional. Al cambiarla se cierran tus otras sesiones.",
+  "settings.currentPassword": "Contraseña actual",
+  "settings.newPassword": "Nueva contraseña",
+  "settings.confirmPassword": "Repetir nueva contraseña",
+  "settings.passwordInvalid":
+    "Completa la contraseña actual y usa una nueva de 8 a 128 caracteres. Ambas contraseñas nuevas deben coincidir.",
+  "settings.save": "Guardar cambios",
+  "settings.saved": "Cambios guardados.",
+  "settings.error": "No pudimos guardar los cambios. Vuelve a intentarlo.",
+  "settings.passwordError":
+    "No pudimos cambiar la contraseña. Revisa la contraseña actual e inténtalo de nuevo.",
+  "settings.languageError":
+    "La contraseña se cambió, pero no pudimos guardar el idioma. Vuelve a guardar para intentarlo.",
+  "feedback.title": "Enviar feedback",
+  "feedback.description": "Cuéntanos qué mejorarías o qué problema encontraste.",
+  "feedback.type": "¿Qué quieres compartir?",
+  "feedback.problem": "Un problema",
+  "feedback.idea": "Una idea",
+  "feedback.message": "Tu mensaje",
+  "feedback.placeholder": "Cuéntanos qué ocurrió o qué te gustaría mejorar…",
+  "feedback.expected": "¿Qué esperabas que ocurriera?",
+  "feedback.optional": "Opcional",
+  "feedback.reply": "Pueden contactarme sobre este mensaje",
+  "feedback.context": "Incluir la página actual",
+  "feedback.contextHint": "Solo se incluye la ruta, sin parámetros de búsqueda ni datos de sesión.",
+  "feedback.unavailable":
+    "El envío de feedback todavía no está disponible. Tu mensaje no se ha enviado.",
+  "feedback.send": "Enviar feedback",
+
+  "pages.organization.plan.title": "Plan y uso",
+  "pages.organization.plan.subtitle":
+    "Qué incluye el plan de tu organización y cuánto llevas usado este mes.",
+  "billing.plan.name.free": "Gratis",
+  "billing.plan.name.pro": "Pro",
+  "billing.plan.name.league": "Liga",
+  "billing.plan.current": "Plan actual",
+  "billing.plan.status.default": "Plan por defecto",
+  "billing.plan.status.active": "Activo",
+  "billing.plan.status.trialing": "Prueba hasta el {date}",
+  "billing.plan.status.past_due": "Pago pendiente",
+  "billing.plan.status.lapsed": "{plan} terminó; se aplica Gratis",
+  "billing.plan.upgrade": "Para pasar a {plan}, escríbenos. Por ahora asignamos los planes a mano.",
+  "billing.plan.topPlan": "Tienes el plan más completo.",
+  "billing.plan.compare": "Ver planes",
+  "billing.usage.title": "Uso",
+  "billing.usage.description":
+    "Los límites solo frenan acciones nuevas. Lo que ya está en marcha termina igual.",
+  "billing.usage.activeCompetitions": "Competiciones activas",
+  "billing.usage.staffMembers": "Staff",
+  "billing.usage.providerSyncJobs": "Sincronizaciones con EA este mes",
+  "billing.usage.value": "{used} de {limit}",
+  "billing.usage.unlimited": "{used} · sin límite",
+  "billing.usage.resets": "Se reinicia el {date}",
+  "billing.usage.fairUse": "Uso justo",
+  "billing.usage.reached.activeCompetitions":
+    "Llegaste al límite de competiciones activas. Finaliza o archiva una para crear otra.",
+  "billing.usage.reached.staffMembers":
+    "No puedes sumar más staff con este plan. El staff actual conserva su rol.",
+  "billing.usage.reached.providerSyncJobs":
+    "Usaste las sincronizaciones del mes. Los enfrentamientos en curso se resuelven con los partidos ya sincronizados.",
+  "billing.features.title": "Incluido en tu plan",
+  "billing.features.included": "Incluido",
+  "billing.features.notIncluded": "No incluido",
+  "billing.features.formats": "Formatos: {formats}",
+  "billing.features.teamsPerCompetition": "Hasta {count} equipos por competición",
+  "billing.features.teamsUnlimited": "Equipos por competición sin límite",
+  "billing.features.automaticProviderSync": "Sincronización automática con EA",
+  "billing.features.performanceRanking": "Ranking de rendimiento 0–100",
+  "billing.features.premiumAnalytics": "Analíticas premium de equipo y jugador",
+  "billing.features.organizerAnalytics.none": "Analítica de organizador",
+  "billing.features.organizerAnalytics.basic": "Analítica de organizador básica",
+  "billing.features.organizerAnalytics.full": "Analítica de organizador completa",
+  "billing.features.portalBranding.futrob": "Portal público con marca Futrob",
+  "billing.features.portalBranding.logo_colors": "Portal público con tu logo y colores",
+  "billing.features.portalBranding.advanced": "Portal público con branding avanzado",
+  "billing.features.notifications": "Notificaciones: {channels}",
+  "billing.channel.web": "web",
+  "billing.channel.email": "email",
+  "billing.channel.announcements": "anuncios",
+  "billing.changes.title": "Cambios de plan",
+  "billing.changes.empty": "Todavía no hubo cambios de plan.",
+  "billing.changes.change": "Cambio",
+  "billing.changes.reason": "Motivo",
+  "billing.changes.date": "Fecha",
+  "billing.changes.assigned": "{plan} ({status})",
+  "billing.changes.from": "{before} → {after}",
+  "billing.changes.status.active": "activo",
+  "billing.changes.status.trialing": "en prueba",
+  "billing.changes.status.past_due": "pago pendiente",
+  "billing.changes.status.canceled": "cancelado",
+  "billing.loading": "Cargando el plan…",
+  "billing.error": "No pudimos cargar el plan.",
+  "billing.accessError": "No pudimos comprobar tu acceso al plan.",
+  "billing.forbidden.title": "No puedes ver el plan",
+  "billing.forbidden.description":
+    "Solo el organizador y el staff ven el plan y el uso de la organización.",
+  "billing.upsell.action": "Ver plan y uso",
+  "teamPerformance.viewStandings": "Ver la tabla",
+  "billing.upsell.competitions.plan_limit_reached":
+    "Tu plan no admite más competiciones activas. Finaliza o archiva una, o cambia de plan.",
+  "billing.upsell.competitions.format_not_in_plan":
+    "Tu plan no incluye este formato. Elige liga o eliminación directa, o cambia de plan.",
+  "billing.upsell.organizations.staff_limit_reached":
+    "Tu plan no admite más staff. Puedes invitar a la persona como miembro.",
+  "billing.upsell.game_data.sync_quota_exhausted":
+    "Usaste las sincronizaciones con EA de este mes. Los partidos ya sincronizados siguen disponibles.",
+  "billing.upsell.statistics.performance_ranking_not_in_plan":
+    "El ranking de rendimiento forma parte de Pro y Liga.",
+  "billing.upsell.generic": "Tu plan no incluye esta acción.",
+  "billing.rankingUpsell.title": "El ranking de rendimiento es de Pro y Liga",
+  "billing.rankingUpsell.description":
+    "Tu plan actual no lo incluye. La tabla oficial de la competición sigue disponible para todos.",
+  "pricing.meta.title": "Precios | Futrob",
+  "pricing.meta.description":
+    "Planes Gratis, Pro y Liga para organizar competiciones de EA SPORTS FC Clubs.",
+  "pricing.title": "Planes para cada competición",
+  "pricing.subtitle": "Empieza gratis y sube de plan cuando tu operación crezca.",
+  "pricing.unavailable": "No pudimos cargar los planes. Vuelve a intentarlo en unos minutos.",
+  "pricing.recommended": "Recomendado",
+  "pricing.tagline.free": "Para tu primera competición.",
+  "pricing.tagline.pro": "Para organizaciones con varias competiciones.",
+  "pricing.tagline.league": "Para operaciones grandes y de varias ligas.",
+  "pricing.perMonthUsd": "USD al mes",
+  "pricing.competitions": "{count} competiciones activas",
+  "pricing.competitionsOne": "1 competición activa",
+  "pricing.competitionsUnlimited": "Competiciones activas sin límite",
+  "pricing.format": "Formato: {format}",
+  "pricing.cta.free": "Empezar gratis",
+  "pricing.cta.paid": "Crear cuenta",
+  "pricing.note.free": "No necesitas tarjeta.",
+  "pricing.note.paid": "Empiezas en Gratis y activamos {plan} a mano cuando nos escribas.",
+  "pricing.perMonth": "{count} sincronizaciones al mes",
+  "pricing.fairUse": "{count} sincronizaciones al mes (uso justo)",
+  "pricing.staff": "Hasta {count} personas de staff",
+  "pricing.staffUnlimited": "Staff sin límite",
+  "pricing.integrity.title": "La integridad competitiva no depende del plan",
+  "pricing.integrity.subtitle":
+    "Todo lo que decide un resultado oficial funciona igual en Gratis, Pro y Liga.",
+  "pricing.integrity.listLabel": "Incluido en todos los planes",
+  "pricing.integrity.selection": "Selección oficial de partidos",
+  "pricing.integrity.confirmation": "Confirmación entre capitanes",
+  "pricing.integrity.disputes": "Disputas",
+  "pricing.integrity.reschedule": "Reprogramación",
+  "pricing.integrity.officialization": "Oficialización de resultados",
+  "pricing.integrity.note":
+    "Si bajas de plan o agotas el cupo, solo se bloquean las acciones nuevas. Las competiciones en curso terminan igual.",
+  "landing.nav.pricing": "Precios",
   "competitions.reschedule.expiryLabel": "Plazo de respuesta de la propuesta (horas)",
   "competitions.reschedule.expiryHelp":
     "De 1 a 72 horas desde cada propuesta. Al vencer, el organizador resuelve la solicitud.",
@@ -39,6 +235,7 @@ const es = {
   "competitionRules.format.knockout": "Eliminación directa",
   "competitionRules.format.groups-knockout": "Grupos + eliminación",
   "competitionRules.format.league-playoffs": "Liga + playoffs",
+  "competitionRules.format.swiss": "Sistema suizo",
   "competitionRules.format.teams": "Equipos",
   "competitionRules.format.teamsRange": "De {min} a {max}",
   "competitionRules.format.teamsAtLeast": "Desde {min}",
@@ -46,6 +243,7 @@ const es = {
   "competitionRules.stage.groups": "Grupos",
   "competitionRules.stage.knockout": "Eliminación",
   "competitionRules.stage.playoffs": "Playoffs",
+  "competitionRules.stage.swiss": "Fase suiza",
   "competitionRules.stage.description": "Reglas de partido de esta etapa.",
   "competitionRules.scoring.title": "Puntuación",
   "competitionRules.scoring.win": "Victoria",
@@ -82,6 +280,7 @@ const es = {
   "competitionRules.tiebreaks.title": "Criterios de desempate",
   "competitionRules.tiebreaks.description": "Se aplican en este orden.",
   "competitionRules.tiebreaks.points": "Puntos",
+  "competitionRules.tiebreaks.buchholz": "Buchholz",
   "competitionRules.tiebreaks.goalDifference": "Diferencia de goles",
   "competitionRules.tiebreaks.goalsFor": "Goles a favor",
   "competitionRules.awayGoals": "Gol de visitante",
@@ -119,6 +318,13 @@ const es = {
   "reschedule.proposedBy": "Propuesta de {team}",
   "reschedule.proposedStart": "Inicio propuesto",
   "reschedule.deadline": "Plazo de respuesta: {date}",
+  "reschedule.summary.encounter": "{team} propone mover todo el enfrentamiento del {from} al {to}.",
+  "reschedule.summary.slot": "{team} propone mover el partido {slot} del {from} al {to}.",
+  "reschedule.summary.applied.encounter": "Todo el enfrentamiento pasó del {from} al {to}.",
+  "reschedule.summary.applied.slot": "El partido {slot} pasó del {from} al {to}.",
+  "reschedule.summary.closed.encounter": "{team} propuso mover todo el enfrentamiento al {to}.",
+  "reschedule.summary.closed.slot": "{team} propuso mover el partido {slot} al {to}.",
+  "reschedule.respondBy": "Responde antes del {date}.",
   "reschedule.history": "Historial de propuestas y decisiones",
   "reschedule.proposal": "Propuesta {number}",
   "reschedule.consent": "Consentimiento de {actor}",
@@ -255,8 +461,9 @@ const es = {
   "common.edit": "Editar",
   "common.pending": "Pendiente",
   "common.seconds": ({ seconds }) => `${seconds} s`,
-  "auth.session.checking": "Comprobando sesión…",
-  "auth.session.checkFailed": "No pudimos comprobar tu sesión.",
+  "auth.session.checking": "Verificando tu acceso…",
+  "auth.session.checkFailed": "No se pudo verificar tu acceso",
+  "auth.session.checkFailedDescription": "Revisa tu conexión e inténtalo de nuevo.",
   "shell.workspace.competitions": "Competiciones",
   "shell.workspace.eaClubs": "Clubes EA",
   "shell.workspace.organizations": "Organizaciones",
@@ -307,6 +514,20 @@ const es = {
   "activity.entryInvitation.expired": "Invitación a competición vencida",
   "activity.entryInvitation.closed": "Invitación a competición respondida",
   "activity.competitionPublished": "Competición publicada",
+  "activity.scheduleChange.pending": "Responder reprogramación",
+  "activity.scheduleChange.watching": "Reprogramación propuesta",
+  "activity.scheduleChange.decide": "Decidir reprogramación",
+  "activity.scheduleChange.expired": "Reprogramación sin responder a tiempo",
+  "activity.scheduleChange.closed": "Reprogramación respondida",
+  "activity.decision.entryApproved": "Inscripción aprobada",
+  "activity.decision.entryRejected": "Inscripción rechazada",
+  "activity.decision.scheduleSet": "Nueva fecha fijada por el organizador",
+  "activity.decision.scheduleKept": "El organizador mantuvo la fecha",
+  "activity.decision.walkoverIntended": "El organizador decidió victoria por incomparecencia",
+  "activity.decision.generic": "Decisión del organizador",
+  "activity.competitionEntry.pending": "Revisar inscripción",
+  "activity.competitionEntry.watching": "Inscripción pendiente",
+  "activity.competitionEntry.closed": "Inscripción de equipo",
   "activity.recent.title": "Actividad reciente",
   "activity.recent.viewAll": "Ver toda la actividad",
   "activity.recent.empty":
@@ -340,16 +561,19 @@ const es = {
   "onboarding.step.account": "Cuenta",
   "onboarding.step.invitation": "Invitación",
   "onboarding.step.club": "Club",
-  "onboarding.loading.progress": "Recuperando tu progreso…",
-  "onboarding.loading.error": "No pudimos recuperar tu progreso. Inténtalo nuevamente.",
+  "onboarding.loading.preparing": "Preparando tu cuenta…",
+  "onboarding.loading.error": "No se pudo recuperar tu progreso",
+  "onboarding.loading.errorDescription": "Revisa tu conexión e inténtalo de nuevo.",
   "onboarding.intention.title": "¿Qué quieres hacer primero?",
   "onboarding.intention.description":
     "Esto nos ayuda a preparar Futrob para lo que quieres hacer primero.",
   "onboarding.intention.aria": "Intención del onboarding",
   "onboarding.intention.organization.label": "Organizar",
-  "onboarding.intention.organization.description": "Crea una organización y una competición.",
+  "onboarding.intention.organization.description":
+    "Crea tu organización y configura sus competiciones después.",
   "onboarding.intention.invitation.label": "Unirme",
-  "onboarding.intention.invitation.description": "Accede a una competición con tu código.",
+  "onboarding.intention.invitation.description":
+    "Entra en una competición con el enlace o el código de tu invitación.",
   "onboarding.intention.player.label": "Empezar como jugador",
   "onboarding.intention.player.description": "Crea tu espacio personal.",
   "onboarding.intention.continue": "Continuar",
@@ -361,7 +585,8 @@ const es = {
   "onboarding.organization.name.required": "Escribe el nombre de la organización.",
   "onboarding.organization.name.max": "El nombre debe tener como máximo 120 caracteres.",
   "onboarding.organization.name.conflict": "Ese nombre ya está en uso. Elige otro.",
-  "onboarding.organization.review": "Revisar organización",
+  "onboarding.organization.continue": "Continuar",
+  "onboarding.organization.createAccount": "Crea tu cuenta",
   "organizations.create.title": "Crear organización",
   "organizations.create.description": "Crea otro espacio para administrar competiciones y equipos.",
   "organizations.create.name.label": "Nombre de la organización",
@@ -453,6 +678,10 @@ const es = {
   "onboarding.competition.validation.region": "Selecciona la región de la competición.",
   "onboarding.competition.validation.timeZone": "Selecciona una zona horaria válida.",
   "onboarding.competition.validation.format": "Selecciona el formato inicial de la competición.",
+  "onboarding.competition.validation.formatNotInPlan":
+    "Ese formato no entra en el plan Gratis. Elige otro para continuar.",
+  "onboarding.competition.format.planHint":
+    "Tu organización empieza en el plan Gratis. Los formatos marcados como Pro necesitan otro plan.",
   "onboarding.region.america": "América",
   "onboarding.region.southAmerica": "Sudamérica",
   "onboarding.region.northCentralAmerica": "Norte y Centroamérica",
@@ -478,9 +707,8 @@ const es = {
   "onboarding.account.platform.required": "Selecciona la plataforma de esta cuenta.",
   "onboarding.account.edition.required": "Selecciona o escribe la edición del juego.",
   "onboarding.account.continue": "Continuar",
-  "onboarding.account.linkContinue": "Vincular y continuar",
-  "onboarding.account.review": "Revisar cuenta",
-  "onboarding.account.linkReview": "Vincular y revisar",
+  "onboarding.account.saveContinue": "Guardar y continuar",
+  "onboarding.account.saveReview": "Guardar y revisar",
   "onboarding.invitation.title": "Únete a una competición",
   "onboarding.invitation.description":
     "Escribe el código que recibiste para unirte a la competición al confirmar.",
@@ -494,7 +722,7 @@ const es = {
   "onboarding.invitation.continuePlayer": "Continuar como jugador",
   "onboarding.club.title": "Asocia tu club EA",
   "onboarding.club.description":
-    "La asociación es opcional y declarativa. No verifica propiedad, ni crea un Team de competición ni te incorpora a una plantilla.",
+    "Opcional. Solo sirve para mostrarte los partidos recientes de tu club. No verificamos la propiedad.",
   "onboarding.club.name.label": "Nombre del club",
   "onboarding.club.name.placeholder": "ej. Night Owls",
   "onboarding.club.reset": "Restablecer búsqueda",
@@ -529,12 +757,11 @@ const es = {
   "onboarding.review.edit": ({ label }) => `Editar ${String(label).toLowerCase()}`,
   "onboarding.review.incomplete": "Completa los datos pendientes antes de confirmar.",
   "onboarding.review.retry": ({ seconds }) => `Reintentar en ${seconds} s`,
-  "onboarding.review.finish.organization": "Crear organización y competición",
+  "onboarding.review.finish.organization": "Crear organización",
   "onboarding.review.finish.invitation": "Aceptar invitación",
   "onboarding.review.finish.player": "Entrar a mi espacio",
   "errors.fallback": "No pudimos completar la operación. Inténtalo nuevamente.",
   "errors.onboarding.organizationCheck": "No pudimos verificar el nombre. Inténtalo nuevamente.",
-  "errors.onboarding.saveProgress": "No pudimos guardar tu progreso. Inténtalo nuevamente.",
   "errors.api.rate_limited":
     "Alcanzaste el límite temporal. Espera antes de intentarlo nuevamente.",
   "errors.product_api.unreachable": "No pudimos conectar con el servicio. Inténtalo nuevamente.",
@@ -552,9 +779,12 @@ const es = {
     "La invitación fue revocada. Solicita una nueva al organizador.",
   "errors.organizations.invitation_invalid": "La invitación ya no está disponible.",
   "errors.organizations.invitation_exhausted": "La invitación alcanzó el número máximo de usos.",
+  "invitations.accept.rateLimited": "Alcanzaste el límite temporal de invitaciones.",
   "errors.organizations.name_conflict":
     "Ese nombre de organización ya está en uso. Vuelve y elige otro.",
   "errors.organizations.invalid_name": "El nombre de la organización no es válido.",
+  "errors.onboarding.formatNotInPlan":
+    "Tu organización empieza en el plan Gratis, que no incluye ese formato. Vuelve a Competición y elige otro.",
   "errors.onboarding.invalidCompetition":
     "Los datos de la competición no son válidos. Revísalos e inténtalo nuevamente.",
   "errors.onboarding.invalidGameAccount":
@@ -571,6 +801,11 @@ const es = {
   "shell.identity.loading": "Cargando tu espacio…",
   "player.home.title": "Inicio",
   "player.home.subtitle.loading": "Cargando tu actividad…",
+  "player.home.clubAssociationFailed.title": "Tu club quedó sin asociar",
+  "player.home.clubAssociationFailed.description":
+    "EA no respondió al guardar tu club. Tu perfil ya está listo y puedes añadir el club más tarde.",
+  "player.home.clubAssociationFailed.action": "Ir a Clubes EA",
+  "player.home.clubAssociationFailed.dismiss": "Cerrar aviso",
   "player.home.subtitle.activity": ({ club }) => `Tu actividad con ${club}`,
   "player.home.cta.matches": "Ver mis partidos",
   "player.home.cta.refreshMatches": "Actualizar partidos",
@@ -649,6 +884,7 @@ const es = {
   "player.home.competitions.format.knockout": "Eliminatoria",
   "player.home.competitions.format.groups-knockout": "Grupos y eliminatoria",
   "player.home.competitions.format.league-playoffs": "Liga y playoffs",
+  "player.home.competitions.format.swiss": "Sistema suizo",
   "player.competitions.title": "Mis competiciones",
   "player.competitions.description": "Competiciones en las que participas con un equipo.",
   "player.competitions.loading": "Cargando competiciones…",
@@ -978,6 +1214,11 @@ const es = {
     "Tú como jugador: rating, atributos y estadísticas de tus partidos recientes.",
   "player.statistics.loading": "Cargando tus estadísticas…",
   "player.statistics.error": "No pudimos cargar tus estadísticas.",
+  "player.competitionStats.emptyTitle": "Aún no hay estadísticas oficiales",
+  "player.competitionStats.emptyDescription":
+    "Aquí aparecerán tus estadísticas cuando se aprueben resultados oficiales en esta competición.",
+  "player.competitionStats.refreshFailed":
+    "No pudimos actualizar tus estadísticas. Se muestran las últimas que cargamos.",
   "player.statistics.emptyTitle": "Aún no hay apariciones tuyas",
   "player.statistics.emptyDescription":
     "Solo vemos los últimos 50 partidos que EA tiene ahora. Si no hay apariciones en el rango, prueba otras fechas.",
@@ -1197,6 +1438,25 @@ const es = {
   "organizations.members.actionsFor": "Acciones de {name}",
   "organizations.members.viewDetails": "Ver detalle",
   "organizations.members.clearFilters": "Limpiar filtros",
+  "organizations.members.organizerHint":
+    "Control total de la organización: miembros, roles, permisos y competiciones.",
+  "organizations.members.roleEditor.label": "Cambiar rol",
+  "organizations.members.roleEditor.save": "Guardar rol",
+  "organizations.members.roleEditor.saving": "Guardando rol…",
+  "organizations.members.roleEditor.saved": "Rol actualizado",
+  "organizations.members.roleEditor.lastOrganizer":
+    "La organización necesita al menos un organizador. Asigna otro antes de cambiar este rol.",
+  "organizations.members.roleEditor.forbidden":
+    "No tienes autoridad para asignar o retirar este rol.",
+  "organizations.members.roleEditor.failed": "No pudimos cambiar el rol. Inténtalo nuevamente.",
+  "organizations.members.grants.title": "Permisos específicos",
+  "organizations.members.grants.loading": "Cargando permisos específicos…",
+  "organizations.members.grants.empty":
+    "Sin permisos específicos: sus accesos dependen solo de su rol.",
+  "organizations.members.grants.failed": "No pudimos cargar los permisos específicos.",
+  "organizations.members.grants.retry": "Reintentar",
+  "organizations.members.grants.allow": "Permitido",
+  "organizations.members.grants.deny": "Denegado",
   "organizations.members.detail.title": "Detalle del miembro",
   "organizations.members.detail.description": "Datos del miembro y alcance de sus accesos.",
   "organizations.members.detail.emptyTitle": "Selecciona un miembro",
@@ -1335,7 +1595,7 @@ const es = {
     "No encontramos esta competición o ya no tienes acceso.",
   "pages.competition.disputes.title": "Disputas",
   "pages.competition.disputes.subtitle":
-    "Desacuerdos sobre partidos o resultados que esperan tu decisión.",
+    "Selecciones en disputa o en revisión del organizador que esperan tu decisión.",
   "pages.competition.analytics.title": "Analíticas",
   "pages.competition.analytics.subtitle": "Participación y actividad de la competición.",
   "pages.competition.teamPerformance.title": "Rendimiento de equipos",
@@ -1422,7 +1682,7 @@ const es = {
   "pages.competitionPlayer.stats.subtitle": "Tus estadísticas oficiales en esta competición.",
   "pages.competitionPlayer.team.title": "Mi equipo",
   "pages.competitionPlayer.team.subtitle":
-    "Tu equipo en esta competición: plantilla, club EA y próximos enfrentamientos.",
+    "Consulta la plantilla y el club de tu equipo en esta competición.",
   "pages.captain.roster.title": "Plantilla",
   "pages.captain.roster.subtitle":
     "Revisa quién está en tu equipo, asigna roles y decide si admite jugadores nuevos.",
@@ -1436,6 +1696,7 @@ const es = {
   "captain.noTeam.action": "Revisar mis invitaciones",
   "captain.forbidden.title": "No tienes acceso a esta página",
   "captain.forbidden.roster": "Solo el capitán y el subcapitán pueden gestionar la plantilla.",
+  "captain.forbidden.team": "No puedes consultar la plantilla de este equipo.",
   "captain.forbidden.invitations": "Solo el capitán y el subcapitán pueden invitar jugadores.",
   "captain.forbidden.action": "Ir a Mi equipo",
   "captain.unavailable.title": "No se pudo comprobar tu acceso",
@@ -1544,7 +1805,8 @@ const es = {
   "player.partialData.description":
     "Algunas métricas no estuvieron disponibles en todos los partidos.",
   "player.noData": "Sin datos",
-  "player.onboarding.checking": "Comprobando tu onboarding…",
+  "player.onboarding.checking": "Cargando tus datos…",
+  "player.onboarding.failed": "No pudimos comprobar tu cuenta",
   "player.metric.goals": "Goles",
   "player.metric.assists": "Asistencias",
   "player.metric.goalsPlusAssists": "G+A",
@@ -1564,14 +1826,13 @@ const es = {
   "landing.meta.description":
     "Opera ligas y copas de FC Clubs con datos reales de EA: selección auditable de partidos oficiales, tabla, rankings y portal público.",
   "landing.nav.aria": "Acceso",
+  "landing.nav.sectionsAria": "Secciones",
+  "landing.nav.howItWorks": "Cómo funciona",
+  "landing.nav.portal": "Portal público",
   "landing.nav.login": "Iniciar sesión",
   "landing.nav.signup": "Crear cuenta",
-  "landing.hero.eyebrow": "Competiciones FC Clubs",
-  "landing.hero.titleLead": "Del partido de EA al",
-  "landing.hero.titleHighlight": "resultado oficial",
-  "landing.hero.subtitleLead": "Los capitanes eligen los partidos que cuentan.",
-  "landing.hero.subtitleRest":
-    "Tú apruebas el resultado y Futrob actualiza la tabla automáticamente.",
+  "landing.hero.title": "Del partido de EA al resultado oficial",
+  "landing.hero.subtitle": "Los capitanes eligen qué partidos cuentan y tú apruebas el resultado.",
   "landing.hero.cta.primary": "Crear cuenta",
   "landing.hero.cta.secondary": "Ver cómo funciona",
   "landing.status.approved": "Aprobado",
@@ -1579,12 +1840,14 @@ const es = {
   "landing.status.selecting": "En selección",
   "landing.status.synced": "Sync EA",
   "landing.status.scheduled": "Programado",
-  "landing.matches.title": "La mesa de operaciones",
-  "landing.matches.subtitle":
-    "Cada enfrentamiento muestra de dónde viene su resultado y en qué estado está. Nada se publica sin pasar por la aprobación.",
-  "landing.matches.matchday": "Jornada 4 · Liga Metropolitana",
+  "landing.status.published": "Publicado",
+  "landing.board.label": "Ejemplo de jornada en Futrob",
+  "landing.board.matchday": "Jornada 4",
+  "landing.board.competition": "Liga Metropolitana",
+  "landing.board.kickoff": "sáb 21:00",
   "landing.mechanism.title": "Cómo un partido se vuelve oficial",
-  "landing.mechanism.subtitle": "El mismo recorrido para cada resultado, siempre auditable.",
+  "landing.mechanism.subtitle":
+    "Cada resultado muestra de dónde viene y en qué estado está. Nada se publica sin aprobación.",
   "landing.mechanism.sync.title": "Sync EA",
   "landing.mechanism.sync.description":
     "Futrob sincroniza los partidos de tus clubs desde EA y los guarda como candidatos, nunca como oficiales.",
@@ -1593,14 +1856,34 @@ const es = {
     "Los capitanes eligen cuáles partidos cuentan para el enfrentamiento, con vista previa de la serie.",
   "landing.mechanism.approval.title": "Aprobación",
   "landing.mechanism.approval.description":
-    "El resultado confirmado queda aprobado y auditado. El sync nunca auto-oficializa.",
+    "El resultado confirmado queda aprobado y auditado. El sync nunca oficializa por su cuenta.",
   "landing.mechanism.publication.title": "Publicación",
   "landing.mechanism.publication.description":
     "Solo lo aprobado actualiza tabla, bracket, rankings y el portal público.",
+  "landing.reschedule.title": "Reprogramar sin perder el hilo",
+  "landing.reschedule.subtitle":
+    "Un capitán propone otro horario y el rival responde. Al aceptarlo, el calendario y la búsqueda de partidos en EA se ajustan.",
+  "landing.reschedule.guarantee": "Un partido aprobado o finalizado ya no se reprograma.",
+  "landing.reschedule.panel.label": "Ejemplo de solicitud de reprogramación",
+  "landing.reschedule.panel.status": "En negociación",
+  "landing.reschedule.panel.sentence":
+    "Sporting Lomas propone mover todo el enfrentamiento del 18 de octubre, 21:00 al 19 de octubre, 22:00.",
+  "landing.reschedule.panel.respondBy": "Responde antes del 16 de octubre, 23:59.",
+  "landing.reschedule.panel.options": "CD Estrella puede aceptar, contraproponer o rechazar.",
   "landing.demo.title": "Pruébalo contra la API real",
   "landing.demo.subtitle":
     "Busca tu club de EA Clubs. Es la misma capa de datos que alimenta tus competiciones.",
   "gameData.clubSearch.source": "Resultados de /api/v1/game-data/clubs/search.",
+  "gameData.clubSearch.queryLabel": "Nombre del club",
+  "gameData.clubSearch.queryPlaceholder": "Ej. Cuervos",
+  "gameData.clubSearch.queryRequired": "Escribe el nombre del club.",
+  "gameData.clubSearch.platformLabel": "Plataforma",
+  "gameData.clubSearch.submit": "Buscar",
+  "gameData.clubSearch.searching": "Buscando…",
+  "gameData.clubSearch.retryIn": ({ seconds }) => `Reintentar en ${seconds} s`,
+  "gameData.clubSearch.empty": "Sin resultados para esa búsqueda.",
+  "gameData.clubSearch.error": "No pudimos buscar clubs. Inténtalo nuevamente.",
+  "gameData.clubSearch.rateLimited": "Alcanzaste el límite temporal de búsquedas.",
   "landing.players.title": "Para jugadores: tus partidos, tus números",
   "landing.players.subtitle":
     "El perfil personal existe sin organización: vincula tu club EA y sigue tu rendimiento.",
@@ -1614,14 +1897,17 @@ const es = {
   "landing.players.feats.description": "Hat-trick, póker y repóker se reconocen en cada aparición.",
   "landing.portal.title": "Un portal público a la altura de tu torneo",
   "landing.portal.subtitle":
-    "Publica portada, equipos, calendario, resultados, tabla, bracket y rankings — cuando tú decides.",
+    "Publica portada, equipos, calendario, resultados, tabla, bracket y rankings cuando tú decides.",
   "landing.portal.point.teams": "Equipos y calendario siempre al día",
   "landing.portal.point.results": "Resultados y tabla oficiales",
   "landing.portal.point.rankings": "Rankings de jugadores y equipos",
-  "landing.cta.title": "¿Listo para poner tu competición bajo control?",
-  "landing.cta.subtitle": "Crea tu organización y publica tu primera competición hoy.",
+  "landing.portal.podium.caption": "Ejemplo de tabla oficial de la Liga Metropolitana",
+  "landing.portal.podium.points": "puntos",
+  "landing.cta.title": "Publica tu primera jornada oficial",
+  "landing.cta.subtitle":
+    "Crea tu organización, invita a los capitanes y arma tu primera competición.",
   "landing.cta.primary": "Crear cuenta",
-  "landing.cta.secondary": "Iniciar sesión",
+  "landing.cta.secondary": "Ver precios",
   "landing.footer.tagline": "Preciso para operar. Claro para competir.",
   "landing.footer.madeBy": "Futrob es creado por Davion Software.",
   "encounter.breadcrumb": "Ruta del enfrentamiento",
@@ -1657,6 +1943,22 @@ const es = {
   "encounters.list.notFound.title": "Competición no disponible",
   "encounters.list.notFound.description":
     "No existe en esta organización o tu cuenta no tiene acceso a sus enfrentamientos.",
+  "disputes.list.label": "Disputas de la competición",
+  "disputes.list.loading": "Cargando disputas",
+  "disputes.list.error": "No pudimos cargar las disputas.",
+  "disputes.list.timeZone": ({ zone }) => `Horarios en ${zone}`,
+  "disputes.list.open": ({ home, away }) => `Revisar la disputa de ${home} vs ${away}`,
+  "disputes.list.kickoff": ({ when }) => `Partido el ${when}`,
+  "disputes.list.waiting": ({ since }) => `En espera desde ${since}`,
+  "disputes.list.status.disputed": "En disputa",
+  "disputes.list.status.organizer_review": "Revisión del organizador",
+  "disputes.list.team.unnamed": "Equipo sin nombre disponible",
+  "disputes.list.empty.title": "No hay disputas pendientes",
+  "disputes.list.empty.description":
+    "Aparecerán aquí cuando un equipo impugne la selección oficial o un caso pase a revisión del organizador.",
+  "disputes.list.notFound.title": "Competición no disponible",
+  "disputes.list.notFound.description":
+    "No existe en esta organización o tu cuenta no puede revisar sus disputas.",
   "encounter.slots.title": "Partidos oficiales",
   "encounter.slots.description":
     "Cada partido tiene su propio horario. Asigna un partido EA para ver el resultado antes de proponerlo.",
@@ -1927,8 +2229,57 @@ const es = {
   "shell.account.fallback": "Cuenta",
   "shell.account.profile": "Perfil",
   "shell.account.feedback": "Enviar feedback",
-  "shell.account.contact": "Contáctanos",
   "shell.account.settings": "Configuración",
+  "shell.account.providerHealth": "Salud del proveedor",
+  "providerHealth.title": "Salud del proveedor EA",
+  "providerHealth.subtitle":
+    "Estado, métricas y fallos recientes de la integración con EA Clubs. Solo para superusuarios.",
+  "providerHealth.refresh": "Actualizar",
+  "providerHealth.checkingAccess": "Comprobando permisos…",
+  "providerHealth.loading": "Cargando la salud del proveedor…",
+  "providerHealth.error": "No pudimos cargar la salud del proveedor.",
+  "providerHealth.refreshError":
+    "No pudimos actualizar los datos. Puede que lo que ves no esté al día.",
+  "providerHealth.denied.title": "No tienes acceso a este panel",
+  "providerHealth.denied.description":
+    "El panel de salud del proveedor es solo para superusuarios.",
+  "providerHealth.accessUnavailable": "No pudimos comprobar tus permisos para ver este panel.",
+  "providerHealth.empty.title": "Aún no hay actividad del proveedor",
+  "providerHealth.empty.description":
+    "Cuando se consulte EA Clubs aparecerán aquí las métricas de la ventana de observación.",
+  "providerHealth.status.label": "Estado",
+  "providerHealth.status.healthy": "Operativo",
+  "providerHealth.status.degraded": "Degradado",
+  "providerHealth.status.unavailable": "No disponible",
+  "providerHealth.status.unknown": "Sin datos",
+  "providerHealth.circuit.label": "Circuito",
+  "providerHealth.circuit.closed": "Cerrado",
+  "providerHealth.circuit.half_open": "Semiabierto",
+  "providerHealth.circuit.open": "Abierto",
+  "providerHealth.metrics": "Métricas de la ventana",
+  "providerHealth.metric.sample": "Muestra",
+  "providerHealth.metric.successRate": "Tasa de éxito",
+  "providerHealth.metric.latency": "Latencia media",
+  "providerHealth.metric.cacheHitRate": "Aciertos de caché",
+  "providerHealth.metric.unit.ms": "ms",
+  "providerHealth.metric.unavailable": "Sin datos",
+  "providerHealth.window.title": "Ventana de observación",
+  "providerHealth.window.startedAt": "Desde",
+  "providerHealth.window.observedAt": "Observado",
+  "providerHealth.calls.title": "Llamadas al proveedor",
+  "providerHealth.calls.success": "Correctas",
+  "providerHealth.calls.failure": "Fallidas",
+  "providerHealth.calls.lastSuccess": "Último éxito",
+  "providerHealth.calls.lastFailure": "Último fallo",
+  "providerHealth.calls.never": "Nunca en la ventana",
+  "providerHealth.failures.title": "Fallos recientes",
+  "providerHealth.failures.none": "Sin fallos en la ventana de observación.",
+  "providerHealth.failures.some":
+    "El proveedor registró fallos en la ventana de observación. El detalle de cada error no se expone en este panel.",
+  "providerHealth.cache.title": "Caché",
+  "providerHealth.cache.hits": "Aciertos",
+  "providerHealth.cache.misses": "Sin acierto",
+  "providerHealth.cache.stale": "Obsoletos servidos",
   "encounter.documentTitle": "Enfrentamiento",
   "encounters.list.documentTitle": "Enfrentamientos",
   "matches.list.documentTitle": "Partidos",
@@ -2001,9 +2352,11 @@ const es = {
   "standings.notFound.title": "No encontramos esta competición",
   "standings.notFound.description":
     "La competición ya no existe o el enlace no es correcto. No es un problema de permisos ni un fallo temporal.",
+  "standings.notFound.action": "Ver competiciones",
   "standings.empty.title": "Aún no hay clasificación oficial",
   "standings.empty.description":
     "La tabla se calcula solo con resultados oficiales aprobados y aparecerá cuando se apruebe el primero. Los partidos de EA sin aprobar no cuentan.",
+  "standings.empty.action": "Ver enfrentamientos",
   "standings.table.label": "Clasificación oficial",
   "standings.table.updated": ({ time }) => `Actualizada ${time}`,
   "standings.table.formula": ({ version }) => `Fórmula ${version}`,
@@ -2016,28 +2369,204 @@ const es = {
   "standings.col.team": "Equipo",
   "standings.col.played": "PJ",
   "standings.col.played.full": "Partidos jugados",
-  "standings.col.wins": "G",
-  "standings.col.wins.full": "Partidos ganados",
-  "standings.col.draws": "E",
-  "standings.col.draws.full": "Partidos empatados",
-  "standings.col.losses": "P",
-  "standings.col.losses.full": "Partidos perdidos",
-  "standings.col.goalsFor": "GF",
-  "standings.col.goalsFor.full": "Goles a favor",
-  "standings.col.goalsAgainst": "GC",
-  "standings.col.goalsAgainst.full": "Goles en contra",
   "standings.col.goalDifference": "DG",
   "standings.col.goalDifference.full": "Diferencia de goles",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Puntos",
-  "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
-    `${wins} G · ${draws} E · ${losses} P · GF ${goalsFor} · GC ${goalsAgainst}`,
+  "standings.col.buchholz": "Buch.",
+  "standings.col.buchholz.full": "Buchholz: suma de los puntos de los rivales",
+  "standings.swiss.round": ({ current, total }) => `Ronda ${current} de ${total}`,
+  "standings.swiss.completed": ({ completed, total }) =>
+    `${completed} de ${total} rondas completadas`,
+  "standings.swiss.final": "Clasificación final",
+  "standings.swiss.tiebreak":
+    "Empates: primero Buchholz (puntos de los rivales), luego diferencia de goles y goles a favor.",
+  "standings.swiss.byes": ({ count }) =>
+    Number(count) === 1 ? "1 descanso" : `${count} descansos`,
+  "standings.swiss.withdrawn": "Retirado",
+  "standings.col.form": "Forma",
+  "standings.col.form.full": "Últimos 5 partidos, el más reciente al final",
+  "standings.form.win": "Victoria",
+  "standings.form.win.short": "G",
+  "standings.form.draw": "Empate",
+  "standings.form.draw.short": "E",
+  "standings.form.loss": "Derrota",
+  "standings.form.loss.short": "P",
+  "standings.playoffCut": ({ count }) =>
+    count === 1
+      ? "El primero pasa al playoff"
+      : `Los ${SPANISH_SMALL_NUMBERS[Number(count)] ?? count} primeros pasan al playoff`,
+  "competition.overview.documentTitle": "Resumen",
+  "competition.overview.description":
+    "Estado, equipos, próximos enfrentamientos y pendientes de la competición.",
+  "competition.overview.loading": "Cargando la competición",
+  "competition.overview.error": "No pudimos cargar la competición.",
+  "competition.overview.accessError": "No pudimos comprobar tu acceso a la competición.",
+  "competition.overview.memberTitle": "Ya formas parte de la competición",
+  "competition.overview.memberDescription":
+    "Tu acceso está listo. Usa el menú para ver tus partidos, estadísticas y equipo.",
+  "competition.overview.status": "Estado de la competición",
+  "competition.overview.continueSetup": "Continuar configuración",
+  "competition.overview.kpi.label": "Indicadores de la competición",
+  "competition.overview.kpi.teams": "Equipos aprobados",
+  "competition.overview.kpi.applications": "Inscripciones por revisar",
+  "competition.overview.kpi.upcoming": "Próximos enfrentamientos",
+  "competition.overview.kpi.awaiting": "Sin resultado oficial",
+  "competition.overview.pending.title": "Pendientes",
+  "competition.overview.pending.applications": ({ count }) =>
+    Number(count) === 1
+      ? "1 inscripción de equipo por revisar"
+      : `${count} inscripciones de equipo por revisar`,
+  "competition.overview.pending.awaiting": ({ count }) =>
+    Number(count) === 1
+      ? "1 enfrentamiento sin resultado oficial"
+      : `${count} enfrentamientos sin resultado oficial`,
+  "competition.overview.pending.activities": "Tareas abiertas",
+  "competition.overview.pending.error": "No pudimos cargar todas las tareas pendientes.",
+  "competition.overview.pending.empty.title": "Todo al día",
+  "competition.overview.pending.empty.description":
+    "No hay inscripciones, resultados ni disputas esperando tu revisión.",
+  "competition.overview.upcoming.title": "Próximos enfrentamientos",
+  "competition.overview.upcoming.viewAll": "Ver todos",
+  "competition.overview.upcoming.error": "No pudimos cargar los enfrentamientos.",
+  "competition.overview.upcoming.empty.title": "Sin enfrentamientos programados",
+  "competition.overview.upcoming.empty.description":
+    "Cuando el calendario tenga cruces por jugar, los verás aquí.",
+  "competition.overview.teams.title": "Equipos",
+  "competition.overview.teams.viewAll": "Ver todos",
+  "competition.overview.teams.error": "No pudimos cargar los equipos.",
+  "competition.overview.teams.empty.title": "Aún no hay equipos",
+  "competition.overview.teams.empty.description":
+    "Invita a capitanes o aprueba solicitudes para completar la competición.",
+  "competition.overview.teams.empty.action": "Gestionar equipos",
+  "competition.overview.teams.roster": ({ count, max }) => `${count} de ${max} jugadores`,
+  "competition.overview.teams.entry.pending": "Por revisar",
+  "competition.overview.teams.entry.approved": "Aprobado",
+  "fixture.documentTitle": "Calendario",
+  "fixture.loading": "Cargando el calendario",
+  "fixture.error": "No pudimos cargar el calendario.",
+  "fixture.refreshError": "No pudimos actualizar el calendario. Ves la última lectura correcta.",
+  "fixture.notFound.title": "Competición no disponible",
+  "fixture.notFound.description":
+    "Puede que se haya eliminado o que no tengas acceso a su calendario.",
+  "fixture.empty.title": "Aún no hay calendario",
+  "fixture.empty.description": "Cuando se genere el fixture, verás aquí cada etapa y sus rondas.",
+  "fixture.timeZone": ({ zone }) => `Horarios en ${zone}`,
+  "fixture.round.pending": ({ number }) => `Se empareja cuando se oficialice la ronda ${number}`,
+  "fixture.round.expected": ({ date }) => `Fecha prevista: ${date}`,
+  "fixture.bye": ({ team }) => `${team} descansa`,
+  "fixture.closed": "No disputado",
+  "fixture.side.withdrawn": "Retirado",
+  "fixture.swiss.progress": ({ paired, total }) => `Rondas emparejadas: ${paired} de ${total}`,
+  "fixture.swiss.withdrawn": ({ teams }) => `Retirados: ${teams}`,
+  "fixture.generate.title": "Genera el calendario",
+  "fixture.generate.description": ({ count }) =>
+    `La ronda 1 se empareja ahora con los ${count} equipos aprobados. Las siguientes se emparejan solas cuando se oficializa la anterior.`,
+  "fixture.generate.start": "Inicio de la ronda 1",
+  "fixture.generate.startInvalid": "Indica una fecha y hora futuras.",
+  "fixture.generate.interval": "Días entre rondas",
+  "fixture.generate.intervalInvalid": "Indica un número entero de días, desde 1.",
+  "fixture.generate.rounds": "Número de rondas",
+  "fixture.generate.roundsHint": ({ recommended, max }) =>
+    `Recomendadas: ${recommended}. Máximo: ${max}.`,
+  "fixture.generate.roundsInvalid": ({ max }) => `Indica entre 1 y ${max} rondas.`,
+  "fixture.generate.submit": "Generar calendario",
+  "fixture.generate.done": "Calendario generado.",
+  "fixture.generate.needTeams":
+    "Para generar el calendario hacen falta al menos 2 equipos aprobados.",
+  "fixture.action.reason": "Motivo",
+  "fixture.action.reasonRequired": "Escribe el motivo.",
+  "fixture.close.trigger": "Cerrar ronda sin resultado",
+  "fixture.close.title": ({ number }) => `Cerrar la ronda ${number} sin resultado`,
+  "fixture.close.description":
+    "Los enfrentamientos de esta ronda sin resultado oficial quedan como no disputados: se cancela su selección abierta, nadie suma puntos y esos equipos cuentan como ya enfrentados. La ronda siguiente se empareja enseguida. No se puede deshacer.",
+  "fixture.close.confirm": "Confirmar cierre",
+  "fixture.close.done": ({ number }) => `Ronda ${number} cerrada sin resultado.`,
+  "fixture.withdraw.trigger": "Retirar equipo",
+  "fixture.withdraw.title": "Retirar un equipo",
+  "fixture.withdraw.description":
+    "El equipo deja de emparejarse y no se puede reincorporar. En su partido sin resultado se cancela la selección abierta y el rival recibe un descanso, que suma como una victoria. Sus resultados oficiales se conservan y sigue en la clasificación, marcado como retirado.",
+  "fixture.withdraw.team": "Equipo",
+  "fixture.withdraw.teamPlaceholder": "Selecciona un equipo",
+  "fixture.withdraw.teamRequired": "Selecciona el equipo.",
+  "fixture.withdraw.confirm": "Confirmar retirada",
+  "fixture.withdraw.done": ({ team }) => `${team} queda retirado.`,
+  "fixture.recovery.unknown":
+    "No sabemos si se aplicó. Vuelve a intentarlo: si ya se aplicó, no se repetirá.",
+  "fixture.recovery.roundNotCurrent":
+    "Esa ronda ya no es la que se está jugando. Revisa el calendario actualizado.",
+  "fixture.recovery.alreadyWithdrawn": "Ese equipo ya estaba retirado.",
+  "fixture.recovery.notParticipant": "Ese equipo no juega este calendario.",
+  "fixture.recovery.notSwiss": "Este calendario no es de sistema suizo.",
+  "fixture.recovery.conflict":
+    "El calendario cambió mientras enviabas la acción. Revísalo y vuelve a intentarlo.",
+  "fixture.recovery.planGone": "Este calendario ya no está vigente. Revisa el actual.",
+  "fixture.recovery.generationConflict":
+    "Ya existe un calendario generado con otros datos. Revisa el calendario actual.",
+  "fixture.recovery.notPublished": "Publica la competición para generar su calendario.",
+  "fixture.recovery.permission": "Ya no tienes permiso para gestionar este calendario.",
+  "fixture.recovery.invalidGenerate":
+    "El servidor rechazó estos datos. Revisa el número de rondas y que haya al menos 2 equipos aprobados.",
+  "fixture.recovery.invalidCommand":
+    "No pudimos aceptar esta acción. Ciérrala, abre de nuevo el diálogo y vuelve a intentarlo.",
+  "errors.scheduling.not_swiss_fixture": "Este calendario no es de sistema suizo.",
+  "errors.scheduling.swiss_round_not_current": "Esa ronda ya no es la que se está jugando.",
+  "errors.scheduling.swiss_team_already_withdrawn": "Ese equipo ya estaba retirado.",
+  "errors.scheduling.swiss_team_not_participant": "Ese equipo no juega este calendario.",
+  "errors.scheduling.invalid_fixture_configuration":
+    "La configuración del calendario no es válida.",
+  "errors.scheduling.fixture_source_not_published":
+    "Publica la competición para generar su calendario.",
+  "errors.scheduling.fixture_generation_conflict":
+    "Ya existe un calendario generado con otros datos.",
+  "fixture.round.matchday": ({ number }) => `Jornada ${number}`,
+  "fixture.round.final": "Final",
+  "fixture.round.semifinal": "Semifinales",
+  "fixture.round.quarterfinal": "Cuartos de final",
+  "fixture.round.roundOf16": "Octavos de final",
+  "fixture.round.number": ({ number }) => `Ronda ${number}`,
+  "fixture.side.unknownTeam": "Equipo no disponible",
+  "fixture.side.bye": "Descansa",
+  "fixture.side.winner.unknown": "Ganador por definir",
+  "fixture.side.winner.final": "Ganador de la final",
+  "fixture.side.winner.semifinal": ({ order }) => `Ganador de la semifinal ${order}`,
+  "fixture.side.winner.quarterfinal": ({ order }) => `Ganador de cuartos ${order}`,
+  "fixture.side.winner.roundOf16": ({ order }) => `Ganador de octavos ${order}`,
+  "fixture.side.winner.matchday": ({ number, order }) =>
+    `Ganador del cruce ${order} de la jornada ${number}`,
+  "fixture.side.winner.round": ({ number, order }) =>
+    `Ganador del cruce ${order} de la ronda ${number}`,
+  "fixture.side.groupRank": ({ place, group }) => `${place} del grupo ${group}`,
+  "fixture.side.stageRank": ({ place, stage }) => `${place} de ${stage}`,
+  "fixture.slots": ({ count }) => (Number(count) === 1 ? "1 partido" : `${count} partidos`),
+  "fixture.group": ({ group }) => `Grupo ${group}`,
+  "fixture.open": ({ home, away }) => `Abrir ${home} vs ${away}`,
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "billing.plan.status.trialing": { readonly date: string };
+  readonly "billing.plan.status.lapsed": { readonly plan: string };
+  readonly "billing.plan.upgrade": { readonly plan: string };
+  readonly "billing.usage.value": { readonly limit: number; readonly used: number };
+  readonly "billing.usage.unlimited": { readonly used: number };
+  readonly "billing.usage.resets": { readonly date: string };
+  readonly "billing.features.formats": { readonly formats: string };
+  readonly "billing.features.teamsPerCompetition": { readonly count: number };
+  readonly "billing.features.notifications": { readonly channels: string };
+  readonly "billing.changes.assigned": { readonly plan: string; readonly status: string };
+  readonly "billing.changes.from": { readonly after: string; readonly before: string };
+  readonly "pricing.perMonth": { readonly count: number };
+  readonly "pricing.fairUse": { readonly count: number };
+  readonly "pricing.note.paid": { readonly plan: string };
+  readonly "pricing.competitions": { readonly count: number };
+  readonly "pricing.format": { readonly format: string };
+  readonly "pricing.staff": { readonly count: number };
+  readonly "competition.overview.pending.applications": { readonly count: number };
+  readonly "competition.overview.pending.awaiting": { readonly count: number };
+  readonly "competition.overview.teams.roster": { readonly count: number; readonly max: number };
   readonly "competition.rankings.eligibility": {
     readonly matches: number;
     readonly percent: string;
@@ -2059,6 +2588,13 @@ export interface MessageParamsByKey {
   "reschedule.requestedBy": { team: string };
   "reschedule.proposedBy": { team: string };
   "reschedule.deadline": { date: string };
+  "reschedule.summary.encounter": { team: string; from: string; to: string };
+  "reschedule.summary.slot": { team: string; slot: number; from: string; to: string };
+  "reschedule.summary.applied.encounter": { from: string; to: string };
+  "reschedule.summary.applied.slot": { slot: number; from: string; to: string };
+  "reschedule.summary.closed.encounter": { team: string; to: string };
+  "reschedule.summary.closed.slot": { team: string; slot: number; to: string };
+  "reschedule.respondBy": { date: string };
   "reschedule.proposal": { number: number };
   "reschedule.consent": { actor: string };
   "reschedule.rejection": { actor: string };
@@ -2081,6 +2617,10 @@ export interface MessageParamsByKey {
   readonly "encounters.list.timeZone": { readonly zone: string };
   readonly "encounters.list.open": { readonly home: string; readonly away: string };
   readonly "encounters.list.slots": { readonly count: number };
+  readonly "disputes.list.timeZone": { readonly zone: string };
+  readonly "disputes.list.open": { readonly home: string; readonly away: string };
+  readonly "disputes.list.kickoff": { readonly when: string };
+  readonly "disputes.list.waiting": { readonly since: string };
   readonly "teamPerformance.unmatched": { readonly count: number };
   readonly "teamPerformance.criteria.windowValue": { readonly recent: number };
   readonly "teamPerformance.criteria.eligibilityValue": { readonly minimum: number };
@@ -2146,6 +2686,7 @@ export interface MessageParamsByKey {
   readonly "encounter.selection.history.selected": { readonly proposal: string };
   readonly "encounter.selection.history.acknowledged": { readonly count: number };
   readonly "common.seconds": { readonly seconds: number };
+  readonly "gameData.clubSearch.retryIn": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
   readonly "competitions.setup.step": { readonly step: number; readonly total: number };
@@ -2279,19 +2820,209 @@ export interface MessageParamsByKey {
   readonly "competition.teamStats.table.label": { readonly view: string };
   readonly "standings.table.updated": { readonly time: string };
   readonly "standings.table.formula": { readonly version: string };
-  readonly "standings.row.record": {
-    readonly wins: string;
-    readonly draws: string;
-    readonly losses: string;
-    readonly goalsFor: string;
-    readonly goalsAgainst: string;
-  };
+  readonly "standings.playoffCut": { readonly count: number };
+  readonly "standings.swiss.round": { readonly current: number; readonly total: number };
+  readonly "standings.swiss.completed": { readonly completed: number; readonly total: number };
+  readonly "standings.swiss.byes": { readonly count: number };
+  readonly "fixture.timeZone": { readonly zone: string };
+  readonly "fixture.round.matchday": { readonly number: number };
+  readonly "fixture.round.number": { readonly number: number };
+  readonly "fixture.side.winner.semifinal": { readonly order: number };
+  readonly "fixture.side.winner.quarterfinal": { readonly order: number };
+  readonly "fixture.side.winner.roundOf16": { readonly order: number };
+  readonly "fixture.side.winner.matchday": { readonly number: number; readonly order: number };
+  readonly "fixture.side.winner.round": { readonly number: number; readonly order: number };
+  readonly "fixture.side.groupRank": { readonly place: string; readonly group: string };
+  readonly "fixture.side.stageRank": { readonly place: string; readonly stage: string };
+  readonly "fixture.slots": { readonly count: number };
+  readonly "fixture.group": { readonly group: string };
+  readonly "fixture.open": { readonly home: string; readonly away: string };
+  readonly "fixture.round.pending": { readonly number: number };
+  readonly "fixture.round.expected": { readonly date: string };
+  readonly "fixture.bye": { readonly team: string };
+  readonly "fixture.swiss.progress": { readonly paired: number; readonly total: number };
+  readonly "fixture.swiss.withdrawn": { readonly teams: string };
+  readonly "fixture.generate.description": { readonly count: number };
+  readonly "fixture.generate.roundsHint": { readonly recommended: number; readonly max: number };
+  readonly "fixture.generate.roundsInvalid": { readonly max: number };
+  readonly "fixture.close.title": { readonly number: number };
+  readonly "fixture.close.done": { readonly number: number };
+  readonly "fixture.withdraw.done": { readonly team: string };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
 export type ParameterlessMessageKey = Exclude<MessageKey, ParameterizedMessageKey>;
 
 const en: Catalog = {
+  "profile.title": "My profile",
+  "profile.description": "Your Futrob identity and game accounts.",
+  "profile.name": "Display name",
+  "profile.email": "Account email",
+  "profile.identityHint": "This email identifies your sign-in account.",
+  "profile.initialsHint": "Your initials are generated from your display name.",
+  "profile.save": "Save profile",
+  "profile.saved": "Profile saved.",
+  "profile.error": "We could not save your profile. Your changes are still here.",
+  "profile.loading": "Loading your profile\u2026",
+  "profile.loadError": "We could not load your account. Try again.",
+  "profile.games": "Game accounts",
+  "profile.gamesEmpty": "You have not added a game account yet.",
+  "profile.gamesError": "We could not load your game accounts.",
+  "profile.gameData": "Manage game data",
+  "profile.statistics": "View my statistics",
+  "account.retry": "Try again",
+  "account.saving": "Saving\u2026",
+  "account.close": "Close",
+  "settings.title": "Settings",
+  "settings.description": "Choose your language and manage your password.",
+  "settings.language": "Language",
+  "settings.languageHint": "Remembered in this browser.",
+  "settings.password": "Change password",
+  "settings.passwordHint": "Optional. Changing it signs out your other sessions.",
+  "settings.currentPassword": "Current password",
+  "settings.newPassword": "New password",
+  "settings.confirmPassword": "Repeat new password",
+  "settings.passwordInvalid":
+    "Enter your current password and a new password of 8 to 128 characters. Both new passwords must match.",
+  "settings.save": "Save changes",
+  "settings.saved": "Changes saved.",
+  "settings.error": "We could not save your changes. Try again.",
+  "settings.passwordError":
+    "We could not change your password. Check your current password and try again.",
+  "settings.languageError":
+    "Your password changed, but we could not save your language. Save again to retry.",
+  "feedback.title": "Send feedback",
+  "feedback.description": "Tell us what to improve or what went wrong.",
+  "feedback.type": "What would you like to share?",
+  "feedback.problem": "A problem",
+  "feedback.idea": "An idea",
+  "feedback.message": "Your message",
+  "feedback.placeholder": "Tell us what happened or what you would like to improve\u2026",
+  "feedback.expected": "What did you expect to happen?",
+  "feedback.optional": "Optional",
+  "feedback.reply": "You may contact me about this message",
+  "feedback.context": "Include the current page",
+  "feedback.contextHint": "Only the path is included, without query parameters or session data.",
+  "feedback.unavailable": "Feedback sending is not available yet. Your message has not been sent.",
+  "feedback.send": "Send feedback",
+
+  "pages.organization.plan.title": "Plan and usage",
+  "pages.organization.plan.subtitle":
+    "What your organization's plan includes and how much you have used this month.",
+  "billing.plan.name.free": "Free",
+  "billing.plan.name.pro": "Pro",
+  "billing.plan.name.league": "League",
+  "billing.plan.current": "Current plan",
+  "billing.plan.status.default": "Default plan",
+  "billing.plan.status.active": "Active",
+  "billing.plan.status.trialing": "Trial until {date}",
+  "billing.plan.status.past_due": "Payment due",
+  "billing.plan.status.lapsed": "{plan} ended; Free applies",
+  "billing.plan.upgrade": "To move to {plan}, contact us. For now we assign plans by hand.",
+  "billing.plan.topPlan": "You are on the most complete plan.",
+  "billing.plan.compare": "Compare plans",
+  "billing.usage.title": "Usage",
+  "billing.usage.description":
+    "Limits only stop new actions. Anything already under way finishes as usual.",
+  "billing.usage.activeCompetitions": "Active competitions",
+  "billing.usage.staffMembers": "Staff",
+  "billing.usage.providerSyncJobs": "EA syncs this month",
+  "billing.usage.value": "{used} of {limit}",
+  "billing.usage.unlimited": "{used} · no limit",
+  "billing.usage.resets": "Resets on {date}",
+  "billing.usage.fairUse": "Fair use",
+  "billing.usage.reached.activeCompetitions":
+    "You reached the active competition limit. Finish or archive one to create another.",
+  "billing.usage.reached.staffMembers":
+    "You cannot add more staff on this plan. Current staff keep their role.",
+  "billing.usage.reached.providerSyncJobs":
+    "You used this month's syncs. Encounters in progress resolve with the matches already synced.",
+  "billing.features.title": "Included in your plan",
+  "billing.features.included": "Included",
+  "billing.features.notIncluded": "Not included",
+  "billing.features.formats": "Formats: {formats}",
+  "billing.features.teamsPerCompetition": "Up to {count} teams per competition",
+  "billing.features.teamsUnlimited": "No team limit per competition",
+  "billing.features.automaticProviderSync": "Automatic EA sync",
+  "billing.features.performanceRanking": "0–100 performance ranking",
+  "billing.features.premiumAnalytics": "Premium team and player analytics",
+  "billing.features.organizerAnalytics.none": "Organizer analytics",
+  "billing.features.organizerAnalytics.basic": "Basic organizer analytics",
+  "billing.features.organizerAnalytics.full": "Full organizer analytics",
+  "billing.features.portalBranding.futrob": "Public portal with Futrob branding",
+  "billing.features.portalBranding.logo_colors": "Public portal with your logo and colors",
+  "billing.features.portalBranding.advanced": "Public portal with advanced branding",
+  "billing.features.notifications": "Notifications: {channels}",
+  "billing.channel.web": "web",
+  "billing.channel.email": "email",
+  "billing.channel.announcements": "announcements",
+  "billing.changes.title": "Plan changes",
+  "billing.changes.empty": "No plan changes yet.",
+  "billing.changes.change": "Change",
+  "billing.changes.reason": "Reason",
+  "billing.changes.date": "Date",
+  "billing.changes.assigned": "{plan} ({status})",
+  "billing.changes.from": "{before} → {after}",
+  "billing.changes.status.active": "active",
+  "billing.changes.status.trialing": "trial",
+  "billing.changes.status.past_due": "payment due",
+  "billing.changes.status.canceled": "canceled",
+  "billing.loading": "Loading the plan…",
+  "billing.error": "We couldn't load the plan.",
+  "billing.accessError": "We couldn't check your access to the plan.",
+  "billing.forbidden.title": "You can't view the plan",
+  "billing.forbidden.description":
+    "Only the organizer and staff see the organization's plan and usage.",
+  "billing.upsell.action": "View plan and usage",
+  "teamPerformance.viewStandings": "View standings",
+  "billing.upsell.competitions.plan_limit_reached":
+    "Your plan allows no more active competitions. Finish or archive one, or change plans.",
+  "billing.upsell.competitions.format_not_in_plan":
+    "Your plan doesn't include this format. Pick league or knockout, or change plans.",
+  "billing.upsell.organizations.staff_limit_reached":
+    "Your plan allows no more staff. You can invite the person as a member.",
+  "billing.upsell.game_data.sync_quota_exhausted":
+    "You used this month's EA syncs. Matches already synced stay available.",
+  "billing.upsell.statistics.performance_ranking_not_in_plan":
+    "The performance ranking is part of Pro and League.",
+  "billing.upsell.generic": "Your plan doesn't include this action.",
+  "billing.rankingUpsell.title": "The performance ranking is on Pro and League",
+  "billing.rankingUpsell.description":
+    "Your current plan doesn't include it. The official competition table stays available to everyone.",
+  "pricing.meta.title": "Pricing | Futrob",
+  "pricing.meta.description": "Free, Pro and League plans to run EA SPORTS FC Clubs competitions.",
+  "pricing.title": "Plans for every competition",
+  "pricing.subtitle": "Start free and move up a plan as your operation grows.",
+  "pricing.unavailable": "We couldn't load the plans. Try again in a few minutes.",
+  "pricing.recommended": "Recommended",
+  "pricing.tagline.free": "For your first competition.",
+  "pricing.tagline.pro": "For organizers running several competitions.",
+  "pricing.tagline.league": "For large, multi-league operations.",
+  "pricing.perMonthUsd": "USD a month",
+  "pricing.competitions": "{count} active competitions",
+  "pricing.competitionsOne": "1 active competition",
+  "pricing.competitionsUnlimited": "No active competition limit",
+  "pricing.format": "Format: {format}",
+  "pricing.cta.free": "Start free",
+  "pricing.cta.paid": "Create account",
+  "pricing.note.free": "No card needed.",
+  "pricing.note.paid": "You start on Free and we activate {plan} by hand when you contact us.",
+  "pricing.perMonth": "{count} syncs a month",
+  "pricing.fairUse": "{count} syncs a month (fair use)",
+  "pricing.staff": "Up to {count} staff",
+  "pricing.staffUnlimited": "No staff limit",
+  "pricing.integrity.title": "Competitive integrity doesn't depend on your plan",
+  "pricing.integrity.subtitle":
+    "Everything that decides an official result works the same on Free, Pro and League.",
+  "pricing.integrity.listLabel": "Included in every plan",
+  "pricing.integrity.selection": "Official match selection",
+  "pricing.integrity.confirmation": "Confirmation between captains",
+  "pricing.integrity.disputes": "Disputes",
+  "pricing.integrity.reschedule": "Rescheduling",
+  "pricing.integrity.officialization": "Result officialization",
+  "pricing.integrity.note":
+    "If you downgrade or run out of quota, only new actions are blocked. Competitions in progress still finish.",
+  "landing.nav.pricing": "Pricing",
   "competitions.reschedule.expiryLabel": "Proposal response window (hours)",
   "competitions.reschedule.expiryHelp":
     "Between 1 and 72 hours from each proposal. Once it expires, the organizer resolves the request.",
@@ -2324,6 +3055,7 @@ const en: Catalog = {
   "competitionRules.format.knockout": "Knockout",
   "competitionRules.format.groups-knockout": "Groups + knockout",
   "competitionRules.format.league-playoffs": "League + playoffs",
+  "competitionRules.format.swiss": "Swiss system",
   "competitionRules.format.teams": "Teams",
   "competitionRules.format.teamsRange": "{min} to {max}",
   "competitionRules.format.teamsAtLeast": "From {min}",
@@ -2331,6 +3063,7 @@ const en: Catalog = {
   "competitionRules.stage.groups": "Groups",
   "competitionRules.stage.knockout": "Knockout",
   "competitionRules.stage.playoffs": "Playoffs",
+  "competitionRules.stage.swiss": "Swiss stage",
   "competitionRules.stage.description": "Match rules for this stage.",
   "competitionRules.scoring.title": "Scoring",
   "competitionRules.scoring.win": "Win",
@@ -2367,6 +3100,7 @@ const en: Catalog = {
   "competitionRules.tiebreaks.title": "Tiebreakers",
   "competitionRules.tiebreaks.description": "Applied in this order.",
   "competitionRules.tiebreaks.points": "Points",
+  "competitionRules.tiebreaks.buchholz": "Buchholz",
   "competitionRules.tiebreaks.goalDifference": "Goal difference",
   "competitionRules.tiebreaks.goalsFor": "Goals for",
   "competitionRules.awayGoals": "Away goals",
@@ -2404,6 +3138,13 @@ const en: Catalog = {
   "reschedule.proposedBy": "Proposal from {team}",
   "reschedule.proposedStart": "Proposed kickoff",
   "reschedule.deadline": "Response deadline: {date}",
+  "reschedule.summary.encounter": "{team} proposes moving the whole encounter from {from} to {to}.",
+  "reschedule.summary.slot": "{team} proposes moving match {slot} from {from} to {to}.",
+  "reschedule.summary.applied.encounter": "The whole encounter moved from {from} to {to}.",
+  "reschedule.summary.applied.slot": "Match {slot} moved from {from} to {to}.",
+  "reschedule.summary.closed.encounter": "{team} proposed moving the whole encounter to {to}.",
+  "reschedule.summary.closed.slot": "{team} proposed moving match {slot} to {to}.",
+  "reschedule.respondBy": "Respond by {date}.",
   "reschedule.history": "Proposal and decision history",
   "reschedule.proposal": "Proposal {number}",
   "reschedule.consent": "Consent from {actor}",
@@ -2542,8 +3283,9 @@ const en: Catalog = {
   "common.edit": "Edit",
   "common.pending": "Pending",
   "common.seconds": ({ seconds }) => `${seconds}s`,
-  "auth.session.checking": "Checking your session…",
-  "auth.session.checkFailed": "We couldn't check your session.",
+  "auth.session.checking": "Checking your access…",
+  "auth.session.checkFailed": "Unable to check your access",
+  "auth.session.checkFailedDescription": "Check your connection and try again.",
   "shell.workspace.competitions": "Competitions",
   "shell.workspace.eaClubs": "EA Clubs",
   "shell.workspace.organizations": "Organizations",
@@ -2594,6 +3336,20 @@ const en: Catalog = {
   "activity.entryInvitation.expired": "Competition invitation expired",
   "activity.entryInvitation.closed": "Competition invitation answered",
   "activity.competitionPublished": "Competition published",
+  "activity.scheduleChange.pending": "Answer reschedule request",
+  "activity.scheduleChange.watching": "Reschedule proposed",
+  "activity.scheduleChange.decide": "Decide reschedule",
+  "activity.scheduleChange.expired": "Reschedule not answered in time",
+  "activity.scheduleChange.closed": "Reschedule answered",
+  "activity.decision.entryApproved": "Entry approved",
+  "activity.decision.entryRejected": "Entry rejected",
+  "activity.decision.scheduleSet": "New date set by the organizer",
+  "activity.decision.scheduleKept": "The organizer kept the date",
+  "activity.decision.walkoverIntended": "The organizer decided a walkover",
+  "activity.decision.generic": "Organizer decision",
+  "activity.competitionEntry.pending": "Review entry",
+  "activity.competitionEntry.watching": "Entry pending",
+  "activity.competitionEntry.closed": "Team entry",
   "activity.recent.title": "Recent activity",
   "activity.recent.viewAll": "View all activity",
   "activity.recent.empty":
@@ -2627,16 +3383,19 @@ const en: Catalog = {
   "onboarding.step.account": "Account",
   "onboarding.step.invitation": "Invitation",
   "onboarding.step.club": "Club",
-  "onboarding.loading.progress": "Restoring your progress…",
-  "onboarding.loading.error": "We couldn't restore your progress. Try again.",
+  "onboarding.loading.preparing": "Getting your account ready…",
+  "onboarding.loading.error": "Unable to restore your progress",
+  "onboarding.loading.errorDescription": "Check your connection and try again.",
   "onboarding.intention.title": "What do you want to do first?",
   "onboarding.intention.description":
     "Your choice helps us prepare Futrob for what you want to do first.",
   "onboarding.intention.aria": "Onboarding goal",
   "onboarding.intention.organization.label": "Organize",
-  "onboarding.intention.organization.description": "Create an organization and a competition.",
+  "onboarding.intention.organization.description":
+    "Create your organization and set up competitions later.",
   "onboarding.intention.invitation.label": "Join",
-  "onboarding.intention.invitation.description": "Access a competition with your code.",
+  "onboarding.intention.invitation.description":
+    "Join a competition with your invitation link or code.",
   "onboarding.intention.player.label": "Start as a player",
   "onboarding.intention.player.description": "Create your personal space.",
   "onboarding.intention.continue": "Continue",
@@ -2648,7 +3407,8 @@ const en: Catalog = {
   "onboarding.organization.name.required": "Enter the organization name.",
   "onboarding.organization.name.max": "The name must be 120 characters or fewer.",
   "onboarding.organization.name.conflict": "That name is already in use. Choose another one.",
-  "onboarding.organization.review": "Review organization",
+  "onboarding.organization.continue": "Continue",
+  "onboarding.organization.createAccount": "Create your account",
   "organizations.create.title": "Create organization",
   "organizations.create.description": "Create another space to manage competitions and teams.",
   "organizations.create.name.label": "Organization name",
@@ -2739,6 +3499,10 @@ const en: Catalog = {
   "onboarding.competition.validation.region": "Select the competition region.",
   "onboarding.competition.validation.timeZone": "Select a valid time zone.",
   "onboarding.competition.validation.format": "Select the initial competition format.",
+  "onboarding.competition.validation.formatNotInPlan":
+    "That format isn't in the Free plan. Choose another one to continue.",
+  "onboarding.competition.format.planHint":
+    "Your organization starts on the Free plan. Formats marked Pro need another plan.",
   "onboarding.region.america": "Americas",
   "onboarding.region.southAmerica": "South America",
   "onboarding.region.northCentralAmerica": "North and Central America",
@@ -2764,9 +3528,8 @@ const en: Catalog = {
   "onboarding.account.platform.required": "Select this account's platform.",
   "onboarding.account.edition.required": "Select or enter the game edition.",
   "onboarding.account.continue": "Continue",
-  "onboarding.account.linkContinue": "Link and continue",
-  "onboarding.account.review": "Review account",
-  "onboarding.account.linkReview": "Link and review",
+  "onboarding.account.saveContinue": "Save and continue",
+  "onboarding.account.saveReview": "Save and review",
   "onboarding.invitation.title": "Join a competition",
   "onboarding.invitation.description":
     "Enter the code you received. We'll use it to join the competition when you confirm.",
@@ -2780,7 +3543,7 @@ const en: Catalog = {
   "onboarding.invitation.continuePlayer": "Continue as a player",
   "onboarding.club.title": "Link your EA club",
   "onboarding.club.description":
-    "The link is optional and declarative. It doesn't verify ownership, create a competition Team, or add you to a roster.",
+    "Optional. It's only used to show your club's recent matches. We don't verify ownership.",
   "onboarding.club.name.label": "Club name",
   "onboarding.club.name.placeholder": "e.g. Night Owls",
   "onboarding.club.reset": "Reset search",
@@ -2815,12 +3578,11 @@ const en: Catalog = {
   "onboarding.review.edit": ({ label }) => `Edit ${String(label).toLowerCase()}`,
   "onboarding.review.incomplete": "Complete the missing details before confirming.",
   "onboarding.review.retry": ({ seconds }) => `Try again in ${seconds}s`,
-  "onboarding.review.finish.organization": "Create organization and competition",
+  "onboarding.review.finish.organization": "Create organization",
   "onboarding.review.finish.invitation": "Accept invitation",
   "onboarding.review.finish.player": "Enter my personal space",
   "errors.fallback": "We couldn't complete the operation. Try again.",
   "errors.onboarding.organizationCheck": "We couldn't check the name. Try again.",
-  "errors.onboarding.saveProgress": "We couldn't save your progress. Try again.",
   "errors.api.rate_limited": "You reached the temporary limit. Wait before trying again.",
   "errors.product_api.unreachable": "We couldn't reach the service. Try again.",
   "errors.product_api.bff_misconfigured": "The service connection isn't configured.",
@@ -2837,9 +3599,12 @@ const en: Catalog = {
   "errors.organizations.invitation_invalid": "The invitation is no longer available.",
   "errors.organizations.invitation_exhausted":
     "The invitation has reached its maximum number of uses.",
+  "invitations.accept.rateLimited": "You've reached the temporary invitation limit.",
   "errors.organizations.name_conflict":
     "That organization name is already in use. Go back and choose another one.",
   "errors.organizations.invalid_name": "The organization name isn't valid.",
+  "errors.onboarding.formatNotInPlan":
+    "Your organization starts on the Free plan, which doesn't include that format. Go back to Competition and choose another one.",
   "errors.onboarding.invalidCompetition":
     "The competition details aren't valid. Review them and try again.",
   "errors.onboarding.invalidGameAccount":
@@ -2855,6 +3620,11 @@ const en: Catalog = {
   "shell.identity.loading": "Loading your space…",
   "player.home.title": "Home",
   "player.home.subtitle.loading": "Loading your activity…",
+  "player.home.clubAssociationFailed.title": "Your club wasn't added",
+  "player.home.clubAssociationFailed.description":
+    "EA didn't respond when we saved your club. Your profile is ready and you can add the club later.",
+  "player.home.clubAssociationFailed.action": "Go to EA Clubs",
+  "player.home.clubAssociationFailed.dismiss": "Dismiss notice",
   "player.home.subtitle.activity": ({ club }) => `Your activity with ${club}`,
   "player.home.cta.matches": "View my matches",
   "player.home.cta.refreshMatches": "Refresh matches",
@@ -2930,6 +3700,7 @@ const en: Catalog = {
   "player.home.competitions.format.knockout": "Knockout",
   "player.home.competitions.format.groups-knockout": "Groups and knockout",
   "player.home.competitions.format.league-playoffs": "League and playoffs",
+  "player.home.competitions.format.swiss": "Swiss system",
   "player.competitions.title": "My competitions",
   "player.competitions.description": "Competitions you play in with a team.",
   "player.competitions.loading": "Loading competitions…",
@@ -3257,6 +4028,11 @@ const en: Catalog = {
     "You as a player: rating, attributes and statistics from your recent matches.",
   "player.statistics.loading": "Loading your statistics…",
   "player.statistics.error": "We could not load your statistics.",
+  "player.competitionStats.emptyTitle": "No official statistics yet",
+  "player.competitionStats.emptyDescription":
+    "Your statistics will appear here when official results are approved in this competition.",
+  "player.competitionStats.refreshFailed":
+    "We could not refresh your statistics. The last ones we loaded are still shown.",
   "player.statistics.emptyTitle": "No appearances of yours yet",
   "player.statistics.emptyDescription":
     "We can only see the last 50 matches EA has available. If there are no appearances in the range, try other dates.",
@@ -3472,6 +4248,25 @@ const en: Catalog = {
   "organizations.members.actionsFor": "Actions for {name}",
   "organizations.members.viewDetails": "View details",
   "organizations.members.clearFilters": "Clear filters",
+  "organizations.members.organizerHint":
+    "Full control of the organization: members, roles, permissions and competitions.",
+  "organizations.members.roleEditor.label": "Change role",
+  "organizations.members.roleEditor.save": "Save role",
+  "organizations.members.roleEditor.saving": "Saving role…",
+  "organizations.members.roleEditor.saved": "Role updated",
+  "organizations.members.roleEditor.lastOrganizer":
+    "The organization needs at least one organizer. Assign another before changing this role.",
+  "organizations.members.roleEditor.forbidden":
+    "You don't have the authority to assign or remove this role.",
+  "organizations.members.roleEditor.failed": "We couldn't change the role. Please try again.",
+  "organizations.members.grants.title": "Specific permissions",
+  "organizations.members.grants.loading": "Loading specific permissions…",
+  "organizations.members.grants.empty":
+    "No specific permissions: their access depends only on their role.",
+  "organizations.members.grants.failed": "We couldn't load the specific permissions.",
+  "organizations.members.grants.retry": "Retry",
+  "organizations.members.grants.allow": "Allowed",
+  "organizations.members.grants.deny": "Denied",
   "organizations.members.detail.title": "Member details",
   "organizations.members.detail.description": "Member information and scope of access.",
   "organizations.members.detail.emptyTitle": "Select a member",
@@ -3608,7 +4403,7 @@ const en: Catalog = {
     "We couldn't find this competition, or you no longer have access.",
   "pages.competition.disputes.title": "Disputes",
   "pages.competition.disputes.subtitle":
-    "Disagreements over matches or results waiting for your decision.",
+    "Selections in dispute or organizer review that are waiting on your decision.",
   "pages.competition.analytics.title": "Analytics",
   "pages.competition.analytics.subtitle": "Participation and activity in the competition.",
   "pages.competition.teamPerformance.title": "Team performance",
@@ -3690,7 +4485,7 @@ const en: Catalog = {
   "pages.competitionPlayer.stats.subtitle": "Your official statistics in this competition.",
   "pages.competitionPlayer.team.title": "My team",
   "pages.competitionPlayer.team.subtitle":
-    "Your team in this competition: roster, EA club, and upcoming encounters.",
+    "View the roster and club of your team in this competition.",
   "pages.captain.roster.title": "Roster",
   "pages.captain.roster.subtitle":
     "See who is on your team, assign roles, and decide whether it accepts new players.",
@@ -3702,6 +4497,7 @@ const en: Catalog = {
   "captain.noTeam.action": "Review my invitations",
   "captain.forbidden.title": "You don't have access to this page",
   "captain.forbidden.roster": "Only the captain and vice-captain can manage the roster.",
+  "captain.forbidden.team": "You cannot view the roster of this team.",
   "captain.forbidden.invitations": "Only the captain and vice-captain can invite players.",
   "captain.forbidden.action": "Go to My team",
   "captain.unavailable.title": "Unable to check your access",
@@ -3806,7 +4602,8 @@ const en: Catalog = {
   "player.retry": "Try again",
   "player.partialData.description": "Some metrics were unavailable in one or more matches.",
   "player.noData": "No data",
-  "player.onboarding.checking": "Checking your onboarding…",
+  "player.onboarding.checking": "Loading your data…",
+  "player.onboarding.failed": "We couldn't check your account",
   "player.metric.goals": "Goals",
   "player.metric.assists": "Assists",
   "player.metric.goalsPlusAssists": "G+A",
@@ -3826,13 +4623,13 @@ const en: Catalog = {
   "landing.meta.description":
     "Run FC Clubs leagues and cups with real EA data: auditable official-match selection, standings, rankings, and a public portal.",
   "landing.nav.aria": "Access",
+  "landing.nav.sectionsAria": "Sections",
+  "landing.nav.howItWorks": "How it works",
+  "landing.nav.portal": "Public portal",
   "landing.nav.login": "Log in",
   "landing.nav.signup": "Create account",
-  "landing.hero.eyebrow": "FC Clubs competitions",
-  "landing.hero.titleLead": "From the EA match to the",
-  "landing.hero.titleHighlight": "official result",
-  "landing.hero.subtitleLead": "Captains pick the matches that count.",
-  "landing.hero.subtitleRest": "You approve the result and Futrob updates the table automatically.",
+  "landing.hero.title": "From the EA match to the official result",
+  "landing.hero.subtitle": "Captains pick the matches that count, and you approve the result.",
   "landing.hero.cta.primary": "Create account",
   "landing.hero.cta.secondary": "See how it works",
   "landing.status.approved": "Approved",
@@ -3840,12 +4637,14 @@ const en: Catalog = {
   "landing.status.selecting": "In selection",
   "landing.status.synced": "EA sync",
   "landing.status.scheduled": "Scheduled",
-  "landing.matches.title": "The operations table",
-  "landing.matches.subtitle":
-    "Every encounter shows where its result comes from and what state it is in. Nothing is published without approval.",
-  "landing.matches.matchday": "Matchday 4 · Metropolitan League",
+  "landing.status.published": "Published",
+  "landing.board.label": "Example matchday in Futrob",
+  "landing.board.matchday": "Matchday 4",
+  "landing.board.competition": "Metropolitan League",
+  "landing.board.kickoff": "Sat 21:00",
   "landing.mechanism.title": "How a match becomes official",
-  "landing.mechanism.subtitle": "The same journey for every result, always auditable.",
+  "landing.mechanism.subtitle":
+    "Every result shows where it comes from and what state it is in. Nothing is published without approval.",
   "landing.mechanism.sync.title": "EA sync",
   "landing.mechanism.sync.description":
     "Futrob syncs your clubs' matches from EA and stores them as candidates, never as official.",
@@ -3854,14 +4653,34 @@ const en: Catalog = {
     "Captains choose which matches count for the encounter, with a series preview.",
   "landing.mechanism.approval.title": "Approval",
   "landing.mechanism.approval.description":
-    "The confirmed result is approved and audited. Sync never auto-officializes.",
+    "The confirmed result is approved and audited. Sync never makes a result official on its own.",
   "landing.mechanism.publication.title": "Publication",
   "landing.mechanism.publication.description":
     "Only approved results update the table, bracket, rankings, and public portal.",
+  "landing.reschedule.title": "Reschedule without losing track",
+  "landing.reschedule.subtitle":
+    "A captain proposes a new time and the opponent responds. Once accepted, the schedule and the EA match search window adjust.",
+  "landing.reschedule.guarantee": "An approved or finished match can no longer be rescheduled.",
+  "landing.reschedule.panel.label": "Example reschedule request",
+  "landing.reschedule.panel.status": "In negotiation",
+  "landing.reschedule.panel.sentence":
+    "Sporting Lomas proposes moving the whole encounter from October 18, 21:00 to October 19, 22:00.",
+  "landing.reschedule.panel.respondBy": "Respond by October 16, 23:59.",
+  "landing.reschedule.panel.options": "CD Estrella can accept, counter or reject.",
   "landing.demo.title": "Try it against the real API",
   "landing.demo.subtitle":
     "Search for your EA Clubs team. It is the same data layer that powers your competitions.",
   "gameData.clubSearch.source": "Results from /api/v1/game-data/clubs/search.",
+  "gameData.clubSearch.queryLabel": "Club name",
+  "gameData.clubSearch.queryPlaceholder": "E.g. Cuervos",
+  "gameData.clubSearch.queryRequired": "Enter the club name.",
+  "gameData.clubSearch.platformLabel": "Platform",
+  "gameData.clubSearch.submit": "Search",
+  "gameData.clubSearch.searching": "Searching…",
+  "gameData.clubSearch.retryIn": ({ seconds }) => `Retry in ${seconds} s`,
+  "gameData.clubSearch.empty": "No results for that search.",
+  "gameData.clubSearch.error": "We couldn't search clubs. Please try again.",
+  "gameData.clubSearch.rateLimited": "You reached the temporary search limit.",
   "landing.players.title": "For players: your matches, your numbers",
   "landing.players.subtitle":
     "The personal profile exists without an organization: link your EA club and track your performance.",
@@ -3876,14 +4695,17 @@ const en: Catalog = {
     "Hat-tricks and four- or five-goal hauls are recognized on every appearance.",
   "landing.portal.title": "A public portal worthy of your tournament",
   "landing.portal.subtitle":
-    "Publish cover, teams, schedule, results, table, bracket, and rankings — when you decide.",
+    "Publish cover, teams, schedule, results, table, bracket, and rankings when you decide.",
   "landing.portal.point.teams": "Teams and schedule always up to date",
   "landing.portal.point.results": "Official results and table",
   "landing.portal.point.rankings": "Player and team rankings",
-  "landing.cta.title": "Ready to put your competition under control?",
-  "landing.cta.subtitle": "Create your organization and publish your first competition today.",
+  "landing.portal.podium.caption": "Example official table for the Metropolitan League",
+  "landing.portal.podium.points": "points",
+  "landing.cta.title": "Publish your first official matchday",
+  "landing.cta.subtitle":
+    "Create your organization, invite the captains, and set up your first competition.",
   "landing.cta.primary": "Create account",
-  "landing.cta.secondary": "Log in",
+  "landing.cta.secondary": "See pricing",
   "landing.footer.tagline": "Precise to operate. Clear to compete.",
   "landing.footer.madeBy": "Futrob is made by Davion Software.",
   "encounter.breadcrumb": "Encounter path",
@@ -3919,6 +4741,22 @@ const en: Catalog = {
   "encounters.list.notFound.title": "Competition unavailable",
   "encounters.list.notFound.description":
     "It isn't part of this organization, or your account can't access its encounters.",
+  "disputes.list.label": "Competition disputes",
+  "disputes.list.loading": "Loading disputes",
+  "disputes.list.error": "We couldn't load the disputes.",
+  "disputes.list.timeZone": ({ zone }) => `Times in ${zone}`,
+  "disputes.list.open": ({ home, away }) => `Review the dispute for ${home} vs ${away}`,
+  "disputes.list.kickoff": ({ when }) => `Kickoff ${when}`,
+  "disputes.list.waiting": ({ since }) => `Waiting since ${since}`,
+  "disputes.list.status.disputed": "In dispute",
+  "disputes.list.status.organizer_review": "Organizer review",
+  "disputes.list.team.unnamed": "Team name unavailable",
+  "disputes.list.empty.title": "No disputes waiting",
+  "disputes.list.empty.description":
+    "They'll show up here when a team disputes the official selection or a case moves to organizer review.",
+  "disputes.list.notFound.title": "Competition unavailable",
+  "disputes.list.notFound.description":
+    "It isn't part of this organization, or your account can't review its disputes.",
   "encounter.slots.title": "Official matches",
   "encounter.slots.description":
     "Each match has its own kickoff. Assign an EA match to see the result before you propose it.",
@@ -4182,8 +5020,55 @@ const en: Catalog = {
   "shell.account.fallback": "Account",
   "shell.account.profile": "Profile",
   "shell.account.feedback": "Send feedback",
-  "shell.account.contact": "Contact us",
   "shell.account.settings": "Settings",
+  "shell.account.providerHealth": "Provider health",
+  "providerHealth.title": "EA provider health",
+  "providerHealth.subtitle":
+    "Status, metrics and recent failures of the EA Clubs integration. Superusers only.",
+  "providerHealth.refresh": "Refresh",
+  "providerHealth.checkingAccess": "Checking permissions…",
+  "providerHealth.loading": "Loading provider health…",
+  "providerHealth.error": "We couldn't load the provider health.",
+  "providerHealth.refreshError": "We couldn't refresh the data. What you see may be out of date.",
+  "providerHealth.denied.title": "You don't have access to this panel",
+  "providerHealth.denied.description": "The provider health panel is for superusers only.",
+  "providerHealth.accessUnavailable": "We couldn't check your permissions for this panel.",
+  "providerHealth.empty.title": "No provider activity yet",
+  "providerHealth.empty.description":
+    "Once EA Clubs is queried, the observation window metrics will show up here.",
+  "providerHealth.status.label": "Status",
+  "providerHealth.status.healthy": "Healthy",
+  "providerHealth.status.degraded": "Degraded",
+  "providerHealth.status.unavailable": "Unavailable",
+  "providerHealth.status.unknown": "No data",
+  "providerHealth.circuit.label": "Circuit",
+  "providerHealth.circuit.closed": "Closed",
+  "providerHealth.circuit.half_open": "Half open",
+  "providerHealth.circuit.open": "Open",
+  "providerHealth.metrics": "Window metrics",
+  "providerHealth.metric.sample": "Sample size",
+  "providerHealth.metric.successRate": "Success rate",
+  "providerHealth.metric.latency": "Average latency",
+  "providerHealth.metric.cacheHitRate": "Cache hit rate",
+  "providerHealth.metric.unit.ms": "ms",
+  "providerHealth.metric.unavailable": "No data",
+  "providerHealth.window.title": "Observation window",
+  "providerHealth.window.startedAt": "Since",
+  "providerHealth.window.observedAt": "Observed",
+  "providerHealth.calls.title": "Provider calls",
+  "providerHealth.calls.success": "Succeeded",
+  "providerHealth.calls.failure": "Failed",
+  "providerHealth.calls.lastSuccess": "Last success",
+  "providerHealth.calls.lastFailure": "Last failure",
+  "providerHealth.calls.never": "None in the window",
+  "providerHealth.failures.title": "Recent failures",
+  "providerHealth.failures.none": "No failures in the observation window.",
+  "providerHealth.failures.some":
+    "The provider recorded failures in the observation window. Per-error detail is not exposed in this panel.",
+  "providerHealth.cache.title": "Cache",
+  "providerHealth.cache.hits": "Hits",
+  "providerHealth.cache.misses": "Misses",
+  "providerHealth.cache.stale": "Stale served",
   "encounter.documentTitle": "Encounter",
   "encounters.list.documentTitle": "Encounters",
   "matches.list.documentTitle": "Matches",
@@ -4256,9 +5141,11 @@ const en: Catalog = {
   "standings.notFound.title": "We couldn't find this competition",
   "standings.notFound.description":
     "The competition no longer exists or the link is wrong. This isn't a permissions problem or a temporary failure.",
+  "standings.notFound.action": "View competitions",
   "standings.empty.title": "No official standings yet",
   "standings.empty.description":
     "The table is built only from approved official results and will appear once the first one is approved. EA matches that aren't approved don't count.",
+  "standings.empty.action": "View encounters",
   "standings.table.label": "Official standings",
   "standings.table.updated": ({ time }) => `Updated ${time}`,
   "standings.table.formula": ({ version }) => `Formula ${version}`,
@@ -4271,22 +5158,173 @@ const en: Catalog = {
   "standings.col.team": "Team",
   "standings.col.played": "P",
   "standings.col.played.full": "Matches played",
-  "standings.col.wins": "W",
-  "standings.col.wins.full": "Matches won",
-  "standings.col.draws": "D",
-  "standings.col.draws.full": "Matches drawn",
-  "standings.col.losses": "L",
-  "standings.col.losses.full": "Matches lost",
-  "standings.col.goalsFor": "GF",
-  "standings.col.goalsFor.full": "Goals for",
-  "standings.col.goalsAgainst": "GA",
-  "standings.col.goalsAgainst.full": "Goals against",
   "standings.col.goalDifference": "GD",
   "standings.col.goalDifference.full": "Goal difference",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Points",
-  "standings.row.record": ({ wins, draws, losses, goalsFor, goalsAgainst }) =>
-    `${wins} W · ${draws} D · ${losses} L · GF ${goalsFor} · GA ${goalsAgainst}`,
+  "standings.col.buchholz": "Buch.",
+  "standings.col.buchholz.full": "Buchholz: sum of the opponents' points",
+  "standings.swiss.round": ({ current, total }) => `Round ${current} of ${total}`,
+  "standings.swiss.completed": ({ completed, total }) =>
+    `${completed} of ${total} rounds completed`,
+  "standings.swiss.final": "Final standings",
+  "standings.swiss.tiebreak":
+    "Ties: Buchholz first (opponents' points), then goal difference and goals for.",
+  "standings.swiss.byes": ({ count }) => (Number(count) === 1 ? "1 bye" : `${count} byes`),
+  "standings.swiss.withdrawn": "Withdrawn",
+  "standings.col.form": "Form",
+  "standings.col.form.full": "Last 5 matches, most recent last",
+  "standings.form.win": "Win",
+  "standings.form.win.short": "W",
+  "standings.form.draw": "Draw",
+  "standings.form.draw.short": "D",
+  "standings.form.loss": "Loss",
+  "standings.form.loss.short": "L",
+  "standings.playoffCut": ({ count }) =>
+    count === 1
+      ? "The top team advances to the playoffs"
+      : `The top ${ENGLISH_SMALL_NUMBERS[Number(count)] ?? count} advance to the playoffs`,
+  "competition.overview.documentTitle": "Overview",
+  "competition.overview.description":
+    "Status, teams, upcoming encounters and pending work for the competition.",
+  "competition.overview.loading": "Loading the competition",
+  "competition.overview.error": "We couldn't load the competition.",
+  "competition.overview.accessError": "We couldn't check your access to the competition.",
+  "competition.overview.memberTitle": "You are part of the competition",
+  "competition.overview.memberDescription":
+    "Your access is ready. Use the menu to see your matches, statistics and team.",
+  "competition.overview.status": "Competition status",
+  "competition.overview.continueSetup": "Continue setup",
+  "competition.overview.kpi.label": "Competition indicators",
+  "competition.overview.kpi.teams": "Approved teams",
+  "competition.overview.kpi.applications": "Entries to review",
+  "competition.overview.kpi.upcoming": "Upcoming encounters",
+  "competition.overview.kpi.awaiting": "No official result",
+  "competition.overview.pending.title": "Pending",
+  "competition.overview.pending.applications": ({ count }) =>
+    Number(count) === 1 ? "1 team entry to review" : `${count} team entries to review`,
+  "competition.overview.pending.awaiting": ({ count }) =>
+    Number(count) === 1
+      ? "1 encounter without an official result"
+      : `${count} encounters without an official result`,
+  "competition.overview.pending.activities": "Open tasks",
+  "competition.overview.pending.error": "We couldn't load all the pending tasks.",
+  "competition.overview.pending.empty.title": "All caught up",
+  "competition.overview.pending.empty.description":
+    "No entries, results or disputes are waiting for your review.",
+  "competition.overview.upcoming.title": "Upcoming encounters",
+  "competition.overview.upcoming.viewAll": "View all",
+  "competition.overview.upcoming.error": "We couldn't load the encounters.",
+  "competition.overview.upcoming.empty.title": "No scheduled encounters",
+  "competition.overview.upcoming.empty.description":
+    "When the schedule has encounters left to play, you will see them here.",
+  "competition.overview.teams.title": "Teams",
+  "competition.overview.teams.viewAll": "View all",
+  "competition.overview.teams.error": "We couldn't load the teams.",
+  "competition.overview.teams.empty.title": "No teams yet",
+  "competition.overview.teams.empty.description":
+    "Invite captains or approve applications to fill the competition.",
+  "competition.overview.teams.empty.action": "Manage teams",
+  "competition.overview.teams.roster": ({ count, max }) => `${count} of ${max} players`,
+  "competition.overview.teams.entry.pending": "To review",
+  "competition.overview.teams.entry.approved": "Approved",
+  "fixture.documentTitle": "Schedule",
+  "fixture.loading": "Loading the schedule",
+  "fixture.error": "We couldn't load the schedule.",
+  "fixture.refreshError":
+    "We couldn't refresh the schedule. You're seeing the last successful read.",
+  "fixture.notFound.title": "Competition unavailable",
+  "fixture.notFound.description":
+    "It may have been removed, or you may not have access to its schedule.",
+  "fixture.empty.title": "No schedule yet",
+  "fixture.empty.description":
+    "Once the fixture is generated, each stage and its rounds will show up here.",
+  "fixture.timeZone": ({ zone }) => `Times in ${zone}`,
+  "fixture.round.pending": ({ number }) => `Paired once round ${number} is official`,
+  "fixture.round.expected": ({ date }) => `Expected date: ${date}`,
+  "fixture.bye": ({ team }) => `${team} has a bye`,
+  "fixture.closed": "Not played",
+  "fixture.side.withdrawn": "Withdrawn",
+  "fixture.swiss.progress": ({ paired, total }) => `Rounds paired: ${paired} of ${total}`,
+  "fixture.swiss.withdrawn": ({ teams }) => `Withdrawn: ${teams}`,
+  "fixture.generate.title": "Generate the schedule",
+  "fixture.generate.description": ({ count }) =>
+    `Round 1 is paired now with the ${count} approved teams. Later rounds pair themselves once the previous one is official.`,
+  "fixture.generate.start": "Round 1 start",
+  "fixture.generate.startInvalid": "Enter a future date and time.",
+  "fixture.generate.interval": "Days between rounds",
+  "fixture.generate.intervalInvalid": "Enter a whole number of days, from 1.",
+  "fixture.generate.rounds": "Number of rounds",
+  "fixture.generate.roundsHint": ({ recommended, max }) =>
+    `Recommended: ${recommended}. Maximum: ${max}.`,
+  "fixture.generate.roundsInvalid": ({ max }) => `Enter between 1 and ${max} rounds.`,
+  "fixture.generate.submit": "Generate schedule",
+  "fixture.generate.done": "Schedule generated.",
+  "fixture.generate.needTeams": "Generating the schedule takes at least 2 approved teams.",
+  "fixture.action.reason": "Reason",
+  "fixture.action.reasonRequired": "Enter the reason.",
+  "fixture.close.trigger": "Close round without result",
+  "fixture.close.title": ({ number }) => `Close round ${number} without result`,
+  "fixture.close.description":
+    "Encounters in this round without an official result become not played: their open selection is cancelled, nobody scores and those teams count as having met. The next round is paired right away. This cannot be undone.",
+  "fixture.close.confirm": "Confirm closing",
+  "fixture.close.done": ({ number }) => `Round ${number} closed without result.`,
+  "fixture.withdraw.trigger": "Withdraw team",
+  "fixture.withdraw.title": "Withdraw a team",
+  "fixture.withdraw.description":
+    "The team stops being paired and cannot rejoin. In its match without a result the open selection is cancelled and the rival gets a bye, which scores like a win. Its official results stay and it remains in the standings, marked as withdrawn.",
+  "fixture.withdraw.team": "Team",
+  "fixture.withdraw.teamPlaceholder": "Select a team",
+  "fixture.withdraw.teamRequired": "Select the team.",
+  "fixture.withdraw.confirm": "Confirm withdrawal",
+  "fixture.withdraw.done": ({ team }) => `${team} is withdrawn.`,
+  "fixture.recovery.unknown":
+    "We don't know whether it applied. Try again: if it already applied, it won't repeat.",
+  "fixture.recovery.roundNotCurrent":
+    "That round is no longer the one being played. Check the updated schedule.",
+  "fixture.recovery.alreadyWithdrawn": "That team was already withdrawn.",
+  "fixture.recovery.notParticipant": "That team doesn't play this schedule.",
+  "fixture.recovery.notSwiss": "This schedule isn't a Swiss system.",
+  "fixture.recovery.conflict":
+    "The schedule changed while you were sending the action. Review it and try again.",
+  "fixture.recovery.planGone": "This schedule is no longer current. Check the current one.",
+  "fixture.recovery.generationConflict":
+    "A schedule with different data already exists. Check the current schedule.",
+  "fixture.recovery.notPublished": "Publish the competition to generate its schedule.",
+  "fixture.recovery.permission": "You no longer have permission to manage this schedule.",
+  "fixture.recovery.invalidGenerate":
+    "The server rejected this data. Check the number of rounds and that at least 2 teams are approved.",
+  "fixture.recovery.invalidCommand":
+    "We couldn't accept this action. Close it, open the dialog again and retry.",
+  "errors.scheduling.not_swiss_fixture": "This schedule isn't a Swiss system.",
+  "errors.scheduling.swiss_round_not_current": "That round is no longer the one being played.",
+  "errors.scheduling.swiss_team_already_withdrawn": "That team was already withdrawn.",
+  "errors.scheduling.swiss_team_not_participant": "That team doesn't play this schedule.",
+  "errors.scheduling.invalid_fixture_configuration": "The schedule configuration isn't valid.",
+  "errors.scheduling.fixture_source_not_published":
+    "Publish the competition to generate its schedule.",
+  "errors.scheduling.fixture_generation_conflict": "A schedule with different data already exists.",
+  "fixture.round.matchday": ({ number }) => `Matchday ${number}`,
+  "fixture.round.final": "Final",
+  "fixture.round.semifinal": "Semifinals",
+  "fixture.round.quarterfinal": "Quarterfinals",
+  "fixture.round.roundOf16": "Round of 16",
+  "fixture.round.number": ({ number }) => `Round ${number}`,
+  "fixture.side.unknownTeam": "Team unavailable",
+  "fixture.side.bye": "Bye",
+  "fixture.side.winner.unknown": "Winner to be decided",
+  "fixture.side.winner.final": "Winner of the final",
+  "fixture.side.winner.semifinal": ({ order }) => `Winner of semifinal ${order}`,
+  "fixture.side.winner.quarterfinal": ({ order }) => `Winner of quarterfinal ${order}`,
+  "fixture.side.winner.roundOf16": ({ order }) => `Winner of round of 16 match ${order}`,
+  "fixture.side.winner.matchday": ({ number, order }) =>
+    `Winner of match ${order} on matchday ${number}`,
+  "fixture.side.winner.round": ({ number, order }) => `Winner of match ${order} in round ${number}`,
+  "fixture.side.groupRank": ({ place, group }) => `${place} in group ${group}`,
+  "fixture.side.stageRank": ({ place, stage }) => `${place} in ${stage}`,
+  "fixture.slots": ({ count }) => (Number(count) === 1 ? "1 match" : `${count} matches`),
+  "fixture.group": ({ group }) => `Group ${group}`,
+  "fixture.open": ({ home, away }) => `Open ${home} vs ${away}`,
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;

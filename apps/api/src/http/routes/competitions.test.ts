@@ -1,15 +1,20 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { describe, expect, it } from "vite-plus/test";
 import {
   addCompetitionParticipantResponseSchema,
-  completeOrganizationOnboardingResponseSchema,
+  getCompetitionDraftResponseSchema,
+  updateCompetitionDraftResponseSchema,
 } from "@futrob/api-contracts";
 import {
   buildApp,
+  buildAppWithModules,
   onboardingCompetition,
   serviceHeaders,
   stubFetch,
 } from "@/http/http-app.harness.ts";
 import { parseResponse } from "@/http/parse-response.ts";
+import { assignOrganizationPlanForTest } from "@/testing/organization-plan.fixture.ts";
+import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
 
 const LEAGUE_RULES = {
   regularStage: {
@@ -31,9 +36,9 @@ const LEAGUE_RULES = {
 
 describe("apps/api http competitions", () => {
   it("competitions: creates a draft with team range, dates and an uploaded cover", async () => {
-    const app = buildApp(stubFetch);
+    const { app, modules } = buildAppWithModules(stubFetch);
     const organizer = "actor-profile-organizer";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -42,11 +47,13 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const { organizationId } = await parseResponse(
-      completeOrganizationOnboardingResponseSchema,
-      created,
-    );
+    const { organizationId } = created;
     const createPath = `/api/v1/organizations/${organizationId}/competitions`;
+    // A second active competition needs a paid plan (ADR-0025).
+    await assignOrganizationPlanForTest(modules, {
+      organizationId: asOrganizationId(organizationId),
+      actorId: asActorId(organizer),
+    });
 
     const draft = await app.request(createPath, {
       method: "POST",
@@ -92,7 +99,7 @@ describe("apps/api http competitions", () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-registration-organizer";
     const outsider = "actor-registration-outsider";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -101,7 +108,7 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const body = created;
     const base = `/api/v1/organizations/${body.organizationId}/competitions/${body.competition.competition.id}`;
 
     const configured = await app.request(base, {
@@ -261,7 +268,7 @@ describe("apps/api http competitions", () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-setup-organizer";
     const outsider = "actor-setup-outsider";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -270,7 +277,7 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const body = created;
     const organizationId = body.organizationId;
     const competitionId = body.competition.competition.id;
 
@@ -370,7 +377,7 @@ describe("apps/api http competitions", () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-explore-organizer";
     const outsider = "actor-explore-outsider";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -379,7 +386,7 @@ describe("apps/api http competitions", () => {
         gameAccount: null,
       }),
     });
-    const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const body = created;
 
     const explore = await app.request("/api/v1/competitions/explore", {
       headers: serviceHeaders(outsider),
@@ -392,5 +399,61 @@ describe("apps/api http competitions", () => {
     );
     expect(hidden.status).toBe(404);
     expect(await hidden.json()).toMatchObject({ code: "competitions.not_discoverable" });
+  });
+
+  it("competitions: stores ranking eligibility on the draft and keeps it when a later edit omits it", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-eligibility-organizer";
+    const created = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Eligibility Org",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const body = created;
+    expect(body.competition.rules.rankingEligibility).toBeNull();
+    const path = `/api/v1/organizations/${body.organizationId}/competitions/${body.competition.competition.id}`;
+    const rankingEligibility = { minimumMatches: 1, minimumTeamMinutesRatio: 0.25 };
+
+    const saved = await app.request(path, {
+      method: "PATCH",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        ...onboardingCompetition,
+        rules: { ...LEAGUE_RULES, rankingEligibility },
+      }),
+    });
+    const savedBody = await parseResponse(updateCompetitionDraftResponseSchema, saved);
+    expect(savedBody.rules.rankingEligibility).toEqual(rankingEligibility);
+
+    const kept = await app.request(path, {
+      method: "PATCH",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        ...onboardingCompetition,
+        name: "Liga con mínimos",
+        rules: LEAGUE_RULES,
+      }),
+    });
+    const keptBody = await parseResponse(updateCompetitionDraftResponseSchema, kept);
+    expect(keptBody.rules.rankingEligibility).toEqual(rankingEligibility);
+
+    const cleared = await app.request(path, {
+      method: "PATCH",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        ...onboardingCompetition,
+        rules: { ...LEAGUE_RULES, rankingEligibility: null },
+      }),
+    });
+    const clearedBody = await parseResponse(updateCompetitionDraftResponseSchema, cleared);
+    expect(clearedBody.rules.rankingEligibility).toBeNull();
+
+    const read = await app.request(path, { headers: serviceHeaders(organizer) });
+    const readBody = await parseResponse(getCompetitionDraftResponseSchema, read);
+    expect(readBody.rules.rankingEligibility).toBeNull();
   });
 });

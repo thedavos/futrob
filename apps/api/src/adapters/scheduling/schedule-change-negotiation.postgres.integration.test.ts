@@ -422,9 +422,14 @@ async function negotiationModule(
     fixtureSource: { load: async () => null },
     eventPublisher: { publish: async () => undefined, publishMany: async () => undefined },
     transaction: new PostgresTransactionPort(pool),
-    officialResults: { findApprovedByEncounter: async () => null },
+    officialResults: {
+      findApprovedByEncounter: async () => null,
+      listByCompetition: async () => [],
+    },
     officialSelections: { findLatestByEncounter: async () => null },
     encounterMutationLock: new PostgresEncounterMutationLock(pool),
+    encounterParticipants: { participantsChanged: async () => undefined },
+    encounterOpenSelection: { cancelOpen: async () => undefined },
     competitions,
   });
   const target = { organizationId, competitionId, encounterId };
@@ -533,6 +538,7 @@ function competitionDraft(approvals: {
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: at,
     },
   };

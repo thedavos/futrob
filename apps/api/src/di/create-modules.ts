@@ -1,27 +1,7 @@
 import type { AppModules } from "./app-modules.ts";
 export type { AppModules } from "./app-modules.ts";
 import { RunScheduleChangeExpiry } from "@/application/scheduling/run-schedule-change-expiry.ts";
-import {
-  InMemoryProviderMatchRepository,
-  InMemoryRawObservationRepository,
-} from "@/adapters/game-data/persistence/in-memory.repository.ts";
-import {
-  PostgresProviderMatchRepository,
-  PostgresRawObservationRepository,
-} from "@/adapters/game-data/persistence/postgres.repository.ts";
-import { InMemoryProviderSyncJobRepository } from "@/adapters/game-data/jobs/in-memory-provider-sync-job.repository.ts";
-import { PostgresProviderSyncJobRepository } from "@/adapters/game-data/jobs/postgres-provider-sync-job.repository.ts";
 import { CachedGameDataProviderAdapter } from "@/adapters/game-data/resilience/cached-game-data-provider.adapter.ts";
-import { InMemoryProviderCircuitBreaker } from "@/adapters/game-data/resilience/provider-circuit-breaker.ts";
-import { PostgresProviderCircuitBreaker } from "@/adapters/game-data/resilience/postgres-provider-circuit-breaker.ts";
-import {
-  InMemoryProviderResponseCache,
-  PostgresProviderResponseCache,
-} from "@/adapters/game-data/resilience/provider-response-cache.ts";
-import {
-  InMemoryProviderHealthRepository,
-  PostgresProviderHealthRepository,
-} from "@/adapters/game-data/health/provider-health.repository.ts";
 import { EaClubsGameDataAdapter, ManualGameDataAdapter } from "@/adapters/game-data/internal.ts";
 import {
   RepositoryProviderMatchReader,
@@ -38,7 +18,7 @@ import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 import type { ProviderMatchRepository } from "@futrob/game-data";
-import type { ClockPort, CompetitionId, OrganizationId } from "@futrob/shared-kernel";
+import type { ClockPort } from "@futrob/shared-kernel";
 import {
   InMemoryOfficialMatchSelectionRepository,
   InMemoryOfficialResultRepository,
@@ -46,7 +26,9 @@ import {
   PostgresOfficialResultRepository,
 } from "@/adapters/results/official-result.repository.ts";
 import type { Pool } from "pg";
+import { createBillingModule, withPlanUsage } from "./billing.module.ts";
 import { createGameDataModule } from "./game-data.module.ts";
+import { createGameDataPersistence } from "./game-data-persistence.composition.ts";
 import { createIdentityModule } from "./identity.module.ts";
 import { createOrganizationMemberDirectory } from "./organization-members.composition.ts";
 import { createOrganizationsModule } from "./organizations.module.ts";
@@ -56,6 +38,12 @@ import { createTeamsModule } from "./teams.module.ts";
 import { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
 import { createAuthorizationModule } from "./authorization.module.ts";
 import { DeferredAuthorizationPort } from "./deferred-authorization.port.ts";
+import { DeferredEncounterParticipantsChangePort } from "./deferred-encounter-participants.port.ts";
+import { createSwissRoundCommands } from "./swiss-round.commands.ts";
+import { createTeamManagement } from "./team-management.composition.ts";
+import { DeferredEncounterOpenSelectionPort } from "./deferred-encounter-open-selection.port.ts";
+import { ResultsCandidateEligibilityAdapter } from "@/adapters/scheduling/results-candidate-eligibility.adapter.ts";
+import { ResultsOpenSelectionAdapter } from "@/adapters/scheduling/results-open-selection.adapter.ts";
 import { CompetitionFixtureSourceAdapter } from "@/adapters/scheduling/competition-fixture-source.ts";
 import {
   InMemoryEncounterMutationLock,
@@ -69,15 +57,13 @@ import {
 import { createResultsModule } from "./results.module.ts";
 import { createActivityFeed } from "./notifications.module.ts";
 import { createStatisticsModule } from "./statistics.module.ts";
+import { createPublicPortalModule } from "./public-portal.module.ts";
 import { createEncounterReads } from "./encounter-reads.composition.ts";
-import {
-  GetTeamRosterManagementUseCase,
-  ListTeamRosterManagementUseCase,
-} from "@/application/teams/team-roster-management.use-case.ts";
+import { OnboardingCompletionFlow } from "@/application/identity/onboarding-completion.flow.ts";
 import { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
 import { RecalculateRescheduledCandidates } from "@/application/results/recalculate-rescheduled-candidates.ts";
+import { ListCompetitionDisputesQuery } from "@/application/results/list-competition-disputes.query.ts";
 import { findProvisionedSystemActor } from "@/adapters/identity/configured-system-actor.ts";
-import { AssociateSyncedProviderMatches } from "@/application/game-data/associate-synced-provider-matches.ts";
 
 /**
  * Composition root for apps/api — the only place that wires adapters to use
@@ -98,26 +84,14 @@ export function createModules(input: CreateModulesInput): AppModules {
   const ids = new CryptoIdGenerator();
   const clock = input.clock ?? new SystemClock();
   const transaction = createTransactionPort(input.pool);
-  const providerMatches =
-    input.providerMatches ??
-    (input.pool
-      ? new PostgresProviderMatchRepository(input.pool)
-      : new InMemoryProviderMatchRepository());
-  const rawObservations = input.pool
-    ? new PostgresRawObservationRepository(input.pool)
-    : new InMemoryRawObservationRepository();
-  const providerSyncJobs = input.pool
-    ? new PostgresProviderSyncJobRepository(input.pool)
-    : new InMemoryProviderSyncJobRepository();
-  const providerCircuit = input.pool
-    ? new PostgresProviderCircuitBreaker(input.pool)
-    : new InMemoryProviderCircuitBreaker();
-  const providerCache = input.pool
-    ? new PostgresProviderResponseCache(input.pool)
-    : new InMemoryProviderResponseCache();
-  const providerHealth = input.pool
-    ? new PostgresProviderHealthRepository(input.pool, providerCircuit, clock)
-    : new InMemoryProviderHealthRepository(providerCircuit, clock);
+  const {
+    providerMatches,
+    rawObservations,
+    providerSyncJobs,
+    providerCircuit,
+    providerCache,
+    providerHealth,
+  } = createGameDataPersistence(input.pool, clock, input.providerMatches);
   const eaAdapter = new EaClubsGameDataAdapter({
     fetcher: input.fetcher,
     baseUrl: input.eaClubsBaseUrl,
@@ -142,9 +116,12 @@ export function createModules(input: CreateModulesInput): AppModules {
   const encounterMutationLock = input.pool
     ? new PostgresEncounterMutationLock(input.pool)
     : new InMemoryEncounterMutationLock();
+  const billingPorts = { transaction, clock, ids };
+  const billing = createBillingModule(input.pool, deferredAuthorization, billingPorts);
   const organizations = createOrganizationsModule({
     pool: input.pool,
     authorization: deferredAuthorization,
+    staffSeats: billing.planLimits.staffSeats,
   });
   const identity = createIdentityModule({
     pool: input.pool,
@@ -176,6 +153,13 @@ export function createModules(input: CreateModulesInput): AppModules {
     transaction,
     mutationLock: organizations.repositories.mutationLock,
     organizations: organizations.repositories.organizations,
+    planLimits: billing.planLimits.competitions,
+  });
+  const encounterParticipants = new DeferredEncounterParticipantsChangePort();
+  const encounterOpenSelection = new DeferredEncounterOpenSelectionPort();
+  const fixtureSource = new CompetitionFixtureSourceAdapter({
+    competitions: competitionRepository,
+    entries: competitions.entryRepository,
   });
   const scheduling = createSchedulingModule({
     clock,
@@ -186,11 +170,10 @@ export function createModules(input: CreateModulesInput): AppModules {
     officialResults,
     officialSelections,
     encounterMutationLock,
+    encounterParticipants,
+    encounterOpenSelection,
     competitions: competitionRepository,
-    fixtureSource: new CompetitionFixtureSourceAdapter({
-      competitions: competitionRepository,
-      entries: competitions.entryRepository,
-    }),
+    fixtureSource,
     participants: {
       async isApprovedParticipant({ organizationId, competitionId, teamId }) {
         const [team, entry] = await Promise.all([
@@ -211,35 +194,16 @@ export function createModules(input: CreateModulesInput): AppModules {
     teams,
     transaction,
     scheduling,
+    staffSeats: billing.planLimits.staffSeats,
   });
   deferredAuthorization.bind(authorization.port);
   entryGate.bind(new CompetitionRosterEntryGate(competitions.entryRepository));
 
-  const teamManagementDeps = {
+  const teamManagement = createTeamManagement({
     authorization: deferredAuthorization,
-    entries: {
-      list: (organizationId: OrganizationId, competitionId: CompetitionId) =>
-        competitions.entryRepository.listByCompetition?.(organizationId, competitionId) ??
-        Promise.resolve([]),
-      find: competitions.entryRepository.findByCompetitionAndTeam.bind(
-        competitions.entryRepository,
-      ),
-    },
-    teams: { find: teams.repositories.teams.findById.bind(teams.repositories.teams) },
-    rosters: { list: teams.repositories.rosters.listByTeam.bind(teams.repositories.rosters) },
-    rosterStates: {
-      get: teams.repositories.rosterStates.get.bind(teams.repositories.rosterStates),
-    },
-    externalClubs: {
-      get: teams.repositories.connections.findByTeam.bind(teams.repositories.connections),
-    },
-    capacity: teams.repositories.capacity,
-    accounts: teams.repositories.accounts,
-  };
-  const teamManagement = {
-    list: new ListTeamRosterManagementUseCase(teamManagementDeps),
-    get: new GetTeamRosterManagementUseCase(teamManagementDeps),
-  };
+    competitions,
+    teams,
+  });
 
   const encounterReader = new SchedulingEncounterReader(
     scheduling.encounters,
@@ -265,17 +229,18 @@ export function createModules(input: CreateModulesInput): AppModules {
     clock,
     ids,
   });
+  encounterParticipants.bind(new ResultsCandidateEligibilityAdapter(results));
   const gameData = createGameDataModule({
     providers: [eaProvider, new ManualGameDataAdapter()],
     ingestion: eaProvider,
     providerMatches,
     rawObservations,
     jobs: providerSyncJobs,
-    completion: new AssociateSyncedProviderMatches({
-      externalClubTeams: teams.externalClubTeams,
-      encounterWindow: scheduling.encounterWindow,
-      associateEncounterCandidates: results.associateEncounterCandidates,
-    }),
+    pool: input.pool,
+    scheduling,
+    teams,
+    results,
+    syncQuota: billing.planLimits.providerSyncQuota,
     ids,
     clock,
     maxJobAttempts: 4,
@@ -290,10 +255,23 @@ export function createModules(input: CreateModulesInput): AppModules {
     profiles: teams.repositories.profiles,
     competitions: competitions.repository,
     entries: competitions.entryRepository,
+    fixturePlans: scheduling.fixturePlans,
+    fixtureSource,
     authorization: authorization.port,
+    performanceRankingAccess: billing.planLimits.performanceRanking,
     encounterReader,
     transaction,
     eventPublisher,
+  });
+
+  const publicPortal = createPublicPortalModule({
+    clock,
+    discovery: competitions.discovery,
+    standings: statistics.ports.standings,
+    swissStandings: statistics.ports.swissStandings,
+    fixturePlans: scheduling.fixturePlans,
+    officialResults: results.officialResultReader,
+    teams: teams.repositories.teams,
   });
 
   const activityFeed = createActivityFeed({
@@ -304,9 +282,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     encounterReader,
     competitions,
     teams,
+    scheduling,
   });
+  encounterOpenSelection.bind(new ResultsOpenSelectionAdapter(results, activityFeed.selection));
   const officialSelection = createOfficialSelectionCommands({
     results,
+    scheduling,
     statistics,
     transaction,
     encounterLock: encounterMutationLock,
@@ -315,7 +296,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     activity: activityFeed.selection,
   });
 
-  const { getMyNextEncounter, getEncounterView, listCompetitionEncounters } = createEncounterReads({
+  const {
+    getMyNextEncounter,
+    getEncounterView,
+    listCompetitionEncounters,
+    getCurrentCompetitionFixture,
+  } = createEncounterReads({
     authorization: deferredAuthorization,
     clock,
     competitions,
@@ -325,8 +311,22 @@ export function createModules(input: CreateModulesInput): AppModules {
     results,
   });
 
+  const listCompetitionDisputes = new ListCompetitionDisputesQuery({
+    disputes: results.listCompetitionDisputes,
+    competitions: competitions.repository,
+    teams: teams.repositories.teams,
+  });
+
   const voidOfficialResultAndUnproject = createVoidOfficialResultAndUnproject({
     results,
+    scheduling,
+    statistics,
+    transaction,
+    encounterLock: encounterMutationLock,
+  });
+
+  const swissRoundCommands = createSwissRoundCommands({
+    scheduling,
     statistics,
     transaction,
     encounterLock: encounterMutationLock,
@@ -342,11 +342,13 @@ export function createModules(input: CreateModulesInput): AppModules {
     teams: teams.repositories.teams,
     profiles: teams.repositories.profiles,
     rosters: teams.repositories.rosters,
+    activity: activityFeed.entries,
   });
 
   const entryInvitations = createEntryInvitations({
     transaction,
     writer: activityFeed.notifications.writer,
+    entryActivity: activityFeed.entries,
     competitions,
     teams,
     organizations: organizations.repositories.organizations,
@@ -360,16 +362,18 @@ export function createModules(input: CreateModulesInput): AppModules {
     teams,
   });
 
-  return {
+  const modules = {
     activityCommands: activityFeed.commands,
     authorization,
+    billing: withPlanUsage(billing, competitionRepository, organizations.repositories.memberships),
     competitionApplications,
     competitions,
     entryInvitations,
     officialSelection,
+    swissRoundCommands,
     runScheduleChangeExpiry: new RunScheduleChangeExpiry({
       feed: scheduling.scheduleChangeExpiryFeed,
-      expire: scheduling.expireScheduleChangeProposal,
+      expire: activityFeed.commands.expireScheduleChangeProposal,
       clock,
       resolveSystemActor: () =>
         findProvisionedSystemActor(input.pool, input.schedulingSystemActorId),
@@ -389,13 +393,17 @@ export function createModules(input: CreateModulesInput): AppModules {
     getMyNextEncounter,
     getEncounterView,
     listCompetitionEncounters,
+    getCurrentCompetitionFixture,
+    listCompetitionDisputes,
     identity,
     notifications: activityFeed.notifications,
     organizations: {
       ...organizations,
       listOrganizationMembers,
     },
+    publicPortal,
     results,
+    encounterOpenSelection,
     scheduling,
     statistics,
     teams,
@@ -403,4 +411,5 @@ export function createModules(input: CreateModulesInput): AppModules {
     transaction,
     voidOfficialResultAndUnproject,
   };
+  return { ...modules, onboardingCompletion: new OnboardingCompletionFlow(modules) };
 }

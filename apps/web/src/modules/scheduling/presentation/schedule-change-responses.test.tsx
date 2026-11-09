@@ -103,9 +103,8 @@ describe("rival response to a reschedule proposal", () => {
         },
       },
     ]);
-    expect(item().getByText(/^Horario actual/).textContent).toBe(
-      "Horario actual: 14 sept 2026, 20:00",
-    );
+    // Rejected: nothing moved, so the item names the proposal without claiming an origin.
+    expect(item().getByText(/propuso mover/).textContent).not.toContain(" del ");
     expect(screen.getByRole("status").textContent).toBe(
       "Propuesta rechazada. Se mantiene el horario actual.",
     );

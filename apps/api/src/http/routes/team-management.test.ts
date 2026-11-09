@@ -1,6 +1,6 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import {
   addCompetitionParticipantResponseSchema,
-  completeOrganizationOnboardingResponseSchema,
   getMyPlayerProfileResponseSchema,
 } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
@@ -18,7 +18,7 @@ describe("apps/api http team-management", () => {
     const organizer = "actor-team-management-organizer";
     const player = "actor-team-management-player";
 
-    const orgCreated = await app.request("/api/v1/identity/onboarding/organization", {
+    const orgCreated = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -27,7 +27,7 @@ describe("apps/api http team-management", () => {
         gameAccount: null,
       }),
     });
-    const orgBody = await parseResponse(completeOrganizationOnboardingResponseSchema, orgCreated);
+    const orgBody = orgCreated;
     const organizationId = orgBody.organizationId;
     const competitionId = orgBody.competition.competition.id;
 

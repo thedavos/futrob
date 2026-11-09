@@ -39,6 +39,7 @@ describe("role escalation guards", () => {
       clock: harness.clock,
       ids: harness.ids,
       memberships: harness.memberships,
+      staffSeats: harness.staffSeats,
       roleCapabilities: { permissionsForRole: () => ["organizations.read"] },
       transaction: { runInTransaction: async (operation) => operation() },
       mutationLock: { runWithActors: async (_org, _actors, operation) => operation() },
@@ -105,6 +106,7 @@ describe("role escalation guards", () => {
       clock: harness.clock,
       ids: harness.ids,
       memberships: harness.memberships,
+      staffSeats: harness.staffSeats,
       roleCapabilities: {
         permissionsForRole: () => ["organizations.read", "teams.update"],
       },
@@ -120,6 +122,63 @@ describe("role escalation guards", () => {
     expect(unwrapErr(result).code).toBe("authorization.forbidden");
     expect(await harness.memberships.findByOrgAndActor(organizationId, memberId)).toMatchObject({
       role: "member",
+    });
+  });
+
+  it("cannot demote a member whose current role exceeds the manager's authority", async () => {
+    const harness = createOrgTestHarness();
+    const organizationId = asOrganizationId("org-1");
+    const managerId = asActorId("manager-1");
+    const organizerId = asActorId("organizer-1");
+    await harness.memberships.add({
+      organizationId,
+      actorId: organizerId,
+      role: "organizer",
+      createdAt: harness.clock.now(),
+    });
+    await harness.memberships.add({
+      organizationId,
+      actorId: asActorId("organizer-2"),
+      role: "organizer",
+      createdAt: harness.clock.now(),
+    });
+    const delegated = new Set(["authorization.roles.manage", "organizations.read"]);
+    const delegatedAuthorization: AuthorizationPort = {
+      decide: async (request) => ({
+        ...request,
+        allowed: delegated.has(request.permission),
+        reason: delegated.has(request.permission) ? "allowed" : "denied",
+      }),
+      getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
+    };
+    const result = await new ChangeOrganizationRoleUseCase({
+      authorization: delegatedAuthorization,
+      audit: auditRepository(),
+      clock: harness.clock,
+      ids: harness.ids,
+      memberships: harness.memberships,
+      staffSeats: harness.staffSeats,
+      roleCapabilities: {
+        permissionsForRole: (role) =>
+          role === "organizer"
+            ? ["organizations.read", "organizations.update"]
+            : ["organizations.read"],
+      },
+      transaction: { runInTransaction: async (operation) => operation() },
+      mutationLock: { runWithActors: async (_org, _actors, operation) => operation() },
+    }).execute({
+      actorId: managerId,
+      organizationId,
+      targetActorId: organizerId,
+      role: "member",
+    });
+
+    expect(unwrapErr(result)).toMatchObject({
+      code: "authorization.forbidden",
+      permission: "organizations.update",
+    });
+    expect(await harness.memberships.findByOrgAndActor(organizationId, organizerId)).toMatchObject({
+      role: "organizer",
     });
   });
 });
@@ -149,3 +208,50 @@ function platformRoles(actorId: ReturnType<typeof asActorId>): PlatformRoleRepos
       requested === actorId ? "last-superuser" : "not-found",
   };
 }
+
+describe("staff seats", () => {
+  it("refuses a promotion past the plan's staff seats and allows it after an upgrade", async () => {
+    const harness = createOrgTestHarness();
+    const organizationId = asOrganizationId("org-1");
+    const organizerId = asActorId("organizer-1");
+    const memberId = asActorId("member-1");
+    for (const [actorId, role] of [
+      [organizerId, "organizer"],
+      [asActorId("staff-1"), "staff"],
+      [memberId, "member"],
+    ] as const) {
+      await harness.memberships.add({
+        organizationId,
+        actorId,
+        role,
+        createdAt: harness.clock.now(),
+      });
+    }
+    harness.setStaffSeatLimit(2);
+    const useCase = new ChangeOrganizationRoleUseCase({
+      authorization,
+      audit: auditRepository(),
+      clock: harness.clock,
+      ids: harness.ids,
+      memberships: harness.memberships,
+      staffSeats: harness.staffSeats,
+      roleCapabilities: { permissionsForRole: () => ["organizations.read"] },
+      transaction: { runInTransaction: async (operation) => operation() },
+      mutationLock: { runWithActors: async (_org, _actors, operation) => operation() },
+    });
+    const promote = {
+      actorId: organizerId,
+      organizationId,
+      targetActorId: memberId,
+      role: "staff" as const,
+    };
+
+    expect(unwrapErr(await useCase.execute(promote))).toMatchObject({
+      code: "organizations.staff_limit_reached",
+      max: 2,
+    });
+
+    harness.setStaffSeatLimit(10);
+    expect((await useCase.execute(promote)).isOk()).toBe(true);
+  });
+});

@@ -1,29 +1,50 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import {
-  onboardingStatusSchema,
+  ONBOARDING_STEPS_BY_PATH,
+  isOnboardingStepAllowed,
+  nextOnboardingStep,
+  onboardingPathSchema,
   onboardingStepSchema,
+  previousOnboardingStep,
   saveOnboardingProgressRequestSchema,
+  type OnboardingStepDto,
 } from "./schemas.ts";
 
 describe("identity onboarding step contract", () => {
-  it("uses club as the canonical player step", () => {
-    expect(onboardingStepSchema.parse("club")).toBe("club");
+  it("rejects the retired game and team steps", () => {
+    expect(onboardingStepSchema.safeParse("game").success).toBe(false);
     expect(onboardingStepSchema.safeParse("team").success).toBe(false);
+    expect(
+      saveOnboardingProgressRequestSchema.safeParse({ path: "player", currentStep: "team" })
+        .success,
+    ).toBe(false);
   });
 
-  it("normalizes the legacy private progress input without emitting it", () => {
+  it("accepts progress only for steps of the chosen path", () => {
     expect(
-      saveOnboardingProgressRequestSchema.parse({ path: "player", currentStep: "team" }),
-    ).toEqual({ path: "player", currentStep: "club" });
+      saveOnboardingProgressRequestSchema.safeParse({ path: null, currentStep: "intention" })
+        .success,
+    ).toBe(true);
     expect(
-      onboardingStatusSchema.safeParse({
-        completed: false,
-        completedAt: null,
-        version: null,
-        path: "player",
-        currentStep: "team",
-      }).success,
+      saveOnboardingProgressRequestSchema.safeParse({ path: null, currentStep: "review" }).success,
     ).toBe(false);
+    expect(
+      saveOnboardingProgressRequestSchema.safeParse({ path: "invitation", currentStep: "club" })
+        .success,
+    ).toBe(false);
+  });
+
+  it("walks every path forward and back in declared order", () => {
+    for (const path of onboardingPathSchema.options) {
+      const steps: readonly OnboardingStepDto[] = ONBOARDING_STEPS_BY_PATH[path];
+      for (const [index, step] of steps.entries()) {
+        expect(isOnboardingStepAllowed(path, step)).toBe(true);
+        expect(nextOnboardingStep(path, step)).toBe(steps[index + 1] ?? null);
+        expect(previousOnboardingStep(path, step)).toBe(steps[index - 1] ?? null);
+      }
+    }
+    expect(nextOnboardingStep("player", "organization")).toBeNull();
+    expect(onboardingStepSchema.safeParse("competition").success).toBe(false);
   });
 });

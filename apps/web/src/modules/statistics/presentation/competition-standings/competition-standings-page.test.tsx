@@ -25,6 +25,7 @@ const row = (position: number, teamId: string, points: number, goalDifference: n
   goalsAgainst: 4 - goalDifference,
   goalDifference,
   points,
+  form: ["draw", "win"],
 });
 const snapshot = {
   competitionId: "competition-1",
@@ -33,6 +34,8 @@ const snapshot = {
   rows: [row(1, "t2", 4, 3), row(2, "t1", 2, -2)],
   sourceRevisionMax: 2,
   updatedAt: "2026-10-12T01:00:00.000Z",
+  playoffSpots: null,
+  swiss: null,
 };
 
 const managedTeam = ([id, name]: readonly [string, string]) => ({
@@ -57,13 +60,18 @@ type Routes = {
   teams?: () => Response;
 };
 
-const allow = (allowed: boolean) => () =>
-  Response.json({
-    actorId: "a",
-    scope: { organizationId: "org-1", competitionId: "competition-1" },
-    roles: [],
-    permissions: [{ permission: "statistics.read", allowed, decidedAt: "competition" }],
-  });
+const allow =
+  (allowed: boolean, encounters = allowed) =>
+  () =>
+    Response.json({
+      actorId: "a",
+      scope: { organizationId: "org-1", competitionId: "competition-1" },
+      roles: [],
+      permissions: [
+        { permission: "statistics.read", allowed, decidedAt: "competition" },
+        { permission: "competitions.read", allowed: encounters, decidedAt: "competition" },
+      ],
+    });
 // Serves each response in turn, repeating the last.
 const sequence =
   (...responses: Array<() => Response>) =>
@@ -151,6 +159,32 @@ describe("Competition standings page", () => {
     expect(screen.getByText("Cuervos FC")).toBeTruthy();
   });
 
+  it("reads each team's form oldest first, with a name for every result", async () => {
+    serve({});
+    renderRoute();
+    await screen.findByText("Maderas FC");
+    const leader = screen.getAllByRole("row")[1]!;
+    expect(
+      within(leader).getAllByText("Últimos 5 partidos, el más reciente al final:").length,
+    ).toBe(2);
+    expect(within(leader).getAllByText(/^Empate/).length).toBe(2);
+    expect(within(leader).getAllByText("Victoria").length).toBe(2);
+    expect(screen.queryByText(/pasan? al playoff/)).toBeNull();
+  });
+
+  it("marks the playoff cut only when the table has teams on both sides of it", async () => {
+    serve({ standings: () => Response.json({ standings: { ...snapshot, playoffSpots: 1 } }) });
+    renderRoute();
+    expect(await screen.findByText("El primero pasa al playoff")).toBeTruthy();
+  });
+
+  it("draws no cut when every team reaches the playoffs", async () => {
+    serve({ standings: () => Response.json({ standings: { ...snapshot, playoffSpots: 2 } }) });
+    renderRoute();
+    await screen.findByText("Maderas FC");
+    expect(screen.queryByText(/pasan? al playoff/)).toBeNull();
+  });
+
   it("speaks English", async () => {
     serve({});
     renderRoute("en");
@@ -164,6 +198,26 @@ describe("Competition standings page", () => {
     expect(await screen.findByText("Aún no hay clasificación oficial")).toBeTruthy();
     expect(screen.queryByRole("table")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("points an empty table to Encounters, where results get approved", async () => {
+    serve({ standings: () => Response.json({ standings: null }) });
+    renderRoute();
+    const action = await screen.findByRole("link", { name: "Ver enfrentamientos" });
+    expect(action.getAttribute("to")).toBe("/orgs/$orgId/competitions/$competitionId/encounters");
+  });
+
+  it("offers no Encounters action to an actor who cannot read them", async () => {
+    serve({ access: allow(true, false), standings: () => Response.json({ standings: null }) });
+    renderRoute();
+    expect(await screen.findByText("Aún no hay clasificación oficial")).toBeTruthy();
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("speaks English in the empty state action", async () => {
+    serve({ standings: () => Response.json({ standings: null }) });
+    renderRoute("en");
+    expect(await screen.findByRole("link", { name: "View encounters" })).toBeTruthy();
   });
 
   it.each([
@@ -221,6 +275,61 @@ describe("Competition standings page", () => {
     expect(screen.getByText("No tienes acceso a la clasificación")).toBeTruthy();
     expect(screen.queryByText("Aún no hay clasificación oficial")).toBeNull();
   }, 15_000);
+
+  it("adds Buchholz, byes, the withdrawn mark and the round to a Swiss table", async () => {
+    serve({
+      standings: () =>
+        Response.json({
+          standings: {
+            ...snapshot,
+            formulaVersion: "swiss-points-buchholz-gd-gf-v1",
+            rows: [
+              { ...row(1, "t2", 6, 3), swiss: { buchholz: 11, byes: 1, withdrawn: false } },
+              { ...row(2, "t1", 2, -2), swiss: { buchholz: 4, byes: 0, withdrawn: true } },
+            ],
+            swiss: { roundsTotal: 4, roundsCompleted: 1, currentRound: 2, isFinal: false },
+          },
+        }),
+    });
+    renderRoute();
+
+    expect(await screen.findByText("Ronda 2 de 4")).toBeTruthy();
+    expect(screen.getByTitle("Buchholz: suma de los puntos de los rivales").textContent).toBe(
+      "Buch.",
+    );
+    expect(screen.getByText("11")).toBeTruthy();
+    expect(screen.getByText("1 descanso")).toBeTruthy();
+    expect(screen.getByText("Retirado")).toBeTruthy();
+    expect(screen.getByText(/Empates: primero Buchholz/)).toBeTruthy();
+    expect(screen.queryByText("Clasificación final")).toBeNull();
+  });
+
+  it("calls a settled Swiss table final and leaves other formats untouched", async () => {
+    serve({
+      standings: () =>
+        Response.json({
+          standings: {
+            ...snapshot,
+            formulaVersion: "swiss-points-buchholz-gd-gf-v1",
+            rows: [{ ...row(1, "t2", 6, 3), swiss: { buchholz: 11, byes: 0, withdrawn: false } }],
+            swiss: { roundsTotal: 4, roundsCompleted: 4, currentRound: null, isFinal: true },
+          },
+        }),
+    });
+    renderRoute();
+
+    expect(await screen.findByText("Clasificación final")).toBeTruthy();
+    expect(screen.queryByText(/Ronda \d/)).toBeNull();
+  });
+
+  it("keeps the table of other formats free of Swiss columns", async () => {
+    serve({ standings: () => Response.json({ standings: snapshot }) });
+    renderRoute();
+
+    expect(await screen.findByText("Fórmula points-gd-gf-v1")).toBeTruthy();
+    expect(screen.queryByText("Buch.")).toBeNull();
+    expect(screen.queryByText(/Empates: primero Buchholz/)).toBeNull();
+  });
 
   it("reports a load failure with retry, distinct from empty", async () => {
     serve({ standings: fail(500, "api.unexpected") });
@@ -432,6 +541,13 @@ describe("Competition standings page", () => {
       expect(screen.queryByRole("alert")).toBeNull();
       expect(screen.queryByRole("button", { name: /Reintentar|Retry/ })).toBeNull();
       expect(screen.queryByText(/No tienes acceso|can't view/)).toBeNull();
+      const way = screen.getByRole("link", {
+        name: locale === "es" ? "Ver competiciones" : "View competitions",
+      });
+      expect(way.getAttribute("to")).toBe("/orgs/$orgId/competitions");
+      expect(
+        screen.queryByRole("link", { name: /Volver a la organización|Back to the organization/ }),
+      ).toBeNull();
 
       await act(() => queryClient.refetchQueries({ queryKey: ["statistics"] }));
       expect(screen.getByText(title)).toBeTruthy();

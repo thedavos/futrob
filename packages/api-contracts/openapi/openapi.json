@@ -60,6 +60,10 @@
     {
       "name": "notifications",
       "description": "Activity feeds and pending work per audience"
+    },
+    {
+      "name": "billing",
+      "description": "Plans, entitlements and quotas (Phase 0, no payments)"
     }
   ],
   "paths": {
@@ -598,7 +602,8 @@
                     "league",
                     "knockout",
                     "groups-knockout",
-                    "league-playoffs"
+                    "league-playoffs",
+                    "swiss"
                   ]
                 },
                 {
@@ -1844,6 +1849,21 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -2009,6 +2029,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -2397,26 +2432,14 @@
                     ]
                   },
                   "currentStep": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "intention",
-                          "organization",
-                          "competition",
-                          "game",
-                          "invitation",
-                          "game-account",
-                          "club",
-                          "review"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "team"
-                        ]
-                      }
+                    "type": "string",
+                    "enum": [
+                      "intention",
+                      "organization",
+                      "invitation",
+                      "game-account",
+                      "club",
+                      "review"
                     ]
                   }
                 },
@@ -2458,6 +2481,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "404": {
             "$ref": "#/components/responses/ApiError"
@@ -2627,6 +2665,21 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "409": {
             "$ref": "#/components/responses/ApiError"
           }
@@ -2648,163 +2701,10 @@
                     "minLength": 1,
                     "maxLength": 120
                   },
-                  "competition": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 120
-                      },
-                      "gameEdition": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 40
-                      },
-                      "platform": {
-                        "type": "string",
-                        "enum": [
-                          "playstation",
-                          "xbox",
-                          "pc",
-                          "nintendo-switch-1",
-                          "nintendo-switch-2"
-                        ]
-                      },
-                      "region": {
-                        "type": "string",
-                        "enum": [
-                          "america",
-                          "south-america",
-                          "north-central-america",
-                          "europe",
-                          "africa",
-                          "asia",
-                          "middle-east",
-                          "oceania"
-                        ]
-                      },
-                      "timeZone": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 100
-                      },
-                      "format": {
-                        "type": "string",
-                        "enum": [
-                          "league",
-                          "knockout",
-                          "groups-knockout",
-                          "league-playoffs"
-                        ]
-                      },
-                      "teams": {
-                        "type": "object",
-                        "properties": {
-                          "min": {
-                            "type": "integer",
-                            "minimum": 2,
-                            "maximum": 256
-                          },
-                          "max": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ],
-                            "minimum": 2,
-                            "maximum": 256
-                          }
-                        },
-                        "required": [
-                          "min",
-                          "max"
-                        ]
-                      },
-                      "schedule": {
-                        "type": "object",
-                        "properties": {
-                          "startsOn": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-                          },
-                          "endsOn": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-                          }
-                        },
-                        "required": [
-                          "startsOn",
-                          "endsOn"
-                        ]
-                      },
-                      "cover": {
-                        "oneOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "kind": {
-                                "type": "string",
-                                "enum": [
-                                  "preset"
-                                ]
-                              },
-                              "preset": {
-                                "type": "string",
-                                "enum": [
-                                  "cup",
-                                  "classic",
-                                  "friendlies",
-                                  "groups",
-                                  "league",
-                                  "lightning",
-                                  "playoffs",
-                                  "pre-season",
-                                  "supercup"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "kind",
-                              "preset"
-                            ]
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "kind": {
-                                "type": "string",
-                                "enum": [
-                                  "upload"
-                                ]
-                              },
-                              "key": {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 300
-                              }
-                            },
-                            "required": [
-                              "kind",
-                              "key"
-                            ]
-                          }
-                        ]
-                      }
-                    },
-                    "required": [
-                      "name",
-                      "gameEdition",
-                      "platform",
-                      "region",
-                      "timeZone",
-                      "format"
-                    ]
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
                   },
                   "gameAccount": {
                     "type": [
@@ -2847,7 +2747,7 @@
                 },
                 "required": [
                   "name",
-                  "competition"
+                  "timeZone"
                 ]
               }
             }
@@ -2864,7 +2764,7 @@
       "post": {
         "responses": {
           "200": {
-            "description": "Completed player onboarding",
+            "description": "Completed player onboarding. The optional club association is best-effort: when the game-data provider is unavailable the path still completes and `externalClubAssociation` is `failed`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2883,6 +2783,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "description": "The provider does not know the requested external club",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "409": {
             "$ref": "#/components/responses/ApiError"
@@ -3106,6 +3021,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           }
         },
         "operationId": "persistProviderSyncJob",
@@ -3177,6 +3107,41 @@
         "description": "Service-only Queue target authenticated with the internal bearer secret."
       }
     },
+    "/internal/game-data/sync-jobs/enqueue-due": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Jobs created in this tick, plus counts of covered and deferred targets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnqueueDueProviderSyncsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "enqueueDueProviderSyncs",
+        "tags": [
+          "game-data"
+        ],
+        "summary": "Enqueue provider syncs for official slots inside the candidate window",
+        "description": "Service-only Cron target authenticated with the internal bearer secret. Selects connected EA clubs on scheduled or awaiting-selection slots whose start is inside the candidate window, and persists one recent-matches job per club and match type. An active job or a finished job inside the cooldown is not duplicated. The response lists only jobs created by this call so the caller can publish them. Retry converges.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/internal/game-data/sync-jobs/run-next": {
       "post": {
         "responses": {
@@ -3218,6 +3183,87 @@
             "$ref": "#/components/parameters/RequestId"
           }
         ]
+      }
+    },
+    "/internal/organizations/{organizationId}/competitions/{competitionId}/statistics/rebuild": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reconstruction completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "competitionId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "officialResultsProjected": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "contributionsProjected": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "competitionId",
+                    "officialResultsProjected",
+                    "contributionsProjected"
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "rebuildCompetitionStatistics",
+        "tags": [
+          "statistics"
+        ],
+        "summary": "Rebuild official statistics, standings and rankings (superuser only)"
       }
     },
     "/internal/results/candidate-recalculation/run": {
@@ -3438,6 +3484,71 @@
             "$ref": "#/components/parameters/RequestId"
           }
         ]
+      }
+    },
+    "/official-results/{officialResultId}/void": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "officialResultId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Voided official result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoidOfficialResultResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "voidOfficialResult",
+        "tags": [
+          "results"
+        ],
+        "summary": "Void an approved result and remove its official statistics",
+        "description": "Requires encounters.results.approve on the stored result scope. Uses the trusted service actor. Repeated calls converge without duplicate audit entries. Preserves approval history and releases provider references.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidOfficialResultRequest"
+              }
+            }
+          }
+        }
       }
     },
     "/openapi.json": {
@@ -3879,6 +3990,162 @@
         "description": "Requires `encounters.results.approve` on the organization. Lists every kind: disputes to resolve, watched proposals and directed invitations, and publications. Failures: 400 `api.validation_error`, `notifications.invalid_cursor`; 403 `authorization.forbidden`."
       }
     },
+    "/organizations/{organizationId}/billing/entitlements": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entitlements of the effective plan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOrganizationEntitlementsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "getOrganizationEntitlements",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Read what the organization's plan includes, for hiding what does not apply"
+      }
+    },
+    "/organizations/{organizationId}/billing/plan": {
+      "put": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignOrganizationPlanResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "assignOrganizationPlan",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Assign a plan by hand (platform superuser, Phase 0 without payments)",
+        "description": "Every change is audited with the previous and new plan and the reason.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignOrganizationPlanRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Effective plan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOrganizationPlanResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "getOrganizationPlan",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Read the organization's effective plan, quota usage and recent plan changes"
+      }
+    },
     "/organizations/{organizationId}/competitions": {
       "post": {
         "parameters": [
@@ -3915,6 +4182,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -3976,7 +4258,8 @@
                       "league",
                       "knockout",
                       "groups-knockout",
-                      "league-playoffs"
+                      "league-playoffs",
+                      "swiss"
                     ]
                   },
                   "teams": {
@@ -4188,7 +4471,8 @@
                               "league",
                               "knockout",
                               "groups-knockout",
-                              "league-playoffs"
+                              "league-playoffs",
+                              "swiss"
                             ]
                           },
                           "teams": {
@@ -4440,6 +4724,21 @@
           "400": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -4594,6 +4893,60 @@
         }
       }
     },
+    "/organizations/{organizationId}/competitions/{competitionId}/disputes": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operator dispute queue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCompetitionDisputesResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listCompetitionDisputes",
+        "tags": [
+          "results"
+        ],
+        "summary": "List the competition's selections waiting on an operator decision",
+        "description": "Selections in `disputed` or `organizer_review`, longest waiting first. Each Encounter is decided on `encounters.results.approve` at its own scope, so a specific deny hides it. A missing competition and an actor without the capability anywhere in it both answer 404 `competitions.not_found`. Dispute reasons are not included; read them from the Encounter's operator selection view."
+      }
+    },
     "/organizations/{organizationId}/competitions/{competitionId}/encounters": {
       "get": {
         "parameters": [
@@ -4692,6 +5045,21 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -4768,6 +5136,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -5287,6 +5670,57 @@
             }
           }
         }
+      },
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current fixture, or null before one is generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCurrentCompetitionFixtureResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "getCurrentCompetitionFixture",
+        "tags": [
+          "fixtures"
+        ],
+        "summary": "Get the competition's current fixture with the names of its Teams"
       }
     },
     "/organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}": {
@@ -5432,6 +5866,176 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/EditFixtureEncounterRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}/swiss/rounds/{roundNumber}/close": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "fixturePlanId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "roundNumber",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated competition fixture",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixturePlan"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "closeSwissRound",
+        "tags": [
+          "fixtures"
+        ],
+        "summary": "Close the unplayed encounters of the current Swiss round",
+        "description": "Requires encounters.schedule.manage. Each unplayed encounter becomes Team vs Team with `series: null` and `closedWithoutResult: true`: nobody scores, no official result is created and the pair counts as already met. Open selections on them are voided. The next round is paired in the same request. Repeating `requestId` returns the fixture without applying anything. Failures carry a stable `code`: 400 `api.validation_error`, `scheduling.invalid_fixture_configuration`; 403 `authorization.forbidden`; 404 `scheduling.fixture_plan_not_found`; 409 `scheduling.not_swiss_fixture`, `scheduling.swiss_round_not_current`, `scheduling.fixture_update_conflict`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseSwissRoundRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/fixtures/{fixturePlanId}/swiss/withdrawals": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "fixturePlanId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated competition fixture",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixturePlan"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "withdrawSwissTeam",
+        "tags": [
+          "fixtures"
+        ],
+        "summary": "Withdraw a Team from the later rounds of a Swiss fixture",
+        "description": "Requires encounters.schedule.manage. The Team keeps its approved results and stays in the table, marked as withdrawn. Its unplayed encounter becomes a bye for the rival, or is removed if the rival is gone too or the Team was the one resting; an open selection on it is voided. An approved result is never touched. Repeating `requestId` returns the fixture without applying anything. Failures carry a stable `code`: 400 `api.validation_error`, `scheduling.invalid_fixture_configuration`, `scheduling.swiss_team_not_participant`; 403 `authorization.forbidden`; 404 `scheduling.fixture_plan_not_found`; 409 `scheduling.not_swiss_fixture`, `scheduling.swiss_team_already_withdrawn`, `scheduling.fixture_update_conflict`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawSwissTeamRequest"
               }
             }
           }
@@ -5652,6 +6256,21 @@
           },
           "400": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -6467,6 +7086,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "403": {
             "$ref": "#/components/responses/ApiError"
@@ -7846,6 +8480,21 @@
           "401": {
             "$ref": "#/components/responses/ApiError"
           },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "403": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -8254,6 +8903,31 @@
         "responses": {
           "200": {
             "description": "Updated role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationRoleAssignment"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
             "headers": {
               "X-Request-ID": {
                 "$ref": "#/components/headers/RequestId"
@@ -8611,6 +9285,21 @@
           },
           "401": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "402": {
+            "description": "The organization's plan does not include this action, or its monthly quota is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
           },
           "404": {
             "$ref": "#/components/responses/ApiError"
@@ -9958,6 +10647,213 @@
         ]
       }
     },
+    "/public/competitions/{publicKey}": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "required": true,
+            "name": "publicKey",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Allowlisted portada fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPublicCompetitionResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "description": "The key is unknown or the competition is not published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "getPublicCompetition",
+        "tags": [
+          "public-portal"
+        ],
+        "summary": "Read the sanitized portada of a published competition",
+        "description": "Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
+        "security": []
+      }
+    },
+    "/public/competitions/{publicKey}/calendar": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "required": true,
+            "name": "publicKey",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Encounters with both teams known, earliest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPublicCalendarResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "description": "The key is unknown or the competition is not published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "getPublicCalendar",
+        "tags": [
+          "public-portal"
+        ],
+        "summary": "Read the calendar of a published competition",
+        "description": "Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
+        "security": []
+      }
+    },
+    "/public/competitions/{publicKey}/standings": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "required": true,
+            "name": "publicKey",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Table rows with team names; empty before the first approved result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPublicStandingsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "description": "The key is unknown or the competition is not published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "getPublicStandings",
+        "tags": [
+          "public-portal"
+        ],
+        "summary": "Read the official table of a published competition",
+        "description": "Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
+        "security": []
+      }
+    },
+    "/public/plans": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Plans in upgrade order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPublicPlansResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "listPublicPlans",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Read the organization plan catalog for the pricing page",
+        "description": "Anonymous. Limits, quotas and features come from the catalog data; `null` means unlimited.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/roster-invitations/{invitationId}/respond": {
       "post": {
         "parameters": [
@@ -10618,6 +11514,30 @@
               },
               "requestedPath": {
                 "type": "string"
+              },
+              "planLimit": {
+                "type": "string",
+                "enum": [
+                  "active_competitions",
+                  "teams_per_competition",
+                  "staff_members",
+                  "provider_sync_jobs"
+                ]
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "used": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "resetsAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "format": {
+                "type": "string"
               }
             },
             "additionalProperties": false
@@ -10627,6 +11547,214 @@
           "code",
           "messageKey"
         ]
+      },
+      "AssignOrganizationPlanRequest": {
+        "type": "object",
+        "properties": {
+          "planKey": {
+            "type": "string",
+            "enum": [
+              "free",
+              "pro",
+              "league"
+            ]
+          },
+          "state": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "trialing"
+                    ]
+                  },
+                  "trialEndsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "status",
+                  "trialEndsAt"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "past_due"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "canceled"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "planKey",
+          "state",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "AssignOrganizationPlanResponse": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "subscription": {
+            "type": "object",
+            "properties": {
+              "planKey": {
+                "type": "string",
+                "enum": [
+                  "free",
+                  "pro",
+                  "league"
+                ]
+              },
+              "state": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "active"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "trialing"
+                        ]
+                      },
+                      "trialEndsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "trialEndsAt"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "past_due"
+                        ]
+                      },
+                      "pastDueSince": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "pastDueSince"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "canceled"
+                        ]
+                      },
+                      "canceledAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "canceledAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "planKey",
+              "state",
+              "updatedAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "organizationId",
+          "subscription"
+        ],
+        "additionalProperties": false
       },
       "AssociateMyPlayerExternalClubRequest": {
         "type": "object",
@@ -10813,6 +11941,23 @@
           "role"
         ]
       },
+      "CloseSwissRoundRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
       "Competition": {
         "type": "object",
         "properties": {
@@ -10882,7 +12027,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "teams": {
@@ -11167,7 +12313,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "teams": {
@@ -11471,6 +12618,27 @@
                 ],
                 "exclusiveMinimum": 0
               },
+              "rankingEligibility": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "minimumMatches": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "minimumTeamMinutesRatio": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "minimumMatches",
+                  "minimumTeamMinutesRatio"
+                ]
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -11482,6 +12650,7 @@
               "knockoutStage",
               "awayGoalsEnabled",
               "maxRosterSize",
+              "rankingEligibility",
               "createdAt"
             ]
           }
@@ -11538,7 +12707,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "teams": {
@@ -12180,6 +13350,27 @@
             ],
             "exclusiveMinimum": 0
           },
+          "rankingEligibility": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "minimumMatches": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minimumTeamMinutesRatio": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "minimumMatches",
+              "minimumTeamMinutesRatio"
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -12191,6 +13382,7 @@
           "knockoutStage",
           "awayGoalsEnabled",
           "maxRosterSize",
+          "rankingEligibility",
           "createdAt"
         ]
       },
@@ -12257,6 +13449,39 @@
           },
           "points": {
             "type": "integer"
+          },
+          "form": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "win",
+                "draw",
+                "loss"
+              ]
+            },
+            "maxItems": 5
+          },
+          "swiss": {
+            "type": "object",
+            "properties": {
+              "buchholz": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "byes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "withdrawn": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "buchholz",
+              "byes",
+              "withdrawn"
+            ]
           }
         },
         "required": [
@@ -12269,7 +13494,8 @@
           "goalsFor",
           "goalsAgainst",
           "goalDifference",
-          "points"
+          "points",
+          "form"
         ]
       },
       "CompetitionStandingSnapshot": {
@@ -12286,7 +13512,8 @@
           "formulaVersion": {
             "type": "string",
             "enum": [
-              "points-gd-gf-v1"
+              "points-gd-gf-v1",
+              "swiss-points-buchholz-gd-gf-v1"
             ]
           },
           "rows": {
@@ -12331,6 +13558,39 @@
                 },
                 "points": {
                   "type": "integer"
+                },
+                "form": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "win",
+                      "draw",
+                      "loss"
+                    ]
+                  },
+                  "maxItems": 5
+                },
+                "swiss": {
+                  "type": "object",
+                  "properties": {
+                    "buchholz": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "byes": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "withdrawn": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "buchholz",
+                    "byes",
+                    "withdrawn"
+                  ]
                 }
               },
               "required": [
@@ -12343,7 +13603,8 @@
                 "goalsFor",
                 "goalsAgainst",
                 "goalDifference",
-                "points"
+                "points",
+                "form"
               ]
             }
           },
@@ -12354,6 +13615,45 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "playoffSpots": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "swiss": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "roundsTotal": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "roundsCompleted": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "currentRound": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              },
+              "isFinal": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "roundsTotal",
+              "roundsCompleted",
+              "currentRound",
+              "isFinal"
+            ]
           }
         },
         "required": [
@@ -12362,7 +13662,9 @@
           "formulaVersion",
           "rows",
           "sourceRevisionMax",
-          "updatedAt"
+          "updatedAt",
+          "playoffSpots",
+          "swiss"
         ]
       },
       "CompetitionTeamManagementDetail": {
@@ -13021,402 +14323,6 @@
               "organizer"
             ]
           },
-          "competition": {
-            "type": "object",
-            "properties": {
-              "competition": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "organizationId": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "name": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "draft",
-                      "registration",
-                      "published",
-                      "paused",
-                      "finished",
-                      "archived"
-                    ]
-                  },
-                  "modality": {
-                    "type": "string",
-                    "enum": [
-                      "fc-clubs"
-                    ]
-                  },
-                  "gameEdition": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "platform": {
-                    "type": "string",
-                    "enum": [
-                      "playstation",
-                      "xbox",
-                      "pc",
-                      "nintendo-switch-1",
-                      "nintendo-switch-2"
-                    ]
-                  },
-                  "region": {
-                    "type": "string",
-                    "enum": [
-                      "america",
-                      "south-america",
-                      "north-central-america",
-                      "europe",
-                      "africa",
-                      "asia",
-                      "middle-east",
-                      "oceania"
-                    ]
-                  },
-                  "timeZone": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "format": {
-                    "type": "string",
-                    "enum": [
-                      "league",
-                      "knockout",
-                      "groups-knockout",
-                      "league-playoffs"
-                    ]
-                  },
-                  "teams": {
-                    "type": "object",
-                    "properties": {
-                      "min": {
-                        "type": "integer",
-                        "minimum": 2,
-                        "maximum": 256
-                      },
-                      "max": {
-                        "type": [
-                          "integer",
-                          "null"
-                        ],
-                        "minimum": 2,
-                        "maximum": 256
-                      }
-                    },
-                    "required": [
-                      "min",
-                      "max"
-                    ]
-                  },
-                  "schedule": {
-                    "type": "object",
-                    "properties": {
-                      "startsOn": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
-                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-                      },
-                      "endsOn": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
-                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-                      }
-                    },
-                    "required": [
-                      "startsOn",
-                      "endsOn"
-                    ]
-                  },
-                  "cover": {
-                    "oneOf": [
-                      {
-                        "type": "object",
-                        "properties": {
-                          "kind": {
-                            "type": "string",
-                            "enum": [
-                              "preset"
-                            ]
-                          },
-                          "preset": {
-                            "type": "string",
-                            "enum": [
-                              "cup",
-                              "classic",
-                              "friendlies",
-                              "groups",
-                              "league",
-                              "lightning",
-                              "playoffs",
-                              "pre-season",
-                              "supercup"
-                            ]
-                          }
-                        },
-                        "required": [
-                          "kind",
-                          "preset"
-                        ]
-                      },
-                      {
-                        "type": "object",
-                        "properties": {
-                          "kind": {
-                            "type": "string",
-                            "enum": [
-                              "upload"
-                            ]
-                          },
-                          "key": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 300
-                          }
-                        },
-                        "required": [
-                          "kind",
-                          "key"
-                        ]
-                      }
-                    ]
-                  },
-                  "createdAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "updatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "required": [
-                  "id",
-                  "organizationId",
-                  "name",
-                  "status",
-                  "modality",
-                  "gameEdition",
-                  "platform",
-                  "region",
-                  "timeZone",
-                  "format",
-                  "teams",
-                  "schedule",
-                  "cover",
-                  "createdAt",
-                  "updatedAt"
-                ]
-              },
-              "rules": {
-                "type": "object",
-                "properties": {
-                  "version": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0
-                  },
-                  "regularStage": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
-                    "properties": {
-                      "officialMatchesPerEncounter": {
-                        "anyOf": [
-                          {
-                            "type": "number",
-                            "enum": [
-                              1
-                            ]
-                          },
-                          {
-                            "type": "number",
-                            "enum": [
-                              2
-                            ]
-                          }
-                        ]
-                      },
-                      "resolutionMode": {
-                        "type": "string",
-                        "enum": [
-                          "independent_matches",
-                          "aggregate_score"
-                        ]
-                      },
-                      "winPoints": {
-                        "type": "number"
-                      },
-                      "drawPoints": {
-                        "type": "number"
-                      },
-                      "lossPoints": {
-                        "type": "number"
-                      },
-                      "allowRescheduling": {
-                        "type": "boolean"
-                      },
-                      "maxReschedulesPerTeam": {
-                        "type": [
-                          "integer",
-                          "null"
-                        ],
-                        "minimum": 0
-                      },
-                      "minimumRescheduleNoticeHours": {
-                        "type": "integer",
-                        "minimum": 0
-                      },
-                      "rescheduleProposalExpiryHours": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 72,
-                        "default": 12
-                      },
-                      "rescheduleRequiresOpponentApproval": {
-                        "type": "boolean"
-                      },
-                      "rescheduleRequiresOrganizerApproval": {
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "officialMatchesPerEncounter",
-                      "resolutionMode",
-                      "winPoints",
-                      "drawPoints",
-                      "lossPoints",
-                      "allowRescheduling",
-                      "maxReschedulesPerTeam",
-                      "minimumRescheduleNoticeHours",
-                      "rescheduleRequiresOpponentApproval",
-                      "rescheduleRequiresOrganizerApproval"
-                    ]
-                  },
-                  "knockoutStage": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
-                    "properties": {
-                      "officialMatchesPerEncounter": {
-                        "anyOf": [
-                          {
-                            "type": "number",
-                            "enum": [
-                              1
-                            ]
-                          },
-                          {
-                            "type": "number",
-                            "enum": [
-                              2
-                            ]
-                          }
-                        ]
-                      },
-                      "resolutionMode": {
-                        "type": "string",
-                        "enum": [
-                          "independent_matches",
-                          "aggregate_score"
-                        ]
-                      },
-                      "winPoints": {
-                        "type": "number"
-                      },
-                      "drawPoints": {
-                        "type": "number"
-                      },
-                      "lossPoints": {
-                        "type": "number"
-                      },
-                      "allowRescheduling": {
-                        "type": "boolean"
-                      },
-                      "maxReschedulesPerTeam": {
-                        "type": [
-                          "integer",
-                          "null"
-                        ],
-                        "minimum": 0
-                      },
-                      "minimumRescheduleNoticeHours": {
-                        "type": "integer",
-                        "minimum": 0
-                      },
-                      "rescheduleProposalExpiryHours": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 72,
-                        "default": 12
-                      },
-                      "rescheduleRequiresOpponentApproval": {
-                        "type": "boolean"
-                      },
-                      "rescheduleRequiresOrganizerApproval": {
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "officialMatchesPerEncounter",
-                      "resolutionMode",
-                      "winPoints",
-                      "drawPoints",
-                      "lossPoints",
-                      "allowRescheduling",
-                      "maxReschedulesPerTeam",
-                      "minimumRescheduleNoticeHours",
-                      "rescheduleRequiresOpponentApproval",
-                      "rescheduleRequiresOrganizerApproval"
-                    ]
-                  },
-                  "awayGoalsEnabled": {
-                    "type": "boolean",
-                    "enum": [
-                      false
-                    ]
-                  },
-                  "maxRosterSize": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
-                    "exclusiveMinimum": 0
-                  },
-                  "createdAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "required": [
-                  "version",
-                  "regularStage",
-                  "knockoutStage",
-                  "awayGoalsEnabled",
-                  "maxRosterSize",
-                  "createdAt"
-                ]
-              }
-            },
-            "required": [
-              "competition",
-              "rules"
-            ]
-          },
           "profile": {
             "type": "object",
             "properties": {
@@ -13493,22 +14399,17 @@
               "kind": {
                 "type": "string",
                 "enum": [
-                  "competition-setup"
+                  "organization"
                 ]
               },
               "organizationId": {
-                "type": "string",
-                "minLength": 1
-              },
-              "competitionId": {
                 "type": "string",
                 "minLength": 1
               }
             },
             "required": [
               "kind",
-              "organizationId",
-              "competitionId"
+              "organizationId"
             ]
           }
         },
@@ -13519,7 +14420,6 @@
           "timeZone",
           "logo",
           "role",
-          "competition",
           "profile",
           "gameAccount",
           "destination"
@@ -13655,6 +14555,14 @@
               ]
             }
           },
+          "externalClubAssociation": {
+            "type": "string",
+            "enum": [
+              "associated",
+              "skipped",
+              "failed"
+            ]
+          },
           "destination": {
             "type": "string",
             "enum": [
@@ -13666,6 +14574,7 @@
           "profile",
           "gameAccount",
           "externalClubs",
+          "externalClubAssociation",
           "destination"
         ]
       },
@@ -14815,6 +15724,49 @@
           "officialMatches"
         ]
       },
+      "EnqueueDueProviderSyncsResponse": {
+        "type": "object",
+        "properties": {
+          "enqueued": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "alreadyCovered": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "deferred": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "requestId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "id",
+                "requestId"
+              ]
+            }
+          }
+        },
+        "required": [
+          "enqueued",
+          "alreadyCovered",
+          "deferred",
+          "jobs"
+        ]
+      },
       "EnqueueProviderSyncJobRequest": {
         "type": "object",
         "properties": {
@@ -15111,7 +16063,8 @@
                   "league",
                   "knockout",
                   "groups-knockout",
-                  "league-playoffs"
+                  "league-playoffs",
+                  "swiss"
                 ]
               },
               "teams": {
@@ -15344,7 +16297,8 @@
                         "league",
                         "knockout",
                         "groups-knockout",
-                        "league-playoffs"
+                        "league-playoffs",
+                        "swiss"
                       ]
                     },
                     "teams": {
@@ -15877,6 +16831,12 @@
               "resolutionMode",
               "officialMatches"
             ]
+          },
+          "closedWithoutResult": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
           }
         },
         "required": [
@@ -16044,7 +17004,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "timeZone": {
@@ -16062,6 +17023,13 @@
             },
             "minItems": 2
           },
+          "withdrawnTeamIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
           "stages": {
             "type": "array",
             "items": {
@@ -16077,7 +17045,8 @@
                     "league",
                     "groups",
                     "knockout",
-                    "playoffs"
+                    "playoffs",
+                    "swiss"
                   ]
                 },
                 "order": {
@@ -16424,6 +17393,12 @@
                                 "id",
                                 "resolutionMode",
                                 "officialMatches"
+                              ]
+                            },
+                            "closedWithoutResult": {
+                              "type": "boolean",
+                              "enum": [
+                                true
                               ]
                             }
                           },
@@ -16816,6 +17791,12 @@
                     "resolutionMode",
                     "officialMatches"
                   ]
+                },
+                "closedWithoutResult": {
+                  "type": "boolean",
+                  "enum": [
+                    true
+                  ]
                 }
               },
               "required": [
@@ -16908,7 +17889,8 @@
               "league",
               "groups",
               "knockout",
-              "playoffs"
+              "playoffs",
+              "swiss"
             ]
           },
           "order": {
@@ -17256,6 +18238,12 @@
                           "resolutionMode",
                           "officialMatches"
                         ]
+                      },
+                      "closedWithoutResult": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
                       }
                     },
                     "required": [
@@ -17343,6 +18331,18 @@
             },
             "required": [
               "teamCount"
+            ]
+          },
+          "swiss": {
+            "type": "object",
+            "properties": {
+              "rounds": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "rounds"
             ]
           }
         },
@@ -17767,7 +18767,8 @@
               "formulaVersion": {
                 "type": "string",
                 "enum": [
-                  "points-gd-gf-v1"
+                  "points-gd-gf-v1",
+                  "swiss-points-buchholz-gd-gf-v1"
                 ]
               },
               "rows": {
@@ -17812,6 +18813,39 @@
                     },
                     "points": {
                       "type": "integer"
+                    },
+                    "form": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "win",
+                          "draw",
+                          "loss"
+                        ]
+                      },
+                      "maxItems": 5
+                    },
+                    "swiss": {
+                      "type": "object",
+                      "properties": {
+                        "buchholz": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "byes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "withdrawn": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "buchholz",
+                        "byes",
+                        "withdrawn"
+                      ]
                     }
                   },
                   "required": [
@@ -17824,7 +18858,8 @@
                     "goalsFor",
                     "goalsAgainst",
                     "goalDifference",
-                    "points"
+                    "points",
+                    "form"
                   ]
                 }
               },
@@ -17835,6 +18870,45 @@
               "updatedAt": {
                 "type": "string",
                 "format": "date-time"
+              },
+              "playoffSpots": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              },
+              "swiss": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "roundsTotal": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "roundsCompleted": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "currentRound": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "isFinal": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "roundsTotal",
+                  "roundsCompleted",
+                  "currentRound",
+                  "isFinal"
+                ]
               }
             },
             "required": [
@@ -17843,7 +18917,9 @@
               "formulaVersion",
               "rows",
               "sourceRevisionMax",
-              "updatedAt"
+              "updatedAt",
+              "playoffSpots",
+              "swiss"
             ]
           }
         },
@@ -18106,6 +19182,530 @@
           }
         },
         "required": [
+          "teams"
+        ]
+      },
+      "GetCurrentCompetitionFixtureResponse": {
+        "type": "object",
+        "properties": {
+          "fixture": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "revision": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "superseded"
+                ]
+              },
+              "generationKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "organizationId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "competitionId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rulesVersion": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "generationVersion": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "format": {
+                "type": "string",
+                "enum": [
+                  "league",
+                  "knockout",
+                  "groups-knockout",
+                  "league-playoffs",
+                  "swiss"
+                ]
+              },
+              "timeZone": {
+                "type": "string",
+                "minLength": 1
+              },
+              "homeAndAway": {
+                "type": "boolean"
+              },
+              "seed": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 2
+              },
+              "withdrawnTeamIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "stages": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "league",
+                        "groups",
+                        "knockout",
+                        "playoffs",
+                        "swiss"
+                      ]
+                    },
+                    "order": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "rounds": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "stageId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "number": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0
+                          },
+                          "scheduledStartAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "encounters": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "stageId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "roundId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "order": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                },
+                                "groupId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "home": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "team"
+                                          ]
+                                        },
+                                        "teamId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "teamId"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "bye"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "winner"
+                                          ]
+                                        },
+                                        "encounterId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "encounterId"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "group-rank"
+                                          ]
+                                        },
+                                        "stageId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "groupId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "stageId",
+                                        "groupId",
+                                        "rank"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "stage-rank"
+                                          ]
+                                        },
+                                        "stageId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "stageId",
+                                        "rank"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "away": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "team"
+                                          ]
+                                        },
+                                        "teamId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "teamId"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "bye"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "winner"
+                                          ]
+                                        },
+                                        "encounterId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "encounterId"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "group-rank"
+                                          ]
+                                        },
+                                        "stageId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "groupId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "stageId",
+                                        "groupId",
+                                        "rank"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "stage-rank"
+                                          ]
+                                        },
+                                        "stageId": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "stageId",
+                                        "rank"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "scheduledStartAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "officialMatchCount": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "enum": [
+                                        1
+                                      ]
+                                    },
+                                    {
+                                      "type": "number",
+                                      "enum": [
+                                        2
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "series": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "resolutionMode": {
+                                      "type": "string",
+                                      "enum": [
+                                        "independent_matches",
+                                        "aggregate_score"
+                                      ]
+                                    },
+                                    "officialMatches": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {
+                                            "type": "string",
+                                            "minLength": 1
+                                          },
+                                          "slot": {
+                                            "anyOf": [
+                                              {
+                                                "type": "number",
+                                                "enum": [
+                                                  1
+                                                ]
+                                              },
+                                              {
+                                                "type": "number",
+                                                "enum": [
+                                                  2
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "id",
+                                          "slot"
+                                        ]
+                                      },
+                                      "minItems": 1,
+                                      "maxItems": 2
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "resolutionMode",
+                                    "officialMatches"
+                                  ]
+                                },
+                                "closedWithoutResult": {
+                                  "type": "boolean",
+                                  "enum": [
+                                    true
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "stageId",
+                                "roundId",
+                                "order",
+                                "home",
+                                "away",
+                                "scheduledStartAt",
+                                "officialMatchCount",
+                                "series"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "stageId",
+                          "number",
+                          "scheduledStartAt",
+                          "encounters"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "order",
+                    "rounds"
+                  ]
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "id",
+              "revision",
+              "status",
+              "generationKey",
+              "organizationId",
+              "competitionId",
+              "rulesVersion",
+              "generationVersion",
+              "format",
+              "timeZone",
+              "homeAndAway",
+              "seed",
+              "stages"
+            ]
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "teamId",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "fixture",
           "teams"
         ]
       },
@@ -21298,6 +22898,1057 @@
           "activeRosterMembershipId"
         ]
       },
+      "GetOrganizationEntitlementsResponse": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "planKey": {
+            "type": "string",
+            "enum": [
+              "free",
+              "pro",
+              "league"
+            ]
+          },
+          "entitlements": {
+            "type": "object",
+            "properties": {
+              "limits": {
+                "type": "object",
+                "properties": {
+                  "activeCompetitions": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "teamsPerCompetition": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "staffMembers": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "activeCompetitions",
+                  "teamsPerCompetition",
+                  "staffMembers"
+                ],
+                "additionalProperties": false
+              },
+              "quotas": {
+                "type": "object",
+                "properties": {
+                  "provider_sync_jobs": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "period": {
+                        "type": "string",
+                        "enum": [
+                          "calendar_month_utc"
+                        ]
+                      },
+                      "fairUse": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "period",
+                      "fairUse"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "provider_sync_jobs"
+                ],
+                "additionalProperties": false
+              },
+              "features": {
+                "type": "object",
+                "properties": {
+                  "competitionFormats": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "automaticProviderSync": {
+                    "type": "boolean"
+                  },
+                  "priorityProviderSync": {
+                    "type": "boolean"
+                  },
+                  "performanceRanking": {
+                    "type": "boolean"
+                  },
+                  "premiumAnalytics": {
+                    "type": "boolean"
+                  },
+                  "organizerAnalytics": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "basic",
+                      "full"
+                    ]
+                  },
+                  "portalBranding": {
+                    "type": "string",
+                    "enum": [
+                      "futrob",
+                      "logo_colors",
+                      "advanced"
+                    ]
+                  },
+                  "notificationChannels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "web",
+                        "email",
+                        "announcements"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "competitionFormats",
+                  "automaticProviderSync",
+                  "priorityProviderSync",
+                  "performanceRanking",
+                  "premiumAnalytics",
+                  "organizerAnalytics",
+                  "portalBranding",
+                  "notificationChannels"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "limits",
+              "quotas",
+              "features"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "organizationId",
+          "planKey",
+          "entitlements"
+        ],
+        "additionalProperties": false
+      },
+      "GetOrganizationPlanResponse": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "enum": [
+                  "free",
+                  "pro",
+                  "league"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "entitlements": {
+                "type": "object",
+                "properties": {
+                  "limits": {
+                    "type": "object",
+                    "properties": {
+                      "activeCompetitions": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "teamsPerCompetition": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "staffMembers": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "activeCompetitions",
+                      "teamsPerCompetition",
+                      "staffMembers"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "quotas": {
+                    "type": "object",
+                    "properties": {
+                      "provider_sync_jobs": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "minimum": 0
+                          },
+                          "period": {
+                            "type": "string",
+                            "enum": [
+                              "calendar_month_utc"
+                            ]
+                          },
+                          "fairUse": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "amount",
+                          "period",
+                          "fairUse"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "provider_sync_jobs"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "features": {
+                    "type": "object",
+                    "properties": {
+                      "competitionFormats": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "automaticProviderSync": {
+                        "type": "boolean"
+                      },
+                      "priorityProviderSync": {
+                        "type": "boolean"
+                      },
+                      "performanceRanking": {
+                        "type": "boolean"
+                      },
+                      "premiumAnalytics": {
+                        "type": "boolean"
+                      },
+                      "organizerAnalytics": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "basic",
+                          "full"
+                        ]
+                      },
+                      "portalBranding": {
+                        "type": "string",
+                        "enum": [
+                          "futrob",
+                          "logo_colors",
+                          "advanced"
+                        ]
+                      },
+                      "notificationChannels": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "web",
+                            "email",
+                            "announcements"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "competitionFormats",
+                      "automaticProviderSync",
+                      "priorityProviderSync",
+                      "performanceRanking",
+                      "premiumAnalytics",
+                      "organizerAnalytics",
+                      "portalBranding",
+                      "notificationChannels"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "limits",
+                  "quotas",
+                  "features"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "key",
+              "version",
+              "entitlements"
+            ],
+            "additionalProperties": false
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "subscription",
+              "fallback"
+            ]
+          },
+          "subscription": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "planKey": {
+                "type": "string",
+                "enum": [
+                  "free",
+                  "pro",
+                  "league"
+                ]
+              },
+              "state": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "active"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "trialing"
+                        ]
+                      },
+                      "trialEndsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "trialEndsAt"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "past_due"
+                        ]
+                      },
+                      "pastDueSince": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "pastDueSince"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "canceled"
+                        ]
+                      },
+                      "canceledAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "canceledAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "planKey",
+              "state",
+              "updatedAt"
+            ],
+            "additionalProperties": false
+          },
+          "quotas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "quota": {
+                  "type": "string",
+                  "enum": [
+                    "provider_sync_jobs"
+                  ]
+                },
+                "used": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "limit": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "fairUse": {
+                  "type": "boolean"
+                },
+                "periodKey": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}$"
+                },
+                "resetsAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "quota",
+                "used",
+                "limit",
+                "fairUse",
+                "periodKey",
+                "resetsAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "activeCompetitions": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "staffMembers": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "activeCompetitions",
+              "staffMembers"
+            ],
+            "additionalProperties": false
+          },
+          "recentChanges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "changedByActorId": {
+                  "type": "string"
+                },
+                "before": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "planKey": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "active"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "status"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "trialing"
+                              ]
+                            },
+                            "trialEndsAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "trialEndsAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "past_due"
+                              ]
+                            },
+                            "pastDueSince": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "pastDueSince"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "canceled"
+                              ]
+                            },
+                            "canceledAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "canceledAt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "planKey",
+                    "state"
+                  ],
+                  "additionalProperties": false
+                },
+                "after": {
+                  "type": "object",
+                  "properties": {
+                    "planKey": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "active"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "status"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "trialing"
+                              ]
+                            },
+                            "trialEndsAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "trialEndsAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "past_due"
+                              ]
+                            },
+                            "pastDueSince": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "pastDueSince"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "canceled"
+                              ]
+                            },
+                            "canceledAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "canceledAt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "planKey",
+                    "state"
+                  ],
+                  "additionalProperties": false
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "occurredAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "changedByActorId",
+                "before",
+                "after",
+                "reason",
+                "occurredAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "organizationId",
+          "plan",
+          "source",
+          "subscription",
+          "quotas",
+          "usage",
+          "recentChanges"
+        ],
+        "additionalProperties": false
+      },
+      "GetPublicCalendarResponse": {
+        "type": "object",
+        "properties": {
+          "calendar": {
+            "type": "object",
+            "properties": {
+              "timeZone": {
+                "type": "string"
+              },
+              "entries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "roundNumber": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "scheduledStartAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "homeTeamName": {
+                      "type": "string"
+                    },
+                    "awayTeamName": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "scheduled",
+                        "awaiting_result",
+                        "official"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "roundNumber",
+                    "scheduledStartAt",
+                    "homeTeamName",
+                    "awayTeamName",
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "timeZone",
+              "entries"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "calendar"
+        ],
+        "additionalProperties": false
+      },
+      "GetPublicCompetitionResponse": {
+        "type": "object",
+        "properties": {
+          "competition": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "published",
+                  "paused",
+                  "finished"
+                ]
+              },
+              "format": {
+                "type": "string",
+                "enum": [
+                  "league",
+                  "knockout",
+                  "groups-knockout",
+                  "league-playoffs",
+                  "swiss"
+                ]
+              },
+              "platform": {
+                "type": "string",
+                "enum": [
+                  "playstation",
+                  "xbox",
+                  "pc",
+                  "nintendo-switch-1",
+                  "nintendo-switch-2"
+                ]
+              },
+              "gameEdition": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string",
+                "enum": [
+                  "america",
+                  "south-america",
+                  "north-central-america",
+                  "europe",
+                  "africa",
+                  "asia",
+                  "middle-east",
+                  "oceania"
+                ]
+              },
+              "timeZone": {
+                "type": "string"
+              },
+              "startsOn": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "endsOn": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "approvedTeamCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "coverPreset": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "cup",
+                  "classic",
+                  "friendlies",
+                  "groups",
+                  "league",
+                  "lightning",
+                  "playoffs",
+                  "pre-season",
+                  "supercup",
+                  null
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "status",
+              "format",
+              "platform",
+              "gameEdition",
+              "region",
+              "timeZone",
+              "startsOn",
+              "endsOn",
+              "approvedTeamCount",
+              "coverPreset"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "competition"
+        ],
+        "additionalProperties": false
+      },
+      "GetPublicStandingsResponse": {
+        "type": "object",
+        "properties": {
+          "standings": {
+            "type": "object",
+            "properties": {
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "position": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "teamName": {
+                      "type": "string"
+                    },
+                    "played": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "wins": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "draws": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "losses": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "goalsFor": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "goalsAgainst": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "goalDifference": {
+                      "type": "integer"
+                    },
+                    "points": {
+                      "type": "integer"
+                    },
+                    "form": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "win",
+                          "draw",
+                          "loss"
+                        ]
+                      },
+                      "maxItems": 5
+                    },
+                    "buchholz": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "byes": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "withdrawn": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "position",
+                    "teamName",
+                    "played",
+                    "wins",
+                    "draws",
+                    "losses",
+                    "goalsFor",
+                    "goalsAgainst",
+                    "goalDifference",
+                    "points",
+                    "form"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "swiss": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "roundsTotal": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "roundsCompleted": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "currentRound": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "isFinal": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "roundsTotal",
+                  "roundsCompleted",
+                  "currentRound",
+                  "isFinal"
+                ],
+                "additionalProperties": false
+              },
+              "updatedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "rows",
+              "swiss",
+              "updatedAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "standings"
+        ],
+        "additionalProperties": false
+      },
       "GetTeamExternalClubResponse": {
         "type": [
           "object",
@@ -21907,7 +24558,8 @@
                         "league",
                         "knockout",
                         "groups-knockout",
-                        "league-playoffs"
+                        "league-playoffs",
+                        "swiss"
                       ]
                     },
                     "teams": {
@@ -22091,7 +24743,10 @@
                     "selection_confirmation",
                     "roster_invitation",
                     "competition_published",
-                    "entry_invitation"
+                    "entry_invitation",
+                    "schedule_change",
+                    "organizer_decision",
+                    "competition_entry"
                   ]
                 },
                 "status": {
@@ -22136,12 +24791,27 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "outcome": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "entry_approved",
+                        "entry_rejected",
+                        "schedule_set",
+                        "schedule_kept",
+                        "walkover_intended",
+                        null
+                      ]
                     }
                   },
                   "required": [
                     "competitionName",
                     "encounterLabel",
-                    "teamName"
+                    "teamName",
+                    "outcome"
                   ]
                 },
                 "openedAt": {
@@ -22195,6 +24865,154 @@
         "required": [
           "activities",
           "nextCursor"
+        ]
+      },
+      "ListCompetitionDisputesResponse": {
+        "type": "object",
+        "properties": {
+          "competition": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timeZone": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "timeZone"
+            ]
+          },
+          "disputes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "encounterId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "disputed",
+                    "organizer_review"
+                  ]
+                },
+                "home": {
+                  "type": "object",
+                  "properties": {
+                    "teamId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "teamId",
+                    "name"
+                  ]
+                },
+                "away": {
+                  "type": "object",
+                  "properties": {
+                    "teamId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "teamId",
+                    "name"
+                  ]
+                },
+                "scheduledStartAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "since": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispute": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "open",
+                        "under_review"
+                      ]
+                    },
+                    "openedByTeamId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "openedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "reviewStartedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "openedByTeamId",
+                    "openedAt",
+                    "reviewStartedAt"
+                  ]
+                }
+              },
+              "required": [
+                "encounterId",
+                "status",
+                "home",
+                "away",
+                "scheduledStartAt",
+                "since",
+                "dispute"
+              ]
+            }
+          }
+        },
+        "required": [
+          "competition",
+          "disputes"
         ]
       },
       "ListCompetitionEncountersResponse": {
@@ -22652,6 +25470,181 @@
         "required": [
           "invitations"
         ]
+      },
+      "ListPublicPlansResponse": {
+        "type": "object",
+        "properties": {
+          "plans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "free",
+                    "pro",
+                    "league"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "entitlements": {
+                  "type": "object",
+                  "properties": {
+                    "limits": {
+                      "type": "object",
+                      "properties": {
+                        "activeCompetitions": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0
+                        },
+                        "teamsPerCompetition": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0
+                        },
+                        "staffMembers": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "activeCompetitions",
+                        "teamsPerCompetition",
+                        "staffMembers"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "quotas": {
+                      "type": "object",
+                      "properties": {
+                        "provider_sync_jobs": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0
+                            },
+                            "period": {
+                              "type": "string",
+                              "enum": [
+                                "calendar_month_utc"
+                              ]
+                            },
+                            "fairUse": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "period",
+                            "fairUse"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "provider_sync_jobs"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "features": {
+                      "type": "object",
+                      "properties": {
+                        "competitionFormats": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "automaticProviderSync": {
+                          "type": "boolean"
+                        },
+                        "priorityProviderSync": {
+                          "type": "boolean"
+                        },
+                        "performanceRanking": {
+                          "type": "boolean"
+                        },
+                        "premiumAnalytics": {
+                          "type": "boolean"
+                        },
+                        "organizerAnalytics": {
+                          "type": "string",
+                          "enum": [
+                            "none",
+                            "basic",
+                            "full"
+                          ]
+                        },
+                        "portalBranding": {
+                          "type": "string",
+                          "enum": [
+                            "futrob",
+                            "logo_colors",
+                            "advanced"
+                          ]
+                        },
+                        "notificationChannels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "web",
+                              "email",
+                              "announcements"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "competitionFormats",
+                        "automaticProviderSync",
+                        "priorityProviderSync",
+                        "performanceRanking",
+                        "premiumAnalytics",
+                        "organizerAnalytics",
+                        "portalBranding",
+                        "notificationChannels"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "limits",
+                    "quotas",
+                    "features"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "key",
+                "version",
+                "entitlements"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "plans"
+        ],
+        "additionalProperties": false
       },
       "ListRosterResponse": {
         "type": "object",
@@ -25167,8 +28160,6 @@
             "enum": [
               "intention",
               "organization",
-              "competition",
-              "game",
               "invitation",
               "game-account",
               "club",
@@ -25385,6 +28376,37 @@
           "slug",
           "timeZone",
           "logo"
+        ]
+      },
+      "OrganizationRoleAssignment": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actorId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "organizer",
+              "staff",
+              "member"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "organizationId",
+          "actorId",
+          "role",
+          "createdAt"
         ]
       },
       "PingResponse": {
@@ -28101,6 +31123,146 @@
           "updatedAt"
         ]
       },
+      "PublicCalendarEntry": {
+        "type": "object",
+        "properties": {
+          "roundNumber": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "scheduledStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "homeTeamName": {
+            "type": "string"
+          },
+          "awayTeamName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "awaiting_result",
+              "official"
+            ]
+          }
+        },
+        "required": [
+          "roundNumber",
+          "scheduledStartAt",
+          "homeTeamName",
+          "awayTeamName",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "PublicCompetition": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "paused",
+              "finished"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "league",
+              "knockout",
+              "groups-knockout",
+              "league-playoffs",
+              "swiss"
+            ]
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "playstation",
+              "xbox",
+              "pc",
+              "nintendo-switch-1",
+              "nintendo-switch-2"
+            ]
+          },
+          "gameEdition": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string",
+            "enum": [
+              "america",
+              "south-america",
+              "north-central-america",
+              "europe",
+              "africa",
+              "asia",
+              "middle-east",
+              "oceania"
+            ]
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "startsOn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "endsOn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "approvedTeamCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "coverPreset": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "cup",
+              "classic",
+              "friendlies",
+              "groups",
+              "league",
+              "lightning",
+              "playoffs",
+              "pre-season",
+              "supercup",
+              null
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "status",
+          "format",
+          "platform",
+          "gameEdition",
+          "region",
+          "timeZone",
+          "startsOn",
+          "endsOn",
+          "approvedTeamCount",
+          "coverPreset"
+        ],
+        "additionalProperties": false
+      },
       "PublicEntryInvitationLink": {
         "oneOf": [
           {
@@ -28171,6 +31333,85 @@
             ]
           }
         ]
+      },
+      "PublicStandingRow": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "teamName": {
+            "type": "string"
+          },
+          "played": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wins": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "draws": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "losses": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goalsFor": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goalsAgainst": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goalDifference": {
+            "type": "integer"
+          },
+          "points": {
+            "type": "integer"
+          },
+          "form": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "win",
+                "draw",
+                "loss"
+              ]
+            },
+            "maxItems": 5
+          },
+          "buchholz": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "byes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "withdrawn": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "position",
+          "teamName",
+          "played",
+          "wins",
+          "draws",
+          "losses",
+          "goalsFor",
+          "goalsAgainst",
+          "goalDifference",
+          "points",
+          "form"
+        ],
+        "additionalProperties": false
       },
       "RankingEligibility": {
         "type": "object",
@@ -31179,7 +34420,8 @@
               "league",
               "knockout",
               "groups-knockout",
-              "league-playoffs"
+              "league-playoffs",
+              "swiss"
             ]
           },
           "teams": {
@@ -31445,6 +34687,27 @@
                   "null"
                 ],
                 "exclusiveMinimum": 0
+              },
+              "rankingEligibility": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "minimumMatches": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "minimumTeamMinutesRatio": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "minimumMatches",
+                  "minimumTeamMinutesRatio"
+                ]
               }
             },
             "required": [
@@ -31638,6 +34901,87 @@
           "effect",
           "scopeType",
           "scopeId"
+        ]
+      },
+      "VoidOfficialResultRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "VoidOfficialResultResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revision": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "voided"
+            ]
+          },
+          "approvalBasis": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "team_agreement",
+              "operator_resolution",
+              null
+            ]
+          },
+          "proposalId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "status",
+          "approvalBasis",
+          "proposalId",
+          "approvedAt"
+        ]
+      },
+      "WithdrawSwissTeamRequest": {
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "teamId",
+          "reason"
         ]
       }
     },

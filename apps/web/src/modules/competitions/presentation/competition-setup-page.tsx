@@ -32,6 +32,8 @@ import {
 } from "./competition-setup-steps.tsx";
 import { CompetitionSetupActionBarRegistration } from "./competition-setup-action-bar.tsx";
 import { competitionPlatformLabel } from "./competition-draft-meta.ts";
+import { PlanUpsellAlert } from "@/modules/billing/presentation/plan-upsell-alert.tsx";
+import { CompetitionsClientError } from "./competitions-browser-client.ts";
 import { PageAlert } from "./competition-setup-fields.tsx";
 import { useCompetitionEntryInvitations } from "./entry-invitations/use-competition-entry-invitations.tsx";
 import {
@@ -234,7 +236,9 @@ export function CompetitionSetupPage({
             </AlertDescription>
           </Alert>
         ) : null}
-        {error ? (
+        {error instanceof CompetitionsClientError && error.status === 402 ? (
+          <PlanUpsellAlert code={error.code} organizationId={organizationId} />
+        ) : error ? (
           <PageAlert>
             No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
           </PageAlert>
@@ -374,12 +378,14 @@ function toUpdateInput(draft: CompetitionDraftDto): UpdateCompetitionDraftReques
       regularStage: draft.rules.regularStage,
       knockoutStage: draft.rules.knockoutStage,
       maxRosterSize: draft.rules.maxRosterSize,
+      rankingEligibility: draft.rules.rankingEligibility,
     },
   };
 }
 function rulesForFormat(format: CompetitionFormatDto): UpdateCompetitionDraftRequest["rules"] {
   const regularStage = format === "knockout" ? null : defaultRules(1, "independent_matches");
-  const knockoutStage = format === "league" ? null : defaultRules(2, "aggregate_score");
+  const knockoutStage =
+    format === "league" || format === "swiss" ? null : defaultRules(2, "aggregate_score");
   return { regularStage, knockoutStage, maxRosterSize: null };
 }
 function defaultRules(

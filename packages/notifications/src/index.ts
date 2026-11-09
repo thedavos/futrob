@@ -2,6 +2,7 @@
 export {
   ACTIVITY_AUDIENCE,
   ACTIVITY_KIND,
+  ACTIVITY_OUTCOME,
   ACTIVITY_RESOURCE,
   ACTIVITY_SOURCE,
   ACTIVITY_STATUS,
@@ -11,6 +12,7 @@ export {
   type ActivityAudienceScope,
   type ActivityEntry,
   type ActivityKind,
+  type ActivityOutcome,
   type ActivityResourceType,
   type ActivitySource,
   type ActivitySourceName,

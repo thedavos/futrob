@@ -14,6 +14,13 @@ export type OrganizationMemberView = {
   readonly access: MemberCompetitionAccess;
 };
 
+/** Which management controls the viewer may use; the product API re-checks every call. */
+export type MemberAccessManagement = {
+  readonly organizationId: string;
+  readonly roles: boolean;
+  readonly grants: boolean;
+};
+
 export type OrganizationMemberChange = {
   readonly id: string;
   readonly description: string;

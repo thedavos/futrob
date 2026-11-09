@@ -1,4 +1,4 @@
-import { defineRoute } from "@/http/openapi/define-route.ts";
+import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
 import {
   AcceptCompetitionInvitationResponse,
@@ -64,7 +64,8 @@ export const createCompetitionDraftRoute = defineRoute({
   params: pathParams(["organizationId"]),
   body: createCompetitionDraftRequestSchema,
   success: { status: 201, description: "Competition draft created", schema: CompetitionDraft },
-  errors: [400, 401, 403],
+  errors: [400, 401, 402, 403],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const listAccessibleCompetitionsRoute = defineRoute({
@@ -148,7 +149,8 @@ export const registerTeamEntryRoute = defineRoute({
   params: pathParams(["organizationId", "competitionId"]),
   body: RegisterTeamEntryRequest,
   success: { status: 201, description: "Created entry", schema: CompetitionEntry },
-  errors: [400, 401, 403, 404, 409],
+  errors: [400, 401, 402, 403, 404, 409],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const approveTeamEntryRoute = defineRoute({
@@ -159,7 +161,8 @@ export const approveTeamEntryRoute = defineRoute({
   summary: "Approve a pending competition team entry",
   params: pathParams(["organizationId", "competitionId", "entryId"]),
   success: { status: 200, description: "Approved entry", schema: CompetitionEntry },
-  errors: [401, 403, 404, 409],
+  errors: [401, 402, 403, 404, 409],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const rejectTeamEntryRoute = defineRoute({
@@ -193,7 +196,8 @@ export const updateCompetitionDraftRoute = defineRoute({
   params: pathParams(["organizationId", "competitionId"]),
   body: UpdateCompetitionDraftInput,
   success: { status: 200, description: "Saved draft", schema: CompetitionDraft },
-  errors: [400, 403, 404, 409],
+  errors: [400, 402, 403, 404, 409],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const listCompetitionParticipantsRoute = defineRoute({
@@ -220,7 +224,8 @@ export const addCompetitionParticipantRoute = defineRoute({
   params: pathParams(["organizationId", "competitionId"]),
   body: CompetitionParticipantInput,
   success: { status: 201, description: "Approved participant", schema: CompetitionEntry },
-  errors: [400, 403, 409],
+  errors: [400, 402, 403, 409],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const removeCompetitionParticipantRoute = defineRoute({

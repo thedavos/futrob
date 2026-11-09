@@ -4,6 +4,7 @@ import {
   type EffectiveAccessDto,
   type PermissionDto,
 } from "@futrob/api-contracts";
+import { BILLING_PERMISSION } from "@futrob/billing";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { RESULT_PERMISSION } from "@futrob/results";
@@ -12,6 +13,7 @@ import { TEAM_PERMISSION } from "@futrob/teams";
 
 /** Shell bootstrap probes — BC permission constants, not string literals. */
 export const SHELL_PERMISSIONS = [
+  BILLING_PERMISSION.read,
   ORGANIZATION_PERMISSION.read,
   ORGANIZATION_PERMISSION.update,
   ORGANIZATION_PERMISSION.membershipsRead,

@@ -69,6 +69,10 @@ export type {
   SelectionTransition,
 } from "./domain/ports/official-result.repository.ts";
 export type { OfficialResultReaderPort } from "./domain/ports/official-result-reader.port.ts";
+export type {
+  SelectionDisputeReaderPort,
+  SelectionUnderDispute,
+} from "./domain/ports/selection-dispute-reader.port.ts";
 export type { OfficialResultApprovedEvent } from "./domain/events/official-result-approved.event.ts";
 export type { OfficialResultVoidedEvent } from "./domain/events/official-result-voided.event.ts";
 export { RESULT_PERMISSION, RESULT_PERMISSIONS } from "./domain/policies/result-permissions.ts";
@@ -131,6 +135,10 @@ export {
   type RecalculateEncounterCandidatesInput,
 } from "./application/recalculate-encounter-candidates/recalculate-encounter-candidates.use-case.ts";
 export {
+  InvalidateEncounterCandidatesUseCase,
+  type InvalidateEncounterCandidatesInput,
+} from "./application/invalidate-encounter-candidates/invalidate-encounter-candidates.use-case.ts";
+export {
   ListEncounterCandidatesUseCase,
   type EncounterCandidateSummary,
   type EncounterCandidateTeam,
@@ -172,9 +180,19 @@ export {
   type GetOfficialSelectionInput,
 } from "./application/get-official-selection/get-official-selection.use-case.ts";
 export {
+  ListCompetitionDisputesUseCase,
+  type CompetitionDisputeCase,
+  type ListCompetitionDisputesInput,
+} from "./application/list-competition-disputes/list-competition-disputes.use-case.ts";
+export {
   ConfirmOfficialSelectionUseCase,
   type ConfirmOfficialSelectionInput,
 } from "./application/confirm-official-selection/confirm-official-selection.use-case.ts";
+export {
+  CancelOpenSelectionUseCase,
+  type CancelOpenSelectionInput,
+  type CancelOpenSelectionOutput,
+} from "./application/cancel-open-selection/cancel-open-selection.use-case.ts";
 export {
   VoidOfficialResultUseCase,
   type VoidOfficialResultDependencies,

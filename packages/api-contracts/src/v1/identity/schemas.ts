@@ -10,14 +10,11 @@ import {
   playerGameAccountSchema,
   playerProfileSchema,
 } from "../teams/schemas.ts";
-import { competitionDraftInputSchema, competitionDraftSchema } from "../competitions/schemas.ts";
 
 export const onboardingPathSchema = z.enum(["player", "organization", "invitation"]);
 export const onboardingStepSchema = z.enum([
   "intention",
   "organization",
-  "competition",
-  "game",
   "invitation",
   "game-account",
   "club",
@@ -41,40 +38,65 @@ export const getOnboardingStatusResponseSchema = onboardingStatusSchema;
 
 export type GetOnboardingStatusResponse = z.infer<typeof getOnboardingStatusResponseSchema>;
 
-function isOnboardingStepInPath(
-  steps: readonly OnboardingStepDto[],
-  step: OnboardingStepDto,
-): boolean {
-  for (const allowed of steps) {
-    if (allowed === step) {
-      return true;
-    }
-  }
-  return false;
-}
-
-const allowedStepsByPath = {
-  organization: ["intention", "organization", "competition", "game-account", "game", "review"],
+/** Ordered steps per path. Clients derive routing, stepper order and next/previous from this. */
+export const ONBOARDING_STEPS_BY_PATH = {
+  organization: ["intention", "organization", "review"],
   invitation: ["intention", "invitation", "game-account", "review"],
-  player: ["intention", "game", "game-account", "club", "review"],
+  player: ["intention", "game-account", "club", "review"],
 } as const satisfies Record<OnboardingPathDto, readonly OnboardingStepDto[]>;
 
-const onboardingProgressInputStepSchema = z.union([
-  onboardingStepSchema,
-  z.literal("team").transform(() => "club" as const),
-]);
+export function onboardingStepsForPath(
+  path: OnboardingPathDto,
+  includeAccount = false,
+): readonly OnboardingStepDto[] {
+  return path === "organization" && includeAccount
+    ? ["intention", "organization", "game-account", "review"]
+    : ONBOARDING_STEPS_BY_PATH[path];
+}
+
+export function isOnboardingStepAllowed(
+  path: OnboardingPathDto | null,
+  step: OnboardingStepDto,
+): boolean {
+  if (path === null) return step === "intention";
+  return (
+    (path === "organization" && step === "game-account") ||
+    ONBOARDING_STEPS_BY_PATH[path].some((allowed) => allowed === step)
+  );
+}
+
+function adjacentOnboardingStep(
+  path: OnboardingPathDto,
+  step: OnboardingStepDto,
+  offset: 1 | -1,
+): OnboardingStepDto | null {
+  const steps: readonly OnboardingStepDto[] = ONBOARDING_STEPS_BY_PATH[path];
+  const index = steps.indexOf(step);
+  if (index === -1) return null;
+  return steps[index + offset] ?? null;
+}
+
+export function nextOnboardingStep(
+  path: OnboardingPathDto,
+  step: OnboardingStepDto,
+): OnboardingStepDto | null {
+  return adjacentOnboardingStep(path, step, 1);
+}
+
+export function previousOnboardingStep(
+  path: OnboardingPathDto,
+  step: OnboardingStepDto,
+): OnboardingStepDto | null {
+  return adjacentOnboardingStep(path, step, -1);
+}
 
 export const saveOnboardingProgressRequestSchema = z
   .object({
     path: onboardingPathSchema.nullable(),
-    currentStep: onboardingProgressInputStepSchema,
+    currentStep: onboardingStepSchema,
   })
   .superRefine((input, context) => {
-    const allowed =
-      input.path === null
-        ? input.currentStep === "intention"
-        : isOnboardingStepInPath(allowedStepsByPath[input.path], input.currentStep);
-    if (!allowed) {
+    if (!isOnboardingStepAllowed(input.path, input.currentStep)) {
       context.addIssue({
         code: "custom",
         path: ["currentStep"],
@@ -90,7 +112,7 @@ export type SaveOnboardingProgressResponse = z.infer<typeof saveOnboardingProgre
 
 export const completeOrganizationOnboardingRequestSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  competition: competitionDraftInputSchema,
+  timeZone: z.string().trim().min(1).max(100),
   gameAccount: playerGameAccountInputSchema.nullable().optional(),
 });
 export type CompleteOrganizationOnboardingRequest = z.infer<
@@ -99,13 +121,11 @@ export type CompleteOrganizationOnboardingRequest = z.infer<
 
 export const completeOrganizationOnboardingResponseSchema = createOrganizationResponseSchema.extend(
   {
-    competition: competitionDraftSchema,
     profile: playerProfileSchema,
     gameAccount: playerGameAccountSchema.nullable(),
     destination: z.object({
-      kind: z.literal("competition-setup"),
+      kind: z.literal("organization"),
       organizationId: z.string().min(1),
-      competitionId: z.string().min(1),
     }),
   },
 );
@@ -161,10 +181,22 @@ export const completePlayerOnboardingRequestSchema = z.object({
 });
 export type CompletePlayerOnboardingRequest = z.infer<typeof completePlayerOnboardingRequestSchema>;
 
+/**
+ * Outcome of the optional, declarative club association requested at the end of the player
+ * path. `skipped`: no club was requested. `failed`: the game-data provider was unavailable
+ * (timeout, rate limit, outage), so onboarding completed without the club and the player can
+ * add it later. Invalid locators still fail the request.
+ */
+export const externalClubAssociationOutcomeSchema = z.enum(["associated", "skipped", "failed"]);
+export type ExternalClubAssociationOutcomeDto = z.infer<
+  typeof externalClubAssociationOutcomeSchema
+>;
+
 export const completePlayerOnboardingResponseSchema = z.object({
   profile: playerProfileSchema,
   gameAccount: playerGameAccountSchema.nullable(),
   externalClubs: z.array(playerExternalClubAssociationSchema),
+  externalClubAssociation: externalClubAssociationOutcomeSchema,
   destination: z.literal("personal"),
 });
 export type CompletePlayerOnboardingResponse = z.infer<

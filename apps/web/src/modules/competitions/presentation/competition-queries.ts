@@ -110,10 +110,15 @@ export function useOrganizationCompetitionsQuery(organizationId: string) {
   });
 }
 
-export function useCompetitionParticipantsQuery(organizationId: string, competitionId: string) {
+export function useCompetitionParticipantsQuery(
+  organizationId: string,
+  competitionId: string,
+  enabled = true,
+) {
   return useQuery({
     queryKey: queryKeys.competitions.participants(organizationId, competitionId),
     queryFn: () => listCompetitionParticipants(organizationId, competitionId),
+    enabled,
   });
 }
 
@@ -282,10 +287,15 @@ export function useUpdateCompetitionCoverMutation(organizationId: string, compet
   });
 }
 
-export function useCompetitionDraftQuery(organizationId: string, competitionId: string) {
+export function useCompetitionDraftQuery(
+  organizationId: string,
+  competitionId: string,
+  enabled = true,
+) {
   return useQuery({
     queryKey: queryKeys.competitions.draft(organizationId, competitionId),
     queryFn: () => getCompetitionDraft(organizationId, competitionId),
+    enabled,
   });
 }
 

@@ -72,14 +72,16 @@ npm run cli -- e2e-golden-path --actor <actorId>
 
 ### Base y dominio (offline)
 
-| Comando                  | Descripción                                                                            |
-| ------------------------ | -------------------------------------------------------------------------------------- |
-| `help`                   | Lista comandos                                                                         |
-| `ping`                   | Comprueba que el CLI arranca                                                           |
-| `domain-smoke`           | Smoke de shared-kernel + tipos de scheduling/results                                   |
-| `domain-smoke-game-data` | Helpers puros + `SearchExternalClubsUseCase` con provider fake                         |
-| `statistics-smoke`       | `GetMyPersonalStatisticsUseCase` con fakes en memoria                                  |
-| `results-smoke`          | Propuesta → confirmación rival, y rechazo → revisión → resolución, con fakes + eventos |
+| Comando                                                           | Descripción                                                                                 |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `help`                                                            | Lista comandos                                                                              |
+| `ping`                                                            | Comprueba que el CLI arranca                                                                |
+| `domain-smoke`                                                    | Smoke de shared-kernel + tipos de scheduling/results                                        |
+| `domain-smoke-game-data`                                          | Helpers puros + `SearchExternalClubsUseCase` con provider fake                              |
+| `statistics-smoke`                                                | `GetMyPersonalStatisticsUseCase` con fakes en memoria                                       |
+| `result-void <officialResultId> [--reason <text>] [--actor <id>]` | Anula un resultado con permiso contextual de aprobación y retira sus estadísticas oficiales |
+| `results-smoke`                                                   | Propuesta → confirmación rival, y rechazo → revisión → resolución, con fakes + eventos      |
+| `swiss-smoke`                                                     | 8 y 7 equipos en 3 rondas con políticas puras: sin revanchas y un bye por ronda con impares |
 
 ### Integración (requieren `npm run dev`)
 
@@ -110,13 +112,19 @@ npm run cli -- e2e-golden-path --actor <actorId>
 | `team-create/team-list`                                    | Equipos de la organización                                                  |
 | `roster-list/add/close/open`                               | Roster por competición                                                      |
 | `club-link <orgId> <compId> <teamId> <clubId> <clubName>`  | Vincula club EA al equipo                                                   |
-| `fixture-generate/show`                                    | Genera y consulta el fixture                                                |
+| `fixture-generate/current/show`                            | Genera y consulta el fixture actual o uno por id (`--rounds N` para suizo)  |
+| `swiss-withdraw <orgId> <compId> <planId> <teamId>`        | Retira un equipo de un fixture suizo (`--reason`, `--request-id`)           |
+| `swiss-close-round <orgId> <compId> <planId> <ronda>`      | Cierra sin resultado lo no jugado de la ronda actual (`--reason`)           |
 | `snapshot-set <encounterId ...>`                           | Upsert de schedule snapshot                                                 |
 | `club-search/get/matches`                                  | Clubes EA vía game-data                                                     |
 | `sync-job-enqueue/run/run-next`                            | Jobs de sincronización EA (endpoints internos)                              |
 | `provider-health [providerKey]`                            | Salud del proveedor (circuit breaker)                                       |
+| `plans`, `org-plan`, `org-entitlements <orgId>`            | Catálogo, plan efectivo con uso y entitlements (ADR-0025)                   |
+| `org-plan-assign <orgId> <plan> --reason "..."`            | Asignación manual de plan por superusuario, auditada                        |
+| `billing-smoke --actor <org> --superuser <su>`             | Gratis: cupo de sync, dedupe sin consumo, 2.ª competición; luego Pro        |
 | `player-me`, `my-stats`, `my-matches`, `my-next-encounter` | Perfil, estadísticas personales y próximo enfrentamiento                    |
 | `e2e-golden-path`                                          | Flujo completo: ping → org → draft → team ×2 → entry ×2 → publish → fixture |
+| `e2e-golden-path --format swiss --superuser <id>`          | Igual con 4 equipos y suizo; el superusuario asigna Pro a la organización   |
 
 Flags comunes en integración: `--json`, `--base-url URL`, `--actor ID`.
 
@@ -163,6 +171,7 @@ apps/cli/
     │   ├── domain-smoke-game-data.ts
     │   ├── statistics-smoke.ts
     │   ├── results-smoke.ts
+    │   ├── swiss-smoke.ts
     │   ├── api-health.ts / onboarding.ts
     │   ├── organizations.ts / competitions.ts / teams.ts
     │   ├── scheduling.ts / game-data.ts / players.ts
@@ -195,3 +204,5 @@ npm run typecheck -w @futrob/cli
 # or from root:
 npm run typecheck
 ```
+
+Reconstrucción oficial (requiere superusuario): `npm run cli -- statistics-rebuild <orgId> <compId> --actor <actorId>`. Reconstruye estadísticas, tabla y rankings desde resultados oficiales; devuelve los contadores de proyección.

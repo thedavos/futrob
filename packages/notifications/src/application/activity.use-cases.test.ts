@@ -242,4 +242,53 @@ describe("activity use cases", () => {
     expect(limit.isErr() && limit.error.code).toBe("notifications.invalid_activity");
     expect(cursor.isErr() && cursor.error.code).toBe("notifications.invalid_cursor");
   });
+  it("records an organizer decision born closed for both Teams and the organization", async () => {
+    const h = activityHarness(at("10:00"));
+    const decision: RecordActivityInput = {
+      organizationId: ORG_A,
+      competitionId: CMP_A,
+      kind: "organizer_decision",
+      source: { name: "organizer_decision", id: "req-1" },
+      resource: { type: "encounter", id: "enc-1" },
+      subject: { encounterLabel: "Cuervos vs Halcones", outcome: "schedule_kept" },
+      actorId: OPERATOR,
+      bornClosed: true,
+      recipients: [
+        { audience: "team", audienceId: "tm-home", requiresAction: false },
+        { audience: "team", audienceId: "tm-away", requiresAction: false },
+        { ...ORG_AUDIENCE, requiresAction: false },
+      ],
+    };
+    await h.record.execute(decision);
+    await h.record.execute(decision);
+
+    for (const audience of [
+      { audience: "team", audienceId: "tm-home" },
+      { audience: "team", audienceId: "tm-away" },
+      ORG_AUDIENCE,
+    ] as const) {
+      const listed = await h.list.execute({ audiences: [audience] });
+      expect(listed.isOk() && listed.value.items).toMatchObject([
+        {
+          kind: "organizer_decision",
+          status: "closed",
+          requiresAction: false,
+          subject: {
+            encounterLabel: "Cuervos vs Halcones",
+            teamName: null,
+            outcome: "schedule_kept",
+          },
+          closedAt: at("10:00"),
+        },
+      ]);
+    }
+    const noOutcome = await h.record.execute(dispute("dsp-2"));
+    expect(noOutcome.isOk() && noOutcome.value[0]?.subject.outcome).toBeNull();
+    const pendingTeams = await h.list.execute({
+      audiences: [{ audience: "team", audienceId: "tm-home" }],
+      status: "open",
+      requiresAction: true,
+    });
+    expect(pendingTeams.isOk() && pendingTeams.value.items).toEqual([]);
+  });
 });

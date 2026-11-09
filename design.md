@@ -61,6 +61,8 @@ una apariencia diferente. Los alias `LIGHT_THEME` y `DARK_THEME` referencian
 | Bordes y divisores, pizarra     | `#343B40` | `border`, `border-subtle`                               |
 | Texto principal, blanco frío    | `#F5F7F8` | `foreground`, `card-foreground`                         |
 | Texto secundario, gris claro    | `#ADB5BD` | `muted-foreground`                                      |
+| Texto terciario (derivado)      | `#9299A0` | `text-tertiary`                                         |
+| Texto inactivo (derivado)       | `#585D62` | `text-disabled`                                         |
 | Principal, lima                 | `#CAFF35` | `primary`, `ring`                                       |
 | Hover principal, lima suave     | `#D8FF70` | `primary-hover`                                         |
 | Fondo de selección e iconos     | `#293514` | `accent`                                                |
@@ -74,6 +76,10 @@ una apariencia diferente. Los alias `LIGHT_THEME` y `DARK_THEME` referencian
 | MVP / reconocimiento            | `#FFD166` | `emphasis`                                              |
 | Cancelación                     | `#ADB5BD` | `status-cancelled`                                      |
 
+Los estados pulsados (`primary-active`, `secondary-active`, `muted-active`,
+`destructive-active`) no son colores de la paleta: mezclan en OKLab su token de hover (o
+`destructive`) con `background` para quedar algo más oscuros. La app nativa no los consume.
+
 Lima se concentra en botones principales, navegación activa y detalles destacados.
 Las tarjetas permanecen en grafito y los números en blanco. Los estados pueden colorear
 su texto, icono o indicador, con una etiqueta explícita; no teñir todos los valores de una stat.
@@ -82,6 +88,15 @@ no demuestra aprobación oficial. `emphasis` expresa reconocimiento, nunca aprob
 Los escudos de clubes mantienen sus colores originales, sin filtros ni recoloración,
 salvo las marcas de agua de la [superficie de partido](#superficie-de-partido)
 (gris, opacidad 0.11).
+
+El texto tiene cuatro niveles: `foreground` (principal), `muted-foreground` (labels,
+encabezados de tabla, ayudas de campo), `text-tertiary` (hints de stat, placeholders,
+timestamps) y `text-disabled` (controles inactivos y sus labels). Los dos últimos no son
+tonos nuevos: se derivan en OKLab mezclando `#ADB5BD` hacia `#101214` (85 % y 50 %).
+`text-tertiary` cumple AA sobre `background`, `surface` y `surface-raised` (6.5 / 5.7 /
+4.9:1). `text-disabled` solo marca UI inactiva (exenta de WCAG 1.4.3) y sustituye a la
+opacidad: no atenuar controles con `opacity`. Un valor deshabilitado dentro de un input
+sigue siendo legible con `text-tertiary` sobre el relleno `muted`.
 
 Los fondos sólidos de estado usan texto grafito (`*-foreground`); las variantes sutiles
 mantienen fondo grafito y texto de estado. Los gráficos usan `chart-*` con etiquetas,
@@ -98,7 +113,8 @@ composición. Medir el par renderizado, incluidas mezclas y opacidad, antes de d
 ### Fuente de tokens y generación
 
 - `packages/ui-tokens/src/scales.ts`: colores sRGB del brief convertidos a OKLCH con precisión
-  suficiente para recuperar el HEX exacto; solo colores de la paleta vigente.
+  suficiente para recuperar el HEX exacto; solo colores de la paleta vigente. Los pasos
+  derivados (`gray-mid`, `gray-dim`) se calculan con `mixOklab` a partir de esos colores.
 - `theme.ts`: asignación semántica única. Los alias light/dark mantienen compatibilidad.
 - `typography.ts`, `geometry.ts`, `motion.ts`: roles, medidas, duración y capas compartidos.
 - `packages/ui/src/tokens.css`: artefacto generado. Nunca editar valores aquí a mano.
@@ -119,12 +135,17 @@ Familia única autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 
 | Rol      | StyleX                | Uso principal                                                  |
 | -------- | --------------------- | -------------------------------------------------------------- |
 | Display  | `typography.display`  | Headlines de marketing                                         |
-| Heading  | `typography.heading`  | Títulos de página y panel                                      |
+| Heading  | `typography.heading`  | Títulos de panel (20 px / 700); el `h1` de página sube a 24 px |
+| Title    | `typography.title`    | Títulos de card, sub-panel y estados vacíos (18 px / 600)      |
 | Subtitle | `typography.subtitle` | Frase de apoyo bajo un heading                                 |
 | Body     | `typography.body`     | Párrafos y contenido de lectura                                |
 | Label    | `typography.label`    | Labels de formulario, navegación, columnas y estados compactos |
 | Caption  | `typography.caption`  | Hints, metadata, timestamps y texto secundario sentence-case   |
 | Score    | `typography.score`    | Marcadores y valores deportivos con cifras tabular             |
+
+Interlineado: `display` 1.1 y `score` 1.0 (tamaños grandes); `heading` 1.25
+(`--leading-heading`), porque los títulos de producto de 20 px envuelven a dos líneas;
+`title` y `label` 1.3; cuerpo y caption 1.55.
 
 `typography.label` es el contrato predeterminado para etiquetas de formulario y navegación.
 `typography.caption` cubre metadata y ayudas; el color secundario se aplica con tokens
@@ -153,10 +174,11 @@ variantes cerradas.
 Primitivas que aplican los roles `typography.*`. El elemento semántico (`as`) elige el tag;
 el look desciende con el nivel.
 
-- `Display` — headlines de marketing (`h1` por defecto; `PageHeaderTitle` es el `h1` de producto; `size="lg"` 30→36px en homes de producto)
-- `Heading` — títulos de panel (`h2`–`h6`; `h2`/`h3` usan `typography.heading`, `h4`–`h6` usan `typography.subtitle`)
+- `Display` — headlines de marketing (`h1` por defecto)
+- `PageHeaderTitle` — el `h1` de producto: `typography.heading` a `text-2xl` (24 px / 700), un paso por encima de los `h2` de panel; `size="lg"` 30→36 px en homes de producto
+- `Heading` — títulos de panel (`h2`–`h6`). Cada nivel baja por tamaño o peso: `h2` usa `typography.heading` (20 px / 700), `h3` usa `typography.title` (18 px / 600) y `h4`–`h6` usan `typography.body` en peso 600 (14 px / 600). Un `h2` con cromo de card pasa `className={typography.title}`
 - `Subtitle` — frase de apoyo; `tone` `muted` por defecto
-- `Body` — cuerpo flexible (`size` `sm` 12px · `md` 14px · `lg` 16px); `measure` opt-in para lectura (65ch); `weight` / `tone` / `align`
+- `Body` — cuerpo flexible (`size` `md` 14px · `lg` 16px; el texto de 12 px es `Caption`); `measure` opt-in para lectura (65ch); `weight` / `tone` / `align`
 - `Text` — prosa/chrome flexible (`look` `body` \| `caption` \| `label` \| `subtitle`; `as` `span` por defecto). Títulos y marcador van en `Display` / `Heading` / `SectionTitle` / `Score`
 - `Caption` — metadata y hints sentence-case; `tone` `muted` por defecto
 - `Score` — cualquier cifra que cambia (marcador, %, conteo, celda); `align` `start` \| `center` \| `end`; `tone` `muted` para no disponible (`—`). El color de estado vive en `StatValue`
@@ -167,7 +189,7 @@ el look desciende con el nivel.
 - `Label` — `<label>` de formulario. Navegación y columnas reutilizan el rol vía `FieldLabel` / `TableHead`
 
 No inventar tamaños fuera de la rampa (`text-xs`…`text-7xl`) ni un `Text` con `size` 1–9.
-`Body size` solo `sm`/`md`/`lg`. Títulos y cifras siguen en `Display` / `Heading` / `SectionTitle` / `Score`.
+`Body size` solo `md`/`lg`. Títulos y cifras siguen en `Display` / `Heading` / `SectionTitle` / `Score`.
 
 ### Formularios
 
@@ -185,7 +207,8 @@ Los formularios muestran validación junto al campo y un resumen solo cuando apo
 
 ### Navegación
 
-- `Tabs` con variantes cerradas `line` (indicador lineal, default) y `pills` (segmento relleno)
+- `Tabs` con variantes cerradas `line` (indicador lineal, default) y `pills` (segmento relleno).
+  24 px entre la lista y el contenido; el panel no añade padding inferior (el padre es dueño del gap)
 - `Breadcrumb`
 - `Sheet` para navegación móvil
 - `Stepper` para progreso secuencial no interactivo
@@ -195,9 +218,15 @@ La navegación de producto usa `typography.label`. El estado activo no depende �
 
 ### Datos
 
-- `Table` y primitivas de fila/celda
-- `Badge` con variantes `approved` (solo resultados oficiales) y `emphasis` (acento categórico; no es un estado)
-- `Card` para entidades o resúmenes autónomos
+- `Table` y primitivas de fila/celda. `TableHead` y `TableCell` aceptan `align`
+  `start` \| `center` \| `end`; `end` alinea a la derecha, mantiene `tabular-nums` y no envuelve.
+  `stickyHeader` fija la fila de encabezado: el contenedor pasa a ser el scroll vertical y
+  necesita un alto máximo vía `containerClassName`.
+- `Badge` con variantes `approved` (solo resultados oficiales) y `emphasis` (acento categórico; no es un estado).
+  `neutral` y `outline` usan peso 500 para no competir con el nombre de la fila; las variantes
+  de estado mantienen 600 porque el estado es el mensaje.
+- `Card` para entidades o resúmenes autónomos. `CardTitle` usa `typography.title`;
+  `CardDescription` usa `typography.subtitle` (14 px muted), con 4 px entre ambos
   - `variant="flat"` (default): borde estructural, sin elevación.
   - `variant="elevated"`: `elevation.md`. Sin `border`/`ring` en el mismo elemento.
     Solo entidades autónomas sobre fondo plano. No usar en grids densas, forms ni cards anidadas.
@@ -225,7 +254,9 @@ La navegación de producto usa `typography.label`. El estado activo no depende �
 - `Progress` para sync/jobs con estado explícito (texto + barra; `value={null}` = indeterminado)
 
 `Table dense` es el patrón recomendado para auditoría y operación en desktop. Las cifras usan
-`tabular-nums`. Toda tabla debe tener encabezados y una representación móvil legible.
+`tabular-nums` y `align="end"` en la celda y su encabezado. En tablas con una cifra que ordena
+(puntos en la clasificación), solo esa columna sube a peso 700; el resto de celdas `Score`
+de tabla van en 500. Toda tabla debe tener encabezados y una representación móvil legible.
 
 ### Overlays
 
@@ -269,6 +300,7 @@ Variantes cerradas: `default`, `secondary`, `outline`, `ghost`, `destructive`, `
 ## Movimiento y accesibilidad
 
 - Animar solo `opacity`, `translate`, `scale` y, cuando es imprescindible, tamaño del indicador.
+- Excepción para controles interactivos: sus cambios de estado pueden animar `background-color`, `border-color`, `color` y `box-shadow` (solo el halo de foco), con `--duration-normal` y `--ease-emphasized`; con `prefers-reduced-motion` la duración pasa a `0ms`.
 - Respetar `prefers-reduced-motion`; los tokens de duración pasan a `0ms`.
 - Focus visible en todos los controles.
 - Objetivos táctiles de al menos 44 px.
@@ -302,7 +334,7 @@ Una primitiva nueva o una variante modificada requiere:
 | Apoyo al título                             | `PageHeaderDescription` / `Subtitle`   | Orientación útil, no repetición de datos ya presentes.                                                 |
 | Sección deportiva                           | `SectionTitle` h2 / `typography.label` | «Rendimiento», «Comparación», «Destacados», «Atributos».                                               |
 | Panel de lectura                            | `Heading`                              | h2–h6 según estructura; evitar saltos de nivel por apariencia.                                         |
-| Título de card de sección                   | `Heading` 18 px / peso 600             | «Último partido», «Mis competiciones». No usar `typography.heading` (20 px / 700) en este cromo.       |
+| Título de card de sección                   | `Heading` con `typography.title`       | «Último partido», «Mis competiciones». No usar `typography.heading` (20 px / 700) en este cromo.       |
 | Acción de card de sección                   | `TextLink` `caption` / peso 500        | «Ver todos», «Ver todas»; lima; chevron 16 px. No es un `Button variant="link"`.                       |
 | Filtros, pestañas, columnas, nombre de stat | `typography.label` / `StatLabel`       | Identificación compacta y consistente.                                                                 |
 | Cifra principal                             | `Score` / `StatValue`                  | Blanco, cifras tabulares y formato local; iguales escalas para métricas pares.                         |
@@ -391,7 +423,7 @@ y competiciones.
 `Card` `flat` a toda la altura del slot. Encabezado y escena no se mezclan.
 
 - **Cromo:** `CardHeader` padding 20 px, fila, `space-between`, gap 12 px, `z-index` 1,
-  fondo de card (sin foto). Título: 18 px (`text-lg`), peso 600, `foreground`. Acción:
+  fondo de card (sin foto). Título: `typography.title` (18 px, peso 600), `foreground`. Acción:
   `TextLink` `text="caption"` (12 px) peso **500**, lima (`primary`), sin subrayado,
   gap 4 px al chevron de 16 px. Copy: «Ver todos» (partidos), «Ver todas» (competiciones).
 - **Cuerpo con encabezado:** padding horizontal y inferior 20 px; sin padding-top extra
@@ -559,6 +591,7 @@ se identifican por separado; brackets incluyen lista accesible y byes sin score 
 ```text
 Futrob
 ├── Landing pública
+│   ├── Precios (/pricing)
 │   ├── Producto
 │   ├── Cómo funciona (EA → candidatos → selección → oficial)
 │   ├── Para organizadores / capitanes
@@ -605,6 +638,9 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 - Logo Futrob.
 - Anclas: Producto, Cómo funciona, Ejemplo público.
 - Acciones: Iniciar sesión, Crear competición.
+- Dos grupos: marca y enlaces de contenido a la izquierda; acceso a la derecha. Sin grupo central.
+- Por debajo de `lg`, los enlaces de contenido pasan a un `Sheet`; por debajo de `sm`, «Iniciar sesión»
+  también. La acción de crear permanece siempre en la barra.
 
 #### Hero
 
@@ -620,6 +656,29 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 2. Reprogramación controlada.
 3. Rankings y portal para espectadores.
 4. CTA final.
+
+#### Esqueleto de sección
+
+Toda sección se compone con `LandingSection` (`shared/presentation/landing/landing-section.tsx`);
+no redefinir contenedor, padding, columnas ni jerarquía de copy en cada sección.
+
+- Contenedor de 80 rem. Padding vertical 80 px, 112 px desde `lg`; el hero, 32 px y 48 px.
+- Copy a la izquierda y visual a la derecha, 5:6 desde `lg`, sin invertir. Sin visual, una columna
+  de copy de hasta 40 rem.
+- Tonos alternos `base` (`background`) y `band` (`sidebar`). El cambio de tono es el separador: sin bordes.
+- Copy centrado respecto al visual; `align="start"` lo fija con sticky cuando el visual es más alto.
+- `Display` más `Body` `lg` en muted con medida de 44ch; los CTA van en `LandingActions`.
+
+#### Precios
+
+`/pricing` se compone con `LandingSection` y `LandingFooter`: hero con `layout="stacked"` y las cards
+debajo; luego una banda con lo que ningún plan limita.
+
+- `PricingPlanCard`: nombre y destinatario; precio mensual en USD en `display`; CTA con nota;
+  separador y lista de filas.
+- Todas las cards listan las mismas filas en el mismo orden, con cada formato en su propia fila. Lo no
+  incluido sigue visible, con icono muted y nombre accesible «No incluido»; nunca solo color.
+- Una sola card destacada: borde `primary`, `surface-raised`, badge y el único CTA `default`. Las demás, `outline`.
 
 ### Shell autenticado
 
@@ -667,7 +726,7 @@ consulta estado previo ni membresías. Después del login, la plataforma consult
 `actor_onboarding`; si está incompleto vuelve al onboarding y, solo si está completo, consulta
 membresías para resolver el destino. En onboarding puede:
 
-- crear una organización y una primera competición en borrador;
+- crear una organización y abrir su inicio, sin exigir una competición; la cuenta de juego se ofrece como desvío opcional desde «Crea tu cuenta» junto a «Continuar»;
 - aceptar una invitación a una competición y navegar directamente a ella;
 - continuar como jugador hacia `/player` sin organización.
 
@@ -721,6 +780,7 @@ El inicio de organización incluye la sección **Actividad reciente**: las últi
 - Jugadores
 - Invitaciones
 - Miembros y roles
+- Plan y uso
 - Ajustes
 
 #### Miembros y roles
@@ -745,6 +805,21 @@ El gap entre secciones y la distancia de la cabecera de página al contenido son
 - En esta página, incluidos menús y diálogo, el peso mínimo de texto es medium (500).
   La fila seleccionada conserva su fondo habitual y se identifica con una barra lateral
   `primary` de 3 px y el nombre en peso 600. Conserva el estado accesible y el foco de teclado.
+
+#### Plan y uso
+
+Ruta `/orgs/:orgId/settings/plan`, visible con `billing.read` (organizer y staff). Compone
+«Uso» (competiciones activas, staff y sincronizaciones con EA del mes, cada una con valor
+«N de M» y barra; «sin límite» no dibuja barra), «Plan actual» (nombre, estado como `Badge`
+y enlace «Ver planes»), «Incluido en tu plan» (icono check lima o círculo muted con texto,
+nunca solo color) y «Cambios de plan» a todo el ancho. Al alcanzar un límite, la fila muestra
+un `Alert` warning que explica qué se frena y que lo ya en marcha sigue. Sin permiso: vacío
+de permiso, no un plan vacío. La compra no existe en la Fase 0: no hay botón de pago.
+
+**Upsell (402).** Una acción que el plan no incluye responde 402. La UI muestra un `Alert`
+warning con el motivo y el enlace «Ver plan y uso»; nunca lo disfraza de error de permiso.
+Una pantalla completa fuera del plan (ranking de rendimiento) usa `EmptyState` con salida a
+la tabla oficial. Mobile oculta lo que el plan no incluye y no muestra precios ni CTA de compra.
 
 #### Inicio de organización
 
@@ -783,7 +858,27 @@ Web responsive: Sheet con la misma sidebar. App nativa: tabs + Más/Stack con la
 
 #### Menú de cuenta
 
-En la cabecera de la sidebar: Perfil · Enviar feedback · Contáctanos · Configuración · Cerrar sesión.
+En la cabecera de la sidebar: Perfil · Enviar feedback · Configuración · Cerrar sesión.
+
+- **Perfil** abre `/player/profile`. Permite consultar y guardar el nombre visible con
+  Better Auth, ver la identidad de acceso y el avatar existente o iniciales derivadas.
+  El correo se presenta como solo lectura. Incluye el resumen de cuentas de juego y
+  enlaces a Datos de juego y Mis estadísticas. CTA principal: «Guardar perfil».
+  No ofrece subida de avatar ni edición de campos sin soporte de backend.
+- **Enviar feedback** abre un diálogo sobre el contexto actual. Tipo problema/idea,
+  mensaje, expectativa opcional para problemas, permiso de contacto y ruta opcional
+  con vista previa, sin query ni sesión. CTA: «Enviar feedback». Mientras no exista
+  entrega real, el CTA permanece deshabilitado y un aviso explica que no se ha enviado.
+  El borrador se conserva al cerrar y reabrir dentro del shell actual.
+- **Configuración** abre un diálogo con idioma ES/EN persistido mediante cookie del
+  navegador y cambio opcional de contraseña con Better Auth. El cambio de contraseña
+  revoca las otras sesiones. CTA: «Guardar cambios». Un fallo de idioma posterior a
+  cambiar la contraseña informa de ese resultado parcial. Las preferencias de
+  notificaciones requieren persistencia y entrega operativa antes de ofrecer controles.
+- Contáctanos se retira del menú. Feedback y Configuración no crean rutas de página.
+
+La navegación y los diálogos usan destinos tipados. Abrirlos conserva el espacio activo,
+la URL y los filtros. Los overlays mantienen el contrato de foco de Base UI.
 
 La navegación General vive en el footer sticky de la sidebar.
 
@@ -889,7 +984,7 @@ Se conservan los IDs `UX-*` para trazabilidad. Son criterios de aceptación, no 
 - **UX-WIZ-003** Cambiar formato o partidos-por-enfrentamiento pide confirmación antes de borrar datos incompatibles.
 - **UX-WIZ-004** Errores junto al campo + resumen enlazable.
 - **UX-WIZ-005** La revisión muestra el resumen guardado (información, formato, reglas y participantes, cada bloque con Editar) junto a la vista previa y la lista para publicar. Las fechas son opcionales. Publicar exige reglas válidas y al menos `teams.min` equipos aprobados.
-- **UX-WIZ-006** El onboarding del organizador crea un draft con nombre, edición, plataforma, región, timezone y formato, sin generar stages ni fixture.
+- **UX-WIZ-006** El onboarding del organizador crea solo la organización (zona horaria detectada del dispositivo, respaldo `UTC`) y asegura el perfil personal. El camino principal es intención → organización → confirmación. La cuenta de juego es un desvío opcional desde «Crea tu cuenta»; el stepper incorpora Cuenta solo si se elige. La primera competición se crea después desde el inicio de organización.
 - **UX-WIZ-007** El Stepper de cinco pasos no produce scroll horizontal y en móvil anuncia número, total y nombre del paso actual.
 - **UX-WIZ-008** Continuar no aparece en revisión. Abrir o cerrar inscripciones está en participantes y en revisión; publicar solo en revisión.
 
@@ -958,9 +1053,14 @@ La marca y el lenguaje visual son los mismos que en web; cambia la plataforma de
 ### Tipografía
 
 - Manrope (pesos 400/500/600/700) vía `@expo-google-fonts/manrope`.
+  Cada peso se carga como una familia propia (`Manrope_700Bold`, …): el peso lo elige
+  `fontFamily` y nunca se combina con `fontWeight`, porque Android buscaría una variante
+  bold inexistente y caería a la fuente del sistema.
 - Mismos roles `typography.*`; tamaños convertidos rem→dp; `letterSpacing` derivado de
   `em × tamaño` del rol.
-- `typography.label` usa tracking ligero (`0.04em`). Mayúsculas son opt-in (p. ej. kicker de landing), no el default.
+- `typography.label` usa tracking ligero (`0.04em`). Mayúsculas son opt-in (p. ej. kicker de landing), no el default;
+  cuando se usan, aplicar `--tracking-caps` (`0.06em`).
+- `typography.score` aplica `fontVariant: ["tabular-nums"]` también en nativo; las pantallas no lo repiten.
 
 ### Color y tema
 
@@ -1005,10 +1105,40 @@ Reglas de authoring:
 
 - Colocate `stylex.create` with the component. Do not rebuild a utility library.
 - Import `colors` from `@futrob/ui/styles/tokens.stylex` and `media` from `@futrob/ui/styles/media.stylex` inside `stylex.create`. StyleX cannot follow `defineVars` / `defineConsts` through a re-export. The package barrel is for runtime helpers (`applyProps`, `typography`).
-- Conditions require `default`. Last `applyProps` / `stylex.props` argument wins.
+- Conditions require `default`. Last `applyProps` / `stylex.props` argument wins for the same property.
 - Longhand or single-value shorthands only.
 - `stylex.when.*` + markers replace `group` / `peer`. Remaining descendant rules live in `slots.css`.
 - Elevation is `elevation.sm|md|lg`. Do not combine with border/ring.
+
+#### Overrides en primitivas
+
+En primitivas que aceptan tokens de StyleX en `className`, pasa el token directamente.
+La primitiva usa `applyProps` para componer sus estilos base con el override. Usa
+`applyStyles` al aplicar estilos a un elemento HTML que no añade otros estilos internamente.
+
+```tsx
+import * as stylex from "@stylexjs/stylex";
+import { applyStyles, CardContent } from "@futrob/ui";
+
+const styles = stylex.create({
+  content: {
+    paddingInline: 0,
+    paddingBottom: 0,
+  },
+});
+
+// CardContent compone el token con sus estilos base.
+<CardContent className={styles.content}>Resumen de tu organización</CardContent>;
+
+// En un elemento HTML, applyStyles convierte el token en props del DOM.
+<div {...applyStyles(styles.content)}>Resumen de tu organización</div>;
+```
+
+Pasar `className={applyStyles(styles.content).className}` a la primitiva convierte
+el token en un string antes de componerlo; `applyProps` solo puede concatenar esas clases.
+Para quitar el padding de `CardContent`, el ejemplo sobrescribe sus mismas propiedades:
+`paddingInline` y `paddingBottom`. La configuración actual de StyleX prioriza propiedades
+específicas sobre shorthands: `padding: 0` por sí solo no sustituye esos valores base.
 
 ### What is not StyleX
 

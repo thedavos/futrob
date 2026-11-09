@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EncounterRoute } from "@/modules/results/presentation/encounter-route.tsx";
-import { getUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
-import { onboardingHead } from "@/shared/presentation/i18n/onboarding-head.ts";
+import { localizedHead } from "@/shared/presentation/i18n/localized-head.ts";
 
 export const Route = createFileRoute(
   "/_app/orgs/$orgId/competitions/$competitionId/encounters_/$encounterId",
 )({
-  loader: () => getUiLocale(),
-  head: ({ loaderData }) => onboardingHead(loaderData, "encounter.documentTitle"),
+  head: localizedHead("encounter.documentTitle"),
   component: EncounterPage,
 });
 

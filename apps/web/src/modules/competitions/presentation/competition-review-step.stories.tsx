@@ -63,6 +63,7 @@ function draft(
       knockoutStage: knockout,
       awayGoalsEnabled: false,
       maxRosterSize: 11,
+      rankingEligibility: null,
       createdAt: "2026-10-01T00:00:00.000Z",
     },
   };

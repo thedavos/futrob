@@ -27,6 +27,17 @@ export function isRetryableProviderError(error: ProviderError): boolean {
   );
 }
 
+/**
+ * The provider could not give an answer, whatever was asked: transport failures, outages,
+ * rate limits, refresh contention or a payload we cannot read. Callers that only enrich an
+ * optional, declarative fact (e.g. a club association) may continue without it. A missing
+ * club, an unsupported operation or a 4xx rejection describe the request itself and are not
+ * outages.
+ */
+export function isProviderOutage(error: ProviderError): boolean {
+  return isRetryableProviderError(error) || ProviderSchemaError.is(error);
+}
+
 export function providerHealthOutcome(error: ProviderError): ProviderHealthOutcome | null {
   if (ProviderTimeout.is(error)) return "timeout";
   if (ProviderNetworkError.is(error)) return "network";

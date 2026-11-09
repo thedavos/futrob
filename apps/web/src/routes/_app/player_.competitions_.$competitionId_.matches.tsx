@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PlayerOnboardingGuard } from "@/modules/statistics/presentation/player-onboarding-guard.tsx";
-import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
+import { PlayerCompetitionMatchesRoute } from "@/modules/results/presentation/player-competition-matches-page.tsx";
+import { localizedHead } from "@/shared/presentation/i18n/localized-head.ts";
 
 export const Route = createFileRoute("/_app/player_/competitions_/$competitionId_/matches")({
-  head: () => ({ meta: [{ title: "Partidos | Futrob" }] }),
-  component: () => (
-    <PlayerOnboardingGuard>
-      <PageScaffold page="competitionPlayer.matches" />
-    </PlayerOnboardingGuard>
-  ),
+  head: localizedHead("matches.list.documentTitle"),
+  component: PlayerMatchesPage,
 });
+
+function PlayerMatchesPage() {
+  const { competitionId } = Route.useParams();
+  return <PlayerCompetitionMatchesRoute competitionId={competitionId} />;
+}

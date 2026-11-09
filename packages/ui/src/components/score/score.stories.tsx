@@ -10,11 +10,13 @@ const meta = {
   args: {
     children: "2–1",
     align: "start",
+    size: "default",
     tone: "default",
     truncate: false,
   },
   argTypes: {
     align: { control: "select", options: ["start", "center", "end"] },
+    size: { control: "inline-radio", options: ["default", "table"] },
     tone: { control: "select", options: ["default", "muted"] },
     as: { control: "select", options: ["p", "span"] },
   },
@@ -36,6 +38,22 @@ export const TabularValues: Story = {
       <Score>47%</Score>
       <Score>28</Score>
       <Score tone="muted">—</Score>
+    </>
+  ),
+};
+
+export const TableScale: Story = {
+  render: () => (
+    <>
+      <Score size="table" align="end">
+        28
+      </Score>
+      <Score size="table" align="end">
+        +12
+      </Score>
+      <Score size="table" align="end" tone="muted">
+        —
+      </Score>
     </>
   ),
 };

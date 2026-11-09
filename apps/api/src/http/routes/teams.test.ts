@@ -1,8 +1,8 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import {
   acceptRosterInvitationResponseSchema,
   createRosterInvitationResponseSchema,
   addToRosterResponseSchema,
-  completeOrganizationOnboardingResponseSchema,
   createTeamResponseSchema,
   getMyPlayerProfileResponseSchema,
 } from "@futrob/api-contracts";
@@ -23,7 +23,7 @@ describe("apps/api http teams", () => {
     const organizer = "actor-roster-org";
     const player = "actor-roster-player";
 
-    const orgCreated = await app.request("/api/v1/identity/onboarding/organization", {
+    const orgCreated = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -32,8 +32,7 @@ describe("apps/api http teams", () => {
         gameAccount: null,
       }),
     });
-    expect(orgCreated.status).toBe(200);
-    const orgBody = await parseResponse(completeOrganizationOnboardingResponseSchema, orgCreated);
+    const orgBody = orgCreated;
     const organizationId = orgBody.organizationId;
     const competitionA = orgBody.competition.competition.id;
 
@@ -232,7 +231,7 @@ describe("apps/api http teams", () => {
     const organizer = "actor-roster-invite-org";
     const player = "actor-roster-invite-player";
 
-    const orgCreated = await app.request("/api/v1/identity/onboarding/organization", {
+    const orgCreated = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -241,8 +240,7 @@ describe("apps/api http teams", () => {
         gameAccount: null,
       }),
     });
-    expect(orgCreated.status).toBe(200);
-    const orgBody = await parseResponse(completeOrganizationOnboardingResponseSchema, orgCreated);
+    const orgBody = orgCreated;
     const organizationId = orgBody.organizationId;
     const competitionId = orgBody.competition.competition.id;
 

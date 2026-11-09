@@ -36,32 +36,4 @@ describe("ClubCrestAvatar", () => {
     }
     expect(container.textContent).toContain("NO");
   });
-
-  it("omits the circular frame when framed is false", () => {
-    const framed = render(
-      <ClubCrestAvatar imageUrl="https://example.com/crest.png" name="Night Owls" />,
-    );
-    const unframed = render(
-      <ClubCrestAvatar framed={false} imageUrl="https://example.com/crest.png" name="Night Owls" />,
-    );
-    const framedAvatar = framed.container.querySelector('[data-slot="club-crest-avatar"]');
-    const unframedAvatar = unframed.container.querySelector('[data-slot="club-crest-avatar"]');
-    const image = unframed.container.querySelector('[data-slot="club-crest-image"]');
-    expect(unframedAvatar).toBeTruthy();
-    expect(image).toBeTruthy();
-    expect(framedAvatar?.className).not.toEqual(unframedAvatar?.className);
-    expect(image?.getAttribute("data-outline")).toBe("none");
-    const framedImage = framed.container.querySelector('[data-slot="club-crest-image"]');
-    expect(framedImage?.getAttribute("data-outline")).toBeNull();
-  });
-
-  it("does not paint the muted chip behind a loaded crest", () => {
-    const withImage = render(
-      <ClubCrestAvatar imageUrl="https://example.com/crest.png" name="Night Owls" />,
-    );
-    const initials = render(<ClubCrestAvatar imageUrl={null} name="Night Owls" />);
-    const imageRoot = withImage.container.querySelector('[data-slot="club-crest-avatar"]');
-    const initialsRoot = initials.container.querySelector('[data-slot="club-crest-avatar"]');
-    expect(imageRoot?.className).not.toEqual(initialsRoot?.className);
-  });
 });

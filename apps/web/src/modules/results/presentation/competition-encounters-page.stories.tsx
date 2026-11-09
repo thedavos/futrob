@@ -81,9 +81,15 @@ type StoryArgs = {
   readonly scenario: Scenario;
   readonly locale: Locale;
   readonly narrow?: boolean;
+  readonly page?: "competition.encounters" | "competitionPlayer.matches";
 };
 
-function ListStory({ locale, narrow = false, scenario }: StoryArgs) {
+function ListStory({
+  locale,
+  narrow = false,
+  page = "competition.encounters",
+  scenario,
+}: StoryArgs) {
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
     const listRoute = createRoute({
@@ -93,6 +99,7 @@ function ListStory({ locale, narrow = false, scenario }: StoryArgs) {
         <CompetitionEncountersPageView
           competitionId="competition-1"
           organizationId="org-1"
+          page={page}
           state={STATES[scenario]}
         />
       ),
@@ -108,7 +115,7 @@ function ListStory({ locale, narrow = false, scenario }: StoryArgs) {
         initialEntries: ["/orgs/org-1/competitions/competition-1/encounters"],
       }),
     });
-  }, [scenario]);
+  }, [page, scenario]);
   return (
     <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
       <div {...applyProps(undefined, undefined, styles.frame, narrow && styles.narrow)}>
@@ -129,7 +136,12 @@ const meta = {
     },
     locale: { control: "inline-radio", options: ["es", "en"] },
   },
-  render: (args) => <ListStory key={`${args.scenario}-${args.locale}`} {...args} />,
+  render: (args) => (
+    <ListStory
+      key={`${args.page ?? "competition.encounters"}-${args.scenario}-${args.locale}`}
+      {...args}
+    />
+  ),
 } satisfies Meta<StoryArgs>;
 
 export default meta;
@@ -150,6 +162,19 @@ export const ReadyEnglishNarrow: Story = {
   name: "Con enfrentamientos · EN 360",
   args: { locale: "en", narrow: true },
   parameters: { a11y: { test: "error" } },
+};
+
+export const PlayerMatches: Story = {
+  name: "Partidos del jugador",
+  args: { page: "competitionPlayer.matches" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { name: "Partidos" })).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: "Abrir Cuervos FC vs Maderas FC" }),
+    ).toBeVisible();
+  },
 };
 
 export const Empty: Story = { name: "Sin calendario", args: { scenario: "empty" } };

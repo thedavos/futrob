@@ -233,7 +233,7 @@ function ReadyRules({
             </Section>
           </CardContent>
         </Card>
-        <PlatformRules t={t} />
+        <PlatformRules format={competition.format} t={t} />
       </div>
     </div>
   );
