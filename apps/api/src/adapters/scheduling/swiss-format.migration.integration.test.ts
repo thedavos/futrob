@@ -46,7 +46,7 @@ async function insertPlan(isolated: IsolatedSchema, id: string, format: string):
   );
 }
 
-suite("0064 Swiss format migration", { timeout: 180_000 }, () => {
+suite("0064 Swiss format migration", () => {
   afterEach(async () => {
     for (const created of schemas.splice(0)) await created.drop();
     for (const directory of directories.splice(0)) {
