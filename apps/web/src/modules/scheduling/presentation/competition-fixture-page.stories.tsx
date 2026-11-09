@@ -397,15 +397,17 @@ export const SwissWithdrawDialog: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "Retirar equipo" }));
     const body = within(canvasElement.ownerDocument.body);
-    const dialog = within(await body.findByRole("alertdialog"));
+    const popup = await body.findByRole("alertdialog");
+    await waitFor(() => expect(popup).toBeVisible());
+    const dialog = within(popup);
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar retirada" }));
-    await expect(await dialog.findByText("Selecciona el equipo.")).toBeVisible();
+    await waitFor(() => expect(dialog.getByText("Selecciona el equipo.")).toBeVisible());
     await userEvent.click(dialog.getByRole("combobox", { name: "Equipo" }));
     await userEvent.click(await body.findByRole("option", { name: "Sur United" }));
     await userEvent.type(dialog.getByRole("textbox", { name: "Motivo" }), "Abandona el torneo");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar retirada" }));
-    await expect(await canvas.findByText("Sur United queda retirado.")).toBeVisible();
     await waitFor(() => expect(body.queryByRole("alertdialog")).toBeNull());
+    await waitFor(() => expect(canvas.getByText("Sur United queda retirado.")).toBeVisible());
   },
 };
 
