@@ -16,8 +16,12 @@ import { SettingsDialog } from "@/modules/identity/presentation/account/settings
 export type ShellAccountDialog = "feedback" | "settings";
 
 interface ShellAccountDialogsValue {
-  readonly open: (dialog: ShellAccountDialog) => void;
-  /** Focus returns here on close; the account menu that remains mounted claims it. */
+  /** Opens `dialog` and returns focus to `trigger` when it closes. */
+  readonly open: (dialog: ShellAccountDialog, trigger: HTMLElement | null) => void;
+  /**
+   * Focus returns here on close. A layout change remounts the account menu while the dialog is
+   * open, so the menu that replaces a disconnected trigger adopts it.
+   */
   readonly returnFocus: RefObject<HTMLElement | null>;
 }
 
@@ -31,7 +35,16 @@ export function ShellAccountDialogsProvider({ children }: { readonly children: R
   const [dialog, setDialog] = useState<ShellAccountDialog | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const value = useMemo(() => ({ open: setDialog, returnFocus }), []);
+  const value = useMemo<ShellAccountDialogsValue>(
+    () => ({
+      open: (next, trigger) => {
+        returnFocus.current = trigger;
+        setDialog(next);
+      },
+      returnFocus,
+    }),
+    [],
+  );
 
   function onOpenChange(open: boolean) {
     if (!open) setDialog(null);

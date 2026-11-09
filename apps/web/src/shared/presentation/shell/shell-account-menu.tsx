@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
+import { useRef } from "react";
 import {
   applyStyles,
   Avatar,
@@ -110,6 +111,7 @@ export function AccountMenu({
   const shortName = abbreviatedDisplayName(name, fallbackName);
   const items = accountNavItems(t);
   const dialogs = useShellAccountDialogs();
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const superuser = useIsSuperuser();
   const inFooter = placement === "footer";
   const trigger = applyStyles(
@@ -134,6 +136,7 @@ export function AccountMenu({
         render={
           <Button
             ref={(element) => {
+              triggerRef.current = element;
               if (element && !dialogs.returnFocus.current?.isConnected) {
                 dialogs.returnFocus.current = element;
               }
@@ -182,7 +185,7 @@ export function AccountMenu({
               if (item.kind === "link") {
                 setOpenMobile(false);
                 void navigate({ to: item.href });
-              } else dialogs.open(item.id);
+              } else dialogs.open(item.id, triggerRef.current);
             }}
           >
             {item.label}
