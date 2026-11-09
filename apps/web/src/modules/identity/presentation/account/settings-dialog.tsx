@@ -22,7 +22,13 @@ import {
   SelectContent,
   SelectItem,
 } from "@futrob/ui";
+import { sidebarLayoutSchema, type SidebarLayoutDto } from "@futrob/api-contracts";
 import { authClient } from "@/modules/identity/auth-client.ts";
+import {
+  DEFAULT_SIDEBAR_LAYOUT,
+  useActorPreferencesQuery,
+  useSaveActorPreferencesMutation,
+} from "@/modules/identity/presentation/identity-queries.ts";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { styles } from "./account.styles.ts";
@@ -31,7 +37,13 @@ type SettingsError =
   | "settings.passwordInvalid"
   | "settings.passwordError"
   | "settings.languageError"
+  | "settings.sidebarLayoutError"
   | "settings.error";
+
+const SIDEBAR_LAYOUT_LABELS = {
+  navigation: "settings.sidebarLayoutNavigation",
+  "pending-queue": "settings.sidebarLayoutPendingQueue",
+} as const satisfies Record<SidebarLayoutDto, string>;
 
 export function SettingsDialog({
   open,
@@ -52,6 +64,13 @@ export function SettingsDialog({
   const [language, setLanguage] = useState<Locale>(locale);
   const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
   const [error, setError] = useState<SettingsError | null>(null);
+  const preferences = useActorPreferencesQuery();
+  const saveActorPreferences = useSaveActorPreferencesMutation();
+  const savedSidebarLayout = preferences.data?.sidebarLayout ?? DEFAULT_SIDEBAR_LAYOUT;
+  // `null` follows the account's value, which may still be loading when the dialog opens.
+  const [sidebarLayoutDraft, setSidebarLayoutDraft] = useState<SidebarLayoutDto | null>(null);
+  const sidebarLayout = sidebarLayoutDraft ?? savedSidebarLayout;
+  const changingSidebarLayout = sidebarLayout !== savedSidebarLayout;
   const changingPassword = Object.values(passwords).some(Boolean);
   const mutation = useMutation({
     mutationFn: async () => {
@@ -88,6 +107,18 @@ export function SettingsDialog({
         setError(changingPassword ? "settings.languageError" : "settings.error");
         return false;
       }
+      if (changingSidebarLayout) {
+        try {
+          await saveActorPreferences.mutateAsync({ sidebarLayout });
+        } catch {
+          setError(
+            changingPassword || language !== locale
+              ? "settings.sidebarLayoutError"
+              : "settings.error",
+          );
+          return false;
+        }
+      }
       return true;
     },
   });
@@ -96,6 +127,7 @@ export function SettingsDialog({
     if (mutation.isPending) return;
     setPasswords({ current: "", next: "", confirm: "" });
     setLanguage(locale);
+    setSidebarLayoutDraft(null);
     setError(null);
     mutation.reset();
     onOpenChange(false);
@@ -149,6 +181,39 @@ export function SettingsDialog({
                 </SelectContent>
               </Select>
               <Caption id="settings-language-hint">{t("settings.languageHint")}</Caption>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="settings-sidebar-layout">
+                {t("settings.sidebarLayout")}
+              </FieldLabel>
+              <Select
+                disabled={mutation.isPending || preferences.isPending}
+                items={sidebarLayoutSchema.options.map((value) => ({
+                  value,
+                  label: t(SIDEBAR_LAYOUT_LABELS[value]),
+                }))}
+                onValueChange={(value) => {
+                  setSidebarLayoutDraft(sidebarLayoutSchema.parse(value));
+                  mutation.reset();
+                  setError(null);
+                }}
+                value={sidebarLayout}
+              >
+                <SelectTrigger
+                  aria-describedby="settings-sidebar-layout-hint"
+                  id="settings-sidebar-layout"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sidebarLayoutSchema.options.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {t(SIDEBAR_LAYOUT_LABELS[value])}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Caption id="settings-sidebar-layout-hint">{t("settings.sidebarLayoutHint")}</Caption>
             </Field>
             <section {...applyStyles(styles.section)} aria-labelledby="settings-password-title">
               <SectionTitle id="settings-password-title">{t("settings.password")}</SectionTitle>
@@ -209,7 +274,10 @@ export function SettingsDialog({
             </Button>
             <Button
               aria-busy={mutation.isPending}
-              disabled={mutation.isPending || (language === locale && !changingPassword)}
+              disabled={
+                mutation.isPending ||
+                (language === locale && !changingPassword && !changingSidebarLayout)
+              }
               type="submit"
             >
               {t(mutation.isPending ? "account.saving" : "settings.save")}

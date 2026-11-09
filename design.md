@@ -690,21 +690,33 @@ La app autenticada (fuera de onboarding) usa un marco único:
 sidebar izquierda | command bar + contenido con scroll + action bar opcional
 ```
 
-Regiones de la sidebar (scroll independiente del contenido central):
+La sidebar tiene dos diseños, disponibles en todos los planes. Cada cuenta elige el suyo en
+Configuración y la preferencia se guarda en la cuenta. Scroll independiente del contenido central en ambos.
+
+**Navegación (predeterminado).** No muestra pendientes:
+
+1. **Header sticky:** selector de contexto sin borde + colapsar a su derecha.
+2. **Content (scroll):** navegación General (Inicio, Competiciones, …).
+3. **Footer sticky:** menú de cuenta (avatar + nombre abreviado), que abre hacia arriba.
+
+**Con pendientes:**
 
 1. **Header sticky:** fila de cuenta (avatar + nombre abreviado + colapsar) y selector de contexto.
 2. **Content (scroll):** pendientes del espacio activo: filas abiertas que requieren acción de la proyección de actividad (`QueueTaskItem`). Un operador de la organización ve las de la organización (disputas); el resto ve las suyas y las de los equipos que capitanea (confirmaciones, invitaciones dirigidas). Vacío «Nada por ahora».
 3. **Footer sticky:** navegación General (Inicio, Competiciones, …).
 
-Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive en el header de la sidebar. La web responsive usa Sheet con las mismas regiones.
+Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive en el header de la sidebar. La web responsive usa Sheet con las mismas regiones del diseño elegido, sobre la misma superficie
+que la sidebar de escritorio. El selector de contexto encabeza el Sheet junto a cerrar; su título
+solo existe para lectores de pantalla. Seguir un enlace de navegación cierra el Sheet.
 
 La app nativa usa Expo Router con tabs para los destinos frecuentes y Stack/overlays nativos para detalle y operaciones. **Más** agrupa destinos secundarios. El selector de contexto permanece siempre accesible desde el header; cambiar de tab no cambia por sí solo el espacio, club, organización o competición activos.
 
-El command bar muestra la identidad del jugador (identificador de juego y club seleccionado) y acciones contextuales (solo controles operativos; una función pendiente se omite o se explica deshabilitada). La action bar inferior solo aparece cuando una página registra acciones.
+El command bar muestra la identidad del jugador (identificador de juego y club seleccionado) y acciones contextuales (solo controles operativos; una función pendiente se omite o se explica deshabilitada). La action bar inferior solo aparece cuando una página registra acciones. La web móvil no
+muestra por ahora las acciones contextuales del command bar; su ubicación está pendiente.
 
 #### Selector de contexto (único)
 
-Un control en el header de la sidebar agrupa:
+Un control en el header de la sidebar, en ambos diseños, agrupa:
 
 - **Espacio personal**
 - **Competiciones** (accesibles al actor)
@@ -858,7 +870,7 @@ Web responsive: Sheet con la misma sidebar. App nativa: tabs + Más/Stack con la
 
 #### Menú de cuenta
 
-En la cabecera de la sidebar: Perfil · Enviar feedback · Configuración · Cerrar sesión.
+En el footer de la sidebar (diseño Navegación) o en su cabecera (diseño Con pendientes): Perfil · Enviar feedback · Configuración · Cerrar sesión.
 
 - **Perfil** abre `/player/profile`. Permite consultar y guardar el nombre visible con
   Better Auth, ver la identidad de acceso y el avatar existente o iniciales derivadas.
@@ -871,7 +883,7 @@ En la cabecera de la sidebar: Perfil · Enviar feedback · Configuración · Cer
   entrega real, el CTA permanece deshabilitado y un aviso explica que no se ha enviado.
   El borrador se conserva al cerrar y reabrir dentro del shell actual.
 - **Configuración** abre un diálogo con idioma ES/EN persistido mediante cookie del
-  navegador y cambio opcional de contraseña con Better Auth. El cambio de contraseña
+  navegador, diseño de la sidebar persistido en la cuenta y cambio opcional de contraseña con Better Auth. El cambio de contraseña
   revoca las otras sesiones. CTA: «Guardar cambios». Un fallo de idioma posterior a
   cambiar la contraseña informa de ese resultado parcial. Las preferencias de
   notificaciones requieren persistencia y entrega operativa antes de ofrecer controles.
@@ -880,7 +892,7 @@ En la cabecera de la sidebar: Perfil · Enviar feedback · Configuración · Cer
 La navegación y los diálogos usan destinos tipados. Abrirlos conserva el espacio activo,
 la URL y los filtros. Los overlays mantienen el contrato de foco de Base UI.
 
-La navegación General vive en el footer sticky de la sidebar.
+La navegación General vive en el contenido de la sidebar (diseño Navegación) o en su footer sticky (diseño Con pendientes).
 
 ### Match Center (recurso central)
 
