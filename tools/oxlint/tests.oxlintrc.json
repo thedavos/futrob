@@ -18,11 +18,13 @@
       "files": ["**/*.{test,spec}.{ts,tsx}"],
       "rules": {
         "vitest/no-focused-tests": "error",
-        "futrob/no-test-timeout-or-retry": "error",
+        "futrob/no-test-timeout": "error",
+        "futrob/no-test-retry": "error",
         "futrob/require-skip-tracking-issue": "error"
       }
     },
-    // Legacy allowlist: per-test timeouts that predate futrob/no-test-timeout-or-retry.
+    // Legacy allowlist: per-test timeouts that predate futrob/no-test-timeout. Only the timeout rule is
+    // off here; futrob/no-test-retry still applies (pinned by futrob/rules/test-discipline.test.ts).
     // Remove a file once its timeouts move to project testTimeout or the waits are fixed. Do not add files.
     {
       "files": [
@@ -72,7 +74,7 @@
         "**/packages/api-contracts/src/v1/openapi/document.validity.test.ts"
       ],
       "rules": {
-        "futrob/no-test-timeout-or-retry": "off"
+        "futrob/no-test-timeout": "off"
       }
     }
   ]
