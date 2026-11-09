@@ -25,7 +25,10 @@ import { useIsSuperuser } from "@/shared/presentation/permissions/index.ts";
 import { announceIdentityChange } from "@/shared/presentation/query/identity-change.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { accountNavItems } from "@/shared/presentation/shell/nav-registry.ts";
-import { useShellAccountDialogs } from "@/shared/presentation/shell/shell-account-dialogs.tsx";
+import {
+  useShellAccountDialogs,
+  type ShellAccountMenuSurface,
+} from "@/shared/presentation/shell/shell-account-dialogs.tsx";
 
 const styles = stylex.create({
   triggerCompact: {
@@ -95,8 +98,10 @@ const styles = stylex.create({
 export function AccountMenu({
   compact = false,
   placement = "header",
+  surface,
 }: {
   readonly compact?: boolean;
+  readonly surface: ShellAccountMenuSurface;
   /** `footer` fills the row and opens upward, since the menu has no room below it. */
   readonly placement?: "header" | "footer";
 }) {
@@ -137,9 +142,7 @@ export function AccountMenu({
           <Button
             ref={(element) => {
               triggerRef.current = element;
-              if (element && !dialogs.returnFocus.current?.isConnected) {
-                dialogs.returnFocus.current = element;
-              }
+              dialogs.claimTrigger(element, surface);
             }}
             className={trigger.className}
             dense
@@ -185,7 +188,7 @@ export function AccountMenu({
               if (item.kind === "link") {
                 setOpenMobile(false);
                 void navigate({ to: item.href });
-              } else dialogs.open(item.id, triggerRef.current);
+              } else dialogs.open(item.id, triggerRef.current, surface);
             }}
           >
             {item.label}

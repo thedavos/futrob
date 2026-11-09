@@ -15,14 +15,21 @@ import { SettingsDialog } from "@/modules/identity/presentation/account/settings
 
 export type ShellAccountDialog = "feedback" | "settings";
 
+/** Where an account menu lives: the sidebar, or the navigation sheet on mobile. */
+export type ShellAccountMenuSurface = "sidebar" | "sheet";
+
 interface ShellAccountDialogsValue {
-  /** Opens `dialog` and returns focus to `trigger` when it closes. */
-  readonly open: (dialog: ShellAccountDialog, trigger: HTMLElement | null) => void;
+  /** Opens `dialog` and returns focus to `trigger` on `surface` when it closes. */
+  readonly open: (
+    dialog: ShellAccountDialog,
+    trigger: HTMLElement | null,
+    surface: ShellAccountMenuSurface,
+  ) => void;
   /**
-   * Focus returns here on close. A layout change remounts the account menu while the dialog is
-   * open, so the menu that replaces a disconnected trigger adopts it.
+   * Registers a mounted account trigger. A layout change remounts every account menu while the
+   * dialog is open; the one on the surface that opened it replaces the disconnected trigger.
    */
-  readonly returnFocus: RefObject<HTMLElement | null>;
+  readonly claimTrigger: (trigger: HTMLElement | null, surface: ShellAccountMenuSurface) => void;
 }
 
 const ShellAccountDialogsContext = createContext<ShellAccountDialogsValue | null>(null);
@@ -34,14 +41,20 @@ const ShellAccountDialogsContext = createContext<ShellAccountDialogsValue | null
 export function ShellAccountDialogsProvider({ children }: { readonly children: ReactNode }) {
   const [dialog, setDialog] = useState<ShellAccountDialog | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const returnSurface = useRef<ShellAccountMenuSurface | null>(null);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const value = useMemo<ShellAccountDialogsValue>(
     () => ({
-      open: (next, trigger) => {
+      open: (next, trigger, surface) => {
         returnFocus.current = trigger;
+        returnSurface.current = surface;
         setDialog(next);
       },
-      returnFocus,
+      claimTrigger: (trigger, surface) => {
+        if (trigger && surface === returnSurface.current && !returnFocus.current?.isConnected) {
+          returnFocus.current = trigger;
+        }
+      },
     }),
     [],
   );

@@ -15,7 +15,7 @@ import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { useActorPreferencesQuery } from "@/modules/identity/presentation/identity-queries.ts";
 import { ShellAccountDialogsProvider } from "./shell-account-dialogs.tsx";
-import { DesktopSidebar } from "./shell-sidebar-nav.tsx";
+import { DesktopSidebar, MobileNav } from "./shell-sidebar-nav.tsx";
 import { buildWorkspaceSelectorModel } from "./workspace-selector-model.ts";
 
 vi.mock("@/modules/identity/auth-client.ts", () => ({
@@ -38,10 +38,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function AccountLayoutSidebar(props: Omit<ComponentProps<typeof DesktopSidebar>, "sidebarLayout">) {
+/** Mirrors the shell: both surfaces stay mounted and follow the account's stored layout. */
+function AccountLayoutShell(props: Omit<ComponentProps<typeof DesktopSidebar>, "sidebarLayout">) {
   const preferences = useActorPreferencesQuery();
+  const sidebarLayout = preferences.data?.sidebarLayout ?? "navigation";
   return (
-    <DesktopSidebar {...props} sidebarLayout={preferences.data?.sidebarLayout ?? "navigation"} />
+    <>
+      <DesktopSidebar {...props} sidebarLayout={sidebarLayout} />
+      <MobileNav {...props} sidebarLayout={sidebarLayout} title="Alex" />
+    </>
   );
 }
 
@@ -64,7 +69,7 @@ function renderSidebar(sidebarLayout: SidebarLayoutDto | "account") {
       <SidebarProvider>
         <ShellAccountDialogsProvider>
           {sidebarLayout === "account" ? (
-            <AccountLayoutSidebar {...sidebarProps} />
+            <AccountLayoutShell {...sidebarProps} />
           ) : (
             <DesktopSidebar {...sidebarProps} sidebarLayout={sidebarLayout} />
           )}
@@ -114,29 +119,51 @@ describe("shell sidebar layouts", () => {
     expect(order).toEqual([...order].sort((a, b) => a - b));
   });
 
-  it("keeps Configuración open and confirms the save when the layout moves the account menu", async () => {
-    let stored: SidebarLayoutDto = "navigation";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: unknown, init: RequestInit = {}) => {
-        if (!String(url).includes("/identity/preferences")) return Response.json({ items: [] });
-        if (init.method === "PUT") stored = "pending-queue";
-        return Response.json({ sidebarLayout: stored });
-      }),
-    );
-    renderSidebar("account");
-    const user = userEvent.setup();
+  it.each([
+    // `hidden`: the open Configuración modal makes the surfaces behind it inert.
+    [
+      "sidebar",
+      () => screen.getByRole("complementary", { name: "Navegación principal", hidden: true }),
+    ],
+    ["navigation sheet", () => screen.getByRole("dialog", { name: "Navegación", hidden: true })],
+  ])(
+    "keeps Configuración open across a layout save from the %s and returns focus to its account menu",
+    async (surface, container) => {
+      let stored: SidebarLayoutDto = "navigation";
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: unknown, init: RequestInit = {}) => {
+          if (!String(url).includes("/identity/preferences")) return Response.json({ items: [] });
+          if (init.method === "PUT") stored = "pending-queue";
+          return Response.json({ sidebarLayout: stored });
+        }),
+      );
+      renderSidebar("account");
+      const user = userEvent.setup();
 
-    await user.click(await screen.findByRole("button", { name: "Abrir menú de cuenta" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Configuración" }));
-    const layout = await screen.findByRole("combobox", { name: "Barra lateral" });
-    await waitFor(() => expect(layout).toBeEnabled());
-    await user.click(layout);
-    await user.click(await screen.findByRole("option", { name: "Con pendientes" }));
-    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+      const openNavigation = await screen.findByRole("button", { name: "Abrir navegación" });
+      if (surface === "navigation sheet") await user.click(openNavigation);
+      await user.click(
+        await within(container()).findByRole("button", { name: "Abrir menú de cuenta" }),
+      );
+      await user.click(await screen.findByRole("menuitem", { name: "Configuración" }));
+      const layout = await screen.findByRole("combobox", { name: "Barra lateral" });
+      await waitFor(() => expect(layout).toBeEnabled());
+      await user.click(layout);
+      await user.click(await screen.findByRole("option", { name: "Con pendientes" }));
+      fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
-    expect(await screen.findByText("Cambios guardados.")).toBeVisible();
-    expect(screen.getByRole("dialog", { name: "Configuración" })).toBeVisible();
-    expect(screen.getByText("Pendientes")).toBeInTheDocument();
-  });
+      expect(await screen.findByText("Cambios guardados.")).toBeVisible();
+      const settings = screen.getByRole("dialog", { name: "Configuración" });
+      expect(settings).toBeVisible();
+      expect(within(container()).getByText("Pendientes")).toBeInTheDocument();
+
+      await user.click(within(settings).getAllByRole("button", { name: "Cerrar" })[0]);
+      await waitFor(() =>
+        expect(
+          within(container()).getByRole("button", { name: "Abrir menú de cuenta", hidden: true }),
+        ).toHaveFocus(),
+      );
+    },
+  );
 });

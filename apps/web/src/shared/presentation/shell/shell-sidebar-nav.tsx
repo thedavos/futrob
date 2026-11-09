@@ -261,7 +261,11 @@ function NavigationSidebarBody({
         )}
       </SidebarContent>
       <SidebarFooter className={compact && styles.accountFooterCompact}>
-        <AccountMenu compact={compact} placement="footer" />
+        <AccountMenu
+          compact={compact}
+          placement="footer"
+          surface={forceExpanded ? "sheet" : "sidebar"}
+        />
       </SidebarFooter>
     </>
   );
@@ -294,7 +298,7 @@ function PendingQueueSidebarBody({
         ]}
       >
         <div {...applyStyles(styles.headerRow, compact && styles.headerRowCompact)}>
-          <AccountMenu compact={compact} />
+          <AccountMenu compact={compact} surface={forceExpanded ? "sheet" : "sidebar"} />
           {showCollapseControl ? (
             <CollapseButton
               className={compact ? undefined : collapse.className}
