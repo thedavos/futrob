@@ -35,3 +35,19 @@ export {
   SaveOnboardingProgressUseCase,
   type SaveOnboardingProgressInput,
 } from "./application/save-onboarding-progress/save-onboarding-progress.use-case.ts";
+export type { ActorPreferencesPort } from "./domain/ports/actor-preferences.port.ts";
+export {
+  DEFAULT_SIDEBAR_LAYOUT,
+  SIDEBAR_LAYOUTS,
+  type ActorPreferences,
+  type ActorPreferencesUpdate,
+  type SidebarLayout,
+} from "./domain/value-objects/actor-preferences.ts";
+export {
+  GetActorPreferencesUseCase,
+  type GetActorPreferencesInput,
+} from "./application/get-actor-preferences/get-actor-preferences.use-case.ts";
+export {
+  SaveActorPreferencesUseCase,
+  type SaveActorPreferencesInput,
+} from "./application/save-actor-preferences/save-actor-preferences.use-case.ts";

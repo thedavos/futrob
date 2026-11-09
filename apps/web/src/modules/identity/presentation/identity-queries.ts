@@ -1,11 +1,37 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { OnboardingStatusDto, SaveOnboardingProgressRequest } from "@futrob/api-contracts";
+import type {
+  ActorPreferencesDto,
+  OnboardingStatusDto,
+  SaveOnboardingProgressRequest,
+  SidebarLayoutDto,
+} from "@futrob/api-contracts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { identityBrowserClient } from "./identity-browser-client.ts";
 
 export type SaveOnboardingProgressFn = (
   input: SaveOnboardingProgressRequest,
 ) => Promise<OnboardingStatusDto>;
+
+/** Shown until the account's preference loads, and if it cannot be loaded. */
+export const DEFAULT_SIDEBAR_LAYOUT: SidebarLayoutDto = "navigation";
+
+export function useActorPreferencesQuery() {
+  return useQuery({
+    queryKey: queryKeys.identity.preferences(),
+    queryFn: () => identityBrowserClient.getActorPreferences(),
+  });
+}
+
+export function useSaveActorPreferencesMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: ActorPreferencesDto) => identityBrowserClient.saveActorPreferences(input),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.identity.preferences(), data);
+    },
+  });
+}
 
 export function useOnboardingStatusQuery(enabled = true) {
   return useQuery({

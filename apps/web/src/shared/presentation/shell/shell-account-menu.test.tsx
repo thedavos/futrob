@@ -16,7 +16,8 @@ import { SidebarProvider, TooltipProvider } from "@futrob/ui";
 import { ProfileEditor } from "@/modules/identity/presentation/account/profile-editor.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
-import { MobileNav } from "./shell-sidebar-nav.tsx";
+import { ShellAccountDialogsProvider } from "@/shared/presentation/shell/shell-account-dialogs.tsx";
+import { DesktopSidebar, MobileNav } from "./shell-sidebar-nav.tsx";
 import { buildWorkspaceSelectorModel } from "./workspace-selector-model.ts";
 
 vi.mock("@/modules/identity/auth-client.ts", () => ({
@@ -55,16 +56,29 @@ function Shell() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
     <SidebarProvider>
-      <MobileNav
-        allowedPermissions={new Set()}
-        model={model}
-        onRequestAddClub={() => undefined}
-        onSelect={() => undefined}
-        pathname={pathname}
-        selection={{ kind: "personal" }}
-        title="Alex"
-      />
-      <Outlet />
+      <ShellAccountDialogsProvider>
+        {/* The shell keeps the desktop sidebar mounted on mobile and hides it with CSS. */}
+        <DesktopSidebar
+          allowedPermissions={new Set()}
+          model={model}
+          onRequestAddClub={() => undefined}
+          onSelect={() => undefined}
+          pathname={pathname}
+          selection={{ kind: "personal" }}
+          sidebarLayout="navigation"
+        />
+        <MobileNav
+          allowedPermissions={new Set()}
+          model={model}
+          onRequestAddClub={() => undefined}
+          onSelect={() => undefined}
+          pathname={pathname}
+          selection={{ kind: "personal" }}
+          sidebarLayout="navigation"
+          title="Alex"
+        />
+        <Outlet />
+      </ShellAccountDialogsProvider>
     </SidebarProvider>
   );
 }
@@ -89,8 +103,13 @@ function renderMobileShell() {
       </>
     ),
   });
+  const matches = createRoute({
+    getParentRoute: () => root,
+    path: "/player/matches",
+    component: () => <h1>Mis partidos</h1>,
+  });
   const router = createRouter({
-    routeTree: root.addChildren([home, profile]),
+    routeTree: root.addChildren([home, profile, matches]),
     history: createMemoryHistory({ initialEntries: ["/player"] }),
   });
   render(
@@ -108,7 +127,8 @@ function renderMobileShell() {
 async function openAccountMenu() {
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Abrir navegación" }));
-  await user.click(await screen.findByRole("button", { name: "Abrir menú de cuenta" }));
+  const sheet = await screen.findByRole("dialog", { name: "Navegación" });
+  await user.click(within(sheet).getByRole("button", { name: "Abrir menú de cuenta" }));
   return user;
 }
 
@@ -137,9 +157,25 @@ describe("account menu in mobile navigation", () => {
     const dialog = await screen.findByRole("dialog", { name: title });
     expect(router.state.location.pathname).toBe("/player");
     await user.click(within(dialog).getAllByRole("button", { name: "Cerrar" })[0]);
-    expect(await screen.findByRole("dialog", { name: "Navegación" })).toBeVisible();
+    const sheet = await screen.findByRole("dialog", { name: "Navegación" });
+    expect(sheet).toBeVisible();
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Abrir menú de cuenta" })).toHaveFocus(),
+      expect(within(sheet).getByRole("button", { name: "Abrir menú de cuenta" })).toHaveFocus(),
     );
+  });
+
+  it("closes the navigation sheet after following a navigation link", async () => {
+    const router = renderMobileShell();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Abrir navegación" }));
+    const sheet = await screen.findByRole("dialog", { name: "Navegación" });
+
+    await user.click(within(sheet).getByRole("link", { name: "Mis partidos" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/player/matches"));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Navegación" })).not.toBeInTheDocument(),
+    );
+    expect(await screen.findByRole("heading", { name: "Mis partidos" })).toBeVisible();
   });
 });

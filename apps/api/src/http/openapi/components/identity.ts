@@ -1,4 +1,5 @@
 import {
+  actorPreferencesSchema,
   onboardingStatusSchema,
   completeOrganizationOnboardingResponseSchema,
   completeInvitationOnboardingResponseSchema,
@@ -7,6 +8,7 @@ import {
 } from "@futrob/api-contracts";
 import { namedSchema } from "@/http/openapi/named-schema.ts";
 
+export const ActorPreferences = namedSchema("ActorPreferences", actorPreferencesSchema);
 export const OnboardingStatus = namedSchema("OnboardingStatus", onboardingStatusSchema);
 export const CompleteOrganizationOnboardingResponse = namedSchema(
   "CompleteOrganizationOnboardingResponse",

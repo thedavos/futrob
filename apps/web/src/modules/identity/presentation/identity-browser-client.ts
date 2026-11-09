@@ -7,9 +7,12 @@ import {
   completeOrganizationOnboardingResponseSchema,
   completePlayerOnboardingRequestSchema,
   completePlayerOnboardingResponseSchema,
+  getActorPreferencesResponseSchema,
   getOnboardingStatusResponseSchema,
   organizationNameAvailabilityRequestSchema,
   organizationNameAvailabilityResponseSchema,
+  saveActorPreferencesRequestSchema,
+  saveActorPreferencesResponseSchema,
   saveOnboardingProgressRequestSchema,
   saveOnboardingProgressResponseSchema,
   type CompleteInvitationOnboardingRequest,
@@ -20,9 +23,12 @@ import {
   type CompleteOrganizationOnboardingResponse,
   type CompletePlayerOnboardingRequest,
   type CompletePlayerOnboardingResponse,
+  type GetActorPreferencesResponse,
   type GetOnboardingStatusResponse,
   type OrganizationNameAvailabilityRequest,
   type OrganizationNameAvailabilityResponse,
+  type SaveActorPreferencesRequest,
+  type SaveActorPreferencesResponse,
   type SaveOnboardingProgressRequest,
   type SaveOnboardingProgressResponse,
   type RequestId,
@@ -44,7 +50,7 @@ export class IdentityOnboardingClientError extends Error {
 
 async function requestIdentityJson<T>(input: {
   readonly path?: string;
-  readonly method: "GET" | "POST" | "PATCH";
+  readonly method: "GET" | "POST" | "PATCH" | "PUT";
   readonly body?: unknown;
   readonly schema: z.ZodType<T>;
 }): Promise<T> {
@@ -74,6 +80,24 @@ export const identityBrowserClient = {
       method: "POST",
       body,
       schema: organizationNameAvailabilityResponseSchema,
+    });
+  },
+
+  getActorPreferences(): Promise<GetActorPreferencesResponse> {
+    return requestIdentityJson({
+      path: "/api/v1/identity/preferences",
+      method: "GET",
+      schema: getActorPreferencesResponseSchema,
+    });
+  },
+
+  saveActorPreferences(input: SaveActorPreferencesRequest): Promise<SaveActorPreferencesResponse> {
+    const body = saveActorPreferencesRequestSchema.parse(input);
+    return requestIdentityJson({
+      path: "/api/v1/identity/preferences",
+      method: "PUT",
+      body,
+      schema: saveActorPreferencesResponseSchema,
     });
   },
 

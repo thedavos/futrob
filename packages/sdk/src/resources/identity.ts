@@ -7,7 +7,10 @@ import {
   completeOrganizationOnboardingResponseSchema,
   completePlayerOnboardingRequestSchema,
   completePlayerOnboardingResponseSchema,
+  getActorPreferencesResponseSchema,
   getOnboardingStatusResponseSchema,
+  saveActorPreferencesRequestSchema,
+  saveActorPreferencesResponseSchema,
   saveOnboardingProgressRequestSchema,
   saveOnboardingProgressResponseSchema,
   type CompleteInvitationOnboardingRequest,
@@ -18,7 +21,10 @@ import {
   type CompleteOrganizationOnboardingResponse,
   type CompletePlayerOnboardingRequest,
   type CompletePlayerOnboardingResponse,
+  type GetActorPreferencesResponse,
   type GetOnboardingStatusResponse,
+  type SaveActorPreferencesRequest,
+  type SaveActorPreferencesResponse,
   type SaveOnboardingProgressRequest,
   type SaveOnboardingProgressResponse,
 } from "@futrob/api-contracts";
@@ -26,6 +32,29 @@ import type { HttpClient, RequestOptions } from "../http.ts";
 
 export function createIdentityResource(http: HttpClient) {
   return {
+    async getActorPreferences(options: RequestOptions = {}): Promise<GetActorPreferencesResponse> {
+      return http.request({
+        path: "/identity/preferences",
+        method: "GET",
+        options,
+        parse: (data) => getActorPreferencesResponseSchema.parse(data),
+      });
+    },
+
+    async saveActorPreferences(
+      input: SaveActorPreferencesRequest,
+      options: RequestOptions = {},
+    ): Promise<SaveActorPreferencesResponse> {
+      const body = saveActorPreferencesRequestSchema.parse(input);
+      return http.request({
+        path: "/identity/preferences",
+        method: "PUT",
+        body,
+        options,
+        parse: (data) => saveActorPreferencesResponseSchema.parse(data),
+      });
+    },
+
     async getOnboardingStatus(options: RequestOptions = {}): Promise<GetOnboardingStatusResponse> {
       return http.request({
         path: "/identity/onboarding",

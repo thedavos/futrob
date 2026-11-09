@@ -14,6 +14,7 @@ export const OPENAPI_DOCUMENT_INFO = {
       name: "game-data",
       description: "Provider observations (neutral DTOs; EA stays server-side)",
     },
+    { name: "identity", description: "Actor account preferences" },
     { name: "onboarding", description: "Actor onboarding state and path completion" },
     { name: "organizations", description: "Organizations and tenant memberships" },
     { name: "players", description: "Personal player profile and game accounts" },

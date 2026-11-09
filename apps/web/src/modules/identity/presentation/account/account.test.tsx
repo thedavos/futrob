@@ -91,7 +91,7 @@ describe("personal account", () => {
       persist,
     );
     const user = userEvent.setup();
-    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox", { name: "Idioma" }));
     await user.click(await screen.findByRole("option", { name: "English" }));
     fireEvent.change(screen.getByLabelText("Contraseña actual"), {
       target: { value: "current-password" },
@@ -117,10 +117,59 @@ describe("personal account", () => {
     const persist = vi.fn().mockResolvedValue(undefined);
     frame(<SettingsDialog onOpenChange={() => undefined} open />, persist);
     const user = userEvent.setup();
-    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox", { name: "Idioma" }));
     await user.click(await screen.findByRole("option", { name: "English" }));
     fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(persist).toHaveBeenCalledWith("en"));
     expect(await screen.findByText("Changes saved.")).toBeVisible();
+  });
+
+  describe("sidebar layout", () => {
+    function stubPreferencesApi(save: () => Response) {
+      const saved: unknown[] = [];
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url: unknown, init: RequestInit = {}) => {
+          if (init.method !== "PUT") return Response.json({ sidebarLayout: "navigation" });
+          saved.push(init.body);
+          return save();
+        }),
+      );
+      return saved;
+    }
+
+    async function chooseWithPendingItems() {
+      const layout = screen.getByRole("combobox", { name: "Barra lateral" });
+      await waitFor(() => expect(layout).toBeEnabled());
+      const user = userEvent.setup();
+      await user.click(layout);
+      await user.click(await screen.findByRole("option", { name: "Con pendientes" }));
+    }
+
+    it("sends the chosen layout to the account on Guardar cambios, not before", async () => {
+      const saved = stubPreferencesApi(() => Response.json({ sidebarLayout: "pending-queue" }));
+      frame(<SettingsDialog onOpenChange={() => undefined} open />);
+
+      await chooseWithPendingItems();
+      expect(saved).toEqual([]);
+
+      fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+      expect(await screen.findByText("Cambios guardados.")).toBeVisible();
+      expect(saved).toEqual([JSON.stringify({ sidebarLayout: "pending-queue" })]);
+    });
+
+    it("keeps the choice and reports the failure when saving fails", async () => {
+      stubPreferencesApi(() => Response.json({ code: "api.internal" }, { status: 500 }));
+      frame(<SettingsDialog onOpenChange={() => undefined} open />);
+
+      await chooseWithPendingItems();
+      fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+      expect(await screen.findByRole("alert")).toBeVisible();
+      expect(screen.getByRole("combobox", { name: "Barra lateral" })).toHaveTextContent(
+        "Con pendientes",
+      );
+    });
   });
 });

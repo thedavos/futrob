@@ -5,7 +5,6 @@ import {
   ActionBarEnd,
   ActionBarStart,
   applyStyles,
-  Button,
   SidebarInset,
   SidebarProvider,
   SidebarRail,
@@ -17,6 +16,7 @@ import {
   ShellActionBarProvider,
   useShellActionBar,
 } from "@/shared/presentation/shell/shell-action-bar.tsx";
+import { ShellAccountDialogsProvider } from "@/shared/presentation/shell/shell-account-dialogs.tsx";
 import { useShellChromeCollapsed } from "@/shared/presentation/shell/shell-chrome-store.ts";
 import { commandsFor } from "@/shared/presentation/shell/shell-commands.ts";
 import { selectionAfterAssociatingClub } from "@/shared/presentation/shell/workspace-selection.ts";
@@ -25,6 +25,10 @@ import {
   useWorkspaceSelection,
 } from "@/shared/presentation/shell/use-workspace-selection.tsx";
 import { AddClubDialog } from "@/modules/teams/presentation/add-club-dialog.tsx";
+import {
+  DEFAULT_SIDEBAR_LAYOUT,
+  useActorPreferencesQuery,
+} from "@/modules/identity/presentation/identity-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   commandBarIdentityLabel,
@@ -38,6 +42,7 @@ import {
   CommandBarWorkspaceMark,
 } from "@/shared/presentation/shell/command-bar-identity-mark.tsx";
 import { workspaceRoleMessageKey } from "@/shared/presentation/shell/workspace-role-icons.ts";
+import { ShellCommandButtons } from "@/shared/presentation/shell/shell-command-buttons.tsx";
 import { DesktopSidebar, MobileNav } from "@/shared/presentation/shell/shell-sidebar-nav.tsx";
 
 const styles = stylex.create({
@@ -130,6 +135,8 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
   );
   const [collapsed, onCollapsedChange] = useShellChromeCollapsed();
   const [addClubOpen, setAddClubOpen] = useState(false);
+  const preferences = useActorPreferencesQuery();
+  const sidebarLayout = preferences.data?.sidebarLayout ?? DEFAULT_SIDEBAR_LAYOUT;
 
   return (
     <SidebarProvider
@@ -138,54 +145,58 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
       onCollapsedChange={onCollapsedChange}
     >
       <ShellActionBarProvider>
-        <a href="#app-main" {...applyStyles(styles.skipLink)}>
-          {t("shell.skipToContent")}
-        </a>
-        <DesktopSidebar
-          allowedPermissions={selectionState.allowedPermissions}
-          model={selectionState.selectorModel}
-          navPending={selectionState.navPending}
-          onRequestAddClub={() => setAddClubOpen(true)}
-          onSelect={selectionState.select}
-          onSelectorOpen={selectionState.prefetchSelectableAccess}
-          pathname={pathname}
-          selection={selectionState.selection}
-        />
-        <SidebarInset>
-          <SidebarRail>
-            <MobileNav
-              allowedPermissions={selectionState.allowedPermissions}
-              model={selectionState.selectorModel}
-              navPending={selectionState.navPending}
-              onRequestAddClub={() => setAddClubOpen(true)}
-              onSelect={selectionState.select}
-              onSelectorOpen={selectionState.prefetchSelectableAccess}
-              pathname={pathname}
-              selection={selectionState.selection}
-              title={identityLabel}
-            />
-          </SidebarRail>
-          <CommandBar
-            commands={commands}
-            identity={selectionState.playerIdentity}
-            identityReady={selectionState.playerIdentityReady}
-            onAddClub={() => setAddClubOpen(true)}
-            workspace={workspace}
-            workspaceRoleLabel={workspaceRoleLabel}
+        <ShellAccountDialogsProvider>
+          <a href="#app-main" {...applyStyles(styles.skipLink)}>
+            {t("shell.skipToContent")}
+          </a>
+          <DesktopSidebar
+            allowedPermissions={selectionState.allowedPermissions}
+            model={selectionState.selectorModel}
+            navPending={selectionState.navPending}
+            onRequestAddClub={() => setAddClubOpen(true)}
+            onSelect={selectionState.select}
+            onSelectorOpen={selectionState.prefetchSelectableAccess}
+            pathname={pathname}
+            selection={selectionState.selection}
+            sidebarLayout={sidebarLayout}
           />
-          <div id="app-main" {...applyStyles(styles.main)}>
-            {children}
-          </div>
-          <ShellActionBarSlot />
-        </SidebarInset>
-        <AddClubDialog
-          onAssociated={() => {
-            selectionState.select(selectionAfterAssociatingClub(selectionState.selection));
-            void navigate({ to: "/player/ea-clubs" });
-          }}
-          onOpenChange={setAddClubOpen}
-          open={addClubOpen}
-        />
+          <SidebarInset>
+            <SidebarRail>
+              <MobileNav
+                allowedPermissions={selectionState.allowedPermissions}
+                model={selectionState.selectorModel}
+                navPending={selectionState.navPending}
+                onRequestAddClub={() => setAddClubOpen(true)}
+                onSelect={selectionState.select}
+                onSelectorOpen={selectionState.prefetchSelectableAccess}
+                pathname={pathname}
+                selection={selectionState.selection}
+                sidebarLayout={sidebarLayout}
+                title={identityLabel}
+              />
+            </SidebarRail>
+            <CommandBar
+              commands={commands}
+              identity={selectionState.playerIdentity}
+              identityReady={selectionState.playerIdentityReady}
+              onAddClub={() => setAddClubOpen(true)}
+              workspace={workspace}
+              workspaceRoleLabel={workspaceRoleLabel}
+            />
+            <div id="app-main" {...applyStyles(styles.main)}>
+              {children}
+            </div>
+            <ShellActionBarSlot />
+          </SidebarInset>
+          <AddClubDialog
+            onAssociated={() => {
+              selectionState.select(selectionAfterAssociatingClub(selectionState.selection));
+              void navigate({ to: "/player/ea-clubs" });
+            }}
+            onOpenChange={setAddClubOpen}
+            open={addClubOpen}
+          />
+        </ShellAccountDialogsProvider>
       </ShellActionBarProvider>
     </SidebarProvider>
   );
@@ -206,7 +217,6 @@ function CommandBar({
   readonly workspaceRoleLabel: string | null;
   readonly onAddClub: () => void;
 }) {
-  const navigate = useNavigate();
   const { t } = useI18n();
   const emptyLabel = t("shell.identity.empty");
 
@@ -230,26 +240,7 @@ function CommandBar({
       </div>
       {commands.length > 0 ? (
         <div {...applyStyles(styles.commands)}>
-          {commands.map((command) => (
-            <Button
-              dense
-              disabled={command.disabled}
-              key={command.id}
-              onClick={() => {
-                if (command.disabled) return;
-                if (command.id === "accept-invite") {
-                  void navigate({ to: "/invitations/accept" });
-                  return;
-                }
-                if (command.id === "associate-club") {
-                  onAddClub();
-                }
-              }}
-              variant={command.variant ?? (command.id === commands[0]?.id ? "default" : "outline")}
-            >
-              {command.id === "associate-club" ? t("shell.workspace.addClub") : command.label}
-            </Button>
-          ))}
+          <ShellCommandButtons commands={commands} onAddClub={onAddClub} />
         </div>
       ) : null}
     </header>

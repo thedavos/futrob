@@ -50,6 +50,7 @@ export const queryKeys = {
   identity: {
     all: ["identity"] as const,
     onboardingStatus: () => [...queryKeys.identity.all, "onboarding-status"] as const,
+    preferences: () => [...queryKeys.identity.all, "preferences"] as const,
   },
   players: {
     all: ["players"] as const,
