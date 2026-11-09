@@ -53,17 +53,17 @@ const stageRules = {
   rescheduleRequiresOrganizerApproval: false,
 };
 
-describe.skipIf(!databaseUrl)("Swiss format on Postgres", { timeout: 120_000 }, () => {
+describe.skipIf(!databaseUrl)("Swiss format on Postgres", () => {
   let isolated: IsolatedSchema;
 
   beforeAll(async () => {
     isolated = await createIsolatedSchema(databaseUrl ?? "", "swiss_format");
     await migrateIsolatedSchema(isolated.pool);
-  }, 180_000);
+  });
 
   afterAll(async () => {
     await isolated?.drop();
-  }, 180_000);
+  });
 
   beforeEach(async () => {
     const schema = `"${isolated.schema}"`;

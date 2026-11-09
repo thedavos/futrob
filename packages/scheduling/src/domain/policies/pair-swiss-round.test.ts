@@ -398,6 +398,5 @@ describe("Swiss round count limits", () => {
         });
       }
     },
-    30_000,
   );
 });
