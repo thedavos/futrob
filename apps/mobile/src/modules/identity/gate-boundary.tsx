@@ -14,7 +14,7 @@ export function GateBoundary({
   route,
 }: {
   children?: ReactNode;
-  mode: "onboarding" | "ready" | "entry";
+  mode: "onboarding" | "ready" | "entry" | "deletion-scheduled";
   route?: string;
 }) {
   const { t } = useMobileCopy();

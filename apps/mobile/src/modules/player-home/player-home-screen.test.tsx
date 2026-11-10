@@ -60,6 +60,7 @@ function playerApi() {
       path: "player",
       currentStep: null,
     }),
+    "/identity/account/deletion": json({ deletion: { status: "active" }, blockers: [] }),
     "/organizations/post-auth-destination": json({
       destination: { kind: "personal" },
       memberships: [],

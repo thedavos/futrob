@@ -49,6 +49,8 @@ describe("roster deep link", () => {
           path: completed ? "player" : null,
           currentStep: null,
         }),
+      "/identity/account/deletion": () =>
+        Response.json({ deletion: { status: "active" }, blockers: [] }),
       "/organizations/post-auth-destination": () =>
         Response.json({ destination: { kind: "personal" }, memberships: [] }),
       "/roster-invitations/accept": accept,
@@ -92,6 +94,8 @@ describe("roster deep link", () => {
           path: "player",
           currentStep: null,
         }),
+      "/identity/account/deletion": () =>
+        Response.json({ deletion: { status: "active" }, blockers: [] }),
       "/organizations/post-auth-destination": () =>
         Response.json({ destination: { kind: "personal" }, memberships: [] }),
       "/roster-invitations/accept": accept,

@@ -160,6 +160,7 @@ function NativeDestinationBody({ destination }: { destination: Destination }) {
             ) : null}
           </>
         )}
+        <Button variant="ghost" label={label("Cuenta", "Account")} onPress={() => go("/account")} />
         <Button
           variant="ghost"
           label={label("Cerrar sesión", "Sign out")}
