@@ -74,18 +74,19 @@ export class RequestOrganizationPlanUseCase {
         }),
       );
     }
-    const current = await this.deps.resolve.execute(input.organizationId);
-    if (input.planKey === "free" || input.planKey === current.plan.key) {
-      return err(
-        new InvalidPlanRequest({
-          code: "billing.invalid_plan_request",
-          message: "Request a paid plan the organization does not have yet",
-        }),
-      );
-    }
-
-    return this.deps.subscriptions.withOrganizationLock(input.organizationId, () =>
-      this.deps.transaction.runInTransaction(async () => {
+    return this.deps.subscriptions.withOrganizationLock(input.organizationId, async () => {
+      // Resolve the plan in force under the lock: a superuser assignment that landed while this
+      // request waited must not leave a pending request for the plan it just activated.
+      const current = await this.deps.resolve.execute(input.organizationId);
+      if (input.planKey === "free" || input.planKey === current.plan.key) {
+        return err(
+          new InvalidPlanRequest({
+            code: "billing.invalid_plan_request",
+            message: "Request a paid plan the organization does not have yet",
+          }),
+        );
+      }
+      return this.deps.transaction.runInTransaction(async () => {
         const pending = await this.deps.requests.findPendingForOrganization(input.organizationId);
         if (pending?.planKey === input.planKey) return ok(pending);
         const now = this.deps.clock.now();
@@ -103,7 +104,7 @@ export class RequestOrganizationPlanUseCase {
         };
         await this.deps.requests.save(created);
         return ok(created);
-      }),
-    );
+      });
+    });
   }
 }

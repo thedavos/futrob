@@ -11,6 +11,14 @@ import {
 import { AssignOrganizationPlanUseCase } from "../assign-organization-plan/assign-organization-plan.use-case.ts";
 import { RequestOrganizationPlanUseCase } from "./request-organization-plan.use-case.ts";
 
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 function setup() {
   const harness = createBillingHarness();
   harness.allow(ORGANIZER, BILLING_PERMISSION.plansRequest);
@@ -96,6 +104,55 @@ describe("RequestOrganizationPlanUseCase", () => {
     const pending = harness.planRequests().filter((r) => r.status === "pending");
     expect(pending).toHaveLength(1);
     expect(harness.planRequests().filter((r) => r.status === "canceled")).toHaveLength(1);
+  });
+
+  it("checks the plan in force under the lock, so a concurrent assignment leaves no stale request", async () => {
+    const { harness } = setup();
+    const saveEntered = deferred();
+    const releaseSave = deferred();
+    const requestQueued = deferred();
+    // The superuser assignment holds the organization lock until the request is queued behind it.
+    const assign = new AssignOrganizationPlanUseCase({
+      ...harness,
+      subscriptions: {
+        ...harness.subscriptions,
+        save: async (subscription) => {
+          saveEntered.resolve();
+          await releaseSave.promise;
+          await harness.subscriptions.save(subscription);
+        },
+      },
+    });
+    const request = new RequestOrganizationPlanUseCase({
+      ...harness,
+      subscriptions: {
+        withOrganizationLock: (organizationId, operation) => {
+          requestQueued.resolve();
+          return harness.subscriptions.withOrganizationLock(organizationId, operation);
+        },
+      },
+    });
+
+    const assigning = assign.execute({
+      actorId: SUPERUSER,
+      organizationId: ORG,
+      planKey: "pro",
+      state: { status: "active" },
+      reason: "Pago recibido",
+    });
+    await saveEntered.promise;
+    const requesting = request.execute({
+      actorId: ORGANIZER,
+      organizationId: ORG,
+      planKey: "pro",
+    });
+    await requestQueued.promise;
+    releaseSave.resolve();
+    const [assigned, requested] = await Promise.all([assigning, requesting]);
+
+    expect(assigned.isOk()).toBe(true);
+    expect(!requested.isOk() && requested.error.code).toBe("billing.invalid_plan_request");
+    expect(harness.planRequests()).toHaveLength(0);
   });
 
   it("keeps requests of different organizations apart", async () => {
