@@ -238,6 +238,14 @@ export default defineConfig({
                   message: "Domain/application must not import Sentry Node bindings.",
                 },
                 {
+                  name: "@sentry/cloudflare",
+                  message: "Domain/application must not import Sentry Cloudflare bindings.",
+                },
+                {
+                  name: "@sentry/react-native",
+                  message: "Domain/application must not import Sentry React Native bindings.",
+                },
+                {
                   name: "pg",
                   message: "Domain/application must not import Postgres clients.",
                 },
@@ -380,6 +388,7 @@ export default defineConfig({
       "packages/notifications",
       "packages/billing",
       "packages/analytics",
+      "packages/logger",
       "apps/mobile",
       // Storybook component tests (stories as tests) in a real browser.
       storybookVitestProject(),

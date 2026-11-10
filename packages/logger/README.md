@@ -35,15 +35,20 @@ child.debug("job.received", { jobId });
 - Campos planos transport-safe (`string | number | boolean | null`).
 - Errores esperados (`TaggedError`) se registran como `warn` con su `code`;
   los defectos van a Sentry además de `error`.
+- La política de Sentry (`buildSentryInitConfig`, `isExpectedFailure`,
+  `sentrySdkOptions`) vive aquí: DSN + `NODE_ENV=production`, filtro de
+  fallos esperados, y scrub de cuerpos, cookies, tokens y correos. Cada app
+  envuelve su SDK. En desarrollo no sale ningún evento.
 
 ## Integración por app
 
-| App           | Estado     | Nota                                                          |
-| ------------- | ---------- | ------------------------------------------------------------- |
-| `apps/api`    | cableado   | Adaptador `CorrelationLogger` + access log HTTP               |
-| `apps/web`    | cableado   | Workers queue/scheduled (formato `plain`)                     |
-| `apps/cli`    | cableado   | Fallos de red en `call-api`                                   |
-| `apps/mobile` | disponible | Usar formato `plain`; integrar en los módulos al construirlos |
+| App           | Estado   | Nota                                                          |
+| ------------- | -------- | ------------------------------------------------------------- |
+| `apps/api`    | cableado | Adaptador `CorrelationLogger` + access log HTTP + Sentry Node |
+| `apps/web`    | cableado | Workers queue/scheduled (formato `plain`) + Sentry Cloudflare |
+| `apps/auth`   | cableado | Sentry Cloudflare (`withSentry`)                              |
+| `apps/cli`    | cableado | Fallos de red en `call-api`                                   |
+| `apps/mobile` | cableado | Logger `plain`; Sentry React Native                           |
 
 En React Native evita `format: "styled"`: los códigos ANSI aparecen como
 basura en Metro.
