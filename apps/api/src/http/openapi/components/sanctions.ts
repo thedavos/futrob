@@ -11,5 +11,11 @@ export const ListCompetitionSanctionsResponse = namedSchema(
   "ListCompetitionSanctionsResponse",
   listCompetitionSanctionsResponseSchema,
 );
-export const ImposeSanctionRequest = namedSchema("ImposeSanctionRequest", imposeSanctionRequestSchema);
-export const RevokeSanctionRequest = namedSchema("RevokeSanctionRequest", revokeSanctionRequestSchema);
+export const ImposeSanctionRequest = namedSchema(
+  "ImposeSanctionRequest",
+  imposeSanctionRequestSchema,
+);
+export const RevokeSanctionRequest = namedSchema(
+  "RevokeSanctionRequest",
+  revokeSanctionRequestSchema,
+);

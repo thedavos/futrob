@@ -32,11 +32,11 @@ consulta.
 
 **Tipos.**
 
-| Tipo                    | Destinatario    | Dato obligatorio                    | Efecto automático                 |
-| ----------------------- | --------------- | ----------------------------------- | --------------------------------- |
-| `warning`               | equipo, jugador | —                                   | Ninguno                           |
-| `points_deduction`      | equipo          | `pointsDeducted` (1–100)            | Resta puntos en la tabla          |
-| `match_suspension`      | equipo, jugador | `suspensionMatches` (1–20)          | Ninguno: registro para el staff   |
+| Tipo                    | Destinatario    | Dato obligatorio                     | Efecto automático                  |
+| ----------------------- | --------------- | ------------------------------------ | ---------------------------------- |
+| `warning`               | equipo, jugador | —                                    | Ninguno                            |
+| `points_deduction`      | equipo          | `pointsDeducted` (1–100)             | Resta puntos en la tabla           |
+| `match_suspension`      | equipo, jugador | `suspensionMatches` (1–20)           | Ninguno: registro para el staff    |
 | `administrative_defeat` | equipo          | `encounterId` (encuentro del equipo) | Ninguno: no crea resultado oficial |
 
 Todas exigen un motivo de 3 a 500 caracteres. Los datos de otro tipo se rechazan.
@@ -64,7 +64,7 @@ lectura.
 
 **Deducción de puntos y tabla.** `statistics` sigue siendo dueño de la tabla. Declara
 `CompetitionPointDeductionReaderPort` y `apps/api` lo conecta con las sanciones activas. La
-tabla se calcula siempre como *partidos oficiales aprobados + deducciones activas*:
+tabla se calcula siempre como _partidos oficiales aprobados + deducciones activas_:
 
 - `buildCompetitionStandings` resta la suma de deducciones activas a los puntos del equipo y
   la guarda en la fila (`pointsDeducted`). Un equipo sancionado sin partidos aparece con

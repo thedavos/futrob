@@ -1,8 +1,5 @@
 import type { CompetitionId, OrganizationId, TeamId } from "@futrob/shared-kernel";
-import type {
-  CompetitionSanction,
-  SanctionRevocation,
-} from "../entities/competition-sanction.ts";
+import type { CompetitionSanction, SanctionRevocation } from "../entities/competition-sanction.ts";
 
 /** Append-only store: rows are created and revoked, never edited or deleted. */
 export interface CompetitionSanctionRepository {

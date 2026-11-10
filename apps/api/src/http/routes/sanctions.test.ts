@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import {
   acceptEntryInvitationResponseSchema,
   competitionSanctionSchema,
@@ -8,6 +9,7 @@ import {
 } from "@futrob/api-contracts";
 import {
   buildApp,
+  buildAppWithModules,
   onboardingCompetition,
   serviceHeaders,
   stubFetch,
@@ -49,9 +51,7 @@ async function captainOf(
     { teamName: input.team, creationKey: `sanction-${input.captain}-0001` },
   );
   expect(accepted.status).toBe(201);
-  return (
-    await parseResponse(acceptEntryInvitationResponseSchema, accepted)
-  ).application.teamId;
+  return (await parseResponse(acceptEntryInvitationResponseSchema, accepted)).application.teamId;
 }
 
 /** A competition in registration with two approved Teams, each with its captain. */
@@ -80,10 +80,188 @@ async function sanctionableCompetition(app: App, organizer: string) {
   await captainOf(app, { organizer, base, captain: puma, gamertag: "Puma7", team: "Puma FC" });
   const opened = await post(app, `${base}/registration/open`, organizer);
   expect(opened.status, await opened.clone().text()).toBe(200);
-  return { base, condor, puma, condorTeamId };
+  return { base, organizationId, competitionId, condor, puma, condorTeamId };
 }
 
 describe("apps/api http competition sanctions", () => {
+  it.each(["vice_captain", "player"] as const)(
+    "lets a roster %s read the affected Team but refuses impose and revoke",
+    async (role) => {
+      const { app, modules } = buildAppWithModules(stubFetch);
+      const organizer = `actor-sanction-${role}-organizer`;
+      const actorId = asActorId(`actor-sanction-${role}`);
+      const { base, organizationId, competitionId, condorTeamId } = await sanctionableCompetition(
+        app,
+        organizer,
+      );
+      const createdAt = new Date("2026-11-10T12:00:00Z");
+      const profile = await modules.teams.repositories.profiles.saveIfAbsent({
+        id: `profile-sanction-${role}`,
+        actorId,
+        createdAt,
+      });
+      await modules.teams.repositories.rosters.add({
+        id: `roster-sanction-${role}`,
+        organizationId: asOrganizationId(organizationId),
+        competitionId: asCompetitionId(competitionId),
+        teamId: asTeamId(condorTeamId),
+        playerProfileId: profile.id,
+        gameAccountId: null,
+        role,
+        createdAt,
+      });
+      const body = {
+        target: { type: "team", teamId: condorTeamId },
+        type: "warning",
+        reason: "Conducta antideportiva",
+      };
+      const sanction = await parseResponse(
+        competitionSanctionSchema,
+        await post(app, `${base}/sanctions`, organizer, body),
+      );
+      const view = await app.request(`${base}/teams/${condorTeamId}/sanctions`, {
+        headers: serviceHeaders(actorId),
+      });
+      expect(view.status).toBe(200);
+      expect(await parseResponse(listCompetitionSanctionsResponseSchema, view)).toMatchObject({
+        sanctions: [{ id: sanction.id }],
+      });
+      expect((await post(app, `${base}/sanctions`, actorId, body)).status).toBe(403);
+      expect(
+        (
+          await post(app, `${base}/sanctions/${sanction.id}/revoke`, actorId, {
+            reason: "Intento sin permiso",
+          })
+        ).status,
+      ).toBe(403);
+    },
+  );
+
+  it.each(["organization", "competition"] as const)(
+    "allows %s staff to impose and revoke, then honors a granular deny",
+    async (staffScope) => {
+      const { app, modules } = buildAppWithModules(stubFetch);
+      const organizer = `actor-sanction-${staffScope}-organizer`;
+      const staff = asActorId(`actor-sanction-${staffScope}-staff`);
+      const { base, organizationId, competitionId, condorTeamId } = await sanctionableCompetition(
+        app,
+        organizer,
+      );
+      const membership = {
+        organizationId: asOrganizationId(organizationId),
+        actorId: staff,
+        role: "staff" as const,
+        createdAt: new Date("2026-11-10T12:00:00Z"),
+      };
+      if (staffScope === "organization") {
+        await modules.organizations.repositories.memberships.add(membership);
+      } else {
+        await modules.organizations.repositories.memberships.add({ ...membership, role: "member" });
+        await modules.competitions.membershipRepository.add({
+          ...membership,
+          competitionId: asCompetitionId(competitionId),
+        });
+      }
+      const body = {
+        target: { type: "team", teamId: condorTeamId },
+        type: "warning",
+        reason: "Conducta antideportiva",
+      };
+      const imposed = await post(app, `${base}/sanctions`, staff, body);
+      expect(imposed.status).toBe(201);
+      const sanction = await parseResponse(competitionSanctionSchema, imposed);
+      expect(
+        (await app.request(`${base}/sanctions`, { headers: serviceHeaders(staff) })).status,
+      ).toBe(200);
+      expect(
+        (
+          await post(app, `${base}/sanctions/${sanction.id}/revoke`, staff, {
+            reason: "Apelación aceptada",
+          })
+        ).status,
+      ).toBe(200);
+      const active = await parseResponse(
+        competitionSanctionSchema,
+        await post(app, `${base}/sanctions`, staff, body),
+      );
+      const denied = await app.request("/api/v1/authorization/grants", {
+        method: "PUT",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({
+          targetActorId: staff,
+          organizationId,
+          competitionId,
+          permission: "competitions.sanctions.manage",
+          effect: "deny",
+          scopeType: "competition",
+          scopeId: competitionId,
+          reason: "Read-only disciplinary access",
+        }),
+      });
+      expect(denied.status, await denied.clone().text()).toBe(200);
+      const access = await app.request(
+        `/api/v1/authorization/effective-access?organizationId=${organizationId}&competitionId=${competitionId}&permissions=competitions.sanctions.manage`,
+        { headers: serviceHeaders(staff) },
+      );
+      expect(await access.json()).toMatchObject({
+        permissions: [{ permission: "competitions.sanctions.manage", allowed: false }],
+      });
+      expect((await post(app, `${base}/sanctions`, staff, body)).status).toBe(403);
+      expect(
+        (
+          await post(app, `${base}/sanctions/${active.id}/revoke`, staff, {
+            reason: "Intento denegado",
+          })
+        ).status,
+      ).toBe(403);
+      const list = await app.request(`${base}/sanctions`, { headers: serviceHeaders(staff) });
+      expect(await parseResponse(listCompetitionSanctionsResponseSchema, list)).toMatchObject({
+        sanctions: expect.arrayContaining([
+          expect.objectContaining({ id: active.id, revocation: null }),
+        ]),
+      });
+    },
+  );
+
+  it("refuses another organization's organizer and mismatched tenant paths without changing sanctions", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-sanction-tenant-a";
+    const other = "actor-sanction-tenant-b";
+    const own = await sanctionableCompetition(app, organizer);
+    const foreign = await sanctionableCompetition(app, other);
+    const body = {
+      target: { type: "team", teamId: own.condorTeamId },
+      type: "warning",
+      reason: "Conducta antideportiva",
+    };
+    const sanction = await parseResponse(
+      competitionSanctionSchema,
+      await post(app, `${own.base}/sanctions`, organizer, body),
+    );
+    for (const base of [
+      own.base,
+      `/api/v1/organizations/${foreign.organizationId}/competitions/${own.competitionId}`,
+    ]) {
+      expect(
+        (await app.request(`${base}/sanctions`, { headers: serviceHeaders(other) })).status,
+      ).toBe(403);
+      expect((await post(app, `${base}/sanctions`, other, body)).status).toBe(403);
+      expect(
+        (
+          await post(app, `${base}/sanctions/${sanction.id}/revoke`, other, {
+            reason: "Intento desde otra organización",
+          })
+        ).status,
+      ).toBe(403);
+    }
+    const listed = await app.request(`${own.base}/sanctions`, {
+      headers: serviceHeaders(organizer),
+    });
+    expect(await parseResponse(listCompetitionSanctionsResponseSchema, listed)).toMatchObject({
+      sanctions: [{ id: sanction.id, revocation: null }],
+    });
+  });
+
   it("imposes and revokes a deduction that the table and the affected Team see, never deleting it", async () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-sanction-organizer";
@@ -108,7 +286,9 @@ describe("apps/api http competition sanctions", () => {
     });
     expect(sanction.requestId).not.toBe("");
 
-    const standings = await app.request(`${base}/standings`, { headers: serviceHeaders(organizer) });
+    const standings = await app.request(`${base}/standings`, {
+      headers: serviceHeaders(organizer),
+    });
     expect(await standings.json()).toMatchObject({
       standings: {
         rows: [

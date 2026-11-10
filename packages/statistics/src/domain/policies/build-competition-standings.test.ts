@@ -71,7 +71,12 @@ describe("buildCompetitionStandings", () => {
           goalsAgainst: 2,
         }),
       ],
-      pointsRules: { winPoints: 3, drawPoints: 1, lossPoints: 0, resolutionMode: "independent_matches" },
+      pointsRules: {
+        winPoints: 3,
+        drawPoints: 1,
+        lossPoints: 0,
+        resolutionMode: "independent_matches",
+      },
       pointDeductions: [
         { teamId: asTeamId("home-team"), points: 2 },
         { teamId: asTeamId("home-team"), points: 2 },
@@ -100,7 +105,12 @@ describe("buildCompetitionStandings", () => {
       competitionId: asCompetitionId("competition-1"),
       organizationId: asOrganizationId("organization-1"),
       contributions: [],
-      pointsRules: { winPoints: 3, drawPoints: 1, lossPoints: 0, resolutionMode: "independent_matches" },
+      pointsRules: {
+        winPoints: 3,
+        drawPoints: 1,
+        lossPoints: 0,
+        resolutionMode: "independent_matches",
+      },
       pointDeductions: [{ teamId: asTeamId("idle-team"), points: 3 }],
       occurredAtBySlot: new Map(),
       updatedAt: new Date("2026-11-10T12:00:00.000Z"),

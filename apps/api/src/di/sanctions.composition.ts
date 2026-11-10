@@ -26,6 +26,9 @@ import type { SchedulingModule } from "./scheduling.module.ts";
 import type { StatisticsModule } from "./statistics.module.ts";
 import type { TeamsModule } from "./teams.module.ts";
 
+/** Statistics reads active deductions through this bridge (ADR-0028). */
+export { SanctionPointDeductionReader } from "@/adapters/statistics/sanction-point-deduction.reader.ts";
+
 export interface SanctionsComposition {
   /** Impose and revoke with their table rebuild and activity in one transaction. */
   readonly commands: SanctionCommands;
@@ -34,17 +37,22 @@ export interface SanctionsComposition {
 }
 
 /** Competition sanctions (ADR-0028): competitions + teams/scheduling targets + statistics. */
-export function createSanctions(input: {
-  readonly authorization: AuthorizationPort;
-  readonly transaction: TransactionPort;
-  readonly clock: ClockPort;
-  readonly ids: IdGeneratorPort;
-  readonly writer: ActivityWriter;
-  readonly competitions: CompetitionsModule;
-  readonly teams: TeamsModule;
-  readonly scheduling: Pick<SchedulingModule, "encounters">;
-  readonly statistics: Pick<StatisticsModule, "useCases">;
-}): SanctionsComposition {
+export function createSanctions(
+  ports: {
+    readonly authorization: AuthorizationPort;
+    readonly transaction: TransactionPort;
+    readonly clock: ClockPort;
+    readonly ids: IdGeneratorPort;
+  },
+  modules: {
+    readonly writer: ActivityWriter;
+    readonly competitions: CompetitionsModule;
+    readonly teams: TeamsModule;
+    readonly scheduling: Pick<SchedulingModule, "encounters">;
+    readonly statistics: Pick<StatisticsModule, "useCases">;
+  },
+): SanctionsComposition {
+  const input = { ...ports, ...modules };
   const sanctions = input.competitions.sanctionRepository;
   const competitions = input.competitions.repository;
   const table: SanctionTableEffect = {

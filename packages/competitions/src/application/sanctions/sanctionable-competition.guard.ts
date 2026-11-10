@@ -60,7 +60,10 @@ export async function requireSanctionableCompetition(
   },
   scope: SanctionScope,
 ): Promise<
-  Result<CompetitionDraft, CompetitionAuthorizationForbidden | CompetitionNotFound | SanctionsClosed>
+  Result<
+    CompetitionDraft,
+    CompetitionAuthorizationForbidden | CompetitionNotFound | SanctionsClosed
+  >
 > {
   const draft = await requireCompetitionAccess(deps, scope, COMPETITION_PERMISSION.sanctionsManage);
   if (draft.isErr()) return draft;

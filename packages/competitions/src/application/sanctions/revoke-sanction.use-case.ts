@@ -1,4 +1,10 @@
-import { err, ok, type AuthorizationPort, type ClockPort, type Result } from "@futrob/shared-kernel";
+import {
+  err,
+  ok,
+  type AuthorizationPort,
+  type ClockPort,
+  type Result,
+} from "@futrob/shared-kernel";
 import type { CompetitionSanction } from "../../domain/entities/competition-sanction.ts";
 import {
   SanctionAlreadyRevoked,
@@ -8,7 +14,10 @@ import {
 import { parseSanctionReason } from "../../domain/policies/sanction-terms.ts";
 import type { CompetitionSanctionRepository } from "../../domain/ports/competition-sanction.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
-import { requireSanctionableCompetition, type SanctionScope } from "./sanctionable-competition.guard.ts";
+import {
+  requireSanctionableCompetition,
+  type SanctionScope,
+} from "./sanctionable-competition.guard.ts";
 
 export interface RevokeSanctionInput extends SanctionScope {
   readonly sanctionId: string;

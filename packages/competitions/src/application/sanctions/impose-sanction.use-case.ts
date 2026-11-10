@@ -12,12 +12,18 @@ import {
   SanctionTargetNotFound,
   type ImposeSanctionError,
 } from "../../domain/errors/sanction.errors.ts";
-import { parseSanctionTerms, type SanctionTermsInput } from "../../domain/policies/sanction-terms.ts";
+import {
+  parseSanctionTerms,
+  type SanctionTermsInput,
+} from "../../domain/policies/sanction-terms.ts";
 import type { CompetitionEntryRepository } from "../../domain/ports/competition-entry.repository.ts";
 import type { CompetitionSanctionRepository } from "../../domain/ports/competition-sanction.repository.ts";
 import type { CompetitionRepository } from "../../domain/ports/competition.repository.ts";
 import type { SanctionTargetReaderPort } from "../../domain/ports/sanction-target.reader.ts";
-import { requireSanctionableCompetition, type SanctionScope } from "./sanctionable-competition.guard.ts";
+import {
+  requireSanctionableCompetition,
+  type SanctionScope,
+} from "./sanctionable-competition.guard.ts";
 
 export interface ImposeSanctionInput extends SanctionScope, SanctionTermsInput {
   /** Correlation of the request, stored with the sanction for the audit trail. */
@@ -112,9 +118,7 @@ export class ImposeSanctionUseCase {
       teamId,
     );
     if (entry?.status !== "approved") {
-      return err(
-        targetNotFound(target.type, "The Team has no approved entry in this competition"),
-      );
+      return err(targetNotFound(target.type, "The Team has no approved entry in this competition"));
     }
     return ok(teamId);
   }

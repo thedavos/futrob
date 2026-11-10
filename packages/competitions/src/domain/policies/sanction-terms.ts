@@ -36,7 +36,9 @@ function invalid(field: InvalidSanctionField, message: string): InvalidSanction 
 }
 
 function isWholeBetween(value: number | null | undefined, max: number): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= max;
+  return (
+    value !== null && value !== undefined && Number.isInteger(value) && value >= 1 && value <= max
+  );
 }
 
 function isPresent<T>(value: T | null | undefined): value is T {
@@ -119,7 +121,10 @@ export function activePointDeductions(
   const byTeam = new Map<TeamId, number>();
   for (const sanction of sanctions) {
     if (!isActiveSanction(sanction) || sanction.type !== SANCTION_TYPE.pointsDeduction) continue;
-    byTeam.set(sanction.teamId, (byTeam.get(sanction.teamId) ?? 0) + (sanction.pointsDeducted ?? 0));
+    byTeam.set(
+      sanction.teamId,
+      (byTeam.get(sanction.teamId) ?? 0) + (sanction.pointsDeducted ?? 0),
+    );
   }
   return [...byTeam].map(([teamId, points]) => ({ teamId, points }));
 }

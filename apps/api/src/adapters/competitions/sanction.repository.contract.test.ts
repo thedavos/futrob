@@ -1,6 +1,17 @@
 import type { CompetitionSanction, CompetitionSanctionRepository } from "@futrob/competitions";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vite-plus/test";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { createModules } from "@/di/create-modules.ts";
+import {
+  seedPerformanceModule,
+  seedPerformanceResults,
+  PERFORMANCE_HOME_CAPTAIN,
+  PERFORMANCE_AWAY_CAPTAIN,
+} from "@/testing/team-performance-module.fixture.ts";
+import {
+  performanceScope,
+  performanceHome,
+} from "../../../../../packages/statistics/src/domain/policies/team-performance.fixture.ts";
 import {
   createIsolatedSchema,
   migrateIsolatedSchema,
@@ -124,7 +135,10 @@ function contract(name: string, repository: () => CompetitionSanctionRepository)
   });
 }
 
-contract("in-memory competition sanction repository", () => new InMemoryCompetitionSanctionRepository());
+contract(
+  "in-memory competition sanction repository",
+  () => new InMemoryCompetitionSanctionRepository(),
+);
 
 describe.skipIf(!databaseUrl)("postgres competition sanctions", () => {
   let isolated: IsolatedSchema;
@@ -132,11 +146,11 @@ describe.skipIf(!databaseUrl)("postgres competition sanctions", () => {
   beforeAll(async () => {
     isolated = await createIsolatedSchema(databaseUrl ?? "", "competition_sanctions");
     await migrateIsolatedSchema(isolated.pool);
-  }, 180_000);
+  });
 
   afterAll(async () => {
     await isolated?.drop();
-  }, 180_000);
+  });
 
   beforeEach(async () => {
     const schema = `"${isolated.schema}"`;
@@ -177,6 +191,159 @@ describe.skipIf(!databaseUrl)("postgres competition sanctions", () => {
   });
 
   contract("postgres", () => new PostgresCompetitionSanctionRepository(isolated.pool));
+
+  async function composition() {
+    await seedActors(isolated.pool, "actor-1", PERFORMANCE_HOME_CAPTAIN, PERFORMANCE_AWAY_CAPTAIN);
+    const modules = createModules({
+      pool: isolated.pool,
+      fetcher: async () => {
+        throw new Error("Sanctions must never call EA");
+      },
+      eaClubsBaseUrl: "https://provider.invalid",
+      clock: { now: () => at(0) },
+    });
+    await seedPerformanceModule(modules);
+    await seedPerformanceResults(modules);
+    const scope = { ...performanceScope, actorId: asActorId("actor-1") };
+    const impose = () =>
+      modules.sanctions.commands.impose.execute({
+        ...scope,
+        target: { type: "team", teamId: performanceHome },
+        type: "points_deduction",
+        pointsDeducted: 3,
+        reason: "Alineación indebida",
+        requestId: "req-impose-composition",
+      });
+    async function state() {
+      const activities = await modules.notifications.listActivities.execute({
+        audiences: [{ audience: "organization", audienceId: scope.organizationId }],
+      });
+      if (activities.isErr()) throw activities.error;
+      return {
+        sanctions: await modules.competitions.sanctionRepository.listByCompetition(
+          scope.organizationId,
+          scope.competitionId,
+        ),
+        standings: await modules.statistics.ports.standings.findByCompetition(scope.competitionId),
+        activities: activities.value.items,
+      };
+    }
+    return { modules, scope, impose, state };
+  }
+
+  it.each([
+    ["impose", "table"],
+    ["impose", "feed"],
+    ["revoke", "table"],
+    ["revoke", "feed"],
+  ] as const)(
+    "rolls back %s, standings and activity when the %s fails after persistence",
+    async (command, stage) => {
+      const { modules, scope, impose, state } = await composition();
+      const existing = command === "revoke" ? await impose() : null;
+      if (existing?.isErr()) throw existing.error;
+      const before = await state();
+      const rebuild = modules.statistics.useCases.rebuildCompetitionStatistics;
+      const writer = modules.notifications.writer;
+      const originalRebuild = rebuild.execute.bind(rebuild);
+      const originalRecord = writer.record.bind(writer);
+      const failure =
+        stage === "table"
+          ? vi.spyOn(rebuild, "execute").mockImplementationOnce(async (input) => {
+              await originalRebuild(input);
+              throw new Error("sanction table persistence failed");
+            })
+          : vi.spyOn(writer, "record").mockImplementationOnce(async (input) => {
+              await originalRecord(input);
+              throw new Error("sanction feed persistence failed");
+            });
+      try {
+        await expect(
+          command === "impose"
+            ? impose()
+            : modules.sanctions.commands.revoke.execute({
+                ...scope,
+                sanctionId: existing?.isOk() ? existing.value.id : "",
+                reason: "Apelación aceptada",
+                requestId: "req-revoke-composition",
+              }),
+        ).rejects.toThrow(`sanction ${stage} persistence failed`);
+      } finally {
+        failure.mockRestore();
+      }
+      expect(await state()).toEqual(before);
+    },
+  );
+
+  it("keeps approved results and standings unchanged when imposing and revoking a suspension", async () => {
+    const { modules, scope, state } = await composition();
+    const before = await state();
+    const results = await modules.results.results.listByCompetition(scope.competitionId);
+    const imposed = await modules.sanctions.commands.impose.execute({
+      ...scope,
+      target: { type: "team", teamId: performanceHome },
+      type: "match_suspension",
+      suspensionMatches: 2,
+      reason: "Conducta antideportiva",
+      requestId: "req-suspension",
+    });
+    if (imposed.isErr()) throw imposed.error;
+    expect((await state()).standings).toEqual(before.standings);
+    expect(await modules.results.results.listByCompetition(scope.competitionId)).toEqual(results);
+    const revoked = await modules.sanctions.commands.revoke.execute({
+      ...scope,
+      sanctionId: imposed.value.id,
+      reason: "Apelación aceptada",
+      requestId: "req-revoke-suspension",
+    });
+    expect(revoked.isOk()).toBe(true);
+    expect((await state()).standings).toEqual(before.standings);
+    expect(await modules.results.results.listByCompetition(scope.competitionId)).toEqual(results);
+  });
+
+  it("rebuilds official matches plus active deductions identically and restores points on revocation", async () => {
+    const { modules, scope, impose, state } = await composition();
+    const before = await state();
+    const imposed = await impose();
+    if (imposed.isErr()) throw imposed.error;
+    const deducted = await state();
+    const previous = before.standings?.rows.find((row) => row.teamId === performanceHome);
+    expect(previous).toBeDefined();
+    expect(deducted.standings?.rows.find((row) => row.teamId === performanceHome)).toMatchObject({
+      points: (previous?.points ?? 0) - 3,
+      pointsDeducted: 3,
+      played: previous?.played,
+    });
+    for (const attempt of [1, 2]) {
+      const rebuilt = await modules.statistics.useCases.rebuildCompetitionStatistics.execute(scope);
+      expect(rebuilt.isOk(), `rebuild ${attempt}`).toBe(true);
+      expect((await state()).standings?.rows).toEqual(deducted.standings?.rows);
+    }
+    const revoked = await modules.sanctions.commands.revoke.execute({
+      ...scope,
+      sanctionId: imposed.value.id,
+      reason: "Apelación aceptada",
+      requestId: "req-revoke-deduction",
+    });
+    expect(revoked.isOk()).toBe(true);
+    const restored = await state();
+    expect(restored.standings?.rows).toEqual(before.standings?.rows);
+    expect(restored.sanctions).toMatchObject([
+      {
+        id: imposed.value.id,
+        requestId: "req-impose-composition",
+        revocation: {
+          actorId: scope.actorId,
+          reason: "Apelación aceptada",
+          requestId: "req-revoke-deduction",
+        },
+      },
+    ]);
+    expect(restored.activities.map((entry) => entry.subject.outcome).sort()).toEqual([
+      "sanction_imposed",
+      "sanction_revoked",
+    ]);
+  });
 
   it("rejects deleting a sanction or editing it outside the one revocation", async () => {
     const sanctions = new PostgresCompetitionSanctionRepository(isolated.pool);

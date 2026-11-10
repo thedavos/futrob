@@ -7,7 +7,9 @@ import type { CompetitionId, OrganizationId } from "@futrob/shared-kernel";
 
 /** Feeds the table the active point deductions of competition sanctions (ADR-0028). */
 export class SanctionPointDeductionReader implements CompetitionPointDeductionReaderPort {
-  constructor(private readonly sanctions: Pick<CompetitionSanctionRepository, "listByCompetition">) {}
+  constructor(
+    private readonly sanctions: Pick<CompetitionSanctionRepository, "listByCompetition">,
+  ) {}
 
   async listActive(
     organizationId: OrganizationId,

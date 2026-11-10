@@ -35,6 +35,7 @@ export type ShellNavIconId =
   | "bracket"
   | "rankings"
   | "disputes"
+  | "sanctions"
   | "analytics"
   | "rules";
 
@@ -271,6 +272,13 @@ function organizationCompetitionContext(
       requiredPermission: RESULT_PERMISSION.resultApprove,
     },
     {
+      id: "sanctions",
+      label: t("pages.competition.sanctions.title"),
+      href: `${base}/sanctions`,
+      icon: "sanctions",
+      requiredPermission: COMPETITION_PERMISSION.sanctionsRead,
+    },
+    {
       id: "analytics",
       label: t("pages.competition.analytics.title"),
       href: `${base}/analytics`,
@@ -318,7 +326,8 @@ export function contextNavFor(
   if (selection.kind === WORKSPACE_SELECTION_KIND.competition) {
     const isOrgOperator =
       selection.organizationId != null &&
-      allowedPermissions?.has(COMPETITION_PERMISSION.update) === true;
+      (allowedPermissions?.has(COMPETITION_PERMISSION.update) === true ||
+        allowedPermissions?.has(COMPETITION_PERMISSION.sanctionsRead) === true);
     const items = isOrgOperator
       ? organizationCompetitionContext(selection.organizationId!, selection.competitionId, t)
       : personalCompetitionContext(selection.organizationId, selection.competitionId, t);

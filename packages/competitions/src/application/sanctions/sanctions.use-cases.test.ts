@@ -16,7 +16,10 @@ import { COMPETITION_PERMISSION } from "../../domain/policies/competition-permis
 import { FakeCompetitionRepository } from "../fake-competition-repository.test-helper.ts";
 import { FakeSanctionRepository } from "./fake-sanction-repository.test-helper.ts";
 import { ImposeSanctionUseCase } from "./impose-sanction.use-case.ts";
-import { ListCompetitionSanctionsUseCase, ListTeamSanctionsUseCase } from "./list-sanctions.use-cases.ts";
+import {
+  ListCompetitionSanctionsUseCase,
+  ListTeamSanctionsUseCase,
+} from "./list-sanctions.use-cases.ts";
 import { RevokeSanctionUseCase } from "./revoke-sanction.use-case.ts";
 
 const organizationId = asOrganizationId("org-1");
@@ -213,7 +216,12 @@ describe("ImposeSanctionUseCase", () => {
   ] as const)("does not sanction %s", async (_label, target, expected) => {
     const { impose } = harness();
 
-    const result = await impose.execute({ ...deduction, target, type: "warning", pointsDeducted: null });
+    const result = await impose.execute({
+      ...deduction,
+      target,
+      type: "warning",
+      pointsDeducted: null,
+    });
 
     expect(result.isErr() && result.error).toMatchObject({
       code: "competitions.sanction_target_not_found",
@@ -237,13 +245,16 @@ describe("ImposeSanctionUseCase", () => {
     expect(foreign.isErr() && foreign.error).toMatchObject({ target: "encounter" });
   });
 
-  it.each(["draft", "archived"] as const)("is closed while the competition is %s", async (status) => {
-    const { impose } = harness({ status });
+  it.each(["draft", "archived"] as const)(
+    "is closed while the competition is %s",
+    async (status) => {
+      const { impose } = harness({ status });
 
-    const result = await impose.execute(deduction);
+      const result = await impose.execute(deduction);
 
-    expect(result.isErr() && result.error.code).toBe("competitions.sanctions_closed");
-  });
+      expect(result.isErr() && result.error.code).toBe("competitions.sanctions_closed");
+    },
+  );
 
   it("rejects invalid terms before touching the store", async () => {
     const { impose, sanctions } = harness();

@@ -1,7 +1,11 @@
 import { asTeamId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import type { CompetitionSanction } from "../entities/competition-sanction.ts";
-import { activePointDeductions, parseSanctionReason, parseSanctionTerms } from "./sanction-terms.ts";
+import {
+  activePointDeductions,
+  parseSanctionReason,
+  parseSanctionTerms,
+} from "./sanction-terms.ts";
 
 const team = { type: "team", teamId: asTeamId("team-a") } as const;
 const player = { type: "player", playerProfileId: "profile-1" } as const;
@@ -43,7 +47,12 @@ describe("parseSanctionTerms", () => {
     for (const pointsDeducted of [undefined, 0, 101, 1.5]) {
       expect(
         fieldOf(
-          parseSanctionTerms({ target: team, type: "points_deduction", reason: "Motivo", pointsDeducted }),
+          parseSanctionTerms({
+            target: team,
+            type: "points_deduction",
+            reason: "Motivo",
+            pointsDeducted,
+          }),
         ),
       ).toBe("pointsDeducted");
     }
@@ -88,7 +97,9 @@ describe("parseSanctionTerms", () => {
     });
     expect(ok.isOk() && ok.value.encounterId).toBe("enc-1");
     expect(
-      fieldOf(parseSanctionTerms({ target: team, type: "administrative_defeat", reason: "Motivo" })),
+      fieldOf(
+        parseSanctionTerms({ target: team, type: "administrative_defeat", reason: "Motivo" }),
+      ),
     ).toBe("encounterId");
     expect(
       fieldOf(
