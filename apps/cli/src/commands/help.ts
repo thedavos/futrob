@@ -23,6 +23,7 @@ Comandos base:
   result-void <officialResultId> [--reason <text>] [--actor <id>] — Anular resultado aprobado
   results-smoke           Select → Confirm con fakes en memoria (@futrob/results)
   swiss-smoke             Torneo suizo con políticas puras: sin revanchas y bye con impares
+  email-smoke             Outbox de email con fakes: hecho repetido, caída del proveedor y un solo envío
 
 Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor):
   api-health              GET /meta/health (estado API + DB)

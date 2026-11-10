@@ -8,6 +8,7 @@ import { run as domainSmokeGameData } from "./commands/domain-smoke-game-data.ts
 import { run as statisticsSmoke } from "./commands/statistics-smoke.ts";
 import { run as resultsSmoke } from "./commands/results-smoke.ts";
 import { run as swissSmoke } from "./commands/swiss-smoke.ts";
+import { run as emailSmoke } from "./commands/email-smoke.ts";
 import { run as apiHealth } from "./commands/api-health.ts";
 import { run as clubSearch } from "./commands/search-clubs.ts";
 import {
@@ -89,6 +90,7 @@ const commands = {
   "statistics-smoke": () => statisticsSmoke(),
   "results-smoke": () => resultsSmoke(),
   "swiss-smoke": () => swissSmoke(),
+  "email-smoke": () => emailSmoke(),
 
   "api-health": (args) => apiHealth(args),
 

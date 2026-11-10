@@ -21,7 +21,7 @@ npm run cli -- <command> [args] [--json]
 
 ## Offline smokes
 
-Four commands run without any server. Each prints JSON evidence and exits 0 or 1:
+These commands run without any server. Each prints JSON evidence and exits 0 or 1:
 
 ```bash
 npm run cli -- domain-smoke              # shared-kernel + scheduling/results types
@@ -29,6 +29,7 @@ npm run cli -- domain-smoke-game-data    # game-data pure helpers + fake provide
 npm run cli -- statistics-smoke          # personal stats use case with in-memory repos
 npm run cli -- results-smoke             # propose → rival confirm, and reject → review → resolve; asserts events
 npm run cli -- swiss-smoke               # 8 and 7 Teams over 3 rounds on pure policies; asserts no rematch and one bye per round
+npm run cli -- email-smoke               # same fact twice → one outbox row; provider outage → retry; exactly one email
 ```
 
 Run these first when touching `packages/*` domain code. They fail fast without Postgres or Workers.

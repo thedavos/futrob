@@ -29,7 +29,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0005: Contrato HTTP privado, BFF y SDK](/docs/adr/0005-typed-private-api.md)                                                   | Aceptada    | Zod genera OAS 3.1; CI `openapi:check` impide drift                            |
 | [ADR-0006: Puerto genérico de game-data (EA como adapter)](/docs/adr/0006-game-data-provider-port.md)                               | Aceptada    | Modelo neutral y adapters existentes; soporte por proveedor                    |
 | [ADR-0007: Observaciones de proveedor inmutables en Postgres](/docs/adr/0007-immutable-provider-observations.md)                    | Aceptada    | Postgres/JSONB y deduplicación; retención/offload completos pendientes         |
-| [ADR-0008: Notificaciones web y email en el MVP](/docs/adr/0008-notifications-web-and-email.md)                                     | Aceptada    | Canal web como proyección transaccional; email y outbox pendientes             |
+| [ADR-0008: Notificaciones web y email en el MVP](/docs/adr/0008-notifications-web-and-email.md)                                     | Aceptada    | Web transaccional; email y outbox en ADR-0028                                  |
 | [ADR-0009: Topología Cloudflare Workers](/docs/adr/0009-cloudflare-workers-topology.md)                                             | Reemplazada | Histórico → ADR-0001                                                           |
 | [ADR-0010: Packages por bounded context y apps/api futura](/docs/adr/0010-bounded-context-packages.md)                              | Reemplazada | Histórico → ADR-0002                                                           |
 | [ADR-0011: TaggedError para fallos esperados tipados](/docs/adr/0011-tagged-errors.md)                                              | Aceptada    | TaggedError y mapping por code existentes                                      |
@@ -49,6 +49,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0025: Planes, entitlements y cupos en el BC billing](/docs/adr/0025-billing-plans-and-entitlements.md)                         | Aceptada    | Fase 0 sin pagos; revisión manual FR-09 y sync automático pendientes           |
 | [ADR-0026: Historial del embudo de onboarding en identity](/docs/adr/0026-onboarding-funnel-history.md)                             | Propuesta   | Historial append-only implementado; resultado de cuenta EA y club pendiente    |
 | [ADR-0027: Sistema suizo con rondas emparejadas por reconciliación](/docs/adr/0027-swiss-format-rounds-paired-by-reconciliation.md) | Aceptada    | API, web y móvil; pendientes aviso al emparejar y paso automático a `finished` |
+| [ADR-0028: Email transaccional con Resend detrás de un outbox](/docs/adr/0028-transactional-email-provider-and-outbox.md)           | Propuesta   | Outbox, plantillas ES/EN, preferencias y baja; sin envío real verificado       |
 
 ## Consolidación de septiembre de 2026
 
