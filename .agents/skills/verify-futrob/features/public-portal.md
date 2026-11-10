@@ -13,6 +13,7 @@ Signed-out visitors open a published competition at `/{organizationSlug}/{compet
 - `portal-teams`, `portal-rules` and `portal-rankings` (`?kind=scorer|assister|rating|mvp|goalkeeper`, navigation `Tipo de ranking`) each have an empty state.
 - `portal-not-found` shows `Esta competición no está disponible` and `Ir a Futrob`, with HTTP 404.
 - `portal-error` shows `No pudimos cargar esta sección` and `Reintentar` when the API fails (not on a 404).
+- `portal-seo` (SEO-01): each portal page carries its own `<title>` (`Tabla · <name> | Futrob` on sections), `rel="canonical"`, `og:url`, `og:image` (the absolute cover URL) and `twitter:*` in the initial HTML. `/robots.txt` disallows the signed-in area, `/api` and invitation paths and names `/sitemap.xml`, which lists `/`, `/pricing` and only published, paused or finished competitions. The portal 404, `/_app` pages and `/entry-invitations/link/$code` carry `<meta name="robots" content="noindex, nofollow">`.
 - `portal-organizer-link` is the button `Ver portal público` on the organizer's competition overview `/orgs/$orgId/competitions/$competitionId`, shown only when the competition is published, paused or finished. It opens the portal in a new tab.
 
 ## How to get to it (user POV)
@@ -35,6 +36,7 @@ Steps:
 - **No private data.** Search every saved page for the organization id, team ids, actor ids, EA match or club ids and `providerMatchRef`. None may appear.
 - **Browser.** Open the cover. Assert the `h1`, the badge and the tabs. Open each tab and take an ARIA snapshot and a screenshot (desktop and 390 px wide). Repeat the cover with JavaScript disabled; the content must still be there.
 - **404.** Open `/<otherOrgSlug>/<competitionId>`, `/<slug>/does-not-exist` and a draft of the same organization. Each answers 404 with `Esta competición no está disponible` and no competition name in the HTML.
+- **Crawling.** `curl -s http://localhost:3000/robots.txt` and `curl -s http://localhost:3000/sitemap.xml`; parse the XML. Archive the competition in your own database and fetch the sitemap again: the URL is gone and the portal answers 404. Restore it. `grep` the saved portal HTML for `<title>`, `rel="canonical"` and `og:image`, and the 404, `/orgs` and an invitation link for the `robots` meta.
 - **Organizer link.** Signed in as the organizer, open the competition overview. `Ver portal público` points to `/<slug>/<competitionId>`. It is absent on a draft.
 
 ## Gotchas
