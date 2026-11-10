@@ -10,6 +10,7 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  TextLink,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
@@ -38,6 +39,7 @@ const styles = stylex.create({
 export function OrganizationSettingsPage({ organizationId }: { readonly organizationId: string }) {
   const { t } = useI18n();
   const profileQuery = useOrganizationProfileQuery(organizationId);
+  const audit = useCan({ organizationId }, ORGANIZATION_PERMISSION.auditTrailRead);
   const update = useCan({ organizationId }, ORGANIZATION_PERMISSION.update);
   const readOnly = !update.loading && !update.allowed;
 
@@ -49,6 +51,11 @@ export function OrganizationSettingsPage({ organizationId }: { readonly organiza
       </PageHeader>
 
       <div {...applyStyles(styles.body)}>
+        {audit.allowed ? (
+          <TextLink href={`/orgs/${encodeURIComponent(organizationId)}/settings/audit`}>
+            {t("audit.title")}
+          </TextLink>
+        ) : null}
         {profileQuery.isError ? (
           <Alert variant="destructive">
             <AlertDescription>{t("organizations.settings.loadFailed")}</AlertDescription>

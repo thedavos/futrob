@@ -1,6 +1,7 @@
 import type { Icon } from "@futrob/ui";
 import {
   BookOpenTextIcon,
+  ClockCounterClockwiseIcon,
   BuildingsIcon,
   CalendarDotsIcon,
   ChartBarIcon,
@@ -44,6 +45,7 @@ export const SHELL_NAV_ICONS = {
   rankings: MedalIcon,
   disputes: ScalesIcon,
   sanctions: SealWarningIcon,
+  audit: ClockCounterClockwiseIcon,
   analytics: PresentationChartIcon,
   rules: BookOpenTextIcon,
 } satisfies Record<ShellNavIconId, Icon>;
