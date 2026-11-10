@@ -33,6 +33,9 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   org-mine                Lista membresías del actor
   org-invite <orgId> <email> [--role role]
   onboarding-status       Estado de onboarding del actor
+  account-deletion-status   Estado de eliminación de la cuenta (fecha y bloqueos)
+  account-deletion-request  Programa la eliminación (contraseña en FUTROB_ACCOUNT_PASSWORD)
+  account-deletion-cancel   Cancela la eliminación durante el plazo
   comp-create <orgId> <name>
   comp-list <orgId>
   comp-show <orgId> <compId>
