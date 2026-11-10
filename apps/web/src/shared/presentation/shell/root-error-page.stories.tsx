@@ -1,7 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
-import { RootErrorPage } from "./root-error-page.tsx";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { RootErrorPage } from "./root-error-page.tsx";
 
 const meta = {
   title: "Product/Shared/Route error",
@@ -13,16 +19,27 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+function renderErrorPage() {
+  const root = createRootRoute({
+    component: () => <RootErrorPage error={new Error("loader crashed")} reset={() => undefined} />,
+  });
+  const router = createRouter({
+    routeTree: root,
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+  });
+  return (
+    <I18nProvider initialLocale="es">
+      <RouterProvider router={router} />
+    </I18nProvider>
+  );
+}
+
 export const Playground: Story = {
   args: {
     error: new Error("loader crashed"),
     reset: () => undefined,
   },
-  render: () => (
-    <I18nProvider initialLocale="es">
-      <RootErrorPage error={new Error("loader crashed")} reset={() => undefined} />
-    </I18nProvider>
-  ),
+  render: () => renderErrorPage(),
   play: async ({ canvasElement }) => {
     const view = within(canvasElement);
     await expect(view.getByRole("alert")).toBeTruthy();

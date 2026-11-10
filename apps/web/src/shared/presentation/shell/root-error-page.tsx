@@ -8,13 +8,9 @@ import { RouteLoadError } from "@/shared/presentation/route-load-state.tsx";
 const reported = new WeakSet<object>();
 
 export function reportUnexpectedRouteError(cause: unknown): void {
-  try {
-    // SAFETY: WeakSet only accepts objects; add/has throw for primitives, which the catch reports.
-    const token = cause as object;
-    if (reported.has(token)) return;
-    reported.add(token);
-  } catch {
-    // Primitive causes cannot be interned; still report them.
+  if (cause instanceof Object) {
+    if (reported.has(cause)) return;
+    reported.add(cause);
   }
   captureWorkerError(cause, { handler: "route-error" });
 }

@@ -12,11 +12,18 @@ import {
   Logo,
   PageHeaderTitle,
 } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link } from "@tanstack/react-router";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 const styles = stylex.create({
+  page: {
+    display: "flex",
+    minHeight: "100svh",
+    flexDirection: "column",
+    backgroundColor: colors.background,
+  },
   logo: {
     height: "2.5rem",
     width: "auto",
@@ -25,16 +32,27 @@ const styles = stylex.create({
 
 export type NotFoundAudience = "visitor" | "member";
 
-export function notFoundAudience(signedIn: boolean): NotFoundAudience {
-  return signedIn ? "member" : "visitor";
+const notFoundExits = {
+  visitor: { to: "/", actionKey: "notFound.visitor.action" },
+  member: { to: "/player", actionKey: "notFound.member.action" },
+} as const satisfies Record<
+  NotFoundAudience,
+  {
+    readonly to: "/" | "/player";
+    readonly actionKey: "notFound.visitor.action" | "notFound.member.action";
+  }
+>;
+
+export function notFoundAudience(input: { readonly user: unknown }): NotFoundAudience {
+  return input.user == null ? "visitor" : "member";
 }
 
 function notFoundExit(audience: NotFoundAudience) {
   switch (audience) {
     case "visitor":
-      return { to: "/" as const, actionKey: "notFound.visitor.action" as const };
+      return notFoundExits.visitor;
     case "member":
-      return { to: "/player" as const, actionKey: "notFound.member.action" as const };
+      return notFoundExits.member;
     default: {
       const _exhaustive: never = audience;
       return _exhaustive;
@@ -46,7 +64,7 @@ export function NotFoundPage({ audience }: { readonly audience: NotFoundAudience
   const { t } = useI18n();
   const exit = notFoundExit(audience);
   return (
-    <main>
+    <main {...applyStyles(styles.page)}>
       <EmptyState fill>
         <EmptyStateIcon>
           <Logo {...applyStyles(styles.logo)} />
@@ -67,5 +85,6 @@ export function NotFoundPage({ audience }: { readonly audience: NotFoundAudience
 
 export function RootNotFoundPage() {
   const session = authClient.useSession();
-  return <NotFoundPage audience={notFoundAudience(session.data?.user != null)} />;
+  const user = session.isPending ? undefined : session.data?.user;
+  return <NotFoundPage audience={notFoundAudience({ user })} />;
 }

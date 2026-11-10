@@ -12,6 +12,7 @@ import appStyles from "@/styles.css?url";
 
 export const Route = createRootRoute({
   loader: () => getUiLocale(),
+  shellComponent: RootShell,
   notFoundComponent: RootNotFoundPage,
   errorComponent: RootErrorPage,
   head: ({ loaderData }) => {
@@ -65,8 +66,8 @@ export const Route = createRootRoute({
   component: RootComponent,
 });
 
-function RootComponent() {
-  const initialLocale = Route.useLoaderData();
+function RootShell({ children }: Readonly<{ children: ReactNode }>) {
+  const initialLocale = Route.useLoaderData() ?? DEFAULT_LOCALE;
   const router = useRouter();
   return (
     <I18nProvider
@@ -77,12 +78,14 @@ function RootComponent() {
       }}
     >
       <RootDocument>
-        <AppProviders>
-          <Outlet />
-        </AppProviders>
+        <AppProviders>{children}</AppProviders>
       </RootDocument>
     </I18nProvider>
   );
+}
+
+function RootComponent() {
+  return <Outlet />;
 }
 
 async function persistUiLocale(locale: Locale): Promise<void> {
