@@ -10742,6 +10742,39 @@
         ]
       }
     },
+    "/public/competitions": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Public addresses, no names or internal ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPublicCompetitionsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "listPublicCompetitions",
+        "tags": [
+          "public-portal"
+        ],
+        "summary": "List every published competition by its public address",
+        "description": "Sitemap source: published, paused and finished competitions of every organization, newest first, with their public address and last update only. Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/public/organizations/{organizationSlug}/competitions/{competitionKey}": {
       "get": {
         "parameters": [
@@ -26592,6 +26625,43 @@
         "required": [
           "invitations"
         ]
+      },
+      "ListPublicCompetitionsResponse": {
+        "type": "object",
+        "properties": {
+          "competitions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "organizationSlug": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "competitionKey": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "organizationSlug",
+                "competitionKey",
+                "updatedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "competitions"
+        ],
+        "additionalProperties": false
       },
       "ListPublicPlansResponse": {
         "type": "object",

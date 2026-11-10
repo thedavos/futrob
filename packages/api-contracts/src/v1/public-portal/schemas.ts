@@ -228,3 +228,16 @@ export const getPublicRankingResponseSchema = z.strictObject({
   }),
 });
 export type GetPublicRankingResponse = z.infer<typeof getPublicRankingResponseSchema>;
+
+/** A published competition as crawlers see it (sitemap): its public address and freshness only. */
+export const publicCompetitionListingSchema = z.strictObject({
+  organizationSlug: publicOrganizationSlugSchema,
+  competitionKey: publicCompetitionKeySchema,
+  updatedAt: z.string().datetime(),
+});
+export type PublicCompetitionListingDto = z.infer<typeof publicCompetitionListingSchema>;
+
+export const listPublicCompetitionsResponseSchema = z.strictObject({
+  competitions: z.array(publicCompetitionListingSchema),
+});
+export type ListPublicCompetitionsResponse = z.infer<typeof listPublicCompetitionsResponseSchema>;

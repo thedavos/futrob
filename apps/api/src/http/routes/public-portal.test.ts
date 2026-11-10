@@ -8,6 +8,7 @@ import {
   getPublicRankingResponseSchema,
   getPublicRulesResponseSchema,
   getPublicTeamsResponseSchema,
+  listPublicCompetitionsResponseSchema,
   type GetPublicCalendarResponse,
 } from "@futrob/api-contracts";
 import {
@@ -158,6 +159,50 @@ const PUBLIC_SUFFIXES = [
 const PUBLIC_PATH = "/public/organizations/{organizationSlug}/competitions/{competitionKey}";
 
 describe("public portal reads", () => {
+  it("lists a published competition by public address only, and drops it once it is no longer public", async () => {
+    const { app, modules, organizationId, competitionId, slug } = await setup({ publish: true });
+    const list = () => app.request("/api/v1/public/competitions");
+
+    const response = await list();
+
+    expect(response.status).toBe(200);
+    await expectMatchesOpenApi(response, "get", "/public/competitions");
+    expect(response.headers.get("cache-control")).toBe(PUBLIC_READ_CACHE_CONTROL);
+    const raw = await response.clone().text();
+    const body = await parseResponse(listPublicCompetitionsResponseSchema, response);
+    expect(body.competitions).toEqual([
+      { organizationSlug: slug, competitionKey: competitionId, updatedAt: expect.any(String) },
+    ]);
+    for (const secret of [organizationId, ORGANIZER, "Copa Barranco", "Organizacion Privada SAC"]) {
+      expect(raw).not.toContain(secret);
+    }
+
+    const stored = await modules.competitions.repository.findById(
+      asOrganizationId(organizationId),
+      asCompetitionId(competitionId),
+    );
+    if (!stored) throw new Error("competition fixture missing");
+    const archived = await modules.competitions.repository.changeStatus(
+      { ...stored, competition: { ...stored.competition, status: "archived" } },
+      "published",
+    );
+    expect(archived?.competition.status).toBe("archived");
+
+    const after = await parseResponse(listPublicCompetitionsResponseSchema, await list());
+    expect(after.competitions).toEqual([]);
+  });
+
+  it("does not list a draft", async () => {
+    const { app } = await setup({ publish: false });
+
+    const body = await parseResponse(
+      listPublicCompetitionsResponseSchema,
+      await app.request("/api/v1/public/competitions"),
+    );
+
+    expect(body.competitions).toEqual([]);
+  });
+
   it("serves the portada to an anonymous caller with only allowlisted keys", async () => {
     const { anonymous, organizationId, competitionId } = await setup({ publish: true });
 
