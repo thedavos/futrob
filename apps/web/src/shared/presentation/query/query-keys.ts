@@ -22,6 +22,7 @@ export const queryKeys = {
       [...queryKeys.activities.all, "organization", organizationId, query] as const,
     organizationFeed: (organizationId: string) =>
       [...queryKeys.activities.all, "organization", organizationId, "feed"] as const,
+    mineFeed: () => [...queryKeys.activities.all, "mine", "feed"] as const,
     mine: (query: ActivityQueryKey) => [...queryKeys.activities.all, "mine", query] as const,
   },
   encounters: {
