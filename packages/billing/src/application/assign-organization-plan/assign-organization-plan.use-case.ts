@@ -21,6 +21,7 @@ import {
 } from "../../domain/errors/billing.errors.ts";
 import { BILLING_PERMISSION } from "../../domain/policies/billing-permissions.ts";
 import type { PlanCatalogPort } from "../../domain/ports/plan-catalog.port.ts";
+import type { PlanRequestRepository } from "../../domain/ports/plan-request.repository.ts";
 import type {
   PlanChangeAuditRepository,
   SubscriptionRepository,
@@ -52,6 +53,7 @@ export class AssignOrganizationPlanUseCase {
       readonly catalog: PlanCatalogPort;
       readonly subscriptions: SubscriptionRepository;
       readonly audit: PlanChangeAuditRepository;
+      readonly requests: PlanRequestRepository;
       readonly transaction: TransactionPort;
       readonly clock: ClockPort;
       readonly ids: IdGeneratorPort;
@@ -124,9 +126,25 @@ export class AssignOrganizationPlanUseCase {
           reason,
           occurredAt: now,
         });
+        await this.fulfillPendingRequest(subscription);
         return ok(subscription);
       }),
     );
+  }
+
+  /** Granting the requested plan closes the request; any other change leaves it waiting. */
+  private async fulfillPendingRequest(subscription: OrganizationSubscription): Promise<void> {
+    const status = subscription.state.status;
+    if (status !== "active" && status !== "trialing") return;
+    const pending = await this.deps.requests.findPendingForOrganization(
+      subscription.subject.organizationId,
+    );
+    if (pending?.planKey !== subscription.planKey) return;
+    await this.deps.requests.save({
+      ...pending,
+      status: "fulfilled",
+      resolvedAt: subscription.updatedAt,
+    });
   }
 }
 

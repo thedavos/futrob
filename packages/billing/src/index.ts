@@ -24,6 +24,7 @@ export {
   type QuotaAllowance,
   type QuotaKey,
 } from "./domain/entities/plan.ts";
+export type { PlanRequest, PlanRequestStatus } from "./domain/entities/plan-request.ts";
 export {
   isOrganizationSubscription,
   type ActorSubscription,
@@ -45,14 +46,19 @@ export { BILLING_PERMISSION, BILLING_PERMISSIONS } from "./domain/policies/billi
 export {
   BillingForbidden,
   FeatureNotInPlan,
+  InvalidPlanRequest,
   InvalidSubscription,
   PaymentProviderUnavailable,
   PlanNotFound,
   QuotaExhausted,
   type AssignOrganizationPlanError,
+  type CancelOrganizationPlanRequestError,
+  type ListPendingPlanRequestsError,
+  type RequestOrganizationPlanError,
 } from "./domain/errors/billing.errors.ts";
 
 export type { PlanCatalogPort } from "./domain/ports/plan-catalog.port.ts";
+export type { PlanRequestRepository } from "./domain/ports/plan-request.repository.ts";
 export type {
   PlanChangeAuditRepository,
   SubscriptionRepository,
@@ -90,3 +96,9 @@ export {
   type OrganizationPlanOverview,
   type QuotaUsage,
 } from "./application/get-organization-plan/get-organization-plan.use-case.ts";
+export {
+  RequestOrganizationPlanUseCase,
+  type RequestOrganizationPlanInput,
+} from "./application/request-organization-plan/request-organization-plan.use-case.ts";
+export { CancelOrganizationPlanRequestUseCase } from "./application/cancel-organization-plan-request/cancel-organization-plan-request.use-case.ts";
+export { ListPendingPlanRequestsUseCase } from "./application/list-pending-plan-requests/list-pending-plan-requests.use-case.ts";

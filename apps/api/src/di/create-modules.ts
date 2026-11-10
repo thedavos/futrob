@@ -365,7 +365,12 @@ export function createModules(input: CreateModulesInput): AppModules {
   const modules = {
     activityCommands: activityFeed.commands,
     authorization,
-    billing: withPlanUsage(billing, competitionRepository, organizations.repositories.memberships),
+    billing: withPlanUsage(
+      billing,
+      competitionRepository,
+      organizations.repositories.memberships,
+      organizations.repositories.organizations,
+    ),
     competitionApplications,
     competitions,
     entryInvitations,
