@@ -90,6 +90,20 @@ aprobar una `proposalId` concreta con reconocimiento explícito de flags cuando 
 o `return_to_selection`. El BFF deriva el actor de la sesión y la API exige la capacidad
 de aprobar resultados; enviar un rol no concede autoridad.
 
+## Auditoría de organización
+
+`client.audit.list(organizationId, filters)` consulta el historial unificado con
+`organizations.audit.read`. Acepta competición, actor, acción y rango de fechas antes
+de paginar. Para continuar, conserva los filtros y envía `nextCursor` como `cursor`;
+para cambiar filtros, omite el cursor. El recurso solo ofrece lectura.
+
+```ts
+const page = await futrob.audit.list(organizationId, { competitionId, limit: 25 });
+if (page.nextCursor) {
+  await futrob.audit.list(organizationId, { competitionId, limit: 25, cursor: page.nextCursor });
+}
+```
+
 ## Testing
 
 Utilidades para tests disponibles como subpath público:
