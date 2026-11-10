@@ -26,6 +26,7 @@ export const styles = stylex.create({
   },
   planLine: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem" },
   planName: { fontSize: "var(--text-2xl)", fontWeight: 700 },
+  actions: { display: "flex", flexWrap: "wrap", gap: "0.75rem" },
   muted: { color: colors.mutedForeground },
   usageList: {
     listStyle: "none",

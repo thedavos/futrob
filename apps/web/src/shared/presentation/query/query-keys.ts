@@ -74,6 +74,8 @@ export const queryKeys = {
     plan: (organizationId: string) => [...queryKeys.billing.all, "plan", organizationId] as const,
     /** Anonymous plan catalog (`/public/plans`); the same for every actor. */
     publicPlans: () => [...queryKeys.billing.all, "public-plans"] as const,
+    /** Superuser queue of organizations waiting for a plan. */
+    planRequests: () => [...queryKeys.billing.all, "plan-requests"] as const,
   },
   authorization: {
     all: ["authorization"] as const,

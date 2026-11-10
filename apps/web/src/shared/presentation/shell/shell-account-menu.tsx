@@ -195,9 +195,14 @@ export function AccountMenu({
           </DropdownMenuItem>
         ))}
         {superuser.allowed ? (
-          <DropdownMenuItem onClick={() => void navigate({ to: "/admin/provider-health" })}>
-            {t("shell.account.providerHealth")}
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem onClick={() => void navigate({ to: "/admin/provider-health" })}>
+              {t("shell.account.providerHealth")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void navigate({ to: "/admin/billing" })}>
+              {t("shell.account.planAdmin")}
+            </DropdownMenuItem>
+          </>
         ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
