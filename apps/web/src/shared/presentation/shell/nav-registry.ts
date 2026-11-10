@@ -36,6 +36,7 @@ export type ShellNavIconId =
   | "rankings"
   | "disputes"
   | "sanctions"
+  | "audit"
   | "analytics"
   | "rules";
 
@@ -137,6 +138,13 @@ function organizationGeneralNav(organizationId: string, t: Translator): readonly
       href: `${base}/settings/plan`,
       icon: "plan",
       requiredPermission: BILLING_PERMISSION.read,
+    },
+    {
+      id: "audit",
+      label: t("audit.title"),
+      href: `${base}/settings/audit`,
+      icon: "audit",
+      requiredPermission: ORGANIZATION_PERMISSION.auditTrailRead,
     },
     {
       id: "settings",
@@ -272,6 +280,13 @@ function organizationCompetitionContext(
       requiredPermission: RESULT_PERMISSION.resultApprove,
     },
     {
+      id: "audit",
+      label: t("audit.title"),
+      href: `${base}/audit`,
+      icon: "audit",
+      requiredPermission: ORGANIZATION_PERMISSION.auditTrailRead,
+    },
+    {
       id: "sanctions",
       label: t("pages.competition.sanctions.title"),
       href: `${base}/sanctions`,
@@ -327,7 +342,8 @@ export function contextNavFor(
     const isOrgOperator =
       selection.organizationId != null &&
       (allowedPermissions?.has(COMPETITION_PERMISSION.update) === true ||
-        allowedPermissions?.has(COMPETITION_PERMISSION.sanctionsRead) === true);
+        allowedPermissions?.has(COMPETITION_PERMISSION.sanctionsRead) === true ||
+        allowedPermissions?.has(ORGANIZATION_PERMISSION.auditTrailRead) === true);
     const items = isOrgOperator
       ? organizationCompetitionContext(selection.organizationId!, selection.competitionId, t)
       : personalCompetitionContext(selection.organizationId, selection.competitionId, t);
