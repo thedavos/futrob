@@ -30,6 +30,7 @@ import { createBillingModule, withPlanUsage } from "./billing.module.ts";
 import { createGameDataModule } from "./game-data.module.ts";
 import { createGameDataPersistence } from "./game-data-persistence.composition.ts";
 import { createIdentityModule } from "./identity.module.ts";
+import { createAccountDeletion } from "./account-deletion.composition.ts";
 import { createOrganizationMemberDirectory } from "./organization-members.composition.ts";
 import { createOrganizationsModule } from "./organizations.module.ts";
 import { createEntryInvitations } from "./entry-invitations.composition.ts";
@@ -363,6 +364,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
 
   const modules = {
+    accountDeletion: createAccountDeletion({ pool: input.pool, clock, transaction }),
     activityCommands: activityFeed.commands,
     authorization,
     billing: withPlanUsage(billing, competitionRepository, organizations.repositories.memberships),

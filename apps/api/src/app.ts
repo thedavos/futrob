@@ -19,6 +19,10 @@ import {
 } from "@/http/routes/entry-invitations.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
 import { registerActorPreferencesRoutes } from "@/http/routes/actor-preferences.ts";
+import {
+  registerAccountDeletionJobRoutes,
+  registerAccountDeletionRoutes,
+} from "@/http/routes/account-deletion.ts";
 import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
 import { registerOrganizationRoutes } from "@/http/routes/organizations.ts";
@@ -96,6 +100,7 @@ export function createApp(deps: AppDeps): Hono {
   registerOpenApiRoutes(v1);
   registerProviderSyncJobRoutes(v1, deps);
   registerConfirmationExpiryRoutes(v1, deps);
+  registerAccountDeletionJobRoutes(v1, deps);
   registerScheduleChangeExpiryRoutes(v1, deps);
   registerCandidateRecalculationRoutes(v1, deps);
   registerPublicEntryInvitationRoutes(v1, deps);
@@ -107,6 +112,7 @@ export function createApp(deps: AppDeps): Hono {
   registerEntryInvitationRoutes(v1, deps);
   registerOnboardingRoutes(v1, deps);
   registerActorPreferencesRoutes(v1, deps);
+  registerAccountDeletionRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);
   registerBillingRoutes(v1, deps);
   registerPlayerRoutes(v1, deps);
