@@ -26,7 +26,9 @@ export type ActivityDestination =
       readonly params: { readonly orgId: string; readonly competitionId: string };
     }
   | {
-      readonly to: "/player/competitions/$competitionId/matches";
+      readonly to:
+        | "/player/competitions/$competitionId/matches"
+        | "/player/competitions/$competitionId";
       readonly params: { readonly competitionId: string };
     }
   | { readonly to: "/invitations"; readonly params?: undefined }
@@ -178,6 +180,9 @@ function destination(entry: ActivityEntryDto): ActivityDestination | null {
   }
   if (!competitionId) return null;
   if (entry.audience === "team") {
+    if (entry.resourceType === "competition") {
+      return { to: "/player/competitions/$competitionId", params: { competitionId } };
+    }
     return { to: "/player/competitions/$competitionId/matches", params: { competitionId } };
   }
   const params = { orgId: entry.organizationId, competitionId };
