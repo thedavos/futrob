@@ -108,6 +108,10 @@ function decisionTitleKey(
       return "activity.decision.scheduleKept";
     case "walkover_intended":
       return "activity.decision.walkoverIntended";
+    case "sanction_imposed":
+      return "activity.decision.sanctionImposed";
+    case "sanction_revoked":
+      return "activity.decision.sanctionRevoked";
     case null:
       return "activity.decision.generic";
   }

@@ -196,6 +196,8 @@ function statusForFailureCode(code: string): number {
     code === "scheduling.not_swiss_fixture" ||
     code === "scheduling.swiss_round_not_current" ||
     code === "scheduling.swiss_team_already_withdrawn" ||
+    code === "competitions.sanctions_closed" ||
+    code === "competitions.sanction_already_revoked" ||
     code.includes("active_schedule_change_request_exists") ||
     code === "scheduling.schedule_change_request_closed" ||
     code === "scheduling.schedule_change_proposal_stale" ||

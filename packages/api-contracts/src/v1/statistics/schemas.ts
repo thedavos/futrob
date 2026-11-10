@@ -144,7 +144,10 @@ export const competitionStandingRowSchema = z.object({
   goalsFor: z.number().int().nonnegative(),
   goalsAgainst: z.number().int().nonnegative(),
   goalDifference: z.number().int(),
+  /** Match points minus `pointsDeducted`; negative when deductions exceed them. */
   points: z.number().int(),
+  /** Points taken away by active sanctions (ADR-0028). Absent on tables stored before them. */
+  pointsDeducted: z.number().int().nonnegative().optional(),
   form: standingFormSchema,
   /** Swiss only. `points` already include the bye credit; `played` and W/D/L never do. */
   swiss: z

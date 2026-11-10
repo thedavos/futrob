@@ -18,6 +18,7 @@ import {
   registerPublicEntryInvitationRoutes,
 } from "@/http/routes/entry-invitations.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
+import { registerSanctionRoutes } from "@/http/routes/sanctions.ts";
 import { registerActorPreferencesRoutes } from "@/http/routes/actor-preferences.ts";
 import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
@@ -105,6 +106,7 @@ export function createApp(deps: AppDeps): Hono {
   registerCompetitionRoutes(v1, deps);
   registerCompetitionParticipantRoutes(v1, deps);
   registerEntryInvitationRoutes(v1, deps);
+  registerSanctionRoutes(v1, deps);
   registerOnboardingRoutes(v1, deps);
   registerActorPreferencesRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);

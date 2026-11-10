@@ -33,6 +33,8 @@ import { createIdentityModule } from "./identity.module.ts";
 import { createOrganizationMemberDirectory } from "./organization-members.composition.ts";
 import { createOrganizationsModule } from "./organizations.module.ts";
 import { createEntryInvitations } from "./entry-invitations.composition.ts";
+import { createSanctions } from "./sanctions.composition.ts";
+import { SanctionPointDeductionReader } from "@/adapters/statistics/sanction-point-deduction.reader.ts";
 import { createCompetitionsModule } from "./competitions.module.ts";
 import { createTeamsModule } from "./teams.module.ts";
 import { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
@@ -260,6 +262,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     authorization: authorization.port,
     performanceRankingAccess: billing.planLimits.performanceRanking,
     encounterReader,
+    pointDeductions: new SanctionPointDeductionReader(competitions.sanctionRepository),
     transaction,
     eventPublisher,
   });
@@ -354,6 +357,18 @@ export function createModules(input: CreateModulesInput): AppModules {
     organizations: organizations.repositories.organizations,
   });
 
+  const sanctions = createSanctions({
+    authorization: deferredAuthorization,
+    transaction,
+    clock,
+    ids,
+    writer: activityFeed.notifications.writer,
+    competitions,
+    teams,
+    scheduling,
+    statistics,
+  });
+
   const listOrganizationMembers = createOrganizationMemberDirectory({
     authorization: deferredAuthorization,
     organizations,
@@ -369,6 +384,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     competitionApplications,
     competitions,
     entryInvitations,
+    sanctions,
     officialSelection,
     swissRoundCommands,
     runScheduleChangeExpiry: new RunScheduleChangeExpiry({
