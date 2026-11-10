@@ -1,0 +1,415 @@
+$ FEED_EVIDENCE_DIR=.agents/skills/verify-futrob/evidence/feed-01-2026-11-10 apps/api/node_modules/.bin/tsx --tsconfig apps/api/tsconfig.json .agents/skills/verify-futrob/helpers/feed-01-live.mjs selections
+{
+  "action": "propose selection",
+  "result": {
+    "selection": {
+      "id": "087df8d6-9807-4147-895f-e77d79db40e9",
+      "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:4:encounter:1",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "status": "awaiting_opponent_confirmation",
+      "version": 1,
+      "round": 1,
+      "currentProposalId": "8edd64ac-11be-49fb-92bb-0d72f9d974e2",
+      "createdAt": "2026-11-10T00:34:02.745Z",
+      "updatedAt": "2026-11-10T00:34:02.745Z"
+    },
+    "proposal": {
+      "id": "8edd64ac-11be-49fb-92bb-0d72f9d974e2",
+      "round": 1,
+      "sequence": 1,
+      "proposingTeamId": "b74d57db-4564-4bb2-91c2-99ee27078e3b",
+      "proposedByActorId": "99e73314-cdff-48cd-a6af-8511a248a4d5",
+      "slots": [
+        {
+          "officialSlot": 1,
+          "providerMatchRef": {
+            "providerKey": "ea-clubs",
+            "externalId": "777000000000082"
+          }
+        },
+        {
+          "officialSlot": 2,
+          "providerMatchRef": {
+            "providerKey": "ea-clubs",
+            "externalId": "777000000000083"
+          }
+        }
+      ],
+      "supersedesProposalId": null,
+      "reason": null,
+      "createdAt": "2026-11-10T00:34:02.745Z",
+      "confirmationDeadline": "2026-11-11T00:34:02.745Z"
+    },
+    "actions": [
+      {
+        "id": "ed25c91c-9c65-4237-8c2b-1c51bd3cbfaf",
+        "proposalId": "8edd64ac-11be-49fb-92bb-0d72f9d974e2",
+        "type": "proposed",
+        "fromStatus": null,
+        "toStatus": "awaiting_opponent_confirmation",
+        "versionBefore": 0,
+        "versionAfter": 1,
+        "actorId": "99e73314-cdff-48cd-a6af-8511a248a4d5",
+        "teamId": "b74d57db-4564-4bb2-91c2-99ee27078e3b",
+        "capacity": "team",
+        "reason": null,
+        "officialResultId": null,
+        "details": null,
+        "occurredAt": "2026-11-10T00:34:02.745Z"
+      }
+    ],
+    "dispute": null,
+    "approvedResult": null,
+    "integrityFlags": [],
+    "replayed": false
+  }
+}
+{
+  "action": "selection audience readback",
+  "result": {
+    "rival": [
+      {
+        "id": "90d58dfc-e242-4496-b926-5e30bb685871",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "team",
+        "kind": "selection_confirmation",
+        "status": "open",
+        "requiresAction": true,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:4:encounter:1",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Inti United vs Cóndores FC",
+          "teamName": "Inti United",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:34:02.745Z",
+        "closedAt": null,
+        "expiresAt": "2026-11-11T00:34:02.745Z",
+        "lastEventAt": "2026-11-10T00:34:02.745Z"
+      }
+    ],
+    "watch": {
+      "id": "88903c10-68b8-40f8-8ade-0d3b8c12b56a",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "audience": "organization",
+      "kind": "selection_confirmation",
+      "status": "open",
+      "requiresAction": false,
+      "resourceType": "encounter",
+      "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:4:encounter:1",
+      "subject": {
+        "competitionName": "Clausura 26",
+        "encounterLabel": "Inti United vs Cóndores FC",
+        "teamName": "Inti United",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:34:02.745Z",
+      "closedAt": null,
+      "expiresAt": "2026-11-11T00:34:02.745Z",
+      "lastEventAt": "2026-11-10T00:34:02.745Z"
+    }
+  }
+}
+{
+  "action": "confirm selection",
+  "result": {
+    "selection": {
+      "id": "087df8d6-9807-4147-895f-e77d79db40e9",
+      "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:4:encounter:1",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "status": "approved",
+      "version": 2,
+      "round": 1,
+      "currentProposalId": "8edd64ac-11be-49fb-92bb-0d72f9d974e2",
+      "createdAt": "2026-11-10T00:34:02.745Z",
+      "updatedAt": "2026-11-10T00:34:02.982Z"
+    },
+    "proposal": {
+      "id": "8edd64ac-11be-49fb-92bb-0d72f9d974e2",
+      "round": 1,
+      "sequence": 1,
+      "proposingTeamId": "b74d57db-4564-4bb2-91c2-99ee27078e3b",
+      "proposedByActorId": "99e73314-cdff-48cd-a6af-8511a248a4d5",
+      "slots": [
+        {
+          "officialSlot": 1,
+          "providerMatchRef": {
+            "providerKey": "ea-clubs",
+            "externalId": "777000000000082"
+          }
+        },
+        {
+          "officialSlot": 2,
+          "providerMatchRef": {
+            "providerKey": "ea-clubs",
+            "externalId": "777000000000083"
+          }
+        }
+      ],
+      "supersedesProposalId": null,
+      "reason": null,
+      "createdAt": "2026-11-10T00:34:02.745Z",
+      "confirmationDeadline": "2026-11-11T00:34:02.745Z"
+    },
+    "actions": [
+      {
+        "id": "456713e1-0851-4798-8a08-dce0b115ed7f",
+        "proposalId": "8edd64ac-11be-49fb-92bb-0d72f9d974e2",
+        "type": "confirmed",
+        "fromStatus": "awaiting_opponent_confirmation",
+        "toStatus": "confirmed",
+        "versionBefore": 1,
+        "versionAfter": 2,
+        "actorId": "1a6735df-4c90-49a4-9f5b-05426f221e6c",
+        "teamId": "9c58357f-6c78-44ac-b123-8f6fe7980f90",
+        "capacity": "team",
+        "reason": null,
+        "officialResultId": null,
+        "details": null,
+        "occurredAt": "2026-11-10T00:34:02.982Z"
+      },
+      {
+        "id": "3c53e28c-7732-429d-b7e6-e1cc68976b54",
+        "proposalId": "8edd64ac-11be-49fb-92bb-0d72f9d974e2",
+        "type": "approved",
+        "fromStatus": "confirmed",
+        "toStatus": "approved",
+        "versionBefore": 2,
+        "versionAfter": 2,
+        "actorId": "1a6735df-4c90-49a4-9f5b-05426f221e6c",
+        "teamId": "9c58357f-6c78-44ac-b123-8f6fe7980f90",
+        "capacity": "team",
+        "reason": null,
+        "officialResultId": "a931d602-73db-4eff-836b-e99794301ac2",
+        "details": null,
+        "occurredAt": "2026-11-10T00:34:02.982Z"
+      }
+    ],
+    "dispute": null,
+    "approvedResult": {
+      "id": "a931d602-73db-4eff-836b-e99794301ac2",
+      "revision": 1,
+      "status": "approved",
+      "approvalBasis": "team_agreement",
+      "proposalId": "8edd64ac-11be-49fb-92bb-0d72f9d974e2",
+      "approvedAt": "2026-11-10T00:34:02.982Z"
+    },
+    "integrityFlags": [],
+    "replayed": false
+  }
+}
+{
+  "action": "confirmed selection readback",
+  "result": [
+    {
+      "id": "90d58dfc-e242-4496-b926-5e30bb685871",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "audience": "team",
+      "kind": "selection_confirmation",
+      "status": "closed",
+      "requiresAction": true,
+      "resourceType": "encounter",
+      "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:4:encounter:1",
+      "subject": {
+        "competitionName": "Clausura 26",
+        "encounterLabel": "Inti United vs Cóndores FC",
+        "teamName": "Inti United",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:34:02.745Z",
+      "closedAt": "2026-11-10T00:34:02.982Z",
+      "expiresAt": "2026-11-11T00:34:02.745Z",
+      "lastEventAt": "2026-11-10T00:34:02.982Z"
+    }
+  ]
+}
+{
+  "action": "open dispute",
+  "result": {
+    "selection": {
+      "id": "3509382a-07f6-4c31-be5e-71a93f895b70",
+      "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:5:encounter:1",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "status": "disputed",
+      "version": 2,
+      "round": 1,
+      "currentProposalId": "eedbd92d-56a3-420a-8810-879ddef43c7f",
+      "createdAt": "2026-11-09T04:27:41.368Z",
+      "updatedAt": "2026-11-10T00:34:03.743Z"
+    },
+    "proposal": {
+      "id": "eedbd92d-56a3-420a-8810-879ddef43c7f",
+      "round": 1,
+      "sequence": 1,
+      "proposingTeamId": "b74d57db-4564-4bb2-91c2-99ee27078e3b",
+      "proposedByActorId": "99e73314-cdff-48cd-a6af-8511a248a4d5",
+      "slots": [
+        {
+          "officialSlot": 1,
+          "providerMatchRef": {
+            "providerKey": "ea-clubs",
+            "externalId": "777000000000098"
+          }
+        },
+        {
+          "officialSlot": 2,
+          "providerMatchRef": {
+            "providerKey": "ea-clubs",
+            "externalId": "777000000000099"
+          }
+        }
+      ],
+      "supersedesProposalId": null,
+      "reason": null,
+      "createdAt": "2026-11-09T04:27:41.368Z",
+      "confirmationDeadline": "2026-11-10T04:27:41.368Z"
+    },
+    "actions": [
+      {
+        "id": "29a8be7b-2453-4bda-8158-ff37812c2492",
+        "proposalId": "eedbd92d-56a3-420a-8810-879ddef43c7f",
+        "type": "dispute_opened",
+        "fromStatus": "awaiting_opponent_confirmation",
+        "toStatus": "disputed",
+        "versionBefore": 1,
+        "versionAfter": 2,
+        "actorId": "3b83c7bc-525f-47cc-9c1b-98c0da3ab09c",
+        "teamId": "d09f548e-4232-4092-8f10-df4cceca2abb",
+        "capacity": "team",
+        "reason": "FEED-01 verify official match choice",
+        "officialResultId": null,
+        "details": {
+          "disputeId": "3624dd28-cf58-46da-a1b5-4efaf2b563ae"
+        },
+        "occurredAt": "2026-11-10T00:34:03.743Z"
+      }
+    ],
+    "dispute": {
+      "id": "3624dd28-cf58-46da-a1b5-4efaf2b563ae",
+      "status": "open",
+      "openedByActorId": "3b83c7bc-525f-47cc-9c1b-98c0da3ab09c",
+      "openedByTeamId": "d09f548e-4232-4092-8f10-df4cceca2abb",
+      "openedReason": "FEED-01 verify official match choice",
+      "openedAt": "2026-11-10T00:34:03.743Z",
+      "reviewStartedAt": null,
+      "resolvedAt": null,
+      "resolution": null,
+      "resolutionProposalId": null,
+      "resolutionReason": null
+    },
+    "approvedResult": null,
+    "integrityFlags": [],
+    "replayed": false
+  }
+}
+{
+  "action": "dispute operator pending",
+  "result": [
+    {
+      "id": "a585fe29-4de1-4f77-a297-14ba94f86d6f",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "audience": "organization",
+      "kind": "match_dispute",
+      "status": "open",
+      "requiresAction": true,
+      "resourceType": "encounter",
+      "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:5:encounter:1",
+      "subject": {
+        "competitionName": "Clausura 26",
+        "encounterLabel": "Cóndores FC vs Deportivo Llama",
+        "teamName": null,
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:34:03.743Z",
+      "closedAt": null,
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:34:03.743Z"
+    }
+  ]
+}
+{
+  "action": "resolve dispute",
+  "result": {
+    "selection": {
+      "id": "3509382a-07f6-4c31-be5e-71a93f895b70",
+      "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:5:encounter:1",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "status": "selection_in_progress",
+      "version": 4,
+      "round": 2,
+      "currentProposalId": null,
+      "createdAt": "2026-11-09T04:27:41.368Z",
+      "updatedAt": "2026-11-10T00:34:04.015Z"
+    },
+    "proposal": null,
+    "actions": [
+      {
+        "id": "a1a754dd-0f22-4fb7-ac4c-4b40cdcbe821",
+        "proposalId": "eedbd92d-56a3-420a-8810-879ddef43c7f",
+        "type": "returned_to_selection",
+        "fromStatus": "organizer_review",
+        "toStatus": "selection_in_progress",
+        "versionBefore": 3,
+        "versionAfter": 4,
+        "actorId": "ebcb55b7-1405-4a07-b169-cb7e4bde9a3b",
+        "teamId": null,
+        "capacity": "operator",
+        "reason": "FEED-01 return for a new agreement",
+        "officialResultId": null,
+        "details": {
+          "disputeId": "3624dd28-cf58-46da-a1b5-4efaf2b563ae"
+        },
+        "occurredAt": "2026-11-10T00:34:04.015Z"
+      }
+    ],
+    "dispute": {
+      "id": "3624dd28-cf58-46da-a1b5-4efaf2b563ae",
+      "status": "resolved",
+      "openedByActorId": "3b83c7bc-525f-47cc-9c1b-98c0da3ab09c",
+      "openedByTeamId": "d09f548e-4232-4092-8f10-df4cceca2abb",
+      "openedReason": "FEED-01 verify official match choice",
+      "openedAt": "2026-11-10T00:34:03.743Z",
+      "reviewStartedAt": "2026-11-10T00:34:03.878Z",
+      "resolvedAt": "2026-11-10T00:34:04.015Z",
+      "resolution": "returned_to_selection",
+      "resolutionProposalId": null,
+      "resolutionReason": "FEED-01 return for a new agreement"
+    },
+    "approvedResult": null,
+    "integrityFlags": [],
+    "replayed": false
+  }
+}
+{
+  "action": "resolved dispute readback",
+  "result": {
+    "id": "a585fe29-4de1-4f77-a297-14ba94f86d6f",
+    "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+    "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+    "audience": "organization",
+    "kind": "match_dispute",
+    "status": "closed",
+    "requiresAction": true,
+    "resourceType": "encounter",
+    "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:5:encounter:1",
+    "subject": {
+      "competitionName": "Clausura 26",
+      "encounterLabel": "Cóndores FC vs Deportivo Llama",
+      "teamName": null,
+      "outcome": null
+    },
+    "openedAt": "2026-11-10T00:34:03.743Z",
+    "closedAt": "2026-11-10T00:34:04.015Z",
+    "expiresAt": null,
+    "lastEventAt": "2026-11-10T00:34:04.015Z"
+  }
+}

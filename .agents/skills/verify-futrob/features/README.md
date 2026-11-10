@@ -44,6 +44,7 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 - [Swiss format](./swiss-format.md) covers the Swiss setup, plan upsell, web fixture generation, rows, withdrawal, round closing and the standings.
 - [Explore competitions](./explore-competitions.md) covers the authenticated catalog, URL filters, detail and share.
 - [Results / Match Center](./results-match-center.md) covers the encounters lists, preview, Team negotiation, organizer review, conflicts, recovery and permissions.
+- [Activity feed](./activity-feed.md) covers organization and personal home/full feeds, Pending, audiences, replay, and the FEED-01 action lifecycle.
 
 ## Not mapped yet (do not fake-drive)
 
