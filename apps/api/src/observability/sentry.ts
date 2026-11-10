@@ -1,5 +1,11 @@
 import * as Sentry from "@sentry/node";
-import { z } from "zod";
+import {
+  applySentryEventPolicy,
+  isExpectedFailure,
+  sentrySdkOptions,
+  withRequestIdTag,
+} from "@futrob/logger";
+import { currentRequestCorrelation } from "@/context/request-correlation.ts";
 
 /**
  * Sentry is production-only: it initializes exclusively when the process runs
@@ -12,39 +18,42 @@ import { z } from "zod";
  * (Panic-style) and worth capturing.
  */
 
-let initialized = false;
-
 export function initSentry(env: { nodeEnv?: string }): void {
-  const dsn = process.env.SENTRY_DSN;
-  const nodeEnv = env.nodeEnv ?? process.env.NODE_ENV;
-  if (!dsn || nodeEnv !== "production") return;
+  const options = sentrySdkOptions({
+    dsn: process.env.SENTRY_DSN,
+    nodeEnv: env.nodeEnv ?? process.env.NODE_ENV,
+    environment: process.env.SENTRY_ENVIRONMENT,
+    service: "api",
+  });
+  if (!options) return;
 
   Sentry.init({
-    dsn,
-    environment: process.env.SENTRY_ENVIRONMENT ?? "production",
-    // Expected failures never reach this SDK; sampled traces cover the happy path.
-    tracesSampleRate: 0.1,
+    dsn: options.dsn,
+    environment: options.environment,
+    tracesSampleRate: options.tracesSampleRate,
     sendDefaultPii: false,
+    initialScope: { tags: { ...options.initialScope.tags } },
+    beforeSend(event, hint) {
+      const scrubbed = applySentryEventPolicy(event, hint);
+      if (!scrubbed) return null;
+      return withRequestIdTag(scrubbed, currentRequestCorrelation()?.requestId);
+    },
   });
-  initialized = true;
 }
 
 export function isSentryEnabled(): boolean {
-  return initialized;
+  return Sentry.getClient() !== undefined;
 }
-
-/** Expected TaggedError failures carry a stable wire `code`; those stay local. */
-const expectedFailureSchema = z.object({ code: z.string() }).passthrough();
 
 /** Captures unexpected defects at execution boundaries; ignores expected failures. */
 export function captureUnexpectedError(cause: unknown): void {
-  if (!initialized) return;
-  if (expectedFailureSchema.safeParse(cause).success) return;
+  if (!Sentry.getClient()) return;
+  if (isExpectedFailure(cause)) return;
   Sentry.captureException(cause);
 }
 
 export function registerGlobalSentryHandlers(): void {
-  if (!initialized) return;
+  if (!Sentry.getClient()) return;
   process.on("unhandledRejection", (cause) => {
     captureUnexpectedError(cause);
   });

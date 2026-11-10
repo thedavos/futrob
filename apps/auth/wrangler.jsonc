@@ -4,9 +4,12 @@
   "compatibility_date": "2026-07-17",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/index.ts",
+  "upload_source_maps": true,
   "vars": {
     "APP_BASE_URL": "https://futrob.app",
     "BETTER_AUTH_TRUSTED_ORIGINS": "https://futrob.app",
+    // Local `apps/auth/.dev.vars` overrides this to development so Sentry stays off.
+    "NODE_ENV": "production",
   },
   "hyperdrive": [
     {

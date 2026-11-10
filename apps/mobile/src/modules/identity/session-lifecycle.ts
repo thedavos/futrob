@@ -3,6 +3,7 @@ import type { FutrobApiError } from "@futrob/sdk";
 import { signOutRemote, type RemoteSignOutResult } from "./auth-api.ts";
 import { clearSession, getSession } from "./session-store.ts";
 import { clearOnboardingDraft, clearPendingInvitation } from "./onboarding-draft.ts";
+import { bindSentryActor } from "@/observability/sentry";
 
 /**
  * Product 401 handling: drop the local session and return to login.
@@ -14,6 +15,7 @@ export async function onProductUnauthorized(showLogin: () => void): Promise<void
   await clearOnboardingDraft();
   await clearPendingInvitation();
   await clearPendingRosterInvitation();
+  bindSentryActor(null);
   showLogin();
 }
 
@@ -38,6 +40,7 @@ export async function logout(showLogin: () => void): Promise<RemoteSignOutResult
   await clearOnboardingDraft();
   await clearPendingInvitation();
   await clearPendingRosterInvitation();
+  bindSentryActor(null);
   showLogin();
   return remote;
 }
