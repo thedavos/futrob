@@ -204,10 +204,23 @@ export function scrubSentryEvent<T extends SentryEventLike>(event: T): T {
 function scrubRequest(request: SentryRequestLike | undefined): SentryRequestLike | undefined {
   if (!request) return undefined;
   const parsed = requestSchema.safeParse(request);
-  if (!parsed.success) return { method: request.method, url: request.url };
+  if (!parsed.success) {
+    return { method: request.method, url: scrubUrl(request.url) };
+  }
   const headers = redactHeaders(parsed.data.headers);
-  if (!headers) return { method: parsed.data.method, url: parsed.data.url };
-  return { method: parsed.data.method, url: parsed.data.url, headers };
+  const url = scrubUrl(parsed.data.url);
+  if (!headers) return { method: parsed.data.method, url };
+  return { method: parsed.data.method, url, headers };
+}
+
+function scrubUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  return url
+    .replace(/\/(accept|link)\/[^/?#]+/gi, "/$1/[Filtered]")
+    .replace(
+      /([?&])([^&=]*(?:token|authorization|bearer|secret|password|cookie|email|credential)[^&=]*)=[^&]*/gi,
+      "$1$2=[Filtered]",
+    );
 }
 
 function scrubUser(user: SentryUserLike | null | undefined): SentryUserLike | undefined {

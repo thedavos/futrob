@@ -124,6 +124,20 @@ describe("event scrubbing", () => {
     );
   });
 
+  it("redacts invitation tokens in the request URL", () => {
+    const event = {
+      request: {
+        method: "GET",
+        url: "https://app.futrob.app/invitations/accept/plain-invite-token?token=reset-secret",
+      },
+    };
+    const scrubbed = scrubSentryEvent(event);
+    expect(scrubbed.request?.url).toBe(
+      "https://app.futrob.app/invitations/accept/[Filtered]?token=[Filtered]",
+    );
+    expect(JSON.stringify(scrubbed)).not.toMatch(/plain-invite-token|reset-secret/);
+  });
+
   it("drops a user object that only has an email", () => {
     expect(scrubSentryEvent({ user: { email: "ana@club.mx" } }).user).toBeUndefined();
   });

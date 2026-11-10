@@ -40,7 +40,7 @@ describe("web Sentry worker wrapper", () => {
         SENTRY_DSN: "https://public@o0.ingest.sentry.io/1",
         NODE_ENV: "development",
       }),
-    ).toBeUndefined();
+    ).toEqual({ enabled: false });
   });
 
   it("enables in production with the web service tag and scrubs credentials", () => {

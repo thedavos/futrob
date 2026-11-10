@@ -16,14 +16,16 @@ function cloudflareSentryOptions<
     readonly SENTRY_DSN?: string;
     readonly SENTRY_ENVIRONMENT?: string;
   },
->(env: Env): Sentry.CloudflareOptions | undefined {
+>(env: Env): Sentry.CloudflareOptions {
   const options = sentrySdkOptions({
     dsn: env.SENTRY_DSN,
     nodeEnv: env.NODE_ENV,
     environment: env.SENTRY_ENVIRONMENT,
     service: "auth",
   });
-  if (!options) return undefined;
+  // `withSentry` still merges `env.SENTRY_DSN` when this callback returns
+  // undefined, so development must return `enabled: false` explicitly.
+  if (!options) return { enabled: false };
   return {
     dsn: options.dsn,
     environment: options.environment,
