@@ -23,6 +23,7 @@ import type {
 } from "@futrob/statistics";
 import type {
   CompetitionRosterMembershipRepository,
+  ExternalClubConnectionRepository,
   PlayerGameAccountRepository,
   TeamRepository,
 } from "@futrob/teams";
@@ -49,6 +50,7 @@ export function createPublicPortalModule(input: {
   readonly fixturePlans: Pick<FixturePlanRepository, "listActive">;
   readonly officialResults: Pick<OfficialResultReaderPort, "listByCompetition">;
   readonly teams: Pick<TeamRepository, "findById">;
+  readonly connections: Pick<ExternalClubConnectionRepository, "findByTeam">;
   readonly rosters: Pick<
     CompetitionRosterMembershipRepository,
     "findByTeamPlayerCompetition" | "findByPlayerAndCompetition"
@@ -69,7 +71,11 @@ export function createPublicPortalModule(input: {
     }),
     getCalendar: new GetPublicCalendarUseCase({
       competitions,
-      calendar: new SchedulingPublicCalendarReader(input.fixturePlans, input.officialResults),
+      calendar: new SchedulingPublicCalendarReader(
+        input.fixturePlans,
+        input.officialResults,
+        input.connections,
+      ),
       teams,
       clock: input.clock,
     }),
@@ -80,7 +86,11 @@ export function createPublicPortalModule(input: {
     }),
     getBracket: new GetPublicBracketUseCase({
       competitions,
-      bracket: new SchedulingPublicBracketReader(input.fixturePlans, input.officialResults),
+      bracket: new SchedulingPublicBracketReader(
+        input.fixturePlans,
+        input.officialResults,
+        input.connections,
+      ),
       teams,
       clock: input.clock,
     }),
