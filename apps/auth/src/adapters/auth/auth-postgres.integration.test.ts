@@ -147,6 +147,138 @@ suite("auth on product Postgres (migration 0043)", () => {
       await client.end();
     });
   }, 30_000);
+
+  it("changes the email only once the new address confirms, and revoking a session ends it", async () => {
+    await withSchema(async ({ connect }) => {
+      const client = await connect();
+      const links: Array<{ to: string; url: string }> = [];
+      const auth = createAuth({
+        db: createAuthDb(client),
+        env: buildAuthEnv({
+          APP_BASE_URL: "http://localhost:3000",
+          BETTER_AUTH_SECRET: "test-secret-at-least-32-characters!!",
+          BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:3000",
+        }),
+        clock: new SystemClock(),
+        ids: new CryptoIdGenerator(),
+        mail: {
+          sendEmailChangeVerification: async ({ to, url }) => {
+            links.push({ to, url });
+          },
+        },
+      });
+      const email = `old-${randomUUID()}@futrob.test`;
+      const newEmail = `new-${randomUUID()}@futrob.test`;
+      const json = { "content-type": "application/json", origin: "http://localhost:3000" };
+      const cookieOf = (response: Response) =>
+        response.headers
+          .getSetCookie()
+          .map((value) => value.split(";")[0])
+          .join("; ");
+      const sessionOf = async (cookie: string) =>
+        (await (
+          await auth.handler(
+            new Request("http://localhost:3000/api/auth/get-session", { headers: { cookie } }),
+          )
+        ).json()) as { user: { email: string }; session: { token: string } } | null;
+
+      const web = cookieOf(
+        await auth.handler(
+          new Request("http://localhost:3000/api/auth/sign-up/email", {
+            method: "POST",
+            headers: json,
+            body: JSON.stringify({ email, password: "password-at-least-8", name: "Captain" }),
+          }),
+        ),
+      );
+      const phone = cookieOf(
+        await auth.handler(
+          new Request("http://localhost:3000/api/auth/sign-in/email", {
+            method: "POST",
+            headers: json,
+            body: JSON.stringify({ email, password: "password-at-least-8" }),
+          }),
+        ),
+      );
+
+      const listed = await auth.handler(
+        new Request("http://localhost:3000/api/auth/list-sessions", { headers: { cookie: web } }),
+      );
+      expect(await listed.json()).toHaveLength(2);
+      const phoneToken = (await sessionOf(phone))?.session.token;
+      const revoked = await auth.handler(
+        new Request("http://localhost:3000/api/auth/revoke-session", {
+          method: "POST",
+          headers: { ...json, cookie: web },
+          body: JSON.stringify({ token: phoneToken }),
+        }),
+      );
+      expect(revoked.status).toBe(200);
+      await expect(sessionOf(phone)).resolves.toBeNull();
+
+      const change = await auth.handler(
+        new Request("http://localhost:3000/api/auth/change-email", {
+          method: "POST",
+          headers: { ...json, cookie: web },
+          body: JSON.stringify({ newEmail, callbackURL: "/" }),
+        }),
+      );
+      expect(change.status).toBe(200);
+      expect(links.map(({ to }) => to)).toEqual([newEmail]);
+      expect((await sessionOf(web))?.user.email).toBe(email);
+
+      const confirm = await auth.handler(new Request(links[0]!.url));
+      expect(confirm.status).toBe(302);
+      expect((await sessionOf(web))?.user.email).toBe(newEmail);
+      const db = createAuthDb(client);
+      expect(await db.select().from(actorContactProfiles)).toMatchObject([{ email: newEmail }]);
+      await client.end();
+    });
+  });
+
+  it("answers that email change is unavailable when no mail adapter is configured", async () => {
+    await withSchema(async ({ connect }) => {
+      const client = await connect();
+      const auth = createAuth({
+        db: createAuthDb(client),
+        env: buildAuthEnv({
+          APP_BASE_URL: "http://localhost:3000",
+          BETTER_AUTH_SECRET: "test-secret-at-least-32-characters!!",
+          BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:3000",
+        }),
+        clock: new SystemClock(),
+        ids: new CryptoIdGenerator(),
+      });
+      const json = { "content-type": "application/json", origin: "http://localhost:3000" };
+      const signUp = await auth.handler(
+        new Request("http://localhost:3000/api/auth/sign-up/email", {
+          method: "POST",
+          headers: json,
+          body: JSON.stringify({
+            email: `pg-${randomUUID()}@futrob.test`,
+            password: "password-at-least-8",
+            name: "Captain",
+          }),
+        }),
+      );
+      const cookie = signUp.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ");
+
+      const change = await auth.handler(
+        new Request("http://localhost:3000/api/auth/change-email", {
+          method: "POST",
+          headers: { ...json, cookie },
+          body: JSON.stringify({ newEmail: `next-${randomUUID()}@futrob.test` }),
+        }),
+      );
+
+      expect(change.status).toBe(400);
+      expect(await change.json()).toMatchObject({ code: "CHANGE_EMAIL_DISABLED" });
+      await client.end();
+    });
+  });
 });
 
 async function withSchema(

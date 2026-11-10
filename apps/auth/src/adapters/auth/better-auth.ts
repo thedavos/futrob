@@ -12,6 +12,8 @@ import {
   findActorIdForSubject,
 } from "./actor-provisioner.ts";
 import { syncCredentialUserContact } from "./actor-contact-profile.ts";
+import type { AuthMailPort } from "../mail/auth-mail.port.ts";
+import { LogAuthMail } from "../mail/log-auth-mail.ts";
 
 export type { AuthEnv };
 
@@ -58,6 +60,8 @@ export function createAuth(input: {
   readonly clock: ClockPort;
   readonly ids: IdGeneratorPort;
   readonly actorProvisioner?: ActorProvisionerPort;
+  /** Overrides the adapter chosen by `AUTH_EMAIL_DELIVERY`; tests capture links with it. */
+  readonly mail?: AuthMailPort;
 }) {
   if (input.env.BETTER_AUTH_SECRET.length < 32) {
     throw new Error("auth: BETTER_AUTH_SECRET must contain at least 32 characters");
@@ -66,6 +70,9 @@ export function createAuth(input: {
   const actorProvisioner =
     input.actorProvisioner ??
     createPostgresActorProvisioner({ db: input.db, clock: input.clock, ids: input.ids });
+
+  const mail =
+    input.mail ?? (input.env.AUTH_EMAIL_DELIVERY === "log" ? new LogAuthMail() : undefined);
 
   return betterAuth({
     appName: "Futrob",
@@ -79,6 +86,16 @@ export function createAuth(input: {
     emailAndPassword: {
       enabled: true,
     },
+    // Changing email sends a link to the new address; the old one stays valid until it is
+    // opened. Without a mail adapter the endpoint answers CHANGE_EMAIL_DISABLED.
+    user: { changeEmail: { enabled: mail !== undefined } },
+    emailVerification: mail
+      ? {
+          sendVerificationEmail: async ({ user, url }) => {
+            await mail.sendEmailChangeVerification({ to: user.email, name: user.name, url });
+          },
+        }
+      : undefined,
     rateLimit: {
       enabled: true,
       storage: "database",
