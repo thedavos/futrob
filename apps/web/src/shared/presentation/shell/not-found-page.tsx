@@ -1,0 +1,74 @@
+"use client";
+
+import * as stylex from "@stylexjs/stylex";
+import {
+  applyStyles,
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateCopy,
+  EmptyStateDescription,
+  EmptyStateIcon,
+  Logo,
+  PageHeaderTitle,
+} from "@futrob/ui";
+import { Link } from "@tanstack/react-router";
+import { authClient } from "@/modules/identity/auth-client.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+
+const styles = stylex.create({
+  logo: {
+    height: "2.5rem",
+    width: "auto",
+  },
+});
+
+export type NotFoundAudience = "visitor" | "member";
+
+export function notFoundAudience(user: unknown): NotFoundAudience {
+  return user == null ? "visitor" : "member";
+}
+
+function notFoundExit(audience: NotFoundAudience): {
+  readonly to: "/" | "/player";
+  readonly actionKey: "notFound.visitor.action" | "notFound.member.action";
+} {
+  switch (audience) {
+    case "visitor":
+      return { to: "/", actionKey: "notFound.visitor.action" };
+    case "member":
+      return { to: "/player", actionKey: "notFound.member.action" };
+    default: {
+      const _exhaustive: never = audience;
+      return _exhaustive;
+    }
+  }
+}
+
+export function NotFoundPage({ audience }: { readonly audience: NotFoundAudience }) {
+  const { t } = useI18n();
+  const exit = notFoundExit(audience);
+  return (
+    <main>
+      <EmptyState fill>
+        <EmptyStateIcon>
+          <Logo {...applyStyles(styles.logo)} />
+        </EmptyStateIcon>
+        <EmptyStateCopy>
+          <PageHeaderTitle>{t("notFound.title")}</PageHeaderTitle>
+          <EmptyStateDescription>{t("notFound.description")}</EmptyStateDescription>
+        </EmptyStateCopy>
+        <EmptyStateActions>
+          <Button render={<Link to={exit.to} />} role="link">
+            {t(exit.actionKey)}
+          </Button>
+        </EmptyStateActions>
+      </EmptyState>
+    </main>
+  );
+}
+
+export function RootNotFoundPage() {
+  const session = authClient.useSession();
+  return <NotFoundPage audience={notFoundAudience(session.data?.user)} />;
+}

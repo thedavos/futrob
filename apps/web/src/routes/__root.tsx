@@ -6,10 +6,14 @@ import { getUiLocale, setUiLocale } from "@/shared/presentation/i18n/locale.func
 import { DEFAULT_LOCALE, localeOpenGraphCode } from "@/shared/presentation/i18n/locale.ts";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
 import { AppProviders } from "@/shared/presentation/query/app-providers.tsx";
+import { RootNotFoundPage } from "@/shared/presentation/shell/not-found-page.tsx";
+import { RootErrorPage } from "@/shared/presentation/shell/root-error-page.tsx";
 import appStyles from "@/styles.css?url";
 
 export const Route = createRootRoute({
   loader: () => getUiLocale(),
+  notFoundComponent: RootNotFoundPage,
+  errorComponent: RootErrorPage,
   head: ({ loaderData }) => {
     const locale = loaderData ?? DEFAULT_LOCALE;
     const t = createTranslator(locale);

@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
-import { z } from "zod";
+import { isExpectedFailure } from "./expected-failure.ts";
 
 /**
  * Sentry is production-only for the web Worker: `withWorkerSentry` initializes
@@ -26,13 +26,10 @@ export function withWorkerSentry<
   }, handler);
 }
 
-/** Expected failures carry a stable wire `code`; those stay local. */
-const expectedFailureSchema = z.object({ code: z.string() }).passthrough();
-
 /** No-op unless the SDK was initialized (dev stays console-only). */
 export function captureWorkerError(cause: unknown, context?: Record<string, string>): void {
   if (!Sentry.getClient()) return;
-  if (expectedFailureSchema.safeParse(cause).success) return;
+  if (isExpectedFailure(cause)) return;
   if (context) {
     Sentry.getCurrentScope().setExtras(context);
   }
