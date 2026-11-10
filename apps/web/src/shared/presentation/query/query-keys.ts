@@ -47,6 +47,10 @@ export const queryKeys = {
     operatorSelection: (organizationId: string, encounterId: string) =>
       [...queryKeys.encounters.all, "operator-selection", organizationId, encounterId] as const,
   },
+  notifications: {
+    all: ["notifications"] as const,
+    emailPreferences: () => [...queryKeys.notifications.all, "email-preferences"] as const,
+  },
   identity: {
     all: ["identity"] as const,
     onboardingStatus: () => [...queryKeys.identity.all, "onboarding-status"] as const,

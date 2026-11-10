@@ -172,4 +172,57 @@ describe("personal account", () => {
       );
     });
   });
+
+  describe("email notifications", () => {
+    function stubEmailApi(save: () => Response) {
+      const saved: unknown[] = [];
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: unknown, init: RequestInit = {}) => {
+          if (!String(url).includes("email-preferences")) {
+            return Response.json({ sidebarLayout: "navigation" });
+          }
+          if (init.method !== "PUT") return Response.json({ locale: "es", nonCriticalEmail: true });
+          saved.push(init.body);
+          return save();
+        }),
+      );
+      return saved;
+    }
+
+    async function chooseOnlyActions() {
+      const email = screen.getByRole("combobox", { name: "Avisos por email" });
+      await waitFor(() => expect(email).toHaveTextContent("Todos los avisos"));
+      const user = userEvent.setup();
+      await user.click(email);
+      await user.click(
+        await screen.findByRole("option", { name: "Solo los que piden una acción" }),
+      );
+    }
+
+    it("turns off non-critical email on Guardar cambios, in the dialog's language", async () => {
+      const saved = stubEmailApi(() => Response.json({ locale: "es", nonCriticalEmail: false }));
+      frame(<SettingsDialog onOpenChange={() => undefined} open />);
+
+      await chooseOnlyActions();
+      expect(saved).toEqual([]);
+      fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+      expect(await screen.findByText("Cambios guardados.")).toBeVisible();
+      expect(saved).toEqual([JSON.stringify({ locale: "es", nonCriticalEmail: false })]);
+    });
+
+    it("keeps the choice and reports the failure when saving fails", async () => {
+      stubEmailApi(() => Response.json({ code: "api.internal" }, { status: 500 }));
+      frame(<SettingsDialog onOpenChange={() => undefined} open />);
+
+      await chooseOnlyActions();
+      fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos guardar");
+      expect(screen.getByRole("combobox", { name: "Avisos por email" })).toHaveTextContent(
+        "Solo los que piden una acción",
+      );
+    });
+  });
 });

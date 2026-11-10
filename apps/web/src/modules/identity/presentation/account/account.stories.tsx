@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Button, applyStyles } from "@futrob/ui";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { ProfileEditor } from "./profile-editor.tsx";
 import { FeedbackDialog } from "./feedback-dialog.tsx";
@@ -13,9 +14,14 @@ import { PlayerStoryShell } from "@/modules/teams/presentation/player-story-shel
 import { styles } from "./account.styles.ts";
 
 function Frame({ children, locale = "es" }: { children: ReactNode; locale?: Locale }) {
-  const [client] = useState(
-    () => new QueryClient({ defaultOptions: { mutations: { retry: false } } }),
-  );
+  const [client] = useState(() => {
+    const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    queryClient.setQueryData(queryKeys.notifications.emailPreferences(), {
+      locale,
+      nonCriticalEmail: true,
+    });
+    return queryClient;
+  });
   return (
     <QueryClientProvider client={client}>
       <I18nProvider initialLocale={locale}>

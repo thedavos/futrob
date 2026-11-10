@@ -1,4 +1,5 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   RouterProvider,
@@ -8,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { expect, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
+import type { UnsubscribeEmailResponse } from "@futrob/api-contracts";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -26,6 +28,7 @@ import {
   type OrganizationRecentActivityState,
 } from "./organization-recent-activity.tsx";
 import { PendingQueueView, type PendingQueueState } from "./shell-pending-queue.tsx";
+import { EmailUnsubscribePage } from "./email-unsubscribe-page.tsx";
 
 const styles = stylex.create({
   page: { width: "min(56rem, 92vw)", backgroundColor: colors.background, padding: "1.5rem" },
@@ -246,4 +249,35 @@ export const PendingLoading: Story = {
 export const PendingError: Story = {
   name: "Sidebar pending / Error",
   render: () => <Queue state={{ status: "error", retry: noop }} />,
+};
+
+const unsubscribed = async (): Promise<UnsubscribeEmailResponse> => ({ nonCriticalEmail: false });
+
+function Unsubscribe({
+  token,
+  unsubscribe,
+}: {
+  readonly token: string | null;
+  readonly unsubscribe: (token: string) => Promise<UnsubscribeEmailResponse>;
+}) {
+  const [client] = useState(
+    () => new QueryClient({ defaultOptions: { mutations: { retry: false } } }),
+  );
+  return (
+    <QueryClientProvider client={client}>
+      <Harness>
+        <div {...applyProps(styles.card)}>
+          <EmailUnsubscribePage token={token} unsubscribe={unsubscribe} />
+        </div>
+      </Harness>
+    </QueryClientProvider>
+  );
+}
+
+export const EmailUnsubscribeConfirm: Story = {
+  render: () => <Unsubscribe token="tok-story" unsubscribe={unsubscribed} />,
+};
+
+export const EmailUnsubscribeInvalidLink: Story = {
+  render: () => <Unsubscribe token={null} unsubscribe={unsubscribed} />,
 };

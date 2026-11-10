@@ -115,6 +115,25 @@ const es = {
     "No pudimos cambiar la contraseña. Revisa la contraseña actual e inténtalo de nuevo.",
   "settings.languageError":
     "La contraseña se cambió, pero no pudimos guardar el idioma. Vuelve a guardar para intentarlo.",
+  "settings.email": "Avisos por email",
+  "settings.emailAll": "Todos los avisos",
+  "settings.emailCritical": "Solo los que piden una acción",
+  "settings.emailHint":
+    "Las acciones pendientes y las decisiones siempre llegan. Se envían en el idioma elegido.",
+  "settings.emailUnavailable": "No disponible ahora",
+  "settings.emailLoading": "Cargando…",
+  "settings.emailError":
+    "Guardamos tus otros cambios, pero no los avisos por email. Vuelve a guardar para intentarlo.",
+  "emailUnsubscribe.title": "Avisos por email",
+  "emailUnsubscribe.description":
+    "Deja de recibir recordatorios y novedades. Las acciones pendientes y las decisiones seguirán llegando.",
+  "emailUnsubscribe.confirm": "Dejar de recibirlos",
+  "emailUnsubscribe.confirming": "Guardando…",
+  "emailUnsubscribe.done":
+    "Listo. Ya no recibirás recordatorios ni novedades por email. Puedes volver a activarlos en Configuración.",
+  "emailUnsubscribe.invalid": "Este enlace no es válido. Cambia tus avisos en Configuración.",
+  "emailUnsubscribe.error": "No pudimos guardar el cambio. Vuelve a intentarlo.",
+  "emailUnsubscribe.home": "Ir a Futrob",
   "feedback.title": "Enviar feedback",
   "feedback.description": "Cuéntanos qué mejorarías o qué problema encontraste.",
   "feedback.type": "¿Qué quieres compartir?",
@@ -3053,6 +3072,25 @@ const en: Catalog = {
     "We could not change your password. Check your current password and try again.",
   "settings.languageError":
     "Your password changed, but we could not save your language. Save again to retry.",
+  "settings.email": "Email notifications",
+  "settings.emailAll": "All notifications",
+  "settings.emailCritical": "Only those that need action",
+  "settings.emailHint":
+    "Pending actions and decisions always arrive. Emails use the language chosen here.",
+  "settings.emailUnavailable": "Unavailable right now",
+  "settings.emailLoading": "Loading\u2026",
+  "settings.emailError":
+    "We saved your other changes, but not your email notifications. Save again to retry.",
+  "emailUnsubscribe.title": "Email notifications",
+  "emailUnsubscribe.description":
+    "Stop reminders and updates. Pending actions and decisions will still arrive.",
+  "emailUnsubscribe.confirm": "Stop them",
+  "emailUnsubscribe.confirming": "Saving\u2026",
+  "emailUnsubscribe.done":
+    "Done. You will no longer get reminders or updates by email. You can turn them back on in Settings.",
+  "emailUnsubscribe.invalid": "This link is not valid. Change your notifications in Settings.",
+  "emailUnsubscribe.error": "We could not save the change. Try again.",
+  "emailUnsubscribe.home": "Go to Futrob",
   "feedback.title": "Send feedback",
   "feedback.description": "Tell us what to improve or what went wrong.",
   "feedback.type": "What would you like to share?",

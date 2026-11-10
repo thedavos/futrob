@@ -29,6 +29,10 @@ import {
   useActorPreferencesQuery,
   useSaveActorPreferencesMutation,
 } from "@/modules/identity/presentation/identity-queries.ts";
+import {
+  useEmailPreferencesQuery,
+  useSaveEmailPreferencesMutation,
+} from "@/modules/notifications/presentation/email-queries.ts";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { styles } from "./account.styles.ts";
@@ -38,12 +42,20 @@ type SettingsError =
   | "settings.passwordError"
   | "settings.languageError"
   | "settings.sidebarLayoutError"
+  | "settings.emailError"
   | "settings.error";
 
 const SIDEBAR_LAYOUT_LABELS = {
   navigation: "settings.sidebarLayoutNavigation",
   "pending-queue": "settings.sidebarLayoutPendingQueue",
 } as const satisfies Record<SidebarLayoutDto, string>;
+
+type EmailChoice = "all" | "critical";
+
+const EMAIL_CHOICE_LABELS = {
+  all: "settings.emailAll",
+  critical: "settings.emailCritical",
+} as const satisfies Record<EmailChoice, string>;
 
 export function SettingsDialog({
   open,
@@ -71,6 +83,19 @@ export function SettingsDialog({
   const [sidebarLayoutDraft, setSidebarLayoutDraft] = useState<SidebarLayoutDto | null>(null);
   const sidebarLayout = sidebarLayoutDraft ?? savedSidebarLayout;
   const changingSidebarLayout = sidebarLayout !== savedSidebarLayout;
+  const emailPreferences = useEmailPreferencesQuery();
+  const saveEmailPreferences = useSaveEmailPreferencesMutation();
+  const savedEmail: EmailChoice | null = emailPreferences.data
+    ? emailPreferences.data.nonCriticalEmail
+      ? "all"
+      : "critical"
+    : null;
+  const [emailDraft, setEmailDraft] = useState<EmailChoice | null>(null);
+  const emailChoice = emailDraft ?? savedEmail;
+  // Email goes out in the language chosen here, so a language change re-saves it too.
+  const changingEmail =
+    emailChoice !== null &&
+    (emailChoice !== savedEmail || emailPreferences.data?.locale !== language);
   const changingPassword = Object.values(passwords).some(Boolean);
   const mutation = useMutation({
     mutationFn: async () => {
@@ -119,6 +144,21 @@ export function SettingsDialog({
           return false;
         }
       }
+      if (changingEmail) {
+        try {
+          await saveEmailPreferences.mutateAsync({
+            locale: language,
+            nonCriticalEmail: emailChoice === "all",
+          });
+        } catch {
+          setError(
+            changingPassword || language !== locale || changingSidebarLayout
+              ? "settings.emailError"
+              : "settings.error",
+          );
+          return false;
+        }
+      }
       return true;
     },
   });
@@ -128,6 +168,7 @@ export function SettingsDialog({
     setPasswords({ current: "", next: "", confirm: "" });
     setLanguage(locale);
     setSidebarLayoutDraft(null);
+    setEmailDraft(null);
     setError(null);
     mutation.reset();
     onOpenChange(false);
@@ -215,6 +256,40 @@ export function SettingsDialog({
               </Select>
               <Caption id="settings-sidebar-layout-hint">{t("settings.sidebarLayoutHint")}</Caption>
             </Field>
+            <Field>
+              <FieldLabel htmlFor="settings-email">{t("settings.email")}</FieldLabel>
+              <Select
+                disabled={mutation.isPending || emailChoice === null}
+                items={(["all", "critical"] as const).map((value) => ({
+                  value,
+                  label: t(EMAIL_CHOICE_LABELS[value]),
+                }))}
+                onValueChange={(value) => {
+                  setEmailDraft(value === "critical" ? "critical" : "all");
+                  mutation.reset();
+                  setError(null);
+                }}
+                value={emailChoice}
+              >
+                <SelectTrigger aria-describedby="settings-email-hint" id="settings-email">
+                  <SelectValue
+                    placeholder={t(
+                      emailPreferences.isError
+                        ? "settings.emailUnavailable"
+                        : "settings.emailLoading",
+                    )}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["all", "critical"] as const).map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {t(EMAIL_CHOICE_LABELS[value])}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Caption id="settings-email-hint">{t("settings.emailHint")}</Caption>
+            </Field>
             <section {...applyStyles(styles.section)} aria-labelledby="settings-password-title">
               <SectionTitle id="settings-password-title">{t("settings.password")}</SectionTitle>
               <Caption id="settings-password-hint">{t("settings.passwordHint")}</Caption>
@@ -276,7 +351,10 @@ export function SettingsDialog({
               aria-busy={mutation.isPending}
               disabled={
                 mutation.isPending ||
-                (language === locale && !changingPassword && !changingSidebarLayout)
+                (language === locale &&
+                  !changingPassword &&
+                  !changingSidebarLayout &&
+                  !changingEmail)
               }
               type="submit"
             >
