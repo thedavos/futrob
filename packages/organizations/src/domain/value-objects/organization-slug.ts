@@ -6,12 +6,16 @@ export type OrganizationSlug = string & { readonly [organizationSlugBrand]: true
 export const ORGANIZATION_SLUG_MIN_LENGTH = 3;
 export const ORGANIZATION_SLUG_MAX_LENGTH = 48;
 
-/** Words that would shadow an app route or brand name once slugs map to public URLs. */
+/**
+ * Words that would shadow an app route or brand name: the public portal lives at
+ * `/{organizationSlug}/{competitionKey}` (ADR-0024), next to the app's own top-level routes.
+ */
 export const RESERVED_ORGANIZATION_SLUGS: ReadonlySet<string> = new Set([
   "admin",
   "api",
   "app",
   "auth",
+  "entry-invitations",
   "explore",
   "futrob",
   "invitations",
@@ -22,6 +26,8 @@ export const RESERVED_ORGANIZATION_SLUGS: ReadonlySet<string> = new Set([
   "onboarding",
   "orgs",
   "player",
+  "pricing",
+  "roster-invitations",
   "settings",
   "signup",
   "support",
