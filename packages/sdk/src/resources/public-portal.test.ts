@@ -90,9 +90,7 @@ describe("public portal SDK resource", () => {
       ),
     });
 
-    const error = await client.publicPortal
-      .getStandings(REF)
-      .catch((caught: unknown) => caught);
+    const error = await client.publicPortal.getStandings(REF).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(FutrobApiError);
     expect(error).toMatchObject({ status: 404, code: "public_portal.competition_not_found" });
   });

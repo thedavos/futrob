@@ -27,7 +27,11 @@ import type {
   PublishedCompetitionReaderPort,
 } from "@futrob/public-portal";
 import type { OfficialResult, OfficialResultReaderPort } from "@futrob/results";
-import type { FixtureParticipantSlot, FixturePlan, FixturePlanRepository } from "@futrob/scheduling";
+import type {
+  FixtureParticipantSlot,
+  FixturePlan,
+  FixturePlanRepository,
+} from "@futrob/scheduling";
 import { asCompetitionId, type EncounterId, type TeamId } from "@futrob/shared-kernel";
 import {
   applySwissStandings,
@@ -217,7 +221,9 @@ function bracketStages(
   const stages = [...plan.stages]
     .sort((a, b) => a.order - b.order)
     .flatMap((stage) =>
-      stage.kind === "knockout" || stage.kind === "playoffs" ? [{ ...stage, kind: stage.kind }] : [],
+      stage.kind === "knockout" || stage.kind === "playoffs"
+        ? [{ ...stage, kind: stage.kind }]
+        : [],
     );
   const positions = new Map<EncounterId, { roundNumber: number; order: number }>();
   for (const stage of stages) {
@@ -279,7 +285,9 @@ export class CompetitionsPublicRulesReader implements PublicRulesReaderPort {
 }
 
 export class StatisticsPublicRankingsReader implements PublicRankingsReaderPort {
-  constructor(private readonly rankings: Pick<RankingSnapshotRepository, "findByCompetitionAndKind">) {}
+  constructor(
+    private readonly rankings: Pick<RankingSnapshotRepository, "findByCompetitionAndKind">,
+  ) {}
 
   async read(
     scope: PublicCompetitionScope,

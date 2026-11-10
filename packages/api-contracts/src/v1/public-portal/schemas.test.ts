@@ -108,7 +108,10 @@ describe("public portal wire schemas", () => {
 
   it("admits only goals on a calendar score", () => {
     const body = (score: unknown) => ({
-      calendar: { timeZone: "America/Lima", entries: [{ ...calendarEntry, status: "official", score }] },
+      calendar: {
+        timeZone: "America/Lima",
+        entries: [{ ...calendarEntry, status: "official", score }],
+      },
     });
     expect(
       getPublicCalendarResponseSchema.safeParse(body([{ homeGoals: 3, awayGoals: 1 }])).success,
@@ -136,7 +139,9 @@ describe("public portal wire schemas", () => {
         stages: [
           {
             kind: "knockout",
-            rounds: [{ number: 1, scheduledStartAt: encounter.scheduledStartAt, encounters: [value] }],
+            rounds: [
+              { number: 1, scheduledStartAt: encounter.scheduledStartAt, encounters: [value] },
+            ],
           },
         ],
       },
@@ -152,8 +157,16 @@ describe("public portal wire schemas", () => {
       ).toBe(false);
     }
 
-    const row = { position: 1, playerName: "AnaGol_10", teamName: null, value: 3, matchesPlayed: 2 };
-    const ranking = (value: object) => ({ ranking: { kind: "scorer", rows: [value], updatedAt: null } });
+    const row = {
+      position: 1,
+      playerName: "AnaGol_10",
+      teamName: null,
+      value: 3,
+      matchesPlayed: 2,
+    };
+    const ranking = (value: object) => ({
+      ranking: { kind: "scorer", rows: [value], updatedAt: null },
+    });
     expect(getPublicRankingResponseSchema.safeParse(ranking(row)).success).toBe(true);
     expect(
       getPublicRankingResponseSchema.safeParse(ranking({ ...row, playerProfileId: "profile-1" }))

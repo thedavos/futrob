@@ -479,7 +479,9 @@ describe("public portal reads", () => {
       createdByActorId: asActorId(ORGANIZER),
     });
 
-    const own = await app.request(`/api/v1/public/organizations/${slug}/competitions/${competitionId}`);
+    const own = await app.request(
+      `/api/v1/public/organizations/${slug}/competitions/${competitionId}`,
+    );
     expect(own.status).toBe(200);
     for (const organizationSlug of ["otra-liga", "no-such-organization"]) {
       for (const suffix of PUBLIC_SUFFIXES) {
@@ -551,9 +553,12 @@ describe("public portal reads", () => {
       .flatMap((stage) => stage.rounds)
       .flatMap((round) => round.encounters)
       .flatMap((encounter) => [encounter.home, encounter.away]);
-    expect(sides.filter((side) => side.kind === "team").map((side) => side.name).sort()).toEqual(
-      expect.arrayContaining(["Barranco FC"]),
-    );
+    expect(
+      sides
+        .filter((side) => side.kind === "team")
+        .map((side) => side.name)
+        .sort(),
+    ).toEqual(expect.arrayContaining(["Barranco FC"]));
     const plans = await knockout.modules.scheduling.fixturePlans.listActive(
       asOrganizationId(knockout.organizationId),
       asCompetitionId(knockout.competitionId),

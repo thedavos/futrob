@@ -49,8 +49,7 @@ export class GetPublicBracketUseCase {
       encounters.flatMap((encounter) => [encounter.home, encounter.away].flatMap(teamIdOf)),
     );
     const now = this.deps.clock.now();
-    const side = (value: PublicBracketSourceSide): PublicBracketSide =>
-      toPublicSide(value, names);
+    const side = (value: PublicBracketSourceSide): PublicBracketSide => toPublicSide(value, names);
 
     return ok({
       timeZone: source.timeZone,
@@ -63,17 +62,15 @@ export class GetPublicBracketUseCase {
             scheduledStartAt: round.scheduledStartAt,
             encounters: [...round.encounters]
               .sort((a, b) => a.order - b.order)
-              .map(
-                (encounter): PublicBracketEncounter => ({
-                  order: encounter.order,
-                  scheduledStartAt: encounter.scheduledStartAt,
-                  officialMatchCount: encounter.officialMatchCount,
-                  home: side(encounter.home),
-                  away: side(encounter.away),
-                  status: statusOf(encounter, now),
-                  score: encounter.officialScore ? toPublicScore(encounter.officialScore) : null,
-                }),
-              ),
+              .map((encounter): PublicBracketEncounter => ({
+                order: encounter.order,
+                scheduledStartAt: encounter.scheduledStartAt,
+                officialMatchCount: encounter.officialMatchCount,
+                home: side(encounter.home),
+                away: side(encounter.away),
+                status: statusOf(encounter, now),
+                score: encounter.officialScore ? toPublicScore(encounter.officialScore) : null,
+              })),
           })),
       })),
     });
@@ -84,7 +81,10 @@ function teamIdOf(side: PublicBracketSourceSide): TeamId[] {
   return side.kind === "team" ? [side.teamId] : [];
 }
 
-function statusOf(encounter: PublicBracketSourceEncounter, now: Date): PublicBracketEncounterStatus {
+function statusOf(
+  encounter: PublicBracketSourceEncounter,
+  now: Date,
+): PublicBracketEncounterStatus {
   if (encounter.officialScore) return "official";
   if (encounter.closedWithoutResult) return "closed";
   return encounter.scheduledStartAt.getTime() <= now.getTime() ? "awaiting_result" : "scheduled";

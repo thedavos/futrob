@@ -34,9 +34,9 @@ function rankingsReader(source: PublicRankingSource | null): PublicRankingsReade
   };
 }
 
-function playerDirectory(
-  names: Readonly<Record<string, string>>,
-): PublicPlayerDirectoryPort & { readonly asked: { playerProfileId: string; teamId: TeamId | null }[] } {
+function playerDirectory(names: Readonly<Record<string, string>>): PublicPlayerDirectoryPort & {
+  readonly asked: { playerProfileId: string; teamId: TeamId | null }[];
+} {
   const asked: { playerProfileId: string; teamId: TeamId | null }[] = [];
   return {
     asked,
@@ -80,8 +80,20 @@ describe("GetPublicRankingsUseCase", () => {
       kind: "scorer",
       updatedAt: UPDATED_AT,
       rows: [
-        { position: 1, playerName: "AnaGol_10", teamName: "Barranco FC", value: 7, matchesPlayed: 4 },
-        { position: 2, playerName: "Beto-PSN", teamName: "Surquillo United", value: 5, matchesPlayed: 4 },
+        {
+          position: 1,
+          playerName: "AnaGol_10",
+          teamName: "Barranco FC",
+          value: 7,
+          matchesPlayed: 4,
+        },
+        {
+          position: 2,
+          playerName: "Beto-PSN",
+          teamName: "Surquillo United",
+          value: 5,
+          matchesPlayed: 4,
+        },
         { position: 3, playerName: "LibreXbox", teamName: null, value: 2, matchesPlayed: 3 },
       ],
     });

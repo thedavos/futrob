@@ -218,7 +218,13 @@ describe("GetPublicBracketUseCase", () => {
       [{ kind: "pending" }, { kind: "team", name: "Surquillo United" }],
     ]);
     const wire = JSON.stringify(result.isOk() && result.value);
-    for (const internal of [stranger, "group-internal-x", BARRANCO, COMPETITION_ID, ORGANIZATION_ID]) {
+    for (const internal of [
+      stranger,
+      "group-internal-x",
+      BARRANCO,
+      COMPETITION_ID,
+      ORGANIZATION_ID,
+    ]) {
       expect(wire).not.toContain(internal);
     }
   });

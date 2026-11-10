@@ -1,9 +1,6 @@
 import type { CompetitionMatchRules } from "@futrob/competitions";
 import { err, ok, type Result } from "@futrob/shared-kernel";
-import type {
-  PublicRules,
-  PublicStageRules,
-} from "../../domain/entities/public-competition.ts";
+import type { PublicRules, PublicStageRules } from "../../domain/entities/public-competition.ts";
 import type { PublicCompetitionNotFound } from "../../domain/errors/public-portal.errors.ts";
 import type { PublicCompetitionKey } from "../../domain/public-competition-key.ts";
 import type { PublicRulesReaderPort } from "../../domain/ports/public-rules-reader.port.ts";

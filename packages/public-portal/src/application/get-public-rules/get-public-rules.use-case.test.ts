@@ -1,6 +1,9 @@
 import type { CompetitionMatchRules } from "@futrob/competitions";
 import { describe, expect, it } from "vite-plus/test";
-import type { PublicRulesReaderPort, PublicRulesSource } from "../../domain/ports/public-rules-reader.port.ts";
+import type {
+  PublicRulesReaderPort,
+  PublicRulesSource,
+} from "../../domain/ports/public-rules-reader.port.ts";
 import { GetPublicRulesUseCase } from "./get-public-rules.use-case.ts";
 import { competitionSource, PUBLIC_KEY, publishedReader } from "../public-portal.test-helper.ts";
 
