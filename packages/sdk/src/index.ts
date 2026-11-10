@@ -41,3 +41,4 @@ export type { RostersResource } from "./resources/rosters.ts";
 export type { StatisticsResource, GetMyRecentMatchInput } from "./resources/statistics.ts";
 export type { TeamsResource } from "./resources/teams.ts";
 export type { TeamExternalClubsResource } from "./resources/external-clubs.ts";
+export * from "./account/index.ts";
