@@ -25,19 +25,16 @@ const styles = stylex.create({
 
 export type NotFoundAudience = "visitor" | "member";
 
-export function notFoundAudience(user: unknown): NotFoundAudience {
-  return user == null ? "visitor" : "member";
+export function notFoundAudience(signedIn: boolean): NotFoundAudience {
+  return signedIn ? "member" : "visitor";
 }
 
-function notFoundExit(audience: NotFoundAudience): {
-  readonly to: "/" | "/player";
-  readonly actionKey: "notFound.visitor.action" | "notFound.member.action";
-} {
+function notFoundExit(audience: NotFoundAudience) {
   switch (audience) {
     case "visitor":
-      return { to: "/", actionKey: "notFound.visitor.action" };
+      return { to: "/" as const, actionKey: "notFound.visitor.action" as const };
     case "member":
-      return { to: "/player", actionKey: "notFound.member.action" };
+      return { to: "/player" as const, actionKey: "notFound.member.action" as const };
     default: {
       const _exhaustive: never = audience;
       return _exhaustive;
@@ -70,5 +67,5 @@ export function NotFoundPage({ audience }: { readonly audience: NotFoundAudience
 
 export function RootNotFoundPage() {
   const session = authClient.useSession();
-  return <NotFoundPage audience={notFoundAudience(session.data?.user)} />;
+  return <NotFoundPage audience={notFoundAudience(session.data?.user != null)} />;
 }

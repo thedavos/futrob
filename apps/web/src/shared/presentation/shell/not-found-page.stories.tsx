@@ -52,13 +52,8 @@ export const Visitor: Story = {
   render: () => renderNotFound("visitor"),
   play: async ({ canvasElement }) => {
     const view = within(canvasElement);
-    await expect(
-      view.getByRole("heading", { name: "No encontramos esta página" }),
-    ).toBeTruthy();
-    await expect(view.getByRole("link", { name: "Volver al inicio" })).toHaveAttribute(
-      "href",
-      "/",
-    );
+    await expect(view.getByRole("heading", { name: "No encontramos esta página" })).toBeTruthy();
+    await expect(view.getByRole("link", { name: "Volver al inicio" })).toHaveAttribute("href", "/");
   },
 };
 

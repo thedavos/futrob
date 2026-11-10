@@ -50,13 +50,12 @@ function renderNotFound(audience: "visitor" | "member") {
 }
 
 describe("notFoundAudience", () => {
-  it("treats a missing user as a visitor", () => {
-    expect(notFoundAudience(undefined)).toBe("visitor");
-    expect(notFoundAudience(null)).toBe("visitor");
+  it("treats a missing session as a visitor", () => {
+    expect(notFoundAudience(false)).toBe("visitor");
   });
 
-  it("treats a session user as a member", () => {
-    expect(notFoundAudience({ id: "user-1" })).toBe("member");
+  it("treats a signed-in session as a member", () => {
+    expect(notFoundAudience(true)).toBe("member");
   });
 });
 

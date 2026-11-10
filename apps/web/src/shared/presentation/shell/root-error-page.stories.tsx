@@ -14,6 +14,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
+  args: {
+    error: new Error("loader crashed"),
+    reset: () => undefined,
+  },
   render: () => (
     <I18nProvider initialLocale="es">
       <RootErrorPage error={new Error("loader crashed")} reset={() => undefined} />
