@@ -56,6 +56,61 @@ describe("buildCompetitionStandings", () => {
     });
   });
 
+  it("subtracts active point deductions and reorders the table by the remaining points", () => {
+    const snapshot = buildCompetitionStandings({
+      competitionId: asCompetitionId("competition-1"),
+      organizationId: asOrganizationId("organization-1"),
+      contributions: [
+        team({ officialSlot: 1, goalsFor: 2, goalsAgainst: 0 }),
+        team({
+          officialSlot: 1,
+          side: "away",
+          teamId: asTeamId("away-team"),
+          externalClubId: "club-2",
+          goalsFor: 0,
+          goalsAgainst: 2,
+        }),
+      ],
+      pointsRules: { winPoints: 3, drawPoints: 1, lossPoints: 0, resolutionMode: "independent_matches" },
+      pointDeductions: [
+        { teamId: asTeamId("home-team"), points: 2 },
+        { teamId: asTeamId("home-team"), points: 2 },
+      ],
+      occurredAtBySlot: new Map(),
+      updatedAt: new Date("2026-11-10T12:00:00.000Z"),
+    });
+
+    expect(
+      snapshot.rows.map(({ position, teamId, played, wins, points, pointsDeducted }) => ({
+        position,
+        teamId,
+        played,
+        wins,
+        points,
+        pointsDeducted,
+      })),
+    ).toEqual([
+      { position: 1, teamId: "away-team", played: 1, wins: 0, points: 0, pointsDeducted: 0 },
+      { position: 2, teamId: "home-team", played: 1, wins: 1, points: -1, pointsDeducted: 4 },
+    ]);
+  });
+
+  it("lists a sanctioned Team that has not played yet with its negative points", () => {
+    const snapshot = buildCompetitionStandings({
+      competitionId: asCompetitionId("competition-1"),
+      organizationId: asOrganizationId("organization-1"),
+      contributions: [],
+      pointsRules: { winPoints: 3, drawPoints: 1, lossPoints: 0, resolutionMode: "independent_matches" },
+      pointDeductions: [{ teamId: asTeamId("idle-team"), points: 3 }],
+      occurredAtBySlot: new Map(),
+      updatedAt: new Date("2026-11-10T12:00:00.000Z"),
+    });
+
+    expect(snapshot.rows).toEqual([
+      expect.objectContaining({ teamId: "idle-team", played: 0, points: -3, pointsDeducted: 3 }),
+    ]);
+  });
+
   it("scores a two-leg aggregate_score encounter as one table match", () => {
     const snapshot = buildCompetitionStandings({
       competitionId: asCompetitionId("competition-1"),
