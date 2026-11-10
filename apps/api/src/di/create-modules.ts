@@ -55,7 +55,7 @@ import {
   createVoidOfficialResultAndUnproject,
 } from "./official-selection.commands.ts";
 import { createResultsModule } from "./results.module.ts";
-import { createActivityFeed } from "./notifications.module.ts";
+import { createActivityFeed, type EmailSettings } from "./notifications.module.ts";
 import { createStatisticsModule } from "./statistics.module.ts";
 import { createPublicPortalModule } from "./public-portal.module.ts";
 import { createEncounterReads } from "./encounter-reads.composition.ts";
@@ -78,6 +78,8 @@ export interface CreateModulesInput {
   readonly clock?: ClockPort;
   readonly resultsSystemActorId?: string;
   readonly schedulingSystemActorId?: string;
+  /** Email provider and link origin; local defaults keep every email in memory. */
+  readonly email?: EmailSettings;
 }
 
 export function createModules(input: CreateModulesInput): AppModules {
@@ -278,6 +280,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     pool: input.pool,
     clock,
     ids,
+    email: input.email,
+    sources: {
+      memberships: organizations.repositories.memberships,
+      contacts: identity.contacts,
+      entitlements: billing.useCases.resolveOrganizationEntitlements,
+    },
     transaction,
     encounterReader,
     competitions,

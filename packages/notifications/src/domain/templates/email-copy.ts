@@ -22,21 +22,21 @@ export interface LocaleCopy {
   readonly signature: string;
 }
 
-const ES_DECISIONS: Readonly<Record<ActivityOutcome, string>> = {
+const ES_DECISIONS = {
   entry_approved: "aprobó la inscripción",
   entry_rejected: "rechazó la inscripción",
   schedule_set: "fijó una nueva fecha para el partido",
   schedule_kept: "mantuvo la fecha del partido",
   walkover_intended: "decidió una victoria por incomparecencia",
-};
+} as const satisfies Record<ActivityOutcome, string>;
 
-const EN_DECISIONS: Readonly<Record<ActivityOutcome, string>> = {
+const EN_DECISIONS = {
   entry_approved: "approved the registration",
   entry_rejected: "rejected the registration",
   schedule_set: "set a new date for the match",
   schedule_kept: "kept the date of the match",
   walkover_intended: "decided a walkover",
-};
+} as const satisfies Record<ActivityOutcome, string>;
 
 const es: LocaleCopy = {
   greeting: (name) => `Hola, ${name}:`,
@@ -252,7 +252,7 @@ function subjectEn(i: IntentOf<"organizer_decision">): string {
   return "";
 }
 
-export const EMAIL_COPY: Readonly<Record<EmailLocale, LocaleCopy>> = { es, en };
+export const EMAIL_COPY = { es, en } as const satisfies Record<EmailLocale, LocaleCopy>;
 
 export function copyFor(intent: EmailIntent, locale: EmailLocale): EmailCopy {
   const t = EMAIL_COPY[locale].templates;

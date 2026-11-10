@@ -194,6 +194,8 @@ export function emailHarness(
       links: {
         webBaseUrl: "https://futrob.test",
         unsubscribeUrl: (token) => `https://futrob.test/email/unsubscribe?token=${token}`,
+        oneClickUnsubscribeUrl: (token) =>
+          `https://futrob.test/api/v1/public/email/unsubscribe?token=${token}`,
       },
     }),
     getPreferences: new GetEmailPreferencesUseCase(deps),

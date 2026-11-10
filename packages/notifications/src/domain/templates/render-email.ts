@@ -9,8 +9,9 @@ export interface RenderedEmail {
 }
 
 /**
- * Renders an intent in the recipient's locale. Non-critical email carries a one-click
- * unsubscribe link (RFC 8058) in the body and headers; critical email has none.
+ * Renders an intent in the recipient's locale. Non-critical email carries an unsubscribe
+ * link in the body and a one-click unsubscribe (RFC 8058) in its headers; critical email
+ * has neither.
  */
 export function renderEmail(input: {
   readonly intent: EmailIntent;
@@ -18,7 +19,10 @@ export function renderEmail(input: {
   readonly recipientName: string;
   /** Web origin, such as `https://futrob.app`. */
   readonly webBaseUrl: string;
+  /** Page that confirms the opt-out, linked from the body. */
   readonly unsubscribeUrl: string;
+  /** Endpoint a mail client POSTs to from the `List-Unsubscribe` header (RFC 8058). */
+  readonly oneClickUnsubscribeUrl: string;
 }): RenderedEmail {
   const locale = EMAIL_COPY[input.locale];
   const copy = copyFor(input.intent, input.locale);
@@ -61,7 +65,7 @@ export function renderEmail(input: {
   const headers: Record<string, string> = critical
     ? {}
     : {
-        "List-Unsubscribe": `<${input.unsubscribeUrl}>`,
+        "List-Unsubscribe": `<${input.oneClickUnsubscribeUrl}>`,
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
       };
   return { subject: copy.subject, html, text, headers };

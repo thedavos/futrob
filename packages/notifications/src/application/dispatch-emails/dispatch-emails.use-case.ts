@@ -33,7 +33,10 @@ export interface DispatchEmailsOutput {
 
 export interface EmailLinks {
   readonly webBaseUrl: string;
+  /** Page that confirms the opt-out. */
   unsubscribeUrl(token: string): string;
+  /** RFC 8058 one-click endpoint; a POST to it opts out without a page. */
+  oneClickUnsubscribeUrl(token: string): string;
 }
 
 /**
@@ -102,6 +105,7 @@ export class DispatchEmailsUseCase {
       recipientName: contact.displayName,
       webBaseUrl: this.deps.links.webBaseUrl,
       unsubscribeUrl: this.deps.links.unsubscribeUrl(preferences.unsubscribeToken),
+      oneClickUnsubscribeUrl: this.deps.links.oneClickUnsubscribeUrl(preferences.unsubscribeToken),
     });
     const sent = await this.deps.sender.send({
       to: contact.email,

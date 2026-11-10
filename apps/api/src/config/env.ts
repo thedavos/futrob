@@ -7,7 +7,15 @@ export interface ApiEnv {
   readonly resultsSystemActorId: string | undefined;
   readonly schedulingSystemActorId: string | undefined;
   readonly initialSuperuserActorId: string | undefined;
+  /** Resend API key (ADR-0028); without it email stays in memory or pending. */
+  readonly resendApiKey: string | undefined;
+  /** Sender on the verified domain, such as `Futrob <avisos@futrob.app>`. */
+  readonly emailFrom: string | undefined;
+  /** Web origin of email links. */
+  readonly webBaseUrl: string;
 }
+
+const DEFAULT_WEB_BASE_URL = "http://localhost:3000";
 
 const DEFAULT_PORT = 8787;
 const DEFAULT_EA_CLUBS_BASE_URL = "https://proclubs.ea.com/api/fc";
@@ -24,5 +32,8 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): ApiEnv {
     resultsSystemActorId: source.RESULTS_SYSTEM_ACTOR_ID || undefined,
     schedulingSystemActorId: source.SCHEDULING_SYSTEM_ACTOR_ID || undefined,
     initialSuperuserActorId: source.INITIAL_SUPERUSER_ACTOR_ID || undefined,
+    resendApiKey: source.RESEND_API_KEY || undefined,
+    emailFrom: source.EMAIL_FROM || undefined,
+    webBaseUrl: source.WEB_BASE_URL || DEFAULT_WEB_BASE_URL,
   };
 }

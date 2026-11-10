@@ -3280,6 +3280,56 @@
         ]
       }
     },
+    "/internal/notifications/email-dispatch/run": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Outcomes of this batch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEmailDispatchResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "503": {
+            "description": "No email provider is configured; queued email stays pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "runEmailDispatch",
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Send up to 50 due emails of the outbox",
+        "description": "Service-only Cron target authenticated with the internal bearer secret. Each claimed email is sent, skipped (plan without email, opted out, no address), retried with backoff or failed. A provider outage only delays email; it never touches the command that queued it.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/internal/organizations/{organizationId}/competitions/{competitionId}/statistics/rebuild": {
       "post": {
         "parameters": [
@@ -3574,6 +3624,103 @@
         ],
         "summary": "Health ping",
         "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
+    "/notifications/email-preferences": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Current email settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailPreferences"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "getEmailPreferences",
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Get the authenticated actor's email settings",
+        "description": "An actor who never saved settings gets the defaults: Spanish and every email.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Saved email settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailPreferences"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "saveEmailPreferences",
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Replace the authenticated actor's email settings",
+        "description": "`nonCriticalEmail: false` stops reminders and updates. Email that asks the actor to act, or tells them about a decision, still arrives.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "locale": {
+                    "type": "string",
+                    "enum": [
+                      "es",
+                      "en"
+                    ]
+                  },
+                  "nonCriticalEmail": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "locale",
+                  "nonCriticalEmail"
+                ]
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestId"
@@ -10916,6 +11063,77 @@
         "security": []
       }
     },
+    "/public/email/unsubscribe": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Non-critical email is off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsubscribeEmailResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "description": "The unsubscribe link is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "unsubscribeEmail",
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Turn non-critical email off with the token of an unsubscribe link",
+        "description": "Anonymous: the token in the link is the only credential and it can only turn non-critical email off. Repeating it succeeds. Failures: 400 `api.validation_error`; 404 `notifications.unknown_unsubscribe_token`.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/public/plans": {
       "get": {
         "responses": {
@@ -15277,6 +15495,25 @@
           "scope",
           "roles",
           "permissions"
+        ]
+      },
+      "EmailPreferences": {
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "es",
+              "en"
+            ]
+          },
+          "nonCriticalEmail": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "locale",
+          "nonCriticalEmail"
         ]
       },
       "EncounterCandidate": {
@@ -32391,6 +32628,33 @@
           "skipped"
         ]
       },
+      "RunEmailDispatchResponse": {
+        "type": "object",
+        "properties": {
+          "sent": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "retried": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "sent",
+          "retried",
+          "failed",
+          "skipped"
+        ]
+      },
       "RunScheduleChangeExpiryResponse": {
         "type": "object",
         "properties": {
@@ -34481,6 +34745,20 @@
           "unmatchedContributions",
           "rows",
           "updatedAt"
+        ]
+      },
+      "UnsubscribeEmailResponse": {
+        "type": "object",
+        "properties": {
+          "nonCriticalEmail": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          }
+        },
+        "required": [
+          "nonCriticalEmail"
         ]
       },
       "UpdateCompetitionDraftInput": {

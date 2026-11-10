@@ -200,11 +200,14 @@ describe("email notifications", () => {
     await organizerOnly("entry:1", registration);
     await h.dispatch.execute();
     const [optional] = h.sender.inbox;
-    const unsubscribeUrl = optional?.headers["List-Unsubscribe"]?.slice(1, -1) ?? "";
+    const oneClickUrl = optional?.headers["List-Unsubscribe"]?.slice(1, -1) ?? "";
     expect(optional?.headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
-    expect(optional?.text).toContain(`Dejar de recibir estos avisos: ${unsubscribeUrl}`);
+    const token = oneClickUrl.split("?token=")[1] ?? "";
+    expect(oneClickUrl).toBe(`https://futrob.test/api/v1/public/email/unsubscribe?token=${token}`);
+    expect(optional?.text).toContain(
+      `Dejar de recibir estos avisos: https://futrob.test/email/unsubscribe?token=${token}`,
+    );
 
-    const token = unsubscribeUrl.split("?token=")[1] ?? "";
     const unsubscribed = await h.unsubscribe.execute({ token });
     expect(unsubscribed.isOk() && unsubscribed.value).toEqual({
       locale: "es",
