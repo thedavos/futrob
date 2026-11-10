@@ -118,68 +118,69 @@ export function PlanSummaryCard({
           <span {...applyStyles(styles.planName)}>{t(planNameKey(plan.plan.key))}</span>
           <Badge variant={status.kind === "past_due" ? "warning" : "neutral"}>{statusText}</Badge>
         </div>
+        {/* An open request stays visible and withdrawable whatever the plan; only starting a new one needs a higher plan to ask for. */}
+        {pending ? (
+          <Alert variant="info">
+            <AlertDescription>
+              {t("billing.request.pending", {
+                plan: t(planNameKey(pending.planKey)),
+                date: formatPlanDate(pending.requestedAt, locale),
+                current: t(planNameKey(plan.plan.key)),
+              })}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {request?.failure ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {t(
+                request.failure === "request"
+                  ? "billing.request.error"
+                  : "billing.request.cancelError",
+              )}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {pending || options.length > 0 ? (
+          request?.canRequest ? (
+            <div {...applyStyles(styles.actions)}>
+              {pending ? (
+                <Button
+                  disabled={request.busy}
+                  onClick={request.onCancel}
+                  type="button"
+                  variant="outline"
+                >
+                  {t("billing.request.cancel")}
+                </Button>
+              ) : (
+                options.map((planKey, index) => (
+                  <Button
+                    disabled={request.busy}
+                    key={planKey}
+                    onClick={() => request.onRequest(planKey)}
+                    type="button"
+                    variant={index === 0 ? "default" : "outline"}
+                  >
+                    {t("billing.request.action", { plan: t(planNameKey(planKey)) })}
+                  </Button>
+                ))
+              )}
+            </div>
+          ) : (
+            <Caption>{t("billing.request.staffOnly")}</Caption>
+          )
+        ) : null}
         {options.length === 0 ? (
           <Caption>
             {t("billing.plan.topPlan")}{" "}
             <TextLink render={<Link to="/pricing" />}>{t("billing.plan.compare")}</TextLink>
           </Caption>
         ) : (
-          <>
-            {pending ? (
-              <Alert variant="info">
-                <AlertDescription>
-                  {t("billing.request.pending", {
-                    plan: t(planNameKey(pending.planKey)),
-                    date: formatPlanDate(pending.requestedAt, locale),
-                    current: t(planNameKey(plan.plan.key)),
-                  })}
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            {request?.failure ? (
-              <Alert variant="destructive">
-                <AlertDescription>
-                  {t(
-                    request.failure === "request"
-                      ? "billing.request.error"
-                      : "billing.request.cancelError",
-                  )}
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            {request?.canRequest ? (
-              <div {...applyStyles(styles.actions)}>
-                {pending ? (
-                  <Button
-                    disabled={request.busy}
-                    onClick={request.onCancel}
-                    type="button"
-                    variant="outline"
-                  >
-                    {t("billing.request.cancel")}
-                  </Button>
-                ) : (
-                  options.map((planKey, index) => (
-                    <Button
-                      disabled={request.busy}
-                      key={planKey}
-                      onClick={() => request.onRequest(planKey)}
-                      type="button"
-                      variant={index === 0 ? "default" : "outline"}
-                    >
-                      {t("billing.request.action", { plan: t(planNameKey(planKey)) })}
-                    </Button>
-                  ))
-                )}
-              </div>
-            ) : (
-              <Caption>{t("billing.request.staffOnly")}</Caption>
-            )}
-            <Caption>
-              {t("billing.request.hint")}{" "}
-              <TextLink render={<Link to="/pricing" />}>{t("billing.plan.compare")}</TextLink>
-            </Caption>
-          </>
+          <Caption>
+            {t("billing.request.hint")}{" "}
+            <TextLink render={<Link to="/pricing" />}>{t("billing.plan.compare")}</TextLink>
+          </Caption>
         )}
       </CardContent>
     </Card>

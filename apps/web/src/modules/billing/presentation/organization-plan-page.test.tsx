@@ -185,6 +185,36 @@ describe("organization plan page", () => {
     expect(screen.getByRole("button", { name: "Solicitar Pro" })).toBeTruthy();
   });
 
+  it("keeps an open request visible and withdrawable on the top plan", async () => {
+    let pending: unknown = { planKey: "pro", requestedAt: "2026-10-29T12:00:00.000Z" };
+    const planRequest = vi.fn(() => {
+      pending = null;
+      return new Response(null, { status: 204 });
+    });
+    serve({
+      allowed: true,
+      canRequest: true,
+      plan: () =>
+        Response.json({
+          ...freePlanFixture,
+          plan: { ...freePlanFixture.plan, key: "league" },
+          pendingRequest: pending,
+        }),
+      planRequest,
+    });
+    const user = userEvent.setup();
+    renderRoute();
+
+    expect(await screen.findByText(/Pediste el plan Pro/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Cancelar solicitud" }));
+
+    expect(planRequest).toHaveBeenCalledWith("DELETE", null);
+    await waitFor(() => expect(screen.queryByText(/Pediste el plan/)).toBeNull());
+    expect(screen.queryByRole("button", { name: "Cancelar solicitud" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Solicitar/ })).toBeNull();
+    expect(screen.getByText("Tienes el plan más completo.")).toBeTruthy();
+  });
+
   it("offers no request on the top plan", async () => {
     serve({
       allowed: true,
