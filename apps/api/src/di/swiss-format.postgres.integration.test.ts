@@ -254,7 +254,7 @@ describe.skipIf(!databaseUrl)("Swiss format on Postgres", () => {
     expect(final?.rows.every((row) => row.played === 2 && row.swiss?.byes === 0)).toBe(true);
 
     const pub = await modules.publicPortal.getStandings.execute({
-      key: asPublicCompetitionKey(COMPETITION),
+      key: asPublicCompetitionKey("org-selection", COMPETITION),
     });
     expect(pub.isOk() && pub.value.swiss?.isFinal).toBe(true);
     if (!pub.isOk()) throw new Error(pub.error.code);

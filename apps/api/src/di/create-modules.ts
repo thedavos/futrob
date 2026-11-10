@@ -266,12 +266,18 @@ export function createModules(input: CreateModulesInput): AppModules {
 
   const publicPortal = createPublicPortalModule({
     clock,
+    organizations: organizations.repositories.organizations,
     discovery: competitions.discovery,
+    competitions: competitions.repository,
+    entries: competitions.entryRepository,
     standings: statistics.ports.standings,
     swissStandings: statistics.ports.swissStandings,
+    rankings: statistics.ports.rankings,
     fixturePlans: scheduling.fixturePlans,
     officialResults: results.officialResultReader,
     teams: teams.repositories.teams,
+    rosters: teams.repositories.rosters,
+    accounts: teams.repositories.accounts,
   });
 
   const activityFeed = createActivityFeed({
