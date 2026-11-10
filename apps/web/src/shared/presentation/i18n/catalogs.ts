@@ -240,7 +240,9 @@ const es = {
   "pricing.cta.free": "Empezar gratis",
   "pricing.cta.paid": "Crear cuenta",
   "pricing.note.free": "No necesitas tarjeta.",
-  "pricing.note.paid": "Empiezas en Gratis y activamos {plan} a mano cuando nos escribas.",
+  "pricing.note.paid":
+    "Empiezas en Gratis, pides {plan} desde tu organización y lo activamos a mano.",
+  "pricing.comingSoon": "Próximamente",
   "pricing.perMonth": "{count} sincronizaciones al mes",
   "pricing.fairUse": "{count} sincronizaciones al mes (uso justo)",
   "pricing.staff": "Hasta {count} personas de staff",
@@ -3228,7 +3230,9 @@ const en: Catalog = {
   "pricing.cta.free": "Start free",
   "pricing.cta.paid": "Create account",
   "pricing.note.free": "No card needed.",
-  "pricing.note.paid": "You start on Free and we activate {plan} by hand when you contact us.",
+  "pricing.note.paid":
+    "You start on Free, request {plan} from your organization and we activate it by hand.",
+  "pricing.comingSoon": "Coming soon",
   "pricing.perMonth": "{count} syncs a month",
   "pricing.fairUse": "{count} syncs a month (fair use)",
   "pricing.staff": "Up to {count} staff",

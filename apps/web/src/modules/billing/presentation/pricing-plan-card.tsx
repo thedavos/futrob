@@ -2,7 +2,7 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { Link } from "@tanstack/react-router";
-import { CheckCircleIcon, MinusCircleIcon } from "@phosphor-icons/react";
+import { CheckCircleIcon, ClockIcon, MinusCircleIcon } from "@phosphor-icons/react";
 import type { OrganizationPlan } from "@futrob/api-contracts";
 import {
   applyStyles,
@@ -159,16 +159,24 @@ export function PricingPlanCard({ featured = false, plan }: PricingPlanCardProps
       <ul {...applyStyles(styles.list)}>
         {planFeatureRows(plan, t).map((row) => (
           <li key={row.label} {...applyStyles(styles.item)}>
-            {row.included ? (
+            {row.status === "included" ? (
               <CheckCircleIcon aria-hidden weight="fill" {...applyStyles(styles.iconIncluded)} />
+            ) : row.status === "soon" ? (
+              <ClockIcon aria-hidden {...applyStyles(styles.iconExcluded)} />
             ) : (
               <MinusCircleIcon aria-hidden {...applyStyles(styles.iconExcluded)} />
             )}
-            <Body as="span" tone={row.included ? undefined : "muted"}>
+            <Body as="span" tone={row.status === "included" ? undefined : "muted"}>
               {row.label}
-              {row.included ? null : (
+              {row.status === "soon" ? (
+                <>
+                  {" "}
+                  <Badge variant="neutral">{t("pricing.comingSoon")}</Badge>
+                </>
+              ) : null}
+              {row.status === "excluded" ? (
                 <span {...applyStyles(vis.srOnly)}> ({t("billing.features.notIncluded")})</span>
-              )}
+              ) : null}
             </Body>
           </li>
         ))}

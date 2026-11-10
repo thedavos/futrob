@@ -30,7 +30,7 @@ Plan de la organización (Gratis, Pro, Liga) con sus límites y cupo de sync, lo
 
 ## Gotchas
 
-- `/pricing`: cada plan es una región con su nombre (`Gratis`, `Pro`, `Liga`). Todos los CTA van a `/signup` porque no hay compra; los importes son de lista y no están en el catálogo.
+- `/pricing`: cada plan es una región con su nombre (`Gratis`, `Pro`, `Liga`). Todos los CTA van a `/signup` porque no hay compra; los importes son de lista y no están en el catálogo. Sincronización automática con EA y el branding del portal con logo, colores o avanzado llevan la insignia «Próximamente» (no prometen nada hasta que exista su consumidor); Gratis no muestra ninguna.
 - El superusuario debe existir como actor (`INITIAL_SUPERUSER_ACTOR_ID`) en el mismo Postgres.
 - Los jobs de sync encolados por la ruta interna no se ejecutan solos; el smoke no llama a EA.
 - No hay ningún flujo web que encole syncs; el cupo agotado solo se ve en «Plan y uso».
