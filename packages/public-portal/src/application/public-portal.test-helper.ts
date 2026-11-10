@@ -21,7 +21,7 @@ import type { PublicCalendarReaderPort } from "../domain/ports/public-calendar-r
 import type { PublicTeamDirectoryPort } from "../domain/ports/public-team-directory.port.ts";
 
 /** Deliberately unlike the internal id: the key is opaque and use cases must not assume more. */
-export const PUBLIC_KEY = asPublicCompetitionKey("copa-barranco");
+export const PUBLIC_KEY = asPublicCompetitionKey("liga-norte", "copa-barranco");
 export const COMPETITION_ID = asCompetitionId("competition-internal-1");
 export const ORGANIZATION_ID = asOrganizationId("organization-internal-1");
 export const UPLOAD_KEY = `competition-covers/${ORGANIZATION_ID}/portada.png`;
@@ -65,8 +65,11 @@ export function publishedReader(
   return {
     requested,
     async findByKey(key) {
-      requested.push(key);
-      return key === PUBLIC_KEY ? source : null;
+      requested.push(`${key.organizationSlug}/${key.competition}`);
+      return key.organizationSlug === PUBLIC_KEY.organizationSlug &&
+        key.competition === PUBLIC_KEY.competition
+        ? source
+        : null;
     },
   };
 }
@@ -77,11 +80,16 @@ export function sourceWithStatus(status: CompetitionStatus): PublicCompetitionSo
 
 export function teamDirectory(
   names: ReadonlyMap<TeamId, string>,
+  participants: readonly string[] = [...names.values()],
 ): PublicTeamDirectoryPort & { readonly calls: number } {
   const state = { calls: 0 };
   return {
     get calls() {
       return state.calls;
+    },
+    async listParticipantNames() {
+      state.calls += 1;
+      return participants;
     },
     async namesByIds(_scope, ids) {
       state.calls += 1;

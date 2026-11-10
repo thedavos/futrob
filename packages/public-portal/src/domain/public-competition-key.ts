@@ -1,13 +1,19 @@
-import type { Brand } from "@futrob/shared-kernel";
-
 /**
- * The opaque key a spectator uses in a public URL. It is deliberately not a
- * `CompetitionId`: how the key relates to the internal id (identical, slug, short code)
- * is a product decision (ADR-0024). Only a `PublishedCompetitionReaderPort` resolves it.
+ * What a spectator types in a public URL: `/{organizationSlug}/{competition}` (ADR-0024).
+ *
+ * The organization slug scopes the lookup, so a competition shown under another organization's
+ * slug is not found. The `competition` part stays opaque: how it relates to the internal id
+ * (identical today, a slug or short code later) is decided by one `PublishedCompetitionReaderPort`
+ * adapter, and no use case may assume more.
  */
-export type PublicCompetitionKey = Brand<string, "PublicCompetitionKey">;
+export interface PublicCompetitionKey {
+  readonly organizationSlug: string;
+  readonly competition: string;
+}
 
-export function asPublicCompetitionKey(value: string): PublicCompetitionKey {
-  // SAFETY: Compile-time brand marker; the HTTP boundary validates the string shape.
-  return value as PublicCompetitionKey;
+export function asPublicCompetitionKey(
+  organizationSlug: string,
+  competition: string,
+): PublicCompetitionKey {
+  return { organizationSlug, competition };
 }

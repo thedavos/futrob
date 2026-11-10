@@ -10,6 +10,7 @@ import type { PublicCalendarReaderPort } from "../../domain/ports/public-calenda
 import type { PublicTeamDirectoryPort } from "../../domain/ports/public-team-directory.port.ts";
 import type { PublishedCompetitionReaderPort } from "../../domain/ports/published-competition-reader.port.ts";
 import { resolvePublishedCompetition } from "../resolve-published-competition.ts";
+import { toPublicScore } from "../public-score.ts";
 
 export interface GetPublicCalendarDependencies {
   readonly competitions: PublishedCompetitionReaderPort;
@@ -22,8 +23,8 @@ export class GetPublicCalendarUseCase {
   constructor(private readonly deps: GetPublicCalendarDependencies) {}
 
   /**
-   * Encounters of a published competition with both teams known, earliest first. Results,
-   * candidates and fixture internals are not part of the calendar.
+   * Encounters of a published competition with both teams known, earliest first. Of a result
+   * only the approved goals per match are shown; candidates and fixture internals never are.
    */
   async execute(input: {
     readonly key: PublicCompetitionKey;
@@ -43,7 +44,7 @@ export class GetPublicCalendarUseCase {
       const homeTeamName = names.get(entry.homeTeamId);
       const awayTeamName = names.get(entry.awayTeamId);
       if (homeTeamName === undefined || awayTeamName === undefined) return [];
-      const status: PublicEncounterStatus = entry.official
+      const status: PublicEncounterStatus = entry.officialScore
         ? "official"
         : entry.scheduledStartAt.getTime() <= now.getTime()
           ? "awaiting_result"
@@ -55,6 +56,7 @@ export class GetPublicCalendarUseCase {
           homeTeamName,
           awayTeamName,
           status,
+          score: entry.officialScore ? toPublicScore(entry.officialScore) : null,
         },
       ];
     });
