@@ -1,5 +1,6 @@
-import type { AppModules } from "./app-modules.ts";
-export type { AppModules } from "./app-modules.ts";
+import { createOrganizationAudit } from "./organization-audit.composition.ts";
+import type { AppModules, CreateModulesInput } from "./app-modules.ts";
+export type { AppModules, CreateModulesInput } from "./app-modules.ts";
 import { RunScheduleChangeExpiry } from "@/application/scheduling/run-schedule-change-expiry.ts";
 import { CachedGameDataProviderAdapter } from "@/adapters/game-data/resilience/cached-game-data-provider.adapter.ts";
 import { EaClubsGameDataAdapter, ManualGameDataAdapter } from "@/adapters/game-data/internal.ts";
@@ -17,15 +18,12 @@ import { NoopEventPublisher } from "@/adapters/events/noop-event-publisher.ts";
 import { InMemoryCompetitionRepository } from "@/adapters/competitions/in-memory.repository.ts";
 import { PostgresCompetitionRepository } from "@/adapters/competitions/postgres.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
-import type { ProviderMatchRepository } from "@futrob/game-data";
-import type { ClockPort } from "@futrob/shared-kernel";
 import {
   InMemoryOfficialMatchSelectionRepository,
   InMemoryOfficialResultRepository,
   PostgresOfficialMatchSelectionRepository,
   PostgresOfficialResultRepository,
 } from "@/adapters/results/official-result.repository.ts";
-import type { Pool } from "pg";
 import { createBillingModule, withPlanUsage } from "./billing.module.ts";
 import { createGameDataModule } from "./game-data.module.ts";
 import { createGameDataPersistence } from "./game-data-persistence.composition.ts";
@@ -70,16 +68,6 @@ import { findProvisionedSystemActor } from "@/adapters/identity/configured-syste
  * Composition root for apps/api — the only place that wires adapters to use
  * cases. Organizations use Postgres when a pool is provided; otherwise memory.
  */
-export interface CreateModulesInput {
-  readonly fetcher: typeof fetch;
-  readonly eaClubsBaseUrl: string;
-  readonly pool: Pool | undefined;
-  /** Test seam: observations the results module reads candidates from. */
-  readonly providerMatches?: ProviderMatchRepository;
-  readonly clock?: ClockPort;
-  readonly resultsSystemActorId?: string;
-  readonly schedulingSystemActorId?: string;
-}
 
 export function createModules(input: CreateModulesInput): AppModules {
   const ids = new CryptoIdGenerator();
@@ -419,5 +407,9 @@ export function createModules(input: CreateModulesInput): AppModules {
     transaction,
     voidOfficialResultAndUnproject,
   };
-  return { ...modules, onboardingCompletion: new OnboardingCompletionFlow(modules) };
+  const audit = createOrganizationAudit(
+    { pool: input.pool, authorization: deferredAuthorization, clock, ids, transaction },
+    modules,
+  );
+  return { ...modules, audit, onboardingCompletion: new OnboardingCompletionFlow(modules) };
 }

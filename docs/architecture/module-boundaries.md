@@ -110,6 +110,12 @@ En presentation (`apps/web`), gatear UI solo con el set `allowed` de EffectiveAc
 `can` / `useCan` / `useCapabilities` y las constantes exportadas por cada BC. No comparar roles
 en React ni inventar strings de permiso fuera del catálogo del BC.
 
+El historial unificado de organización usa `organizations.audit.read`. `organizations`
+posee el contrato de lectura; cada propietario aporta su fuente en `apps/api` y la
+composición combina páginas filtradas sin que un adapter consulte tablas ajenas.
+Los registros existentes se conservan y solo los hechos ausentes reciben nuevas
+escrituras append-only, según [ADR-0029](/docs/adr/0029-unified-organization-audit.md).
+
 En `apps/mobile`, aplicar la misma regla sobre `EffectiveAccess` desde hooks/estado nativos. La app
 no importa bounded contexts ni adapters: consume contratos mediante `@futrob/sdk` y deja la
 autorización definitiva a `apps/api`.
