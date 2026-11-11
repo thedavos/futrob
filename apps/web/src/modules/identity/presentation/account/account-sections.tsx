@@ -77,12 +77,14 @@ export function PreferencesSection() {
   const shownEmail = saveEmail.isPending
     ? emailChoiceOf(saveEmail.variables.nonCriticalEmail)
     : savedEmail;
+  // Language and notices both write the email preference; one at a time keeps the latest choice.
+  const emailWriteInFlight = language.isPending || saveEmail.isPending;
   return (
     <div {...applyStyles(styles.stack)}>
       <Field invalid={language.isError}>
         <FieldLabel htmlFor="settings-language">{t("settings.language")}</FieldLabel>
         <Select
-          disabled={language.isPending}
+          disabled={emailWriteInFlight}
           items={[
             { value: "es", label: "Español" },
             { value: "en", label: "English" },
@@ -141,7 +143,7 @@ export function PreferencesSection() {
           {t("settings.emailNotifications")}
         </FieldLabel>
         <Select
-          disabled={saveEmail.isPending || savedEmail === null}
+          disabled={emailWriteInFlight || savedEmail === null}
           items={EMAIL_CHOICES.map((value) => ({
             value,
             label: t(EMAIL_CHOICE_LABELS[value]),

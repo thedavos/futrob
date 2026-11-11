@@ -350,6 +350,40 @@ describe("account dialog", () => {
       );
     });
 
+    it("keeps a pending opt-out when the language is changed before it is saved", async () => {
+      let finishOptOut: () => void = () => undefined;
+      const calls = stubApi({
+        "/api/v1/identity/preferences": () => Response.json({ sidebarLayout: "navigation" }),
+        "GET /api/v1/notifications/email-preferences": () =>
+          Response.json({ locale: "es", nonCriticalEmail: true }),
+        "PUT /api/v1/notifications/email-preferences": (init) =>
+          new Promise<Response>((resolve) => {
+            finishOptOut = () => resolve(Response.json(JSON.parse(String(init.body))));
+          }),
+      });
+      const persist = vi.fn().mockResolvedValue(undefined);
+      openAccount(fakeAuth(), persist);
+      const emailPuts = () =>
+        calls.filter((call) => call.method === "PUT" && call.path.includes("email-preferences"));
+
+      await chooseOnlyActions();
+      await waitFor(() => expect(emailPuts()).toHaveLength(1));
+      const language = screen.getByRole("combobox", { name: "Idioma" });
+      expect(language).toBeDisabled();
+      fireEvent.click(language);
+      expect(screen.queryByRole("option", { name: "English" })).toBeNull();
+
+      finishOptOut();
+      expect(await screen.findByText("Guardado.")).toBeVisible();
+      expect(persist).not.toHaveBeenCalled();
+      expect(emailPuts().map((call) => call.body)).toEqual([
+        { locale: "es", nonCriticalEmail: false },
+      ]);
+      expect(screen.getByRole("combobox", { name: "Avisos por email" })).toHaveTextContent(
+        "Solo los que piden una acción",
+      );
+    });
+
     it("re-saves the email language when the language changes", async () => {
       const calls = stubApi({
         "/api/v1/identity/preferences": () => Response.json({ sidebarLayout: "navigation" }),
