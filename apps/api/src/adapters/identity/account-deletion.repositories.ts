@@ -21,7 +21,7 @@ const deletionRowSchema = z.object({
 const CREDENTIAL_USERS_SQL = `SELECT subject FROM identity_subjects
   WHERE actor_id = $1 AND provider = '${CREDENTIAL_IDENTITY_PROVIDER}'`;
 
-/** Account lifecycle columns on `actors` (migration 0067, ADR-0029). */
+/** Account lifecycle columns on `actors` (migration 0067, ADR-0030). */
 export class PostgresAccountDeletionRepository implements AccountDeletionRepository {
   constructor(private readonly pool: Pool) {}
 

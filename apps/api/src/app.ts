@@ -1,3 +1,4 @@
+import { registerAuditRoutes } from "@/http/routes/audit.ts";
 import { registerStatisticsRebuildRoutes } from "@/http/routes/statistics-rebuild.ts";
 import { registerScheduleChangeExpiryRoutes } from "@/http/routes/schedule-change-expiry.ts";
 import { cors } from "hono/cors";
@@ -112,6 +113,7 @@ export function createApp(deps: AppDeps): Hono {
   registerCompetitionParticipantRoutes(v1, deps);
   registerEntryInvitationRoutes(v1, deps);
   registerSanctionRoutes(v1, deps);
+  registerAuditRoutes(v1, deps);
   registerOnboardingRoutes(v1, deps);
   registerActorPreferencesRoutes(v1, deps);
   registerAccountDeletionRoutes(v1, deps);

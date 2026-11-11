@@ -41,7 +41,7 @@ const styles = stylex.create({
 
 /**
  * During the grace period a signed-in account sees only its deletion date and the way to
- * cancel (ADR-0029). Cancelling returns the app as it was.
+ * cancel (ADR-0030). Cancelling returns the app as it was.
  */
 export function AccountDeletionGate({
   children,

@@ -277,3 +277,38 @@ describe("sanctions navigation from shell bootstrap permissions", () => {
     if (canRead) expect(resolveActiveNavHref(href, items)).toBe(href);
   });
 });
+
+describe("audit navigation from effective access", () => {
+  it.each([true, false])("follows the audit-read decision %s in both contexts", (allowed) => {
+    const access: EffectiveAccessDto = {
+      actorId: "actor-1",
+      scope: { organizationId: "org-1", competitionId: "competition-1" },
+      roles: [],
+      permissions: SHELL_PERMISSIONS.map((permission) => ({
+        permission,
+        allowed: permission === ORGANIZATION_PERMISSION.auditTrailRead && allowed,
+        decidedAt: "organization",
+      })),
+    };
+    const permissions = allowedPermissionSet(access);
+    const organizationItems = generalNavFor(
+      { kind: WORKSPACE_SELECTION_KIND.organization, organizationId: "org-1" },
+      permissions,
+    ).items;
+    const competitionItems = contextNavFor(
+      {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        organizationId: "org-1",
+        competitionId: "competition-1",
+      },
+      permissions,
+    ).items;
+    expect(organizationItems.some((item) => item.href === "/orgs/org-1/settings/audit")).toBe(
+      allowed,
+    );
+    expect(
+      competitionItems.some((item) => item.href === "/orgs/org-1/competitions/competition-1/audit"),
+    ).toBe(allowed);
+    if (allowed) expect(competitionItems.map((item) => item.id)).toEqual(["audit"]);
+  });
+});

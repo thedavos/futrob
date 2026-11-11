@@ -17,7 +17,7 @@ export type GateResult =
   | { readonly kind: "onboarding"; readonly route: string; readonly status: OnboardingStatusDto }
   | { readonly kind: "ready"; readonly route: string; readonly destination: PostAuthDestinationDto }
   | {
-      /** Grace period (ADR-0029): the account only sees its deletion date and how to cancel. */
+      /** Grace period (ADR-0030): the account only sees its deletion date and how to cancel. */
       readonly kind: "deletion-scheduled";
       readonly route: typeof ACCOUNT_DELETION_SCHEDULED_ROUTE;
       readonly scheduledFor: Date;

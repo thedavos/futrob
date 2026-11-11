@@ -7,6 +7,7 @@ import type {
   TeamRepository,
 } from "@futrob/teams";
 import type { Pool } from "pg";
+import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 export class InMemoryExternalClubConnectionRepository implements ExternalClubConnectionRepository {
   readonly rows = new Map<TeamId, ExternalClubConnection>();
@@ -25,7 +26,7 @@ export class PostgresExternalClubConnectionRepository implements ExternalClubCon
   constructor(private readonly pool: Pool) {}
 
   async findByTeam(teamId: TeamId): Promise<ExternalClubConnection | null> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT team_id, provider_key, external_club_id, external_club_name,
               game_edition, platform
        FROM team_external_club_connections WHERE team_id = $1`,
@@ -35,7 +36,7 @@ export class PostgresExternalClubConnectionRepository implements ExternalClubCon
   }
 
   async upsert(connection: ExternalClubConnection): Promise<ExternalClubConnection> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `INSERT INTO team_external_club_connections (
          team_id, provider_key, external_club_id, external_club_name,
          game_edition, platform
@@ -93,7 +94,7 @@ export class PostgresExternalClubTeamReader implements ExternalClubTeamReaderPor
   async listTeamIds(
     input: Parameters<ExternalClubTeamReaderPort["listTeamIds"]>[0],
   ): Promise<readonly TeamId[]> {
-    const result = await this.pool.query(
+    const result = await getPgExecutor(this.pool).query(
       `SELECT connection.team_id
        FROM team_external_club_connections AS connection
        INNER JOIN teams AS team ON team.id = connection.team_id

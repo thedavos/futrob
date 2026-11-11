@@ -2546,7 +2546,7 @@
           "identity"
         ],
         "summary": "Schedule deletion of the authenticated account and sign it out everywhere",
-        "description": "Requires the current password. Deletion runs after the grace period by anonymizing the account (ADR-0029). Repeating the request keeps the original date and signs out again.",
+        "description": "Requires the current password. Deletion runs after the grace period by anonymizing the account (ADR-0030). Repeating the request keeps the original date and signs out again.",
         "requestBody": {
           "required": true,
           "content": {
@@ -4338,6 +4338,127 @@
         ],
         "summary": "List the organization's activity feed for its operators",
         "description": "Requires `encounters.results.approve` on the organization. Lists every kind: disputes to resolve, watched proposals and directed invitations, and publications. Failures: 400 `api.validation_error`, `notifications.invalid_cursor`; 403 `authorization.forbidden`."
+      }
+    },
+    "/organizations/{organizationId}/audit": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "competitionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "actorId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "action",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filtered audit entries and the next page cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListOrganizationAuditResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listOrganizationAudit",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Read the organization's unified audit history",
+        "description": "Requires organizations.audit.read. Read-only, newest first by timestamp and stable ID. Filters apply before keyset pagination. Existing historical records retain unknown actors or reasons as null; no write, edit or delete operation is exposed."
       }
     },
     "/organizations/{organizationId}/billing/entitlements": {
@@ -27783,6 +27904,119 @@
         },
         "required": [
           "invitations"
+        ]
+      },
+      "ListOrganizationAuditResponse": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "organizationId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "competitionId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "actorId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "actorName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "action": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "occurredAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "requestId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "object": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "label": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "href": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^\\/(?!\\/)"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "id",
+                    "label",
+                    "href"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "organizationId",
+                "competitionId",
+                "actorId",
+                "actorName",
+                "action",
+                "reason",
+                "occurredAt",
+                "requestId",
+                "object"
+              ]
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
         ]
       },
       "ListPlanRequestsResponse": {

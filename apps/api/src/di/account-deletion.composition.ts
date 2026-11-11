@@ -41,7 +41,7 @@ export type ActorDeletedReaction = (actorId: ActorId, at: Date) => Promise<void>
 
 /**
  * Delivers `identity.actor-deleted` in process to every context, inside the transaction the
- * job opened, until the outbox is wired (ADR-0029). A failing reaction rolls the deletion back.
+ * job opened, until the outbox is wired (ADR-0030). A failing reaction rolls the deletion back.
  */
 export class InProcessActorDeletedPublisher implements EventPublisherPort {
   constructor(private readonly reactions: readonly ActorDeletedReaction[]) {}

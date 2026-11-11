@@ -71,6 +71,7 @@ import {
 import { compInviteLink, compInviteTeam, entryInviteAccept } from "./commands/entry-invitations.ts";
 import { myMatches, myNextEncounter, myStats, playerMe } from "./commands/players.ts";
 import { sanctionList, sanctionsSmoke } from "./commands/sanctions.ts";
+import { auditList, auditSmoke } from "./commands/audit.ts";
 import { run as e2eGoldenPath } from "./commands/e2e-golden-path.ts";
 import {
   billingSmoke,
@@ -131,6 +132,8 @@ const commands = {
   standings: (args) => standings(args),
   "sanction-list": (args) => sanctionList(args),
   "sanctions-smoke": (args) => sanctionsSmoke(args),
+  "audit-list": (args) => auditList(args),
+  "audit-smoke": (args) => auditSmoke(args),
 
   "team-create": (args) => teamCreate(args),
   "team-list": (args) => teamList(args),

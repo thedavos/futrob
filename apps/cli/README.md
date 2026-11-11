@@ -85,8 +85,14 @@ npm run cli -- e2e-golden-path --actor <actorId>
 
 ### Integración (requieren `npm run dev`)
 
+`audit-list <orgId>` consulta el historial unificado. Admite `--competition`, `--by-actor`,
+`--action`, `--from`, `--to`, `--cursor` y `--limit`. `audit-smoke <orgId> --outsider <actorId>`
+comprueba páginas, filtros, aislamiento y denegación 403 sin modificar datos.
+
 | Comando                                                     | Descripción                                                                 |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `audit-list <orgId>`                                        | Historial unificado con filtros y cursor                                    |
+| `audit-smoke <orgId> --outsider <actorId>`                  | Lectura, paginación, filtros, aislamiento y outsider 403                    |
 | `api-health`                                                | `GET /meta/health` (estado API + DB: `ok` / `skipped` / `error`)            |
 | `org-name-check <name>`                                     | Disponibilidad de nombre de organización                                    |
 | `org-create <name> [--slug s] [--time-zone tz]`             | Crea organización (zona por defecto `UTC`)                                  |

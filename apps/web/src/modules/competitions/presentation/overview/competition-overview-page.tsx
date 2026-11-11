@@ -1,5 +1,6 @@
 "use client";
 
+import { CompetitionAuditTabs } from "@/modules/organizations/presentation/audit/competition-audit-tabs.tsx";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type {
@@ -179,6 +180,11 @@ export function CompetitionOverviewView({
         ) : null}
       </PageHeader>
 
+      <CompetitionAuditTabs
+        organizationId={organizationId}
+        competitionId={competitionId}
+        active="overview"
+      />
       {competition.status === "error" ? (
         <RetryAlert message={t("competition.overview.error")} retry={competition.retry} t={t} />
       ) : null}
