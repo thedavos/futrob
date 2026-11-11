@@ -1,6 +1,7 @@
 import { Navigate, Outlet, createFileRoute, useLocation } from "@tanstack/react-router";
 import { NOINDEX_META } from "@/shared/infrastructure/seo/crawl-policy.ts";
 import { authClient } from "@/modules/identity/auth-client.ts";
+import { AccountDeletionGate } from "@/modules/identity/presentation/account-deletion-gate.tsx";
 import { PrivateContentGate } from "@/modules/identity/presentation/private-content-gate.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { AuthenticatedContent } from "@/shared/presentation/shell/authenticated-content.tsx";
@@ -27,9 +28,11 @@ function AppLayout() {
 
   return (
     <PrivateContentGate>
-      <AuthenticatedContent>
-        <Outlet />
-      </AuthenticatedContent>
+      <AccountDeletionGate>
+        <AuthenticatedContent>
+          <Outlet />
+        </AuthenticatedContent>
+      </AccountDeletionGate>
     </PrivateContentGate>
   );
 }

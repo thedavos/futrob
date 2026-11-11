@@ -101,6 +101,9 @@ comprueba páginas, filtros, aislamiento y denegación 403 sin modificar datos.
 | `org-mine`                                                  | Membresías del actor                                                        |
 | `org-invite <orgId> <email> [--role role]`                  | Invitación staff de organización                                            |
 | `onboarding-status`                                         | Estado de onboarding del actor                                              |
+| `account-deletion-status`                                   | Estado de eliminación de la cuenta: fecha y bloqueos                        |
+| `account-deletion-request`                                  | Programa la eliminación; contraseña en `FUTROB_ACCOUNT_PASSWORD`            |
+| `account-deletion-cancel`                                   | Cancela la eliminación durante el plazo                                     |
 | `comp-create <orgId> <name>`                                | Draft de competición (`--edition --platform --region --tz --format`)        |
 | `comp-list <orgId>` / `comp-show <orgId> <compId>`          | Listar / ver draft                                                          |
 | `comp-publish <orgId> <compId>`                             | Publica la competición                                                      |

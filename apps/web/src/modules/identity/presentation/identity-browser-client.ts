@@ -1,4 +1,10 @@
 import {
+  cancelAccountDeletionResponseSchema,
+  getAccountDeletionResponseSchema,
+  requestAccountDeletionRequestSchema,
+  requestAccountDeletionResponseSchema,
+  type AccountDeletionStatusDto,
+  type RequestAccountDeletionRequest,
   completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
   inspectCompetitionInvitationRequestSchema,
@@ -50,7 +56,7 @@ export class IdentityOnboardingClientError extends Error {
 
 async function requestIdentityJson<T>(input: {
   readonly path?: string;
-  readonly method: "GET" | "POST" | "PATCH" | "PUT";
+  readonly method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   readonly body?: unknown;
   readonly schema: z.ZodType<T>;
 }): Promise<T> {
@@ -71,6 +77,32 @@ async function requestIdentityJson<T>(input: {
 }
 
 export const identityBrowserClient = {
+  getAccountDeletion(): Promise<AccountDeletionStatusDto> {
+    return requestIdentityJson({
+      path: "/api/v1/identity/account/deletion",
+      method: "GET",
+      schema: getAccountDeletionResponseSchema,
+    });
+  },
+
+  /** Schedules deletion and ends every session, this one included. */
+  requestAccountDeletion(input: RequestAccountDeletionRequest): Promise<AccountDeletionStatusDto> {
+    return requestIdentityJson({
+      path: "/api/v1/identity/account/deletion",
+      method: "POST",
+      body: requestAccountDeletionRequestSchema.parse(input),
+      schema: requestAccountDeletionResponseSchema,
+    });
+  },
+
+  cancelAccountDeletion(): Promise<AccountDeletionStatusDto> {
+    return requestIdentityJson({
+      path: "/api/v1/identity/account/deletion",
+      method: "DELETE",
+      schema: cancelAccountDeletionResponseSchema,
+    });
+  },
+
   checkOrganizationName(
     input: OrganizationNameAvailabilityRequest,
   ): Promise<OrganizationNameAvailabilityResponse> {

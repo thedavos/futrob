@@ -17,5 +17,6 @@ export const styles = stylex.create({
     overflowY: "auto",
   },
   path: { overflowWrap: "anywhere" },
+  skeleton: { height: "4rem", width: "100%" },
   footer: { marginTop: 0 },
 });

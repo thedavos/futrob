@@ -38,6 +38,15 @@ vi.mock("@/modules/notifications/presentation/shell-pending-queue.tsx", () => ({
 
 beforeEach(() => {
   vi.stubGlobal("PointerEvent", MouseEvent);
+  // The settings dialog reads its layout from matchMedia, which jsdom lacks.
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => ({
+      matches: true,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })),
+  );
   vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
 });
 afterEach(() => {
@@ -149,7 +158,7 @@ describe("account menu in mobile navigation", () => {
 
   it.each([
     ["Enviar feedback", "Enviar feedback"],
-    ["Configuración", "Configuración"],
+    ["Configuración", "Cuenta"],
   ])("preserves navigation and restores account focus after closing %s", async (item, title) => {
     const router = renderMobileShell();
     const user = await openAccountMenu();

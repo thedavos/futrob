@@ -1,4 +1,6 @@
 import {
+  accountDeletionStatusSchema,
+  runAccountDeletionResponseSchema,
   actorPreferencesSchema,
   onboardingStatusSchema,
   completeOrganizationOnboardingResponseSchema,
@@ -25,4 +27,12 @@ export const InspectCompetitionInvitationResponse = namedSchema(
 export const CompletePlayerOnboardingResponse = namedSchema(
   "CompletePlayerOnboardingResponse",
   completePlayerOnboardingResponseSchema,
+);
+export const AccountDeletionStatus = namedSchema(
+  "AccountDeletionStatus",
+  accountDeletionStatusSchema,
+);
+export const RunAccountDeletionResponse = namedSchema(
+  "RunAccountDeletionResponse",
+  runAccountDeletionResponseSchema,
 );

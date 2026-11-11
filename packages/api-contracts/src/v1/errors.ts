@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { accountDeletionBlockerSchema } from "./identity/account-deletion.ts";
 import { requestIdSchema } from "./request-correlation.ts";
 
 /** Typed wire props for expected failures (ADR-0011). Keep keys stable for i18n/clients. */
@@ -29,6 +30,8 @@ export const apiErrorDetailsSchema = z
     used: z.number().int().nonnegative().optional(),
     resetsAt: z.iso.datetime().optional(),
     format: z.string().optional(),
+    /** Account deletion (HTTP 409): what the account holder must resolve first. */
+    blockers: z.array(accountDeletionBlockerSchema).optional(),
   })
   .strict();
 

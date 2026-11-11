@@ -51,6 +51,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0027: Sistema suizo con rondas emparejadas por reconciliación](/docs/adr/0027-swiss-format-rounds-paired-by-reconciliation.md) | Aceptada    | API, web y móvil; pendientes aviso al emparejar y paso automático a `finished`                     |
 | [ADR-0028: Sanciones de competición](/docs/adr/0028-competition-sanctions.md)                                                       | Aceptada    | Registro y revocación auditados, deducción en tabla, API y web; correo y vista móvil pendientes    |
 | [ADR-0029: Lectura unificada de auditoría de organización](/docs/adr/0029-unified-organization-audit.md)                            | Aceptada    | Lectura por fuentes existentes y hechos operativos nuevos; API y visor de organización/competición |
+| [ADR-0030: Eliminación de cuenta por anonimización](/docs/adr/0030-account-deletion-by-anonymization.md)                            | Aceptada    | Plazo de 30 días, limpieza por contexto en la transacción del job; correos pendientes de MAIL-01   |
 
 ## Consolidación de septiembre de 2026
 

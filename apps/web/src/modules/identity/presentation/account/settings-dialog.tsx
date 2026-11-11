@@ -1,290 +1,187 @@
-import { useState, type RefObject } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useSyncExternalStore, type RefObject } from "react";
+import { flushSync } from "react-dom";
+import * as stylex from "@stylexjs/stylex";
 import {
-  Alert,
-  AlertDescription,
   applyStyles,
   Button,
-  Caption,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Field,
-  FieldLabel,
-  Input,
-  SectionTitle,
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
+  hasBrowserWindow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@futrob/ui";
-import { sidebarLayoutSchema, type SidebarLayoutDto } from "@futrob/api-contracts";
-import { authClient } from "@/modules/identity/auth-client.ts";
-import {
-  DEFAULT_SIDEBAR_LAYOUT,
-  useActorPreferencesQuery,
-  useSaveActorPreferencesMutation,
-} from "@/modules/identity/presentation/identity-queries.ts";
-import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { styles } from "./account.styles.ts";
+import { defaultAccountAuth, type AccountAuth } from "./account-auth.ts";
+import { DeleteAccountSection } from "./account-delete-section.tsx";
+import { PreferencesSection, SecuritySection } from "./account-sections.tsx";
+import { SessionsSection } from "./account-sessions-section.tsx";
+import { styles as accountStyles } from "./account.styles.ts";
 
-type SettingsError =
-  | "settings.passwordInvalid"
-  | "settings.passwordError"
-  | "settings.languageError"
-  | "settings.sidebarLayoutError"
-  | "settings.error";
+export const ACCOUNT_SECTIONS = ["preferences", "security", "sessions", "delete"] as const;
+export type AccountSection = (typeof ACCOUNT_SECTIONS)[number];
 
-const SIDEBAR_LAYOUT_LABELS = {
-  navigation: "settings.sidebarLayoutNavigation",
-  "pending-queue": "settings.sidebarLayoutPendingQueue",
-} as const satisfies Record<SidebarLayoutDto, string>;
+const SECTION_LABELS = {
+  preferences: "settings.section.preferences",
+  security: "settings.section.security",
+  sessions: "settings.section.sessions",
+  delete: "settings.section.delete",
+} as const satisfies Record<AccountSection, string>;
+
+const WIDE_QUERY = "(min-width: 48rem)";
+
+function subscribeWide(onChange: () => void) {
+  if (!hasBrowserWindow()) return () => undefined;
+  const list = window.matchMedia(WIDE_QUERY);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
+}
+
+/** Vertical navigation beside the panel on wide screens; horizontal tabs above it otherwise. */
+function useWideLayout(): boolean {
+  return useSyncExternalStore(
+    subscribeWide,
+    () => (hasBrowserWindow() ? window.matchMedia(WIDE_QUERY).matches : true),
+    () => true,
+  );
+}
+
+const styles = stylex.create({
+  dialog: {
+    width: "min(48rem, calc(100vw - 2rem))",
+  },
+  tabs: {
+    display: "grid",
+    gridTemplateColumns: { default: "minmax(0, 1fr)", [media.md]: "11rem minmax(0, 1fr)" },
+    gap: { default: "1rem", [media.md]: "2rem" },
+    alignItems: "start",
+  },
+  list: {
+    flexDirection: { default: "row", [media.md]: "column" },
+    alignItems: { default: "flex-end", [media.md]: "stretch" },
+    gap: { default: "1.25rem", [media.md]: "0.25rem" },
+    borderBottomWidth: { default: 1, [media.md]: 0 },
+    minHeight: { default: "var(--control-height)", [media.md]: "auto" },
+  },
+  trigger: {
+    justifyContent: { default: "center", [media.md]: "flex-start" },
+    borderBottomWidth: { default: 2, [media.md]: 0 },
+    borderRadius: { default: null, [media.md]: "var(--corner-md)" },
+    paddingInline: { default: 0, [media.md]: "0.75rem" },
+    backgroundColor: {
+      default: "transparent",
+      ":is([data-active])": { default: "transparent", [media.md]: colors.muted },
+    },
+    borderBottomColor: {
+      default: "transparent",
+      ":is([data-active])": { default: colors.primary, [media.md]: "transparent" },
+    },
+  },
+  panel: { paddingTop: 0, minWidth: 0 },
+});
 
 export function SettingsDialog({
   open,
   onOpenChange,
-  changePassword = authClient.changePassword,
+  initialSection = "preferences",
+  auth: authOverrides,
   returnFocus,
 }: {
   readonly open: boolean;
-  readonly returnFocus?: RefObject<HTMLElement | null>;
   readonly onOpenChange: (open: boolean) => void;
-  readonly changePassword?: (input: {
-    currentPassword: string;
-    newPassword: string;
-    revokeOtherSessions: true;
-  }) => Promise<{ error: unknown }>;
+  /** Where the dialog opens, e.g. `security` from the profile page. */
+  readonly initialSection?: AccountSection;
+  readonly auth?: Partial<AccountAuth>;
+  readonly returnFocus?: RefObject<HTMLElement | null>;
 }) {
-  const { t, locale, setLocale } = useI18n();
-  const [language, setLanguage] = useState<Locale>(locale);
-  const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
-  const [error, setError] = useState<SettingsError | null>(null);
-  const preferences = useActorPreferencesQuery();
-  const saveActorPreferences = useSaveActorPreferencesMutation();
-  const savedSidebarLayout = preferences.data?.sidebarLayout ?? DEFAULT_SIDEBAR_LAYOUT;
-  // `null` follows the account's value, which may still be loading when the dialog opens.
-  const [sidebarLayoutDraft, setSidebarLayoutDraft] = useState<SidebarLayoutDto | null>(null);
-  const sidebarLayout = sidebarLayoutDraft ?? savedSidebarLayout;
-  const changingSidebarLayout = sidebarLayout !== savedSidebarLayout;
-  const changingPassword = Object.values(passwords).some(Boolean);
-  const mutation = useMutation({
-    mutationFn: async () => {
-      setError(null);
-      if (changingPassword) {
-        if (
-          !passwords.current ||
-          passwords.next.length < 8 ||
-          passwords.next.length > 128 ||
-          passwords.next !== passwords.confirm
-        ) {
-          setError("settings.passwordInvalid");
-          return false;
-        }
-        try {
-          const result = await changePassword({
-            currentPassword: passwords.current,
-            newPassword: passwords.next,
-            revokeOtherSessions: true,
-          });
-          if (result.error) {
-            setError("settings.passwordError");
-            return false;
-          }
-        } catch {
-          setError("settings.passwordError");
-          return false;
-        }
-        setPasswords({ current: "", next: "", confirm: "" });
-      }
-      try {
-        await setLocale(language);
-      } catch {
-        setError(changingPassword ? "settings.languageError" : "settings.error");
-        return false;
-      }
-      if (changingSidebarLayout) {
-        try {
-          await saveActorPreferences.mutateAsync({ sidebarLayout });
-        } catch {
-          setError(
-            changingPassword || language !== locale
-              ? "settings.sidebarLayoutError"
-              : "settings.error",
-          );
-          return false;
-        }
-      }
-      return true;
-    },
-  });
-  const saved = mutation.isSuccess && mutation.data;
-  function close() {
-    if (mutation.isPending) return;
-    setPasswords({ current: "", next: "", confirm: "" });
-    setLanguage(locale);
-    setSidebarLayoutDraft(null);
-    setError(null);
-    mutation.reset();
-    onOpenChange(false);
-  }
+  const { t } = useI18n();
+  const auth = { ...defaultAccountAuth, ...authOverrides };
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) close();
-        else onOpenChange(true);
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         closeLabel={t("account.close")}
         finalFocus={returnFocus}
-        {...applyStyles(styles.dialog)}
+        {...applyStyles(accountStyles.dialog, styles.dialog)}
       >
         <DialogHeader>
           <DialogTitle>{t("settings.title")}</DialogTitle>
           <DialogDescription>{t("settings.description")}</DialogDescription>
         </DialogHeader>
-        <form
-          {...applyStyles(styles.stack)}
-          onSubmit={(event) => {
-            event.preventDefault();
-            mutation.mutate();
-          }}
-        >
-          <fieldset disabled={mutation.isPending} {...applyStyles(styles.stack)}>
-            <Field>
-              <FieldLabel htmlFor="settings-language">{t("settings.language")}</FieldLabel>
-              <Select
-                disabled={mutation.isPending}
-                items={[
-                  { value: "es", label: "Español" },
-                  { value: "en", label: "English" },
-                ]}
-                onValueChange={(value) => {
-                  setLanguage(value === "en" ? "en" : "es");
-                  mutation.reset();
-                  setError(null);
-                }}
-                value={language}
-              >
-                <SelectTrigger aria-describedby="settings-language-hint" id="settings-language">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                </SelectContent>
-              </Select>
-              <Caption id="settings-language-hint">{t("settings.languageHint")}</Caption>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="settings-sidebar-layout">
-                {t("settings.sidebarLayout")}
-              </FieldLabel>
-              <Select
-                disabled={mutation.isPending || preferences.isPending}
-                items={sidebarLayoutSchema.options.map((value) => ({
-                  value,
-                  label: t(SIDEBAR_LAYOUT_LABELS[value]),
-                }))}
-                onValueChange={(value) => {
-                  setSidebarLayoutDraft(sidebarLayoutSchema.parse(value));
-                  mutation.reset();
-                  setError(null);
-                }}
-                value={sidebarLayout}
-              >
-                <SelectTrigger
-                  aria-describedby="settings-sidebar-layout-hint"
-                  id="settings-sidebar-layout"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {sidebarLayoutSchema.options.map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {t(SIDEBAR_LAYOUT_LABELS[value])}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Caption id="settings-sidebar-layout-hint">{t("settings.sidebarLayoutHint")}</Caption>
-            </Field>
-            <section {...applyStyles(styles.section)} aria-labelledby="settings-password-title">
-              <SectionTitle id="settings-password-title">{t("settings.password")}</SectionTitle>
-              <Caption id="settings-password-hint">{t("settings.passwordHint")}</Caption>
-              {(["current", "next", "confirm"] as const).map((key) => (
-                <Field
-                  key={key}
-                  invalid={
-                    error === "settings.passwordInvalid" || error === "settings.passwordError"
-                  }
-                >
-                  <FieldLabel htmlFor={`settings-${key}`}>
-                    {t(
-                      key === "current"
-                        ? "settings.currentPassword"
-                        : key === "next"
-                          ? "settings.newPassword"
-                          : "settings.confirmPassword",
-                    )}
-                  </FieldLabel>
-                  <Input
-                    aria-describedby={
-                      error === "settings.passwordInvalid" || error === "settings.passwordError"
-                        ? "settings-error"
-                        : "settings-password-hint"
-                    }
-                    aria-invalid={
-                      error === "settings.passwordInvalid" || error === "settings.passwordError"
-                    }
-                    autoComplete={key === "current" ? "current-password" : "new-password"}
-                    id={`settings-${key}`}
-                    maxLength={128}
-                    onChange={(event) => {
-                      setPasswords({ ...passwords, [key]: event.target.value });
-                      mutation.reset();
-                      setError(null);
-                    }}
-                    type="password"
-                    value={passwords[key]}
-                  />
-                </Field>
-              ))}
-            </section>
-          </fieldset>
-          {error ? (
-            <Alert id="settings-error" role="alert" variant="destructive">
-              <AlertDescription>{t(error)}</AlertDescription>
-            </Alert>
-          ) : null}
-          {saved ? (
-            <p role="status">
-              <Caption>{t("settings.saved")}</Caption>
-            </p>
-          ) : null}
-          <DialogFooter {...applyStyles(styles.footer)}>
-            <Button disabled={mutation.isPending} onClick={close} type="button" variant="outline">
-              {t("account.close")}
-            </Button>
-            <Button
-              aria-busy={mutation.isPending}
-              disabled={
-                mutation.isPending ||
-                (language === locale && !changingPassword && !changingSidebarLayout)
-              }
-              type="submit"
-            >
-              {t(mutation.isPending ? "account.saving" : "settings.save")}
-            </Button>
-          </DialogFooter>
-        </form>
+        {/* The popup unmounts on close, so every section starts clean when it opens again. */}
+        <AccountSections auth={auth} initialSection={initialSection} />
+        <DialogFooter {...applyStyles(accountStyles.footer)}>
+          <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
+            {t("account.close")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AccountSections({
+  auth,
+  initialSection,
+}: {
+  readonly auth: AccountAuth;
+  readonly initialSection: AccountSection;
+}) {
+  const { t } = useI18n();
+  const [section, setSection] = useState<AccountSection>(initialSection);
+  const wide = useWideLayout();
+  return (
+    <Tabs
+      onValueChange={(value: AccountSection) => {
+        flushSync(() => setSection(value));
+        // Arrow keys only move between sections; choosing one hands focus to its panel.
+        document.getElementById(`account-panel-${value}`)?.focus();
+      }}
+      orientation={wide ? "vertical" : "horizontal"}
+      value={section}
+      className={styles.tabs}
+    >
+      <TabsList aria-label={t("settings.sections")} className={styles.list}>
+        {ACCOUNT_SECTIONS.map((id) => (
+          <TabsTrigger key={id} value={id} className={styles.trigger}>
+            {t(SECTION_LABELS[id])}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {/* Every panel stays mounted: switching sections keeps what was typed. */}
+      <TabsContent
+        id="account-panel-preferences"
+        keepMounted
+        value="preferences"
+        className={styles.panel}
+      >
+        <PreferencesSection />
+      </TabsContent>
+      <TabsContent
+        id="account-panel-security"
+        keepMounted
+        value="security"
+        className={styles.panel}
+      >
+        <SecuritySection auth={auth} />
+      </TabsContent>
+      <TabsContent
+        id="account-panel-sessions"
+        keepMounted
+        value="sessions"
+        className={styles.panel}
+      >
+        <SessionsSection auth={auth} active={section === "sessions"} />
+      </TabsContent>
+      <TabsContent id="account-panel-delete" keepMounted value="delete" className={styles.panel}>
+        <DeleteAccountSection auth={auth} active={section === "delete"} />
+      </TabsContent>
+    </Tabs>
   );
 }

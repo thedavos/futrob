@@ -3,6 +3,41 @@ import { createFutrobClient } from "../client.ts";
 import { mockFetch, parseMockJsonBody, requestUrl } from "../testing/mock-fetch.ts";
 
 describe("createFutrobClient identity", () => {
+  it("requests, reads and cancels account deletion on one resource", async () => {
+    const calls: Array<{ method: string | undefined; url: string; body: unknown }> = [];
+    const scheduled = {
+      deletion: {
+        status: "scheduled",
+        requestedAt: "2026-11-10T09:00:00.000Z",
+        scheduledFor: "2026-12-10T09:00:00.000Z",
+      },
+      blockers: [],
+    };
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        calls.push({ method: init?.method, url: requestUrl(input), body: parseMockJsonBody(init) });
+        return Response.json(
+          init?.method === "DELETE" ? { deletion: { status: "active" }, blockers: [] } : scheduled,
+        );
+      }),
+    });
+
+    await expect(client.identity.requestAccountDeletion({ password: "secret" })).resolves.toEqual(
+      scheduled,
+    );
+    await expect(client.identity.getAccountDeletion()).resolves.toEqual(scheduled);
+    await expect(client.identity.cancelAccountDeletion()).resolves.toEqual({
+      deletion: { status: "active" },
+      blockers: [],
+    });
+    expect(calls.map(({ method, url, body }) => [method, url, body])).toEqual([
+      ["POST", "https://app.example.com/api/v1/identity/account/deletion", { password: "secret" }],
+      ["GET", "https://app.example.com/api/v1/identity/account/deletion", null],
+      ["DELETE", "https://app.example.com/api/v1/identity/account/deletion", null],
+    ]);
+  });
+
   const profile = { id: "profile-1", createdAt: "2026-07-31T12:00:00.000Z" };
   it("saves onboarding progress with PATCH and parses the resume point", async () => {
     let method: string | undefined;

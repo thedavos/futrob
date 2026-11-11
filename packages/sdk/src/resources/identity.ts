@@ -1,4 +1,12 @@
 import {
+  cancelAccountDeletionResponseSchema,
+  getAccountDeletionResponseSchema,
+  requestAccountDeletionRequestSchema,
+  requestAccountDeletionResponseSchema,
+  type CancelAccountDeletionResponse,
+  type GetAccountDeletionResponse,
+  type RequestAccountDeletionRequest,
+  type RequestAccountDeletionResponse,
   completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
   inspectCompetitionInvitationRequestSchema,
@@ -32,6 +40,41 @@ import type { HttpClient, RequestOptions } from "../http.ts";
 
 export function createIdentityResource(http: HttpClient) {
   return {
+    async getAccountDeletion(options: RequestOptions = {}): Promise<GetAccountDeletionResponse> {
+      return http.request({
+        path: "/identity/account/deletion",
+        method: "GET",
+        options,
+        parse: (data) => getAccountDeletionResponseSchema.parse(data),
+      });
+    },
+
+    /** Schedules deletion and signs the account out of every session, this one included. */
+    async requestAccountDeletion(
+      input: RequestAccountDeletionRequest,
+      options: RequestOptions = {},
+    ): Promise<RequestAccountDeletionResponse> {
+      const body = requestAccountDeletionRequestSchema.parse(input);
+      return http.request({
+        path: "/identity/account/deletion",
+        method: "POST",
+        body,
+        options,
+        parse: (data) => requestAccountDeletionResponseSchema.parse(data),
+      });
+    },
+
+    async cancelAccountDeletion(
+      options: RequestOptions = {},
+    ): Promise<CancelAccountDeletionResponse> {
+      return http.request({
+        path: "/identity/account/deletion",
+        method: "DELETE",
+        options,
+        parse: (data) => cancelAccountDeletionResponseSchema.parse(data),
+      });
+    },
+
     async getActorPreferences(options: RequestOptions = {}): Promise<GetActorPreferencesResponse> {
       return http.request({
         path: "/identity/preferences",

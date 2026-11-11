@@ -51,3 +51,31 @@ export {
   SaveActorPreferencesUseCase,
   type SaveActorPreferencesInput,
 } from "./application/save-actor-preferences/save-actor-preferences.use-case.ts";
+export {
+  ACCOUNT_DELETION_GRACE_DAYS,
+  ACTOR_DELETED_EVENT,
+  DELETED_ACCOUNT_DISPLAY_NAME,
+  type AccountDeletionBlocker,
+  type AccountDeletionState,
+  type ActorDeletedEvent,
+} from "./domain/value-objects/account-deletion.ts";
+export {
+  AccountDeletionBlocked,
+  AccountDeleted,
+  AccountReauthenticationFailed,
+} from "./domain/errors/account-deletion.errors.ts";
+export type {
+  AccountDeletionBlockersPort,
+  AccountDeletionRepository,
+  ActorSessionsPort,
+  CredentialVerifierPort,
+} from "./domain/ports/account-deletion.port.ts";
+export {
+  CancelAccountDeletionUseCase,
+  ExecuteAccountDeletionUseCase,
+  GetAccountDeletionStatusUseCase,
+  RequestAccountDeletionUseCase,
+  type AccountDeletionStatus,
+  type ExecuteAccountDeletionResult,
+  type RequestAccountDeletionInput,
+} from "./application/account-deletion/account-deletion.use-cases.ts";
