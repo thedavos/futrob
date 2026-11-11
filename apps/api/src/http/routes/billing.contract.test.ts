@@ -112,6 +112,70 @@ describe("billing HTTP contract", () => {
     );
   });
 
+  it("lets the organizer request a paid plan and withdraw it, and the superuser fulfil it by assigning", async () => {
+    const { app, organizationId, planPath } = await setup();
+    const requestPath = `/api/v1/organizations/${organizationId}/billing/plan-request`;
+    const queuePath = "/api/v1/billing/plan-requests";
+    const send = (path: string, method: string, actorId: string, body?: unknown) =>
+      app.request(path, {
+        method,
+        headers: serviceHeaders(actorId),
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    const planOf = async () => (await send(planPath, "GET", ORGANIZER)).json();
+
+    expect((await send(requestPath, "PUT", OUTSIDER, { planKey: "pro" })).status).toBe(403);
+    expect((await send(requestPath, "PUT", ORGANIZER, { planKey: "free" })).status).toBe(400);
+    const requested = await send(requestPath, "PUT", ORGANIZER, { planKey: "pro" });
+    expect(requested.status).toBe(200);
+    expect(await requested.clone().json()).toMatchObject({
+      organizationId,
+      request: { planKey: "pro" },
+    });
+    await expectMatchesOpenApi(
+      requested,
+      "put",
+      "/organizations/{organizationId}/billing/plan-request",
+    );
+    expect(await planOf()).toMatchObject({
+      plan: { key: "free" },
+      pendingRequest: { planKey: "pro" },
+    });
+
+    expect((await send(queuePath, "GET", ORGANIZER)).status).toBe(403);
+    const queue = await send(queuePath, "GET", SUPERUSER);
+    expect(queue.status).toBe(200);
+    expect(await queue.clone().json()).toMatchObject({
+      requests: [{ organizationId, organizationName: "Liga Billing", planKey: "pro" }],
+    });
+    await expectMatchesOpenApi(queue, "get", "/billing/plan-requests");
+
+    const withdrawn = await send(requestPath, "DELETE", ORGANIZER);
+    expect(withdrawn.status).toBe(204);
+    await expectMatchesOpenApi(
+      withdrawn,
+      "delete",
+      "/organizations/{organizationId}/billing/plan-request",
+    );
+    expect(await planOf()).toMatchObject({ pendingRequest: null });
+    expect((await send(requestPath, "DELETE", OUTSIDER)).status).toBe(403);
+
+    await send(requestPath, "PUT", ORGANIZER, { planKey: "pro" });
+    const assigned = await send(planPath, "PUT", SUPERUSER, {
+      planKey: "pro",
+      state: { status: "active" },
+      reason: "Pago confirmado",
+    });
+    expect(assigned.status).toBe(200);
+    expect(await planOf()).toMatchObject({
+      plan: { key: "pro" },
+      pendingRequest: null,
+      recentChanges: [{ changedByActorId: SUPERUSER, reason: "Pago confirmado" }],
+    });
+    expect(await (await send(queuePath, "GET", SUPERUSER)).json()).toEqual({ requests: [] });
+    expect((await send(requestPath, "PUT", ORGANIZER, { planKey: "pro" })).status).toBe(400);
+  });
+
   it("answers 402 for a second active competition and for a sync past the monthly quota", async () => {
     const { app, organizationId } = await setup();
     const createCompetition = (name: string) =>
