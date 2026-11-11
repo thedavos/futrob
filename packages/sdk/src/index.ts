@@ -40,6 +40,7 @@ export type { ResultsResource } from "./resources/results.ts";
 export type { RosterInvitationsResource } from "./resources/roster-invitations.ts";
 export type { RostersResource } from "./resources/rosters.ts";
 export type { SanctionsResource } from "./resources/sanctions.ts";
+export type { AuditResource } from "./resources/audit.ts";
 export type { StatisticsResource, GetMyRecentMatchInput } from "./resources/statistics.ts";
 export type { TeamsResource } from "./resources/teams.ts";
 export type { TeamExternalClubsResource } from "./resources/external-clubs.ts";

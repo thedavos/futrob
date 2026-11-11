@@ -39,7 +39,7 @@ const unsubscribeSearchSchema = z.object({
   token: z.string().min(1).optional().catch(undefined),
 });
 
-/** Anonymous: the link in a non-critical email (ADR-0030). */
+/** Anonymous: the link in a non-critical email (ADR-0031). */
 export const Route = createFileRoute("/email/unsubscribe")({
   validateSearch: unsubscribeSearchSchema,
   head: () => ({

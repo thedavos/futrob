@@ -80,6 +80,7 @@ export function createBillingModule(
   const premiumAnalyticsAccess = new BillingPremiumAnalyticsAccess(resolve);
 
   return {
+    audit,
     useCases: {
       resolveOrganizationEntitlements: resolve,
       resolveActorEntitlements: new ResolveActorEntitlementsUseCase({

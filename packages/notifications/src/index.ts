@@ -1,4 +1,4 @@
-/** Public API for notifications: the web activity channel and email (ADR-0008, ADR-0030). */
+/** Public API for notifications: the web activity channel and email (ADR-0008, ADR-0031). */
 export {
   ACTIVITY_AUDIENCE,
   ACTIVITY_KIND,

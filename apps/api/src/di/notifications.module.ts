@@ -8,6 +8,7 @@ import {
   RecordActivityUseCase,
   SaveEmailPreferencesUseCase,
   UnsubscribeEmailUseCase,
+  type ActivityEntryRepository,
   type CloseActivityInput,
   type EmailContactsPort,
   type EmailOutboxRepository,
@@ -59,6 +60,7 @@ import type { SchedulingModule } from "./scheduling.module.ts";
 import type { TeamsModule } from "./teams.module.ts";
 
 export interface NotificationsModule {
+  readonly activities: ActivityEntryRepository;
   readonly recordActivity: RecordActivityUseCase;
   readonly closeActivity: CloseActivityUseCase;
   readonly listActivities: ListActivitiesUseCase;
@@ -78,7 +80,7 @@ export interface ActivityWriter {
   email(input: EnqueueEmailsInput): Promise<void>;
 }
 
-/** Email channel (ADR-0008, ADR-0030): queued by commands, sent by the dispatch runner. */
+/** Email channel (ADR-0008, ADR-0031): queued by commands, sent by the dispatch runner. */
 export interface EmailChannel {
   readonly outbox: EmailOutboxRepository;
   /** `null` without a provider: queued email stays pending until one is configured. */
@@ -169,6 +171,7 @@ export function createNotificationsModule(input: {
   });
   const closeActivity = new CloseActivityUseCase({ activities, clock: input.clock });
   return {
+    activities,
     recordActivity,
     closeActivity,
     listActivities: new ListActivitiesUseCase({ activities, clock: input.clock }),

@@ -1,4 +1,4 @@
-# ADR-0030: Email transaccional con Resend detrás de un outbox en notifications
+# ADR-0031: Email transaccional con Resend detrás de un outbox en notifications
 
 - Estado: Propuesta
 - Fecha: 2026-11-10

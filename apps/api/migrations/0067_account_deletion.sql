@@ -1,4 +1,4 @@
--- Account deletion by anonymization (ADR-0029). The actors row stays as a tombstone because
+-- Account deletion by anonymization (ADR-0030). The actors row stays as a tombstone because
 -- official results and audit reference it with ON DELETE RESTRICT.
 
 ALTER TABLE actors

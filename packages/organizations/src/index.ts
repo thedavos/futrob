@@ -184,6 +184,19 @@ export {
   type GetEffectiveAccessInput,
 } from "./application/get-effective-access/get-effective-access.use-case.ts";
 export { RequirePermissionUseCase } from "./application/require-permission/require-permission.use-case.ts";
+export { ListOrganizationAuditUseCase } from "./application/list-organization-audit/list-organization-audit.use-case.ts";
+export type {
+  OrganizationAuditEntry,
+  OrganizationAuditCursor,
+  OrganizationAuditQuery,
+  OrganizationAuditReadQuery,
+  OrganizationAuditCompetitionReaderPort,
+  OrganizationAuditPage,
+  OrganizationAuditReaderPort,
+  OrganizationAuditSourcePort,
+  OrganizationOperationAuditEntry,
+  OrganizationOperationAuditRepository,
+} from "./domain/ports/organization-audit.reader.ts";
 export {
   DeleteAccessGrantUseCase,
   ListAccessGrantsUseCase,

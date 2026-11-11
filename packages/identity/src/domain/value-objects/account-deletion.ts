@@ -5,7 +5,7 @@ export const ACCOUNT_DELETION_GRACE_DAYS = 30;
 
 /**
  * Lifecycle of an account. Deleting anonymizes: the actor row stays as a tombstone so
- * official results and audit keep their foreign keys (ADR-0029).
+ * official results and audit keep their foreign keys (ADR-0030).
  */
 export type AccountDeletionState =
   | { readonly kind: "active" }
@@ -27,7 +27,7 @@ export type AccountDeletionBlocker =
       readonly teamName: string;
     };
 
-/** What every read shows in place of a deleted account's name (ADR-0029). */
+/** What every read shows in place of a deleted account's name (ADR-0030). */
 export const DELETED_ACCOUNT_DISPLAY_NAME = "Cuenta eliminada";
 
 export const ACTOR_DELETED_EVENT = "identity.actor-deleted";

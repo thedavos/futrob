@@ -1,5 +1,5 @@
 -- Retries of an email resend the request that first went out under its idempotency key
--- (ADR-0030): a provider that already accepted it answers with the same message id instead
+-- (ADR-0031): a provider that already accepted it answers with the same message id instead
 -- of rejecting a different body. The request is pinned before the first send.
 
 ALTER TABLE email_outbox ADD COLUMN IF NOT EXISTS message JSONB;

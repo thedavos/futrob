@@ -11,6 +11,10 @@ const activeStatuses = new Set<ProviderSyncJob["status"]>(["queued", "running", 
 export class InMemoryProviderSyncJobRepository implements ProviderSyncJobRepository {
   private readonly jobs = new Map<string, ProviderSyncJob>();
 
+  auditSnapshot(organizationId: string): readonly ProviderSyncJob[] {
+    return [...this.jobs.values()].filter((job) => job.organizationId === organizationId);
+  }
+
   enqueue(job: QueuedProviderSyncJob): Promise<ProviderSyncJob> {
     const existing = this.activeByDedupeKey(job.organizationId, job.dedupeKey);
     if (existing) return Promise.resolve(existing);

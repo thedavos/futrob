@@ -48,7 +48,7 @@ del canal web; no hay consumer ni entrega asíncrona.
 El canal email, su outbox `email_outbox` con deduplicación por
 `(event_id, channel, recipient)`, los reintentos con backoff, el permiso del plan y las
 preferencias mínimas se deciden en
-[ADR-0030](/docs/adr/0030-transactional-email-provider-and-outbox.md) (Resend, propuesta).
+[ADR-0031](/docs/adr/0031-transactional-email-provider-and-outbox.md) (Resend, propuesta).
 Sin credenciales del proveedor no hay envío real verificado. El publisher de dominio sigue
 siendo no-op.
 

@@ -1,4 +1,4 @@
-# ADR-0029: Eliminación de cuenta por anonimización
+# ADR-0030: Eliminación de cuenta por anonimización
 
 - Estado: Aceptada
 - Fecha: 2026-11-10

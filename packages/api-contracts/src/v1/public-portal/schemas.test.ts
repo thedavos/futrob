@@ -6,6 +6,7 @@ import {
   getPublicTeamsResponseSchema,
   getPublicCompetitionResponseSchema,
   getPublicStandingsResponseSchema,
+  listPublicCompetitionsResponseSchema,
   publicCompetitionSchema,
 } from "./schemas.ts";
 
@@ -193,5 +194,25 @@ describe("public portal wire schemas", () => {
     for (const status of ["draft", "registration", "archived"]) {
       expect(publicCompetitionSchema.safeParse({ ...competition, status }).success).toBe(false);
     }
+  });
+
+  it.each([
+    ["organizationId", "org-1"],
+    ["status", "draft"],
+    ["name", "Copa Barranco"],
+  ])("rejects %s on a public listing so a sitemap only carries an address", (key, value) => {
+    const listing = {
+      organizationSlug: "liga-norte",
+      competitionKey: "competition-1",
+      updatedAt: "2026-11-08T20:00:00.000Z",
+    };
+    expect(
+      listPublicCompetitionsResponseSchema.safeParse({ competitions: [listing] }).success,
+    ).toBe(true);
+    expect(
+      listPublicCompetitionsResponseSchema.safeParse({
+        competitions: [{ ...listing, [key]: value }],
+      }).success,
+    ).toBe(false);
   });
 });

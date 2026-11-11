@@ -94,4 +94,30 @@ describe("public portal SDK resource", () => {
     expect(error).toBeInstanceOf(FutrobApiError);
     expect(error).toMatchObject({ status: 404, code: "public_portal.competition_not_found" });
   });
+
+  it("lists published competitions anonymously from the public root", async () => {
+    const requests: { url: string; authorization: string | null }[] = [];
+    const listing = {
+      organizationSlug: "liga-norte",
+      competitionKey: "copa",
+      updatedAt: "2026-11-08T20:00:00.000Z",
+    };
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        requests.push({
+          url: requestUrl(input),
+          authorization: new Headers(init?.headers).get("authorization"),
+        });
+        return Response.json({ competitions: [listing] });
+      }),
+    });
+
+    await expect(client.publicPortal.listCompetitions()).resolves.toEqual({
+      competitions: [listing],
+    });
+    expect(requests).toEqual([
+      { url: "https://app.example.com/api/v1/public/competitions", authorization: null },
+    ]);
+  });
 });

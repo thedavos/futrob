@@ -189,3 +189,10 @@ export interface PublicRules {
   /** Null means the platform default roster size. */
   readonly maxRosterSize: number | null;
 }
+
+/** A competition a spectator may open, as a crawler sees it: its public address and freshness. */
+export interface PublicCompetitionListing {
+  readonly organizationSlug: string;
+  readonly competitionKey: string;
+  readonly updatedAt: Date;
+}

@@ -11,7 +11,7 @@ import {
 } from "@/context/create-authenticated-product-api-client.ts";
 import { jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
 
-/** The signed-in actor's email locale and non-critical opt-out (ADR-0030). */
+/** The signed-in actor's email locale and non-critical opt-out (ADR-0031). */
 export const Route = createFileRoute("/api/v1/notifications/email-preferences")({
   server: {
     handlers: {
