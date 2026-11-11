@@ -22,6 +22,7 @@ export const queryKeys = {
       [...queryKeys.activities.all, "organization", organizationId, query] as const,
     organizationFeed: (organizationId: string) =>
       [...queryKeys.activities.all, "organization", organizationId, "feed"] as const,
+    mineFeed: () => [...queryKeys.activities.all, "mine", "feed"] as const,
     mine: (query: ActivityQueryKey) => [...queryKeys.activities.all, "mine", query] as const,
   },
   encounters: {
@@ -76,6 +77,8 @@ export const queryKeys = {
     plan: (organizationId: string) => [...queryKeys.billing.all, "plan", organizationId] as const,
     /** Anonymous plan catalog (`/public/plans`); the same for every actor. */
     publicPlans: () => [...queryKeys.billing.all, "public-plans"] as const,
+    /** Superuser queue of organizations waiting for a plan. */
+    planRequests: () => [...queryKeys.billing.all, "plan-requests"] as const,
   },
   authorization: {
     all: ["authorization"] as const,

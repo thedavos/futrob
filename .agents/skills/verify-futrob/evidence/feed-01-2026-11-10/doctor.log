@@ -1,0 +1,8 @@
+doctor: repo /home/user/code/futrob
+doctor: env files present
+doctor: owned launch pid 23154 (run 20261110T002838Z-23135)
+doctor: GET http://localhost:3000/ → 200
+doctor: GET http://localhost:8787/api/v1/meta/ping → 200 {"ok":true,"service":"futrob","apiVersion":"v1"}
+doctor: GET http://localhost:8787/api/v1/meta/health → 200 {"ok":true,"service":"futrob","apiVersion":"v1","db":"ok"}
+doctor: GET http://localhost:8788/meta/health → 200 {"ok":true,"service":"futrob-auth"}
+doctor: ready

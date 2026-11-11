@@ -95,6 +95,18 @@ export const planChangeSchema = z
   .strict();
 export type PlanChange = z.infer<typeof planChangeSchema>;
 
+/** Paid plans an organizer can ask for; `free` is never purchased. */
+export const requestablePlanKeySchema = z.enum(["pro", "league"]);
+export type RequestablePlanKey = z.infer<typeof requestablePlanKeySchema>;
+
+export const organizationPlanRequestSchema = z
+  .object({
+    planKey: requestablePlanKeySchema,
+    requestedAt: z.iso.datetime(),
+  })
+  .strict();
+export type OrganizationPlanRequest = z.infer<typeof organizationPlanRequestSchema>;
+
 export const getOrganizationPlanResponseSchema = z
   .object({
     organizationId: z.string(),
@@ -111,6 +123,8 @@ export const getOrganizationPlanResponseSchema = z
       })
       .strict(),
     recentChanges: z.array(planChangeSchema),
+    /** The organization's open request for a paid plan; the plan above is unchanged by it. */
+    pendingRequest: organizationPlanRequestSchema.nullable(),
   })
   .strict();
 export type GetOrganizationPlanResponse = z.infer<typeof getOrganizationPlanResponseSchema>;
@@ -154,3 +168,30 @@ export const listPublicPlansResponseSchema = z
   .object({ plans: z.array(organizationPlanSchema) })
   .strict();
 export type ListPublicPlansResponse = z.infer<typeof listPublicPlansResponseSchema>;
+
+export const requestOrganizationPlanRequestSchema = z
+  .object({ planKey: requestablePlanKeySchema })
+  .strict();
+export type RequestOrganizationPlanRequest = z.infer<typeof requestOrganizationPlanRequestSchema>;
+
+export const requestOrganizationPlanResponseSchema = z
+  .object({ organizationId: z.string(), request: organizationPlanRequestSchema })
+  .strict();
+export type RequestOrganizationPlanResponse = z.infer<typeof requestOrganizationPlanResponseSchema>;
+
+/** Superuser queue: organizations waiting for a plan to be assigned. */
+export const listPlanRequestsResponseSchema = z
+  .object({
+    requests: z.array(
+      z
+        .object({
+          organizationId: z.string(),
+          organizationName: z.string(),
+          planKey: requestablePlanKeySchema,
+          requestedAt: z.iso.datetime(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+export type ListPlanRequestsResponse = z.infer<typeof listPlanRequestsResponseSchema>;

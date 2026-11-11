@@ -21,6 +21,14 @@
 **Precios de lista (hipótesis):** Gratis 0 USD, Pro 9 USD y Liga 29 USD al mes. Solo se muestran en
 `/pricing`, viven en `pricing-model.ts` y no están en el catálogo porque no hay cobro automático.
 
+**Qué promete `/pricing` (BILL-01b):** solo lo que el producto entrega hoy. Los entitlements del
+catálogo sin consumidor (sincronización automática, branding del portal con logo, colores o
+avanzado) aparecen con la insignia «Próximamente» en lugar de una marca de incluido. `/pricing` no
+lista notificaciones por email ni anuncios, ni sincronización prioritaria, hasta que existan. La
+regla vive en `pricing-model.ts` (`undelivered`): el cambio que construye un consumidor lo
+convierte en `included` en la misma PR. Esto sustituye la decisión del 2026-11-06 de anunciar lo
+no construido sin marca.
+
 **Sistema suizo:** formato del catálogo en Pro y Liga, no en Gratis
 ([ADR-0027](/docs/adr/0027-swiss-format-rounds-paired-by-reconciliation.md)). `/pricing` lo muestra
 desde el catálogo, igual que los demás formatos.

@@ -69,11 +69,6 @@ superusuarios. `--reset` solo quita el suyo: los administradores existentes se c
 También por SQL: el cupo de sync agotado de Barrio FC, el add-on Premium (sin endpoint) y la
 fecha de la invitación vencida (el módulo de equipos no usa el reloj inyectado).
 
-> **Bug conocido:** rechazar una inscripción devuelve `rejected` pero en Postgres se queda
-> `pending`. El upsert de `competition-entry.repositories.ts` solo permite pasar de
-> `pending` a `approved`. Por eso Apertura y Superliga muestran las inscripciones
-> «rechazadas» como pendientes hasta que se corrija.
-
 ### Clausura 26
 
 - Jornadas 1–3: oficiales (una con alternativa del rival aprobada por el organizador, una

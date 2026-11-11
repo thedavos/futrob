@@ -209,7 +209,15 @@ const es = {
   "billing.plan.status.trialing": "Prueba hasta el {date}",
   "billing.plan.status.past_due": "Pago pendiente",
   "billing.plan.status.lapsed": "{plan} terminó; se aplica Gratis",
-  "billing.plan.upgrade": "Para pasar a {plan}, escríbenos. Por ahora asignamos los planes a mano.",
+  "billing.request.hint":
+    "Pedir un plan no cobra nada: lo activamos a mano y tu plan cambia cuando lo hacemos.",
+  "billing.request.action": "Solicitar {plan}",
+  "billing.request.pending":
+    "Pediste el plan {plan} el {date}. Lo activaremos a mano; hasta entonces sigues con {current}.",
+  "billing.request.cancel": "Cancelar solicitud",
+  "billing.request.error": "No pudimos registrar tu solicitud. Inténtalo de nuevo.",
+  "billing.request.cancelError": "No pudimos cancelar tu solicitud. Inténtalo de nuevo.",
+  "billing.request.staffOnly": "Solo el organizador puede pedir un cambio de plan.",
   "billing.plan.topPlan": "Tienes el plan más completo.",
   "billing.plan.compare": "Ver planes",
   "billing.usage.title": "Uso",
@@ -298,7 +306,9 @@ const es = {
   "pricing.cta.free": "Empezar gratis",
   "pricing.cta.paid": "Crear cuenta",
   "pricing.note.free": "No necesitas tarjeta.",
-  "pricing.note.paid": "Empiezas en Gratis y activamos {plan} a mano cuando nos escribas.",
+  "pricing.note.paid":
+    "Empiezas en Gratis, pides {plan} desde tu organización y lo activamos a mano.",
+  "pricing.comingSoon": "Próximamente",
   "pricing.perMonth": "{count} sincronizaciones al mes",
   "pricing.fairUse": "{count} sincronizaciones al mes (uso justo)",
   "pricing.staff": "Hasta {count} personas de staff",
@@ -647,6 +657,10 @@ const es = {
   "activity.error": "No se pudo cargar la actividad.",
   "activity.page.title": "Actividad",
   "activity.page.description": "Todo lo que pasó en la organización, lo más reciente primero.",
+  "activity.personal.description":
+    "Tus invitaciones y la actividad de tus equipos, lo más reciente primero.",
+  "activity.personal.empty":
+    "Aquí verás tus invitaciones y la actividad de los equipos que representas.",
   "activity.page.loadMore": "Cargar más",
   "activity.page.loadingMore": "Cargando más actividad",
   "activity.page.empty.title": "Sin actividad todavía",
@@ -2343,6 +2357,37 @@ const es = {
   "shell.account.feedback": "Enviar feedback",
   "shell.account.settings": "Configuración",
   "shell.account.providerHealth": "Salud del proveedor",
+  "shell.account.planAdmin": "Planes y solicitudes",
+  "pages.admin.billing.title": "Planes y solicitudes",
+  "pages.admin.billing.subtitle":
+    "Solicitudes de plan de las organizaciones y asignación manual. Solo para superusuarios.",
+  "billing.admin.checkingAccess": "Comprobando permisos…",
+  "billing.admin.accessUnavailable": "No pudimos comprobar tus permisos para ver este panel.",
+  "billing.admin.denied.title": "No tienes acceso a este panel",
+  "billing.admin.denied.description": "Asignar planes es solo para superusuarios.",
+  "billing.admin.loading": "Cargando las solicitudes…",
+  "billing.admin.error": "No pudimos cargar las solicitudes.",
+  "billing.admin.queue.title": "Solicitudes pendientes",
+  "billing.admin.queue.empty": "No hay solicitudes pendientes.",
+  "billing.admin.queue.organization": "Organización",
+  "billing.admin.queue.plan": "Plan pedido",
+  "billing.admin.queue.date": "Pedida el",
+  "billing.admin.queue.action": "Acción",
+  "billing.admin.queue.assignLabel": "Asignar",
+  "billing.admin.queue.assign": "Asignar {plan} a {organization}",
+  "billing.admin.form.title": "Asignar un plan",
+  "billing.admin.form.description":
+    "Úsalo cuando el cobro ya se confirmó fuera del producto. El cambio queda en el historial de la organización.",
+  "billing.admin.form.organizationId": "ID de la organización",
+  "billing.admin.form.plan": "Plan",
+  "billing.admin.form.reason": "Motivo",
+  "billing.admin.form.reasonHint": "Ej.: pago recibido por transferencia el 10 de noviembre.",
+  "billing.admin.form.submit": "Asignar plan",
+  "billing.admin.form.submitting": "Asignando…",
+  "billing.admin.form.success": "Asignamos el plan {plan} a la organización {organizationId}.",
+  "billing.admin.form.forbidden": "No tienes permiso para asignar planes.",
+  "billing.admin.form.notFound": "No encontramos esa organización.",
+  "billing.admin.form.error": "No pudimos asignar el plan. Revisa los datos e inténtalo de nuevo.",
   "providerHealth.title": "Salud del proveedor EA",
   "providerHealth.subtitle":
     "Estado, métricas y fallos recientes de la integración con EA Clubs. Solo para superusuarios.",
@@ -2719,7 +2764,20 @@ export interface MessageParamsByKey {
 
   readonly "billing.plan.status.trialing": { readonly date: string };
   readonly "billing.plan.status.lapsed": { readonly plan: string };
-  readonly "billing.plan.upgrade": { readonly plan: string };
+  readonly "billing.request.action": { readonly plan: string };
+  readonly "billing.request.pending": {
+    readonly current: string;
+    readonly date: string;
+    readonly plan: string;
+  };
+  readonly "billing.admin.queue.assign": {
+    readonly organization: string;
+    readonly plan: string;
+  };
+  readonly "billing.admin.form.success": {
+    readonly organizationId: string;
+    readonly plan: string;
+  };
   readonly "billing.usage.value": { readonly limit: number; readonly used: number };
   readonly "billing.usage.unlimited": { readonly used: number };
   readonly "billing.usage.resets": { readonly date: string };
@@ -3223,7 +3281,15 @@ const en: Catalog = {
   "billing.plan.status.trialing": "Trial until {date}",
   "billing.plan.status.past_due": "Payment due",
   "billing.plan.status.lapsed": "{plan} ended; Free applies",
-  "billing.plan.upgrade": "To move to {plan}, contact us. For now we assign plans by hand.",
+  "billing.request.hint":
+    "Requesting a plan charges nothing: we activate it by hand and your plan changes when we do.",
+  "billing.request.action": "Request {plan}",
+  "billing.request.pending":
+    "You asked for the {plan} plan on {date}. We'll activate it by hand; until then you stay on {current}.",
+  "billing.request.cancel": "Cancel request",
+  "billing.request.error": "We couldn't record your request. Try again.",
+  "billing.request.cancelError": "We couldn't cancel your request. Try again.",
+  "billing.request.staffOnly": "Only the organizer can ask for a plan change.",
   "billing.plan.topPlan": "You are on the most complete plan.",
   "billing.plan.compare": "Compare plans",
   "billing.usage.title": "Usage",
@@ -3311,7 +3377,9 @@ const en: Catalog = {
   "pricing.cta.free": "Start free",
   "pricing.cta.paid": "Create account",
   "pricing.note.free": "No card needed.",
-  "pricing.note.paid": "You start on Free and we activate {plan} by hand when you contact us.",
+  "pricing.note.paid":
+    "You start on Free, request {plan} from your organization and we activate it by hand.",
+  "pricing.comingSoon": "Coming soon",
   "pricing.perMonth": "{count} syncs a month",
   "pricing.fairUse": "{count} syncs a month (fair use)",
   "pricing.staff": "Up to {count} staff",
@@ -3662,6 +3730,9 @@ const en: Catalog = {
   "activity.error": "Activity could not be loaded.",
   "activity.page.title": "Activity",
   "activity.page.description": "Everything that happened in the organization, newest first.",
+  "activity.personal.description": "Your invitations and your teams' activity, newest first.",
+  "activity.personal.empty":
+    "Your invitations and activity for the teams you represent will appear here.",
   "activity.page.loadMore": "Load more",
   "activity.page.loadingMore": "Loading more activity",
   "activity.page.empty.title": "No activity yet",
@@ -5327,6 +5398,37 @@ const en: Catalog = {
   "shell.account.feedback": "Send feedback",
   "shell.account.settings": "Settings",
   "shell.account.providerHealth": "Provider health",
+  "shell.account.planAdmin": "Plans and requests",
+  "pages.admin.billing.title": "Plans and requests",
+  "pages.admin.billing.subtitle":
+    "Organizations' plan requests and manual assignment. For superusers only.",
+  "billing.admin.checkingAccess": "Checking permissions…",
+  "billing.admin.accessUnavailable": "We couldn't check your permissions for this panel.",
+  "billing.admin.denied.title": "You don't have access to this panel",
+  "billing.admin.denied.description": "Assigning plans is for superusers only.",
+  "billing.admin.loading": "Loading requests…",
+  "billing.admin.error": "We couldn't load the requests.",
+  "billing.admin.queue.title": "Pending requests",
+  "billing.admin.queue.empty": "There are no pending requests.",
+  "billing.admin.queue.organization": "Organization",
+  "billing.admin.queue.plan": "Requested plan",
+  "billing.admin.queue.date": "Requested on",
+  "billing.admin.queue.action": "Action",
+  "billing.admin.queue.assignLabel": "Assign",
+  "billing.admin.queue.assign": "Assign {plan} to {organization}",
+  "billing.admin.form.title": "Assign a plan",
+  "billing.admin.form.description":
+    "Use it once payment is confirmed outside the product. The change is recorded in the organization's history.",
+  "billing.admin.form.organizationId": "Organization ID",
+  "billing.admin.form.plan": "Plan",
+  "billing.admin.form.reason": "Reason",
+  "billing.admin.form.reasonHint": "E.g. payment received by bank transfer on November 10.",
+  "billing.admin.form.submit": "Assign plan",
+  "billing.admin.form.submitting": "Assigning…",
+  "billing.admin.form.success": "We assigned the {plan} plan to organization {organizationId}.",
+  "billing.admin.form.forbidden": "You don't have permission to assign plans.",
+  "billing.admin.form.notFound": "We couldn't find that organization.",
+  "billing.admin.form.error": "We couldn't assign the plan. Check the details and try again.",
   "providerHealth.title": "EA provider health",
   "providerHealth.subtitle":
     "Status, metrics and recent failures of the EA Clubs integration. Superusers only.",

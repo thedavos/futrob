@@ -66,6 +66,7 @@ export const freePlanFixture: GetOrganizationPlanResponse = {
   ],
   usage: { activeCompetitions: 1, staffMembers: 1 },
   recentChanges: [],
+  pendingRequest: null,
 };
 
 export const proPlanFixture: GetOrganizationPlanResponse = {
@@ -89,6 +90,7 @@ export const proPlanFixture: GetOrganizationPlanResponse = {
       occurredAt: "2026-10-20T15:00:00.000Z",
     },
   ],
+  pendingRequest: null,
 };
 
 /** The published catalog (`/public/plans`) for stories and tests. */

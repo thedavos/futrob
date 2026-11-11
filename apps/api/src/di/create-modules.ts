@@ -367,7 +367,12 @@ export function createModules(input: CreateModulesInput): AppModules {
     accountDeletion: createAccountDeletion({ pool: input.pool, clock, transaction }),
     activityCommands: activityFeed.commands,
     authorization,
-    billing: withPlanUsage(billing, competitionRepository, organizations.repositories.memberships),
+    billing: withPlanUsage(
+      billing,
+      competitionRepository,
+      organizations.repositories.memberships,
+      organizations.repositories.organizations,
+    ),
     competitionApplications,
     competitions,
     entryInvitations,

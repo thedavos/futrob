@@ -1,0 +1,25 @@
+{
+  "action": "select Pending sidebar layout",
+  "result": {
+    "account": "org-pro",
+    "readback": {
+      "sidebarLayout": "pending-queue"
+    }
+  }
+}
+{
+  "action": "select Pending sidebar layout",
+  "result": {
+    "account": "capitan-visita",
+    "readback": {
+      "sidebarLayout": "pending-queue"
+    }
+  }
+}
+{
+  "action": "verification complete",
+  "result": {
+    "mode": "preferences",
+    "verified": true
+  }
+}

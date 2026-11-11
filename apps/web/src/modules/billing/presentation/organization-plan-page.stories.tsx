@@ -16,6 +16,7 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { OrganizationPlanPageView, type OrganizationPlanState } from "./organization-plan-page.tsx";
+import type { PlanRequestControls } from "./organization-plan-sections.tsx";
 import { freePlanFixture, proPlanFixture } from "./organization-plan.fixtures.ts";
 
 const styles = stylex.create({
@@ -30,8 +31,34 @@ const styles = stylex.create({
 
 const noop = () => undefined;
 
+const organizerRequest: PlanRequestControls = {
+  canRequest: true,
+  busy: false,
+  failure: null,
+  onRequest: noop,
+  onCancel: noop,
+};
+
 const STATES = {
-  free: { kind: "ready", plan: freePlanFixture },
+  free: { kind: "ready", plan: freePlanFixture, request: organizerRequest },
+  freePending: {
+    kind: "ready",
+    plan: {
+      ...freePlanFixture,
+      pendingRequest: { planKey: "pro", requestedAt: "2026-11-09T10:00:00.000Z" },
+    },
+    request: organizerRequest,
+  },
+  freeRequestError: {
+    kind: "ready",
+    plan: freePlanFixture,
+    request: { ...organizerRequest, failure: "request" },
+  },
+  freeStaff: {
+    kind: "ready",
+    plan: freePlanFixture,
+    request: { ...organizerRequest, canRequest: false },
+  },
   freeAtLimit: {
     kind: "ready",
     plan: {
@@ -40,7 +67,7 @@ const STATES = {
       quotas: [{ ...freePlanFixture.quotas[0]!, used: 60 }],
     },
   },
-  pro: { kind: "ready", plan: proPlanFixture },
+  pro: { kind: "ready", plan: proPlanFixture, request: organizerRequest },
   loading: { kind: "loading" },
   forbidden: { kind: "forbidden" },
   error: { kind: "error", cause: "load", retry: noop },
@@ -104,10 +131,42 @@ export const Free: Story = {
     await expect(await canvas.findByText("Gratis")).toBeVisible();
     await expect(canvas.getByText("Plan por defecto")).toBeVisible();
     await expect(canvas.getByText("12 de 60")).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Solicitar Pro" })).toBeVisible();
     await expect(canvas.getByRole("link", { name: "Ver planes" })).toHaveAttribute(
       "href",
       "/pricing",
     );
+  },
+};
+
+export const FreePending: Story = {
+  name: "Gratis · solicitud abierta",
+  args: { scenario: "freePending" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText(/Pediste el plan Pro/)).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Cancelar solicitud" })).toBeVisible();
+  },
+};
+
+export const FreeRequestError: Story = {
+  name: "Gratis · error al solicitar",
+  args: { scenario: "freeRequestError" },
+  play: async ({ canvasElement }) => {
+    await expect(
+      await within(canvasElement).findByText(/No pudimos registrar tu solicitud/),
+    ).toBeVisible();
+  },
+};
+
+export const FreeStaff: Story = {
+  name: "Gratis · staff (solo lectura)",
+  args: { scenario: "freeStaff" },
+  play: async ({ canvasElement }) => {
+    await expect(
+      await within(canvasElement).findByText(/Solo el organizador puede pedir/),
+    ).toBeVisible();
   },
 };
 

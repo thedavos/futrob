@@ -5,6 +5,9 @@ export interface AuthWorkerEnv {
   readonly BETTER_AUTH_SECRET?: string;
   readonly BETTER_AUTH_URL?: string;
   readonly BETTER_AUTH_TRUSTED_ORIGINS?: string;
+  readonly NODE_ENV?: string;
+  readonly SENTRY_DSN?: string;
+  readonly SENTRY_ENVIRONMENT?: string;
   /** `log` writes account emails to the log (development). Unset: email change is disabled. */
   readonly AUTH_EMAIL_DELIVERY?: string;
 }

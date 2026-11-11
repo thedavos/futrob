@@ -84,6 +84,9 @@ suite("auth on product Postgres (migration 0043)", () => {
         }),
         clock: new SystemClock(),
         ids: new CryptoIdGenerator(),
+        reportDefect: (cause) => {
+          throw cause;
+        },
       });
       const email = `pg-${randomUUID()}@futrob.test`;
 

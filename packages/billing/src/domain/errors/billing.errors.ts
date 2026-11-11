@@ -19,6 +19,11 @@ export class InvalidSubscription extends TaggedError("InvalidSubscription")<{
   message: string;
 }> {}
 
+export class InvalidPlanRequest extends TaggedError("InvalidPlanRequest")<{
+  code: "billing.invalid_plan_request";
+  message: string;
+}> {}
+
 export class QuotaExhausted extends TaggedError("QuotaExhausted")<{
   code: "billing.quota_exhausted";
   message: string;
@@ -42,3 +47,7 @@ export class PaymentProviderUnavailable extends TaggedError("PaymentProviderUnav
 }> {}
 
 export type AssignOrganizationPlanError = BillingForbidden | PlanNotFound | InvalidSubscription;
+
+export type RequestOrganizationPlanError = BillingForbidden | PlanNotFound | InvalidPlanRequest;
+export type CancelOrganizationPlanRequestError = BillingForbidden;
+export type ListPendingPlanRequestsError = BillingForbidden;

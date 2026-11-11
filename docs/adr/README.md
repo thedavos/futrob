@@ -1,6 +1,6 @@
 # Registro de decisiones de arquitectura
 
-Actualizado: 2026-10-29.
+Actualizado: 2026-11-10.
 
 Este índice distingue la **vigencia de una decisión** del **estado de su implementación**.
 Aceptada no significa desplegada ni verificada de extremo a extremo. Las referencias
@@ -40,7 +40,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0016: Proyección transaccional de resultados oficiales](/docs/adr/0016-official-results-transactional-projection.md)           | Aceptada    | Resultado, estadísticas y avance de bracket transaccionales; outbox pendiente                    |
 | [ADR-0017: Autorización contextual por capacidades](/docs/adr/0017-contextual-capability-authorization.md)                          | Aceptada    | Resolver contextual y matriz de pruebas existentes                                               |
 | [ADR-0018: Descubrimiento autenticado de competiciones publicadas](/docs/adr/0018-authenticated-competition-discovery.md)           | Aceptada    | Explore autenticado; lectura anónima en ADR-0024                                                 |
-| [ADR-0019: Inscripciones abiertas y postulación de equipos](/docs/adr/0019-competition-registration-and-applications.md)            | Aceptada    | Estado `registration` y postulación; notificación al organizador pendiente                       |
+| [ADR-0019: Inscripciones abiertas y postulación de equipos](/docs/adr/0019-competition-registration-and-applications.md)            | Aceptada    | Estado `registration`, postulación y actividad web; email pendiente                              |
 | [ADR-0020: Perfil de competición y portadas en R2](/docs/adr/0020-competition-profile-and-media.md)                                 | Aceptada    | Cupo, fechas y portada; limpieza de huérfanos en R2 pendiente                                    |
 | [ADR-0021: Auth, actores y rate limits en el Postgres de producto](/docs/adr/0021-auth-and-actors-in-product-postgres.md)           | Aceptada    | Implementado en el checkout; Hyperdrive→Railway sin desplegar                                    |
 | [ADR-0022: Perfil de organización: slug, zona horaria y escudo](/docs/adr/0022-organization-profile-and-logo.md)                    | Aceptada    | Implementado en el checkout; slug sin consumidor hasta el portal público                         |

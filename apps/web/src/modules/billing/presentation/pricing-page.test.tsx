@@ -69,9 +69,30 @@ describe("PricingPage", () => {
     expect(plan("Pro").queryByText(/\(No incluido\)/)).toBeNull();
   });
 
-  it("explains the manual activation and sends every plan to signup", () => {
+  it("marks entitlements without a consumer as coming soon instead of selling them", () => {
     renderPage(PLANS);
-    expect(plan("Pro").getByText(/activamos Pro a mano/)).toBeTruthy();
+    for (const name of ["Pro", "Liga"]) {
+      const row = (label: string) => plan(name).getByText(label).closest("li");
+      expect(
+        within(row("Sincronización automática con EA")!).getByText("Próximamente"),
+      ).toBeTruthy();
+      expect(
+        within(
+          plan(name)
+            .getByText(/^Portal público con/)
+            .closest("li")!,
+        ).getByText("Próximamente"),
+      ).toBeTruthy();
+      expect(within(row("Ranking de rendimiento 0–100")!).queryByText("Próximamente")).toBeNull();
+    }
+    // Free keeps what exists today: the Futrob-branded portal, and no promise of auto sync.
+    expect(plan("Gratis").queryByText("Próximamente")).toBeNull();
+    expect(plan("Gratis").getByText("Portal público con marca Futrob")).toBeTruthy();
+  });
+
+  it("explains the request-based manual activation and sends every plan to signup", () => {
+    renderPage(PLANS);
+    expect(plan("Pro").getByText(/pides Pro desde tu organización/)).toBeTruthy();
     expect(plan("Pro").getByRole("button", { name: "Crear cuenta" }).getAttribute("href")).toBe(
       "/signup",
     );

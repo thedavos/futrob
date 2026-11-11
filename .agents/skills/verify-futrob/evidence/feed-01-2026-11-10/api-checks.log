@@ -1,0 +1,16 @@
+
+> futrob@0.1.0 test
+> vp test --project api apps/api/src/adapters/notifications apps/api/src/di/official-selection.activity.composition.test.ts apps/api/src/application/competitions/competition-application.integration.test.ts apps/api/src/http/routes/activities.test.ts apps/api/src/adapters/scheduling/schedule-change-expiry.postgres.integration.test.ts apps/api/src/adapters/scheduling/schedule-change-negotiation.postgres.integration.test.ts apps/api/src/adapters/authorization/rbac-matrix.test.ts apps/api/src/http/contract/route-coverage.test.ts
+
+
+ RUN  v4.1.11 /home/user/code/futrob
+
+(node:35403) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:35404) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ Test Files  9 passed (9)
+      Tests  1187 passed (1187)
+   Start at  00:38:13
+   Duration  78.15s (transform 3.77s, setup 429ms, import 7.25s, tests 106.53s, environment 0ms)

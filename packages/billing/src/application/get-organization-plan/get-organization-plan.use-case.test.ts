@@ -28,6 +28,27 @@ describe("GetOrganizationPlanUseCase", () => {
     });
   });
 
+  it("includes the organization's pending plan request", async () => {
+    const harness = createBillingHarness();
+    harness.allow(ORGANIZER, BILLING_PERMISSION.read);
+    await harness.requests.save({
+      id: "request-1",
+      organizationId: ORG,
+      planKey: "pro",
+      requestedByActorId: ORGANIZER,
+      status: "pending",
+      createdAt: harness.clock.now(),
+      resolvedAt: null,
+    });
+
+    const result = await new GetOrganizationPlanUseCase(harness).execute({
+      actorId: ORGANIZER,
+      organizationId: ORG,
+    });
+
+    expect(result.isOk() && result.value.pendingRequest).toMatchObject({ planKey: "pro" });
+  });
+
   it("denies readers without billing.read", async () => {
     const harness = createBillingHarness();
 
