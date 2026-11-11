@@ -5,16 +5,26 @@ import type {
   EmailRecipientsPort,
 } from "@futrob/notifications";
 import type { MembershipRepository } from "@futrob/organizations";
-import { asActorId, asTeamId, type ActorId, type OrganizationId } from "@futrob/shared-kernel";
+import { RESULT_PERMISSION } from "@futrob/results";
+import {
+  asActorId,
+  asTeamId,
+  type ActorId,
+  type AuthorizationPort,
+  type OrganizationId,
+} from "@futrob/shared-kernel";
 import type { CompetitionRosterMembershipRepository, PlayerProfileRepository } from "@futrob/teams";
 
-/** Organization rows are read by its operators, as the organization activity feed is. */
-const OPERATOR_ROLES = new Set(["organizer", "staff"]);
+/**
+ * Organization rows are read by whoever the organization activity feed admits: the same
+ * permission, decided per member, so an explicit deny wins over the role.
+ */
+const ORGANIZATION_FEED_PERMISSION = RESULT_PERMISSION.resultApprove;
 const MEMBERSHIP_PAGE = 500;
 
 /**
- * Who reads email for an activity audience, matching who reads that row on the web: operators
- * for the organization, captain and vice-captain of a Team within its competition (ADR-0017),
+ * Who reads email for an activity audience, matching who reads that row on the web: members
+ * allowed to read the organization feed, captain and vice-captain of a Team within its competition (ADR-0017),
  * and the actor for a directed row.
  */
 export class ActivityAudienceEmailRecipients implements EmailRecipientsPort {
@@ -23,6 +33,7 @@ export class ActivityAudienceEmailRecipients implements EmailRecipientsPort {
       readonly memberships: MembershipRepository;
       readonly rosters: CompetitionRosterMembershipRepository;
       readonly profiles: PlayerProfileRepository;
+      readonly authorization: AuthorizationPort;
     },
   ) {}
 
@@ -35,8 +46,18 @@ export class ActivityAudienceEmailRecipients implements EmailRecipientsPort {
           audience.organizationId,
           MEMBERSHIP_PAGE,
         );
+        const scope = { organizationId: audience.organizationId };
+        const decisions = await Promise.all(
+          members.map((member) =>
+            this.deps.authorization.decide({
+              actorId: member.actorId,
+              permission: ORGANIZATION_FEED_PERMISSION,
+              scope,
+            }),
+          ),
+        );
         return members
-          .filter((member) => OPERATOR_ROLES.has(member.role))
+          .filter((_, index) => decisions[index]?.allowed === true)
           .map((member) => member.actorId);
       }
       case "team": {

@@ -125,9 +125,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     authorization: deferredAuthorization,
     staffSeats: billing.planLimits.staffSeats,
   });
-  const identity = createIdentityModule({
-    pool: input.pool,
-  });
+  const identity = createIdentityModule({ pool: input.pool });
 
   const competitionRepository = input.pool
     ? new PostgresCompetitionRepository(input.pool)
@@ -285,6 +283,7 @@ export function createModules(input: CreateModulesInput): AppModules {
       memberships: organizations.repositories.memberships,
       contacts: identity.contacts,
       entitlements: billing.useCases.resolveOrganizationEntitlements,
+      authorization: authorization.port,
     },
     transaction,
     encounterReader,

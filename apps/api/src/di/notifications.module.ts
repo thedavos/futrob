@@ -18,7 +18,12 @@ import {
 import type { MembershipRepository } from "@futrob/organizations";
 import type { EncounterReaderPort } from "@futrob/results";
 import type { CompetitionRosterMembershipRepository, PlayerProfileRepository } from "@futrob/teams";
-import type { ClockPort, IdGeneratorPort, TransactionPort } from "@futrob/shared-kernel";
+import type {
+  AuthorizationPort,
+  ClockPort,
+  IdGeneratorPort,
+  TransactionPort,
+} from "@futrob/shared-kernel";
 import type { Pool } from "pg";
 import { InMemoryActivityEntryRepository } from "@/adapters/notifications/activity-entry.in-memory.repository.ts";
 import { PostgresActivityEntryRepository } from "@/adapters/notifications/activity-entry.repository.ts";
@@ -106,6 +111,7 @@ export interface EmailSources {
   readonly profiles: PlayerProfileRepository;
   readonly contacts: EmailContactsPort;
   readonly entitlements: ResolveOrganizationEntitlementsUseCase;
+  readonly authorization: AuthorizationPort;
 }
 
 export function createNotificationsModule(input: {
@@ -206,7 +212,10 @@ export function createActivityFeed(input: {
   readonly clock: ClockPort;
   readonly ids: IdGeneratorPort;
   readonly email?: EmailSettings;
-  readonly sources: Pick<EmailSources, "memberships" | "contacts" | "entitlements">;
+  readonly sources: Pick<
+    EmailSources,
+    "memberships" | "contacts" | "entitlements" | "authorization"
+  >;
   readonly transaction: TransactionPort;
   readonly encounterReader: EncounterReaderPort;
   readonly competitions: CompetitionsModule;
