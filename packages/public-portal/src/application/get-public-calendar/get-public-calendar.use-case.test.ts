@@ -25,28 +25,28 @@ describe("GetPublicCalendarUseCase", () => {
         scheduledStartAt: new Date("2026-11-15T20:00:00.000Z"),
         homeTeamId: SURQUILLO,
         awayTeamId: BARRANCO,
-        official: false,
+        officialScore: null,
       },
       {
         roundNumber: 1,
         scheduledStartAt: new Date("2026-11-08T20:00:00.000Z"),
         homeTeamId: BARRANCO,
         awayTeamId: SURQUILLO,
-        official: false,
+        officialScore: null,
       },
       {
         roundNumber: 1,
         scheduledStartAt: new Date("2026-11-01T20:00:00.000Z"),
         homeTeamId: BARRANCO,
         awayTeamId: SURQUILLO,
-        official: true,
+        officialScore: [{ homeGoals: 3, awayGoals: 1 }],
       },
       {
         roundNumber: 1,
         scheduledStartAt: new Date("2026-11-08T10:00:00.000Z"),
         homeTeamId: SURQUILLO,
         awayTeamId: BARRANCO,
-        official: false,
+        officialScore: null,
       },
     ]);
     const result = await new GetPublicCalendarUseCase({
@@ -65,6 +65,7 @@ describe("GetPublicCalendarUseCase", () => {
           homeTeamName: "Barranco FC",
           awayTeamName: "Surquillo United",
           status: "official",
+          score: [{ homeGoals: 3, awayGoals: 1 }],
         },
         {
           roundNumber: 1,
@@ -72,6 +73,7 @@ describe("GetPublicCalendarUseCase", () => {
           homeTeamName: "Surquillo United",
           awayTeamName: "Barranco FC",
           status: "awaiting_result",
+          score: null,
         },
         {
           roundNumber: 1,
@@ -79,6 +81,7 @@ describe("GetPublicCalendarUseCase", () => {
           homeTeamName: "Barranco FC",
           awayTeamName: "Surquillo United",
           status: "scheduled",
+          score: null,
         },
         {
           roundNumber: 2,
@@ -86,6 +89,7 @@ describe("GetPublicCalendarUseCase", () => {
           homeTeamName: "Surquillo United",
           awayTeamName: "Barranco FC",
           status: "scheduled",
+          score: null,
         },
       ],
     });
@@ -101,7 +105,7 @@ describe("GetPublicCalendarUseCase", () => {
           scheduledStartAt: new Date("2026-11-15T20:00:00.000Z"),
           homeTeamId: BARRANCO,
           awayTeamId: SURQUILLO,
-          official: false,
+          officialScore: null,
           candidates: [{ providerMatchRef: "ea-secret" }],
           fixturePlanId: "plan-secret",
         } as never,
@@ -118,6 +122,7 @@ describe("GetPublicCalendarUseCase", () => {
       "homeTeamName",
       "roundNumber",
       "scheduledStartAt",
+      "score",
       "status",
     ]);
     const wire = JSON.stringify(result.value);
@@ -133,6 +138,34 @@ describe("GetPublicCalendarUseCase", () => {
     }
   });
 
+  it("shows the official score of each match and nothing else of the result", async () => {
+    const result = await new GetPublicCalendarUseCase({
+      competitions: publishedReader(competitionSource()),
+      calendar: countingCalendar(async () => [
+        {
+          roundNumber: 1,
+          scheduledStartAt: new Date("2026-11-01T20:00:00.000Z"),
+          homeTeamId: BARRANCO,
+          awayTeamId: SURQUILLO,
+          officialScore: [
+            { homeGoals: 2, awayGoals: 2, providerMatchRef: "ea-match-secret" } as never,
+            { homeGoals: 0, awayGoals: 1 },
+          ],
+        },
+      ]),
+      teams: teamDirectory(TEAM_NAMES),
+      clock,
+    }).execute({ key: PUBLIC_KEY });
+
+    expect(result.isOk() && result.value.entries.map((entry) => entry.score)).toEqual([
+      [
+        { homeGoals: 2, awayGoals: 2 },
+        { homeGoals: 0, awayGoals: 1 },
+      ],
+    ]);
+    expect(JSON.stringify(result.isOk() && result.value)).not.toContain("ea-match-secret");
+  });
+
   it("skips an encounter with a team that has no public name", async () => {
     const result = await new GetPublicCalendarUseCase({
       competitions: publishedReader(competitionSource()),
@@ -142,7 +175,7 @@ describe("GetPublicCalendarUseCase", () => {
           scheduledStartAt: new Date("2026-11-15T20:00:00.000Z"),
           homeTeamId: BARRANCO,
           awayTeamId: MIRAFLORES,
-          official: false,
+          officialScore: null,
         },
       ]),
       teams: teamDirectory(new Map([[BARRANCO, "Barranco FC"]])),

@@ -273,8 +273,12 @@ describe("Swiss fixture HTTP contract", () => {
     expect(
       privateTable.standings?.rows.find((row) => row.teamId === opponentTeamId)?.swiss?.buchholz,
     ).toBe(-3);
+    const organization = await context.modules.organizations.repositories.organizations.getById(
+      asOrganizationId(context.organizationId),
+    );
+    if (!organization) throw new Error("organization fixture missing");
     const publicResponse = await context.app.request(
-      `/api/v1/public/competitions/${context.competitionId}/standings`,
+      `/api/v1/public/organizations/${organization.slug}/competitions/${context.competitionId}/standings`,
     );
     expect(publicResponse.status).toBe(200);
     const publicTable = await parseResponse(getPublicStandingsResponseSchema, publicResponse);

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  getPublicBracketResponseSchema,
   getPublicCalendarResponseSchema,
+  getPublicRankingResponseSchema,
+  getPublicTeamsResponseSchema,
   getPublicCompetitionResponseSchema,
   getPublicStandingsResponseSchema,
   publicCompetitionSchema,
@@ -40,6 +43,7 @@ const calendarEntry = {
   homeTeamName: "Barranco FC",
   awayTeamName: "Surquillo United",
   status: "scheduled",
+  score: null,
 } as const;
 
 describe("public portal wire schemas", () => {
@@ -111,6 +115,78 @@ describe("public portal wire schemas", () => {
         getPublicCalendarResponseSchema.safeParse(body({ ...calendarEntry, ...extra })).success,
       ).toBe(false);
     }
+  });
+
+  it("admits only goals on a calendar score", () => {
+    const body = (score: unknown) => ({
+      calendar: {
+        timeZone: "America/Lima",
+        entries: [{ ...calendarEntry, status: "official", score }],
+      },
+    });
+    expect(
+      getPublicCalendarResponseSchema.safeParse(body([{ homeGoals: 3, awayGoals: 1 }])).success,
+    ).toBe(true);
+    expect(
+      getPublicCalendarResponseSchema.safeParse(
+        body([{ homeGoals: 3, awayGoals: 1, providerMatchRef: "ea-1" }]),
+      ).success,
+    ).toBe(false);
+  });
+
+  it("refuses internal references on bracket sides, rankings and teams", () => {
+    const encounter = {
+      order: 1,
+      scheduledStartAt: "2026-11-08T20:00:00.000Z",
+      officialMatchCount: 1,
+      home: { kind: "team", name: "Barranco FC" },
+      away: { kind: "group_rank", group: "A", rank: 2 },
+      status: "scheduled",
+      score: null,
+    };
+    const bracket = (value: object) => ({
+      bracket: {
+        timeZone: "UTC",
+        stages: [
+          {
+            kind: "knockout",
+            rounds: [
+              { number: 1, scheduledStartAt: encounter.scheduledStartAt, encounters: [value] },
+            ],
+          },
+        ],
+      },
+    });
+    expect(getPublicBracketResponseSchema.safeParse(bracket(encounter)).success).toBe(true);
+    for (const side of [
+      { kind: "team", name: "Barranco FC", teamId: "team-1" },
+      { kind: "winner", encounterId: "encounter-1" },
+      { kind: "group_rank", group: "group-internal-1", rank: 1 },
+    ]) {
+      expect(
+        getPublicBracketResponseSchema.safeParse(bracket({ ...encounter, home: side })).success,
+      ).toBe(false);
+    }
+
+    const row = {
+      position: 1,
+      playerName: "AnaGol_10",
+      teamName: null,
+      value: 3,
+      matchesPlayed: 2,
+    };
+    const ranking = (value: object) => ({
+      ranking: { kind: "scorer", rows: [value], updatedAt: null },
+    });
+    expect(getPublicRankingResponseSchema.safeParse(ranking(row)).success).toBe(true);
+    expect(
+      getPublicRankingResponseSchema.safeParse(ranking({ ...row, playerProfileId: "profile-1" }))
+        .success,
+    ).toBe(false);
+    expect(
+      getPublicTeamsResponseSchema.safeParse({ teams: [{ name: "Barranco FC", teamId: "t" }] })
+        .success,
+    ).toBe(false);
   });
 
   it("only admits publicly visible statuses", () => {

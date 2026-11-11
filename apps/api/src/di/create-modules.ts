@@ -268,12 +268,18 @@ export function createModules(input: CreateModulesInput): AppModules {
 
   const publicPortal = createPublicPortalModule({
     clock,
+    organizations: organizations.repositories.organizations,
     discovery: competitions.discovery,
+    competitions: competitions.repository,
+    entries: competitions.entryRepository,
     standings: statistics.ports.standings,
     swissStandings: statistics.ports.swissStandings,
+    rankings: statistics.ports.rankings,
     fixturePlans: scheduling.fixturePlans,
     officialResults: results.officialResultReader,
     teams: teams.repositories.teams,
+    rosters: teams.repositories.rosters,
+    accounts: teams.repositories.accounts,
   });
 
   const activityFeed = createActivityFeed({
@@ -368,12 +374,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     accountDeletion: createAccountDeletion({ pool: input.pool, clock, transaction }),
     activityCommands: activityFeed.commands,
     authorization,
-    billing: withPlanUsage(
-      billing,
-      competitionRepository,
-      organizations.repositories.memberships,
-      organizations.repositories.organizations,
-    ),
+    billing: withPlanUsage(billing, competitionRepository, organizations.repositories),
     competitionApplications,
     competitions,
     entryInvitations,

@@ -11370,7 +11370,7 @@
         ]
       }
     },
-    "/public/competitions/{publicKey}": {
+    "/public/organizations/{organizationSlug}/competitions/{competitionKey}": {
       "get": {
         "parameters": [
           {
@@ -11380,10 +11380,20 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "organizationSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
               "maxLength": 128
             },
             "required": true,
-            "name": "publicKey",
+            "name": "competitionKey",
             "in": "path"
           }
         ],
@@ -11404,7 +11414,7 @@
             }
           },
           "404": {
-            "description": "The key is unknown or the competition is not published",
+            "description": "The organization or competition is unknown, the competition belongs to another organization, or it is not published",
             "content": {
               "application/json": {
                 "schema": {
@@ -11428,7 +11438,7 @@
         "security": []
       }
     },
-    "/public/competitions/{publicKey}/calendar": {
+    "/public/organizations/{organizationSlug}/competitions/{competitionKey}/bracket": {
       "get": {
         "parameters": [
           {
@@ -11438,16 +11448,94 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "organizationSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
               "maxLength": 128
             },
             "required": true,
-            "name": "publicKey",
+            "name": "competitionKey",
             "in": "path"
           }
         ],
         "responses": {
           "200": {
-            "description": "Encounters with both teams known, earliest first",
+            "description": "Knockout and playoff stages; null without a fixture or an elimination stage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPublicBracketResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "description": "The organization or competition is unknown, the competition belongs to another organization, or it is not published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "getPublicBracket",
+        "tags": [
+          "public-portal"
+        ],
+        "summary": "Read the elimination bracket of a published competition",
+        "description": "Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
+        "security": []
+      }
+    },
+    "/public/organizations/{organizationSlug}/competitions/{competitionKey}/calendar": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "organizationSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "required": true,
+            "name": "competitionKey",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Encounters with both teams known, earliest first, with the approved goals per match",
             "content": {
               "application/json": {
                 "schema": {
@@ -11462,7 +11550,7 @@
             }
           },
           "404": {
-            "description": "The key is unknown or the competition is not published",
+            "description": "The organization or competition is unknown, the competition belongs to another organization, or it is not published",
             "content": {
               "application/json": {
                 "schema": {
@@ -11481,12 +11569,12 @@
         "tags": [
           "public-portal"
         ],
-        "summary": "Read the calendar of a published competition",
+        "summary": "Read the calendar and official scores of a published competition",
         "description": "Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
         "security": []
       }
     },
-    "/public/competitions/{publicKey}/standings": {
+    "/public/organizations/{organizationSlug}/competitions/{competitionKey}/rankings/{kind}": {
       "get": {
         "parameters": [
           {
@@ -11496,10 +11584,186 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "organizationSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
               "maxLength": 128
             },
             "required": true,
-            "name": "publicKey",
+            "name": "competitionKey",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "scorer",
+                "assister",
+                "rating",
+                "mvp",
+                "goalkeeper"
+              ]
+            },
+            "required": true,
+            "name": "kind",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Players by their roster game account; empty before the first projection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPublicRankingResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown ranking kind",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "description": "The organization or competition is unknown, the competition belongs to another organization, or it is not published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "getPublicRanking",
+        "tags": [
+          "public-portal"
+        ],
+        "summary": "Read one official player ranking of a published competition",
+        "description": "Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
+        "security": []
+      }
+    },
+    "/public/organizations/{organizationSlug}/competitions/{competitionKey}/rules": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "organizationSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "required": true,
+            "name": "competitionKey",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Format, team range and per-stage scoring; no approval workflow settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPublicRulesResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "description": "The organization or competition is unknown, the competition belongs to another organization, or it is not published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "getPublicRules",
+        "tags": [
+          "public-portal"
+        ],
+        "summary": "Read the public rules of a published competition",
+        "description": "Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
+        "security": []
+      }
+    },
+    "/public/organizations/{organizationSlug}/competitions/{competitionKey}/standings": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "organizationSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "required": true,
+            "name": "competitionKey",
             "in": "path"
           }
         ],
@@ -11520,7 +11784,7 @@
             }
           },
           "404": {
-            "description": "The key is unknown or the competition is not published",
+            "description": "The organization or competition is unknown, the competition belongs to another organization, or it is not published",
             "content": {
               "application/json": {
                 "schema": {
@@ -11540,6 +11804,74 @@
           "public-portal"
         ],
         "summary": "Read the official table of a published competition",
+        "description": "Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
+        "security": []
+      }
+    },
+    "/public/organizations/{organizationSlug}/competitions/{competitionKey}/teams": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "organizationSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "required": true,
+            "name": "competitionKey",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team names, alphabetical",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPublicTeamsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "description": "The organization or competition is unknown, the competition belongs to another organization, or it is not published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "getPublicTeams",
+        "tags": [
+          "public-portal"
+        ],
+        "summary": "List the approved teams of a published competition",
         "description": "Anonymous and shareable: no session or service credentials are read. Successful responses send `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`; errors are `no-store`.",
         "security": []
       }
@@ -24709,6 +25041,396 @@
         ],
         "additionalProperties": false
       },
+      "GetPublicBracketResponse": {
+        "type": "object",
+        "properties": {
+          "bracket": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "timeZone": {
+                "type": "string"
+              },
+              "stages": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "knockout",
+                        "playoffs"
+                      ]
+                    },
+                    "rounds": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "number": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0
+                          },
+                          "scheduledStartAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "encounters": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "order": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                },
+                                "scheduledStartAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "officialMatchCount": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "enum": [
+                                        1
+                                      ]
+                                    },
+                                    {
+                                      "type": "number",
+                                      "enum": [
+                                        2
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "home": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "team"
+                                          ]
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "bye"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "winner"
+                                          ]
+                                        },
+                                        "roundNumber": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        },
+                                        "order": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "roundNumber",
+                                        "order"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "group_rank"
+                                          ]
+                                        },
+                                        "group": {
+                                          "type": "string",
+                                          "pattern": "^[A-Z]$"
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "group",
+                                        "rank"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "stage_rank"
+                                          ]
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "rank"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "pending"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "away": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "team"
+                                          ]
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "bye"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "winner"
+                                          ]
+                                        },
+                                        "roundNumber": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        },
+                                        "order": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "roundNumber",
+                                        "order"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "group_rank"
+                                          ]
+                                        },
+                                        "group": {
+                                          "type": "string",
+                                          "pattern": "^[A-Z]$"
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "group",
+                                        "rank"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "stage_rank"
+                                          ]
+                                        },
+                                        "rank": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "rank"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "pending"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "scheduled",
+                                    "awaiting_result",
+                                    "official",
+                                    "closed"
+                                  ]
+                                },
+                                "score": {
+                                  "type": [
+                                    "array",
+                                    "null"
+                                  ],
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "homeGoals": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      },
+                                      "awayGoals": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      }
+                                    },
+                                    "required": [
+                                      "homeGoals",
+                                      "awayGoals"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 1,
+                                  "maxItems": 2
+                                }
+                              },
+                              "required": [
+                                "order",
+                                "scheduledStartAt",
+                                "officialMatchCount",
+                                "home",
+                                "away",
+                                "status",
+                                "score"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "number",
+                          "scheduledStartAt",
+                          "encounters"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "rounds"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "timeZone",
+              "stages"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "bracket"
+        ],
+        "additionalProperties": false
+      },
       "GetPublicCalendarResponse": {
         "type": "object",
         "properties": {
@@ -24744,6 +25466,32 @@
                         "awaiting_result",
                         "official"
                       ]
+                    },
+                    "score": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "homeGoals": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "awayGoals": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "homeGoals",
+                          "awayGoals"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 1,
+                      "maxItems": 2
                     }
                   },
                   "required": [
@@ -24751,7 +25499,8 @@
                     "scheduledStartAt",
                     "homeTeamName",
                     "awayTeamName",
-                    "status"
+                    "status",
+                    "score"
                   ],
                   "additionalProperties": false
                 }
@@ -24880,6 +25629,245 @@
         },
         "required": [
           "competition"
+        ],
+        "additionalProperties": false
+      },
+      "GetPublicRankingResponse": {
+        "type": "object",
+        "properties": {
+          "ranking": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "scorer",
+                  "assister",
+                  "rating",
+                  "mvp",
+                  "goalkeeper"
+                ]
+              },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "position": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "playerName": {
+                      "type": "string"
+                    },
+                    "teamName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "value": {
+                      "type": "number"
+                    },
+                    "matchesPlayed": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "position",
+                    "playerName",
+                    "teamName",
+                    "value",
+                    "matchesPlayed"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "updatedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "kind",
+              "rows",
+              "updatedAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ranking"
+        ],
+        "additionalProperties": false
+      },
+      "GetPublicRulesResponse": {
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "object",
+            "properties": {
+              "format": {
+                "type": "string",
+                "enum": [
+                  "league",
+                  "knockout",
+                  "groups-knockout",
+                  "league-playoffs",
+                  "swiss"
+                ]
+              },
+              "teams": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "min": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "max": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "additionalProperties": false
+              },
+              "stages": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "stage": {
+                      "type": "string",
+                      "enum": [
+                        "regular",
+                        "knockout"
+                      ]
+                    },
+                    "winPoints": {
+                      "type": "number"
+                    },
+                    "drawPoints": {
+                      "type": "number"
+                    },
+                    "lossPoints": {
+                      "type": "number"
+                    },
+                    "officialMatchesPerEncounter": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "enum": [
+                            1
+                          ]
+                        },
+                        {
+                          "type": "number",
+                          "enum": [
+                            2
+                          ]
+                        }
+                      ]
+                    },
+                    "resolutionMode": {
+                      "type": "string",
+                      "enum": [
+                        "independent_matches",
+                        "aggregate_score"
+                      ]
+                    },
+                    "rescheduling": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allowed": {
+                              "type": "boolean",
+                              "enum": [
+                                false
+                              ]
+                            }
+                          },
+                          "required": [
+                            "allowed"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allowed": {
+                              "type": "boolean",
+                              "enum": [
+                                true
+                              ]
+                            },
+                            "maxPerTeam": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0
+                            },
+                            "minimumNoticeHours": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "allowed",
+                            "maxPerTeam",
+                            "minimumNoticeHours"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "stage",
+                    "winPoints",
+                    "drawPoints",
+                    "lossPoints",
+                    "officialMatchesPerEncounter",
+                    "resolutionMode",
+                    "rescheduling"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "maxRosterSize": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "format",
+              "teams",
+              "stages",
+              "maxRosterSize"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "rules"
         ],
         "additionalProperties": false
       },
@@ -25021,6 +26009,30 @@
         },
         "required": [
           "standings"
+        ],
+        "additionalProperties": false
+      },
+      "GetPublicTeamsResponse": {
+        "type": "object",
+        "properties": {
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "teams"
         ],
         "additionalProperties": false
       },
@@ -32466,6 +33478,811 @@
           "updatedAt"
         ]
       },
+      "PublicBracketEncounter": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "scheduledStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "officialMatchCount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [
+                  1
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  2
+                ]
+              }
+            ]
+          },
+          "home": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "team"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "bye"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "winner"
+                    ]
+                  },
+                  "roundNumber": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "order": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "kind",
+                  "roundNumber",
+                  "order"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "group_rank"
+                    ]
+                  },
+                  "group": {
+                    "type": "string",
+                    "pattern": "^[A-Z]$"
+                  },
+                  "rank": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "kind",
+                  "group",
+                  "rank"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "stage_rank"
+                    ]
+                  },
+                  "rank": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "kind",
+                  "rank"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "pending"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "away": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "team"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "bye"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "winner"
+                    ]
+                  },
+                  "roundNumber": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "order": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "kind",
+                  "roundNumber",
+                  "order"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "group_rank"
+                    ]
+                  },
+                  "group": {
+                    "type": "string",
+                    "pattern": "^[A-Z]$"
+                  },
+                  "rank": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "kind",
+                  "group",
+                  "rank"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "stage_rank"
+                    ]
+                  },
+                  "rank": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "kind",
+                  "rank"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "pending"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "awaiting_result",
+              "official",
+              "closed"
+            ]
+          },
+          "score": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "homeGoals": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "awayGoals": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "homeGoals",
+                "awayGoals"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 2
+          }
+        },
+        "required": [
+          "order",
+          "scheduledStartAt",
+          "officialMatchCount",
+          "home",
+          "away",
+          "status",
+          "score"
+        ],
+        "additionalProperties": false
+      },
+      "PublicBracketSide": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "team"
+                ]
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "bye"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "winner"
+                ]
+              },
+              "roundNumber": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "order": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "kind",
+              "roundNumber",
+              "order"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "group_rank"
+                ]
+              },
+              "group": {
+                "type": "string",
+                "pattern": "^[A-Z]$"
+              },
+              "rank": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "kind",
+              "group",
+              "rank"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "stage_rank"
+                ]
+              },
+              "rank": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "kind",
+              "rank"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "pending"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "PublicBracketStage": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "knockout",
+              "playoffs"
+            ]
+          },
+          "rounds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "scheduledStartAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "encounters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "order": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "scheduledStartAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "officialMatchCount": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "enum": [
+                              1
+                            ]
+                          },
+                          {
+                            "type": "number",
+                            "enum": [
+                              2
+                            ]
+                          }
+                        ]
+                      },
+                      "home": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "team"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "bye"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "winner"
+                                ]
+                              },
+                              "roundNumber": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              },
+                              "order": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "roundNumber",
+                              "order"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "group_rank"
+                                ]
+                              },
+                              "group": {
+                                "type": "string",
+                                "pattern": "^[A-Z]$"
+                              },
+                              "rank": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "group",
+                              "rank"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "stage_rank"
+                                ]
+                              },
+                              "rank": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "rank"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "pending"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "away": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "team"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "bye"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "winner"
+                                ]
+                              },
+                              "roundNumber": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              },
+                              "order": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "roundNumber",
+                              "order"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "group_rank"
+                                ]
+                              },
+                              "group": {
+                                "type": "string",
+                                "pattern": "^[A-Z]$"
+                              },
+                              "rank": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "group",
+                              "rank"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "stage_rank"
+                                ]
+                              },
+                              "rank": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "rank"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "pending"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "scheduled",
+                          "awaiting_result",
+                          "official",
+                          "closed"
+                        ]
+                      },
+                      "score": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "homeGoals": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "awayGoals": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "homeGoals",
+                            "awayGoals"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 1,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "order",
+                      "scheduledStartAt",
+                      "officialMatchCount",
+                      "home",
+                      "away",
+                      "status",
+                      "score"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "number",
+                "scheduledStartAt",
+                "encounters"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "rounds"
+        ],
+        "additionalProperties": false
+      },
       "PublicCalendarEntry": {
         "type": "object",
         "properties": {
@@ -32490,6 +34307,32 @@
               "awaiting_result",
               "official"
             ]
+          },
+          "score": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "homeGoals": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "awayGoals": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "homeGoals",
+                "awayGoals"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 2
           }
         },
         "required": [
@@ -32497,7 +34340,8 @@
           "scheduledStartAt",
           "homeTeamName",
           "awayTeamName",
-          "status"
+          "status",
+          "score"
         ],
         "additionalProperties": false
       },
@@ -32676,6 +34520,125 @@
             ]
           }
         ]
+      },
+      "PublicMatchScore": {
+        "type": "object",
+        "properties": {
+          "homeGoals": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "awayGoals": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "homeGoals",
+          "awayGoals"
+        ],
+        "additionalProperties": false
+      },
+      "PublicStageRules": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "knockout"
+            ]
+          },
+          "winPoints": {
+            "type": "number"
+          },
+          "drawPoints": {
+            "type": "number"
+          },
+          "lossPoints": {
+            "type": "number"
+          },
+          "officialMatchesPerEncounter": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [
+                  1
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  2
+                ]
+              }
+            ]
+          },
+          "resolutionMode": {
+            "type": "string",
+            "enum": [
+              "independent_matches",
+              "aggregate_score"
+            ]
+          },
+          "rescheduling": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "allowed": {
+                    "type": "boolean",
+                    "enum": [
+                      false
+                    ]
+                  }
+                },
+                "required": [
+                  "allowed"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "allowed": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "maxPerTeam": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "minimumNoticeHours": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "allowed",
+                  "maxPerTeam",
+                  "minimumNoticeHours"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "stage",
+          "winPoints",
+          "drawPoints",
+          "lossPoints",
+          "officialMatchesPerEncounter",
+          "resolutionMode",
+          "rescheduling"
+        ],
+        "additionalProperties": false
       },
       "PublicStandingRow": {
         "type": "object",

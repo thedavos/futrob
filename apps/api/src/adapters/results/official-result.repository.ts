@@ -8,6 +8,7 @@ import {
   asCompetitionId,
   asEncounterId,
   asOrganizationId,
+  asTeamId,
   type CompetitionId,
   type EncounterId,
   type OrganizationId,
@@ -61,6 +62,8 @@ const officialResultSlotSnapshotSchema = z.object({
   gameEdition: z.string(),
   platform: z.string(),
   players: z.array(providerPlayerMatchStatsSchema),
+  homeTeamId: z.string().transform(asTeamId).nullable().optional(),
+  awayTeamId: z.string().transform(asTeamId).nullable().optional(),
 });
 
 const officialResultRowSchema = z.object({
