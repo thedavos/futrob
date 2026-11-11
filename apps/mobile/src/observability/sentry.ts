@@ -1,6 +1,11 @@
 import type { ComponentType } from "react";
 import * as Sentry from "@sentry/react-native";
-import { applySentryEventPolicy, isExpectedFailure, sentrySdkOptions } from "@futrob/logger";
+import {
+  applySentryEventPolicy,
+  applySentryTransactionPolicy,
+  isExpectedFailure,
+  sentrySdkOptions,
+} from "@futrob/logger";
 
 /**
  * Sentry is production-only on native: DSN present and not `__DEV__`.
@@ -28,6 +33,9 @@ export function initMobileSentry(): void {
     initialScope: { tags: { ...options.initialScope.tags } },
     beforeSend(event, hint) {
       return applySentryEventPolicy(event, hint);
+    },
+    beforeSendTransaction(event) {
+      return applySentryTransactionPolicy(event);
     },
   });
 }

@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/node";
 import {
   applySentryEventPolicy,
+  applySentryTransactionPolicy,
   isExpectedFailure,
   sentrySdkOptions,
   withRequestIdTag,
@@ -37,6 +38,9 @@ export function initSentry(env: { nodeEnv?: string }): void {
       const scrubbed = applySentryEventPolicy(event, hint);
       if (!scrubbed) return null;
       return withRequestIdTag(scrubbed, currentRequestCorrelation()?.requestId);
+    },
+    beforeSendTransaction(event) {
+      return applySentryTransactionPolicy(event);
     },
   });
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
   applySentryEventPolicy,
+  applySentryTransactionPolicy,
   buildSentryInitConfig,
   filterAndScrubSentryEvent,
   isExpectedFailure,
@@ -136,6 +137,50 @@ describe("event scrubbing", () => {
       "https://app.futrob.app/invitations/accept/[Filtered]?token=[Filtered]",
     );
     expect(JSON.stringify(scrubbed)).not.toMatch(/plain-invite-token|reset-secret/);
+  });
+
+  it("redacts invitation tokens in Referer and breadcrumb URLs", () => {
+    const page = "https://app.futrob.app/roster-invitations/accept/SYNTHETIC_INVITE_TOKEN";
+    const scrubbed = scrubSentryEvent({
+      request: {
+        url: "https://app.futrob.app/api/auth/get-session",
+        headers: { Referer: page },
+      },
+      breadcrumbs: [
+        { category: "fetch", data: { url: page, method: "GET" } },
+        { category: "navigation", message: `to ${page}` },
+      ],
+    });
+    expect(scrubbed.request?.headers).toEqual({
+      Referer: "https://app.futrob.app/roster-invitations/accept/[Filtered]",
+    });
+    expect(JSON.stringify(scrubbed)).not.toMatch(/SYNTHETIC_INVITE_TOKEN/);
+  });
+
+  it("redacts invitation tokens in transaction names, spans, and trace context", () => {
+    const url = "https://app.futrob.app/roster-invitations/accept/SYNTHETIC_INVITE_TOKEN";
+    const scrubbed = applySentryTransactionPolicy({
+      transaction: "GET /roster-invitations/accept/SYNTHETIC_INVITE_TOKEN",
+      request: { url, headers: { Referer: url } },
+      contexts: {
+        trace: {
+          trace_id: "trace-1",
+          data: {
+            "url.full": url,
+            "url.path": "/roster-invitations/accept/SYNTHETIC_INVITE_TOKEN",
+          },
+        },
+      },
+      spans: [
+        {
+          description: `GET ${url}`,
+          data: { "http.url": url, "http.request.header.cookie": "session-cookie" },
+        },
+      ],
+    });
+    expect(scrubbed.transaction).toBe("GET /roster-invitations/accept/[Filtered]");
+    expect(JSON.stringify(scrubbed)).not.toMatch(/SYNTHETIC_INVITE_TOKEN|session-cookie/);
+    expect(JSON.stringify(scrubbed)).toContain("trace-1");
   });
 
   it("drops a user object that only has an email", () => {

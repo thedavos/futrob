@@ -44,8 +44,16 @@ describe("auth Sentry worker wrapper", () => {
       initialScope: { tags: Record<string, string> };
       sendDefaultPii: boolean;
       beforeSend: (event: object, hint: object) => object | null;
+      beforeSendTransaction: (event: object) => object | null;
     };
     expect(options.initialScope.tags).toEqual({ service: "auth", environment: "production" });
+    expect(
+      JSON.stringify(
+        options.beforeSendTransaction({
+          transaction: "GET /roster-invitations/accept/SYNTHETIC_INVITE_TOKEN",
+        }),
+      ),
+    ).not.toMatch(/SYNTHETIC_INVITE_TOKEN/);
     expect(options.sendDefaultPii).toBe(false);
     const sent = options.beforeSend(
       {

@@ -57,6 +57,22 @@ const breadcrumbSchema = z
     category: z.string().optional(),
   })
   .passthrough();
+const textSchema = z.string();
+const attributesSchema = z.record(z.string(), z.unknown());
+const spanSchema = z
+  .object({ description: z.string().optional(), data: attributesSchema.optional() })
+  .passthrough();
+const contextsSchema = z
+  .object({
+    trace: z.object({ data: attributesSchema.optional() }).passthrough().optional(),
+  })
+  .passthrough();
+const transactionBagSchema = z
+  .object({
+    spans: z.array(spanSchema).optional().catch(undefined),
+    contexts: contextsSchema.optional().catch(undefined),
+  })
+  .passthrough();
 const eventBagSchema = z
   .object({
     extra: extraSchema.optional().catch(undefined),
@@ -107,6 +123,13 @@ export interface SentryEventLike {
   extra?: object;
   breadcrumbs?: readonly object[];
   tags?: Record<string, SentryPrimitive>;
+}
+
+/** Transaction envelopes carry the request URL in the name, spans and trace context. */
+export interface SentryTransactionLike extends SentryEventLike {
+  transaction?: string;
+  spans?: readonly object[];
+  contexts?: object;
 }
 
 export function buildSentryInitConfig(input: SentryInitInput): SentryInitConfig | undefined {
@@ -162,6 +185,23 @@ export function applySentryEventPolicy<T extends SentryEventLike>(
   return withRequestIdTag(scrubbed, requestIdFromSentryEvent(scrubbed));
 }
 
+/**
+ * `beforeSend` never sees transactions. Use this for `beforeSendTransaction`
+ * so invite tokens in route names and span URL attributes are filtered too.
+ */
+export function applySentryTransactionPolicy<T extends SentryTransactionLike>(event: T): T {
+  const scrubbed = scrubSentryEvent(event);
+  const bag = transactionBagSchema.safeParse(event);
+  const spans = bag.success ? bag.data.spans?.map(scrubSpan) : undefined;
+  const contexts = bag.success ? scrubContexts(bag.data.contexts) : undefined;
+  return {
+    ...scrubbed,
+    transaction: scrubUrl(event.transaction),
+    spans,
+    contexts,
+  };
+}
+
 export function requestIdFromSentryEvent(event: SentryEventLike): string | undefined {
   const headers = headersFromRequest(event.request);
   if (!headers) return undefined;
@@ -188,9 +228,11 @@ export function scrubSentryEvent<T extends SentryEventLike>(event: T): T {
   const extra = bag.success && bag.data.extra ? redactFields(bag.data.extra) : undefined;
   const breadcrumbs =
     bag.success && bag.data.breadcrumbs
-      ? bag.data.breadcrumbs.map((breadcrumb) =>
-          breadcrumb.data ? { ...breadcrumb, data: redactFields(breadcrumb.data) } : breadcrumb,
-        )
+      ? bag.data.breadcrumbs.map((breadcrumb) => ({
+          ...breadcrumb,
+          message: scrubUrl(breadcrumb.message),
+          data: breadcrumb.data ? redactFields(breadcrumb.data) : undefined,
+        }))
       : undefined;
   return {
     ...event,
@@ -213,8 +255,10 @@ function scrubRequest(request: SentryRequestLike | undefined): SentryRequestLike
   return { method: parsed.data.method, url, headers };
 }
 
+function scrubUrl(url: string): string;
+function scrubUrl(url: string | undefined): string | undefined;
 function scrubUrl(url: string | undefined): string | undefined {
-  if (!url) return undefined;
+  if (!url) return url;
   return url
     .replace(/\/(accept|link)\/[^/?#]+/gi, "/$1/[Filtered]")
     .replace(
@@ -243,7 +287,8 @@ function redactHeaders(headers: z.infer<typeof headersSchema> | undefined): Head
   if (!normalized) return undefined;
   const next: Record<string, string> = {};
   for (const [key, value] of Object.entries(normalized)) {
-    next[key] = SENSITIVE_HEADER_NAMES.has(key.toLowerCase()) ? "[Filtered]" : value;
+    // Referer/Origin carry page URLs such as `/roster-invitations/accept/<token>`.
+    next[key] = SENSITIVE_HEADER_NAMES.has(key.toLowerCase()) ? "[Filtered]" : scrubUrl(value);
   }
   return next;
 }
@@ -257,9 +302,34 @@ function normalizeHeaders(
 
 function redactFields(fields: z.infer<typeof extraSchema>): LogFields {
   return Object.fromEntries(
-    Object.entries(fields).map(([key, value]) => [
-      key,
-      SENSITIVE_KEY.test(key) ? "[Filtered]" : value,
-    ]),
+    Object.entries(fields).map(([key, value]) => {
+      if (SENSITIVE_KEY.test(key)) return [key, "[Filtered]"];
+      const text = textSchema.safeParse(value);
+      return [key, text.success ? scrubUrl(text.data) : value];
+    }),
+  );
+}
+
+function scrubSpan(span: z.infer<typeof spanSchema>) {
+  return {
+    ...span,
+    description: scrubUrl(span.description),
+    data: span.data ? scrubAttributes(span.data) : undefined,
+  };
+}
+
+function scrubContexts(contexts: z.infer<typeof contextsSchema> | undefined) {
+  if (!contexts?.trace?.data) return contexts;
+  return { ...contexts, trace: { ...contexts.trace, data: scrubAttributes(contexts.trace.data) } };
+}
+
+/** Span and trace attributes (`url.full`, `http.target`, …) carry raw request URLs. */
+function scrubAttributes(attributes: z.infer<typeof attributesSchema>) {
+  return Object.fromEntries(
+    Object.entries(attributes).map(([key, value]) => {
+      const text = textSchema.safeParse(value);
+      if (!text.success) return [key, value];
+      return [key, SENSITIVE_KEY.test(key) ? "[Filtered]" : scrubUrl(text.data)];
+    }),
   );
 }

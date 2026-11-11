@@ -53,8 +53,19 @@ describe("web Sentry worker wrapper", () => {
       initialScope: { tags: Record<string, string> };
       sendDefaultPii: boolean;
       beforeSend: (event: object, hint: object) => object | null;
+      beforeSendTransaction: (event: object) => object | null;
     };
     expect(options.initialScope.tags).toEqual({ service: "web", environment: "production" });
+    const inviteUrl = "https://app.futrob.app/roster-invitations/accept/SYNTHETIC_INVITE_TOKEN";
+    expect(
+      JSON.stringify(
+        options.beforeSendTransaction({
+          transaction: "GET /roster-invitations/accept/SYNTHETIC_INVITE_TOKEN",
+          contexts: { trace: { data: { "url.full": inviteUrl } } },
+          spans: [{ data: { "url.full": inviteUrl } }],
+        }),
+      ),
+    ).not.toMatch(/SYNTHETIC_INVITE_TOKEN/);
     expect(options.sendDefaultPii).toBe(false);
     const requestId = "9b020aa7-9c5e-4cca-b8ea-daeb047c6dca";
     const sent = options.beforeSend(

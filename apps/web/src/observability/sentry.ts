@@ -1,5 +1,10 @@
 import * as Sentry from "@sentry/cloudflare";
-import { applySentryEventPolicy, isExpectedFailure, sentrySdkOptions } from "@futrob/logger";
+import {
+  applySentryEventPolicy,
+  applySentryTransactionPolicy,
+  isExpectedFailure,
+  sentrySdkOptions,
+} from "@futrob/logger";
 
 /**
  * Sentry is production-only for the web Worker: `withWorkerSentry` initializes
@@ -36,6 +41,9 @@ function cloudflareSentryOptions<
     initialScope: { tags: { ...options.initialScope.tags } },
     beforeSend(event, hint) {
       return applySentryEventPolicy(event, hint);
+    },
+    beforeSendTransaction(event) {
+      return applySentryTransactionPolicy(event);
     },
   };
 }

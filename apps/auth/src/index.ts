@@ -72,7 +72,16 @@ const worker = {
       connection = await connectAuthDatabase(env.HYPERDRIVE.connectionString);
       const clock = new SystemClock();
       const ids: IdGeneratorPort = new CryptoIdGenerator();
-      const auth = createAuth({ db: connection.db, env: authEnv, clock, ids });
+      const auth = createAuth({
+        db: connection.db,
+        env: authEnv,
+        clock,
+        ids,
+        reportDefect: (cause) => {
+          console.error(JSON.stringify({ event: "auth.endpoint.failed" }));
+          captureWorkerError(cause);
+        },
+      });
       return await auth.handler(request);
     } catch (cause) {
       console.error(JSON.stringify({ event: "auth.request.failed" }));

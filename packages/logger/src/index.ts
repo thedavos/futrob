@@ -1,6 +1,7 @@
 export { createConsoleLogger, formatHttpAccessLog } from "./console.ts";
 export {
   applySentryEventPolicy,
+  applySentryTransactionPolicy,
   buildSentryInitConfig,
   filterAndScrubSentryEvent,
   isExpectedFailure,
@@ -19,6 +20,7 @@ export type {
   SentryInitConfig,
   SentryInitInput,
   SentryPrimitive,
+  SentryTransactionLike,
 } from "./sentry-policy.ts";
 export { logLevelEnabled } from "./types.ts";
 export type { AppLogger, ConsoleLoggerOptions, LogFields, LogLevel } from "./types.ts";
