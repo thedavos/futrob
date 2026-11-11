@@ -1,7 +1,7 @@
 "use client";
 
 import type { ErrorComponentProps } from "@tanstack/react-router";
-import { captureWorkerError } from "@/observability/sentry.ts";
+import { captureUnexpectedError } from "@/observability/capture-unexpected-error.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { RouteLoadError } from "@/shared/presentation/route-load-state.tsx";
 
@@ -12,7 +12,7 @@ export function reportUnexpectedRouteError(cause: unknown): void {
     if (reported.has(cause)) return;
     reported.add(cause);
   }
-  captureWorkerError(cause, { handler: "route-error" });
+  captureUnexpectedError(cause, { handler: "route-error" });
 }
 
 export function RootErrorPage(props: ErrorComponentProps) {

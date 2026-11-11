@@ -15,10 +15,10 @@ import {
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { reportUnexpectedRouteError, RootErrorPage } from "./root-error-page.tsx";
 
-const captureWorkerError = vi.fn();
+const captureUnexpectedError = vi.fn();
 
-vi.mock("@/observability/sentry.ts", () => ({
-  captureWorkerError: (...args: unknown[]) => captureWorkerError(...args),
+vi.mock("@/observability/capture-unexpected-error.ts", () => ({
+  captureUnexpectedError: (...args: unknown[]) => captureUnexpectedError(...args),
 }));
 
 beforeEach(() => {
@@ -27,7 +27,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  captureWorkerError.mockReset();
+  captureUnexpectedError.mockReset();
   vi.restoreAllMocks();
 });
 
@@ -66,8 +66,8 @@ describe("RootErrorPage", () => {
     renderBrokenLoader();
     expect(await screen.findByRole("alert")).toBeVisible();
     expect(screen.getByText("Algo no ha ido bien")).toBeVisible();
-    expect(captureWorkerError).toHaveBeenCalledTimes(1);
-    const firstReport = captureWorkerError.mock.calls[0]?.[0];
+    expect(captureUnexpectedError).toHaveBeenCalledTimes(1);
+    const firstReport = captureUnexpectedError.mock.calls[0]?.[0];
     expect(firstReport).toBeInstanceOf(Error);
     if (!(firstReport instanceof Error)) {
       throw new Error("expected an Error report");
@@ -82,6 +82,6 @@ describe("RootErrorPage", () => {
     const cause = new Error("loader crashed");
     reportUnexpectedRouteError(cause);
     reportUnexpectedRouteError(cause);
-    expect(captureWorkerError).toHaveBeenCalledTimes(1);
+    expect(captureUnexpectedError).toHaveBeenCalledTimes(1);
   });
 });
