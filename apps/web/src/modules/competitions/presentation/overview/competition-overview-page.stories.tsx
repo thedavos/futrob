@@ -201,6 +201,7 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
       entries={entries}
       now={OVERVIEW_NOW}
       organizationId={OVERVIEW_ORG_ID}
+      organizationSlug="liga-nocturna"
       teams={teams}
     />
   );
@@ -274,6 +275,8 @@ export const Ready: Story = {
     await expect(canvas.findByText("Atlas")).resolves.toBeVisible();
     await expect(canvas.queryByText("Rechazado SC")).toBeNull();
     await expect(canvas.queryByText("Inscrito")).toBeNull();
+    const portal = await canvas.findByRole("link", { name: "Ver portal público" });
+    await expect(portal.getAttribute("href")).toBe(`/liga-nocturna/${OVERVIEW_COMPETITION_ID}`);
   },
 };
 
@@ -380,6 +383,8 @@ export const Draft: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.findByText("Borrador")).resolves.toBeVisible();
+    // A draft has no public portal yet, so there is nothing to open.
+    await expect(canvas.queryByRole("link", { name: "Ver portal público" })).toBeNull();
     await userEvent.click(canvas.getByRole("button", { name: "Continuar configuración" }));
     await expect(canvas.findByText("Configuración")).resolves.toBeVisible();
   },

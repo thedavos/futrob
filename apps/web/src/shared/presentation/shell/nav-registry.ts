@@ -6,6 +6,11 @@ import { RESULT_PERMISSION } from "@futrob/results";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { createTranslator, type Translator } from "@/shared/presentation/i18n/translate.ts";
+import {
+  type LEGAL_HREFS,
+  legalNavItems,
+  type LegalDocumentId,
+} from "@/shared/presentation/legal/legal-hrefs.ts";
 import { WORKSPACE_SELECTION_KIND, type WorkspaceSelection } from "./workspace-selection.ts";
 
 export const NAV_SECTION = {
@@ -379,6 +384,12 @@ export type AccountNavItem =
       readonly kind: "link";
       readonly href: "/player/profile";
     }
+  | {
+      readonly id: LegalDocumentId;
+      readonly label: string;
+      readonly kind: "link";
+      readonly href: (typeof LEGAL_HREFS)[LegalDocumentId];
+    }
   | { readonly id: "feedback" | "settings"; readonly label: string; readonly kind: "dialog" };
 
 export function accountNavItems(t: Translator = createTranslator("es")): readonly AccountNavItem[] {
@@ -386,6 +397,7 @@ export function accountNavItems(t: Translator = createTranslator("es")): readonl
     { id: "profile", label: t("shell.account.profile"), kind: "link", href: "/player/profile" },
     { id: "feedback", label: t("shell.account.feedback"), kind: "dialog" },
     { id: "settings", label: t("shell.account.settings"), kind: "dialog" },
+    ...legalNavItems(t).map((item) => ({ ...item, kind: "link" as const })),
   ];
 }
 

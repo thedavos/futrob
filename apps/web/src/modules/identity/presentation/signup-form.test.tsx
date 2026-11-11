@@ -58,6 +58,23 @@ describe("SignupForm field composition", () => {
   });
 });
 
+it("shows terms and privacy links before the submit button", async () => {
+  render(<AuthRouterDecorator initialPath="/signup" />);
+
+  const terms = await screen.findByRole("link", { name: "Términos de servicio" });
+  const privacy = screen.getByRole("link", { name: "Política de privacidad" });
+  const submit = screen.getByRole("button", { name: "Crear cuenta" });
+
+  expect(terms).toHaveAttribute("href", "/terms");
+  expect(privacy).toHaveAttribute("href", "/privacy");
+  expect(terms.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  expect(privacy.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+});
+
 it("revalidates confirmation when either password changes and blocks mismatched submission", async () => {
   render(<AuthRouterDecorator initialPath="/signup" />);
   const password = await screen.findByLabelText("Contraseña");

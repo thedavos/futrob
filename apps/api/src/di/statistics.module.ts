@@ -16,6 +16,7 @@ import {
   type PlayerProfileLookupPort,
   type PerformanceRankingAccessPort,
   type CompetitionSwissStandingReaderPort,
+  type RankingSnapshotRepository,
   type CompetitionPointDeductionReaderPort,
 } from "@futrob/statistics";
 import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
@@ -84,6 +85,7 @@ export type StatisticsModule = {
     identities: PlayerIdentityResolverPort;
     profiles: PlayerProfileLookupPort;
     standings: CompetitionStandingSnapshotRepository;
+    rankings: RankingSnapshotRepository;
   };
 };
 
@@ -261,6 +263,7 @@ export function createStatisticsModule(deps: {
       identities,
       profiles,
       standings,
+      rankings,
     },
   };
 }

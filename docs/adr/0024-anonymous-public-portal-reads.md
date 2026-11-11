@@ -1,7 +1,7 @@
 # ADR-0024: Lecturas públicas anónimas del portal
 
 - Estado: Aceptada
-- Fecha: 2026-10-29
+- Fecha: 2026-10-29 (actualizada 2026-11-10: URL pública y portal web)
 - Relacionado: [ADR-0004](/docs/adr/0004-multi-tenant-d1-scoping.md) · [ADR-0005](/docs/adr/0005-typed-private-api.md) · [ADR-0018](/docs/adr/0018-authenticated-competition-discovery.md) · [ADR-0022](/docs/adr/0022-organization-profile-and-logo.md)
 - Extiende: ADR-0005 (un grupo de rutas anónimo de primera parte, junto al contrato privado) y ADR-0018 (la lectura anónima que aquel dejó fuera)
 - Índice: [Registro de decisiones](/docs/adr/README.md)
@@ -18,17 +18,22 @@ servicio, y ADR-0018 dejó explícitamente fuera el portal anónimo.
 
 ## Decisión
 
-**Un grupo de rutas anónimo de primera parte.** `GET /api/v1/public/competitions/{publicKey}`,
-`.../standings` y `.../calendar` no usan `createServiceAuthMiddleware`: no leen sesión ni
-secreto de servicio. Es un contrato para nuestras propias superficies (web, SSR, móvil), no
+**Un grupo de rutas anónimo de primera parte.**
+`GET /api/v1/public/organizations/{organizationSlug}/competitions/{competitionKey}` y sus
+recursos `.../standings`, `.../calendar`, `.../teams`, `.../rules`, `.../bracket` y
+`.../rankings/{kind}` no usan `createServiceAuthMiddleware`: no leen sesión ni secreto de
+servicio. Es un contrato para nuestras propias superficies (web, SSR, móvil), no
 una API de terceros: ADR-0005 sigue vigente para todo lo demás y las rutas privadas no cambian.
 No se añade `?public=true` a rutas con `organizationId`; el grupo público es otro árbol.
 
 **La lógica vive en `@futrob/public-portal`**, no en la ruta ni en `statistics`.
 Los casos de uso (`GetPublicCompetitionUseCase`, `GetPublicStandingsUseCase`,
-`GetPublicCalendarUseCase`) reciben una `PublicCompetitionKey` y ningún `ActorId`. Dependen de
-cuatro puertos de lectura propios (`PublishedCompetitionReaderPort`, `PublicStandingsReaderPort`,
-`PublicCalendarReaderPort`, `PublicTeamDirectoryPort`); los adapters están en
+`GetPublicCalendarUseCase`, `GetPublicTeamsUseCase`, `GetPublicRulesUseCase`,
+`GetPublicBracketUseCase`, `GetPublicRankingsUseCase`) reciben una `PublicCompetitionKey` y
+ningún `ActorId`. Dependen de puertos de lectura propios (`PublishedCompetitionReaderPort`,
+`PublicStandingsReaderPort`, `PublicCalendarReaderPort`, `PublicTeamDirectoryPort`,
+`PublicRulesReaderPort`, `PublicBracketReaderPort`, `PublicRankingsReaderPort`,
+`PublicPlayerDirectoryPort`); los adapters están en
 `apps/api/src/adapters/public-portal/` y se componen en `apps/api/src/di/public-portal.module.ts`.
 
 **Publicación como única puerta.** `resolvePublishedCompetition` es el único punto que decide
@@ -48,12 +53,26 @@ la organización, la clave de portada subida (incluye el `organizationId` en la 
 (`slots`, `providerMatchRef`, ids de club EA, estadísticas por jugador, `approvedBy`). Una fila de
 tabla o de calendario cuyo equipo no tenga nombre público se omite en lugar de mostrar un id.
 
-**La clave pública es opaca y está pendiente de decisión de producto.** `PublicCompetitionKey`
-no es un `CompetitionId`. El único lugar que sabe cómo se relaciona con el id interno es
-`DiscoveryPublishedCompetitionReader`; hoy la clave se interpreta como `competitionId`. Los tests
-de `public-portal` usan una clave distinta del id para que ningún caso de uso pueda asumir
-igualdad. Cambiar a un slug o código corto toca un adapter, el contrato de la ruta no cambia.
-El slug de organización (ADR-0022) no basta: no identifica una competición.
+**La URL pública es `/{organizationSlug}/{competitionKey}`.** `PublicCompetitionKey` es el par
+slug de organización (ADR-0022) + clave de competición. El slug acota la búsqueda: una
+competición servida bajo el slug de otra organización responde igual que una inexistente, así que
+el portal nunca confirma que un id existe en otro tenant. La clave de competición sigue opaca: el
+único lugar que sabe cómo se relaciona con el id interno es
+`OrganizationScopedPublishedCompetitionReader`, y hoy es el `competitionId`. Los tests de
+`public-portal` usan una clave distinta del id para que ningún caso de uso pueda asumir igualdad.
+Cambiar a un slug o código corto por competición toca ese adapter; las rutas no cambian. La web
+usa la misma forma (`apps/web/src/routes/$organizationSlug/$competitionKey*`), y
+`RESERVED_ORGANIZATION_SLUGS` incluye las rutas de primer nivel de la app (`pricing`,
+`entry-invitations`, `roster-invitations`, …) para que ningún slug las tape.
+
+**El portal web se sirve por SSR sin sesión.** Las rutas del portal llaman a la API desde server
+functions con un cliente SDK sin token, actor ni cookie (`modules/public-portal/server`), así que el
+HTML inicial ya trae portada, calendario con resultados oficiales, tabla, bracket, equipos,
+rankings y reglamento, y no depende de quién mira. Un 404 de cualquier lectura se convierte en la
+página «Esta competición no está disponible» con estado HTTP 404; un fallo de red es un error
+reintentable, no un 404. El bracket solo aparece como pestaña en formatos con eliminatorias. El
+organizador abre el portal desde la vista general de la competición (`Ver portal público`) cuando
+su estado es público.
 
 **Caché explícita para la futura capa pública.** Las respuestas 200 envían
 `Cache-Control: public, max-age=0, s-maxage=30, stale-while-revalidate=60`
@@ -76,7 +95,8 @@ partida; cambiarlas es editar una constante.
   leerlo. Es información ya visible en la URL; los permisos privados siguen exigiendo ownership
   (ADR-0004).
 - La tabla pública de una competición sin proyección es una tabla vacía (200), no un error.
-- Resultados, bracket, equipos, jugadores y rankings no existen todavía como lecturas públicas.
+- Un enlace al portal expone el slug de la organización y el `competitionId`, igual que la URL
+  privada; no da acceso a nada que no esté ya publicado.
 
 ## Alternativas descartadas
 
@@ -100,10 +120,16 @@ prueba contra Postgres real ni contra Cloudflare en esta revisión**.
   [prueba HTTP anónima](/apps/api/src/http/routes/public-portal.test.ts).
 - [Adapters](/apps/api/src/adapters/public-portal/readers.ts) y
   [composición](/apps/api/src/di/public-portal.module.ts).
-- SDK: `client.publicPortal.{getCompetition,getStandings,getCalendar}`.
+- SDK: `client.publicPortal.{getCompetition,getStandings,getCalendar,getTeams,getRules,getBracket,getRanking}`.
+- [Rutas web del portal](/apps/web/src/routes/$organizationSlug/$competitionKey.tsx) y
+  [presentación](/apps/web/src/modules/public-portal/presentation/), con historias y pruebas de
+  vistas; [recetario de verificación](/.agents/skills/verify-futrob/features/public-portal.md).
+- Verificación en vivo (2026-11-10) contra un Postgres local migrado: golden path de CLI hasta
+  publicar, un resultado oficial aprobado, `statistics-rebuild`, y SSR del portal con 200, el
+  marcador oficial en el HTML inicial y 404 para borrador, otra organización y clave inexistente.
+  No se probó contra Cloudflare desplegado.
 
-Pendiente: resultados sanitizados (puntajes por partido sin `slots`), bracket (404 en formato
-liga), equipos, jugadores (requiere nombre público y un listado por competición que
-`PlayerCompetitionStatsRepository` no ofrece), rankings y premios, portada subida (ruta pública de
-media), nombre público de la organización, referencia pública de equipo y de encuentro, y la
-elección de la clave pública.
+Pendiente: perfiles públicos de jugadores (requiere un nombre público propio; hoy el ranking usa
+la cuenta de juego declarada en la plantilla), portada subida (ruta pública de media; hoy solo
+presets), nombre público de la organización, referencia pública de equipo y de encuentro (deep
+links a un enfrentamiento), una clave corta o slug por competición, y la caché pública en el borde.

@@ -591,6 +591,97 @@ const es = {
   "common.back": "Volver",
   "common.skip": "Omitir por ahora",
   "common.retry": "Reintentar",
+  "notFound.title": "No encontramos esta página",
+  "notFound.description": "El enlace puede estar mal escrito o la página ya no existe.",
+  "notFound.visitor.action": "Volver al inicio",
+  "notFound.member.action": "Ir a tu espacio",
+  "routeError.title": "Algo no ha ido bien",
+  "routeError.description": "Ha ocurrido un fallo inesperado. Puedes reintentar esta página.",
+  "legal.nav.aria": "Documentos legales",
+  "legal.nav.terms": "Términos de servicio",
+  "legal.nav.privacy": "Política de privacidad",
+  "legal.nav.refunds": "Reembolsos",
+  "legal.related": "Otros documentos",
+  "legal.signup.lead": "Al crear una cuenta aceptas los",
+  "legal.signup.joiner": " y la ",
+  "legal.signup.end": ".",
+  "legal.draft.title": "Borrador pendiente de revisión legal",
+  "legal.draft.body":
+    "Este texto describe cómo funciona Futrob hoy. No es asesoramiento jurídico y puede cambiar antes de publicarse como política definitiva.",
+  "legal.updated": ({ date }) => `Última actualización: ${date}`,
+  "legal.terms.meta.title": "Términos de servicio",
+  "legal.terms.meta.description":
+    "Condiciones de uso de Futrob para competiciones de EA SPORTS FC Clubs.",
+  "legal.terms.title": "Términos de servicio",
+  "legal.terms.description":
+    "Reglas de la cuenta, el uso aceptable y cómo Futrob trata los datos de EA.",
+  "legal.terms.service.title": "El servicio",
+  "legal.terms.service.body":
+    "Futrob es un producto de Davion Software para operar competiciones de EA SPORTS FC Clubs. Está disponible en español e inglés. Al crear una cuenta aceptas estas condiciones en el estado en que se publican.",
+  "legal.terms.accounts.title": "Cuentas",
+  "legal.terms.accounts.body":
+    "Necesitas una cuenta con un correo y una contraseña. Eres responsable de lo que hagas con ella. No compartas el acceso ni te hagas pasar por otra persona. Si detectas un uso indebido, avisa al operador.",
+  "legal.terms.results.title": "Competiciones y resultados oficiales",
+  "legal.terms.results.body":
+    "Un partido observado en EA no es oficial en Futrob hasta que un capitán lo selecciona y el resultado se aprueba. La sincronización con EA no oficializa nada. Solo los resultados oficiales aprobados actualizan clasificación, rankings y el portal público.",
+  "legal.terms.use.title": "Uso aceptable",
+  "legal.terms.use.body":
+    "Usa Futrob para organizar y jugar competiciones de forma honesta. No intentes falsear resultados, abusar de invitaciones, atacar el servicio ni usar datos de otros participantes fuera de la competición. El operador puede suspender una cuenta que rompa estas reglas.",
+  "legal.terms.ea.title": "Datos de EA",
+  "legal.terms.ea.body":
+    "Los datos de EA Clubs son observaciones del proveedor. Futrob no pide ni guarda credenciales de EA. EA SPORTS y FC Clubs son marcas de sus titulares; Futrob no está afiliado ni respaldado por EA.",
+  "legal.terms.liability.title": "Responsabilidad",
+  "legal.terms.liability.body":
+    "El servicio se ofrece tal cual, en la medida que permite la ley. Futrob no garantiza que EA esté disponible, que un sync coincida con lo que viste en el juego, ni que una competición termine de una forma concreta. Este apartado es un borrador y no limita derechos que no se puedan limitar.",
+  "legal.terms.changes.title": "Cambios",
+  "legal.terms.changes.body":
+    "Podemos actualizar estos términos cuando cambie el producto. La fecha de la última actualización aparece arriba. Si el cambio es sustancial, lo indicaremos en el producto cuando exista un canal para avisarte.",
+  "legal.privacy.meta.title": "Política de privacidad",
+  "legal.privacy.meta.description":
+    "Qué datos guarda Futrob, cómo usa las observaciones de EA y cómo pedir la baja de la cuenta.",
+  "legal.privacy.title": "Política de privacidad",
+  "legal.privacy.description":
+    "Qué guardamos, para qué y cómo puedes pedir que borremos tu cuenta.",
+  "legal.privacy.who.title": "Quiénes somos",
+  "legal.privacy.who.body":
+    "Futrob lo opera Davion Software. Tratamos los datos para que puedas crear una cuenta, unirte a organizaciones y competiciones, y ver resultados oficiales.",
+  "legal.privacy.data.title": "Datos que guardamos",
+  "legal.privacy.data.body":
+    "Cuenta: nombre, correo y el hash de la contraseña (Better Auth). Perfil del actor, organizaciones, competiciones, equipos y plantillas que creas o a las que te unes, invitaciones, actividad y los planes o cupos asignados a tu organización.",
+  "legal.privacy.data.body2":
+    "No vendemos estos datos. Los usamos para operar el producto, diagnosticar fallos y cumplir las reglas de la competición que organizas o juegas.",
+  "legal.privacy.ea.title": "Datos de EA",
+  "legal.privacy.ea.body":
+    "Si asocias un club o una cuenta de juego, guardamos los identificadores que declares y las observaciones de partidos que llegan de la API de EA Clubs. Futrob no pide ni almacena usuario o contraseña de EA.",
+  "legal.privacy.providers.title": "Proveedores",
+  "legal.privacy.providers.body":
+    "Cloudflare (web, auth y almacenamiento de archivos), Railway (API de producto y Postgres) y Sentry (diagnóstico de errores en producción). El correo transaccional usará un proveedor de email cuando ese canal esté listo; hoy no enviamos ese correo.",
+  "legal.privacy.retention.title": "Conservación",
+  "legal.privacy.retention.body":
+    "Guardamos los datos mientras la cuenta esté abierta. Algunos registros de competición pueden permanecer si otros participantes aún los necesitan (por ejemplo un resultado oficial). Las copias de seguridad se conservan un tiempo limitado y luego se rotan.",
+  "legal.privacy.deletion.title": "Eliminación de la cuenta",
+  "legal.privacy.deletion.body":
+    "Puedes pedir que borremos tu cuenta desde el perfil cuando esa función esté en el producto. Mientras tanto, pide la baja al operador desde la cuenta o el canal de soporte que publique Futrob.",
+  "legal.privacy.deletion.body2":
+    "Al borrar el acceso quitamos perfil y datos de cuenta. Conservaremos los registros de competición que otros participantes aún necesiten, como resultados oficiales ya aprobados y plantillas de un equipo que sigue en juego.",
+  "legal.privacy.contact.title": "Contacto",
+  "legal.privacy.contact.body":
+    "Escribe al operador de Futrob (Davion Software) desde la cuenta o el canal de soporte publicado en el producto. No inventes un correo: cuando el canal transaccional exista, lo indicaremos aquí.",
+  "legal.refunds.meta.title": "Reembolsos",
+  "legal.refunds.meta.description":
+    "Futrob no cobra con tarjeta en esta fase. Cómo se tramitará un reembolso cuando existan cargos.",
+  "legal.refunds.title": "Reembolsos",
+  "legal.refunds.description":
+    "No hay cobros automáticos en el producto actual. Esta página existirá para el proveedor de pagos cuando los haya.",
+  "legal.refunds.current.title": "Producto actual",
+  "legal.refunds.current.body":
+    "En esta fase Futrob no cobra con tarjeta ni procesa pagos automáticos. Los planes se asignan a mano. No hay un cargo que reembolsar en el producto público.",
+  "legal.refunds.charges.title": "Cuando existan cargos",
+  "legal.refunds.charges.body":
+    "Si un plan de pago se asigna de forma manual, el operador tramita cualquier devolución. Cuando un proveedor de pagos entre en el producto, esta política describirá plazos y el canal para pedir el reembolso.",
+  "legal.refunds.ask.title": "Cómo pedirlo",
+  "legal.refunds.ask.body":
+    "Contacta al operador de Futrob (Davion Software) desde la cuenta o el canal de soporte publicado. Conserva el identificador de la organización y, si lo hay, el del cargo.",
   "common.edit": "Editar",
   "common.pending": "Pendiente",
   "common.seconds": ({ seconds }) => `${seconds} s`,
@@ -2832,6 +2923,106 @@ const es = {
   "fixture.rounds.current": "Próxima",
   "fixture.rounds.emptyRound": "Sin enfrentamientos con estos filtros.",
   "fixture.rounds.scroll": ({ stage }) => `Jornadas de ${stage}`,
+  "portal.nav.label": "Secciones de la competición",
+  "portal.section.cover": "Portada",
+  "portal.section.calendar": "Calendario y resultados",
+  "portal.section.standings": "Tabla",
+  "portal.section.bracket": "Bracket",
+  "portal.section.teams": "Equipos",
+  "portal.section.rankings": "Rankings",
+  "portal.section.rules": "Reglamento",
+  "portal.status.published": "En juego",
+  "portal.status.paused": "En pausa",
+  "portal.status.finished": "Finalizada",
+  "portal.header.eyebrow": "Competición pública",
+  "portal.header.teams": ({ count }) => (count === 1 ? "1 equipo" : `${count} equipos`),
+  "portal.header.timeZone": ({ zone }) => `Horarios en ${zone}`,
+  "portal.footer.poweredBy": "Publicado con Futrob",
+  "portal.footer.home": "Conoce Futrob",
+  "portal.meta.description": ({ name }) =>
+    `Calendario, resultados, tabla, bracket y rankings de ${name}, publicados en Futrob.`,
+  "portal.loading": "Cargando la sección",
+  "portal.error.title": "No pudimos cargar esta sección",
+  "portal.error.description":
+    "Puede ser un problema temporal. Vuelve a intentarlo en unos segundos.",
+  "portal.error.retry": "Reintentar",
+  "portal.notFound.title": "Esta competición no está disponible",
+  "portal.notFound.description":
+    "Revisa el enlace. Si es correcto, la competición todavía no está publicada.",
+  "portal.notFound.action": "Ir a Futrob",
+  "portal.cover.upcoming": "Próximos enfrentamientos",
+  "portal.cover.upcoming.empty": "No quedan enfrentamientos por jugar.",
+  "portal.cover.results": "Últimos resultados",
+  "portal.cover.results.empty": "Aún no hay resultados oficiales.",
+  "portal.cover.calendarLink": "Ver calendario completo",
+  "portal.noFixture.title": "El calendario aún no está publicado",
+  "portal.noFixture.description":
+    "Cuando la organización genere el fixture, verás aquí cada jornada y sus resultados.",
+  "portal.calendar.round": ({ round }) => `Jornada ${round}`,
+  "portal.encounter.status.scheduled": "Programado",
+  "portal.encounter.status.awaiting_result": "Pendiente de resultado",
+  "portal.encounter.status.official": "Oficial",
+  "portal.encounter.status.closed": "Cerrado",
+  "portal.encounter.versus": "vs",
+  "portal.encounter.label": ({ home, away }) => `${home} contra ${away}`,
+  "portal.encounter.score": ({ score }) => `Resultado oficial ${score}`,
+  "portal.standings.caption": "Tabla oficial, calculada solo con resultados oficializados.",
+  "portal.standings.empty.title": "Aún no hay tabla",
+  "portal.standings.empty.description":
+    "La tabla aparece cuando la organización oficializa el primer resultado.",
+  "portal.standings.col.wins": "G",
+  "portal.standings.col.wins.full": "Ganados",
+  "portal.standings.col.draws": "E",
+  "portal.standings.col.draws.full": "Empatados",
+  "portal.standings.col.losses": "P",
+  "portal.standings.col.losses.full": "Perdidos",
+  "portal.standings.col.goalsFor": "GF",
+  "portal.standings.col.goalsFor.full": "Goles a favor",
+  "portal.standings.col.goalsAgainst": "GC",
+  "portal.standings.col.goalsAgainst.full": "Goles en contra",
+  "portal.bracket.stage.knockout": "Eliminatorias",
+  "portal.bracket.stage.playoffs": "Playoffs",
+  "portal.bracket.round": ({ round }) => `Ronda ${round}`,
+  "portal.bracket.encounter": ({ order }) => `Cruce ${order}`,
+  "portal.bracket.side.bye": "Descanso",
+  "portal.bracket.side.winner": ({ round, order }) => `Ganador del cruce ${order} (ronda ${round})`,
+  "portal.bracket.side.groupRank": ({ group, rank }) => `${rank}.º del grupo ${group}`,
+  "portal.bracket.side.stageRank": ({ rank }) => `${rank}.º de la fase anterior`,
+  "portal.bracket.side.pending": "Por definir",
+  "portal.teams.empty.title": "Aún no hay equipos confirmados",
+  "portal.teams.empty.description":
+    "Los equipos aparecen aquí cuando la organización aprueba su inscripción.",
+  "portal.rankings.kinds": "Tipo de ranking",
+  "portal.rankings.col.player": "Jugador",
+  "portal.rankings.col.team": "Equipo",
+  "portal.rankings.col.matches": "PJ",
+  "portal.rankings.col.matches.full": "Partidos jugados",
+  "portal.rankings.empty.title": "Aún no hay datos para este ranking",
+  "portal.rankings.empty.description":
+    "Los rankings se calculan con las estadísticas de los partidos oficializados.",
+  "portal.rules.format": "Formato",
+  "portal.rules.teams": "Equipos",
+  "portal.rules.teams.range": ({ min, max }) => `De ${min} a ${max}`,
+  "portal.rules.teams.min": ({ min }) => `Desde ${min}`,
+  "portal.rules.roster": "Plantilla máxima",
+  "portal.rules.roster.value": ({ count }) => `${count} jugadores`,
+  "portal.rules.roster.default": "La de la plataforma",
+  "portal.rules.stage.regular": "Fase regular",
+  "portal.rules.stage.knockout": "Eliminatorias",
+  "portal.rules.points": "Puntos (victoria, empate, derrota)",
+  "portal.rules.matches": "Partidos oficiales por enfrentamiento",
+  "portal.rules.resolution": "Cómo se decide un enfrentamiento",
+  "portal.rules.resolution.independent_matches": "Cada partido suma por separado",
+  "portal.rules.resolution.aggregate_score": "Marcador global",
+  "portal.rules.rescheduling": "Reprogramaciones",
+  "portal.rules.rescheduling.none": "No se permiten",
+  "portal.rules.rescheduling.limited": ({ count, hours }) =>
+    `Hasta ${count} por equipo, con ${hours} h de aviso`,
+  "portal.rules.rescheduling.unlimited": ({ hours }) => `Sin límite, con ${hours} h de aviso`,
+  "portal.rules.empty.title": "El reglamento aún no está publicado",
+  "portal.rules.empty.description":
+    "La organización todavía no ha guardado las reglas de esta competición.",
+  "competition.overview.viewPortal": "Ver portal público",
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
@@ -3016,6 +3207,7 @@ export interface MessageParamsByKey {
   readonly "encounter.selection.history.selected": { readonly proposal: string };
   readonly "encounter.selection.history.acknowledged": { readonly count: number };
   readonly "common.seconds": { readonly seconds: number };
+  readonly "legal.updated": { readonly date: string };
   readonly "gameData.clubSearch.retryIn": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
@@ -3190,6 +3382,22 @@ export interface MessageParamsByKey {
   readonly "fixture.close.title": { readonly number: number };
   readonly "fixture.close.done": { readonly number: number };
   readonly "fixture.withdraw.done": { readonly team: string };
+  readonly "portal.header.teams": { readonly count: number };
+  readonly "portal.header.timeZone": { readonly zone: string };
+  readonly "portal.meta.description": { readonly name: string };
+  readonly "portal.calendar.round": { readonly round: number };
+  readonly "portal.encounter.label": { readonly home: string; readonly away: string };
+  readonly "portal.encounter.score": { readonly score: string };
+  readonly "portal.bracket.round": { readonly round: number };
+  readonly "portal.bracket.encounter": { readonly order: number };
+  readonly "portal.bracket.side.winner": { readonly round: number; readonly order: number };
+  readonly "portal.bracket.side.groupRank": { readonly group: string; readonly rank: number };
+  readonly "portal.bracket.side.stageRank": { readonly rank: number };
+  readonly "portal.rules.teams.range": { readonly min: number; readonly max: number };
+  readonly "portal.rules.teams.min": { readonly min: number };
+  readonly "portal.rules.roster.value": { readonly count: number };
+  readonly "portal.rules.rescheduling.limited": { readonly count: number; readonly hours: number };
+  readonly "portal.rules.rescheduling.unlimited": { readonly hours: number };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -3754,6 +3962,94 @@ const en: Catalog = {
   "common.back": "Back",
   "common.skip": "Skip for now",
   "common.retry": "Try again",
+  "notFound.title": "We couldn't find this page",
+  "notFound.description": "The link may be mistyped, or the page no longer exists.",
+  "notFound.visitor.action": "Back to home",
+  "notFound.member.action": "Go to your space",
+  "routeError.title": "Something went wrong",
+  "routeError.description": "An unexpected failure happened. You can try this page again.",
+  "legal.nav.aria": "Legal documents",
+  "legal.nav.terms": "Terms of service",
+  "legal.nav.privacy": "Privacy policy",
+  "legal.nav.refunds": "Refunds",
+  "legal.related": "Other documents",
+  "legal.signup.lead": "By creating an account you accept the",
+  "legal.signup.joiner": " and the ",
+  "legal.signup.end": ".",
+  "legal.draft.title": "Draft pending legal review",
+  "legal.draft.body":
+    "This text describes how Futrob works today. It is not legal advice and may change before it is published as a final policy.",
+  "legal.updated": ({ date }) => `Last updated: ${date}`,
+  "legal.terms.meta.title": "Terms of service",
+  "legal.terms.meta.description": "Terms for using Futrob to run EA SPORTS FC Clubs competitions.",
+  "legal.terms.title": "Terms of service",
+  "legal.terms.description": "Account rules, acceptable use, and how Futrob treats EA data.",
+  "legal.terms.service.title": "The service",
+  "legal.terms.service.body":
+    "Futrob is a Davion Software product for operating EA SPORTS FC Clubs competitions. It is available in Spanish and English. Creating an account means you accept these terms as published.",
+  "legal.terms.accounts.title": "Accounts",
+  "legal.terms.accounts.body":
+    "You need an account with an email and a password. You are responsible for what you do with it. Do not share access or impersonate someone else. If you see misuse, tell the operator.",
+  "legal.terms.results.title": "Competitions and official results",
+  "legal.terms.results.body":
+    "A match observed in EA is not official in Futrob until a captain selects it and the result is approved. Syncing with EA never officializes a result. Only approved official results update standings, rankings, and the public portal.",
+  "legal.terms.use.title": "Acceptable use",
+  "legal.terms.use.body":
+    "Use Futrob to organize and play competitions honestly. Do not fake results, abuse invitations, attack the service, or use other participants' data outside the competition. The operator may suspend an account that breaks these rules.",
+  "legal.terms.ea.title": "EA data",
+  "legal.terms.ea.body":
+    "EA Clubs data are observations from the provider. Futrob does not ask for or store EA login credentials. EA SPORTS and FC Clubs are trademarks of their owners; Futrob is not affiliated with or endorsed by EA.",
+  "legal.terms.liability.title": "Liability",
+  "legal.terms.liability.body":
+    "The service is provided as is, to the extent the law allows. Futrob does not warrant that EA will be available, that a sync will match what you saw in the game, or that a competition will finish a particular way. This section is a draft and does not limit rights that cannot be limited.",
+  "legal.terms.changes.title": "Changes",
+  "legal.terms.changes.body":
+    "We may update these terms when the product changes. The last-updated date is at the top. If a change is material, we will note it in the product once there is a channel to tell you.",
+  "legal.privacy.meta.title": "Privacy policy",
+  "legal.privacy.meta.description":
+    "What Futrob stores, how it uses EA observations, and how to ask for account deletion.",
+  "legal.privacy.title": "Privacy policy",
+  "legal.privacy.description": "What we store, why, and how you can ask us to delete your account.",
+  "legal.privacy.who.title": "Who we are",
+  "legal.privacy.who.body":
+    "Futrob is operated by Davion Software. We process data so you can create an account, join organizations and competitions, and see official results.",
+  "legal.privacy.data.title": "Data we store",
+  "legal.privacy.data.body":
+    "Account: name, email, and the password hash (Better Auth). Actor profile, organizations, competitions, teams and rosters you create or join, invitations, activity, and plan entitlements assigned to your organization.",
+  "legal.privacy.data.body2":
+    "We do not sell this data. We use it to run the product, diagnose failures, and apply the rules of the competition you organize or play.",
+  "legal.privacy.ea.title": "EA data",
+  "legal.privacy.ea.body":
+    "If you associate a club or a game account, we store the identifiers you declare and match observations from the EA Clubs API. Futrob does not ask for or store EA usernames or passwords.",
+  "legal.privacy.providers.title": "Providers",
+  "legal.privacy.providers.body":
+    "Cloudflare (web, auth, and file storage), Railway (product API and Postgres), and Sentry (error diagnostics in production). Transactional email will use an email provider when that channel ships; we do not send that mail today.",
+  "legal.privacy.retention.title": "Retention",
+  "legal.privacy.retention.body":
+    "We keep data while the account is open. Some competition records may remain if other participants still need them (for example an official result). Backups are kept for a limited period and then rotated.",
+  "legal.privacy.deletion.title": "Account deletion",
+  "legal.privacy.deletion.body":
+    "You can ask us to delete your account from your profile when that flow ships. Until then, ask the operator for deletion from the account or the support channel Futrob publishes.",
+  "legal.privacy.deletion.body2":
+    "Deleting access removes your profile and account data. We will keep competition records that other participants still need, such as approved official results and rosters of a team still in play.",
+  "legal.privacy.contact.title": "Contact",
+  "legal.privacy.contact.body":
+    "Write to the Futrob operator (Davion Software) from the account or the support channel published in the product. Do not invent an email address: when the transactional channel exists, we will list it here.",
+  "legal.refunds.meta.title": "Refunds",
+  "legal.refunds.meta.description":
+    "Futrob does not charge cards in this phase. How a refund will be handled when charges exist.",
+  "legal.refunds.title": "Refunds",
+  "legal.refunds.description":
+    "There are no automated charges in the current product. This page will exist for the payments provider when they do.",
+  "legal.refunds.current.title": "Current product",
+  "legal.refunds.current.body":
+    "In this phase Futrob does not charge cards or process automated payments. Plans are assigned by hand. There is no charge to refund in the public product.",
+  "legal.refunds.charges.title": "When charges exist",
+  "legal.refunds.charges.body":
+    "If a paid plan is assigned manually, the operator handles any refund. When a payments provider joins the product, this policy will describe timelines and the channel to request a refund.",
+  "legal.refunds.ask.title": "How to ask",
+  "legal.refunds.ask.body":
+    "Contact the Futrob operator (Davion Software) from the account or the published support channel. Keep the organization identifier and, if there is one, the charge identifier.",
   "common.edit": "Edit",
   "common.pending": "Pending",
   "common.seconds": ({ seconds }) => `${seconds}s`,
@@ -5956,6 +6252,104 @@ const en: Catalog = {
   "fixture.rounds.current": "Up next",
   "fixture.rounds.emptyRound": "No encounters match these filters.",
   "fixture.rounds.scroll": ({ stage }) => `${stage} rounds`,
+  "portal.nav.label": "Competition sections",
+  "portal.section.cover": "Overview",
+  "portal.section.calendar": "Fixtures and results",
+  "portal.section.standings": "Table",
+  "portal.section.bracket": "Bracket",
+  "portal.section.teams": "Teams",
+  "portal.section.rankings": "Rankings",
+  "portal.section.rules": "Rules",
+  "portal.status.published": "In play",
+  "portal.status.paused": "Paused",
+  "portal.status.finished": "Finished",
+  "portal.header.eyebrow": "Public competition",
+  "portal.header.teams": ({ count }) => (count === 1 ? "1 team" : `${count} teams`),
+  "portal.header.timeZone": ({ zone }) => `Times in ${zone}`,
+  "portal.footer.poweredBy": "Published with Futrob",
+  "portal.footer.home": "Discover Futrob",
+  "portal.meta.description": ({ name }) =>
+    `Fixtures, results, table, bracket and rankings for ${name}, published on Futrob.`,
+  "portal.loading": "Loading the section",
+  "portal.error.title": "We couldn't load this section",
+  "portal.error.description": "It may be a temporary problem. Try again in a few seconds.",
+  "portal.error.retry": "Try again",
+  "portal.notFound.title": "This competition isn't available",
+  "portal.notFound.description":
+    "Check the link. If it is right, the competition isn't published yet.",
+  "portal.notFound.action": "Go to Futrob",
+  "portal.cover.upcoming": "Upcoming encounters",
+  "portal.cover.upcoming.empty": "No encounters left to play.",
+  "portal.cover.results": "Latest results",
+  "portal.cover.results.empty": "No official results yet.",
+  "portal.cover.calendarLink": "See all fixtures",
+  "portal.noFixture.title": "The fixtures aren't published yet",
+  "portal.noFixture.description":
+    "Once the organization generates the fixtures, every round and its results show up here.",
+  "portal.calendar.round": ({ round }) => `Round ${round}`,
+  "portal.encounter.status.scheduled": "Scheduled",
+  "portal.encounter.status.awaiting_result": "Awaiting result",
+  "portal.encounter.status.official": "Official",
+  "portal.encounter.status.closed": "Closed",
+  "portal.encounter.versus": "vs",
+  "portal.encounter.label": ({ home, away }) => `${home} against ${away}`,
+  "portal.encounter.score": ({ score }) => `Official score ${score}`,
+  "portal.standings.caption": "Official table, built only from officialized results.",
+  "portal.standings.empty.title": "No table yet",
+  "portal.standings.empty.description":
+    "The table appears once the organization officializes the first result.",
+  "portal.standings.col.wins": "W",
+  "portal.standings.col.wins.full": "Won",
+  "portal.standings.col.draws": "D",
+  "portal.standings.col.draws.full": "Drawn",
+  "portal.standings.col.losses": "L",
+  "portal.standings.col.losses.full": "Lost",
+  "portal.standings.col.goalsFor": "GF",
+  "portal.standings.col.goalsFor.full": "Goals for",
+  "portal.standings.col.goalsAgainst": "GA",
+  "portal.standings.col.goalsAgainst.full": "Goals against",
+  "portal.bracket.stage.knockout": "Knockout",
+  "portal.bracket.stage.playoffs": "Playoffs",
+  "portal.bracket.round": ({ round }) => `Round ${round}`,
+  "portal.bracket.encounter": ({ order }) => `Tie ${order}`,
+  "portal.bracket.side.bye": "Bye",
+  "portal.bracket.side.winner": ({ round, order }) => `Winner of tie ${order} (round ${round})`,
+  "portal.bracket.side.groupRank": ({ group, rank }) => `Group ${group}, place ${rank}`,
+  "portal.bracket.side.stageRank": ({ rank }) => `Place ${rank} of the previous stage`,
+  "portal.bracket.side.pending": "To be decided",
+  "portal.teams.empty.title": "No confirmed teams yet",
+  "portal.teams.empty.description":
+    "Teams show up here once the organization approves their entry.",
+  "portal.rankings.kinds": "Ranking type",
+  "portal.rankings.col.player": "Player",
+  "portal.rankings.col.team": "Team",
+  "portal.rankings.col.matches": "MP",
+  "portal.rankings.col.matches.full": "Matches played",
+  "portal.rankings.empty.title": "No data for this ranking yet",
+  "portal.rankings.empty.description": "Rankings are built from the stats of officialized matches.",
+  "portal.rules.format": "Format",
+  "portal.rules.teams": "Teams",
+  "portal.rules.teams.range": ({ min, max }) => `${min} to ${max}`,
+  "portal.rules.teams.min": ({ min }) => `From ${min}`,
+  "portal.rules.roster": "Maximum roster",
+  "portal.rules.roster.value": ({ count }) => `${count} players`,
+  "portal.rules.roster.default": "The platform default",
+  "portal.rules.stage.regular": "Regular stage",
+  "portal.rules.stage.knockout": "Knockout",
+  "portal.rules.points": "Points (win, draw, loss)",
+  "portal.rules.matches": "Official matches per encounter",
+  "portal.rules.resolution": "How an encounter is decided",
+  "portal.rules.resolution.independent_matches": "Each match counts on its own",
+  "portal.rules.resolution.aggregate_score": "Aggregate score",
+  "portal.rules.rescheduling": "Rescheduling",
+  "portal.rules.rescheduling.none": "Not allowed",
+  "portal.rules.rescheduling.limited": ({ count, hours }) =>
+    `Up to ${count} per team, with ${hours} h notice`,
+  "portal.rules.rescheduling.unlimited": ({ hours }) => `No limit, with ${hours} h notice`,
+  "portal.rules.empty.title": "The rules aren't published yet",
+  "portal.rules.empty.description":
+    "The organization hasn't saved the rules of this competition yet.",
+  "competition.overview.viewPortal": "View public portal",
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;

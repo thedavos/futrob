@@ -24,6 +24,8 @@ describe("parseOrganizationSlug", () => {
     ["underscore", "liga_norte"],
     ["reserved word", "admin"],
     ["reserved brand", "futrob"],
+    ["a top-level web route", "pricing"],
+    ["a top-level invitation route", "roster-invitations"],
     ["empty", ""],
   ])("rejects %s", (_label, input) => {
     expect(parseOrganizationSlug(input)).toBeNull();

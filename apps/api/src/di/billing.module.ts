@@ -158,8 +158,13 @@ export type BillingModule = ReturnType<typeof createBillingModule>;
 export function withPlanUsage(
   billing: BillingModule,
   competitions: Pick<CompetitionRepository, "listByOrganization">,
-  memberships: Pick<MembershipRepository, "countByRole">,
-  organizations: Pick<OrganizationRepository, "getByIds">,
+  {
+    memberships,
+    organizations,
+  }: {
+    readonly memberships: Pick<MembershipRepository, "countByRole">;
+    readonly organizations: Pick<OrganizationRepository, "getByIds">;
+  },
 ) {
   return {
     ...billing,

@@ -13,13 +13,29 @@ export {
   type PublicPortalReadError,
 } from "./domain/errors/public-portal.errors.ts";
 export type {
+  PublicBracket,
+  PublicBracketEncounter,
+  PublicBracketEncounterStatus,
+  PublicBracketRound,
+  PublicBracketSide,
+  PublicBracketStage,
+  PublicBracketStageKind,
   PublicCalendar,
   PublicCalendarEntry,
   PublicCompetition,
   PublicEncounterStatus,
+  PublicMatchScore,
+  PublicRanking,
+  PublicRankingKind,
+  PublicRankingRow,
+  PublicReschedulingRules,
+  PublicRules,
+  PublicStageRules,
   PublicStandingRow,
   PublicStandings,
   PublicSwissProgress,
+  PublicTeam,
+  PublicTeams,
 } from "./domain/entities/public-competition.ts";
 export type {
   PublicCompetitionScope,
@@ -35,6 +51,24 @@ export type {
   PublicCalendarReaderPort,
   PublicCalendarSourceEntry,
 } from "./domain/ports/public-calendar-reader.port.ts";
+export type {
+  PublicBracketReaderPort,
+  PublicBracketSource,
+  PublicBracketSourceEncounter,
+  PublicBracketSourceRound,
+  PublicBracketSourceSide,
+  PublicBracketSourceStage,
+} from "./domain/ports/public-bracket-reader.port.ts";
+export type {
+  PublicPlayerDirectoryPort,
+  PublicRankingSource,
+  PublicRankingSourceRow,
+  PublicRankingsReaderPort,
+} from "./domain/ports/public-rankings-reader.port.ts";
+export type {
+  PublicRulesReaderPort,
+  PublicRulesSource,
+} from "./domain/ports/public-rules-reader.port.ts";
 export type { PublicTeamDirectoryPort } from "./domain/ports/public-team-directory.port.ts";
 export { GetPublicCompetitionUseCase } from "./application/get-public-competition/get-public-competition.use-case.ts";
 export {
@@ -45,3 +79,19 @@ export {
   GetPublicCalendarUseCase,
   type GetPublicCalendarDependencies,
 } from "./application/get-public-calendar/get-public-calendar.use-case.ts";
+export {
+  GetPublicTeamsUseCase,
+  type GetPublicTeamsDependencies,
+} from "./application/get-public-teams/get-public-teams.use-case.ts";
+export {
+  GetPublicRulesUseCase,
+  type GetPublicRulesDependencies,
+} from "./application/get-public-rules/get-public-rules.use-case.ts";
+export {
+  GetPublicRankingsUseCase,
+  type GetPublicRankingsDependencies,
+} from "./application/get-public-rankings/get-public-rankings.use-case.ts";
+export {
+  GetPublicBracketUseCase,
+  type GetPublicBracketDependencies,
+} from "./application/get-public-bracket/get-public-bracket.use-case.ts";

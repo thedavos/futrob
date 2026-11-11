@@ -104,12 +104,16 @@ describe("GetPublicCompetitionUseCase", () => {
     },
   );
 
-  it("answers not found for an unknown key, including the internal competition id", async () => {
+  it("answers not found for an unknown key, the internal id, or another organization's slug", async () => {
     const reader = publishedReader(competitionSource());
     const useCase = new GetPublicCompetitionUseCase(reader);
 
-    for (const key of ["missing", COMPETITION_ID]) {
-      const result = await useCase.execute({ key: asPublicCompetitionKey(key) });
+    for (const key of [
+      asPublicCompetitionKey(PUBLIC_KEY.organizationSlug, "missing"),
+      asPublicCompetitionKey(PUBLIC_KEY.organizationSlug, COMPETITION_ID),
+      asPublicCompetitionKey("another-organization", PUBLIC_KEY.competition),
+    ]) {
+      const result = await useCase.execute({ key });
       expect(result.isErr() && result.error.code).toBe("public_portal.competition_not_found");
     }
   });

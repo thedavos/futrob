@@ -7,4 +7,6 @@ export interface PublicTeamDirectoryPort {
     scope: PublicCompetitionScope,
     teamIds: readonly TeamId[],
   ): Promise<ReadonlyMap<TeamId, string>>;
+  /** Display names of the competition's approved participants, in no particular order. */
+  listParticipantNames(scope: PublicCompetitionScope): Promise<readonly string[]>;
 }

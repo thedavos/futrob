@@ -31,6 +31,9 @@ describe("generalNavFor", () => {
       "Profile",
       "Send feedback",
       "Settings",
+      "Terms of service",
+      "Privacy policy",
+      "Refunds",
     ]);
     expect(accountNavItems().map((item) => item.label)).toContain("Perfil");
   });
