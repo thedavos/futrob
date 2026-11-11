@@ -1,11 +1,13 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Caption, Logo } from "@futrob/ui";
+import { applyStyles, Caption, Logo, TextLink } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
+import { Link } from "@tanstack/react-router";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { legalNavItems } from "@/shared/presentation/legal/legal-hrefs.ts";
 
 const styles = stylex.create({
   footer: {
@@ -59,6 +61,23 @@ const styles = stylex.create({
   },
   legal: {
     flexShrink: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: {
+      default: "flex-start",
+      [media.sm]: "flex-end",
+    },
+    rowGap: "0.75rem",
+  },
+  legalNav: {
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: {
+      default: "flex-start",
+      [media.sm]: "flex-end",
+    },
+    columnGap: "1rem",
+    rowGap: "0.5rem",
   },
 });
 
@@ -76,6 +95,13 @@ export function LandingFooter() {
           </div>
         </div>
         <div {...applyStyles(styles.legal)}>
+          <nav aria-label={t("legal.nav.aria")} {...applyStyles(styles.legalNav)}>
+            {legalNavItems(t).map((item) => (
+              <TextLink key={item.id} render={<Link to={item.href} />} text="caption">
+                {item.label}
+              </TextLink>
+            ))}
+          </nav>
           <Caption as="span">{t("landing.footer.legal")}</Caption>
         </div>
       </div>

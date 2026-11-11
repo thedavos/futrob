@@ -514,6 +514,97 @@ const es = {
   "common.back": "Volver",
   "common.skip": "Omitir por ahora",
   "common.retry": "Reintentar",
+  "notFound.title": "No encontramos esta página",
+  "notFound.description": "El enlace puede estar mal escrito o la página ya no existe.",
+  "notFound.visitor.action": "Volver al inicio",
+  "notFound.member.action": "Ir a tu espacio",
+  "routeError.title": "Algo no ha ido bien",
+  "routeError.description": "Ha ocurrido un fallo inesperado. Puedes reintentar esta página.",
+  "legal.nav.aria": "Documentos legales",
+  "legal.nav.terms": "Términos de servicio",
+  "legal.nav.privacy": "Política de privacidad",
+  "legal.nav.refunds": "Reembolsos",
+  "legal.related": "Otros documentos",
+  "legal.signup.lead": "Al crear una cuenta aceptas los",
+  "legal.signup.joiner": " y la ",
+  "legal.signup.end": ".",
+  "legal.draft.title": "Borrador pendiente de revisión legal",
+  "legal.draft.body":
+    "Este texto describe cómo funciona Futrob hoy. No es asesoramiento jurídico y puede cambiar antes de publicarse como política definitiva.",
+  "legal.updated": ({ date }) => `Última actualización: ${date}`,
+  "legal.terms.meta.title": "Términos de servicio",
+  "legal.terms.meta.description":
+    "Condiciones de uso de Futrob para competiciones de EA SPORTS FC Clubs.",
+  "legal.terms.title": "Términos de servicio",
+  "legal.terms.description":
+    "Reglas de la cuenta, el uso aceptable y cómo Futrob trata los datos de EA.",
+  "legal.terms.service.title": "El servicio",
+  "legal.terms.service.body":
+    "Futrob es un producto de Davion Software para operar competiciones de EA SPORTS FC Clubs. Está disponible en español e inglés. Al crear una cuenta aceptas estas condiciones en el estado en que se publican.",
+  "legal.terms.accounts.title": "Cuentas",
+  "legal.terms.accounts.body":
+    "Necesitas una cuenta con un correo y una contraseña. Eres responsable de lo que hagas con ella. No compartas el acceso ni te hagas pasar por otra persona. Si detectas un uso indebido, avisa al operador.",
+  "legal.terms.results.title": "Competiciones y resultados oficiales",
+  "legal.terms.results.body":
+    "Un partido observado en EA no es oficial en Futrob hasta que un capitán lo selecciona y el resultado se aprueba. La sincronización con EA no oficializa nada. Solo los resultados oficiales aprobados actualizan clasificación, rankings y el portal público.",
+  "legal.terms.use.title": "Uso aceptable",
+  "legal.terms.use.body":
+    "Usa Futrob para organizar y jugar competiciones de forma honesta. No intentes falsear resultados, abusar de invitaciones, atacar el servicio ni usar datos de otros participantes fuera de la competición. El operador puede suspender una cuenta que rompa estas reglas.",
+  "legal.terms.ea.title": "Datos de EA",
+  "legal.terms.ea.body":
+    "Los datos de EA Clubs son observaciones del proveedor. Futrob no pide ni guarda credenciales de EA. EA SPORTS y FC Clubs son marcas de sus titulares; Futrob no está afiliado ni respaldado por EA.",
+  "legal.terms.liability.title": "Responsabilidad",
+  "legal.terms.liability.body":
+    "El servicio se ofrece tal cual, en la medida que permite la ley. Futrob no garantiza que EA esté disponible, que un sync coincida con lo que viste en el juego, ni que una competición termine de una forma concreta. Este apartado es un borrador y no limita derechos que no se puedan limitar.",
+  "legal.terms.changes.title": "Cambios",
+  "legal.terms.changes.body":
+    "Podemos actualizar estos términos cuando cambie el producto. La fecha de la última actualización aparece arriba. Si el cambio es sustancial, lo indicaremos en el producto cuando exista un canal para avisarte.",
+  "legal.privacy.meta.title": "Política de privacidad",
+  "legal.privacy.meta.description":
+    "Qué datos guarda Futrob, cómo usa las observaciones de EA y cómo pedir la baja de la cuenta.",
+  "legal.privacy.title": "Política de privacidad",
+  "legal.privacy.description":
+    "Qué guardamos, para qué y cómo puedes pedir que borremos tu cuenta.",
+  "legal.privacy.who.title": "Quiénes somos",
+  "legal.privacy.who.body":
+    "Futrob lo opera Davion Software. Tratamos los datos para que puedas crear una cuenta, unirte a organizaciones y competiciones, y ver resultados oficiales.",
+  "legal.privacy.data.title": "Datos que guardamos",
+  "legal.privacy.data.body":
+    "Cuenta: nombre, correo y el hash de la contraseña (Better Auth). Perfil del actor, organizaciones, competiciones, equipos y plantillas que creas o a las que te unes, invitaciones, actividad y los planes o cupos asignados a tu organización.",
+  "legal.privacy.data.body2":
+    "No vendemos estos datos. Los usamos para operar el producto, diagnosticar fallos y cumplir las reglas de la competición que organizas o juegas.",
+  "legal.privacy.ea.title": "Datos de EA",
+  "legal.privacy.ea.body":
+    "Si asocias un club o una cuenta de juego, guardamos los identificadores que declares y las observaciones de partidos que llegan de la API de EA Clubs. Futrob no pide ni almacena usuario o contraseña de EA.",
+  "legal.privacy.providers.title": "Proveedores",
+  "legal.privacy.providers.body":
+    "Cloudflare (web, auth y almacenamiento de archivos), Railway (API de producto y Postgres) y Sentry (diagnóstico de errores en producción). El correo transaccional usará un proveedor de email cuando ese canal esté listo; hoy no enviamos ese correo.",
+  "legal.privacy.retention.title": "Conservación",
+  "legal.privacy.retention.body":
+    "Guardamos los datos mientras la cuenta esté abierta. Algunos registros de competición pueden permanecer si otros participantes aún los necesitan (por ejemplo un resultado oficial). Las copias de seguridad se conservan un tiempo limitado y luego se rotan.",
+  "legal.privacy.deletion.title": "Eliminación de la cuenta",
+  "legal.privacy.deletion.body":
+    "Puedes pedir que borremos tu cuenta desde el perfil cuando esa función esté en el producto. Mientras tanto, pide la baja al operador desde la cuenta o el canal de soporte que publique Futrob.",
+  "legal.privacy.deletion.body2":
+    "Al borrar el acceso quitamos perfil y datos de cuenta. Conservaremos los registros de competición que otros participantes aún necesiten, como resultados oficiales ya aprobados y plantillas de un equipo que sigue en juego.",
+  "legal.privacy.contact.title": "Contacto",
+  "legal.privacy.contact.body":
+    "Escribe al operador de Futrob (Davion Software) desde la cuenta o el canal de soporte publicado en el producto. No inventes un correo: cuando el canal transaccional exista, lo indicaremos aquí.",
+  "legal.refunds.meta.title": "Reembolsos",
+  "legal.refunds.meta.description":
+    "Futrob no cobra con tarjeta en esta fase. Cómo se tramitará un reembolso cuando existan cargos.",
+  "legal.refunds.title": "Reembolsos",
+  "legal.refunds.description":
+    "No hay cobros automáticos en el producto actual. Esta página existirá para el proveedor de pagos cuando los haya.",
+  "legal.refunds.current.title": "Producto actual",
+  "legal.refunds.current.body":
+    "En esta fase Futrob no cobra con tarjeta ni procesa pagos automáticos. Los planes se asignan a mano. No hay un cargo que reembolsar en el producto público.",
+  "legal.refunds.charges.title": "Cuando existan cargos",
+  "legal.refunds.charges.body":
+    "Si un plan de pago se asigna de forma manual, el operador tramita cualquier devolución. Cuando un proveedor de pagos entre en el producto, esta política describirá plazos y el canal para pedir el reembolso.",
+  "legal.refunds.ask.title": "Cómo pedirlo",
+  "legal.refunds.ask.body":
+    "Contacta al operador de Futrob (Davion Software) desde la cuenta o el canal de soporte publicado. Conserva el identificador de la organización y, si lo hay, el del cargo.",
   "common.edit": "Editar",
   "common.pending": "Pendiente",
   "common.seconds": ({ seconds }) => `${seconds} s`,
@@ -2938,6 +3029,7 @@ export interface MessageParamsByKey {
   readonly "encounter.selection.history.selected": { readonly proposal: string };
   readonly "encounter.selection.history.acknowledged": { readonly count: number };
   readonly "common.seconds": { readonly seconds: number };
+  readonly "legal.updated": { readonly date: string };
   readonly "gameData.clubSearch.retryIn": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
@@ -3600,6 +3692,94 @@ const en: Catalog = {
   "common.back": "Back",
   "common.skip": "Skip for now",
   "common.retry": "Try again",
+  "notFound.title": "We couldn't find this page",
+  "notFound.description": "The link may be mistyped, or the page no longer exists.",
+  "notFound.visitor.action": "Back to home",
+  "notFound.member.action": "Go to your space",
+  "routeError.title": "Something went wrong",
+  "routeError.description": "An unexpected failure happened. You can try this page again.",
+  "legal.nav.aria": "Legal documents",
+  "legal.nav.terms": "Terms of service",
+  "legal.nav.privacy": "Privacy policy",
+  "legal.nav.refunds": "Refunds",
+  "legal.related": "Other documents",
+  "legal.signup.lead": "By creating an account you accept the",
+  "legal.signup.joiner": " and the ",
+  "legal.signup.end": ".",
+  "legal.draft.title": "Draft pending legal review",
+  "legal.draft.body":
+    "This text describes how Futrob works today. It is not legal advice and may change before it is published as a final policy.",
+  "legal.updated": ({ date }) => `Last updated: ${date}`,
+  "legal.terms.meta.title": "Terms of service",
+  "legal.terms.meta.description": "Terms for using Futrob to run EA SPORTS FC Clubs competitions.",
+  "legal.terms.title": "Terms of service",
+  "legal.terms.description": "Account rules, acceptable use, and how Futrob treats EA data.",
+  "legal.terms.service.title": "The service",
+  "legal.terms.service.body":
+    "Futrob is a Davion Software product for operating EA SPORTS FC Clubs competitions. It is available in Spanish and English. Creating an account means you accept these terms as published.",
+  "legal.terms.accounts.title": "Accounts",
+  "legal.terms.accounts.body":
+    "You need an account with an email and a password. You are responsible for what you do with it. Do not share access or impersonate someone else. If you see misuse, tell the operator.",
+  "legal.terms.results.title": "Competitions and official results",
+  "legal.terms.results.body":
+    "A match observed in EA is not official in Futrob until a captain selects it and the result is approved. Syncing with EA never officializes a result. Only approved official results update standings, rankings, and the public portal.",
+  "legal.terms.use.title": "Acceptable use",
+  "legal.terms.use.body":
+    "Use Futrob to organize and play competitions honestly. Do not fake results, abuse invitations, attack the service, or use other participants' data outside the competition. The operator may suspend an account that breaks these rules.",
+  "legal.terms.ea.title": "EA data",
+  "legal.terms.ea.body":
+    "EA Clubs data are observations from the provider. Futrob does not ask for or store EA login credentials. EA SPORTS and FC Clubs are trademarks of their owners; Futrob is not affiliated with or endorsed by EA.",
+  "legal.terms.liability.title": "Liability",
+  "legal.terms.liability.body":
+    "The service is provided as is, to the extent the law allows. Futrob does not warrant that EA will be available, that a sync will match what you saw in the game, or that a competition will finish a particular way. This section is a draft and does not limit rights that cannot be limited.",
+  "legal.terms.changes.title": "Changes",
+  "legal.terms.changes.body":
+    "We may update these terms when the product changes. The last-updated date is at the top. If a change is material, we will note it in the product once there is a channel to tell you.",
+  "legal.privacy.meta.title": "Privacy policy",
+  "legal.privacy.meta.description":
+    "What Futrob stores, how it uses EA observations, and how to ask for account deletion.",
+  "legal.privacy.title": "Privacy policy",
+  "legal.privacy.description": "What we store, why, and how you can ask us to delete your account.",
+  "legal.privacy.who.title": "Who we are",
+  "legal.privacy.who.body":
+    "Futrob is operated by Davion Software. We process data so you can create an account, join organizations and competitions, and see official results.",
+  "legal.privacy.data.title": "Data we store",
+  "legal.privacy.data.body":
+    "Account: name, email, and the password hash (Better Auth). Actor profile, organizations, competitions, teams and rosters you create or join, invitations, activity, and plan entitlements assigned to your organization.",
+  "legal.privacy.data.body2":
+    "We do not sell this data. We use it to run the product, diagnose failures, and apply the rules of the competition you organize or play.",
+  "legal.privacy.ea.title": "EA data",
+  "legal.privacy.ea.body":
+    "If you associate a club or a game account, we store the identifiers you declare and match observations from the EA Clubs API. Futrob does not ask for or store EA usernames or passwords.",
+  "legal.privacy.providers.title": "Providers",
+  "legal.privacy.providers.body":
+    "Cloudflare (web, auth, and file storage), Railway (product API and Postgres), and Sentry (error diagnostics in production). Transactional email will use an email provider when that channel ships; we do not send that mail today.",
+  "legal.privacy.retention.title": "Retention",
+  "legal.privacy.retention.body":
+    "We keep data while the account is open. Some competition records may remain if other participants still need them (for example an official result). Backups are kept for a limited period and then rotated.",
+  "legal.privacy.deletion.title": "Account deletion",
+  "legal.privacy.deletion.body":
+    "You can ask us to delete your account from your profile when that flow ships. Until then, ask the operator for deletion from the account or the support channel Futrob publishes.",
+  "legal.privacy.deletion.body2":
+    "Deleting access removes your profile and account data. We will keep competition records that other participants still need, such as approved official results and rosters of a team still in play.",
+  "legal.privacy.contact.title": "Contact",
+  "legal.privacy.contact.body":
+    "Write to the Futrob operator (Davion Software) from the account or the support channel published in the product. Do not invent an email address: when the transactional channel exists, we will list it here.",
+  "legal.refunds.meta.title": "Refunds",
+  "legal.refunds.meta.description":
+    "Futrob does not charge cards in this phase. How a refund will be handled when charges exist.",
+  "legal.refunds.title": "Refunds",
+  "legal.refunds.description":
+    "There are no automated charges in the current product. This page will exist for the payments provider when they do.",
+  "legal.refunds.current.title": "Current product",
+  "legal.refunds.current.body":
+    "In this phase Futrob does not charge cards or process automated payments. Plans are assigned by hand. There is no charge to refund in the public product.",
+  "legal.refunds.charges.title": "When charges exist",
+  "legal.refunds.charges.body":
+    "If a paid plan is assigned manually, the operator handles any refund. When a payments provider joins the product, this policy will describe timelines and the channel to request a refund.",
+  "legal.refunds.ask.title": "How to ask",
+  "legal.refunds.ask.body":
+    "Contact the Futrob operator (Davion Software) from the account or the published support channel. Keep the organization identifier and, if there is one, the charge identifier.",
   "common.edit": "Edit",
   "common.pending": "Pending",
   "common.seconds": ({ seconds }) => `${seconds}s`,
