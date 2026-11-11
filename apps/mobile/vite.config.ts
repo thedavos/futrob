@@ -23,6 +23,7 @@ export default defineConfig({
       "expo-secure-store": path.resolve(rootDir, "test/expo-secure-store.ts"),
       "expo-crypto": path.resolve(rootDir, "test/expo-crypto.ts"),
       "expo-router": path.resolve(rootDir, "test/expo-router.tsx"),
+      "@sentry/react-native": path.resolve(rootDir, "test/sentry.ts"),
       "react-native": "react-native-web",
     },
     server: {

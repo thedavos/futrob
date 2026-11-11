@@ -3,7 +3,10 @@ import {
   AssignOrganizationPlanResponse,
   GetOrganizationEntitlementsResponse,
   GetOrganizationPlanResponse,
+  ListPlanRequestsResponse,
   ListPublicPlansResponse,
+  RequestOrganizationPlanRequest,
+  RequestOrganizationPlanResponse,
 } from "@/http/openapi/components.ts";
 import { defineRoute } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
@@ -61,4 +64,44 @@ export const assignOrganizationPlanRoute = defineRoute({
     schema: AssignOrganizationPlanResponse,
   },
   errors: [400, 401, 403, 404],
+});
+
+export const requestOrganizationPlanRoute = defineRoute({
+  method: "put",
+  path: "/organizations/{organizationId}/billing/plan-request",
+  operationId: "requestOrganizationPlan",
+  tags: ["billing"],
+  summary: "Ask for a paid plan (organizer, manual purchase without payments)",
+  description:
+    "Stores the organization's single open request; repeating it keeps one and asking for another plan replaces it. It never changes the plan: a platform superuser assigns it after billing happens outside the product.",
+  params: pathParams(["organizationId"]),
+  body: RequestOrganizationPlanRequest,
+  success: { status: 200, description: "Open request", schema: RequestOrganizationPlanResponse },
+  errors: [400, 401, 403, 404],
+});
+
+export const cancelOrganizationPlanRequestRoute = defineRoute({
+  method: "delete",
+  path: "/organizations/{organizationId}/billing/plan-request",
+  operationId: "cancelOrganizationPlanRequest",
+  tags: ["billing"],
+  summary: "Withdraw the organization's open plan request",
+  description: "Succeeds when no request is open.",
+  params: pathParams(["organizationId"]),
+  success: { status: 204, description: "Request withdrawn or none open" },
+  errors: [401, 403, 404],
+});
+
+export const listPlanRequestsRoute = defineRoute({
+  method: "get",
+  path: "/billing/plan-requests",
+  operationId: "listPlanRequests",
+  tags: ["billing"],
+  summary: "List organizations waiting for a plan (platform superuser)",
+  success: {
+    status: 200,
+    description: "Open requests, oldest first",
+    schema: ListPlanRequestsResponse,
+  },
+  errors: [401, 403],
 });

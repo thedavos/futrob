@@ -226,6 +226,10 @@ function scenarioState(id: ScenarioId): HomeStoryState {
 }
 
 function hydrateHomeQueries(client: QueryClient, state: HomeStoryState): void {
+  client.setQueryData(queryKeys.activities.mine({ limit: 10 }), {
+    activities: [],
+    nextCursor: null,
+  });
   if (state.profile !== "pending" && state.profile !== "error") {
     client.setQueryData(queryKeys.players.me(), state.profile);
   }

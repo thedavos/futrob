@@ -3,19 +3,24 @@ import {
   assignOrganizationPlanResponseSchema,
   getOrganizationEntitlementsResponseSchema,
   getOrganizationPlanResponseSchema,
+  listPlanRequestsResponseSchema,
   listPublicPlansResponseSchema,
+  requestOrganizationPlanResponseSchema,
 } from "@futrob/api-contracts";
 import type { OrganizationSubscription, RequestedSubscriptionState } from "@futrob/billing";
 import { asOrganizationId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
 import { failureToHttp } from "@/http/errors.ts";
-import { organizationPlanDto, subscriptionDto } from "@/http/mappers/billing.ts";
+import { organizationPlanDto, planRequestDto, subscriptionDto } from "@/http/mappers/billing.ts";
 import { createOpenApiRouter, createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
   assignOrganizationPlanRoute,
+  cancelOrganizationPlanRequestRoute,
   getOrganizationEntitlementsRoute,
   getOrganizationPlanRoute,
+  listPlanRequestsRoute,
   listPublicPlansRoute,
+  requestOrganizationPlanRoute,
 } from "@/http/openapi/routes/billing.ts";
 import { jsonResponse, publicJsonResponse } from "@/utils/http-response.ts";
 
@@ -71,6 +76,45 @@ export function registerBillingRoutes(app: Hono, deps: AppDeps): void {
     });
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(assignedDto(organizationId, result.value));
+  });
+
+  secured.openapi(requestOrganizationPlanRoute, async (c) => {
+    const organizationId = asOrganizationId(c.req.valid("param").organizationId);
+    const result = await billing.useCases.requestOrganizationPlan.execute({
+      actorId: c.get("actorId"),
+      organizationId,
+      planKey: c.req.valid("json").planKey,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      requestOrganizationPlanResponseSchema.parse({
+        organizationId,
+        request: planRequestDto(result.value),
+      }),
+    );
+  });
+
+  secured.openapi(cancelOrganizationPlanRequestRoute, async (c) => {
+    const result = await billing.useCases.cancelOrganizationPlanRequest.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(c.req.valid("param").organizationId),
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return new Response(null, { status: 204 });
+  });
+
+  secured.openapi(listPlanRequestsRoute, async (c) => {
+    const result = await billing.pendingPlanRequests.execute({ actorId: c.get("actorId") });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      listPlanRequestsResponseSchema.parse({
+        requests: result.value.map(({ request, organizationName }) => ({
+          organizationId: request.organizationId,
+          organizationName,
+          ...planRequestDto(request),
+        })),
+      }),
+    );
   });
 
   app.route("/", secured);

@@ -1,0 +1,33 @@
+- link "Saltar al contenido":
+  - /url: "#app-main"
+- complementary "Navegación principal":
+  - button "Parque Unido"
+  - button "Colapsar barra lateral"
+  - list:
+    - listitem:
+      - link "Inicio":
+        - /url: /player
+    - listitem:
+      - link "Competiciones":
+        - /url: /player/competitions
+    - listitem:
+      - link "Datos de juego":
+        - /url: /player/game-accounts
+    - listitem:
+      - link "Mis partidos":
+        - /url: /player/matches
+    - listitem:
+      - link "Mis estadísticas":
+        - /url: /player/statistics
+    - listitem:
+      - link "Invitaciones":
+        - /url: /invitations
+  - button "Abrir menú de cuenta": JS Julián
+- banner:
+  - paragraph: Solo_Gol Parque Unido
+  - button "Aceptar invitación"
+- main:
+  - heading "Partidos" [level=1]
+  - paragraph: "Tus partidos en esta competición: próximos y jugados."
+  - heading "Competición no disponible" [level=2]
+  - paragraph: No existe en esta organización o tu cuenta no tiene acceso a sus enfrentamientos.

@@ -11,8 +11,11 @@ import {
   QueryTestProvider,
 } from "@/shared/presentation/query/query-test-utils.tsx";
 import type { ActivityListQuery } from "./activity-browser-client.ts";
-import { OrganizationActivityPage } from "./organization-activity-page.tsx";
-import { OrganizationRecentActivity } from "./organization-recent-activity.tsx";
+import { OrganizationActivityPage, PlayerActivityPage } from "./organization-activity-page.tsx";
+import {
+  OrganizationRecentActivity,
+  PlayerRecentActivity,
+} from "./organization-recent-activity.tsx";
 import { ShellPendingQueue } from "./shell-pending-queue.tsx";
 
 const listForOrganization =
@@ -265,6 +268,24 @@ describe("activity screens", () => {
     expect(screen.queryByRole("link", { name: "Ver toda la actividad" })).toBeNull();
   });
 
+  it("shows the player's own recent activity with a capped list and personal full-feed link", async () => {
+    listForOrganization.mockResolvedValue(page([]));
+    listMine.mockResolvedValue(
+      page(
+        many(12, "personal").map((row) => ({ ...row, audience: "team" })),
+        "next",
+      ),
+    );
+    renderWith(<PlayerRecentActivity />);
+    const recent = await screen.findByRole("list", { name: "Actividad reciente" });
+    expect(within(recent).getAllByRole("listitem")).toHaveLength(10);
+    expect(within(recent).getByText("Match personal-0 · Liga A")).toBeTruthy();
+    expect(within(recent).queryByText("Match personal-10 · Liga A")).toBeNull();
+    expect(screen.getByRole("link", { name: "Ver toda la actividad" }).getAttribute("href")).toBe(
+      "/player/activity",
+    );
+  });
+
   it("pages the full feed with «Cargar más» until the last page", async () => {
     const first = many(25, "first");
     const second = many(5, "second");
@@ -279,6 +300,68 @@ describe("activity screens", () => {
     await waitFor(() => expect(within(feed).getAllByRole("listitem")).toHaveLength(30));
     expect(screen.queryByRole("button", { name: "Cargar más" })).toBeNull();
     expect(listForOrganization).toHaveBeenLastCalledWith(ORG, { limit: 25, cursor: "next" });
+  });
+
+  it("pages the player's full feed and keeps its copy personal", async () => {
+    listMine.mockImplementation(async (query) =>
+      query?.cursor === "personal-next"
+        ? page([
+            entry({
+              id: "last-personal",
+              audience: "team",
+              subject: { ...dispute.subject, encounterLabel: "Personal final match" },
+            }),
+          ])
+        : page(
+            many(25, "personal-page").map((row) => ({ ...row, audience: "team" })),
+            "personal-next",
+          ),
+    );
+    renderWith(<PlayerActivityPage />);
+    const feed = await screen.findByRole("list", { name: "Actividad" });
+    expect(within(feed).getAllByRole("listitem")).toHaveLength(25);
+    expect(
+      screen.getByText("Tus invitaciones y la actividad de tus equipos, lo más reciente primero."),
+    ).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Cargar más" }));
+    expect(await within(feed).findByText("Personal final match · Liga A")).toBeTruthy();
+    expect(within(feed).getAllByRole("listitem")).toHaveLength(26);
+    expect(screen.queryByRole("button", { name: "Cargar más" })).toBeNull();
+  });
+
+  it("gives an empty player feed personal guidance and no full-feed CTA", async () => {
+    listMine.mockResolvedValue(page([]));
+    renderWith(<PlayerRecentActivity />);
+    expect(
+      await screen.findByText(
+        "Aquí verás tus invitaciones y la actividad de los equipos que representas.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Ver toda la actividad" })).toBeNull();
+    cleanup();
+    renderWith(<PlayerActivityPage />);
+    expect(await screen.findByText("Sin actividad todavía")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Aquí verás tus invitaciones y la actividad de los equipos que representas.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("retries a failed personal activity read and shows the recovered row", async () => {
+    listMine.mockRejectedValueOnce(new Error("unavailable")).mockResolvedValue(
+      page([
+        entry({
+          id: "recovered-personal",
+          audience: "team",
+          subject: { ...dispute.subject, encounterLabel: "Recovered match" },
+        }),
+      ]),
+    );
+    renderWith(<PlayerActivityPage />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo cargar la actividad.");
+    await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(await screen.findByText("Recovered match · Liga A")).toBeTruthy();
   });
 
   it("tells a member without access that the feed is not theirs", async () => {

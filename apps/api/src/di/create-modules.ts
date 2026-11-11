@@ -285,12 +285,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     activity: activityFeed.selection,
   });
 
-  const {
-    getMyNextEncounter,
-    getEncounterView,
-    listCompetitionEncounters,
-    getCurrentCompetitionFixture,
-  } = createEncounterReads({
+  const encounterReads = createEncounterReads({
     authorization: deferredAuthorization,
     clock,
     competitions,
@@ -359,7 +354,12 @@ export function createModules(input: CreateModulesInput): AppModules {
   const modules = {
     activityCommands: activityFeed.commands,
     authorization,
-    billing: withPlanUsage(billing, competitionRepository, organizations.repositories.memberships),
+    billing: withPlanUsage(
+      billing,
+      competitionRepository,
+      organizations.repositories.memberships,
+      organizations.repositories.organizations,
+    ),
     competitionApplications,
     competitions,
     entryInvitations,
@@ -385,17 +385,11 @@ export function createModules(input: CreateModulesInput): AppModules {
       clock,
     }),
     gameData,
-    getMyNextEncounter,
-    getEncounterView,
-    listCompetitionEncounters,
-    getCurrentCompetitionFixture,
+    ...encounterReads,
     listCompetitionDisputes,
     identity,
     notifications: activityFeed.notifications,
-    organizations: {
-      ...organizations,
-      listOrganizationMembers,
-    },
+    organizations: { ...organizations, listOrganizationMembers },
     publicPortal,
     results,
     encounterOpenSelection,
