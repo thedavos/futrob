@@ -1,4 +1,22 @@
 export {
+  accountDeletionBlockerSchema,
+  accountDeletionStateSchema,
+  accountDeletionStatusSchema,
+  getAccountDeletionResponseSchema,
+  requestAccountDeletionRequestSchema,
+  requestAccountDeletionResponseSchema,
+  cancelAccountDeletionResponseSchema,
+  runAccountDeletionResponseSchema,
+  type AccountDeletionBlockerDto,
+  type AccountDeletionStateDto,
+  type AccountDeletionStatusDto,
+  type GetAccountDeletionResponse,
+  type RequestAccountDeletionRequest,
+  type RequestAccountDeletionResponse,
+  type CancelAccountDeletionResponse,
+  type RunAccountDeletionResponse,
+} from "./account-deletion.ts";
+export {
   sidebarLayoutSchema,
   actorPreferencesSchema,
   getActorPreferencesResponseSchema,

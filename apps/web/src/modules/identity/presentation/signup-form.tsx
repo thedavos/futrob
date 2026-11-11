@@ -13,6 +13,7 @@ import {
   Form,
   InputWithIcon,
   readFormString,
+  TextLink,
   type FormErrors,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -46,6 +47,8 @@ import {
   type SignupValues,
 } from "@/modules/identity/presentation/signup-form-validation.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LEGAL_HREFS } from "@/shared/presentation/legal/legal-hrefs.ts";
 
 const styles = stylex.create({
   form: {
@@ -113,6 +116,12 @@ const styles = stylex.create({
   submit: {
     width: "100%",
   },
+  consent: {
+    margin: 0,
+    fontSize: "0.75rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
   footer: {
     textAlign: "center",
     fontSize: "0.75rem",
@@ -162,6 +171,7 @@ function signupFailure(error: AuthClientError): SignupFailure {
 }
 
 export function SignupForm() {
+  const { t } = useI18n();
   const { redirectTo, afterAuthenticated } = useAuthResume();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -363,6 +373,17 @@ export function SignupForm() {
       </div>
 
       <div {...applyStyles(styles.actions)}>
+        <p {...applyStyles(styles.consent)}>
+          {t("legal.signup.lead")}{" "}
+          <TextLink render={<Link to={LEGAL_HREFS.terms} />} text="caption">
+            {t("legal.nav.terms")}
+          </TextLink>
+          {t("legal.signup.joiner")}
+          <TextLink render={<Link to={LEGAL_HREFS.privacy} />} text="caption">
+            {t("legal.nav.privacy")}
+          </TextLink>
+          {t("legal.signup.end")}
+        </p>
         <Button
           className={submit.className}
           disabled={isSubmitting}

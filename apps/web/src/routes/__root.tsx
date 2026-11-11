@@ -6,10 +6,15 @@ import { getUiLocale, setUiLocale } from "@/shared/presentation/i18n/locale.func
 import { DEFAULT_LOCALE, localeOpenGraphCode } from "@/shared/presentation/i18n/locale.ts";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
 import { AppProviders } from "@/shared/presentation/query/app-providers.tsx";
+import { RootNotFoundPage } from "@/shared/presentation/shell/not-found-page.tsx";
+import { RootErrorPage } from "@/shared/presentation/shell/root-error-page.tsx";
 import appStyles from "@/styles.css?url";
 
 export const Route = createRootRoute({
   loader: () => getUiLocale(),
+  shellComponent: RootShell,
+  notFoundComponent: RootNotFoundPage,
+  errorComponent: RootErrorPage,
   head: ({ loaderData }) => {
     const locale = loaderData ?? DEFAULT_LOCALE;
     const t = createTranslator(locale);
@@ -61,8 +66,8 @@ export const Route = createRootRoute({
   component: RootComponent,
 });
 
-function RootComponent() {
-  const initialLocale = Route.useLoaderData();
+function RootShell({ children }: Readonly<{ children: ReactNode }>) {
+  const initialLocale = Route.useLoaderData() ?? DEFAULT_LOCALE;
   const router = useRouter();
   return (
     <I18nProvider
@@ -73,12 +78,14 @@ function RootComponent() {
       }}
     >
       <RootDocument>
-        <AppProviders>
-          <Outlet />
-        </AppProviders>
+        <AppProviders>{children}</AppProviders>
       </RootDocument>
     </I18nProvider>
   );
+}
+
+function RootComponent() {
+  return <Outlet />;
 }
 
 async function persistUiLocale(locale: Locale): Promise<void> {

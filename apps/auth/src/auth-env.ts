@@ -8,12 +8,17 @@ export interface AuthWorkerEnv {
   readonly NODE_ENV?: string;
   readonly SENTRY_DSN?: string;
   readonly SENTRY_ENVIRONMENT?: string;
+  /** `log` writes account emails to the log (development). Unset: email change is disabled. */
+  readonly AUTH_EMAIL_DELIVERY?: string;
 }
+
+export type AuthEmailDelivery = "log" | "disabled";
 
 export interface AuthEnv {
   readonly BETTER_AUTH_SECRET: string;
   readonly BETTER_AUTH_URL: string;
   readonly BETTER_AUTH_TRUSTED_ORIGINS: readonly string[];
+  readonly AUTH_EMAIL_DELIVERY: AuthEmailDelivery;
 }
 
 const MINIMUM_SECRET_LENGTH = 32;
@@ -64,9 +69,15 @@ export function buildAuthEnv(env: AuthWorkerEnv): AuthEnv {
     throw new Error("BETTER_AUTH_TRUSTED_ORIGINS must contain at least one origin");
   }
 
+  const delivery = env.AUTH_EMAIL_DELIVERY?.trim() || "disabled";
+  if (delivery !== "log" && delivery !== "disabled") {
+    throw new Error("AUTH_EMAIL_DELIVERY must be `log` or unset");
+  }
+
   return {
     BETTER_AUTH_SECRET: secret,
     BETTER_AUTH_URL: authOrigin,
     BETTER_AUTH_TRUSTED_ORIGINS: trustedOrigins,
+    AUTH_EMAIL_DELIVERY: delivery,
   };
 }

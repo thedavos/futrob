@@ -1,5 +1,5 @@
 /**
- * Wakes the API's email outbox runner (ADR-0028). The API answers 503 while no provider is
+ * Wakes the API's email outbox runner (ADR-0029). The API answers 503 while no provider is
  * configured: queued email waits as pending, so that is not a Cron failure.
  */
 export async function dispatchDueEmails(deps: {

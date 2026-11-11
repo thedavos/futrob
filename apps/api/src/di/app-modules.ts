@@ -19,6 +19,7 @@ import type { SchedulingModule } from "./scheduling.module.ts";
 import type { GameDataModule } from "./game-data.module.ts";
 import type { OnboardingCompletionFlow } from "@/application/identity/onboarding-completion.flow.ts";
 import type { IdentityModule } from "./identity.module.ts";
+import type { AccountDeletionComposition } from "./account-deletion.composition.ts";
 import type { ListOrganizationMembersUseCase } from "@futrob/organizations";
 import type { OrganizationsModule } from "./organizations.module.ts";
 import type { CompetitionsModule } from "./competitions.module.ts";
@@ -35,6 +36,8 @@ import type { PublicPortalModule } from "./public-portal.module.ts";
 import type { StatisticsModule } from "./statistics.module.ts";
 
 export interface AppModules {
+  /** Account deletion by anonymization with every context's cleanup (ADR-0028). */
+  readonly accountDeletion: AccountDeletionComposition;
   /** Commands of other contexts composed with their activity feed writes. */
   readonly activityCommands: ActivityCommands;
   readonly authorization: AuthorizationModule;

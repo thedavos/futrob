@@ -169,7 +169,7 @@ const proposal: EnqueueEmailsInput = {
 };
 
 /**
- * Offline email channel smoke (ADR-0028): fires the same fact twice, reads the outbox,
+ * Offline email channel smoke (ADR-0029): fires the same fact twice, reads the outbox,
  * survives a provider outage with a retry, and sends exactly one email.
  */
 export function run(): Effect.Effect<number> {

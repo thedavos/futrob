@@ -56,6 +56,8 @@ export const queryKeys = {
     all: ["identity"] as const,
     onboardingStatus: () => [...queryKeys.identity.all, "onboarding-status"] as const,
     preferences: () => [...queryKeys.identity.all, "preferences"] as const,
+    accountDeletion: () => [...queryKeys.identity.all, "account-deletion"] as const,
+    sessions: () => [...queryKeys.identity.all, "sessions"] as const,
   },
   players: {
     all: ["players"] as const,

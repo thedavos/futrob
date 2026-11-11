@@ -10,7 +10,7 @@ import {
 import type { HttpClient, RequestOptions } from "../http.ts";
 import { apiPath } from "../internal/path.ts";
 
-/** Email channel settings (ADR-0028). */
+/** Email channel settings (ADR-0029). */
 export function createEmailResource(http: HttpClient) {
   return {
     /** The actor's email locale and non-critical opt-out; defaults when never saved. */

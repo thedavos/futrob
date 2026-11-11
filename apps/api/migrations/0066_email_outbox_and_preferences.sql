@@ -1,4 +1,4 @@
--- Email channel (ADR-0008, ADR-0028). The notifications repository writes email_outbox
+-- Email channel (ADR-0008, ADR-0029). The notifications repository writes email_outbox
 -- inside the transaction of the command that produced the fact; a separate runner sends.
 
 CREATE TABLE IF NOT EXISTS email_outbox (

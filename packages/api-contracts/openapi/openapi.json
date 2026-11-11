@@ -2391,6 +2391,189 @@
         "summary": "Search external clubs via a game-data provider"
       }
     },
+    "/identity/account/deletion": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Account is active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDeletionStatus"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "description": "The account was deleted (`identity.account_deleted`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "cancelAccountDeletion",
+        "tags": [
+          "identity"
+        ],
+        "summary": "Cancel a scheduled deletion of the authenticated account",
+        "description": "Leaves the account as it was. Cancelling an account that is not scheduled changes nothing.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Deletion state and blockers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDeletionStatus"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "description": "The account was deleted (`identity.account_deleted`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "getAccountDeletion",
+        "tags": [
+          "identity"
+        ],
+        "summary": "Get whether the authenticated account is scheduled for deletion and what blocks it",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Scheduled deletion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDeletionStatus"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "description": "The password does not match this account (`identity.reauthentication_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "description": "The account holds responsibilities listed in `details.blockers` (`identity.account_deletion_blocked`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "requestAccountDeletion",
+        "tags": [
+          "identity"
+        ],
+        "summary": "Schedule deletion of the authenticated account and sign it out everywhere",
+        "description": "Requires the current password. Deletion runs after the grace period by anonymizing the account (ADR-0028). Repeating the request keeps the original date and signs out again.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/identity/onboarding": {
       "get": {
         "responses": {
@@ -3310,6 +3493,41 @@
         ],
         "summary": "Run the next ready provider synchronization job",
         "description": "Service-only Cron recovery path for durable jobs left ready after an interrupted Queue publication or delivery.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
+    "/internal/identity/account-deletion/run": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Deleted and postponed accounts in this batch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunAccountDeletionResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "runAccountDeletion",
+        "tags": [
+          "identity"
+        ],
+        "summary": "Anonymize up to 25 accounts whose deletion grace period has ended",
+        "description": "Service-only Cron target authenticated with the internal bearer secret. Uses the API clock. Each account is anonymized with every context's cleanup in one transaction; accounts with a blocker stay scheduled. Re-running finds no work twice.",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestId"
@@ -11812,6 +12030,119 @@
           "updatedAt"
         ]
       },
+      "AccountDeletionStatus": {
+        "type": "object",
+        "properties": {
+          "deletion": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "scheduled"
+                    ]
+                  },
+                  "requestedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "scheduledFor": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "status",
+                  "requestedAt",
+                  "scheduledFor"
+                ]
+              }
+            ]
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "sole-organizer"
+                      ]
+                    },
+                    "organizationId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "organizationName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "organizationId",
+                    "organizationName"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "active-captain"
+                      ]
+                    },
+                    "competitionId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "competitionName": {
+                      "type": "string"
+                    },
+                    "teamId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "teamName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "competitionId",
+                    "competitionName",
+                    "teamId",
+                    "teamName"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "deletion",
+          "blockers"
+        ]
+      },
       "ActorPreferences": {
         "type": "object",
         "properties": {
@@ -12005,6 +12336,68 @@
               },
               "format": {
                 "type": "string"
+              },
+              "blockers": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "sole-organizer"
+                          ]
+                        },
+                        "organizationId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "organizationName": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "organizationId",
+                        "organizationName"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "active-captain"
+                          ]
+                        },
+                        "competitionId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "competitionName": {
+                          "type": "string"
+                        },
+                        "teamId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "teamName": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "competitionId",
+                        "competitionName",
+                        "teamId",
+                        "teamName"
+                      ]
+                    }
+                  ]
+                }
               }
             },
             "additionalProperties": false
@@ -32852,6 +33245,23 @@
           "competitionId",
           "teamId",
           "lockedAt"
+        ]
+      },
+      "RunAccountDeletionResponse": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "postponed": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "deleted",
+          "postponed"
         ]
       },
       "RunCandidateRecalculationResponse": {

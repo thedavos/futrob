@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { SidebarProvider, TooltipProvider } from "@futrob/ui";
 import type { ComponentProps } from "react";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { SidebarLayoutDto } from "@futrob/api-contracts";
@@ -28,6 +28,15 @@ vi.mock("@/modules/identity/auth-client.ts", () => ({
 
 beforeEach(() => {
   vi.stubGlobal("PointerEvent", MouseEvent);
+  // The settings dialog reads its layout from matchMedia, which jsdom lacks.
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => ({
+      matches: true,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })),
+  );
   vi.stubGlobal(
     "fetch",
     vi.fn(async () => Response.json({ items: [] })),
@@ -151,10 +160,9 @@ describe("shell sidebar layouts", () => {
       await waitFor(() => expect(layout).toBeEnabled());
       await user.click(layout);
       await user.click(await screen.findByRole("option", { name: "Con pendientes" }));
-      fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
-      expect(await screen.findByText("Cambios guardados.")).toBeVisible();
-      const settings = screen.getByRole("dialog", { name: "Configuración" });
+      expect(await screen.findByText("Guardado.")).toBeVisible();
+      const settings = screen.getByRole("dialog", { name: "Cuenta" });
       expect(settings).toBeVisible();
       expect(within(container()).getByText("Pendientes")).toBeInTheDocument();
 

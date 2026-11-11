@@ -91,39 +91,56 @@ const es = {
   "account.retry": "Reintentar",
   "account.saving": "Guardando…",
   "account.close": "Cerrar",
-  "settings.title": "Configuración",
-  "settings.description": "Elige el idioma y la barra lateral, y gestiona tu contraseña.",
+  "settings.title": "Cuenta",
+  "settings.description": "Preferencias, seguridad, sesiones y eliminación de tu cuenta.",
+  "settings.sections": "Secciones de la cuenta",
+  "settings.section.preferences": "Preferencias",
+  "settings.section.security": "Seguridad",
+  "settings.section.sessions": "Sesiones",
+  "settings.section.delete": "Eliminar cuenta",
   "settings.language": "Idioma",
-  "settings.languageHint": "Se recuerda en este navegador.",
+  "settings.languageHint": "Se aplica al elegirlo y se recuerda en este navegador.",
   "settings.sidebarLayout": "Barra lateral",
-  "settings.sidebarLayoutHint": "Se guarda en tu cuenta.",
+  "settings.sidebarLayoutHint": "Se aplica al elegirla y se guarda en tu cuenta.",
   "settings.sidebarLayoutNavigation": "Navegación",
   "settings.sidebarLayoutPendingQueue": "Con pendientes",
+  "settings.saved": "Guardado.",
+  "settings.languageError": "No pudimos cambiar el idioma. Sigue el anterior; vuelve a elegirlo.",
   "settings.sidebarLayoutError":
-    "Guardamos tus otros cambios, pero no la barra lateral. Vuelve a guardar para intentarlo.",
-  "settings.password": "Cambiar contraseña",
-  "settings.passwordHint": "Opcional. Al cambiarla se cierran tus otras sesiones.",
+    "No pudimos guardar la barra lateral. Sigue la anterior; vuelve a elegirla.",
+  "settings.email": "Correo",
+  "settings.emailCurrent": "Entras con {email}.",
+  "settings.emailNew": "Correo nuevo",
+  "settings.emailHint":
+    "Te enviaremos un enlace al correo nuevo. Hasta que lo abras, sigues entrando con el actual.",
+  "settings.emailSubmit": "Cambiar correo",
+  "settings.emailSending": "Enviando enlace…",
+  "settings.emailSent": "Enlace enviado a {email}. Ábrelo para confirmar el cambio.",
+  "settings.emailInvalid": "Escribe un correo válido.",
+  "settings.emailUnchanged": "Ese ya es tu correo.",
+  "settings.emailUnavailable": "El cambio de correo aún no está disponible. Tu correo no cambió.",
+  "settings.emailError": "No pudimos pedir el cambio de correo. Vuelve a intentarlo.",
+  "settings.password": "Contraseña",
+  "settings.passwordHint": "Al cambiarla se cierran tus otras sesiones.",
   "settings.currentPassword": "Contraseña actual",
   "settings.newPassword": "Nueva contraseña",
   "settings.confirmPassword": "Repetir nueva contraseña",
+  "settings.passwordSubmit": "Cambiar contraseña",
+  "settings.passwordChanging": "Cambiando contraseña…",
+  "settings.passwordChanged": "Contraseña cambiada. Cerramos tus otras sesiones.",
   "settings.passwordInvalid":
     "Completa la contraseña actual y usa una nueva de 8 a 128 caracteres. Ambas contraseñas nuevas deben coincidir.",
-  "settings.save": "Guardar cambios",
-  "settings.saved": "Cambios guardados.",
-  "settings.error": "No pudimos guardar los cambios. Vuelve a intentarlo.",
   "settings.passwordError":
     "No pudimos cambiar la contraseña. Revisa la contraseña actual e inténtalo de nuevo.",
-  "settings.languageError":
-    "La contraseña se cambió, pero no pudimos guardar el idioma. Vuelve a guardar para intentarlo.",
-  "settings.email": "Avisos por email",
-  "settings.emailAll": "Todos los avisos",
-  "settings.emailCritical": "Solo los que piden una acción",
-  "settings.emailHint":
+  "settings.emailNotifications": "Avisos por email",
+  "settings.emailNotificationsAll": "Todos los avisos",
+  "settings.emailNotificationsCritical": "Solo los que piden una acción",
+  "settings.emailNotificationsHint":
     "Las acciones pendientes y las decisiones siempre llegan. Se envían en el idioma elegido.",
-  "settings.emailUnavailable": "No disponible ahora",
-  "settings.emailLoading": "Cargando…",
-  "settings.emailError":
-    "Guardamos tus otros cambios, pero no los avisos por email. Vuelve a guardar para intentarlo.",
+  "settings.emailNotificationsUnavailable": "No disponible ahora",
+  "settings.emailNotificationsLoading": "Cargando…",
+  "settings.emailNotificationsError":
+    "No pudimos guardar los avisos por email. Siguen los anteriores; vuelve a elegirlos.",
   "emailUnsubscribe.title": "Avisos por email",
   "emailUnsubscribe.description":
     "Deja de recibir recordatorios y novedades. Las acciones pendientes y las decisiones seguirán llegando.",
@@ -134,6 +151,55 @@ const es = {
   "emailUnsubscribe.invalid": "Este enlace no es válido. Cambia tus avisos en Configuración.",
   "emailUnsubscribe.error": "No pudimos guardar el cambio. Vuelve a intentarlo.",
   "emailUnsubscribe.home": "Ir a Futrob",
+  "settings.sessionsHint":
+    "Dispositivos con tu cuenta abierta. Al cerrar una sesión deja de valer al momento.",
+  "settings.sessionsLoading": "Cargando sesiones…",
+  "settings.sessionsError": "No pudimos cargar tus sesiones.",
+  "settings.sessionsOnlyThis": "Solo tienes abierta esta sesión.",
+  "settings.sessionCurrent": "Esta sesión",
+  "settings.sessionActivity": "Inició el {signedIn} · Última actividad: {lastActive}",
+  "settings.sessionRevoke": "Cerrar sesión",
+  "settings.sessionRevokeLabel": "Cerrar la sesión de {device}",
+  "settings.sessionsRevokeOthers": "Cerrar las demás",
+  "settings.sessionsRevokeError": "No pudimos cerrar la sesión. Vuelve a intentarlo.",
+  "settings.deviceUnknown": "Dispositivo desconocido",
+  "settings.deviceApp": "App de Futrob",
+  "settings.deviceOn": "{client} en {os}",
+  "settings.deleteIntro":
+    "La cuenta se elimina 30 días después de pedirlo. Hasta entonces puedes cancelarlo iniciando sesión.",
+  "settings.deleteRemovedTitle": "Qué se borra",
+  "settings.deleteRemoved":
+    "Tu nombre, correo, contraseña y sesiones; tus cuentas de juego y estadísticas personales; tus membresías en organizaciones y en plantillas de competiciones en curso.",
+  "settings.deleteKeptTitle": "Qué se conserva",
+  "settings.deleteKept":
+    "Los resultados oficiales, las estadísticas de competición y la auditoría, sin tu nombre: aparecen como «Cuenta eliminada».",
+  "settings.deleteLoading": "Comprobando si puedes eliminar la cuenta…",
+  "settings.deleteStatusError": "No pudimos comprobar el estado de tu cuenta.",
+  "settings.deleteBlockedTitle": "Antes de eliminar la cuenta",
+  "settings.deleteBlockerOrganizer":
+    "Eres el único organizador de {organization}. Da el rol de organizador a otra persona o archiva sus competiciones activas.",
+  "settings.deleteBlockerCaptain":
+    "Eres capitán de {team} en {competition}. Cede la capitanía a otro jugador.",
+  "settings.deleteScheduled": "Tu cuenta se eliminará el {date}.",
+  "settings.deleteStart": "Eliminar cuenta",
+  "settings.deleteConfirmTitle": "¿Eliminar tu cuenta?",
+  "settings.deleteConfirmDescription":
+    "Cerraremos todas tus sesiones, también esta, y eliminaremos la cuenta el {date}. Escribe tu contraseña para confirmar.",
+  "settings.deletePassword": "Contraseña",
+  "settings.deleteConfirm": "Eliminar mi cuenta",
+  "settings.deleting": "Programando eliminación…",
+  "settings.deleteKeep": "Mantener la cuenta",
+  "settings.deleteWrongPassword": "La contraseña no coincide. La cuenta sigue activa.",
+  "settings.deleteBlocked": "Hay responsabilidades pendientes. Revísalas en esta sección.",
+  "settings.deleteError": "No pudimos programar la eliminación. La cuenta sigue activa.",
+  "accountDeletion.title": "Tu cuenta se eliminará el {date}",
+  "accountDeletion.body":
+    "Pediste eliminar tu cuenta. Hasta esa fecha puedes cancelarlo y todo quedará como estaba.",
+  "accountDeletion.cancel": "Cancelar eliminación",
+  "accountDeletion.cancelling": "Cancelando…",
+  "accountDeletion.cancelError": "No pudimos cancelar la eliminación. Vuelve a intentarlo.",
+  "accountDeletion.signOut": "Cerrar sesión",
+  "profile.manageAccount": "Cambiar correo o contraseña",
   "feedback.title": "Enviar feedback",
   "feedback.description": "Cuéntanos qué mejorarías o qué problema encontraste.",
   "feedback.type": "¿Qué quieres compartir?",
@@ -533,6 +599,97 @@ const es = {
   "common.back": "Volver",
   "common.skip": "Omitir por ahora",
   "common.retry": "Reintentar",
+  "notFound.title": "No encontramos esta página",
+  "notFound.description": "El enlace puede estar mal escrito o la página ya no existe.",
+  "notFound.visitor.action": "Volver al inicio",
+  "notFound.member.action": "Ir a tu espacio",
+  "routeError.title": "Algo no ha ido bien",
+  "routeError.description": "Ha ocurrido un fallo inesperado. Puedes reintentar esta página.",
+  "legal.nav.aria": "Documentos legales",
+  "legal.nav.terms": "Términos de servicio",
+  "legal.nav.privacy": "Política de privacidad",
+  "legal.nav.refunds": "Reembolsos",
+  "legal.related": "Otros documentos",
+  "legal.signup.lead": "Al crear una cuenta aceptas los",
+  "legal.signup.joiner": " y la ",
+  "legal.signup.end": ".",
+  "legal.draft.title": "Borrador pendiente de revisión legal",
+  "legal.draft.body":
+    "Este texto describe cómo funciona Futrob hoy. No es asesoramiento jurídico y puede cambiar antes de publicarse como política definitiva.",
+  "legal.updated": ({ date }) => `Última actualización: ${date}`,
+  "legal.terms.meta.title": "Términos de servicio",
+  "legal.terms.meta.description":
+    "Condiciones de uso de Futrob para competiciones de EA SPORTS FC Clubs.",
+  "legal.terms.title": "Términos de servicio",
+  "legal.terms.description":
+    "Reglas de la cuenta, el uso aceptable y cómo Futrob trata los datos de EA.",
+  "legal.terms.service.title": "El servicio",
+  "legal.terms.service.body":
+    "Futrob es un producto de Davion Software para operar competiciones de EA SPORTS FC Clubs. Está disponible en español e inglés. Al crear una cuenta aceptas estas condiciones en el estado en que se publican.",
+  "legal.terms.accounts.title": "Cuentas",
+  "legal.terms.accounts.body":
+    "Necesitas una cuenta con un correo y una contraseña. Eres responsable de lo que hagas con ella. No compartas el acceso ni te hagas pasar por otra persona. Si detectas un uso indebido, avisa al operador.",
+  "legal.terms.results.title": "Competiciones y resultados oficiales",
+  "legal.terms.results.body":
+    "Un partido observado en EA no es oficial en Futrob hasta que un capitán lo selecciona y el resultado se aprueba. La sincronización con EA no oficializa nada. Solo los resultados oficiales aprobados actualizan clasificación, rankings y el portal público.",
+  "legal.terms.use.title": "Uso aceptable",
+  "legal.terms.use.body":
+    "Usa Futrob para organizar y jugar competiciones de forma honesta. No intentes falsear resultados, abusar de invitaciones, atacar el servicio ni usar datos de otros participantes fuera de la competición. El operador puede suspender una cuenta que rompa estas reglas.",
+  "legal.terms.ea.title": "Datos de EA",
+  "legal.terms.ea.body":
+    "Los datos de EA Clubs son observaciones del proveedor. Futrob no pide ni guarda credenciales de EA. EA SPORTS y FC Clubs son marcas de sus titulares; Futrob no está afiliado ni respaldado por EA.",
+  "legal.terms.liability.title": "Responsabilidad",
+  "legal.terms.liability.body":
+    "El servicio se ofrece tal cual, en la medida que permite la ley. Futrob no garantiza que EA esté disponible, que un sync coincida con lo que viste en el juego, ni que una competición termine de una forma concreta. Este apartado es un borrador y no limita derechos que no se puedan limitar.",
+  "legal.terms.changes.title": "Cambios",
+  "legal.terms.changes.body":
+    "Podemos actualizar estos términos cuando cambie el producto. La fecha de la última actualización aparece arriba. Si el cambio es sustancial, lo indicaremos en el producto cuando exista un canal para avisarte.",
+  "legal.privacy.meta.title": "Política de privacidad",
+  "legal.privacy.meta.description":
+    "Qué datos guarda Futrob, cómo usa las observaciones de EA y cómo pedir la baja de la cuenta.",
+  "legal.privacy.title": "Política de privacidad",
+  "legal.privacy.description":
+    "Qué guardamos, para qué y cómo puedes pedir que borremos tu cuenta.",
+  "legal.privacy.who.title": "Quiénes somos",
+  "legal.privacy.who.body":
+    "Futrob lo opera Davion Software. Tratamos los datos para que puedas crear una cuenta, unirte a organizaciones y competiciones, y ver resultados oficiales.",
+  "legal.privacy.data.title": "Datos que guardamos",
+  "legal.privacy.data.body":
+    "Cuenta: nombre, correo y el hash de la contraseña (Better Auth). Perfil del actor, organizaciones, competiciones, equipos y plantillas que creas o a las que te unes, invitaciones, actividad y los planes o cupos asignados a tu organización.",
+  "legal.privacy.data.body2":
+    "No vendemos estos datos. Los usamos para operar el producto, diagnosticar fallos y cumplir las reglas de la competición que organizas o juegas.",
+  "legal.privacy.ea.title": "Datos de EA",
+  "legal.privacy.ea.body":
+    "Si asocias un club o una cuenta de juego, guardamos los identificadores que declares y las observaciones de partidos que llegan de la API de EA Clubs. Futrob no pide ni almacena usuario o contraseña de EA.",
+  "legal.privacy.providers.title": "Proveedores",
+  "legal.privacy.providers.body":
+    "Cloudflare (web, auth y almacenamiento de archivos), Railway (API de producto y Postgres) y Sentry (diagnóstico de errores en producción). El correo transaccional usará un proveedor de email cuando ese canal esté listo; hoy no enviamos ese correo.",
+  "legal.privacy.retention.title": "Conservación",
+  "legal.privacy.retention.body":
+    "Guardamos los datos mientras la cuenta esté abierta. Algunos registros de competición pueden permanecer si otros participantes aún los necesitan (por ejemplo un resultado oficial). Las copias de seguridad se conservan un tiempo limitado y luego se rotan.",
+  "legal.privacy.deletion.title": "Eliminación de la cuenta",
+  "legal.privacy.deletion.body":
+    "Puedes pedir que borremos tu cuenta desde el perfil cuando esa función esté en el producto. Mientras tanto, pide la baja al operador desde la cuenta o el canal de soporte que publique Futrob.",
+  "legal.privacy.deletion.body2":
+    "Al borrar el acceso quitamos perfil y datos de cuenta. Conservaremos los registros de competición que otros participantes aún necesiten, como resultados oficiales ya aprobados y plantillas de un equipo que sigue en juego.",
+  "legal.privacy.contact.title": "Contacto",
+  "legal.privacy.contact.body":
+    "Escribe al operador de Futrob (Davion Software) desde la cuenta o el canal de soporte publicado en el producto. No inventes un correo: cuando el canal transaccional exista, lo indicaremos aquí.",
+  "legal.refunds.meta.title": "Reembolsos",
+  "legal.refunds.meta.description":
+    "Futrob no cobra con tarjeta en esta fase. Cómo se tramitará un reembolso cuando existan cargos.",
+  "legal.refunds.title": "Reembolsos",
+  "legal.refunds.description":
+    "No hay cobros automáticos en el producto actual. Esta página existirá para el proveedor de pagos cuando los haya.",
+  "legal.refunds.current.title": "Producto actual",
+  "legal.refunds.current.body":
+    "En esta fase Futrob no cobra con tarjeta ni procesa pagos automáticos. Los planes se asignan a mano. No hay un cargo que reembolsar en el producto público.",
+  "legal.refunds.charges.title": "Cuando existan cargos",
+  "legal.refunds.charges.body":
+    "Si un plan de pago se asigna de forma manual, el operador tramita cualquier devolución. Cuando un proveedor de pagos entre en el producto, esta política describirá plazos y el canal para pedir el reembolso.",
+  "legal.refunds.ask.title": "Cómo pedirlo",
+  "legal.refunds.ask.body":
+    "Contacta al operador de Futrob (Davion Software) desde la cuenta o el canal de soporte publicado. Conserva el identificador de la organización y, si lo hay, el del cargo.",
   "common.edit": "Editar",
   "common.pending": "Pendiente",
   "common.seconds": ({ seconds }) => `${seconds} s`,
@@ -2867,6 +3024,7 @@ export interface MessageParamsByKey {
   readonly "encounter.selection.history.selected": { readonly proposal: string };
   readonly "encounter.selection.history.acknowledged": { readonly count: number };
   readonly "common.seconds": { readonly seconds: number };
+  readonly "legal.updated": { readonly date: string };
   readonly "gameData.clubSearch.retryIn": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
@@ -3041,6 +3199,16 @@ export interface MessageParamsByKey {
   readonly "fixture.close.title": { readonly number: number };
   readonly "fixture.close.done": { readonly number: number };
   readonly "fixture.withdraw.done": { readonly team: string };
+  readonly "settings.emailCurrent": { readonly email: string };
+  readonly "settings.emailSent": { readonly email: string };
+  readonly "settings.sessionActivity": { readonly signedIn: string; readonly lastActive: string };
+  readonly "settings.sessionRevokeLabel": { readonly device: string };
+  readonly "settings.deviceOn": { readonly client: string; readonly os: string };
+  readonly "settings.deleteBlockerOrganizer": { readonly organization: string };
+  readonly "settings.deleteBlockerCaptain": { readonly team: string; readonly competition: string };
+  readonly "settings.deleteScheduled": { readonly date: string };
+  readonly "settings.deleteConfirmDescription": { readonly date: string };
+  readonly "accountDeletion.title": { readonly date: string };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -3106,39 +3274,57 @@ const en: Catalog = {
   "account.retry": "Try again",
   "account.saving": "Saving\u2026",
   "account.close": "Close",
-  "settings.title": "Settings",
-  "settings.description": "Choose your language and sidebar, and manage your password.",
+  "settings.title": "Account",
+  "settings.description": "Preferences, security, sessions and account deletion.",
+  "settings.sections": "Account sections",
+  "settings.section.preferences": "Preferences",
+  "settings.section.security": "Security",
+  "settings.section.sessions": "Sessions",
+  "settings.section.delete": "Delete account",
   "settings.language": "Language",
-  "settings.languageHint": "Remembered in this browser.",
+  "settings.languageHint": "Applied when you choose it and remembered in this browser.",
   "settings.sidebarLayout": "Sidebar",
-  "settings.sidebarLayoutHint": "Saved to your account.",
+  "settings.sidebarLayoutHint": "Applied when you choose it and saved to your account.",
   "settings.sidebarLayoutNavigation": "Navigation",
   "settings.sidebarLayoutPendingQueue": "With pending items",
+  "settings.saved": "Saved.",
+  "settings.languageError":
+    "We could not change the language. The previous one stays; choose again.",
   "settings.sidebarLayoutError":
-    "We saved your other changes, but not the sidebar. Save again to retry.",
-  "settings.password": "Change password",
-  "settings.passwordHint": "Optional. Changing it signs out your other sessions.",
+    "We could not save the sidebar. The previous one stays; choose again.",
+  "settings.email": "Email",
+  "settings.emailCurrent": "You sign in with {email}.",
+  "settings.emailNew": "New email",
+  "settings.emailHint":
+    "We will send a link to the new address. Until you open it, you keep signing in with the current one.",
+  "settings.emailSubmit": "Change email",
+  "settings.emailSending": "Sending link\u2026",
+  "settings.emailSent": "Link sent to {email}. Open it to confirm the change.",
+  "settings.emailInvalid": "Enter a valid email.",
+  "settings.emailUnchanged": "That is already your email.",
+  "settings.emailUnavailable": "Changing email is not available yet. Your email did not change.",
+  "settings.emailError": "We could not request the email change. Try again.",
+  "settings.password": "Password",
+  "settings.passwordHint": "Changing it signs out your other sessions.",
   "settings.currentPassword": "Current password",
   "settings.newPassword": "New password",
   "settings.confirmPassword": "Repeat new password",
+  "settings.passwordSubmit": "Change password",
+  "settings.passwordChanging": "Changing password\u2026",
+  "settings.passwordChanged": "Password changed. We signed out your other sessions.",
   "settings.passwordInvalid":
     "Enter your current password and a new password of 8 to 128 characters. Both new passwords must match.",
-  "settings.save": "Save changes",
-  "settings.saved": "Changes saved.",
-  "settings.error": "We could not save your changes. Try again.",
   "settings.passwordError":
     "We could not change your password. Check your current password and try again.",
-  "settings.languageError":
-    "Your password changed, but we could not save your language. Save again to retry.",
-  "settings.email": "Email notifications",
-  "settings.emailAll": "All notifications",
-  "settings.emailCritical": "Only those that need action",
-  "settings.emailHint":
+  "settings.emailNotifications": "Email notifications",
+  "settings.emailNotificationsAll": "All notifications",
+  "settings.emailNotificationsCritical": "Only those that need action",
+  "settings.emailNotificationsHint":
     "Pending actions and decisions always arrive. Emails use the language chosen here.",
-  "settings.emailUnavailable": "Unavailable right now",
-  "settings.emailLoading": "Loading\u2026",
-  "settings.emailError":
-    "We saved your other changes, but not your email notifications. Save again to retry.",
+  "settings.emailNotificationsUnavailable": "Unavailable right now",
+  "settings.emailNotificationsLoading": "Loading\u2026",
+  "settings.emailNotificationsError":
+    "We could not save your email notifications. The previous choice stays; choose again.",
   "emailUnsubscribe.title": "Email notifications",
   "emailUnsubscribe.description":
     "Stop reminders and updates. Pending actions and decisions will still arrive.",
@@ -3149,6 +3335,55 @@ const en: Catalog = {
   "emailUnsubscribe.invalid": "This link is not valid. Change your notifications in Settings.",
   "emailUnsubscribe.error": "We could not save the change. Try again.",
   "emailUnsubscribe.home": "Go to Futrob",
+  "settings.sessionsHint":
+    "Devices where your account is open. Signing a session out ends it immediately.",
+  "settings.sessionsLoading": "Loading sessions\u2026",
+  "settings.sessionsError": "We could not load your sessions.",
+  "settings.sessionsOnlyThis": "Only this session is open.",
+  "settings.sessionCurrent": "This session",
+  "settings.sessionActivity": "Signed in {signedIn} · Last active {lastActive}",
+  "settings.sessionRevoke": "Sign out",
+  "settings.sessionRevokeLabel": "Sign out {device}",
+  "settings.sessionsRevokeOthers": "Sign out the others",
+  "settings.sessionsRevokeError": "We could not sign that session out. Try again.",
+  "settings.deviceUnknown": "Unknown device",
+  "settings.deviceApp": "Futrob app",
+  "settings.deviceOn": "{client} on {os}",
+  "settings.deleteIntro":
+    "Your account is deleted 30 days after you ask. Until then you can cancel by signing in.",
+  "settings.deleteRemovedTitle": "What is deleted",
+  "settings.deleteRemoved":
+    "Your name, email, password and sessions; your game accounts and personal statistics; your memberships in organizations and in rosters of running competitions.",
+  "settings.deleteKeptTitle": "What is kept",
+  "settings.deleteKept":
+    "Official results, competition statistics and the audit trail, without your name: they show \u201cDeleted account\u201d.",
+  "settings.deleteLoading": "Checking whether you can delete the account\u2026",
+  "settings.deleteStatusError": "We could not check your account status.",
+  "settings.deleteBlockedTitle": "Before you delete the account",
+  "settings.deleteBlockerOrganizer":
+    "You are the only organizer of {organization}. Give the organizer role to someone else or archive its active competitions.",
+  "settings.deleteBlockerCaptain":
+    "You captain {team} in {competition}. Hand the captaincy to another player.",
+  "settings.deleteScheduled": "Your account will be deleted on {date}.",
+  "settings.deleteStart": "Delete account",
+  "settings.deleteConfirmTitle": "Delete your account?",
+  "settings.deleteConfirmDescription":
+    "We will sign out every session, this one included, and delete the account on {date}. Enter your password to confirm.",
+  "settings.deletePassword": "Password",
+  "settings.deleteConfirm": "Delete my account",
+  "settings.deleting": "Scheduling deletion\u2026",
+  "settings.deleteKeep": "Keep my account",
+  "settings.deleteWrongPassword": "The password does not match. Your account is still active.",
+  "settings.deleteBlocked": "There are open responsibilities. Review them in this section.",
+  "settings.deleteError": "We could not schedule the deletion. Your account is still active.",
+  "accountDeletion.title": "Your account will be deleted on {date}",
+  "accountDeletion.body":
+    "You asked to delete your account. Until that date you can cancel and everything stays as it was.",
+  "accountDeletion.cancel": "Cancel deletion",
+  "accountDeletion.cancelling": "Cancelling\u2026",
+  "accountDeletion.cancelError": "We could not cancel the deletion. Try again.",
+  "accountDeletion.signOut": "Sign out",
+  "profile.manageAccount": "Change email or password",
   "feedback.title": "Send feedback",
   "feedback.description": "Tell us what to improve or what went wrong.",
   "feedback.type": "What would you like to share?",
@@ -3548,6 +3783,94 @@ const en: Catalog = {
   "common.back": "Back",
   "common.skip": "Skip for now",
   "common.retry": "Try again",
+  "notFound.title": "We couldn't find this page",
+  "notFound.description": "The link may be mistyped, or the page no longer exists.",
+  "notFound.visitor.action": "Back to home",
+  "notFound.member.action": "Go to your space",
+  "routeError.title": "Something went wrong",
+  "routeError.description": "An unexpected failure happened. You can try this page again.",
+  "legal.nav.aria": "Legal documents",
+  "legal.nav.terms": "Terms of service",
+  "legal.nav.privacy": "Privacy policy",
+  "legal.nav.refunds": "Refunds",
+  "legal.related": "Other documents",
+  "legal.signup.lead": "By creating an account you accept the",
+  "legal.signup.joiner": " and the ",
+  "legal.signup.end": ".",
+  "legal.draft.title": "Draft pending legal review",
+  "legal.draft.body":
+    "This text describes how Futrob works today. It is not legal advice and may change before it is published as a final policy.",
+  "legal.updated": ({ date }) => `Last updated: ${date}`,
+  "legal.terms.meta.title": "Terms of service",
+  "legal.terms.meta.description": "Terms for using Futrob to run EA SPORTS FC Clubs competitions.",
+  "legal.terms.title": "Terms of service",
+  "legal.terms.description": "Account rules, acceptable use, and how Futrob treats EA data.",
+  "legal.terms.service.title": "The service",
+  "legal.terms.service.body":
+    "Futrob is a Davion Software product for operating EA SPORTS FC Clubs competitions. It is available in Spanish and English. Creating an account means you accept these terms as published.",
+  "legal.terms.accounts.title": "Accounts",
+  "legal.terms.accounts.body":
+    "You need an account with an email and a password. You are responsible for what you do with it. Do not share access or impersonate someone else. If you see misuse, tell the operator.",
+  "legal.terms.results.title": "Competitions and official results",
+  "legal.terms.results.body":
+    "A match observed in EA is not official in Futrob until a captain selects it and the result is approved. Syncing with EA never officializes a result. Only approved official results update standings, rankings, and the public portal.",
+  "legal.terms.use.title": "Acceptable use",
+  "legal.terms.use.body":
+    "Use Futrob to organize and play competitions honestly. Do not fake results, abuse invitations, attack the service, or use other participants' data outside the competition. The operator may suspend an account that breaks these rules.",
+  "legal.terms.ea.title": "EA data",
+  "legal.terms.ea.body":
+    "EA Clubs data are observations from the provider. Futrob does not ask for or store EA login credentials. EA SPORTS and FC Clubs are trademarks of their owners; Futrob is not affiliated with or endorsed by EA.",
+  "legal.terms.liability.title": "Liability",
+  "legal.terms.liability.body":
+    "The service is provided as is, to the extent the law allows. Futrob does not warrant that EA will be available, that a sync will match what you saw in the game, or that a competition will finish a particular way. This section is a draft and does not limit rights that cannot be limited.",
+  "legal.terms.changes.title": "Changes",
+  "legal.terms.changes.body":
+    "We may update these terms when the product changes. The last-updated date is at the top. If a change is material, we will note it in the product once there is a channel to tell you.",
+  "legal.privacy.meta.title": "Privacy policy",
+  "legal.privacy.meta.description":
+    "What Futrob stores, how it uses EA observations, and how to ask for account deletion.",
+  "legal.privacy.title": "Privacy policy",
+  "legal.privacy.description": "What we store, why, and how you can ask us to delete your account.",
+  "legal.privacy.who.title": "Who we are",
+  "legal.privacy.who.body":
+    "Futrob is operated by Davion Software. We process data so you can create an account, join organizations and competitions, and see official results.",
+  "legal.privacy.data.title": "Data we store",
+  "legal.privacy.data.body":
+    "Account: name, email, and the password hash (Better Auth). Actor profile, organizations, competitions, teams and rosters you create or join, invitations, activity, and plan entitlements assigned to your organization.",
+  "legal.privacy.data.body2":
+    "We do not sell this data. We use it to run the product, diagnose failures, and apply the rules of the competition you organize or play.",
+  "legal.privacy.ea.title": "EA data",
+  "legal.privacy.ea.body":
+    "If you associate a club or a game account, we store the identifiers you declare and match observations from the EA Clubs API. Futrob does not ask for or store EA usernames or passwords.",
+  "legal.privacy.providers.title": "Providers",
+  "legal.privacy.providers.body":
+    "Cloudflare (web, auth, and file storage), Railway (product API and Postgres), and Sentry (error diagnostics in production). Transactional email will use an email provider when that channel ships; we do not send that mail today.",
+  "legal.privacy.retention.title": "Retention",
+  "legal.privacy.retention.body":
+    "We keep data while the account is open. Some competition records may remain if other participants still need them (for example an official result). Backups are kept for a limited period and then rotated.",
+  "legal.privacy.deletion.title": "Account deletion",
+  "legal.privacy.deletion.body":
+    "You can ask us to delete your account from your profile when that flow ships. Until then, ask the operator for deletion from the account or the support channel Futrob publishes.",
+  "legal.privacy.deletion.body2":
+    "Deleting access removes your profile and account data. We will keep competition records that other participants still need, such as approved official results and rosters of a team still in play.",
+  "legal.privacy.contact.title": "Contact",
+  "legal.privacy.contact.body":
+    "Write to the Futrob operator (Davion Software) from the account or the support channel published in the product. Do not invent an email address: when the transactional channel exists, we will list it here.",
+  "legal.refunds.meta.title": "Refunds",
+  "legal.refunds.meta.description":
+    "Futrob does not charge cards in this phase. How a refund will be handled when charges exist.",
+  "legal.refunds.title": "Refunds",
+  "legal.refunds.description":
+    "There are no automated charges in the current product. This page will exist for the payments provider when they do.",
+  "legal.refunds.current.title": "Current product",
+  "legal.refunds.current.body":
+    "In this phase Futrob does not charge cards or process automated payments. Plans are assigned by hand. There is no charge to refund in the public product.",
+  "legal.refunds.charges.title": "When charges exist",
+  "legal.refunds.charges.body":
+    "If a paid plan is assigned manually, the operator handles any refund. When a payments provider joins the product, this policy will describe timelines and the channel to request a refund.",
+  "legal.refunds.ask.title": "How to ask",
+  "legal.refunds.ask.body":
+    "Contact the Futrob operator (Davion Software) from the account or the published support channel. Keep the organization identifier and, if there is one, the charge identifier.",
   "common.edit": "Edit",
   "common.pending": "Pending",
   "common.seconds": ({ seconds }) => `${seconds}s`,

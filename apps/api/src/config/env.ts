@@ -7,7 +7,7 @@ export interface ApiEnv {
   readonly resultsSystemActorId: string | undefined;
   readonly schedulingSystemActorId: string | undefined;
   readonly initialSuperuserActorId: string | undefined;
-  /** Resend API key (ADR-0028); without it email stays in memory or pending. */
+  /** Resend API key (ADR-0029); without it email stays in memory or pending. */
   readonly resendApiKey: string | undefined;
   /** Sender on the verified domain, such as `Futrob <avisos@futrob.app>`. */
   readonly emailFrom: string | undefined;

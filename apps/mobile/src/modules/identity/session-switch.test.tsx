@@ -90,6 +90,9 @@ function installAccountsApi({ ana, beto }: ReturnType<typeof accounts>) {
         currentStep: null,
       }),
     ),
+    "/identity/account/deletion": authorized(() =>
+      Response.json({ deletion: { status: "active" }, blockers: [] }),
+    ),
     "/organizations/post-auth-destination": authorized((account) =>
       Response.json({ destination: { kind: "personal" }, memberships: account.memberships }),
     ),

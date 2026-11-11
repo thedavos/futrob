@@ -21,6 +21,11 @@ import {
 } from "./commands/organizations.ts";
 import { run as onboardingStatus } from "./commands/onboarding.ts";
 import {
+  accountDeletionCancel,
+  accountDeletionRequest,
+  accountDeletionStatus,
+} from "./commands/account-deletion.ts";
+import {
   statisticsRebuild,
   compCreate,
   compExplore,
@@ -102,6 +107,9 @@ const commands = {
   "org-invite": (args) => orgInvite(args),
 
   "onboarding-status": (args) => onboardingStatus(args),
+  "account-deletion-status": (args) => accountDeletionStatus(args),
+  "account-deletion-request": (args) => accountDeletionRequest(args),
+  "account-deletion-cancel": (args) => accountDeletionCancel(args),
 
   "comp-create": (args) => compCreate(args),
   "comp-list": (args) => compList(args),

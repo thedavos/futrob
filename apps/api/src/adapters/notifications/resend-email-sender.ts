@@ -11,7 +11,7 @@ const errorSchema = z.object({ name: z.string() });
 const CONCURRENT_IDEMPOTENT_REQUESTS = "concurrent_idempotent_requests";
 
 /**
- * Resend over its HTTP API (ADR-0028). The `Idempotency-Key` header makes Resend return the
+ * Resend over its HTTP API (ADR-0029). The `Idempotency-Key` header makes Resend return the
  * first result for a retried delivery instead of sending it again, as long as the body is the
  * same: the outbox pins the request and the body is serialized in a stable order. Rate limits,
  * a concurrent request with the same key, server errors and network failures are retryable;
