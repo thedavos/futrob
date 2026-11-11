@@ -25,3 +25,10 @@ export const ACTIVE_COMPETITION_STATUSES = [
 export function isActiveCompetitionStatus(status: CompetitionStatus): boolean {
   return ACTIVE_COMPETITION_STATUSES.some((value) => value === status);
 }
+
+/** Statuses where staff may impose or revoke sanctions (ADR-0028). */
+export const SANCTIONABLE_STATUSES = ["registration", "published", "paused", "finished"] as const;
+
+export function canSanction(status: CompetitionStatus): boolean {
+  return SANCTIONABLE_STATUSES.some((value) => value === status);
+}

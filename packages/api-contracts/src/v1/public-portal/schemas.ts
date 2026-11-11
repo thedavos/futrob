@@ -58,7 +58,7 @@ export const publicStandingRowSchema = z.strictObject({
   /** Latest official results, oldest first. */
   form: z.array(z.enum(["win", "draw", "loss"])).max(5),
   /** Swiss only. `points` already include the rests. */
-  buchholz: z.number().int().nonnegative().optional(),
+  buchholz: z.number().int().optional(),
   byes: z.number().int().nonnegative().optional(),
   withdrawn: z.boolean().optional(),
 });

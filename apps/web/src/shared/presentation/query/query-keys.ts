@@ -119,6 +119,11 @@ export const queryKeys = {
     publicEntryInvitationLink: (code: string) =>
       [...queryKeys.competitions.all, "public-entry-invitation-link", code] as const,
     myEntryInvitations: () => [...queryKeys.competitions.all, "my-entry-invitations"] as const,
+    /** Every sanctions list of the competition; the Team's own read nests under it. */
+    sanctions: (organizationId: string, competitionId: string) =>
+      [...queryKeys.competitions.all, "sanctions", organizationId, competitionId] as const,
+    teamSanctions: (organizationId: string, competitionId: string, teamId: string) =>
+      [...queryKeys.competitions.sanctions(organizationId, competitionId), "team", teamId] as const,
   },
   teams: {
     all: ["teams"] as const,

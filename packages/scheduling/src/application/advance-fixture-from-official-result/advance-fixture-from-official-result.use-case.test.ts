@@ -74,6 +74,7 @@ function setup(options: {
     officialMatchCounts: { regular: 1, knockout: options.knockoutMatches ?? 2 },
     resolutionModes: { regular: "independent_matches", knockout: knockoutMode },
     standingPoints: { winPoints: 3, drawPoints: 1, lossPoints: 0 },
+    pointDeductions: [],
     approvedParticipants: [...options.seed],
   };
   const useCase = new AdvanceFixtureFromOfficialResultUseCase({

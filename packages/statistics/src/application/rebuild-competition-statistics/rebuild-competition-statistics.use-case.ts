@@ -20,6 +20,7 @@ import type {
 } from "../../domain/entities/team-match-contribution.ts";
 import type { ProjectOfficialResultError } from "../../domain/errors/project-official-result.errors.ts";
 import type { CompetitionMatchRulesReaderPort } from "../../domain/ports/competition-match-rules-reader.port.ts";
+import type { CompetitionPointDeductionReaderPort } from "../../domain/ports/competition-point-deduction-reader.port.ts";
 import type { CompetitionStandingSnapshotRepository } from "../../domain/ports/competition-standing-snapshot.repository.ts";
 import type { PlayerCompetitionStatsRepository } from "../../domain/ports/player-competition-stats.repository.ts";
 import type { PlayerIdentityResolverPort } from "../../domain/ports/player-identity-resolver.port.ts";
@@ -65,6 +66,8 @@ export interface RebuildCompetitionStatisticsDependencies {
   readonly teamCompetitionStats: TeamCompetitionStatsRepository;
   readonly standings: CompetitionStandingSnapshotRepository;
   readonly matchRules: CompetitionMatchRulesReaderPort;
+  /** Active sanction deductions (ADR-0028); absent means none. */
+  readonly pointDeductions?: CompetitionPointDeductionReaderPort;
   readonly encounterReader?: EncounterReaderPort;
   readonly rebuildRankings: Pick<RebuildCompetitionRankingsUseCase, "execute">;
   readonly teamPerformanceLock?: TeamPerformanceRankingLockPort;
@@ -150,6 +153,7 @@ export class RebuildCompetitionStatisticsUseCase {
       );
       await this.rebuildStandings(
         input.competitionId,
+        input.organizationId,
         previousTeams,
         currentTeams,
         officialSlotTimes(latestResults),
@@ -246,11 +250,20 @@ export class RebuildCompetitionStatisticsUseCase {
 
   private async rebuildStandings(
     competitionId: CompetitionId,
+    scopeOrganizationId: OrganizationId | undefined,
     previous: readonly TeamMatchContribution[],
     current: readonly TeamMatchContribution[],
     occurredAtBySlot: ReadonlyMap<string, Date>,
   ): Promise<void> {
-    const organizationId = current[0]?.organizationId ?? previous[0]?.organizationId;
+    const contributionOrganizationId = current[0]?.organizationId ?? previous[0]?.organizationId;
+    const deductionOrganizationId = contributionOrganizationId ?? scopeOrganizationId;
+    const pointDeductions = deductionOrganizationId
+      ? ((await this.deps.pointDeductions?.listActive(deductionOrganizationId, competitionId)) ??
+        [])
+      : [];
+    // A competition with neither results nor deductions has no table to keep.
+    const organizationId =
+      contributionOrganizationId ?? (pointDeductions.length > 0 ? scopeOrganizationId : undefined);
     if (!organizationId) {
       await this.deps.standings.deleteByCompetition(competitionId);
       return;
@@ -268,6 +281,7 @@ export class RebuildCompetitionStatisticsUseCase {
         contributions: current,
         pointsRules: DEFAULT_COMPETITION_MATCH_POINTS,
         pointsByEncounter,
+        pointDeductions,
         occurredAtBySlot,
         updatedAt: this.deps.clock.now(),
       }),

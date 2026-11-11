@@ -91,6 +91,17 @@ describe("public portal wire schemas", () => {
     ).toBe(false);
   });
 
+  it("accepts negative Buchholz from sanctioned opponents", () => {
+    const parsed = getPublicStandingsResponseSchema.parse({
+      standings: {
+        rows: [{ ...standingRow, buchholz: -3, byes: 0, withdrawn: false }],
+        swiss: null,
+        updatedAt: null,
+      },
+    });
+    expect(parsed.standings.rows[0]?.buchholz).toBe(-3);
+  });
+
   it("rejects candidates, slots and provider payloads on a calendar entry", () => {
     const body = (entry: object) => ({ calendar: { timeZone: "America/Lima", entries: [entry] } });
     expect(getPublicCalendarResponseSchema.safeParse(body(calendarEntry)).success).toBe(true);
