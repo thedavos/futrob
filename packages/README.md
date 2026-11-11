@@ -15,7 +15,7 @@ Documento canónico: [`/docs/architecture/packages-and-sdk.md`](/docs/architectu
 | [`shared-kernel`](./shared-kernel/)                             | `@futrob/shared-kernel` | Result, IDs, errores/eventos y ports transversales |
 | [`test-support`](./test-support/)                               | `@futrob/test-support`  | Fakes/builders de test                             |
 
-Packages de soporte adicionales: `@futrob/ui-tokens` (tokens compartidos), `@futrob/ea-clubs` (schemas/mappers puros del proveedor) y `@futrob/logger` (logging).
+Packages de soporte adicionales: `@futrob/ui-tokens` (tokens compartidos), `@futrob/ea-clubs` (schemas/mappers puros del proveedor) y `@futrob/logger` (logging y política compartida de Sentry).
 
 BC packages: `identity`, `organizations`, `competitions`, `teams`, `scheduling`, `game-data`, `results`, `statistics`, `analytics`, `notifications`, `public-portal`, `billing`.
 

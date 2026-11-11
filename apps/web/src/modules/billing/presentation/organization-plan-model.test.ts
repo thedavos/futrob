@@ -1,6 +1,6 @@
 import type { GetOrganizationPlanResponse } from "@futrob/api-contracts";
 import { describe, expect, it } from "vite-plus/test";
-import { nextPlan, planStatus, usageLevel, usageRows } from "./organization-plan-model.ts";
+import { planStatus, requestablePlans, usageLevel, usageRows } from "./organization-plan-model.ts";
 import { freePlanFixture } from "./organization-plan.fixtures.ts";
 
 describe("organization plan model", () => {
@@ -25,12 +25,10 @@ describe("organization plan model", () => {
     ]);
   });
 
-  it("names the next plan and reads a lapsed subscription as free", () => {
-    expect([nextPlan("free"), nextPlan("pro"), nextPlan("league")]).toEqual([
-      "pro",
-      "league",
-      null,
-    ]);
+  it("offers only paid plans above the current one and reads a lapsed subscription as free", () => {
+    expect([requestablePlans("free"), requestablePlans("pro"), requestablePlans("league")]).toEqual(
+      [["pro", "league"], ["league"], []],
+    );
     expect(planStatus(freePlanFixture)).toEqual({ kind: "default" });
     expect(
       planStatus({

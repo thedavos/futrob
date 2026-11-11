@@ -1,4 +1,5 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, type BetterAuthOptions } from "better-auth";
+import { isAPIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, customSession } from "better-auth/plugins";
 import type { ActorProvisionerPort } from "@futrob/identity";
@@ -43,6 +44,22 @@ export function createActorProvisioningHooks(
 }
 
 /**
+ * Better Auth turns endpoint exceptions into HTTP responses without rethrowing,
+ * so the worker's outer catch never sees them. Report only defects: 4xx
+ * `APIError`s (bad credentials, rate limits) are expected responses.
+ */
+export function createAuthErrorHandler(
+  reportDefect: (cause: Error) => void,
+): NonNullable<BetterAuthOptions["onAPIError"]> {
+  return {
+    onError: (error) => {
+      if (isAPIError(error) && error.statusCode < 500) return;
+      reportDefect(error instanceof Error ? error : new Error("auth.endpoint.failed"));
+    },
+  };
+}
+
+/**
  * Request-scoped Better Auth instance bound to the product Postgres (ADR-0021).
  * Instantiate per request (or per handler) — do not share a singleton across isolates.
  *
@@ -58,6 +75,7 @@ export function createAuth(input: {
   readonly clock: ClockPort;
   readonly ids: IdGeneratorPort;
   readonly actorProvisioner?: ActorProvisionerPort;
+  readonly reportDefect: (cause: Error) => void;
 }) {
   if (input.env.BETTER_AUTH_SECRET.length < 32) {
     throw new Error("auth: BETTER_AUTH_SECRET must contain at least 32 characters");
@@ -79,6 +97,7 @@ export function createAuth(input: {
     emailAndPassword: {
       enabled: true,
     },
+    onAPIError: createAuthErrorHandler(input.reportDefect),
     rateLimit: {
       enabled: true,
       storage: "database",

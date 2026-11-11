@@ -1,43 +1,98 @@
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const captureException = vi.fn();
 const getClient = vi.fn();
 const setExtras = vi.fn();
+const withSentry = vi.fn((configFn: (env: object) => unknown, handler: unknown) => {
+  lastOptions = configFn;
+  return handler;
+});
+let lastOptions: ((env: object) => unknown) | undefined;
 
 vi.mock("@sentry/cloudflare", () => ({
-  captureException: (...args: unknown[]) => captureException(...args),
-  getClient: () => getClient(),
+  withSentry,
+  captureException,
+  getClient,
   getCurrentScope: () => ({ setExtras }),
-  withSentry: (_factory: unknown, handler: unknown) => handler,
 }));
 
-afterEach(() => {
-  captureException.mockReset();
-  getClient.mockReset();
-  setExtras.mockReset();
-});
+const { captureWorkerError, withWorkerSentry } = await import("./sentry.ts");
 
-describe("captureWorkerError", () => {
-  it("does not capture when Sentry is not initialized", async () => {
+describe("web Sentry worker wrapper", () => {
+  beforeEach(() => {
+    captureException.mockReset();
+    getClient.mockReset();
+    setExtras.mockReset();
+    lastOptions = undefined;
+  });
+
+  it("does not send when the SDK is not initialized", () => {
     getClient.mockReturnValue(undefined);
-    const { captureWorkerError } = await import("./sentry.ts");
     captureWorkerError(new Error("boom"));
     expect(captureException).not.toHaveBeenCalled();
   });
 
-  it("does not capture an expected TaggedError when Sentry is on", async () => {
-    getClient.mockReturnValue({});
-    const { captureWorkerError } = await import("./sentry.ts");
-    captureWorkerError({ code: "auth.unavailable", message: "down" });
-    expect(captureException).not.toHaveBeenCalled();
+  it("does not send options in development even with a DSN", () => {
+    const worker = { fetch: () => new Response("ok") };
+    expect(withWorkerSentry(worker)).toBe(worker);
+    expect(
+      lastOptions?.({
+        SENTRY_DSN: "https://public@o0.ingest.sentry.io/1",
+        NODE_ENV: "development",
+      }),
+    ).toEqual({ enabled: false });
   });
 
-  it("captures a generic Error when Sentry is on", async () => {
+  it("enables in production with the web service tag and scrubs credentials", () => {
+    withWorkerSentry({ fetch: () => new Response("ok") });
+    const options = lastOptions?.({
+      SENTRY_DSN: "https://public@o0.ingest.sentry.io/1",
+      NODE_ENV: "production",
+      SENTRY_ENVIRONMENT: "production",
+    }) as {
+      initialScope: { tags: Record<string, string> };
+      sendDefaultPii: boolean;
+      beforeSend: (event: object, hint: object) => object | null;
+      beforeSendTransaction: (event: object) => object | null;
+    };
+    expect(options.initialScope.tags).toEqual({ service: "web", environment: "production" });
+    const inviteUrl = "https://app.futrob.app/roster-invitations/accept/SYNTHETIC_INVITE_TOKEN";
+    expect(
+      JSON.stringify(
+        options.beforeSendTransaction({
+          transaction: "GET /roster-invitations/accept/SYNTHETIC_INVITE_TOKEN",
+          contexts: { trace: { data: { "url.full": inviteUrl } } },
+          spans: [{ data: { "url.full": inviteUrl } }],
+        }),
+      ),
+    ).not.toMatch(/SYNTHETIC_INVITE_TOKEN/);
+    expect(options.sendDefaultPii).toBe(false);
+    const requestId = "9b020aa7-9c5e-4cca-b8ea-daeb047c6dca";
+    const sent = options.beforeSend(
+      {
+        request: {
+          data: { password: "secret-pass" },
+          headers: { Authorization: "Bearer session-token", "X-Request-ID": requestId },
+        },
+        user: { email: "ana@club.mx" },
+      },
+      {},
+    );
+    expect(sent).toMatchObject({
+      request: { headers: { Authorization: "[Filtered]", "X-Request-ID": requestId } },
+      tags: { request_id: requestId },
+    });
+    expect(sent).not.toHaveProperty("request.data");
+    expect(JSON.stringify(sent)).not.toMatch(/secret-pass|session-token|ana@club\.mx/);
+  });
+
+  it("drops expected failures and sends defects", () => {
     getClient.mockReturnValue({});
-    const { captureWorkerError } = await import("./sentry.ts");
-    const error = new Error("loader crashed");
-    captureWorkerError(error, { handler: "route-error" });
-    expect(setExtras).toHaveBeenCalledWith({ handler: "route-error" });
-    expect(captureException).toHaveBeenCalledWith(error);
+    captureWorkerError({ code: "api.not_found" });
+    expect(captureException).not.toHaveBeenCalled();
+    const defect = new Error("queue failed");
+    captureWorkerError(defect, { handler: "queue" });
+    expect(captureException).toHaveBeenCalledWith(defect);
+    expect(setExtras).toHaveBeenCalledWith({ handler: "queue" });
   });
 });

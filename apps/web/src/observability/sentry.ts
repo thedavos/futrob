@@ -1,5 +1,10 @@
 import * as Sentry from "@sentry/cloudflare";
-import { isExpectedFailure } from "./expected-failure.ts";
+import {
+  applySentryEventPolicy,
+  applySentryTransactionPolicy,
+  isExpectedFailure,
+  sentrySdkOptions,
+} from "@futrob/logger";
 
 /**
  * Sentry is production-only for the web Worker: `withWorkerSentry` initializes
@@ -12,18 +17,46 @@ import { isExpectedFailure } from "./expected-failure.ts";
  * Sentry here is a defect.
  */
 
+function cloudflareSentryOptions<
+  Env extends {
+    readonly NODE_ENV?: string;
+    readonly SENTRY_DSN?: string;
+    readonly SENTRY_ENVIRONMENT?: string;
+  },
+>(env: Env): Sentry.CloudflareOptions {
+  const options = sentrySdkOptions({
+    dsn: env.SENTRY_DSN,
+    nodeEnv: env.NODE_ENV,
+    environment: env.SENTRY_ENVIRONMENT ?? process.env.SENTRY_ENVIRONMENT,
+    service: "web",
+  });
+  // `withSentry` still merges `env.SENTRY_DSN` when this callback returns
+  // undefined, so development must return `enabled: false` explicitly.
+  if (!options) return { enabled: false };
+  return {
+    dsn: options.dsn,
+    environment: options.environment,
+    tracesSampleRate: options.tracesSampleRate,
+    sendDefaultPii: false,
+    initialScope: { tags: { ...options.initialScope.tags } },
+    beforeSend(event, hint) {
+      return applySentryEventPolicy(event, hint);
+    },
+    beforeSendTransaction(event) {
+      return applySentryTransactionPolicy(event);
+    },
+  };
+}
+
 export function withWorkerSentry<
-  Env extends { readonly NODE_ENV?: string; readonly SENTRY_DSN?: string },
+  Env extends {
+    readonly NODE_ENV?: string;
+    readonly SENTRY_DSN?: string;
+    readonly SENTRY_ENVIRONMENT?: string;
+  },
   T,
 >(handler: T): T {
-  return Sentry.withSentry((env: Env) => {
-    if (!env.SENTRY_DSN || env.NODE_ENV !== "production") return undefined;
-    return {
-      dsn: env.SENTRY_DSN,
-      environment: process.env.SENTRY_ENVIRONMENT ?? "production",
-      tracesSampleRate: 0.1,
-    } satisfies Partial<Sentry.CloudflareOptions>;
-  }, handler);
+  return Sentry.withSentry((env: Env) => cloudflareSentryOptions(env), handler);
 }
 
 /** No-op unless the SDK was initialized (dev stays console-only). */

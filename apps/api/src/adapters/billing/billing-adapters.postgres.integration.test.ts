@@ -9,11 +9,13 @@ import { PostgresTransactionPort } from "@/adapters/persistence/pg-transaction.t
 import { seedActors } from "@/testing/seed-actors.ts";
 import {
   billingAdapterContract,
+  planRequestAdapterContract,
   CONTRACT_ORG,
   CONTRACT_OTHER_ORG,
   CONTRACT_SUPERUSER,
 } from "./billing-adapters.contract.ts";
 import { PostgresPlanCatalog } from "./plan-catalog.ts";
+import { PostgresPlanRequestRepository } from "./plan-requests.ts";
 import { PostgresQuotaLedger } from "./quota-ledger.ts";
 import {
   PostgresPlanChangeAuditRepository,
@@ -35,7 +37,7 @@ describe.skipIf(!databaseUrl)("Postgres billing adapters", () => {
 
   async function freshTenants() {
     await isolated.pool.query(
-      "TRUNCATE billing_quota_consumptions, billing_plan_changes, billing_subscriptions",
+      "TRUNCATE billing_quota_consumptions, billing_plan_changes, billing_plan_requests, billing_subscriptions",
     );
     await seedActors(isolated.pool, CONTRACT_SUPERUSER);
     await isolated.pool.query(
@@ -49,10 +51,36 @@ describe.skipIf(!databaseUrl)("Postgres billing adapters", () => {
       ledger: new PostgresQuotaLedger(isolated.pool),
       subscriptions: new PostgresSubscriptionRepository(isolated.pool),
       audit: new PostgresPlanChangeAuditRepository(isolated.pool),
+      requests: new PostgresPlanRequestRepository(isolated.pool),
     };
   }
 
   billingAdapterContract(freshTenants);
+  planRequestAdapterContract(freshTenants);
+
+  it("rejects a second open request for an organization and a request for the free plan", async () => {
+    const { requests } = await freshTenants();
+    const pending = {
+      id: "request-a",
+      organizationId: CONTRACT_ORG,
+      planKey: "pro" as const,
+      requestedByActorId: CONTRACT_SUPERUSER,
+      status: "pending" as const,
+      createdAt: new Date("2026-10-15T12:00:00.000Z"),
+      resolvedAt: null,
+    };
+    await requests.save(pending);
+
+    await expect(requests.save({ ...pending, id: "request-b" })).rejects.toThrow(/unique/);
+    await expect(
+      requests.save({
+        ...pending,
+        id: "request-c",
+        organizationId: CONTRACT_OTHER_ORG,
+        planKey: "free",
+      }),
+    ).rejects.toThrow(/check/);
+  });
 
   it("seeds the catalog with the in-memory defaults", async () => {
     const catalog = new PostgresPlanCatalog(isolated.pool);

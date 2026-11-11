@@ -1,13 +1,18 @@
 import { useId } from "react";
 import { Link } from "@tanstack/react-router";
 import { CheckCircleIcon, MinusCircleIcon } from "@phosphor-icons/react";
-import type { GetOrganizationPlanResponse, PlanChange } from "@futrob/api-contracts";
+import type {
+  GetOrganizationPlanResponse,
+  PlanChange,
+  RequestablePlanKey,
+} from "@futrob/api-contracts";
 import {
   Alert,
   AlertDescription,
   applyStyles,
   Badge,
   Body,
+  Button,
   Caption,
   Card,
   CardContent,
@@ -28,7 +33,12 @@ import {
 } from "@futrob/ui";
 import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { nextPlan, planStatus, usageRows, type UsageRow } from "./organization-plan-model.ts";
+import {
+  planStatus,
+  requestablePlans,
+  usageRows,
+  type UsageRow,
+} from "./organization-plan-model.ts";
 import { styles } from "./organization-plan.styles.ts";
 import {
   formatPlanDate,
@@ -59,11 +69,29 @@ const CHANNEL_LABEL: ReadonlyMap<string, MessageKey> = new Map(
   } as const satisfies Record<string, MessageKey>),
 );
 
-export function PlanSummaryCard({ plan }: { readonly plan: Plan }) {
+/** What the plan card needs to start or withdraw a manual plan request. */
+export interface PlanRequestControls {
+  /** The organizer bundle carries the capability; staff only read. */
+  readonly canRequest: boolean;
+  readonly busy: boolean;
+  /** The last write that failed, so the card says which one. */
+  readonly failure: "request" | "cancel" | null;
+  readonly onRequest: (planKey: RequestablePlanKey) => void;
+  readonly onCancel: () => void;
+}
+
+export function PlanSummaryCard({
+  plan,
+  request,
+}: {
+  readonly plan: Plan;
+  readonly request?: PlanRequestControls;
+}) {
   const { t, locale } = useI18n();
   const headingId = useId();
   const status = planStatus(plan);
-  const upgrade = nextPlan(plan.plan.key);
+  const options = requestablePlans(plan.plan.key);
+  const pending = plan.pendingRequest;
   const statusText = (() => {
     switch (status.kind) {
       case "default":
@@ -90,12 +118,70 @@ export function PlanSummaryCard({ plan }: { readonly plan: Plan }) {
           <span {...applyStyles(styles.planName)}>{t(planNameKey(plan.plan.key))}</span>
           <Badge variant={status.kind === "past_due" ? "warning" : "neutral"}>{statusText}</Badge>
         </div>
-        <Caption>
-          {upgrade
-            ? t("billing.plan.upgrade", { plan: t(planNameKey(upgrade)) })
-            : t("billing.plan.topPlan")}{" "}
-          <TextLink render={<Link to="/pricing" />}>{t("billing.plan.compare")}</TextLink>
-        </Caption>
+        {/* An open request stays visible and withdrawable whatever the plan; only starting a new one needs a higher plan to ask for. */}
+        {pending ? (
+          <Alert variant="info">
+            <AlertDescription>
+              {t("billing.request.pending", {
+                plan: t(planNameKey(pending.planKey)),
+                date: formatPlanDate(pending.requestedAt, locale),
+                current: t(planNameKey(plan.plan.key)),
+              })}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {request?.failure ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {t(
+                request.failure === "request"
+                  ? "billing.request.error"
+                  : "billing.request.cancelError",
+              )}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {pending || options.length > 0 ? (
+          request?.canRequest ? (
+            <div {...applyStyles(styles.actions)}>
+              {pending ? (
+                <Button
+                  disabled={request.busy}
+                  onClick={request.onCancel}
+                  type="button"
+                  variant="outline"
+                >
+                  {t("billing.request.cancel")}
+                </Button>
+              ) : (
+                options.map((planKey, index) => (
+                  <Button
+                    disabled={request.busy}
+                    key={planKey}
+                    onClick={() => request.onRequest(planKey)}
+                    type="button"
+                    variant={index === 0 ? "default" : "outline"}
+                  >
+                    {t("billing.request.action", { plan: t(planNameKey(planKey)) })}
+                  </Button>
+                ))
+              )}
+            </div>
+          ) : (
+            <Caption>{t("billing.request.staffOnly")}</Caption>
+          )
+        ) : null}
+        {options.length === 0 ? (
+          <Caption>
+            {t("billing.plan.topPlan")}{" "}
+            <TextLink render={<Link to="/pricing" />}>{t("billing.plan.compare")}</TextLink>
+          </Caption>
+        ) : (
+          <Caption>
+            {t("billing.request.hint")}{" "}
+            <TextLink render={<Link to="/pricing" />}>{t("billing.plan.compare")}</TextLink>
+          </Caption>
+        )}
       </CardContent>
     </Card>
   );

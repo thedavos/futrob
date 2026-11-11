@@ -5,7 +5,7 @@ import { planUpsellKey } from "./plan-copy.ts";
 
 /**
  * Upsell for a plan-gated (402) answer: it says what the plan does not include and points
- * to the plan page. Purchase stays out of the product until payments exist (ADR-0025).
+ * to the plan page, where the organizer starts a manual plan request (ADR-0025, Phase 0).
  */
 export function PlanUpsellAlert({
   code,
