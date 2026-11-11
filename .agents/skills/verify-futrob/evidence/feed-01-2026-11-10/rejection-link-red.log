@@ -1,0 +1,41 @@
+
+> futrob@0.1.0 test
+> vp test --project web apps/web/src/modules/notifications/presentation/activity-view.test.ts
+
+
+ RUN  v4.1.11 /home/user/code/futrob
+
+ ❯ |web| src/modules/notifications/presentation/activity-view.test.ts (7 tests | 1 failed) 21ms
+     × opens the readable competition detail for a rejected applicant instead of its matches 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |web| src/modules/notifications/presentation/activity-view.test.ts > activity row view > opens the readable competition detail for a rejected applicant instead of its matches
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+    "params": {
+      "competitionId": "cmp-a",
+    },
+-   "to": "/player/competitions/$competitionId",
++   "to": "/player/competitions/$competitionId/matches",
+  }
+
+ ❯ src/modules/notifications/presentation/activity-view.test.ts:148:56
+    146|       subject: { competitionName: "Liga A", teamName: "Halcones", enco…
+    147|     });
+    148|     expect(activityRowView(rejected, NOW).destination).toEqual({
+       |                                                        ^
+    149|       to: "/player/competitions/$competitionId", params: { competition…
+    150|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  00:44:50
+   Duration  2.44s (transform 156ms, setup 253ms, import 2.02s, tests 21ms, environment 0ms)

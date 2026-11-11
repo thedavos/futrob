@@ -27,6 +27,13 @@
       "expo-router",
       "expo-secure-store",
       [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "note": "EAS/native builds read SENTRY_ORG, SENTRY_PROJECT, and SENTRY_AUTH_TOKEN from the environment. Do not commit a DSN or auth token."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",

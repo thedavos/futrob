@@ -203,6 +203,30 @@ export interface ActivityFeed {
   readonly commands: ActivityCommands;
 }
 
+export type ActivityEmailSources = Pick<
+  EmailSources,
+  "memberships" | "contacts" | "entitlements" | "authorization"
+>;
+
+/** Picks the email sources the activity feed needs from the composed modules. */
+export function activityEmailSources(modules: {
+  readonly organizations: { readonly repositories: { readonly memberships: MembershipRepository } };
+  readonly identity: { readonly contacts: EmailContactsPort };
+  readonly billing: {
+    readonly useCases: {
+      readonly resolveOrganizationEntitlements: ResolveOrganizationEntitlementsUseCase;
+    };
+  };
+  readonly authorization: { readonly port: AuthorizationPort };
+}): ActivityEmailSources {
+  return {
+    memberships: modules.organizations.repositories.memberships,
+    contacts: modules.identity.contacts,
+    entitlements: modules.billing.useCases.resolveOrganizationEntitlements,
+    authorization: modules.authorization.port,
+  };
+}
+
 /**
  * The notifications module plus every composition that writes activity: the projector of
  * selection commands and the commands of other contexts wrapped with their activity.
@@ -212,10 +236,7 @@ export function createActivityFeed(input: {
   readonly clock: ClockPort;
   readonly ids: IdGeneratorPort;
   readonly email?: EmailSettings;
-  readonly sources: Pick<
-    EmailSources,
-    "memberships" | "contacts" | "entitlements" | "authorization"
-  >;
+  readonly sources: ActivityEmailSources;
   readonly transaction: TransactionPort;
   readonly encounterReader: EncounterReaderPort;
   readonly competitions: CompetitionsModule;

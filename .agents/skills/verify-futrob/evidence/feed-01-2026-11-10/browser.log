@@ -1,0 +1,64 @@
+Completed browser entry checks.
+organization-denied http://localhost:3000/orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/activity
+player-home-after http://localhost:3000/player
+player-full-after http://localhost:3000/player/activity
+PASS denied organization deep link and personal home/full feed
+
+Pending sidebar readback after public SDK preference setup.
+org-pro PA
+Patricia
+LA
+Liga Andina
+
+Pendientes
+
+Decidir reprogramación
+Deportivo Llama vs Atlético Pumas · Clausura 26
+dentro de 12 h
+Decidir reprogramación
+Real Vicuña vs Cóndores FC · Clausura 26
+dentro de 12 h
+Revisar inscripción
+Inti United · Apertura Inscripciones
+hace 22 min
+Decidir reprogramación
+Sporting Quipu vs Racing Totora · Clausura 26
+hace 22 min
+Resolver disputa
+Sporting Quipu vs Deportivo Llama · Clausura 26
+hace 8 d
+Resolver disputa
+Unión Chasqui vs Atlético Pumas · Clausura 26
+hace 8 d
+Inicio
+Competiciones
+Equipos
+Jugadores
+Invitaciones
+Miembros y roles
+Plan y uso
+Ajustes
+capitan-visita PP
+Pablo
+AP
+Atlético Pumas
+
+Pendientes
+
+Confirmar selección
+Sporting Quipu vs Atlético Pumas · Clausura 26
+hace 20 h
+Inicio
+Competiciones
+Datos de juego
+Mis partidos
+Mis estadísticas
+Invitaciones
+
+Rejected registration row before fix.
+activity destination /player/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/matches
+observed unavailable competition http://localhost:3000/player/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/matches
+
+Rejected registration row after fix.
+activity destination /player/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6
+observed readable rejection http://localhost:3000/player/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6

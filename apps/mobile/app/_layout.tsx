@@ -12,10 +12,13 @@ import {
 } from "@expo-google-fonts/manrope";
 import { createMobileQueryClient } from "@/modules/query/create-query-client";
 import { SessionQueryClientProvider } from "@/modules/query/session-query-client-provider";
+import { initMobileSentry, wrapRootLayout } from "@/observability/sentry";
+
+initMobileSentry();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export default function RootLayout() {
+function RootLayout() {
   const [queryClient] = useState(createMobileQueryClient);
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
@@ -44,3 +47,5 @@ export default function RootLayout() {
     </SessionQueryClientProvider>
   );
 }
+
+export default wrapRootLayout(RootLayout);

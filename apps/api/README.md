@@ -167,6 +167,9 @@ npm run api
 - Set `TEST_DATABASE_URL` to run the clean/legacy migration integration suite; it creates and
   removes a uniquely named schema without touching existing schemas.
 - Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.
+- Sentry: set `SENTRY_DSN` (and optional `SENTRY_ENVIRONMENT`) only on the production
+  service. Events send when `NODE_ENV=production` and the DSN is present. Leave both
+  unset locally.
 - Start command: `npm run start -w @futrob/api`. Railway injects `PORT`; the app reads it.
 - Health check path: `/api/v1/meta/health`.
 - EA egress relies on browser-like headers (`EA_CLUBS_REQUEST_HEADERS`) so Node

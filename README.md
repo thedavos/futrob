@@ -101,14 +101,16 @@ cp apps/web/.env.example apps/web/.env
 
 Configura los archivos locales con estas relaciones:
 
-| Variable                                                   | Configuración                                                                    |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                             | En `apps/api/.env`, apunta a tu Postgres de desarrollo.                          |
-| `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` | En `apps/auth/.env` y `apps/web/.env`, usa la misma conexión que `DATABASE_URL`. |
-| `BETTER_AUTH_SECRET`                                       | Mismo valor en los `.dev.vars` de web y auth.                                    |
-| `INTERNAL_JOB_SECRET`                                      | Mismo valor en web y API.                                                        |
-| `RATE_LIMIT_FINGERPRINT_SECRET`                            | En web, usa un secreto aleatorio independiente.                                  |
-| `FUTROB_API_BASE_URL`                                      | En web, `http://localhost:8787/api/v1`.                                          |
+| Variable                                                   | Configuración                                                                         |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                             | En `apps/api/.env`, apunta a tu Postgres de desarrollo.                               |
+| `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` | En `apps/auth/.env` y `apps/web/.env`, usa la misma conexión que `DATABASE_URL`.      |
+| `BETTER_AUTH_SECRET`                                       | Mismo valor en los `.dev.vars` de web y auth.                                         |
+| `INTERNAL_JOB_SECRET`                                      | Mismo valor en web y API.                                                             |
+| `RATE_LIMIT_FINGERPRINT_SECRET`                            | En web, usa un secreto aleatorio independiente.                                       |
+| `FUTROB_API_BASE_URL`                                      | En web, `http://localhost:8787/api/v1`.                                               |
+| `SENTRY_DSN`                                               | Vacío en local. En producción, secreto de Wrangler (web/auth) o env de Railway (API). |
+| `EXPO_PUBLIC_SENTRY_DSN`                                   | Vacío en local. Expo Go no envía eventos.                                             |
 
 Mantén `ENVIRONMENT=development` en web para el desarrollo local. Los archivos de entorno están excluidos de Git; no publiques sus valores.
 

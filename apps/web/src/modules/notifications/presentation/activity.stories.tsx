@@ -25,6 +25,7 @@ import {
 } from "./organization-activity-page.tsx";
 import {
   OrganizationRecentActivityView,
+  PlayerRecentActivityView,
   type OrganizationRecentActivityState,
 } from "./organization-recent-activity.tsx";
 import { PendingQueueView, type PendingQueueState } from "./shell-pending-queue.tsx";
@@ -58,25 +59,41 @@ function Harness({ children }: { readonly children: ReactNode }) {
 
 const noop = () => undefined;
 
-function RecentActivity({ state }: { readonly state: OrganizationRecentActivityState }) {
+function RecentActivity({
+  state,
+  personal = false,
+}: {
+  readonly state: OrganizationRecentActivityState;
+  readonly personal?: boolean;
+}) {
   return (
     <Harness>
       <div {...applyProps(undefined, undefined, styles.card)}>
-        <OrganizationRecentActivityView
-          now={ACTIVITY_STORY_NOW}
-          organizationId="org-1"
-          state={state}
-        />
+        {personal ? (
+          <PlayerRecentActivityView now={ACTIVITY_STORY_NOW} state={state} />
+        ) : (
+          <OrganizationRecentActivityView
+            now={ACTIVITY_STORY_NOW}
+            organizationId="org-1"
+            state={state}
+          />
+        )}
       </div>
     </Harness>
   );
 }
 
-function FeedPage({ state }: { readonly state: OrganizationActivityPageState }) {
+function FeedPage({
+  state,
+  personal = false,
+}: {
+  readonly state: OrganizationActivityPageState;
+  readonly personal?: boolean;
+}) {
   return (
     <Harness>
       <div {...applyProps(undefined, undefined, styles.page)}>
-        <OrganizationActivityPageView now={ACTIVITY_STORY_NOW} state={state} />
+        <OrganizationActivityPageView personal={personal} now={ACTIVITY_STORY_NOW} state={state} />
       </div>
     </Harness>
   );
@@ -280,4 +297,57 @@ export const EmailUnsubscribeConfirm: Story = {
 
 export const EmailUnsubscribeInvalidLink: Story = {
   render: () => <Unsubscribe token={null} unsubscribe={unsubscribed} />,
+};
+
+export const PlayerRecentActivity: Story = {
+  name: "Player activity / Recent",
+  render: () => (
+    <RecentActivity personal state={{ status: "success", activities: personalPendingFixture }} />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("link", { name: "Ver toda la actividad" }),
+    ).toHaveAttribute("href", "/player/activity");
+    await expect(canvas.getByText("Responder invitación")).toBeVisible();
+  },
+};
+
+export const PlayerActivityEmpty: Story = {
+  name: "Player activity / Empty",
+  render: () => (
+    <FeedPage
+      personal
+      state={{
+        status: "success",
+        activities: [],
+        hasMore: false,
+        loadingMore: false,
+        loadMore: noop,
+      }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(
+      await within(canvasElement).findByText(
+        "Aquí verás tus invitaciones y la actividad de los equipos que representas.",
+      ),
+    ).toBeVisible();
+  },
+};
+
+export const PlayerActivityFull: Story = {
+  name: "Player activity / Full feed",
+  render: () => (
+    <FeedPage
+      personal
+      state={{
+        status: "success",
+        activities: personalPendingFixture,
+        hasMore: true,
+        loadingMore: false,
+        loadMore: noop,
+      }}
+    />
+  ),
 };

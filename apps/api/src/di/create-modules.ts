@@ -55,7 +55,8 @@ import {
   createVoidOfficialResultAndUnproject,
 } from "./official-selection.commands.ts";
 import { createResultsModule } from "./results.module.ts";
-import { createActivityFeed, type EmailSettings } from "./notifications.module.ts";
+import { activityEmailSources, createActivityFeed } from "./notifications.module.ts";
+import type { EmailSettings } from "./notifications.module.ts";
 import { createStatisticsModule } from "./statistics.module.ts";
 import { createPublicPortalModule } from "./public-portal.module.ts";
 import { createEncounterReads } from "./encounter-reads.composition.ts";
@@ -279,12 +280,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     clock,
     ids,
     email: input.email,
-    sources: {
-      memberships: organizations.repositories.memberships,
-      contacts: identity.contacts,
-      entitlements: billing.useCases.resolveOrganizationEntitlements,
-      authorization: authorization.port,
-    },
+    sources: activityEmailSources({ organizations, identity, billing, authorization }),
     transaction,
     encounterReader,
     competitions,
@@ -372,7 +368,12 @@ export function createModules(input: CreateModulesInput): AppModules {
   const modules = {
     activityCommands: activityFeed.commands,
     authorization,
-    billing: withPlanUsage(billing, competitionRepository, organizations.repositories.memberships),
+    billing: withPlanUsage(
+      billing,
+      competitionRepository,
+      organizations.repositories.memberships,
+      organizations.repositories.organizations,
+    ),
     competitionApplications,
     competitions,
     entryInvitations,

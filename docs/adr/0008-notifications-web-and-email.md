@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-07-17
-- Actualizada: 2026-10-07
+- Actualizada: 2026-11-10
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
@@ -51,3 +51,15 @@ preferencias mínimas se deciden en
 [ADR-0028](/docs/adr/0028-transactional-email-provider-and-outbox.md) (Resend, propuesta).
 Sin credenciales del proveedor no hay envío real verificado. El publisher de dominio sigue
 siendo no-op.
+
+La verificación [FEED-01](/docs/plans/activity-feed-notifications.md#verificación-feed-01-2026-11-10)
+registra acciones por HTTP, audiencias, cierres, reintentos y aislamiento de organización en
+Postgres local aislado. La [evidencia retenida](/.agents/skills/verify-futrob/evidence/feed-01-2026-11-10/NOTES.md)
+distingue el vencimiento con `ClockPort` controlado de los comandos con reloj normal y de las
+capturas web. La lectura web incluye ahora inicio y pantalla completa en los espacios de
+organización y jugador, además de Pendientes. No cambia la decisión transaccional ni introduce
+un canal asíncrono.
+
+La lectura nativa queda en MOB-06. MAIL-01 mantiene email, outbox y la política de invitaciones
+solo por token, incluida su revocación. Los controles web de filtro por tipo y estado se aplazan;
+el feed completo conserva el orden cronológico y el contrato de estado sigue sirviendo a Pendientes.

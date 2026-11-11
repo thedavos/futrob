@@ -42,7 +42,9 @@ Necesita dos archivos locales (ambos ignorados por git):
   `apps/web/.dev.vars`. `BETTER_AUTH_URL` es el origen público de web
   (`http://localhost:3000`). `APP_BASE_URL` alimenta `trustedOrigins` en producción. El
   Worker responde 503 si falta un secreto de al menos 32 caracteres o si un origen no
-  es un origen HTTP(S) válido.
+  es un origen HTTP(S) válido. Deja `NODE_ENV=development` y `SENTRY_DSN` vacío: Sentry
+  no envía nada desde esta máquina. En producción: `wrangler secret put SENTRY_DSN` y
+  `NODE_ENV=production` (var de Wrangler, no el DSN en git).
 - `.env` (desde `.env.example`): `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`
   con el mismo valor que `DATABASE_URL` de `apps/api`. Wrangler no lee esta variable de
   `.dev.vars`. Sin ella `wrangler dev` falla al arrancar.
@@ -61,6 +63,7 @@ npx wrangler hyperdrive create futrob-postgres --connection-string="<DATABASE_UR
 npm run migrate -w @futrob/api      # con DATABASE_URL de producción
 cd apps/auth
 npx wrangler secret put BETTER_AUTH_SECRET
+npx wrangler secret put SENTRY_DSN
 npx wrangler deploy
 curl --fail https://futrob-auth.futrob-workers.workers.dev/meta/health
 ```
