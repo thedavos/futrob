@@ -54,7 +54,7 @@ sigue programada y la siguiente ejecución lo reintenta. Cada manejador es idemp
 | teams         | cuentas de juego, club EA del jugador, plantillas en competiciones no finalizadas, invitaciones pendientes, equipo activo; marca `player_profiles.anonymized_at` | perfil de jugador como lápida, plantillas de competiciones finalizadas |
 | organizations | membresías y permisos concedidos al actor                                                                                                                        | permisos que el actor concedió a otros                                 |
 | statistics    | `player_personal_stats`                                                                                                                                          | estadísticas oficiales de competición, sin nombre                      |
-| notifications | cierra la actividad dirigida al actor                                                                                                                            | actividad del resto                                                    |
+| notifications | cierra la actividad dirigida al actor; omite el correo pendiente, retira dirección, nombre y cuerpo de los correos guardados y las preferencias de correo        | actividad del resto; filas del outbox sin datos del destinatario       |
 
 `player_match_contributions.game_account_id` pasa a `ON DELETE SET NULL` para que borrar las
 cuentas de juego no choque con estadísticas ya proyectadas.

@@ -93,13 +93,15 @@ export class DispatchEmailsUseCase {
     if (!(await this.deps.channelAccess.allowsEmail(delivery.organizationId))) {
       return skipped(EMAIL_SKIP_REASON.planWithoutEmail);
     }
+    // No contact means no address to write to, even for a pinned request: a deleted account
+    // keeps neither contact nor preferences, and this check must not recreate them.
+    if (!contact) return skipped(EMAIL_SKIP_REASON.noAddress);
     const preferences = await this.preferencesOf(delivery.recipientActorId);
     if (!isCriticalEmail(delivery.intent.template) && !preferences.nonCriticalEmail) {
       return skipped(EMAIL_SKIP_REASON.optedOut);
     }
     // A started send keeps its request: the idempotency key belongs to that exact body.
     if (delivery.message) return this.send(delivery, delivery.message);
-    if (!contact) return skipped(EMAIL_SKIP_REASON.noAddress);
 
     const rendered = renderEmail({
       intent: delivery.intent,

@@ -15,3 +15,29 @@ export async function closeDeletedActorActivity(
     [actorId, at],
   );
 }
+
+/**
+ * Reaction to `identity.actor-deleted` (ADR-0028): the actors row stays as a tombstone, so its
+ * cascades never reach the email channel. Pending email to the actor settles as having no
+ * address, every stored request (address, name, body) and provider error goes, and the
+ * preferences row with its unsubscribe token is removed.
+ */
+export async function retireDeletedActorEmail(
+  pool: Pool,
+  actorId: ActorId,
+  at: Date,
+): Promise<void> {
+  const executor = getPgExecutor(pool);
+  await executor.query(
+    `UPDATE email_outbox
+     SET status = 'skipped', skip_reason = 'no_address', settled_at = $2
+     WHERE recipient_actor_id = $1 AND status = 'pending'`,
+    [actorId, at],
+  );
+  await executor.query(
+    `UPDATE email_outbox SET message = NULL, last_error = NULL
+     WHERE recipient_actor_id = $1 AND (message IS NOT NULL OR last_error IS NOT NULL)`,
+    [actorId],
+  );
+  await executor.query(`DELETE FROM notification_email_preferences WHERE actor_id = $1`, [actorId]);
+}

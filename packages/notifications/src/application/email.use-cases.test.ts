@@ -138,6 +138,26 @@ describe("email notifications", () => {
     ]);
   });
 
+  it("does not resend a pinned request once the recipient has no contact, nor recreate preferences", async () => {
+    const h = emailHarness();
+    await h.enqueue.execute(proposalFact({ audiences: proposalFact().audiences.slice(0, 1) }));
+    h.sender.failures.push({ retryable: true });
+    expect(await h.dispatch.execute()).toMatchObject({ retried: 1 });
+    expect((await h.outbox.listByEvent("proposal:prp-1"))[0]?.message).not.toBeNull();
+
+    h.contacts.splice(0, h.contacts.length);
+    h.preferences.rows.clear();
+    h.clock.current = new Date(h.clock.current.getTime() + minutes(1));
+
+    expect(await h.dispatch.execute()).toEqual({ sent: 0, retried: 0, failed: 0, skipped: 1 });
+    expect(h.sender.inbox).toEqual([]);
+    expect((await h.outbox.listByEvent("proposal:prp-1"))[0]).toMatchObject({
+      status: "skipped",
+      skipReason: "no_address",
+    });
+    expect(h.preferences.rows.size).toBe(0);
+  });
+
   it("fails a delivery the provider rejects, and one whose retries run out", async () => {
     const rejected = emailHarness();
     await rejected.enqueue.execute(

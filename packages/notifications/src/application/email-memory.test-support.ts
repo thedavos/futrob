@@ -190,6 +190,7 @@ export function emailHarness(
     preferences,
     sender,
     clock,
+    contacts,
     enqueue: new EnqueueEmailsUseCase({ outbox, recipients, clock, ids }),
     dispatch: new DispatchEmailsUseCase({
       outbox,
