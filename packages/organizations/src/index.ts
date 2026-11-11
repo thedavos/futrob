@@ -189,6 +189,8 @@ export type {
   OrganizationAuditEntry,
   OrganizationAuditCursor,
   OrganizationAuditQuery,
+  OrganizationAuditReadQuery,
+  OrganizationAuditCompetitionReaderPort,
   OrganizationAuditPage,
   OrganizationAuditReaderPort,
   OrganizationAuditSourcePort,

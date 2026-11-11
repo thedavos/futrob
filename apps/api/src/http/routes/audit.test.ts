@@ -1,3 +1,4 @@
+import { assignOrganizationPlanForTest } from "@/testing/organization-plan.fixture.ts";
 import { describe, expect, it } from "vite-plus/test";
 import {
   createOrganizationResponseSchema,
@@ -5,12 +6,154 @@ import {
 } from "@futrob/api-contracts";
 import { buildAppWithModules, serviceHeaders, stubFetch } from "@/http/http-app.harness.ts";
 import { parseResponse } from "@/http/parse-response.ts";
-import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
+import { asActorId, asCompetitionId, asOrganizationId, asEncounterId } from "@futrob/shared-kernel";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { onboardingCompetition } from "@/http/http-app.harness.ts";
 
+import { buildAction } from "@/adapters/results/official-selection.fixtures.ts";
+
 describe("organization audit HTTP", () => {
+  it("excludes denied competition rows before limits across every global page", async () => {
+    const { app, modules } = buildAppWithModules(stubFetch);
+    const actorId = asActorId("audit-scopes-owner");
+    const org = await modules.organizations.createOrganization.execute({
+      actorId,
+      name: "Audit scopes",
+      timeZone: "UTC",
+    });
+    if (org.isErr()) throw org.error;
+    const organizationId = org.value.organization.id;
+    await assignOrganizationPlanForTest(modules, { organizationId, actorId });
+    const competitionIds = [];
+    for (const name of ["Permitted", "Denied"]) {
+      const draft = await modules.competitions.createDraft.execute({
+        actorId,
+        organizationId,
+        name,
+        format: "league",
+        gameEdition: "fc26",
+        platform: "playstation",
+        region: "south-america",
+        timeZone: "UTC",
+      });
+      if (draft.isErr()) throw draft.error;
+      competitionIds.push(draft.value.competition.id);
+    }
+    const [permittedId, deniedId] = competitionIds;
+    if (!permittedId || !deniedId) throw new Error("Expected two competitions");
+    const deny = await modules.authorization.upsertGrant.execute({
+      actorId,
+      targetActorId: actorId,
+      organizationId,
+      permission: ORGANIZATION_PERMISSION.auditTrailRead,
+      effect: "deny",
+      scopeType: "competition",
+      scopeId: deniedId,
+      scope: { organizationId, competitionId: deniedId },
+      reason: "Restricted competition history",
+    });
+    if (deny.isErr()) throw deny.error;
+    for (const [id, competitionId] of [
+      ["z-denied-3", deniedId],
+      ["z-denied-2", deniedId],
+      ["z-denied-1", deniedId],
+      ["c-organization", null],
+      ["b-permitted", permittedId],
+      ["a-permitted", permittedId],
+    ] as const) {
+      await modules.audit.operations.append({
+        id,
+        organizationId,
+        competitionId,
+        actorId,
+        action: "audit.scope_fixture",
+        reason: null,
+        occurredAt: new Date("2026-11-11T00:00:00Z"),
+        requestId: null,
+        object: {
+          type: "competition",
+          id: competitionId ?? organizationId,
+          label: null,
+          href: null,
+        },
+      });
+    }
+    const path = `/api/v1/organizations/${organizationId}/audit`;
+    expect(
+      (
+        await app.request(`${path}?competitionId=${deniedId}`, {
+          headers: serviceHeaders(actorId),
+        })
+      ).status,
+    ).toBe(403);
+    let cursor: string | undefined;
+    const entries = [];
+    do {
+      const query = new URLSearchParams({ limit: "1", action: "audit.scope_fixture" });
+      if (cursor) query.set("cursor", cursor);
+      const response = await app.request(`${path}?${query}`, { headers: serviceHeaders(actorId) });
+      expect(response.status).toBe(200);
+      const page = await parseResponse(listOrganizationAuditResponseSchema, response);
+      expect(page.entries).toHaveLength(1);
+      entries.push(...page.entries);
+      cursor = page.nextCursor ?? undefined;
+    } while (cursor);
+    expect(entries.map((entry) => entry.id)).toEqual([
+      "60:operation:c-organization",
+      "60:operation:b-permitted",
+      "60:operation:a-permitted",
+    ]);
+    expect(entries.every((entry) => entry.competitionId !== deniedId)).toBe(true);
+  });
+
+  it("redacts legacy result reasons on GET without changing stored history or other contexts", async () => {
+    const { app, modules } = buildAppWithModules(stubFetch);
+    const actorId = asActorId("audit-legacy-owner");
+    const fixture = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders(actorId),
+      body: JSON.stringify({
+        name: "Legacy result audit",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const organizationId = asOrganizationId(fixture.organizationId);
+    const competitionId = asCompetitionId(fixture.competition.competition.id);
+    const encounterId = asEncounterId("legacy-audit-encounter");
+    const reason = "Score corrected. Contact referee@example.test or +1 202 555 0146.";
+    const action = buildAction(null, { organizationId, competitionId, encounterId }, actorId, {
+      type: "legacy_review_required",
+      reason,
+    });
+    await modules.results.selections.recordAudit(action);
+    await modules.audit.operations.append({
+      id: "non-results-legacy-audit",
+      organizationId,
+      competitionId,
+      actorId,
+      action: "scheduling.note",
+      reason,
+      occurredAt: action.occurredAt,
+      requestId: null,
+      object: { type: "encounter", id: encounterId, label: null, href: null },
+    });
+    const response = await app.request(
+      `/api/v1/organizations/${organizationId}/audit?competitionId=${competitionId}`,
+      {
+        headers: serviceHeaders(actorId),
+      },
+    );
+    expect(response.status).toBe(200);
+    const page = await parseResponse(listOrganizationAuditResponseSchema, response);
+    expect(
+      page.entries.find((entry) => entry.action === "results.legacy_review_required")?.reason,
+    ).toBe("Score corrected. Contact [REDACTED] or [REDACTED].");
+    expect(page.entries.find((entry) => entry.action === "scheduling.note")?.reason).toBe(reason);
+    expect(await modules.results.selections.listActions(encounterId)).toEqual([action]);
+  });
+
   it("paginates only the organizer's history, rejects outsiders and exposes no mutation", async () => {
     const { app } = buildAppWithModules(stubFetch);
     async function create(actor: string, name: string) {

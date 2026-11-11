@@ -2,6 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-11-10
+- Actualizado: 2026-11-11
 - Relacionado: [ADR-0017](/docs/adr/0017-contextual-capability-authorization.md), [ADR-0016](/docs/adr/0016-official-results-transactional-projection.md), [ADR-0028](/docs/adr/0028-competition-sanctions.md).
 - Tarea: [AUDIT-01](https://app.notion.com/p/4147b204009a8100836cf82b4cd4fb62).
 
@@ -38,6 +39,12 @@ su fuente de lectura en `apps/api`, con filtro obligatorio por organización. La
 combina fuentes por sus contratos públicos. Un adapter no consulta tablas de otro bounded
 context y ningún package importa adapters de otra app.
 
+La lectura global evalúa por lote el permiso de cada competición y pasa sus IDs permitidos
+como alcance obligatorio a las fuentes. Cada fuente excluye competiciones denegadas antes
+de paginar y conserva las entradas de organización sin competición. La consulta explícita
+de una competición denegada devuelve 403. Los motivos legacy de `results` se redactan al
+proyectarlos con la política pública de su contexto, sin reescribir el historial almacenado.
+
 Cada fuente aplica competición, actor, acción y fechas antes del límite de página. La
 composición mezcla las páginas por fecha descendente y un identificador estable que incluye
 la fuente. El cursor conserva posición, organización y filtros. No concede autoridad y no
@@ -59,6 +66,9 @@ sin inventar un actor. Los jobs pertenecen a la organización y pueden servir va
 competiciones; aparecen en la vista de organización, sin atribuirles una competición.
 La clave de cada hecho evita duplicarlo al repetir una operación idempotente.
 La correlación de petición no es una clave de idempotencia y puede agrupar hechos distintos.
+El vínculo de club serializa por `Team` la lectura anterior, la mutación y su registro;
+PostgreSQL mantiene el bloqueo hasta el cierre de la transacción. Dos vínculos idénticos
+concurrentes producen un solo hecho, mientras los revínculos distintos conservan el suyo.
 No se migran ni reescriben las tablas históricas.
 
 La pantalla vive en los ajustes de organización y en la competición, con su contexto y

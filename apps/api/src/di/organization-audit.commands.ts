@@ -1,3 +1,5 @@
+import type { Pool } from "pg";
+import { TeamExternalClubMutationLock } from "@/adapters/teams/external-club-mutation-lock.ts";
 import type { OrganizationOperationAuditRepository } from "@futrob/organizations";
 import type { CompetitionRosterMembership } from "@futrob/teams";
 import type { ActorId, ClockPort, IdGeneratorPort, TransactionPort } from "@futrob/shared-kernel";
@@ -9,6 +11,7 @@ import type { TeamsModule } from "./teams.module.ts";
 
 export function createAuditCommands(
   ports: {
+    readonly pool: Pool | undefined;
     readonly clock: ClockPort;
     readonly ids: IdGeneratorPort;
     readonly transaction: TransactionPort;
@@ -20,6 +23,7 @@ export function createAuditCommands(
     readonly activityCommands: ActivityCommands;
   },
 ) {
+  const clubMutationLock = new TeamExternalClubMutationLock(ports.pool);
   async function recordRoster(membership: CompetitionRosterMembership, actorId: ActorId) {
     await ports.operations.append({
       id: `roster:${membership.id}`,
@@ -80,30 +84,37 @@ export function createAuditCommands(
     },
     connectTeamExternalClub: {
       execute: (input: Parameters<TeamsModule["connectTeamExternalClub"]["execute"]>[0]) =>
-        runAtomically(ports.transaction, async () => {
-          const previous = await modules.teams.externalClubConnections.findByTeam(input.teamId);
-          const result = await modules.teams.connectTeamExternalClub.execute(input);
-          if (
-            result.isOk() &&
-            (previous?.providerKey !== result.value.providerKey ||
-              previous.externalClubId !== result.value.externalClubId ||
-              previous.externalClubName !== result.value.externalClubName ||
-              previous.gameEdition !== result.value.gameEdition ||
-              previous.platform !== result.value.platform)
-          )
-            await ports.operations.append({
-              id: ports.ids.generate(),
-              organizationId: input.organizationId,
-              competitionId: input.competitionId ?? null,
-              actorId: input.actorId,
-              action: "teams.external_club_connected",
-              reason: null,
-              occurredAt: ports.clock.now(),
-              requestId: currentRequestCorrelation()?.requestId ?? null,
-              object: { type: "team", id: input.teamId, label: input.externalClubName, href: null },
-            });
-          return result;
-        }),
+        runAtomically(ports.transaction, () =>
+          clubMutationLock.runExclusive(input.teamId, async () => {
+            const previous = await modules.teams.externalClubConnections.findByTeam(input.teamId);
+            const result = await modules.teams.connectTeamExternalClub.execute(input);
+            if (
+              result.isOk() &&
+              (previous?.providerKey !== result.value.providerKey ||
+                previous.externalClubId !== result.value.externalClubId ||
+                previous.externalClubName !== result.value.externalClubName ||
+                previous.gameEdition !== result.value.gameEdition ||
+                previous.platform !== result.value.platform)
+            )
+              await ports.operations.append({
+                id: ports.ids.generate(),
+                organizationId: input.organizationId,
+                competitionId: input.competitionId ?? null,
+                actorId: input.actorId,
+                action: "teams.external_club_connected",
+                reason: null,
+                occurredAt: ports.clock.now(),
+                requestId: currentRequestCorrelation()?.requestId ?? null,
+                object: {
+                  type: "team",
+                  id: input.teamId,
+                  label: input.externalClubName,
+                  href: null,
+                },
+              });
+            return result;
+          }),
+        ),
     },
   };
 }

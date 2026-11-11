@@ -1,3 +1,4 @@
+import { asActorId } from "@futrob/shared-kernel";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import { createFutrobClient } from "@futrob/sdk";
 import { createApp } from "@/app.ts";
@@ -22,6 +23,10 @@ describe.skipIf(!databaseUrl)("AC-E2E-001 audit journey", () => {
   });
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("serializes identical club connections before their previous-state reads", async () => {
+    await concurrentClubAudit(isolated.pool);
   });
 
   it("retains creation, clubs, rosters, publication, fixture, durable sync and approval in order without replay duplicates", async () => {
@@ -284,3 +289,93 @@ describe.skipIf(!databaseUrl)("AC-E2E-001 audit journey", () => {
     });
   });
 });
+
+async function concurrentClubAudit(pool?: import("pg").Pool) {
+  const actorId = asActorId("audit-concurrent-owner");
+  if (pool) await seedActors(pool, actorId);
+  const modules = createModules({
+    pool,
+    fetcher: async () => new Response("[]"),
+    eaClubsBaseUrl: "https://example.test",
+  });
+  const organization = await modules.organizations.createOrganization.execute({
+    actorId,
+    name: "Concurrent audit",
+    timeZone: "UTC",
+  });
+  if (organization.isErr()) throw organization.error;
+  const organizationId = organization.value.organization.id;
+  const team = await modules.teams.createTeam.execute({
+    actorId,
+    organizationId,
+    name: "Concurrent team",
+  });
+  if (team.isErr()) throw team.error;
+  const input = {
+    actorId,
+    organizationId,
+    teamId: team.value.id,
+    providerKey: "ea-clubs" as const,
+    externalClubId: "same-club",
+    externalClubName: "Same Club",
+    gameEdition: "fc26",
+    platform: "common-gen5",
+  };
+  const snapshots = barrier();
+  const release = barrier();
+  let reads = 0;
+  const connections = modules.teams.externalClubConnections;
+  const original = connections.findByTeam.bind(connections);
+  const read = pool
+    ? vi.spyOn(connections, "findByTeam").mockImplementation(async (teamId) => {
+        const previous = await original(teamId);
+        reads++;
+        snapshots.resolve();
+        if (reads === 2) release.resolve();
+        await release.promise;
+        return previous;
+      })
+    : null;
+  const first = modules.audit.commands.connectTeamExternalClub.execute(input);
+  const second = modules.audit.commands.connectTeamExternalClub.execute(input);
+  try {
+    if (pool) {
+      await snapshots.promise;
+      while (reads < 2) {
+        const blocked = await pool.query(
+          `SELECT 1 FROM pg_locks WHERE locktype = 'advisory' AND NOT granted
+           AND ((classid::bigint << 32) | objid::bigint) = hashtextextended($1, 0)`,
+          [`teams:external-club:${input.teamId}`],
+        );
+        if (blocked.rowCount) break;
+      }
+      release.resolve();
+    }
+    const results = await Promise.all([first, second]);
+    expect(results.every((result) => result.isOk())).toBe(true);
+  } finally {
+    release.resolve();
+    read?.mockRestore();
+  }
+  const audit = await modules.audit.list.execute({
+    actorId,
+    query: { organizationId, action: "teams.external_club_connected", limit: 25 },
+  });
+  if (audit.isErr()) throw audit.error;
+  expect(audit.value.entries).toHaveLength(1);
+  expect(await connections.findByTeam(input.teamId)).toMatchObject({ externalClubId: "same-club" });
+}
+
+describe("Concurrent club audit in memory", () => {
+  it("records one transition for identical simultaneous connections", async () => {
+    await concurrentClubAudit();
+  });
+});
+
+function barrier() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}

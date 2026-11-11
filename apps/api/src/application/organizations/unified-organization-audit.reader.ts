@@ -2,7 +2,7 @@ import { auditObjectHref } from "./audit-object-href.ts";
 import type { ActorContactReader } from "@futrob/identity";
 import type {
   OrganizationAuditEntry,
-  OrganizationAuditQuery,
+  OrganizationAuditReadQuery,
   OrganizationAuditReaderPort,
   OrganizationAuditSourcePort,
 } from "@futrob/organizations";
@@ -20,12 +20,14 @@ export function compareAuditEntries(
 
 export function filterAuditEntries(
   entries: readonly OrganizationAuditEntry[],
-  query: OrganizationAuditQuery,
+  query: OrganizationAuditReadQuery,
 ): OrganizationAuditEntry[] {
+  const accessibleCompetitionIds = new Set(query.accessibleCompetitionIds);
   return entries
     .filter(
       (entry) =>
         entry.organizationId === query.organizationId &&
+        (entry.competitionId === null || accessibleCompetitionIds.has(entry.competitionId)) &&
         (!query.competitionId || entry.competitionId === query.competitionId) &&
         (!query.actorId || entry.actorId === query.actorId) &&
         (!query.action || entry.action === query.action) &&
@@ -46,7 +48,7 @@ export class UnifiedOrganizationAuditReader implements OrganizationAuditReaderPo
     private readonly contacts: ActorContactReader,
   ) {}
 
-  async read(query: OrganizationAuditQuery) {
+  async read(query: OrganizationAuditReadQuery) {
     const entries = (await Promise.all(this.sources.map((source) => source.read(query))))
       .flat()
       .sort(compareAuditEntries);

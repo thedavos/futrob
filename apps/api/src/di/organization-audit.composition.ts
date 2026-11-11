@@ -3,17 +3,19 @@ import { InMemoryProviderSyncJobRepository } from "@/adapters/game-data/jobs/in-
 import {
   ListOrganizationAuditUseCase,
   type OrganizationAuditEntry,
-  type OrganizationAuditQuery,
+  type OrganizationAuditReadQuery,
   type OrganizationAuditSourcePort,
 } from "@futrob/organizations";
 import type {
   AuthorizationPort,
+  AuthorizationBatchPort,
   ClockPort,
   IdGeneratorPort,
   TransactionPort,
 } from "@futrob/shared-kernel";
 import { asCompetitionId } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import { redactOptionalAuditReason } from "@futrob/results";
 import { InMemoryOfficialMatchSelectionRepository } from "@/adapters/results/official-result.repository.ts";
 import { InMemoryFixtureAuditPort } from "@/adapters/scheduling/fixture-editing.adapters.ts";
 import { InMemorySwissRoundActionLog } from "@/adapters/scheduling/swiss-round-actions.ts";
@@ -27,7 +29,7 @@ import { AUTHORIZATION_AUDIT_SQL } from "@/adapters/authorization/authorization-
 import { COMPETITION_AUDIT_SQL } from "@/adapters/competitions/competition-audit.source.ts";
 import { TEAM_AUDIT_SQL } from "@/adapters/teams/team-audit.source.ts";
 import { SCHEDULING_AUDIT_SQL } from "@/adapters/scheduling/scheduling-audit.source.ts";
-import { RESULTS_AUDIT_SQL } from "@/adapters/results/results-audit.source.ts";
+import { ResultsAuditSource } from "@/adapters/results/results-audit.source.ts";
 import { BILLING_AUDIT_SQL } from "@/adapters/billing/billing-audit.source.ts";
 import { NOTIFICATION_AUDIT_SQL } from "@/adapters/notifications/notification-audit.source.ts";
 import {
@@ -62,7 +64,7 @@ type AuditModules = {
 export function createOrganizationAudit(
   ports: {
     readonly pool: Pool | undefined;
-    readonly authorization: AuthorizationPort;
+    readonly authorization: AuthorizationPort & AuthorizationBatchPort;
     readonly clock: ClockPort;
     readonly ids: IdGeneratorPort;
     readonly transaction: TransactionPort;
@@ -76,20 +78,28 @@ export function createOrganizationAudit(
   const pool = ports.pool;
   const sources: readonly OrganizationAuditSourcePort[] = pool
     ? [
-        ORGANIZATION_AUDIT_SQL,
-        AUTHORIZATION_AUDIT_SQL,
-        COMPETITION_AUDIT_SQL,
-        TEAM_AUDIT_SQL,
-        SCHEDULING_AUDIT_SQL,
-        RESULTS_AUDIT_SQL,
-        BILLING_AUDIT_SQL,
-        NOTIFICATION_AUDIT_SQL,
-        GAME_DATA_AUDIT_SQL,
-      ].map((sql) => new PostgresAuditSource(pool, sql))
+        ...[
+          ORGANIZATION_AUDIT_SQL,
+          AUTHORIZATION_AUDIT_SQL,
+          COMPETITION_AUDIT_SQL,
+          TEAM_AUDIT_SQL,
+          SCHEDULING_AUDIT_SQL,
+          BILLING_AUDIT_SQL,
+          NOTIFICATION_AUDIT_SQL,
+          GAME_DATA_AUDIT_SQL,
+        ].map((sql) => new PostgresAuditSource(pool, sql)),
+        new ResultsAuditSource(pool),
+      ]
     : [memoryOperations, { read: (query) => readMemorySources(query, modules) }];
   return {
     list: new ListOrganizationAuditUseCase({
       authorization: ports.authorization,
+      competitions: {
+        listIdsByOrganization: async (organizationId) =>
+          (await modules.competitions.repository.listByOrganization(organizationId)).map(
+            (competition) => competition.id,
+          ),
+      },
       audit: new UnifiedOrganizationAuditReader(sources, modules.identity.contacts),
     }),
     operations,
@@ -97,7 +107,7 @@ export function createOrganizationAudit(
   };
 }
 
-async function readMemorySources(query: OrganizationAuditQuery, modules: AuditModules) {
+async function readMemorySources(query: OrganizationAuditReadQuery, modules: AuditModules) {
   const rows: OrganizationAuditEntry[] = [];
   function add(
     fact: Omit<
@@ -218,7 +228,7 @@ async function readMemorySources(query: OrganizationAuditQuery, modules: AuditMo
           competitionId: row.competitionId,
           actorId: row.actorId,
           action: `results.${row.type}`,
-          reason: row.reason,
+          reason: redactOptionalAuditReason(row.reason),
           occurredAt: row.occurredAt,
           requestId: row.commandKey,
           object: object("encounter", row.encounterId),

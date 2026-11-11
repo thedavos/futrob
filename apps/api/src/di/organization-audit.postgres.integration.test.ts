@@ -1,7 +1,12 @@
+import { assignOrganizationPlanForTest } from "@/testing/organization-plan.fixture.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
-import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
+import { asActorId, asOrganizationId, asEncounterId } from "@futrob/shared-kernel";
 import { createModules } from "./create-modules.ts";
-import { stubFetch } from "@/http/http-app.harness.ts";
+import { stubFetch, serviceHeaders, INTERNAL_JOB_SECRET } from "@/http/http-app.harness.ts";
+import { createApp } from "@/app.ts";
+import { listOrganizationAuditResponseSchema } from "@futrob/api-contracts";
+import { parseResponse } from "@/http/parse-response.ts";
+import { buildAction } from "@/adapters/results/official-selection.fixtures.ts";
 import {
   createIsolatedSchema,
   migrateIsolatedSchema,
@@ -9,6 +14,8 @@ import {
 } from "@/testing/isolated-schema.ts";
 import { seedActors } from "@/testing/seed-actors.ts";
 import { runWithRequestCorrelation } from "@/context/request-correlation.ts";
+
+import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 describe.skipIf(!databaseUrl)("unified organization audit on Postgres", () => {
@@ -19,6 +26,168 @@ describe.skipIf(!databaseUrl)("unified organization audit on Postgres", () => {
   });
   afterAll(async () => {
     await isolated?.drop();
+  });
+
+  it("filters competition denies in PostgreSQL before source limits and global cursors", async () => {
+    const actorId = asActorId("audit-scopes-pg-owner");
+    await seedActors(isolated.pool, actorId);
+    const modules = createModules({
+      pool: isolated.pool,
+      fetcher: stubFetch,
+      eaClubsBaseUrl: "https://example.test",
+    });
+    const org = await modules.organizations.createOrganization.execute({
+      actorId,
+      name: "Audit scopes PostgreSQL",
+      timeZone: "UTC",
+    });
+    if (org.isErr()) throw org.error;
+    const organizationId = org.value.organization.id;
+    await assignOrganizationPlanForTest(modules, { organizationId, actorId });
+    const competitionIds = [];
+    for (const name of ["Permitted", "Denied"]) {
+      const draft = await modules.competitions.createDraft.execute({
+        actorId,
+        organizationId,
+        name,
+        format: "league",
+        gameEdition: "fc26",
+        platform: "playstation",
+        region: "south-america",
+        timeZone: "UTC",
+      });
+      if (draft.isErr()) throw draft.error;
+      competitionIds.push(draft.value.competition.id);
+    }
+    const [permittedId, deniedId] = competitionIds;
+    if (!permittedId || !deniedId) throw new Error("Expected two competitions");
+    const deny = await modules.authorization.upsertGrant.execute({
+      actorId,
+      targetActorId: actorId,
+      organizationId,
+      permission: ORGANIZATION_PERMISSION.auditTrailRead,
+      effect: "deny",
+      scopeType: "competition",
+      scopeId: deniedId,
+      scope: { organizationId, competitionId: deniedId },
+      reason: "Restricted competition history",
+    });
+    if (deny.isErr()) throw deny.error;
+    for (const [id, competitionId] of [
+      ["z-denied-3", deniedId],
+      ["z-denied-2", deniedId],
+      ["z-denied-1", deniedId],
+      ["c-organization", null],
+      ["b-permitted", permittedId],
+      ["a-permitted", permittedId],
+    ] as const) {
+      await modules.audit.operations.append({
+        id,
+        organizationId,
+        competitionId,
+        actorId,
+        action: "audit.scope_fixture",
+        reason: null,
+        occurredAt: new Date("2026-11-11T00:00:00Z"),
+        requestId: null,
+        object: {
+          type: "competition",
+          id: competitionId ?? organizationId,
+          label: null,
+          href: null,
+        },
+      });
+    }
+    const app = createApp({
+      modules,
+      internalJobSecret: INTERNAL_JOB_SECRET,
+      checkDbHealth: () => Promise.resolve("ok"),
+      correlationLogger: { info: () => {}, error: () => {} },
+    });
+    const path = `/api/v1/organizations/${organizationId}/audit`;
+    expect(
+      (
+        await app.request(`${path}?competitionId=${deniedId}`, {
+          headers: serviceHeaders(actorId),
+        })
+      ).status,
+    ).toBe(403);
+    let cursor: string | undefined;
+    const entries = [];
+    do {
+      const query = new URLSearchParams({ limit: "1", action: "audit.scope_fixture" });
+      if (cursor) query.set("cursor", cursor);
+      const response = await app.request(`${path}?${query}`, { headers: serviceHeaders(actorId) });
+      expect(response.status).toBe(200);
+      const page = await parseResponse(listOrganizationAuditResponseSchema, response);
+      expect(page.entries).toHaveLength(1);
+      entries.push(...page.entries);
+      cursor = page.nextCursor ?? undefined;
+    } while (cursor);
+    expect(entries.map((entry) => entry.id)).toEqual([
+      "60:operation:c-organization",
+      "60:operation:b-permitted",
+      "60:operation:a-permitted",
+    ]);
+    expect(entries.every((entry) => entry.competitionId !== deniedId)).toBe(true);
+  });
+
+  it("redacts legacy result reasons on GET while preserving the original PostgreSQL row", async () => {
+    const actorId = asActorId("audit-legacy-pg-owner");
+    await seedActors(isolated.pool, actorId);
+    const modules = createModules({
+      pool: isolated.pool,
+      fetcher: stubFetch,
+      eaClubsBaseUrl: "https://example.test",
+    });
+    const org = await modules.organizations.createOrganization.execute({
+      actorId,
+      name: "Legacy result audit",
+      timeZone: "UTC",
+    });
+    if (org.isErr()) throw org.error;
+    const organizationId = org.value.organization.id;
+    const draft = await modules.competitions.createDraft.execute({
+      actorId,
+      organizationId,
+      name: "Legacy result competition",
+      format: "league",
+      gameEdition: "fc26",
+      platform: "playstation",
+      region: "south-america",
+      timeZone: "UTC",
+    });
+    if (draft.isErr()) throw draft.error;
+    const competitionId = draft.value.competition.id;
+    const encounterId = asEncounterId("legacy-pg-audit-encounter");
+    const reason = "Score corrected. Contact referee@example.test or +1 202 555 0146.";
+    const action = buildAction(null, { organizationId, competitionId, encounterId }, actorId, {
+      type: "legacy_review_required",
+      reason,
+    });
+    await modules.results.selections.recordAudit(action);
+    const app = createApp({
+      modules,
+      internalJobSecret: INTERNAL_JOB_SECRET,
+      checkDbHealth: () => Promise.resolve("ok"),
+      correlationLogger: { info: () => {}, error: () => {} },
+    });
+    const response = await app.request(
+      `/api/v1/organizations/${organizationId}/audit?competitionId=${competitionId}&action=results.legacy_review_required`,
+      {
+        headers: serviceHeaders(actorId),
+      },
+    );
+    expect(response.status).toBe(200);
+    const page = await parseResponse(listOrganizationAuditResponseSchema, response);
+    expect(page.entries).toHaveLength(1);
+    expect(page.entries[0]?.reason).toBe("Score corrected. Contact [REDACTED] or [REDACTED].");
+    const stored = await isolated.pool.query(
+      "SELECT reason FROM official_selection_actions WHERE id = $1",
+      [action.id],
+    );
+    expect(stored.rows).toEqual([{ reason }]);
+    expect(await modules.results.selections.listActions(encounterId)).toEqual([action]);
   });
 
   it("filters every source by tenant and paginates same-millisecond entries without skips", async () => {

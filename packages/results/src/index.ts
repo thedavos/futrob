@@ -204,3 +204,5 @@ export {
   type ExpireConfirmationWindowInput,
   type ExpireConfirmationWindowOutput,
 } from "./application/expire-confirmation-window/expire-confirmation-window.use-case.ts";
+
+export { redactOptionalAuditReason } from "./domain/policies/audit-reason.ts";

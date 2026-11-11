@@ -34,17 +34,25 @@ export interface OrganizationAuditQuery {
   readonly limit: number;
 }
 
+export interface OrganizationAuditReadQuery extends OrganizationAuditQuery {
+  readonly accessibleCompetitionIds: readonly CompetitionId[];
+}
+
+export interface OrganizationAuditCompetitionReaderPort {
+  listIdsByOrganization(organizationId: OrganizationId): Promise<readonly CompetitionId[]>;
+}
+
 export interface OrganizationAuditPage {
   readonly entries: readonly OrganizationAuditEntry[];
   readonly nextCursor: OrganizationAuditCursor | null;
 }
 
 export interface OrganizationAuditReaderPort {
-  read(query: OrganizationAuditQuery): Promise<OrganizationAuditPage>;
+  read(query: OrganizationAuditReadQuery): Promise<OrganizationAuditPage>;
 }
 
 export interface OrganizationAuditSourcePort {
-  read(query: OrganizationAuditQuery): Promise<readonly OrganizationAuditEntry[]>;
+  read(query: OrganizationAuditReadQuery): Promise<readonly OrganizationAuditEntry[]>;
 }
 
 export type OrganizationOperationAuditEntry = Omit<OrganizationAuditEntry, "actorName">;

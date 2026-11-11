@@ -1,5 +1,5 @@
 import type {
-  OrganizationAuditQuery,
+  OrganizationAuditReadQuery,
   OrganizationAuditSourcePort,
   OrganizationOperationAuditEntry,
   OrganizationOperationAuditRepository,
@@ -39,7 +39,7 @@ export class InMemoryOperationAuditRepository
   async append(entry: OrganizationOperationAuditEntry): Promise<void> {
     if (!this.rows.some((row) => row.id === entry.id)) this.rows.push(entry);
   }
-  async read(query: OrganizationAuditQuery) {
+  async read(query: OrganizationAuditReadQuery) {
     return filterAuditEntries(
       this.rows.map((entry) => ({ ...entry, id: `60:operation:${entry.id}`, actorName: null })),
       query,

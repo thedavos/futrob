@@ -1,6 +1,6 @@
 import type {
   OrganizationAuditEntry,
-  OrganizationAuditQuery,
+  OrganizationAuditReadQuery,
   OrganizationAuditSourcePort,
 } from "@futrob/organizations";
 import { asActorId, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
@@ -30,11 +30,12 @@ export class PostgresAuditSource implements OrganizationAuditSourcePort {
     private readonly sourceQuery: string,
   ) {}
 
-  async read(query: OrganizationAuditQuery): Promise<readonly OrganizationAuditEntry[]> {
+  async read(query: OrganizationAuditReadQuery): Promise<readonly OrganizationAuditEntry[]> {
     const rows = await getPgExecutor(this.pool).query(
       `SELECT * FROM (SELECT id, organization_id, competition_id, actor_id, action, reason, date_trunc('milliseconds', occurred_at) AS occurred_at, request_id, object_type, object_id, object_label, object_href FROM (${this.sourceQuery}) AS raw_audit) AS audit
       WHERE organization_id = $1
       AND ($2::text IS NULL OR competition_id = $2)
+      AND (competition_id IS NULL OR competition_id = ANY($10::text[]))
       AND ($3::text IS NULL OR actor_id = $3)
       AND ($4::text IS NULL OR action = $4)
       AND ($5::timestamptz IS NULL OR occurred_at >= $5)
@@ -51,6 +52,7 @@ export class PostgresAuditSource implements OrganizationAuditSourcePort {
         query.cursor?.occurredAt ?? null,
         query.cursor?.id ?? null,
         query.limit + 1,
+        query.accessibleCompetitionIds,
       ],
     );
     return rows.rows.map((raw) => {
