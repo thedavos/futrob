@@ -57,6 +57,12 @@ orientativos y deben confirmarse al contratar; no se hicieron pruebas de entrega
    (1, 5, 15, 60, 240 y 720 minutos; luego `failed`). El Cron por minuto del Worker web llama a
    `POST /api/v1/internal/notifications/email-dispatch/run`. Una caída del proveedor solo
    retrasa el email; la oficialización y la reprogramación ya se confirmaron.
+   Antes del primer envío el outbox fija la petición renderizada (columna `message`,
+   [migración 0067](/apps/api/migrations/0067_email_outbox_pinned_message.sql)) y cada
+   reintento la reenvía tal cual: si cambian el idioma, el nombre o la dirección, Resend sigue
+   viendo el mismo cuerpo bajo la misma clave y devuelve el id del primer envío. Un `409
+concurrent_idempotent_requests` se reintenta; un `409 invalid_idempotent_request` cierra
+   la entrega como `failed`.
 5. **Plan.** El despacho omite (`plan_without_email`) las organizaciones cuyo plan no incluye
    `email` en `notificationChannels`.
 6. **Preferencias mínimas.** `notification_email_preferences` guarda idioma (`es`/`en`), el
@@ -73,7 +79,8 @@ orientativos y deben confirmarse al contratar; no se hicieron pruebas de entrega
 - Resultados y scheduling no conocen el canal: solo la composición de notificaciones encola.
 - El outbox es tabla de producto en el Postgres de la API; tenencia por `organization_id`.
 - El contenido del email usa nombres guardados al ocurrir el hecho, nunca texto libre de
-  usuarios; los errores guardados no contienen destinatario ni cuerpo.
+  usuarios; los errores guardados no contienen destinatario ni cuerpo. La petición fijada sí
+  guarda dirección y cuerpo del email ya enviado, en la misma tabla de producto.
 - `apps/auth` reutilizará Resend por HTTP para verificación y restablecimiento; ese cableado
   queda fuera de MAIL-01.
 

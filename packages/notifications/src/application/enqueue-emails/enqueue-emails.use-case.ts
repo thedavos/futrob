@@ -61,6 +61,7 @@ export class EnqueueEmailsUseCase {
       lastError: null,
       skipReason: null,
       providerMessageId: null,
+      message: null,
       createdAt: now,
       settledAt: null,
     }));

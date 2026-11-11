@@ -99,6 +99,29 @@ function contract(
       expect(queued[0]?.intent).toEqual(decision);
     });
 
+    it("pins the first request of a delivery and returns it to every later send", async () => {
+      await fact("event-pinned");
+      const [claimed] = await outbox.claimDue({ now: at(0), leaseUntil: at(10), limit: 1 });
+      const id = claimed?.id ?? "";
+      const first = {
+        to: "ana@example.test",
+        subject: "Hola",
+        html: "<p>Hola</p>",
+        text: "Hola",
+        headers: {
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          "List-Unsubscribe": "<u>",
+        },
+        idempotencyKey: `email-delivery/${id}`,
+      };
+
+      expect(await outbox.pinMessage(id, first)).toEqual(first);
+      expect(await outbox.pinMessage(id, { ...first, to: "new@example.test" })).toEqual(first);
+      await outbox.settle(id, { kind: "retry", error: "lost", nextAttemptAt: at(1) });
+      const retried = await outbox.claimDue({ now: at(1), leaseUntil: at(11), limit: 10 });
+      expect(retried.find((row) => row.id === id)).toMatchObject({ attempts: 2, message: first });
+    });
+
     it("claims due rows once per lease, oldest first, and settles each outcome", async () => {
       await fact("event-early");
       now = at(1);

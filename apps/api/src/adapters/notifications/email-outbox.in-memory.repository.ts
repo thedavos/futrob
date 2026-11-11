@@ -2,6 +2,7 @@ import {
   EMAIL_DELIVERY_STATUS,
   type EmailDelivery,
   type EmailDeliveryOutcome,
+  type EmailMessage,
   type EmailOutboxRepository,
 } from "@futrob/notifications";
 
@@ -41,6 +42,14 @@ export class InMemoryEmailOutboxRepository implements EmailOutboxRepository {
       .map((row) => ({ ...row, attempts: row.attempts + 1, nextAttemptAt: input.leaseUntil }));
     for (const row of claimed) this.replace(row);
     return claimed;
+  }
+
+  async pinMessage(id: string, message: EmailMessage): Promise<EmailMessage> {
+    const row = this.rows.find((candidate) => candidate.id === id);
+    if (!row) return message;
+    if (row.message) return row.message;
+    this.replace({ ...row, message });
+    return message;
   }
 
   async settle(id: string, outcome: EmailDeliveryOutcome): Promise<void> {

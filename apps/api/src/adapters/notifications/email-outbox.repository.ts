@@ -3,6 +3,7 @@ import {
   type EmailDelivery,
   type EmailDeliveryOutcome,
   type EmailIntent,
+  type EmailMessage,
   type EmailOutboxRepository,
 } from "@futrob/notifications";
 import { asActorId, asOrganizationId } from "@futrob/shared-kernel";
@@ -17,7 +18,7 @@ import { getPgExecutor } from "@/adapters/persistence/pg-transaction.ts";
 
 const COLUMNS = `id, event_id, channel, organization_id, recipient_actor_id, template, intent,
   status, attempts, next_attempt_at, last_error, skip_reason, provider_message_id, created_at,
-  settled_at`;
+  settled_at, message`;
 
 const names = {
   path: z.string(),
@@ -53,6 +54,15 @@ const intentSchema: z.ZodType<EmailIntent> = z.discriminatedUnion("template", [
   z.object({ ...names, template: z.literal("sanction") }),
 ]);
 
+const messageSchema: z.ZodType<EmailMessage> = z.object({
+  to: z.string(),
+  subject: z.string(),
+  html: z.string(),
+  text: z.string(),
+  headers: z.record(z.string(), z.string()),
+  idempotencyKey: z.string(),
+});
+
 const nullableTimestampSchema = z.union([z.null(), pgTimestampSchema]);
 
 const deliveryRowSchema = z.object({
@@ -70,6 +80,7 @@ const deliveryRowSchema = z.object({
   provider_message_id: pgNullableTextSchema,
   created_at: pgTimestampSchema,
   settled_at: nullableTimestampSchema,
+  message: messageSchema.nullable(),
 });
 
 type DeliveryRow = z.infer<typeof deliveryRowSchema>;
@@ -90,6 +101,7 @@ function toDelivery(parsed: DeliveryRow): EmailDelivery {
     providerMessageId: parsed.provider_message_id,
     createdAt: parsed.created_at,
     settledAt: parsed.settled_at,
+    message: parsed.message,
   };
 }
 
@@ -109,7 +121,8 @@ export class PostgresEmailOutboxRepository implements EmailOutboxRepository {
     for (const delivery of deliveries) {
       await executor.query(
         `INSERT INTO email_outbox (${COLUMNS})
-         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13, $14, $15)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13, $14, $15,
+           $16::jsonb)
          ON CONFLICT (event_id, channel, recipient_actor_id) DO NOTHING`,
         [
           delivery.id,
@@ -127,6 +140,7 @@ export class PostgresEmailOutboxRepository implements EmailOutboxRepository {
           delivery.providerMessageId,
           delivery.createdAt,
           delivery.settledAt,
+          delivery.message && JSON.stringify(delivery.message),
         ],
       );
     }
@@ -155,6 +169,18 @@ export class PostgresEmailOutboxRepository implements EmailOutboxRepository {
       [input.now, input.leaseUntil, input.limit],
     );
     return claimed.rows.map((row) => toDelivery(deliveryRowSchema.parse(row))).sort(byDueThenId);
+  }
+
+  async pinMessage(id: string, message: EmailMessage): Promise<EmailMessage> {
+    const pinned = await getPgExecutor(this.pool).query(
+      `UPDATE email_outbox SET message = COALESCE(message, $2::jsonb)
+       WHERE id = $1 AND status = $3
+       RETURNING message`,
+      [id, JSON.stringify(message), EMAIL_DELIVERY_STATUS.pending],
+    );
+    // A settled or unknown delivery pins nothing; the send then carries the given request.
+    if (pinned.rows.length === 0) return message;
+    return z.object({ message: messageSchema }).parse(pinned.rows[0]).message;
   }
 
   async settle(id: string, outcome: EmailDeliveryOutcome): Promise<void> {

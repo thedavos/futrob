@@ -7,6 +7,7 @@ import {
 import { asActorId, asOrganizationId, err, ok } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import { InMemoryActorContactReader } from "@/adapters/identity/actor-contact.reader.ts";
+import { ResendEmailSender } from "@/adapters/notifications/resend-email-sender.ts";
 import { createApp } from "@/app.ts";
 import { createModules } from "@/di/create-modules.ts";
 import type { EmailSettings } from "@/di/notifications.module.ts";
@@ -63,6 +64,32 @@ class ScriptedSender implements EmailSenderPort {
     this.delivered.push(message);
     return ok({ providerMessageId: `re_${this.delivered.length}` });
   }
+}
+
+/**
+ * Resend double that honors `Idempotency-Key` the way Resend documents it: the same body
+ * returns the first message id without a second email, another body under the key is a
+ * 409 `invalid_idempotent_request`. It can drop the answer to an accepted request.
+ */
+class IdempotentResend {
+  readonly accepted = new Map<string, { readonly body: string; readonly id: string }>();
+  loseNextAnswer = false;
+
+  readonly fetcher = (async (_url: string | URL | Request, init?: RequestInit) => {
+    const key = new Headers(init?.headers).get("Idempotency-Key") ?? "";
+    const body = String(init?.body);
+    const known = this.accepted.get(key);
+    if (known && known.body !== body) {
+      return Response.json({ name: "invalid_idempotent_request" }, { status: 409 });
+    }
+    const id = known?.id ?? `re_${this.accepted.size + 1}`;
+    this.accepted.set(key, { body, id });
+    if (this.loseNextAnswer) {
+      this.loseNextAnswer = false;
+      throw new TypeError("fetch failed");
+    }
+    return Response.json({ id });
+  }) as typeof fetch;
 }
 
 /** A clock the test moves by hand, so retries come due without waiting. */
@@ -216,6 +243,48 @@ describe("apps/api http email", () => {
     const [settled] = await h.modules.notifications.email.outbox.listByEvent(eventId);
     expect(settled).toMatchObject({ status: "sent", attempts: 2, providerMessageId: "re_1" });
     expect(h.sender.delivered).toHaveLength(1);
+  });
+
+  it("recovers a send whose answer was lost even after the recipient's locale and address change", async () => {
+    const resend = new IdempotentResend();
+    resend.loseNextAnswer = true;
+    const h = setup({
+      sender: new ResendEmailSender({
+        fetcher: resend.fetcher,
+        apiKey: "re_test",
+        from: "Futrob <avisos@futrob.test>",
+        timeoutMs: 1_000,
+      }),
+    });
+    const { entryId } = await competitionWithApplication(h, "pro");
+    const eventId = `activity:competition_entry:${entryId}`;
+
+    expect(await dispatch(h.app)).toEqual({ sent: 0, retried: 1, failed: 0, skipped: 0 });
+    expect(resend.accepted.size).toBe(1);
+
+    const contacts = h.modules.identity.contacts;
+    if (!(contacts instanceof InMemoryActorContactReader)) throw new Error("memory contacts");
+    contacts.rows.set(asActorId(ORGANIZER), {
+      actorId: asActorId(ORGANIZER),
+      displayName: "Organizer",
+      email: "organizer@example.test",
+    });
+    const saved = await h.app.request(PREFERENCES, {
+      method: "PUT",
+      headers: serviceHeaders(ORGANIZER),
+      body: JSON.stringify({ locale: "en", nonCriticalEmail: true }),
+    });
+    expect(saved.status).toBe(200);
+    h.clock.advanceMinutes(1);
+
+    expect(await dispatch(h.app)).toEqual({ sent: 1, retried: 0, failed: 0, skipped: 0 });
+    const [delivery] = await h.modules.notifications.email.outbox.listByEvent(eventId);
+    expect(delivery).toMatchObject({ status: "sent", attempts: 2, providerMessageId: "re_1" });
+    expect(delivery?.message).toMatchObject({
+      to: "orga@example.test",
+      subject: "Nueva inscripción en Liga Correo",
+    });
+    expect(resend.accepted.size).toBe(1);
   });
 
   it("skips email for an organization on Free, which is web only", async () => {

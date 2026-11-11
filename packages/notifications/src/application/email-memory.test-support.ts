@@ -54,6 +54,14 @@ export class MemoryOutbox implements EmailOutboxRepository {
     return due;
   }
 
+  async pinMessage(id: string, message: EmailMessage): Promise<EmailMessage> {
+    const row = this.rows.find((candidate) => candidate.id === id);
+    if (!row) return message;
+    if (row.message) return row.message;
+    this.replace({ ...row, message });
+    return message;
+  }
+
   async settle(id: string, outcome: EmailDeliveryOutcome): Promise<void> {
     const row = this.rows.find((candidate) => candidate.id === id);
     if (!row) return;

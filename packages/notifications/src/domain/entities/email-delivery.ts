@@ -1,4 +1,5 @@
 import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
+import type { EmailMessage } from "../ports/email-sender.port.ts";
 import type { EmailIntent } from "./email-intent.ts";
 
 export const EMAIL_CHANNEL = "email";
@@ -44,6 +45,12 @@ export interface EmailDelivery {
   readonly lastError: string | null;
   readonly skipReason: EmailSkipReason | null;
   readonly providerMessageId: string | null;
+  /**
+   * The request sent under this delivery's idempotency key, pinned before the first send.
+   * Retries resend it as is, so a send the provider accepted but whose answer was lost is
+   * recovered even if the recipient's address, name or locale changed since.
+   */
+  readonly message: EmailMessage | null;
   readonly createdAt: Date;
   readonly settledAt: Date | null;
 }

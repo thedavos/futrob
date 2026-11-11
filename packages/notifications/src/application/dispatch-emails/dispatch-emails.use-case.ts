@@ -19,7 +19,7 @@ import type {
   EmailContact,
   EmailContactsPort,
 } from "../../domain/ports/email-recipients.port.ts";
-import type { EmailSenderPort } from "../../domain/ports/email-sender.port.ts";
+import type { EmailMessage, EmailSenderPort } from "../../domain/ports/email-sender.port.ts";
 import { renderEmail } from "../../domain/templates/render-email.ts";
 
 export const EMAIL_DISPATCH_BATCH = 50;
@@ -85,6 +85,8 @@ export class DispatchEmailsUseCase {
     delivery: EmailDelivery,
     contact: EmailContact | undefined,
   ): Promise<EmailDeliveryOutcome> {
+    // A started send keeps its request: the idempotency key belongs to that exact body.
+    if (delivery.message) return this.send(delivery, delivery.message);
     const skipped = (reason: EmailSkipReason): EmailDeliveryOutcome => ({
       kind: "skipped",
       reason,
@@ -107,11 +109,19 @@ export class DispatchEmailsUseCase {
       unsubscribeUrl: this.deps.links.unsubscribeUrl(preferences.unsubscribeToken),
       oneClickUnsubscribeUrl: this.deps.links.oneClickUnsubscribeUrl(preferences.unsubscribeToken),
     });
-    const sent = await this.deps.sender.send({
+    const message = await this.deps.outbox.pinMessage(delivery.id, {
       to: contact.email,
       ...rendered,
       idempotencyKey: `email-delivery/${delivery.id}`,
     });
+    return this.send(delivery, message);
+  }
+
+  private async send(
+    delivery: EmailDelivery,
+    message: EmailMessage,
+  ): Promise<EmailDeliveryOutcome> {
+    const sent = await this.deps.sender.send(message);
     const at = this.deps.clock.now();
     if (sent.isOk()) return { kind: "sent", providerMessageId: sent.value.providerMessageId, at };
     const nextAttemptAt = sent.error.retryable ? nextEmailAttemptAt(delivery.attempts, at) : null;
