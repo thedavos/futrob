@@ -1,4 +1,4 @@
-import type { CompetitionDraft, CompetitionEntry } from "@futrob/competitions";
+import type { CompetitionDraft, CompetitionEntry, CompetitionSanction } from "@futrob/competitions";
 import { asActorId, asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import { CompetitionFixtureSourceAdapter } from "./competition-fixture-source.ts";
@@ -70,6 +70,7 @@ describe("CompetitionFixtureSourceAdapter", () => {
     const adapter = new CompetitionFixtureSourceAdapter({
       competitions: { findById: async () => draft },
       entries: { listByCompetition: async () => entries },
+      sanctions: { listByCompetition: async () => [] },
     });
 
     const source = await adapter.load({ organizationId, competitionId });
@@ -80,6 +81,52 @@ describe("CompetitionFixtureSourceAdapter", () => {
       regular: "independent_matches",
       knockout: "aggregate_score",
     });
+  });
+
+  it("reads only active point deductions in the competition scope on each load", async () => {
+    const active: CompetitionSanction = {
+      id: "sanction-active",
+      organizationId,
+      competitionId,
+      targetType: "team",
+      teamId: asTeamId("team-a"),
+      playerProfileId: null,
+      type: "points_deduction",
+      pointsDeducted: 4,
+      suspensionMatches: null,
+      encounterId: null,
+      reason: "Ineligible player",
+      imposedByActorId: asActorId("actor-1"),
+      imposedAt: new Date("2026-02-01T00:00:00.000Z"),
+      requestId: "impose-deduction",
+      revocation: null,
+    };
+    const revocation = {
+      actorId: asActorId("actor-1"),
+      at: new Date("2026-02-02T00:00:00.000Z"),
+      reason: "Appeal accepted",
+      requestId: "revoke-deduction",
+    };
+    let rows: CompetitionSanction[] = [
+      active,
+      { ...active, id: "sanction-revoked", revocation },
+      { ...active, id: "sanction-warning", type: "warning", pointsDeducted: null },
+    ];
+    const adapter = new CompetitionFixtureSourceAdapter({
+      competitions: { findById: async () => draft },
+      entries: { listByCompetition: async () => [] },
+      sanctions: {
+        listByCompetition: async (org, competition) => {
+          expect([org, competition]).toEqual([organizationId, competitionId]);
+          return rows;
+        },
+      },
+    });
+    expect((await adapter.load({ organizationId, competitionId }))?.pointDeductions).toEqual([
+      { teamId: active.teamId, points: 4 },
+    ]);
+    rows = [{ ...active, revocation }];
+    expect((await adapter.load({ organizationId, competitionId }))?.pointDeductions).toEqual([]);
   });
 });
 

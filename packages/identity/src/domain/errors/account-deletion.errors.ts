@@ -13,7 +13,7 @@ export class AccountDeletionBlocked extends TaggedError("AccountDeletionBlocked"
   details: { blockers: readonly AccountDeletionBlocker[] };
 }> {}
 
-/** The account was deleted: nothing about it can be read or changed any more (ADR-0028). */
+/** The account was deleted: nothing about it can be read or changed any more (ADR-0029). */
 export class AccountDeleted extends TaggedError("AccountDeleted")<{
   code: "identity.account_deleted";
   message: string;

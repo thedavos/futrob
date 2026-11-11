@@ -49,7 +49,8 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0025: Planes, entitlements y cupos en el BC billing](/docs/adr/0025-billing-plans-and-entitlements.md)                         | Aceptada    | Fase 0 sin pagos; revisión manual FR-09 y sync automático pendientes                             |
 | [ADR-0026: Historial del embudo de onboarding en identity](/docs/adr/0026-onboarding-funnel-history.md)                             | Propuesta   | Historial append-only implementado; resultado de cuenta EA y club pendiente                      |
 | [ADR-0027: Sistema suizo con rondas emparejadas por reconciliación](/docs/adr/0027-swiss-format-rounds-paired-by-reconciliation.md) | Aceptada    | API, web y móvil; pendientes aviso al emparejar y paso automático a `finished`                   |
-| [ADR-0028: Eliminación de cuenta por anonimización](/docs/adr/0028-account-deletion-by-anonymization.md)                            | Aceptada    | Plazo de 30 días, limpieza por contexto en la transacción del job; correos pendientes de MAIL-01 |
+| [ADR-0028: Sanciones de competición](/docs/adr/0028-competition-sanctions.md)                                                       | Aceptada    | Registro y revocación auditados, deducción en tabla, API y web; correo y vista móvil pendientes  |
+| [ADR-0029: Eliminación de cuenta por anonimización](/docs/adr/0029-account-deletion-by-anonymization.md)                            | Aceptada    | Plazo de 30 días, limpieza por contexto en la transacción del job; correos pendientes de MAIL-01 |
 
 ## Consolidación de septiembre de 2026
 
@@ -59,7 +60,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 - ADR-0016 y ADR-0017 formalizan consistencia transaccional y autorización contextual.
 - ADR-0021 reemplaza el almacenamiento D1 de ADR-0015: auth, actores y rate limits pasan al Postgres de producto.
 
-Quedan **23 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
+Quedan **24 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
 archivo antiguos se conservan para no romper referencias. Para implementación nueva,
 seguir el sucesor indicado, aunque un enlace histórico aún apunte al documento anterior.
 

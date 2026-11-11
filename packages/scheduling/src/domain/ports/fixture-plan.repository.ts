@@ -25,6 +25,8 @@ export interface CompetitionFixtureSourceSnapshot {
   };
   /** Regular-stage points that rank groups and leagues for qualification. */
   readonly standingPoints: StandingPoints;
+  /** Active deductions applied when pairing a future Swiss round. */
+  readonly pointDeductions: readonly { readonly teamId: TeamId; readonly points: number }[];
   readonly approvedParticipants: readonly TeamId[];
 }
 

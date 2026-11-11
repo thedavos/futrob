@@ -1,7 +1,9 @@
 import {
+  activePointDeductions,
   selectStageMatchRules,
   type CompetitionEntryRepository,
   type CompetitionRepository,
+  type CompetitionSanctionRepository,
 } from "@futrob/competitions";
 import { compareTime } from "@futrob/shared-kernel";
 import type {
@@ -14,6 +16,7 @@ export class CompetitionFixtureSourceAdapter implements CompetitionFixtureSource
     private readonly deps: {
       readonly competitions: Pick<CompetitionRepository, "findById">;
       readonly entries: Pick<CompetitionEntryRepository, "listByCompetition">;
+      readonly sanctions: Pick<CompetitionSanctionRepository, "listByCompetition">;
     },
   ) {}
 
@@ -63,6 +66,9 @@ export class CompetitionFixtureSourceAdapter implements CompetitionFixtureSource
         lossPoints: regularRules.lossPoints,
       },
       approvedParticipants,
+      pointDeductions: activePointDeductions(
+        await this.deps.sanctions.listByCompetition(input.organizationId, input.competitionId),
+      ),
     };
   }
 }

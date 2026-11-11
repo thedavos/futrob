@@ -9,6 +9,8 @@ export const COMPETITION_PERMISSION = {
   participantsManage: "competitions.participants.manage",
   invitationsManage: "competitions.invitations.manage",
   membershipsManage: "competitions.memberships.manage",
+  sanctionsRead: "competitions.sanctions.read",
+  sanctionsManage: "competitions.sanctions.manage",
 } as const satisfies Record<string, Permission>;
 
 export const COMPETITION_PERMISSIONS = Object.values(COMPETITION_PERMISSION);

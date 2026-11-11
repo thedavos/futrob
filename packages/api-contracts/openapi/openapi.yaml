@@ -1700,7 +1700,7 @@ paths:
         - identity
       summary: Schedule deletion of the authenticated account and sign it out everywhere
       description: Requires the current password. Deletion runs after the grace period
-        by anonymizing the account (ADR-0028). Repeating the request keeps the
+        by anonymizing the account (ADR-0029). Repeating the request keeps the
         original date and signs out again.
       requestBody:
         required: true
@@ -4570,6 +4570,141 @@ paths:
         - competitions
       summary: Open registration for a valid draft; format and rules freeze until it
         closes
+  /organizations/{organizationId}/competitions/{competitionId}/sanctions:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+      responses:
+        "201":
+          description: Sanction imposed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionSanction"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400": &a84
+          $ref: "#/components/responses/ApiError"
+        "401": *a84
+        "403": *a84
+        "404": *a84
+        "409": *a84
+      operationId: imposeSanction
+      tags:
+        - competitions
+      summary: Sanction a Team entered in the competition, or one of its players
+      description: "Requires `competitions.sanctions.manage` and a competition in
+        registration, published, paused or finished. `points_deduction` needs
+        `pointsDeducted` (1–100) and rebuilds the table in the same transaction;
+        `match_suspension` needs `suspensionMatches` (1–20);
+        `administrative_defeat` needs the Team's `encounterId` and creates no
+        official result. Failures: 400 `api.validation_error`,
+        `competitions.invalid_sanction`; 403 `authorization.forbidden`; 404
+        `competitions.not_found`; 409 `competitions.sanctions_closed`; 404
+        `competitions.sanction_target_not_found`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImposeSanctionRequest"
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+      responses:
+        "200":
+          description: Sanctions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListCompetitionSanctionsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "401": &a85
+          $ref: "#/components/responses/ApiError"
+        "403": *a85
+        "404": *a85
+      operationId: listCompetitionSanctions
+      tags:
+        - competitions
+      summary: List every sanction of a competition, revoked included
+      description: Requires `competitions.sanctions.read` (organizer and staff).
+        Newest first. Each sanction keeps who imposed it, the reason, when and
+        the request correlation (ADR-0028).
+  /organizations/{organizationId}/competitions/{competitionId}/sanctions/{sanctionId}/revoke:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: sanctionId
+          in: path
+      responses:
+        "200":
+          description: Sanction revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionSanction"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400": &a86
+          $ref: "#/components/responses/ApiError"
+        "401": *a86
+        "403": *a86
+        "404": *a86
+        "409": *a86
+      operationId: revokeSanction
+      tags:
+        - competitions
+      summary: Revoke an active sanction
+      description: "Requires `competitions.sanctions.manage`. The sanction is never
+        deleted: the revocation records actor, reason, date and request
+        correlation once. A revoked deduction rebuilds the table. Failures: 400
+        `api.validation_error`, `competitions.invalid_sanction`; 403
+        `authorization.forbidden`; 404 `competitions.not_found`; 409
+        `competitions.sanctions_closed`; 404 `competitions.sanction_not_found`;
+        409 `competitions.sanction_already_revoked`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevokeSanctionRequest"
   /organizations/{organizationId}/competitions/{competitionId}/standings:
     get:
       parameters:
@@ -4594,9 +4729,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a84
+        "401": &a87
           $ref: "#/components/responses/ApiError"
-        "403": *a84
+        "403": *a87
       operationId: getCompetitionStandings
       tags:
         - statistics
@@ -4766,9 +4901,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a85
+        "400": &a88
           $ref: "#/components/responses/ApiError"
-        "403": *a85
+        "403": *a88
       operationId: listCompetitionTeamManagement
       tags:
         - teams
@@ -4802,9 +4937,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a86
+        "403": &a89
           $ref: "#/components/responses/ApiError"
-        "404": *a86
+        "404": *a89
       operationId: getCompetitionTeamManagement
       tags:
         - teams
@@ -4834,7 +4969,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a87
+        "401": &a90
           $ref: "#/components/responses/ApiError"
         "402":
           description: The organization's plan does not include this action, or its
@@ -4846,7 +4981,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a87
+        "403": *a90
       operationId: getTeamPerformanceRanking
       tags:
         - statistics
@@ -4876,9 +5011,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a88
+        "401": &a91
           $ref: "#/components/responses/ApiError"
-        "403": *a88
+        "403": *a91
       operationId: getCompetitionTeamStatistics
       tags:
         - statistics
@@ -4912,11 +5047,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a89
+        "400": &a92
           $ref: "#/components/responses/ApiError"
-        "401": *a89
-        "403": *a89
-        "404": *a89
+        "401": *a92
+        "403": *a92
+        "404": *a92
       operationId: connectCompetitionTeamExternalClub
       tags:
         - teams
@@ -4955,9 +5090,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a90
+        "401": &a93
           $ref: "#/components/responses/ApiError"
-        "403": *a90
+        "403": *a93
       operationId: getCompetitionTeamExternalClub
       tags:
         - teams
@@ -4991,12 +5126,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a91
+        "400": &a94
           $ref: "#/components/responses/ApiError"
-        "401": *a91
-        "403": *a91
-        "404": *a91
-        "409": *a91
+        "401": *a94
+        "403": *a94
+        "404": *a94
+        "409": *a94
       operationId: addToTeamRoster
       tags:
         - teams
@@ -5035,9 +5170,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a92
+        "401": &a95
           $ref: "#/components/responses/ApiError"
-        "403": *a92
+        "403": *a95
       operationId: listTeamRoster
       tags:
         - teams
@@ -5071,11 +5206,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a93
+        "400": &a96
           $ref: "#/components/responses/ApiError"
-        "401": *a93
-        "403": *a93
-        "409": *a93
+        "401": *a96
+        "403": *a96
+        "409": *a96
       operationId: createRosterInvitation
       tags:
         - teams
@@ -5120,11 +5255,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a94
+        "400": &a97
           $ref: "#/components/responses/ApiError"
-        "401": *a94
-        "403": *a94
-        "404": *a94
+        "401": *a97
+        "403": *a97
+        "404": *a97
       operationId: changeRosterRole
       tags:
         - teams
@@ -5164,10 +5299,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a95
+        "401": &a98
           $ref: "#/components/responses/ApiError"
-        "403": *a95
-        "409": *a95
+        "403": *a98
+        "409": *a98
       operationId: closeTeamRoster
       tags:
         - teams
@@ -5201,14 +5336,53 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a96
+        "401": &a99
           $ref: "#/components/responses/ApiError"
-        "403": *a96
-        "409": *a96
+        "403": *a99
+        "409": *a99
       operationId: openTeamRoster
       tags:
         - teams
       summary: Unlock the competition team roster
+  /organizations/{organizationId}/competitions/{competitionId}/teams/{teamId}/sanctions:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: teamId
+          in: path
+      responses:
+        "200":
+          description: Sanctions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListCompetitionSanctionsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "401": &a100
+          $ref: "#/components/responses/ApiError"
+        "403": *a100
+      operationId: listTeamSanctions
+      tags:
+        - competitions
+      summary: List the sanctions on a Team and on its players
+      description: "Read-only view for the affected Team. Requires `teams.read` on
+        that Team in this competition: its roster and the competition operators
+        pass; other Teams get 403."
   /organizations/{organizationId}/encounters/{encounterId}:
     get:
       parameters:
@@ -5233,9 +5407,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a97
+        "401": &a101
           $ref: "#/components/responses/ApiError"
-        "404": *a97
+        "404": *a101
       operationId: getEncounterView
       tags:
         - encounters
@@ -5271,11 +5445,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a98
+        "400": &a102
           $ref: "#/components/responses/ApiError"
-        "401": *a98
-        "403": *a98
-        "404": *a98
+        "401": *a102
+        "403": *a102
+        "404": *a102
       operationId: getTeamOfficialSelection
       tags:
         - results
@@ -5306,10 +5480,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a99
+        "401": &a103
           $ref: "#/components/responses/ApiError"
-        "403": *a99
-        "404": *a99
+        "403": *a103
+        "404": *a103
       operationId: getOperatorOfficialSelection
       tags:
         - results
@@ -5342,12 +5516,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a100
+        "400": &a104
           $ref: "#/components/responses/ApiError"
-        "401": *a100
-        "403": *a100
-        "404": *a100
-        "409": *a100
+        "401": *a104
+        "403": *a104
+        "404": *a104
+        "409": *a104
       operationId: openMatchDispute
       tags:
         - results
@@ -5400,12 +5574,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a101
+        "400": &a105
           $ref: "#/components/responses/ApiError"
-        "401": *a101
-        "403": *a101
-        "404": *a101
-        "409": *a101
+        "401": *a105
+        "403": *a105
+        "404": *a105
+        "409": *a105
       operationId: resolveMatchDispute
       tags:
         - results
@@ -5467,12 +5641,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a102
+        "400": &a106
           $ref: "#/components/responses/ApiError"
-        "401": *a102
-        "403": *a102
-        "404": *a102
-        "409": *a102
+        "401": *a106
+        "403": *a106
+        "404": *a106
+        "409": *a106
       operationId: reviewMatchDispute
       tags:
         - results
@@ -5533,12 +5707,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a103
+        "400": &a107
           $ref: "#/components/responses/ApiError"
-        "401": *a103
-        "403": *a103
-        "404": *a103
-        "409": *a103
+        "401": *a107
+        "403": *a107
+        "404": *a107
+        "409": *a107
       operationId: proposeOfficialSelection
       tags:
         - results
@@ -5596,12 +5770,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a104
+        "400": &a108
           $ref: "#/components/responses/ApiError"
-        "401": *a104
-        "403": *a104
-        "404": *a104
-        "409": *a104
+        "401": *a108
+        "403": *a108
+        "404": *a108
+        "409": *a108
       operationId: proposeAlternativeOfficialSelection
       tags:
         - results
@@ -5659,12 +5833,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a105
+        "400": &a109
           $ref: "#/components/responses/ApiError"
-        "401": *a105
-        "403": *a105
-        "404": *a105
-        "409": *a105
+        "401": *a109
+        "403": *a109
+        "404": *a109
+        "409": *a109
       operationId: confirmOfficialSelection
       tags:
         - results
@@ -5722,12 +5896,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a106
+        "400": &a110
           $ref: "#/components/responses/ApiError"
-        "401": *a106
-        "403": *a106
-        "404": *a106
-        "409": *a106
+        "401": *a110
+        "403": *a110
+        "404": *a110
+        "409": *a110
       operationId: rejectOfficialSelection
       tags:
         - results
@@ -5775,9 +5949,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a107
+        "400": &a111
           $ref: "#/components/responses/ApiError"
-        "401": *a107
+        "401": *a111
         "402":
           description: The organization's plan does not include this action, or its
             monthly quota is used
@@ -5788,9 +5962,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a107
-        "404": *a107
-        "409": *a107
+        "403": *a111
+        "404": *a111
+        "409": *a111
       operationId: createOrganizationInvitation
       tags:
         - organizations
@@ -5820,11 +5994,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a108
+        "400": &a112
           $ref: "#/components/responses/ApiError"
-        "401": *a108
-        "403": *a108
-        "404": *a108
+        "401": *a112
+        "403": *a112
+        "404": *a112
       operationId: setOrganizationLogo
       tags:
         - organizations
@@ -6015,12 +6189,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a109
+        "400": &a113
           $ref: "#/components/responses/ApiError"
-        "401": *a109
-        "403": *a109
-        "404": *a109
-        "409": *a109
+        "401": *a113
+        "403": *a113
+        "404": *a113
+        "409": *a113
       operationId: listOrganizationMembers
       tags:
         - organizations
@@ -6052,7 +6226,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a110
+        "400": &a114
           $ref: "#/components/responses/ApiError"
         "402":
           description: The organization's plan does not include this action, or its
@@ -6064,9 +6238,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a110
-        "404": *a110
-        "409": *a110
+        "403": *a114
+        "404": *a114
+        "409": *a114
       operationId: changeOrganizationRole
       tags:
         - authorization
@@ -6096,11 +6270,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a111
+        "400": &a115
           $ref: "#/components/responses/ApiError"
-        "401": *a111
-        "403": *a111
-        "409": *a111
+        "401": *a115
+        "403": *a115
+        "409": *a115
       operationId: createOrganizationTeam
       tags:
         - teams
@@ -6154,9 +6328,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a112
+        "401": &a116
           $ref: "#/components/responses/ApiError"
-        "403": *a112
+        "403": *a116
       operationId: listOrganizationTeams
       tags:
         - teams
@@ -6185,11 +6359,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a113
+        "400": &a117
           $ref: "#/components/responses/ApiError"
-        "401": *a113
-        "403": *a113
-        "404": *a113
+        "401": *a117
+        "403": *a117
+        "404": *a117
       operationId: connectOrganizationTeamExternalClub
       tags:
         - teams
@@ -6223,9 +6397,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a114
+        "401": &a118
           $ref: "#/components/responses/ApiError"
-        "403": *a114
+        "403": *a118
       operationId: getOrganizationTeamExternalClub
       tags:
         - teams
@@ -6273,9 +6447,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a115
+        "400": &a119
           $ref: "#/components/responses/ApiError"
-        "401": *a115
+        "401": *a119
         "402":
           description: The organization's plan does not include this action, or its
             monthly quota is used
@@ -6286,8 +6460,8 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "404": *a115
-        "409": *a115
+        "404": *a119
+        "409": *a119
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptOrganizationInvitation
@@ -6397,9 +6571,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a116
+        "400": &a120
           $ref: "#/components/responses/ApiError"
-        "401": *a116
+        "401": *a120
       operationId: checkOrganizationNameAvailability
       tags:
         - organizations
@@ -6465,9 +6639,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a117
+        "400": &a121
           $ref: "#/components/responses/ApiError"
-        "401": *a117
+        "401": *a121
       operationId: checkOrganizationSlugAvailability
       tags:
         - organizations
@@ -6522,11 +6696,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a118
+        "400": &a122
           $ref: "#/components/responses/ApiError"
-        "401": *a118
-        "403": *a118
-        "404": *a118
+        "401": *a122
+        "403": *a122
+        "404": *a122
       operationId: setMyActiveTeam
       tags:
         - teams
@@ -6597,9 +6771,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a119
+        "400": &a123
           $ref: "#/components/responses/ApiError"
-        "401": *a119
+        "401": *a123
       operationId: listMyActivities
       tags:
         - notifications
@@ -6639,10 +6813,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a120
+        "400": &a124
           $ref: "#/components/responses/ApiError"
-        "401": *a120
-        "404": *a120
+        "401": *a124
+        "404": *a124
       operationId: associateMyPlayerExternalClub
       tags:
         - players
@@ -6667,9 +6841,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a121
+        "400": &a125
           $ref: "#/components/responses/ApiError"
-        "401": *a121
+        "401": *a125
       operationId: addMyPlayerGameAccount
       tags:
         - players
@@ -6702,11 +6876,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a122
+        "400": &a126
           $ref: "#/components/responses/ApiError"
-        "401": *a122
-        "404": *a122
-        "409": *a122
+        "401": *a126
+        "404": *a126
+        "409": *a126
       operationId: updateMyPlayerGameAccount
       tags:
         - players
@@ -6749,10 +6923,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a123
+        "400": &a127
           $ref: "#/components/responses/ApiError"
-        "401": *a123
-        "503": *a123
+        "401": *a127
+        "503": *a127
       operationId: getMyGameProfile
       tags:
         - players
@@ -6818,10 +6992,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a124
+        "400": &a128
           $ref: "#/components/responses/ApiError"
-        "401": *a124
-        "403": *a124
+        "401": *a128
+        "403": *a128
       operationId: getMyMatches
       tags:
         - players
@@ -6871,11 +7045,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a125
+        "400": &a129
           $ref: "#/components/responses/ApiError"
-        "401": *a125
-        "403": *a125
-        "502": *a125
+        "401": *a129
+        "403": *a129
+        "502": *a129
       operationId: getMyRecentMatches
       tags:
         - players
@@ -6917,12 +7091,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a126
+        "400": &a130
           $ref: "#/components/responses/ApiError"
-        "401": *a126
-        "403": *a126
-        "502": *a126
-        "503": *a126
+        "401": *a130
+        "403": *a130
+        "502": *a130
+        "503": *a130
       operationId: getMyRecentMatch
       tags:
         - players
@@ -7100,9 +7274,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a127
+        "401": &a131
           $ref: "#/components/responses/ApiError"
-        "403": *a127
+        "403": *a131
       operationId: getMyStatistics
       tags:
         - players
@@ -7336,12 +7510,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a128
+        "400": &a132
           $ref: "#/components/responses/ApiError"
-        "401": *a128
-        "403": *a128
-        "404": *a128
-        "409": *a128
+        "401": *a132
+        "403": *a132
+        "404": *a132
+        "409": *a132
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: respondToRosterInvitation
@@ -7375,11 +7549,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a129
+        "400": &a133
           $ref: "#/components/responses/ApiError"
-        "401": *a129
-        "404": *a129
-        "409": *a129
+        "401": *a133
+        "404": *a133
+        "409": *a133
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptRosterInvitation
@@ -9182,6 +9356,101 @@ components:
         - maxRosterSize
         - rankingEligibility
         - createdAt
+    CompetitionSanction:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        competitionId:
+          type: string
+          minLength: 1
+        targetType:
+          type: string
+          enum:
+            - team
+            - player
+        teamId:
+          type: string
+          minLength: 1
+        teamName:
+          type:
+            - string
+            - "null"
+        playerProfileId:
+          type:
+            - string
+            - "null"
+        playerName:
+          type:
+            - string
+            - "null"
+        type:
+          type: string
+          enum:
+            - warning
+            - points_deduction
+            - match_suspension
+            - administrative_defeat
+        pointsDeducted:
+          type:
+            - integer
+            - "null"
+        suspensionMatches:
+          type:
+            - integer
+            - "null"
+        encounterId:
+          type:
+            - string
+            - "null"
+        reason:
+          type: string
+        imposedByActorId:
+          type: string
+          minLength: 1
+        imposedAt:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+        revocation:
+          type:
+            - object
+            - "null"
+          properties:
+            actorId:
+              type: string
+              minLength: 1
+            revokedAt:
+              type: string
+              format: date-time
+            reason:
+              type: string
+            requestId:
+              type: string
+          required:
+            - actorId
+            - revokedAt
+            - reason
+            - requestId
+      required:
+        - id
+        - competitionId
+        - targetType
+        - teamId
+        - teamName
+        - playerProfileId
+        - playerName
+        - type
+        - pointsDeducted
+        - suspensionMatches
+        - encounterId
+        - reason
+        - imposedByActorId
+        - imposedAt
+        - requestId
+        - revocation
     CompetitionSchedule:
       type: object
       properties:
@@ -9229,6 +9498,9 @@ components:
           type: integer
         points:
           type: integer
+        pointsDeducted:
+          type: integer
+          minimum: 0
         form:
           type: array
           items:
@@ -9243,7 +9515,6 @@ components:
           properties:
             buchholz:
               type: integer
-              minimum: 0
             byes:
               type: integer
               minimum: 0
@@ -9312,6 +9583,9 @@ components:
                 type: integer
               points:
                 type: integer
+              pointsDeducted:
+                type: integer
+                minimum: 0
               form:
                 type: array
                 items:
@@ -9326,7 +9600,6 @@ components:
                 properties:
                   buchholz:
                     type: integer
-                    minimum: 0
                   byes:
                     type: integer
                     minimum: 0
@@ -13034,6 +13307,9 @@ components:
                     type: integer
                   points:
                     type: integer
+                  pointsDeducted:
+                    type: integer
+                    minimum: 0
                   form:
                     type: array
                     items:
@@ -13048,7 +13324,6 @@ components:
                     properties:
                       buchholz:
                         type: integer
-                        minimum: 0
                       byes:
                         type: integer
                         minimum: 0
@@ -16618,7 +16893,6 @@ components:
                     maxItems: 5
                   buchholz:
                     type: integer
-                    minimum: 0
                   byes:
                     type: integer
                     minimum: 0
@@ -17019,6 +17293,63 @@ components:
         - service
         - apiVersion
         - db
+    ImposeSanctionRequest:
+      type: object
+      properties:
+        target:
+          oneOf:
+            - type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - team
+                teamId:
+                  type: string
+                  minLength: 1
+              required:
+                - type
+                - teamId
+            - type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - player
+                playerProfileId:
+                  type: string
+                  minLength: 1
+              required:
+                - type
+                - playerProfileId
+        type:
+          type: string
+          enum:
+            - warning
+            - points_deduction
+            - match_suspension
+            - administrative_defeat
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+        pointsDeducted:
+          type:
+            - integer
+            - "null"
+        suspensionMatches:
+          type:
+            - integer
+            - "null"
+        encounterId:
+          type:
+            - string
+            - "null"
+          minLength: 1
+      required:
+        - target
+        - type
+        - reason
     InspectCompetitionInvitationResponse:
       type: object
       properties:
@@ -17310,6 +17641,8 @@ components:
                       - schedule_set
                       - schedule_kept
                       - walkover_intended
+                      - sanction_imposed
+                      - sanction_revoked
                       - null
                 required:
                   - competitionName
@@ -17554,6 +17887,108 @@ components:
       required:
         - competition
         - encounters
+    ListCompetitionSanctionsResponse:
+      type: object
+      properties:
+        sanctions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              competitionId:
+                type: string
+                minLength: 1
+              targetType:
+                type: string
+                enum:
+                  - team
+                  - player
+              teamId:
+                type: string
+                minLength: 1
+              teamName:
+                type:
+                  - string
+                  - "null"
+              playerProfileId:
+                type:
+                  - string
+                  - "null"
+              playerName:
+                type:
+                  - string
+                  - "null"
+              type:
+                type: string
+                enum:
+                  - warning
+                  - points_deduction
+                  - match_suspension
+                  - administrative_defeat
+              pointsDeducted:
+                type:
+                  - integer
+                  - "null"
+              suspensionMatches:
+                type:
+                  - integer
+                  - "null"
+              encounterId:
+                type:
+                  - string
+                  - "null"
+              reason:
+                type: string
+              imposedByActorId:
+                type: string
+                minLength: 1
+              imposedAt:
+                type: string
+                format: date-time
+              requestId:
+                type: string
+              revocation:
+                type:
+                  - object
+                  - "null"
+                properties:
+                  actorId:
+                    type: string
+                    minLength: 1
+                  revokedAt:
+                    type: string
+                    format: date-time
+                  reason:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                  - actorId
+                  - revokedAt
+                  - reason
+                  - requestId
+            required:
+              - id
+              - competitionId
+              - targetType
+              - teamId
+              - teamName
+              - playerProfileId
+              - playerName
+              - type
+              - pointsDeducted
+              - suspensionMatches
+              - encounterId
+              - reason
+              - imposedByActorId
+              - imposedAt
+              - requestId
+              - revocation
+      required:
+        - sanctions
     ListEncounterCandidatesResponse:
       oneOf:
         - type: object
@@ -22056,7 +22491,6 @@ components:
           maxItems: 5
         buchholz:
           type: integer
-          minimum: 0
         byes:
           type: integer
           minimum: 0
@@ -22573,6 +23007,15 @@ components:
       required:
         - expectedVersion
         - commandKey
+        - reason
+    RevokeSanctionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+      required:
         - reason
     RosterInvitationInboxItem:
       type: object
@@ -24679,7 +25122,7 @@ components:
     ApiError:
       description: API error
       headers:
-        X-Request-ID: &a130
+        X-Request-ID: &a134
           $ref: "#/components/headers/RequestId"
       content:
         application/json:
@@ -24688,7 +25131,7 @@ components:
     RateLimited:
       description: Rate limit exceeded
       headers:
-        X-Request-ID: *a130
+        X-Request-ID: *a134
         Retry-After:
           $ref: "#/components/headers/RetryAfter"
       content:

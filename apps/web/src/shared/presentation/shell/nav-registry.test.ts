@@ -7,7 +7,12 @@ import { RESULT_PERMISSION } from "@futrob/results";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
-import { accountNavItems, contextNavFor, generalNavFor } from "./nav-registry.ts";
+import {
+  accountNavItems,
+  contextNavFor,
+  generalNavFor,
+  resolveActiveNavHref,
+} from "./nav-registry.ts";
 import { WORKSPACE_SELECTION_KIND } from "./workspace-selection.ts";
 
 describe("generalNavFor", () => {
@@ -230,5 +235,45 @@ describe("plan navigation from shell bootstrap permissions", () => {
     expect(generalNavFor(selection, permissions).items.map((item) => item.id)).not.toContain(
       "plan",
     );
+  });
+});
+
+describe("sanctions navigation from shell bootstrap permissions", () => {
+  it("lets a sanctions reader reach the page without competition editing access", () => {
+    const section = contextNavFor(
+      {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        organizationId: "org-1",
+        competitionId: "competition-1",
+      },
+      new Set([COMPETITION_PERMISSION.sanctionsRead]),
+    );
+
+    expect(section.items.map((item) => item.id)).toEqual(["sanctions"]);
+  });
+
+  it.each([true, false])("follows the sanctions read decision %s", (canRead) => {
+    const access: EffectiveAccessDto = {
+      actorId: "actor-1",
+      scope: { organizationId: "org-1", competitionId: "competition-1" },
+      roles: [],
+      permissions: SHELL_PERMISSIONS.map((permission) => ({
+        permission,
+        allowed: permission === COMPETITION_PERMISSION.sanctionsRead ? canRead : true,
+        decidedAt: "competition",
+      })),
+    };
+    const items = contextNavFor(
+      {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        organizationId: "org-1",
+        competitionId: "competition-1",
+      },
+      allowedPermissionSet(access),
+    ).items;
+    const href = "/orgs/org-1/competitions/competition-1/sanctions";
+
+    expect(items.some((item) => item.href === href)).toBe(canRead);
+    if (canRead) expect(resolveActiveNavHref(href, items)).toBe(href);
   });
 });

@@ -6,6 +6,7 @@ import type {
   SeriesResolutionMode,
 } from "../entities/fixture-plan.ts";
 import type { OfficialEncounterScore } from "../ports/official-encounter-score-reader.port.ts";
+import type { CompetitionFixtureSourceSnapshot } from "../ports/fixture-plan.repository.ts";
 import { planEncounters } from "./edit-fixture-encounter.ts";
 import type { StandingPoints } from "./reconcile-fixture-advancement.ts";
 
@@ -13,6 +14,7 @@ export interface SwissPointsRules {
   readonly standingPoints: StandingPoints;
   readonly officialMatchCount: 1 | 2;
   readonly resolutionMode: SeriesResolutionMode;
+  readonly pointDeductions?: CompetitionFixtureSourceSnapshot["pointDeductions"];
 }
 
 /** A bye is worth a win over the whole encounter (ADR-0027, section 3). */
@@ -67,6 +69,9 @@ export function swissPairingPoints(
       award(home.teamId, outcome(slot.homeGoals, slot.awayGoals));
       award(away.teamId, outcome(slot.awayGoals, slot.homeGoals));
     }
+  }
+  for (const deduction of rules.pointDeductions ?? []) {
+    award(deduction.teamId, -deduction.points);
   }
   return points;
 }

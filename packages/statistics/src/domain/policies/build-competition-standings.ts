@@ -11,6 +11,7 @@ import {
   type TeamMatchContribution,
 } from "../entities/team-match-contribution.ts";
 import type { CompetitionMatchPointsRules } from "../ports/competition-match-rules-reader.port.ts";
+import type { CompetitionPointDeduction } from "../ports/competition-point-deduction-reader.port.ts";
 
 export const DEFAULT_COMPETITION_MATCH_POINTS: CompetitionMatchPointsRules = {
   winPoints: 3,
@@ -37,27 +38,32 @@ export function buildCompetitionStandings(input: {
   readonly contributions: readonly TeamMatchContribution[];
   readonly pointsRules: CompetitionMatchPointsRules;
   readonly pointsByEncounter?: ReadonlyMap<string, CompetitionMatchPointsRules>;
+  /** Active sanctions: subtracted from points; a Team listed here appears even unplayed. */
+  readonly pointDeductions?: readonly CompetitionPointDeduction[];
   /** Official slot time keyed by `officialSlotKey`. */
   readonly occurredAtBySlot: ReadonlyMap<string, Date>;
   readonly updatedAt: Date;
 }): CompetitionStandingSnapshot {
   const byTeam = new Map<TeamId, MutableStanding>();
 
+  const standingOf = (teamId: TeamId): MutableStanding =>
+    byTeam.get(teamId) ??
+    ({
+      teamId,
+      played: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      goalsFor: 0,
+      goalsAgainst: 0,
+      points: 0,
+      pointsDeducted: 0,
+      sourceRevisionMax: 0,
+      timedMatches: [],
+    } satisfies MutableStanding);
+
   for (const match of matchesForStandings(input.contributions, input.occurredAtBySlot)) {
-    const standing =
-      byTeam.get(match.teamId) ??
-      ({
-        teamId: match.teamId,
-        played: 0,
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        goalsFor: 0,
-        goalsAgainst: 0,
-        points: 0,
-        sourceRevisionMax: 0,
-        timedMatches: [],
-      } satisfies MutableStanding);
+    const standing = standingOf(match.teamId);
     standing.played += 1;
     standing.goalsFor += match.goalsFor;
     standing.goalsAgainst += match.goalsAgainst;
@@ -82,6 +88,13 @@ export function buildCompetitionStandings(input: {
     byTeam.set(match.teamId, standing);
   }
 
+  for (const deduction of input.pointDeductions ?? []) {
+    const standing = standingOf(deduction.teamId);
+    standing.points -= deduction.points;
+    standing.pointsDeducted += deduction.points;
+    byTeam.set(deduction.teamId, standing);
+  }
+
   const sorted = [...byTeam.values()].sort(compareStandings);
   const rows: CompetitionStandingRow[] = sorted.map((standing, index) => ({
     position: index + 1,
@@ -94,6 +107,7 @@ export function buildCompetitionStandings(input: {
     goalsAgainst: standing.goalsAgainst,
     goalDifference: standing.goalsFor - standing.goalsAgainst,
     points: standing.points,
+    pointsDeducted: standing.pointsDeducted,
     form: formFor(standing.timedMatches),
   }));
 
@@ -218,6 +232,7 @@ interface MutableStanding {
   goalsFor: number;
   goalsAgainst: number;
   points: number;
+  pointsDeducted: number;
   sourceRevisionMax: number;
   timedMatches: TimedStandingMatch[];
 }

@@ -34,6 +34,7 @@ import { createAccountDeletion } from "./account-deletion.composition.ts";
 import { createOrganizationMemberDirectory } from "./organization-members.composition.ts";
 import { createOrganizationsModule } from "./organizations.module.ts";
 import { createEntryInvitations } from "./entry-invitations.composition.ts";
+import { createSanctions, SanctionPointDeductionReader } from "./sanctions.composition.ts";
 import { createCompetitionsModule } from "./competitions.module.ts";
 import { createTeamsModule } from "./teams.module.ts";
 import { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
@@ -124,9 +125,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     authorization: deferredAuthorization,
     staffSeats: billing.planLimits.staffSeats,
   });
-  const identity = createIdentityModule({
-    pool: input.pool,
-  });
+  const identity = createIdentityModule({ pool: input.pool });
 
   const competitionRepository = input.pool
     ? new PostgresCompetitionRepository(input.pool)
@@ -161,6 +160,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   const fixtureSource = new CompetitionFixtureSourceAdapter({
     competitions: competitionRepository,
     entries: competitions.entryRepository,
+    sanctions: competitions.sanctionRepository,
   });
   const scheduling = createSchedulingModule({
     clock,
@@ -261,6 +261,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     authorization: authorization.port,
     performanceRankingAccess: billing.planLimits.performanceRanking,
     encounterReader,
+    pointDeductions: new SanctionPointDeductionReader(competitions.sanctionRepository),
     transaction,
     eventPublisher,
   });
@@ -297,12 +298,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     activity: activityFeed.selection,
   });
 
-  const {
-    getMyNextEncounter,
-    getEncounterView,
-    listCompetitionEncounters,
-    getCurrentCompetitionFixture,
-  } = createEncounterReads({
+  const encounterReads = createEncounterReads({
     authorization: deferredAuthorization,
     clock,
     competitions,
@@ -355,6 +351,11 @@ export function createModules(input: CreateModulesInput): AppModules {
     organizations: organizations.repositories.organizations,
   });
 
+  const sanctions = createSanctions(
+    { authorization: deferredAuthorization, transaction, clock, ids },
+    { writer: activityFeed.notifications.writer, competitions, teams, scheduling, statistics },
+  );
+
   const listOrganizationMembers = createOrganizationMemberDirectory({
     authorization: deferredAuthorization,
     organizations,
@@ -376,6 +377,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     competitionApplications,
     competitions,
     entryInvitations,
+    sanctions,
     officialSelection,
     swissRoundCommands,
     runScheduleChangeExpiry: new RunScheduleChangeExpiry({
@@ -397,17 +399,11 @@ export function createModules(input: CreateModulesInput): AppModules {
       clock,
     }),
     gameData,
-    getMyNextEncounter,
-    getEncounterView,
-    listCompetitionEncounters,
-    getCurrentCompetitionFixture,
+    ...encounterReads,
     listCompetitionDisputes,
     identity,
     notifications: activityFeed.notifications,
-    organizations: {
-      ...organizations,
-      listOrganizationMembers,
-    },
+    organizations: { ...organizations, listOrganizationMembers },
     publicPortal,
     results,
     encounterOpenSelection,

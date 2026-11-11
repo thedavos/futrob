@@ -147,7 +147,7 @@ export const requestAccountDeletionRoute = defineRoute({
   tags: ["identity"],
   summary: "Schedule deletion of the authenticated account and sign it out everywhere",
   description:
-    "Requires the current password. Deletion runs after the grace period by anonymizing the account (ADR-0028). Repeating the request keeps the original date and signs out again.",
+    "Requires the current password. Deletion runs after the grace period by anonymizing the account (ADR-0029). Repeating the request keeps the original date and signs out again.",
   body: requestAccountDeletionRequestSchema,
   success: { status: 200, description: "Scheduled deletion", schema: AccountDeletionStatus },
   errors: [400, 401, 403, 409],

@@ -180,6 +180,33 @@ describe("activity row view", () => {
     });
   });
 
+  it.each(["sanction_imposed", "sanction_revoked"] as const)(
+    "links %s to sanctions for the organizer and Mi equipo for the affected Team",
+    (outcome) => {
+      const sanction = entry({
+        kind: "organizer_decision",
+        status: "closed",
+        requiresAction: false,
+        resourceType: "competition",
+        subject: {
+          competitionName: "Liga A",
+          encounterLabel: null,
+          teamName: "Halcones",
+          outcome,
+        },
+      });
+
+      expect(activityRowView(sanction, NOW).destination).toEqual({
+        to: "/orgs/$orgId/competitions/$competitionId/sanctions",
+        params: { orgId: "org-a", competitionId: "cmp-a" },
+      });
+      expect(activityRowView({ ...sanction, audience: "team" }, NOW).destination).toEqual({
+        to: "/player/competitions/$competitionId/team",
+        params: { competitionId: "cmp-a" },
+      });
+    },
+  );
+
   it("treats an open row past its deadline as expired, not pending", () => {
     const expired = entry({
       kind: "roster_invitation",
