@@ -15,6 +15,7 @@ import {
   OfficialResultNotFound,
   type ProjectOfficialResultError,
 } from "../../domain/errors/project-official-result.errors.ts";
+import type { CompetitionPointDeductionReaderPort } from "../../domain/ports/competition-point-deduction-reader.port.ts";
 import type { CompetitionMatchRulesReaderPort } from "../../domain/ports/competition-match-rules-reader.port.ts";
 import type { CompetitionStandingSnapshotRepository } from "../../domain/ports/competition-standing-snapshot.repository.ts";
 import type { PlayerCompetitionStatsRepository } from "../../domain/ports/player-competition-stats.repository.ts";
@@ -59,6 +60,8 @@ export interface ProjectOfficialResultDependencies {
   readonly teamCompetitionStats: TeamCompetitionStatsRepository;
   readonly standings: CompetitionStandingSnapshotRepository;
   readonly matchRules: CompetitionMatchRulesReaderPort;
+  /** Active sanction deductions (ADR-0028); absent means none. */
+  readonly pointDeductions?: CompetitionPointDeductionReaderPort;
   readonly rebuildRankings?: Pick<RebuildCompetitionRankingsUseCase, "execute">;
   readonly teamPerformanceLock?: TeamPerformanceRankingLockPort;
   readonly rebuildTeamPerformance?: Pick<RebuildTeamPerformanceRankingUseCase, "execute">;
@@ -268,6 +271,11 @@ export class ProjectOfficialResultUseCase {
         contributions,
         pointsRules: DEFAULT_COMPETITION_MATCH_POINTS,
         pointsByEncounter,
+        pointDeductions:
+          (await this.deps.pointDeductions?.listActive(
+            officialResult.organizationId,
+            officialResult.competitionId,
+          )) ?? [],
         occurredAtBySlot: officialSlotTimes(officialResults),
         updatedAt: this.deps.clock.now(),
       }),

@@ -48,11 +48,13 @@ async function setup(
   const snapshots = new Snapshots();
   const matches = new Matches();
   const events: DomainEvent[] = [];
+  const pointDeductions: { teamId: TeamId; points: number }[] = [];
   const fixtureSource = source({
     format: "swiss",
     approvedParticipants: seed,
     officialMatchCounts: { regular: 1, knockout: 1 },
     resolutionModes: { regular: "independent_matches", knockout: "independent_matches" },
+    pointDeductions,
   });
   const generated = await generationUseCase({
     fixtures,
@@ -171,6 +173,7 @@ async function setup(
     locked,
     matches,
     participantChanges,
+    pointDeductions,
     plan,
     reconcile,
     round,
@@ -182,6 +185,44 @@ async function setup(
 }
 
 describe("ReconcileSwissRoundsUseCase", () => {
+  it("uses net points for the next bye without changing an already paired round", async () => {
+    const fixture = await setup({ seed: teams, rounds: 3 });
+    const original = fixture.round(1).encounters;
+    const [first, last] = original.filter((encounter) => encounter.series);
+    fixture.approve(first!.id);
+    await fixture.advance.execute({ ...scope, encounterId: first!.id });
+    fixture.pointDeductions.push({ teamId: teamA, points: 4 });
+    expect(fixture.round(1).encounters).toEqual(original);
+
+    fixture.approve(last!.id);
+    const advanced = await fixture.advance.execute({ ...scope, encounterId: last!.id });
+    expect(advanced.isOk()).toBe(true);
+    expect(fixture.round(2).encounters.find((encounter) => !encounter.series)?.home).toEqual({
+      kind: "team",
+      teamId: teamA,
+    });
+
+    const paired = fixture.round(2).encounters;
+    fixture.pointDeductions.length = 0;
+    expect((await fixture.reconcile.execute(scope)).isOk()).toBe(true);
+    expect(fixture.round(2).encounters).toEqual(paired);
+  });
+
+  it("reloads deductions revoked before the last approval of a future round", async () => {
+    const fixture = await setup({ seed: teams, rounds: 3 });
+    fixture.pointDeductions.push({ teamId: teamA, points: 4 });
+    const [first, last] = fixture.round(1).encounters.filter((encounter) => encounter.series);
+    fixture.approve(first!.id);
+    await fixture.advance.execute({ ...scope, encounterId: first!.id });
+    fixture.pointDeductions.length = 0;
+    fixture.approve(last!.id);
+    expect((await fixture.advance.execute({ ...scope, encounterId: last!.id })).isOk()).toBe(true);
+    expect(fixture.round(2).encounters.find((encounter) => !encounter.series)?.home).toEqual({
+      kind: "team",
+      teamId: teamD,
+    });
+  });
+
   it("pairs, projects and announces the next round after the last approval", async () => {
     const fixture = await setup();
     const [first, second] = fixture.round(1).encounters;

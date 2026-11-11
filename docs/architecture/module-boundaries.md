@@ -5,20 +5,20 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 ## Bounded contexts (MVP)
 
-| Módulo          | Responsabilidad                                                                                                                     |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `identity`      | Usuarios, sesiones, autenticación, estado de onboarding y preferencias del actor                                                    |
-| `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación                                                       |
-| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC, membresías contextuales y descubrimiento autenticado de competiciones publicadas |
-| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes y asociaciones a clubes externos                              |
-| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                                                                |
-| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                                                             |
-| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales                                                       |
-| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                                                                 |
-| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                                                   |
-| `notifications` | Web, email (WhatsApp/push como ampliación)                                                                                          |
-| `public-portal` | Lecturas públicas anónimas y sanitizadas de competiciones publicadas ([ADR-0024](/docs/adr/0024-anonymous-public-portal-reads.md))  |
-| `billing`       | Catálogo de planes, suscripciones, entitlements y ledger de cupos ([ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md))    |
+| Módulo          | Responsabilidad                                                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identity`      | Usuarios, sesiones, autenticación, estado de onboarding y preferencias del actor                                                               |
+| `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación                                                                  |
+| `competitions`  | Ligas/copas, formatos, etapas, reglas, sanciones, edición FC, membresías contextuales y descubrimiento autenticado de competiciones publicadas |
+| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes y asociaciones a clubes externos                                         |
+| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                                                                           |
+| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                                                                        |
+| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales                                                                  |
+| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                                                                            |
+| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                                                              |
+| `notifications` | Web, email (WhatsApp/push como ampliación)                                                                                                     |
+| `public-portal` | Lecturas públicas anónimas y sanitizadas de competiciones publicadas ([ADR-0024](/docs/adr/0024-anonymous-public-portal-reads.md))             |
+| `billing`       | Catálogo de planes, suscripciones, entitlements y ledger de cupos ([ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md))               |
 
 `billing` es una hoja: ningún BC lo importa. Cada consumidor declara su port de límites con su vocabulario y `apps/api/src/di/` lo conecta con billing. Los pagos automatizados siguen fuera del MVP (WONT-05).
 

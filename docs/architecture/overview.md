@@ -165,7 +165,7 @@ Proveedores MVP: `ea-clubs`, `manual`. Extensiones futuras (`screenshot-ocr`, co
 | ------------- | ------------------------------------------------------------------------------------------------------------------- |
 | identity      | users/sessions/accounts (Better Auth in `apps/auth` + Actor mapping; web reads sessions)                            |
 | organizations | organizations, normalized names, tenant memberships, grants, platform roles, authorization audit, invitation tokens |
-| competitions  | competitions, rules, stages, entries, competition memberships                                                       |
+| competitions  | competitions, rules, stages, entries, competition memberships, sanctions                                            |
 | teams         | teams, player profiles, player game accounts, rosters, external club connections                                    |
 | scheduling    | rounds, encounters, official slots, reschedules, Swiss withdrawals and round actions                                |
 | game-data     | raw observations, provider matches/clubs, sync jobs, health                                                         |

@@ -126,6 +126,7 @@ async function setup() {
     officialMatchCounts: { regular: 1, knockout: 2 },
     resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
     standingPoints: { winPoints: 3, drawPoints: 1, lossPoints: 0 },
+    pointDeductions: [],
     approvedParticipants: teams,
   };
   const useCase = new AdvanceFixtureFromOfficialResultUseCase({

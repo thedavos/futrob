@@ -100,6 +100,7 @@ export class ReconcileSwissRoundsUseCase {
         plan,
         scores,
         standingPoints: source.standingPoints,
+        pointDeductions: source.pointDeductions,
         officialMatchCount: source.officialMatchCounts.regular,
         resolutionMode: source.resolutionModes.regular,
         now: this.deps.clock.now(),

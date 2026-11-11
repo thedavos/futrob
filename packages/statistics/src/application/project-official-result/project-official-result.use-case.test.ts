@@ -17,6 +17,8 @@ import {
 import type {
   CompetitionMatchPointsRules,
   CompetitionMatchRulesReaderPort,
+  CompetitionPointDeduction,
+  CompetitionPointDeductionReaderPort,
   CompetitionStandingSnapshot,
   CompetitionStandingSnapshotRepository,
   MatchedPlayerContributionPageQuery,
@@ -312,6 +314,7 @@ function makeHarness(input: {
   readonly encounters?: readonly EncounterScheduleSnapshot[];
   readonly pointsRules?: CompetitionMatchPointsRules | null;
   readonly getPointsRules?: CompetitionMatchRulesReaderPort["getPointsRules"];
+  readonly pointDeductions?: CompetitionPointDeduction[];
 }) {
   const byId = new Map(input.results.map((result) => [result.id, result]));
   const officialResults: OfficialResultReaderPort = {
@@ -382,6 +385,10 @@ function makeHarness(input: {
           },
         }
       : undefined;
+  const deductions = input.pointDeductions ?? [];
+  const pointDeductions: CompetitionPointDeductionReaderPort = {
+    listActive: async () => deductions,
+  };
   const clock = { now: () => new Date("2026-08-11T07:00:00.000Z") };
   const transaction: TransactionPort = { runInTransaction: async (operation) => operation() };
   const events: string[] = [];
@@ -412,12 +419,15 @@ function makeHarness(input: {
     teamCompetitionStats,
     standings,
     matchRules,
+    pointDeductions,
     rebuildRankings,
     transaction,
     clock,
     encounterReader,
   });
   return {
+    deductions,
+    pointDeductions,
     byId,
     officialResults,
     identities,
@@ -1799,6 +1809,83 @@ describe("RebuildCompetitionStatisticsUseCase", () => {
     });
   });
 
+  it("rebuilds official results plus active deductions to the table the projection produced", async () => {
+    const result = officialResult({
+      players: [
+        player({ externalPlayerId: "home-1", externalClubId: "club-1" }),
+        player({ externalPlayerId: "away-1", externalClubId: "club-2" }),
+      ],
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const harness = makeHarness({
+      results: [result],
+      resolutions: {},
+      encounter: defaultEncounter(result),
+      pointDeductions: [{ teamId: asTeamId("home-team"), points: 4 }],
+    });
+    await harness.project.execute({ officialResultId: result.id });
+    const projected = await harness.standings.findByCompetition(competitionId);
+
+    const rebuilt = await makeRebuild(harness).rebuild.execute({ competitionId });
+
+    expect(rebuilt.isOk()).toBe(true);
+    expect(
+      projected?.rows.map(({ teamId, points, pointsDeducted }) => ({
+        teamId,
+        points,
+        pointsDeducted,
+      })),
+    ).toEqual([
+      { teamId: asTeamId("away-team"), points: 0, pointsDeducted: 0 },
+      { teamId: asTeamId("home-team"), points: -1, pointsDeducted: 4 },
+    ]);
+    expect((await harness.standings.findByCompetition(competitionId))?.rows).toEqual(
+      projected?.rows,
+    );
+  });
+
+  it("restores the points once the deduction is no longer active", async () => {
+    const result = officialResult({
+      players: [player({ externalPlayerId: "home-1", externalClubId: "club-1" })],
+      homeGoals: 1,
+      awayGoals: 0,
+    });
+    const harness = makeHarness({
+      results: [result],
+      resolutions: {},
+      encounter: defaultEncounter(result),
+      pointDeductions: [{ teamId: asTeamId("home-team"), points: 2 }],
+    });
+    await harness.project.execute({ officialResultId: result.id });
+    harness.deductions.length = 0;
+
+    await makeRebuild(harness).rebuild.execute({ competitionId });
+
+    expect(
+      (await harness.standings.findByCompetition(competitionId))?.rows.find(
+        (row) => row.teamId === asTeamId("home-team"),
+      ),
+    ).toMatchObject({ points: 3, pointsDeducted: 0 });
+  });
+
+  it("keeps a table for a deduction on a competition without official results", async () => {
+    const harness = makeHarness({
+      results: [],
+      resolutions: {},
+      pointDeductions: [{ teamId: asTeamId("idle-team"), points: 3 }],
+    });
+
+    await makeRebuild(harness).rebuild.execute({
+      competitionId,
+      organizationId: asOrganizationId("organization-1"),
+    });
+
+    expect((await harness.standings.findByCompetition(competitionId))?.rows).toEqual([
+      expect.objectContaining({ teamId: asTeamId("idle-team"), played: 0, points: -3 }),
+    ]);
+  });
+
   it("clears every projection when the competition has no approved results left", async () => {
     const only = officialResult({ players: [player({ externalPlayerId: "solo" })] });
     const harness = makeHarness({
@@ -1923,6 +2010,7 @@ function makeRebuild(
     teamCompetitionStats: harness.teamCompetitionStats,
     standings: harness.standings,
     matchRules: harness.matchRules,
+    pointDeductions: harness.pointDeductions,
     encounterReader: harness.encounterReader,
     rebuildRankings: {
       execute(input) {

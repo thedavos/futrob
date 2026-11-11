@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { TeamSanctionsSection } from "@/modules/competitions/presentation/sanctions/team-sanctions-section.tsx";
 import { useSearchClubsMutation } from "@/modules/game-data/presentation/game-data-queries.ts";
 import {
   useChangeRosterRoleMutation,
@@ -56,6 +57,7 @@ export function CaptainRosterPage({
       capabilities={capabilities}
       detail={detail.data ?? null}
       error={error ? teamConsoleError(error, t) : null}
+      footer={access.kind === "ready" ? <TeamSanctionsSection {...access.scope} /> : null}
       links={captainLinks(organizationId, competitionId)}
       onChangeRole={async (membershipId, role) => {
         clearActionErrors();

@@ -145,6 +145,7 @@ function createUseCase(input: {
           officialMatchCounts: { regular: 1, knockout: 2 },
           resolutionModes: { regular: "independent_matches", knockout: "aggregate_score" },
           standingPoints: { winPoints: 3, drawPoints: 1, lossPoints: 0 },
+          pointDeductions: [],
           approvedParticipants: seed,
         }),
       },
