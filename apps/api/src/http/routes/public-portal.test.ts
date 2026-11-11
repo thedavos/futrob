@@ -295,7 +295,7 @@ describe("public portal reads", () => {
       (encounter) => encounter.home.kind === "team" && encounter.away.kind === "team",
     );
     expect(firstEncounter).toBeDefined();
-    if (!firstEncounter) return;
+    if (firstEncounter?.home.kind !== "team" || firstEncounter.away.kind !== "team") return;
     await modules.results.results.append({
       id: "official-result-secret-id",
       encounterId: firstEncounter.id,
@@ -311,6 +311,8 @@ describe("public portal reads", () => {
           providerMatchRef: { providerKey: "ea-clubs", externalId: EXTERNAL_MATCH_ID },
           homeExternalClubId: EXTERNAL_CLUB_ID,
           awayExternalClubId: "ea-club-other",
+          homeTeamId: firstEncounter.home.teamId,
+          awayTeamId: firstEncounter.away.teamId,
           homeGoals: 3,
           awayGoals: 1,
           occurredAt: new Date("2026-09-01T02:00:00Z"),
