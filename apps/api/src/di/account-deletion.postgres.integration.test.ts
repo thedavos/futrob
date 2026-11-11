@@ -1,4 +1,5 @@
-import { asActorId } from "@futrob/shared-kernel";
+import type { EmailMessage } from "@futrob/notifications";
+import { asActorId, ok } from "@futrob/shared-kernel";
 import { hashPassword } from "better-auth/crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { createModules } from "@/di/create-modules.ts";
@@ -16,11 +17,20 @@ const alex = asActorId("actor-alex");
 const REQUESTED = new Date("2026-11-10T09:00:00.000Z");
 const DEADLINE = new Date("2026-12-10T09:00:00.000Z");
 const PASSWORD = "correct horse battery";
+const PINNED = JSON.stringify({
+  to: "alex@futrob.test",
+  subject: "Hola, Alex Rivera",
+  html: "<p>Hola, Alex Rivera</p>",
+  text: "Hola, Alex Rivera",
+  headers: {},
+  idempotencyKey: "email-delivery/email-pending",
+});
 
 suite("account deletion on Postgres", () => {
   let isolated: IsolatedSchema;
   let now = REQUESTED;
   let modules: ReturnType<typeof createModules>;
+  const sent: EmailMessage[] = [];
 
   async function count(sql: string, values: unknown[] = [alex]): Promise<number> {
     const result = await isolated.pool.query<{ n: string }>(
@@ -40,6 +50,15 @@ suite("account deletion on Postgres", () => {
       },
       eaClubsBaseUrl: "https://ea.example.test/api/fc",
       clock: { now: () => now },
+      email: {
+        sender: {
+          send: async (message) => {
+            sent.push(message);
+            return ok({ providerMessageId: `msg-${sent.length}` });
+          },
+        },
+        webBaseUrl: "https://futrob.test",
+      },
     });
     await seedActors(isolated.pool, alex, "actor-bea");
     const at = REQUESTED.toISOString();
@@ -97,7 +116,22 @@ suite("account deletion on Postgres", () => {
                                      requires_action, resource_type, resource_id, actor_id, opened_at,
                                      last_event_at, source_name, source_id)
          VALUES ('activity-1', 'org-1', 'actor', 'actor-alex', 'roster_invitation', 'open', true,
-                 'roster_invitation', 'inv-1', 'actor-bea', $1, $1, 'roster_invitation', 'inv-1');`.replaceAll(
+                 'roster_invitation', 'inv-1', 'actor-bea', $1, $1, 'roster_invitation', 'inv-1');
+       INSERT INTO billing_subscriptions (id, subject_type, organization_id, plan_key, status,
+                                          created_at, updated_at)
+         VALUES ('sub-1', 'organization', 'org-1', 'pro', 'active', $1, $1);
+       INSERT INTO notification_email_preferences (actor_id, locale, non_critical_email,
+                                                   unsubscribe_token, updated_at)
+         VALUES ('actor-alex', 'es', true, 'unsubscribe-token-alex-0123456789abcdef', $1);
+       INSERT INTO email_outbox (id, event_id, channel, organization_id, recipient_actor_id,
+                                 template, intent, status, attempts, next_attempt_at, last_error,
+                                 provider_message_id, created_at, settled_at, message)
+         VALUES ('email-sent', 'event-sent', 'email', 'org-1', 'actor-alex', 'sanction',
+                 '{"template":"sanction","path":"/","competitionName":null,"encounterLabel":null,"teamName":null}',
+                 'sent', 1, $1, NULL, 'provider-1', $1, $1, '${PINNED}'),
+                ('email-pending', 'event-pending', 'email', 'org-1', 'actor-alex', 'sanction',
+                 '{"template":"sanction","path":"/","competitionName":null,"encounterLabel":null,"teamName":null}',
+                 'pending', 1, $1, 'rejected alex@futrob.test', NULL, $1, NULL, '${PINNED}');`.replaceAll(
         "$1",
         `'${at}'`,
       ),
@@ -187,6 +221,29 @@ suite("account deletion on Postgres", () => {
     expect(await count(`activity_entries WHERE id = 'activity-1' AND status = 'closed'`, [])).toBe(
       1,
     );
+    // Email: no stored address, name or body, no preferences, and the pending one is never sent.
+    expect(await count(`notification_email_preferences WHERE actor_id = $1`)).toBe(0);
+    const emails = await isolated.pool.query(
+      `SELECT id, status, skip_reason, message, last_error FROM email_outbox ORDER BY id`,
+    );
+    expect(emails.rows).toEqual([
+      {
+        id: "email-pending",
+        status: "skipped",
+        skip_reason: "no_address",
+        message: null,
+        last_error: null,
+      },
+      { id: "email-sent", status: "sent", skip_reason: null, message: null, last_error: null },
+    ]);
+    await expect(modules.notifications.email.dispatch?.execute()).resolves.toEqual({
+      sent: 0,
+      retried: 0,
+      failed: 0,
+      skipped: 0,
+    });
+    expect(sent).toEqual([]);
+    expect(await count(`notification_email_preferences WHERE actor_id = $1`)).toBe(0);
     // History stays: finished roster, official competition stats, audit and authorship.
     const rosters = await isolated.pool.query(
       `SELECT id, game_account_id FROM competition_roster_memberships ORDER BY id`,

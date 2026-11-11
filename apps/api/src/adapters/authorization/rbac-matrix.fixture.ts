@@ -82,6 +82,9 @@ export type RbacMatrixFixture = {
   readonly authorization: ContextualAuthorizationAdapter;
   readonly entries: InMemoryCompetitionEntryRepository;
   readonly encounters: InMemoryEncounterScheduleRepository;
+  readonly organizationMemberships: InMemoryMembershipRepository;
+  readonly rosters: InMemoryCompetitionRosterMembershipRepository;
+  readonly profiles: InMemoryPlayerProfileRepository;
   readonly grants: ReturnType<typeof createInMemoryAuthorizationStore>["grants"];
   readonly ids: RbacMatrixIds;
   readonly actors: Record<RbacActorKey, ActorId>;
@@ -402,5 +405,16 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
     }
   };
 
-  return { authorization, entries, encounters, grants: store.grants, ids, actors, scope };
+  return {
+    authorization,
+    entries,
+    encounters,
+    organizationMemberships,
+    rosters,
+    profiles,
+    grants: store.grants,
+    ids,
+    actors,
+    scope,
+  };
 }

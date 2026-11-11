@@ -209,6 +209,25 @@ const es = {
     "Completa la contraseña actual y usa una nueva de 8 a 128 caracteres. Ambas contraseñas nuevas deben coincidir.",
   "settings.passwordError":
     "No pudimos cambiar la contraseña. Revisa la contraseña actual e inténtalo de nuevo.",
+  "settings.emailNotifications": "Avisos por email",
+  "settings.emailNotificationsAll": "Todos los avisos",
+  "settings.emailNotificationsCritical": "Solo los que piden una acción",
+  "settings.emailNotificationsHint":
+    "Las acciones pendientes y las decisiones siempre llegan. Se envían en el idioma elegido.",
+  "settings.emailNotificationsUnavailable": "No disponible ahora",
+  "settings.emailNotificationsLoading": "Cargando…",
+  "settings.emailNotificationsError":
+    "No pudimos guardar los avisos por email. Siguen los anteriores; vuelve a elegirlos.",
+  "emailUnsubscribe.title": "Avisos por email",
+  "emailUnsubscribe.description":
+    "Deja de recibir recordatorios y novedades. Las acciones pendientes y las decisiones seguirán llegando.",
+  "emailUnsubscribe.confirm": "Dejar de recibirlos",
+  "emailUnsubscribe.confirming": "Guardando…",
+  "emailUnsubscribe.done":
+    "Listo. Ya no recibirás recordatorios ni novedades por email. Puedes volver a activarlos en Configuración.",
+  "emailUnsubscribe.invalid": "Este enlace no es válido. Cambia tus avisos en Configuración.",
+  "emailUnsubscribe.error": "No pudimos guardar el cambio. Vuelve a intentarlo.",
+  "emailUnsubscribe.home": "Ir a Futrob",
   "settings.sessionsHint":
     "Dispositivos con tu cuenta abierta. Al cerrar una sesión deja de valer al momento.",
   "settings.sessionsLoading": "Cargando sesiones…",
@@ -3657,6 +3676,25 @@ const en: Catalog = {
     "Enter your current password and a new password of 8 to 128 characters. Both new passwords must match.",
   "settings.passwordError":
     "We could not change your password. Check your current password and try again.",
+  "settings.emailNotifications": "Email notifications",
+  "settings.emailNotificationsAll": "All notifications",
+  "settings.emailNotificationsCritical": "Only those that need action",
+  "settings.emailNotificationsHint":
+    "Pending actions and decisions always arrive. Emails use the language chosen here.",
+  "settings.emailNotificationsUnavailable": "Unavailable right now",
+  "settings.emailNotificationsLoading": "Loading\u2026",
+  "settings.emailNotificationsError":
+    "We could not save your email notifications. The previous choice stays; choose again.",
+  "emailUnsubscribe.title": "Email notifications",
+  "emailUnsubscribe.description":
+    "Stop reminders and updates. Pending actions and decisions will still arrive.",
+  "emailUnsubscribe.confirm": "Stop them",
+  "emailUnsubscribe.confirming": "Saving\u2026",
+  "emailUnsubscribe.done":
+    "Done. You will no longer get reminders or updates by email. You can turn them back on in Settings.",
+  "emailUnsubscribe.invalid": "This link is not valid. Change your notifications in Settings.",
+  "emailUnsubscribe.error": "We could not save the change. Try again.",
+  "emailUnsubscribe.home": "Go to Futrob",
   "settings.sessionsHint":
     "Devices where your account is open. Signing a session out ends it immediately.",
   "settings.sessionsLoading": "Loading sessions\u2026",

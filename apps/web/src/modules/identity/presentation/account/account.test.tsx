@@ -301,6 +301,154 @@ describe("account dialog", () => {
     });
   });
 
+  describe("email notifications", () => {
+    async function chooseOnlyActions() {
+      const email = screen.getByRole("combobox", { name: "Avisos por email" });
+      await waitFor(() => expect(email).toHaveTextContent("Todos los avisos"));
+      const user = userEvent.setup();
+      await user.click(email);
+      await user.click(
+        await screen.findByRole("option", { name: "Solo los que piden una acción" }),
+      );
+    }
+
+    it("turns off non-critical email on selection, in the dialog's language", async () => {
+      const calls = stubApi({
+        "/api/v1/identity/preferences": () => Response.json({ sidebarLayout: "navigation" }),
+        "GET /api/v1/notifications/email-preferences": () =>
+          Response.json({ locale: "es", nonCriticalEmail: true }),
+        "PUT /api/v1/notifications/email-preferences": () =>
+          Response.json({ locale: "es", nonCriticalEmail: false }),
+      });
+      openAccount(fakeAuth());
+
+      await chooseOnlyActions();
+
+      expect(await screen.findByText("Guardado.")).toBeVisible();
+      expect(
+        calls
+          .filter((call) => call.method === "PUT" && call.path.includes("email-preferences"))
+          .map((call) => call.body),
+      ).toEqual([{ locale: "es", nonCriticalEmail: false }]);
+    });
+
+    it("keeps the previous choice and says so when saving fails", async () => {
+      stubApi({
+        "/api/v1/identity/preferences": () => Response.json({ sidebarLayout: "navigation" }),
+        "GET /api/v1/notifications/email-preferences": () =>
+          Response.json({ locale: "es", nonCriticalEmail: true }),
+        "PUT /api/v1/notifications/email-preferences": () =>
+          Response.json({ code: "api.internal" }, { status: 500 }),
+      });
+      openAccount(fakeAuth());
+
+      await chooseOnlyActions();
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos guardar los avisos");
+      expect(screen.getByRole("combobox", { name: "Avisos por email" })).toHaveTextContent(
+        "Todos los avisos",
+      );
+    });
+
+    it("keeps a pending opt-out when the language is changed before it is saved", async () => {
+      let finishOptOut: () => void = () => undefined;
+      const calls = stubApi({
+        "/api/v1/identity/preferences": () => Response.json({ sidebarLayout: "navigation" }),
+        "GET /api/v1/notifications/email-preferences": () =>
+          Response.json({ locale: "es", nonCriticalEmail: true }),
+        "PUT /api/v1/notifications/email-preferences": (init) =>
+          new Promise<Response>((resolve) => {
+            finishOptOut = () => resolve(Response.json(JSON.parse(String(init.body))));
+          }),
+      });
+      const persist = vi.fn().mockResolvedValue(undefined);
+      openAccount(fakeAuth(), persist);
+      const emailPuts = () =>
+        calls.filter((call) => call.method === "PUT" && call.path.includes("email-preferences"));
+
+      await chooseOnlyActions();
+      await waitFor(() => expect(emailPuts()).toHaveLength(1));
+      const language = screen.getByRole("combobox", { name: "Idioma" });
+      expect(language).toBeDisabled();
+      fireEvent.click(language);
+      expect(screen.queryByRole("option", { name: "English" })).toBeNull();
+
+      finishOptOut();
+      expect(await screen.findByText("Guardado.")).toBeVisible();
+      expect(persist).not.toHaveBeenCalled();
+      expect(emailPuts().map((call) => call.body)).toEqual([
+        { locale: "es", nonCriticalEmail: false },
+      ]);
+      expect(screen.getByRole("combobox", { name: "Avisos por email" })).toHaveTextContent(
+        "Solo los que piden una acción",
+      );
+    });
+
+    it("keeps a pending opt-out when another setting changes before the language", async () => {
+      let finishOptOut: () => void = () => undefined;
+      const calls = stubApi({
+        "GET /api/v1/identity/preferences": () => Response.json({ sidebarLayout: "navigation" }),
+        "PUT /api/v1/identity/preferences": () => Response.json({ sidebarLayout: "pending-queue" }),
+        "GET /api/v1/notifications/email-preferences": () =>
+          Response.json({ locale: "es", nonCriticalEmail: true }),
+        "PUT /api/v1/notifications/email-preferences": (init) =>
+          new Promise<Response>((resolve) => {
+            finishOptOut = () => resolve(Response.json(JSON.parse(String(init.body))));
+          }),
+      });
+      const persist = vi.fn().mockResolvedValue(undefined);
+      openAccount(fakeAuth(), persist);
+      const emailPuts = () =>
+        calls.filter((call) => call.method === "PUT" && call.path.includes("email-preferences"));
+
+      await chooseOnlyActions();
+      await waitFor(() => expect(emailPuts()).toHaveLength(1));
+      // Changing the sidebar resets the notices mutation while its PUT is still in flight.
+      const user = userEvent.setup();
+      await user.click(screen.getByRole("combobox", { name: "Barra lateral" }));
+      await user.click(await screen.findByRole("option", { name: "Con pendientes" }));
+      expect(await screen.findByText("Guardado.")).toBeVisible();
+      const language = screen.getByRole("combobox", { name: "Idioma" });
+      expect(language).toBeDisabled();
+      fireEvent.click(language);
+      expect(screen.queryByRole("option", { name: "English" })).toBeNull();
+
+      finishOptOut();
+      await waitFor(() => expect(language).toBeEnabled());
+      expect(persist).not.toHaveBeenCalled();
+      expect(emailPuts().map((call) => call.body)).toEqual([
+        { locale: "es", nonCriticalEmail: false },
+      ]);
+      expect(screen.getByRole("combobox", { name: "Avisos por email" })).toHaveTextContent(
+        "Solo los que piden una acción",
+      );
+    });
+
+    it("re-saves the email language when the language changes", async () => {
+      const calls = stubApi({
+        "/api/v1/identity/preferences": () => Response.json({ sidebarLayout: "navigation" }),
+        "GET /api/v1/notifications/email-preferences": () =>
+          Response.json({ locale: "es", nonCriticalEmail: false }),
+        "PUT /api/v1/notifications/email-preferences": () =>
+          Response.json({ locale: "en", nonCriticalEmail: false }),
+      });
+      openAccount(fakeAuth(), async () => undefined);
+      const email = screen.getByRole("combobox", { name: "Avisos por email" });
+      await waitFor(() => expect(email).toHaveTextContent("Solo los que piden una acción"));
+      const user = userEvent.setup();
+      await user.click(screen.getByRole("combobox", { name: "Idioma" }));
+      await user.click(await screen.findByRole("option", { name: "English" }));
+
+      await waitFor(() =>
+        expect(
+          calls
+            .filter((call) => call.method === "PUT" && call.path.includes("email-preferences"))
+            .map((call) => call.body),
+        ).toEqual([{ locale: "en", nonCriticalEmail: false }]),
+      );
+    });
+  });
+
   it("lists sessions with this one first and signs another device out", async () => {
     stubApi({
       "/api/v1/identity/preferences": () => Response.json({ sidebarLayout: "navigation" }),

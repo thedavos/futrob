@@ -55,7 +55,7 @@ import {
   createVoidOfficialResultAndUnproject,
 } from "./official-selection.commands.ts";
 import { createResultsModule } from "./results.module.ts";
-import { createActivityFeed } from "./notifications.module.ts";
+import { activityEmailSources, createActivityFeed } from "./notifications.module.ts";
 import { createStatisticsModule } from "./statistics.module.ts";
 import { createPublicPortalModule } from "./public-portal.module.ts";
 import { createEncounterReads } from "./encounter-reads.composition.ts";
@@ -274,6 +274,8 @@ export function createModules(input: CreateModulesInput): AppModules {
     pool: input.pool,
     clock,
     ids,
+    email: input.email,
+    sources: activityEmailSources({ organizations, identity, billing, authorization }),
     transaction,
     encounterReader,
     competitions,

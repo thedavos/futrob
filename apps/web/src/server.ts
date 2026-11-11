@@ -7,6 +7,7 @@ import { createConsoleLogger } from "@futrob/logger";
 const logger = createConsoleLogger({ format: "plain", scope: "worker" });
 import { recoverCandidateRecalculation } from "@/workers/results-candidate-recalculation.worker.ts";
 import { recoverConfirmationExpiry } from "@/workers/results-confirmation-expiry.worker.ts";
+import { dispatchDueEmails } from "@/workers/notifications-email-dispatch.worker.ts";
 import { runDueAccountDeletions } from "@/workers/identity-account-deletion.worker.ts";
 import {
   enqueueDueProviderSyncs,
@@ -93,6 +94,15 @@ const worker = {
         captureWorkerError(cause, {
           handler: "scheduled",
           job: "candidate_recalculation",
+          cron: controller.cron,
+        });
+      }),
+    );
+    context.waitUntil(
+      dispatchDueEmails(deps).catch((cause) => {
+        captureWorkerError(cause, {
+          handler: "scheduled",
+          job: "email_dispatch",
           cron: controller.cron,
         });
       }),

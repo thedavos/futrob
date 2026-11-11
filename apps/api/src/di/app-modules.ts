@@ -34,7 +34,11 @@ import type {
   VoidOfficialResultAndUnproject,
 } from "./official-selection.commands.ts";
 import type { ResultsModule } from "./results.module.ts";
-import type { ActivityCommands, NotificationsModule } from "./notifications.module.ts";
+import type {
+  ActivityCommands,
+  EmailSettings,
+  NotificationsModule,
+} from "./notifications.module.ts";
 import type { PublicPortalModule } from "./public-portal.module.ts";
 import type { StatisticsModule } from "./statistics.module.ts";
 
@@ -98,4 +102,6 @@ export interface CreateModulesInput {
   readonly clock?: ClockPort;
   readonly resultsSystemActorId?: string;
   readonly schedulingSystemActorId?: string;
+  /** Email provider and link origin; local defaults keep every email in memory. */
+  readonly email?: EmailSettings;
 }

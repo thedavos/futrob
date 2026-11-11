@@ -14,6 +14,7 @@ import { createStatisticsResource } from "./resources/statistics.ts";
 import { createPlayersResource } from "./resources/players.ts";
 import { createActivitiesResource } from "./resources/activities.ts";
 import { createEntryInvitationsResource } from "./resources/entry-invitations.ts";
+import { createEmailResource } from "./resources/email.ts";
 import { createSanctionsResource } from "./resources/sanctions.ts";
 import { createAuditResource } from "./resources/audit.ts";
 
@@ -38,6 +39,7 @@ export function createFutrobClient(options: CreateFutrobClientOptions) {
     players: createPlayersResource(http),
     activities: createActivitiesResource(http),
     entryInvitations: createEntryInvitationsResource(http),
+    email: createEmailResource(http),
     sanctions: createSanctionsResource(http),
     audit: createAuditResource(http),
   };

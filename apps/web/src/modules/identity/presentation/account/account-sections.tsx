@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useIsMutating, useMutation } from "@tanstack/react-query";
 import {
   Alert,
   AlertDescription,
@@ -23,6 +23,11 @@ import {
   useActorPreferencesQuery,
   useSaveActorPreferencesMutation,
 } from "@/modules/identity/presentation/identity-queries.ts";
+import {
+  EMAIL_PREFERENCES_WRITE_KEY,
+  useEmailPreferencesQuery,
+  useSaveEmailPreferencesMutation,
+} from "@/modules/notifications/presentation/email-queries.ts";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { AccountAuth } from "./account-auth.ts";
@@ -34,27 +39,63 @@ const SIDEBAR_LAYOUT_LABELS = {
   "pending-queue": "settings.sidebarLayoutPendingQueue",
 } as const satisfies Record<SidebarLayoutDto, string>;
 
+type EmailChoice = "all" | "critical";
+
+const EMAIL_CHOICES = ["all", "critical"] as const satisfies readonly EmailChoice[];
+
+const EMAIL_CHOICE_LABELS = {
+  all: "settings.emailNotificationsAll",
+  critical: "settings.emailNotificationsCritical",
+} as const satisfies Record<EmailChoice, string>;
+
+function emailChoiceOf(nonCriticalEmail: boolean): EmailChoice {
+  return nonCriticalEmail ? "all" : "critical";
+}
+
 /** Each choice applies on selection; a failure keeps the previous value and says so. */
 export function PreferencesSection() {
   const { t, locale, setLocale } = useI18n();
-  const language = useMutation({ mutationFn: (next: Locale) => setLocale(next) });
+  const emailPreferences = useEmailPreferencesQuery();
+  const saveEmail = useSaveEmailPreferencesMutation();
+  const language = useMutation({
+    mutationKey: EMAIL_PREFERENCES_WRITE_KEY,
+    mutationFn: (next: Locale) => setLocale(next),
+    // Email goes out in the language chosen here, so a language change re-saves it too.
+    onSuccess: (_, next) => {
+      const current = emailPreferences.data;
+      if (current && current.locale !== next) {
+        saveEmail.mutate({ locale: next, nonCriticalEmail: current.nonCriticalEmail });
+      }
+    },
+  });
   const preferences = useActorPreferencesQuery();
   const saveLayout = useSaveActorPreferencesMutation();
   const savedLayout = preferences.data?.sidebarLayout ?? DEFAULT_SIDEBAR_LAYOUT;
   const shownLanguage = language.isPending ? language.variables : locale;
   const shownLayout = saveLayout.isPending ? saveLayout.variables.sidebarLayout : savedLayout;
+  const savedEmail = emailPreferences.data
+    ? emailChoiceOf(emailPreferences.data.nonCriticalEmail)
+    : null;
+  const shownEmail = saveEmail.isPending
+    ? emailChoiceOf(saveEmail.variables.nonCriticalEmail)
+    : savedEmail;
+  // Language and notices both write the email preference; one at a time keeps the latest choice.
+  // Counted in the mutation cache, so a `reset()` from another select cannot lift the block.
+  const emailWritesInCache = useIsMutating({ mutationKey: EMAIL_PREFERENCES_WRITE_KEY });
+  const emailWriteInFlight = emailWritesInCache > 0 || language.isPending || saveEmail.isPending;
   return (
     <div {...applyStyles(styles.stack)}>
       <Field invalid={language.isError}>
         <FieldLabel htmlFor="settings-language">{t("settings.language")}</FieldLabel>
         <Select
-          disabled={language.isPending}
+          disabled={emailWriteInFlight}
           items={[
             { value: "es", label: "Español" },
             { value: "en", label: "English" },
           ]}
           onValueChange={(value) => {
             saveLayout.reset();
+            saveEmail.reset();
             language.mutate(value === "en" ? "en" : "es");
           }}
           value={shownLanguage}
@@ -80,6 +121,7 @@ export function PreferencesSection() {
           onValueChange={(value) => {
             const sidebarLayout = sidebarLayoutSchema.parse(value);
             language.reset();
+            saveEmail.reset();
             if (sidebarLayout !== savedLayout) saveLayout.mutate({ sidebarLayout });
           }}
           value={shownLayout}
@@ -100,14 +142,64 @@ export function PreferencesSection() {
         </Select>
         <Caption id="settings-sidebar-layout-hint">{t("settings.sidebarLayoutHint")}</Caption>
       </Field>
-      {language.isError || saveLayout.isError ? (
+      <Field invalid={saveEmail.isError}>
+        <FieldLabel htmlFor="settings-email-notifications">
+          {t("settings.emailNotifications")}
+        </FieldLabel>
+        <Select
+          disabled={emailWriteInFlight || savedEmail === null}
+          items={EMAIL_CHOICES.map((value) => ({
+            value,
+            label: t(EMAIL_CHOICE_LABELS[value]),
+          }))}
+          onValueChange={(value) => {
+            const choice: EmailChoice = value === "critical" ? "critical" : "all";
+            language.reset();
+            saveLayout.reset();
+            if (choice !== savedEmail) {
+              saveEmail.mutate({ locale, nonCriticalEmail: choice === "all" });
+            }
+          }}
+          value={shownEmail}
+        >
+          <SelectTrigger
+            aria-describedby="settings-email-notifications-hint"
+            id="settings-email-notifications"
+          >
+            <SelectValue
+              placeholder={t(
+                emailPreferences.isError
+                  ? "settings.emailNotificationsUnavailable"
+                  : "settings.emailNotificationsLoading",
+              )}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {EMAIL_CHOICES.map((value) => (
+              <SelectItem key={value} value={value}>
+                {t(EMAIL_CHOICE_LABELS[value])}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Caption id="settings-email-notifications-hint">
+          {t("settings.emailNotificationsHint")}
+        </Caption>
+      </Field>
+      {language.isError || saveLayout.isError || saveEmail.isError ? (
         <Alert role="alert" variant="destructive">
           <AlertDescription>
-            {t(language.isError ? "settings.languageError" : "settings.sidebarLayoutError")}
+            {t(
+              language.isError
+                ? "settings.languageError"
+                : saveLayout.isError
+                  ? "settings.sidebarLayoutError"
+                  : "settings.emailNotificationsError",
+            )}
           </AlertDescription>
         </Alert>
       ) : null}
-      {language.isSuccess || saveLayout.isSuccess ? (
+      {language.isSuccess || saveLayout.isSuccess || saveEmail.isSuccess ? (
         <p role="status">
           <Caption>{t("settings.saved")}</Caption>
         </p>

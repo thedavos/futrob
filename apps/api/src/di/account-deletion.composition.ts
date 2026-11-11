@@ -25,7 +25,10 @@ import {
   PostgresActorSessions,
   PostgresCredentialVerifier,
 } from "@/adapters/identity/account-deletion.repositories.ts";
-import { closeDeletedActorActivity } from "@/adapters/notifications/account-deletion.cleanup.ts";
+import {
+  closeDeletedActorActivity,
+  retireDeletedActorEmail,
+} from "@/adapters/notifications/account-deletion.cleanup.ts";
 import {
   listSoleOrganizerBlockers,
   removeDeletedActorFromOrganizations,
@@ -67,6 +70,7 @@ export function postgresActorDeletedReactions(pool: Pool): ActorDeletedReaction[
     (actorId, at) => removeDeletedActorFromCompetitions(pool, actorId, at),
     (actorId) => removeDeletedActorPersonalStats(pool, actorId),
     (actorId, at) => closeDeletedActorActivity(pool, actorId, at),
+    (actorId, at) => retireDeletedActorEmail(pool, actorId, at),
   ];
 }
 

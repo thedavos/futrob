@@ -10,7 +10,8 @@ import {
   createTestQueryClient,
   QueryTestProvider,
 } from "@/shared/presentation/query/query-test-utils.tsx";
-import type { ActivityListQuery } from "./activity-browser-client.ts";
+import { ActivityClientError, type ActivityListQuery } from "./activity-browser-client.ts";
+import { EmailUnsubscribePage } from "./email-unsubscribe-page.tsx";
 import { OrganizationActivityPage, PlayerActivityPage } from "./organization-activity-page.tsx";
 import {
   OrganizationRecentActivity,
@@ -427,5 +428,41 @@ describe("activity screens", () => {
     expect(link?.getAttribute("href")).toBe("/invitations");
     expect(screen.getByText("Cuervos · Liga A")).toBeTruthy();
     expect(listForOrganization).not.toHaveBeenCalled();
+  });
+});
+
+describe("email unsubscribe page", () => {
+  it("turns non-critical email off only after the person confirms", async () => {
+    const unsubscribe = vi.fn(async () => ({ nonCriticalEmail: false as const }));
+    renderWith(<EmailUnsubscribePage token="tok-1" unsubscribe={unsubscribe} />);
+
+    expect(unsubscribe).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Dejar de recibirlos" }));
+
+    expect((await screen.findByRole("status")).textContent).toContain("Configuración");
+    expect(unsubscribe).toHaveBeenCalledWith("tok-1");
+    expect(screen.getByText("Ir a Futrob").closest("a")?.getAttribute("href")).toBe("/");
+  });
+
+  it("explains an unknown or missing link, and keeps the button after a failure", async () => {
+    const unknown = vi.fn(async () => {
+      throw new ActivityClientError(404, "notifications.unknown_unsubscribe_token");
+    });
+    renderWith(<EmailUnsubscribePage token="forged" unsubscribe={unknown} />);
+    await userEvent.click(screen.getByRole("button", { name: "Dejar de recibirlos" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("no es válido");
+    cleanup();
+
+    renderWith(<EmailUnsubscribePage token={null} />);
+    expect(screen.getByRole("alert").textContent).toContain("no es válido");
+    cleanup();
+
+    const offline = vi.fn(async () => {
+      throw new ActivityClientError(503, "api.unavailable");
+    });
+    renderWith(<EmailUnsubscribePage token="tok-1" unsubscribe={offline} />);
+    await userEvent.click(screen.getByRole("button", { name: "Dejar de recibirlos" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Vuelve a intentarlo");
+    expect(screen.getByRole("button", { name: "Dejar de recibirlos" })).toBeTruthy();
   });
 });

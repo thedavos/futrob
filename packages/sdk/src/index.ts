@@ -16,6 +16,7 @@ export { buildRosterInvitationShareUrl } from "./roster-invitation-share-url.ts"
 export { buildEntryInvitationShareUrl, buildWhatsAppShareUrl } from "./entry-invitation-share.ts";
 
 export type { ActivitiesResource, ListActivitiesInput } from "./resources/activities.ts";
+export type { EmailResource } from "./resources/email.ts";
 export type { AuthorizationResource } from "./resources/authorization.ts";
 export {
   isPlanGatedErrorCode,

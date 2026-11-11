@@ -45,9 +45,12 @@ y decisiones del organizador), igual que la proyección de
 el comando revierte; cerrar un origen inexistente no falla. Esta tabla es el intent persistido
 del canal web; no hay consumer ni entrega asíncrona.
 
-Siguen pendientes el email, el outbox general, los reintentos y la deduplicación por
-`(event_id, channel, recipient)`. El publisher de dominio sigue siendo no-op. Este documento
-no certifica un servicio de entrega de email existente.
+El canal email, su outbox `email_outbox` con deduplicación por
+`(event_id, channel, recipient)`, los reintentos con backoff, el permiso del plan y las
+preferencias mínimas se deciden en
+[ADR-0031](/docs/adr/0031-transactional-email-provider-and-outbox.md) (Resend, propuesta).
+Sin credenciales del proveedor no hay envío real verificado. El publisher de dominio sigue
+siendo no-op.
 
 La verificación [FEED-01](/docs/plans/activity-feed-notifications.md#verificación-feed-01-2026-11-10)
 registra acciones por HTTP, audiencias, cierres, reintentos y aislamiento de organización en

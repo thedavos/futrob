@@ -59,3 +59,43 @@ describe("activities SDK resource", () => {
     expect(url).toBe("https://app.example.com/api/v1/players/me/activities?requiresAction=false");
   });
 });
+
+describe("email SDK resource", () => {
+  it("reads and saves email preferences and unsubscribes with a link token", async () => {
+    const calls: Array<{ url: string; method: string | undefined; body: unknown }> = [];
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        const url = requestUrl(input);
+        calls.push({
+          url,
+          method: init?.method,
+          body: typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
+        });
+        if (url.endsWith("/unsubscribe")) return Response.json({ nonCriticalEmail: false });
+        return Response.json({ locale: "en", nonCriticalEmail: true });
+      }),
+    });
+
+    expect(await client.email.getPreferences()).toEqual({ locale: "en", nonCriticalEmail: true });
+    await client.email.savePreferences({ locale: "en", nonCriticalEmail: true });
+    expect(await client.email.unsubscribe("tok-1")).toEqual({ nonCriticalEmail: false });
+    expect(calls).toEqual([
+      {
+        url: "https://app.example.com/api/v1/notifications/email-preferences",
+        method: "GET",
+        body: undefined,
+      },
+      {
+        url: "https://app.example.com/api/v1/notifications/email-preferences",
+        method: "PUT",
+        body: { locale: "en", nonCriticalEmail: true },
+      },
+      {
+        url: "https://app.example.com/api/v1/public/email/unsubscribe",
+        method: "POST",
+        body: { token: "tok-1" },
+      },
+    ]);
+  });
+});

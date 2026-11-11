@@ -17,6 +17,7 @@ import {
   asOrganizationId,
   asTeamId,
 } from "@futrob/shared-kernel";
+import { renderEmail } from "@futrob/notifications";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import { createApp } from "@/app.ts";
 import { createModules } from "@/di/create-modules.ts";
@@ -107,6 +108,7 @@ describe.each([
       awayCaptain: `actor-away-captain-${tag}`,
       awayPlayer: `actor-away-player-${tag}`,
       stranger: `actor-stranger-${tag}`,
+      system: `actor-system-${tag}`,
     };
     if (isolated) await seedActors(isolated.pool, ...Object.values(actors));
     let now = new Date("2026-10-01T12:00:00.000Z");
@@ -1195,13 +1197,44 @@ describe.each([
 
       setTime("2026-10-02T12:00:01.000Z");
       const expired = await modules.activityCommands.expireScheduleChangeProposal.execute({
-        actorId: asActorId(actors.organizer),
+        actorId: asActorId(actors.system),
         organizationId: asOrganizationId(created.organizationId),
         encounterId: asEncounterId(created.encounterId),
         requestId: created.id,
       });
       expect(expired.isOk() && expired.value.status).toBe("escalated");
       expect(await orgPending()).toEqual([`organization:${created.encounterId}`]);
+
+      // The organizer is emailed to resolve the expired request, not to answer a proposal.
+      const [escalation, ...others] = await modules.notifications.email.outbox.listByEvent(
+        `activity:schedule_change_escalation:${created.id}`,
+      );
+      expect(others).toEqual([]);
+      expect(escalation).toMatchObject({
+        recipientActorId: actors.organizer,
+        intent: { template: "reschedule", requiresAction: true, escalated: true },
+      });
+      const render = (locale: "es" | "en") =>
+        escalation &&
+        renderEmail({
+          intent: escalation.intent,
+          locale,
+          recipientName: "Orga",
+          webBaseUrl: "https://futrob.test",
+          unsubscribeUrl: "https://futrob.test/email/unsubscribe",
+          oneClickUnsubscribeUrl: "https://futrob.test/api/v1/public/email/unsubscribe",
+        });
+      const es = render("es");
+      expect(es?.subject).toMatch(/^Reprogramación sin respuesta: /);
+      expect(es?.text).toContain("venció sin respuesta.");
+      expect(es?.text).toContain("resuelve tú la solicitud.");
+      expect(es?.text).not.toContain("Hay una nueva fecha propuesta");
+      expect(es?.text).toContain("Decidir reprogramación: https://futrob.test/orgs/");
+      const en = render("en");
+      expect(en?.subject).toMatch(/^Reschedule not answered: /);
+      expect(en?.text).toContain("expired without an answer.");
+      expect(en?.text).toContain("resolve the request yourself.");
+      expect(en?.text).not.toContain("before the deadline");
 
       const replayed = await counter();
       expect(replayed.status).toBe(200);

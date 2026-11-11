@@ -82,6 +82,7 @@ npm run cli -- e2e-golden-path --actor <actorId>
 | `result-void <officialResultId> [--reason <text>] [--actor <id>]` | Anula un resultado con permiso contextual de aprobación y retira sus estadísticas oficiales |
 | `results-smoke`                                                   | Propuesta → confirmación rival, y rechazo → revisión → resolución, con fakes + eventos      |
 | `swiss-smoke`                                                     | 8 y 7 equipos en 3 rondas con políticas puras: sin revanchas y un bye por ronda con impares |
+| `email-smoke`                                                     | Hecho repetido → una fila en el outbox; caída del proveedor → reintento; un solo email      |
 
 ### Integración (requieren `npm run dev`)
 
@@ -184,6 +185,7 @@ apps/cli/
     │   ├── results-smoke.ts
     │   ├── sanctions.ts
     │   ├── swiss-smoke.ts
+    │   ├── email-smoke.ts
     │   ├── api-health.ts / onboarding.ts
     │   ├── organizations.ts / competitions.ts / teams.ts
     │   ├── scheduling.ts / game-data.ts / players.ts

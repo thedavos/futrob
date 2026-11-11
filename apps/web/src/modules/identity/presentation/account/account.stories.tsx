@@ -87,6 +87,10 @@ function Frame({
     });
     queryClient.setQueryData(queryKeys.identity.accountDeletion(), deletion);
     queryClient.setQueryData(queryKeys.identity.preferences(), { sidebarLayout: "navigation" });
+    queryClient.setQueryData(queryKeys.notifications.emailPreferences(), {
+      locale,
+      nonCriticalEmail: true,
+    });
     return queryClient;
   });
   return (

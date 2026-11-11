@@ -42,6 +42,11 @@ import { registerCandidateRecalculationRoutes } from "@/http/routes/candidate-re
 import { registerConfirmationExpiryRoutes } from "@/http/routes/confirmation-expiry.ts";
 import { registerProviderHealthRoutes } from "@/http/routes/provider-health.ts";
 import { registerActivityRoutes } from "@/http/routes/activities.ts";
+import {
+  registerEmailDispatchRoutes,
+  registerEmailPreferenceRoutes,
+  registerPublicEmailRoutes,
+} from "@/http/routes/email.ts";
 
 export interface AppDeps {
   readonly modules: AppModules;
@@ -99,9 +104,11 @@ export function createApp(deps: AppDeps): Hono {
   registerMetaRoutes(v1, deps);
   registerPublicPortalRoutes(v1, deps);
   registerPublicBillingRoutes(v1, deps);
+  registerPublicEmailRoutes(v1, deps);
   registerOpenApiRoutes(v1);
   registerProviderSyncJobRoutes(v1, deps);
   registerConfirmationExpiryRoutes(v1, deps);
+  registerEmailDispatchRoutes(v1, deps);
   registerAccountDeletionJobRoutes(v1, deps);
   registerScheduleChangeExpiryRoutes(v1, deps);
   registerCandidateRecalculationRoutes(v1, deps);
@@ -116,6 +123,7 @@ export function createApp(deps: AppDeps): Hono {
   registerAuditRoutes(v1, deps);
   registerOnboardingRoutes(v1, deps);
   registerActorPreferencesRoutes(v1, deps);
+  registerEmailPreferenceRoutes(v1, deps);
   registerAccountDeletionRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);
   registerBillingRoutes(v1, deps);
