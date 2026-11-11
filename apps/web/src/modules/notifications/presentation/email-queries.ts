@@ -10,9 +10,16 @@ export function useEmailPreferencesQuery() {
   });
 }
 
+/** Every write of the email preference (including a language change) runs under this key. */
+export const EMAIL_PREFERENCES_WRITE_KEY = [
+  ...queryKeys.notifications.emailPreferences(),
+  "write",
+] as const;
+
 export function useSaveEmailPreferencesMutation() {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: EMAIL_PREFERENCES_WRITE_KEY,
     mutationFn: (input: EmailPreferencesDto) => emailBrowserClient.savePreferences(input),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.notifications.emailPreferences(), data);

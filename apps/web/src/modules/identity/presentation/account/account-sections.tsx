@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useIsMutating, useMutation } from "@tanstack/react-query";
 import {
   Alert,
   AlertDescription,
@@ -24,6 +24,7 @@ import {
   useSaveActorPreferencesMutation,
 } from "@/modules/identity/presentation/identity-queries.ts";
 import {
+  EMAIL_PREFERENCES_WRITE_KEY,
   useEmailPreferencesQuery,
   useSaveEmailPreferencesMutation,
 } from "@/modules/notifications/presentation/email-queries.ts";
@@ -57,6 +58,7 @@ export function PreferencesSection() {
   const emailPreferences = useEmailPreferencesQuery();
   const saveEmail = useSaveEmailPreferencesMutation();
   const language = useMutation({
+    mutationKey: EMAIL_PREFERENCES_WRITE_KEY,
     mutationFn: (next: Locale) => setLocale(next),
     // Email goes out in the language chosen here, so a language change re-saves it too.
     onSuccess: (_, next) => {
@@ -78,7 +80,9 @@ export function PreferencesSection() {
     ? emailChoiceOf(saveEmail.variables.nonCriticalEmail)
     : savedEmail;
   // Language and notices both write the email preference; one at a time keeps the latest choice.
-  const emailWriteInFlight = language.isPending || saveEmail.isPending;
+  // Counted in the mutation cache, so a `reset()` from another select cannot lift the block.
+  const emailWritesInCache = useIsMutating({ mutationKey: EMAIL_PREFERENCES_WRITE_KEY });
+  const emailWriteInFlight = emailWritesInCache > 0 || language.isPending || saveEmail.isPending;
   return (
     <div {...applyStyles(styles.stack)}>
       <Field invalid={language.isError}>
