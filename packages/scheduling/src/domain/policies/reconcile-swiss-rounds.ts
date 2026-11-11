@@ -18,6 +18,7 @@ import type { OfficialEncounterScore } from "../ports/official-encounter-score-r
 import { planEncounters } from "./edit-fixture-encounter.ts";
 import { pairSwissRound, type SwissTable } from "./pair-swiss-round.ts";
 import type { StandingPoints } from "./reconcile-fixture-advancement.ts";
+import type { CompetitionFixtureSourceSnapshot } from "../ports/fixture-plan.repository.ts";
 import {
   isSwissEncounterSettled,
   isSwissRoundSettled,
@@ -31,6 +32,7 @@ export interface ReconcileSwissRoundsInput {
   readonly plan: FixturePlan;
   readonly scores: ReadonlyMap<EncounterId, OfficialEncounterScore>;
   readonly standingPoints: StandingPoints;
+  readonly pointDeductions?: CompetitionFixtureSourceSnapshot["pointDeductions"];
   readonly officialMatchCount: 1 | 2;
   readonly resolutionMode: SeriesResolutionMode;
   readonly now: Date;

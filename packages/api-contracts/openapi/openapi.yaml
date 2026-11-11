@@ -9179,7 +9179,6 @@ components:
           properties:
             buchholz:
               type: integer
-              minimum: 0
             byes:
               type: integer
               minimum: 0
@@ -9265,7 +9264,6 @@ components:
                 properties:
                   buchholz:
                     type: integer
-                    minimum: 0
                   byes:
                     type: integer
                     minimum: 0
@@ -12990,7 +12988,6 @@ components:
                     properties:
                       buchholz:
                         type: integer
-                        minimum: 0
                       byes:
                         type: integer
                         minimum: 0
@@ -16542,7 +16539,6 @@ components:
                     maxItems: 5
                   buchholz:
                     type: integer
-                    minimum: 0
                   byes:
                     type: integer
                     minimum: 0
@@ -22112,7 +22108,6 @@ components:
           maxItems: 5
         buchholz:
           type: integer
-          minimum: 0
         byes:
           type: integer
           minimum: 0

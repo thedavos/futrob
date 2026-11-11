@@ -124,9 +124,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     authorization: deferredAuthorization,
     staffSeats: billing.planLimits.staffSeats,
   });
-  const identity = createIdentityModule({
-    pool: input.pool,
-  });
+  const identity = createIdentityModule({ pool: input.pool });
 
   const competitionRepository = input.pool
     ? new PostgresCompetitionRepository(input.pool)
@@ -161,6 +159,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   const fixtureSource = new CompetitionFixtureSourceAdapter({
     competitions: competitionRepository,
     entries: competitions.entryRepository,
+    sanctions: competitions.sanctionRepository,
   });
   const scheduling = createSchedulingModule({
     clock,

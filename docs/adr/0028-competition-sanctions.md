@@ -74,6 +74,9 @@ tabla se calcula siempre como _partidos oficiales aprobados + deducciones activa
 - Imponer o revocar una deducción reconstruye las estadísticas de la competición en la misma
   transacción que el comando. Si falla la reconstrucción, la sanción no se guarda.
 - En suizo, los puntos oficiales ya incluyen la deducción; Buchholz los usa tal cual.
+- El bridge `CompetitionFixtureSourceAdapter` entrega las deducciones activas al emparejar
+  rondas suizas futuras. Revocarlas actualiza el siguiente emparejamiento sin modificar rondas
+  ya emparejadas ni los marcadores oficiales.
 
 **Suspensiones y derrota administrativa.** No cambian resultados ya oficializados ni crean
 resultados nuevos. Una suspensión es un registro visible para el staff y el equipo. Aplicar

@@ -152,7 +152,7 @@ export const competitionStandingRowSchema = z.object({
   /** Swiss only. `points` already include the bye credit; `played` and W/D/L never do. */
   swiss: z
     .object({
-      buchholz: z.number().int().nonnegative(),
+      buchholz: z.number().int(),
       byes: z.number().int().nonnegative(),
       withdrawn: z.boolean(),
     })

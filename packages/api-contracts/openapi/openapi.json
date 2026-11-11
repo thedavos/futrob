@@ -13980,8 +13980,7 @@
             "type": "object",
             "properties": {
               "buchholz": {
-                "type": "integer",
-                "minimum": 0
+                "type": "integer"
               },
               "byes": {
                 "type": "integer",
@@ -14093,8 +14092,7 @@
                   "type": "object",
                   "properties": {
                     "buchholz": {
-                      "type": "integer",
-                      "minimum": 0
+                      "type": "integer"
                     },
                     "byes": {
                       "type": "integer",
@@ -19352,8 +19350,7 @@
                       "type": "object",
                       "properties": {
                         "buchholz": {
-                          "type": "integer",
-                          "minimum": 0
+                          "type": "integer"
                         },
                         "byes": {
                           "type": "integer",
@@ -24390,8 +24387,7 @@
                       "maxItems": 5
                     },
                     "buchholz": {
-                      "type": "integer",
-                      "minimum": 0
+                      "type": "integer"
                     },
                     "byes": {
                       "type": "integer",
@@ -32136,8 +32132,7 @@
             "maxItems": 5
           },
           "buchholz": {
-            "type": "integer",
-            "minimum": 0
+            "type": "integer"
           },
           "byes": {
             "type": "integer",
