@@ -109,6 +109,7 @@
   },
   "packageManager": "npm@11.16.0",
   "allowScripts": {
+    "@sentry/cli": true,
     "esbuild": true,
     "fsevents": false,
     "lefthook": false,
