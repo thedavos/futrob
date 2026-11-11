@@ -25,6 +25,7 @@ const SENSITIVE_HEADER_NAMES = new Set([
   "x-futrob-actor-id",
 ]);
 
+const EMAIL_PATTERN = /[^\s@"'<>(),;:]+@[^\s@"'<>(),;:]+\.[a-z]{2,}/gi;
 const SENSITIVE_KEY = /token|authorization|bearer|secret|password|cookie|email|credential/i;
 
 const expectedFailureSchema = z.object({ code: z.string().min(1) });
@@ -73,10 +74,13 @@ const transactionBagSchema = z
     contexts: contextsSchema.optional().catch(undefined),
   })
   .passthrough();
+const exceptionValueSchema = z.object({ value: z.string().optional() }).passthrough();
+const exceptionSchema = z.object({ values: z.array(exceptionValueSchema) }).passthrough();
 const eventBagSchema = z
   .object({
     extra: extraSchema.optional().catch(undefined),
     breadcrumbs: z.array(breadcrumbSchema).optional().catch(undefined),
+    exception: exceptionSchema.optional().catch(undefined),
   })
   .passthrough();
 
@@ -122,6 +126,7 @@ export interface SentryEventLike {
   user?: SentryUserLike | null;
   extra?: object;
   breadcrumbs?: readonly object[];
+  exception?: object;
   tags?: Record<string, SentryPrimitive>;
 }
 
@@ -240,7 +245,31 @@ export function scrubSentryEvent<T extends SentryEventLike>(event: T): T {
     user: scrubUser(event.user),
     extra,
     breadcrumbs,
+    exception: bag.success ? scrubException(bag.data.exception) : undefined,
   };
+}
+
+/**
+ * Exception messages are sent verbatim. Drizzle appends bound SQL values as
+ * `\nparams: …` (an email on sign-in lookups), so drop them and any email
+ * left in the chain. Stack frames stay intact.
+ */
+function scrubException(exception: z.infer<typeof exceptionSchema> | undefined) {
+  if (!exception) return undefined;
+  return {
+    ...exception,
+    values: exception.values.map((entry) =>
+      entry.value === undefined ? entry : { ...entry, value: scrubErrorMessage(entry.value) },
+    ),
+  };
+}
+
+function scrubErrorMessage(message: string): string {
+  return scrubUrl(
+    message
+      .replace(/\nparams:[\s\S]*$/, "\nparams: [Filtered]")
+      .replace(EMAIL_PATTERN, "[Filtered]"),
+  );
 }
 
 function scrubRequest(request: SentryRequestLike | undefined): SentryRequestLike | undefined {

@@ -37,8 +37,9 @@ child.debug("job.received", { jobId });
   los defectos van a Sentry además de `error`.
 - La política de Sentry (`buildSentryInitConfig`, `isExpectedFailure`,
   `sentrySdkOptions`) vive aquí: DSN + `NODE_ENV=production`, filtro de
-  fallos esperados, y scrub de cuerpos, cookies, tokens y correos. Cada app
-  envuelve su SDK. En desarrollo no sale ningún evento.
+  fallos esperados, y scrub de cuerpos, cookies, tokens y correos (también en
+  los mensajes de `exception.values`, donde se descartan los `params:` SQL de
+  Drizzle; la pila se conserva). Cada app envuelve su SDK. En desarrollo no sale ningún evento.
 
 ## Integración por app
 

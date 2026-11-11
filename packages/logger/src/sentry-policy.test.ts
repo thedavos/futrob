@@ -183,6 +183,38 @@ describe("event scrubbing", () => {
     expect(JSON.stringify(scrubbed)).toContain("trace-1");
   });
 
+  it("drops SQL params and emails from exception messages but keeps the stack", () => {
+    const frames = [{ filename: "drizzle-orm/node-postgres/session.js", lineno: 124 }];
+    const scrubbed = applySentryEventPolicy({
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value: "duplicate key: Key (email)=(ana@club.mx) already exists",
+          },
+          {
+            type: "Error",
+            value:
+              'Failed query: select "id" from "auth_users" where "email" = $1\nparams: ana@club.mx,SYNTHETIC_PARAM',
+            stacktrace: { frames },
+          },
+        ],
+      },
+    });
+    expect(scrubbed?.exception).toEqual({
+      values: [
+        { type: "Error", value: "duplicate key: Key (email)=([Filtered]) already exists" },
+        {
+          type: "Error",
+          value:
+            'Failed query: select "id" from "auth_users" where "email" = $1\nparams: [Filtered]',
+          stacktrace: { frames },
+        },
+      ],
+    });
+    expect(JSON.stringify(scrubbed)).not.toMatch(/ana@club\.mx|SYNTHETIC_PARAM/);
+  });
+
   it("drops a user object that only has an email", () => {
     expect(scrubSentryEvent({ user: { email: "ana@club.mx" } }).user).toBeUndefined();
   });
