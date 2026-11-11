@@ -1,5 +1,7 @@
+import type { ProviderMatchRepository } from "@futrob/game-data";
+import type { ClockPort, TransactionPort } from "@futrob/shared-kernel";
+import type { Pool } from "pg";
 import type { EncounterOpenSelectionPort } from "@futrob/scheduling";
-import type { TransactionPort } from "@futrob/shared-kernel";
 import type { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
 import type { RunScheduleChangeExpiry } from "@/application/scheduling/run-schedule-change-expiry.ts";
 import type { RecalculateRescheduledCandidates } from "@/application/results/recalculate-rescheduled-candidates.ts";
@@ -35,7 +37,10 @@ import type { ActivityCommands, NotificationsModule } from "./notifications.modu
 import type { PublicPortalModule } from "./public-portal.module.ts";
 import type { StatisticsModule } from "./statistics.module.ts";
 
+import type { createOrganizationAudit } from "./organization-audit.composition.ts";
+
 export interface AppModules {
+  readonly audit: ReturnType<typeof createOrganizationAudit>;
   /** Commands of other contexts composed with their activity feed writes. */
   readonly activityCommands: ActivityCommands;
   readonly authorization: AuthorizationModule;
@@ -79,4 +84,15 @@ export interface AppModules {
     readonly get: GetTeamRosterManagementUseCase;
   };
   readonly transaction: TransactionPort;
+}
+
+export interface CreateModulesInput {
+  readonly fetcher: typeof fetch;
+  readonly eaClubsBaseUrl: string;
+  readonly pool: Pool | undefined;
+  /** Test seam: observations the results module reads candidates from. */
+  readonly providerMatches?: ProviderMatchRepository;
+  readonly clock?: ClockPort;
+  readonly resultsSystemActorId?: string;
+  readonly schedulingSystemActorId?: string;
 }

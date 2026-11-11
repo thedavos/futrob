@@ -25,7 +25,7 @@ export function registerFixtureRoutes(app: Hono, deps: AppDeps): void {
   secured.openapi(generateCompetitionFixtureRoute, async (c) => {
     const parsed = c.req.valid("json");
     const params = c.req.valid("param");
-    const result = await deps.modules.scheduling.generateFixture.execute({
+    const result = await deps.modules.audit.commands.generateFixture.execute({
       actorId: c.get("actorId"),
       organizationId: asOrganizationId(params.organizationId),
       competitionId: asCompetitionId(params.competitionId),

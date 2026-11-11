@@ -2,6 +2,7 @@ import {
   CloseActivityUseCase,
   ListActivitiesUseCase,
   RecordActivityUseCase,
+  type ActivityEntryRepository,
   type CloseActivityInput,
   type RecordActivityInput,
 } from "@futrob/notifications";
@@ -30,6 +31,7 @@ import type { SchedulingModule } from "./scheduling.module.ts";
 import type { TeamsModule } from "./teams.module.ts";
 
 export interface NotificationsModule {
+  readonly activities: ActivityEntryRepository;
   readonly recordActivity: RecordActivityUseCase;
   readonly closeActivity: CloseActivityUseCase;
   readonly listActivities: ListActivitiesUseCase;
@@ -60,6 +62,7 @@ export function createNotificationsModule(input: {
   });
   const closeActivity = new CloseActivityUseCase({ activities, clock: input.clock });
   return {
+    activities,
     recordActivity,
     closeActivity,
     listActivities: new ListActivitiesUseCase({ activities, clock: input.clock }),

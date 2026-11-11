@@ -1,5 +1,6 @@
 import type {
   ExploreCompetitionsQuery,
+  ListOrganizationAuditQuery,
   GetMyGameProfileQuery,
   GetMyMatchesQuery,
   GetMyRecentMatchPath,
@@ -61,6 +62,8 @@ export const queryKeys = {
     meNextEncounter: () => [...queryKeys.players.all, "me", "next-encounter"] as const,
   },
   organizations: {
+    audit: (organizationId: string, query: ListOrganizationAuditQuery) =>
+      ["organizations", organizationId, "audit", query] as const,
     all: ["organizations"] as const,
     mine: () => [...queryKeys.organizations.all, "mine"] as const,
     members: (organizationId: string) =>

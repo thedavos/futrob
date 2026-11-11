@@ -1,0 +1,32 @@
+- link "Saltar al contenido":
+    - /url: "#app-main"
+- complementary "Navegación principal":
+    - button "Liga Sanciones"
+    - button "Colapsar barra lateral"
+    - list:
+        - listitem:
+            - link "Resumen":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752
+        - listitem:
+            - link "Partidos":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/matches
+        - listitem:
+            - link "Estadísticas":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/stats
+        - listitem:
+            - link "Mi equipo":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/team
+        - listitem:
+            - link "Plantilla":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/team/roster
+        - listitem:
+            - link "Invitaciones del equipo":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/team/invitations
+    - button "Abrir menú de cuenta": SC Sanctions
+- banner:
+    - paragraph: Liga Sanciones Capitán
+- main:
+    - heading "Auditoría" [level=1]
+    - paragraph: Decisiones y cambios registrados en esta competición.
+    - heading "Auditoría no disponible" [level=2]
+    - paragraph: Necesitas permiso para consultar la auditoría de esta organización.
