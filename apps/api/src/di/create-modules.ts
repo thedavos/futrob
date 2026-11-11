@@ -276,7 +276,6 @@ export function createModules(input: CreateModulesInput): AppModules {
     fixturePlans: scheduling.fixturePlans,
     officialResults: results.officialResultReader,
     teams: teams.repositories.teams,
-    connections: teams.externalClubConnections,
     rosters: teams.repositories.rosters,
     accounts: teams.repositories.accounts,
   });

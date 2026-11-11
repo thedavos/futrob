@@ -45,7 +45,6 @@ import {
 } from "@futrob/statistics";
 import type {
   CompetitionRosterMembershipRepository,
-  ExternalClubConnectionRepository,
   PlayerGameAccountRepository,
   TeamRepository,
 } from "@futrob/teams";
@@ -126,7 +125,6 @@ export class SchedulingPublicCalendarReader implements PublicCalendarReaderPort 
   constructor(
     private readonly fixturePlans: Pick<FixturePlanRepository, "listActive">,
     private readonly officialResults: Pick<OfficialResultReaderPort, "listByCompetition">,
-    private readonly connections: Pick<ExternalClubConnectionRepository, "findByTeam">,
   ) {}
 
   async list(scope: PublicCompetitionScope): Promise<readonly PublicCalendarSourceEntry[]> {
@@ -134,7 +132,7 @@ export class SchedulingPublicCalendarReader implements PublicCalendarReaderPort 
       this.fixturePlans.listActive(scope.organizationId, scope.competitionId),
       this.officialResults.listByCompetition(scope.competitionId, scope.organizationId),
     ]);
-    const scores = await officialScores(plans, results, this.connections);
+    const scores = officialScores(plans, results);
     return plans
       .flatMap(pairedEncounters)
       .map(({ encounter, homeTeamId, awayTeamId, roundNumber }) => ({
@@ -180,15 +178,15 @@ export class TeamsPublicTeamDirectory implements PublicTeamDirectoryPort {
 /**
  * Latest approved revision of each played Encounter's OfficialResult, reduced to goals per slot
  * and oriented to the Encounter. A slot keeps EA's home/away sides, which may be the reverse of
- * the fixture, so each slot is flipped when its clubs face the Encounter's teams the other way
- * round. Club identity comes from each Team's ExternalClubConnection; a slot neither club of which
- * is recognised keeps its stored orientation.
+ * the fixture, so each slot is flipped when the Teams frozen on it at approval face the
+ * Encounter the other way round. Current ExternalClubConnections are never consulted: a re-link
+ * must not reinterpret an approved result. A result with a slot that cannot be attributed to the
+ * Encounter's Teams publishes no score rather than guessing the provider's order.
  */
-async function officialScores(
+function officialScores(
   plans: readonly FixturePlan[],
   results: readonly OfficialResult[],
-  connections: Pick<ExternalClubConnectionRepository, "findByTeam">,
-): Promise<ReadonlyMap<EncounterId, readonly PublicMatchScore[]>> {
+): ReadonlyMap<EncounterId, readonly PublicMatchScore[]> {
   const latest = new Map<EncounterId, OfficialResult>();
   for (const result of results) {
     if (result.status !== "approved") continue;
@@ -196,41 +194,32 @@ async function officialScores(
     if (current && current.revision > result.revision) continue;
     latest.set(result.encounterId, result);
   }
-  const played = plans
-    .flatMap(pairedEncounters)
-    .filter(({ encounter }) => latest.has(encounter.id));
-  const teamIds = [...new Set(played.flatMap((pair) => [pair.homeTeamId, pair.awayTeamId]))];
-  const clubs = new Map(
-    await Promise.all(
-      teamIds.map(
-        async (teamId) =>
-          [teamId, (await connections.findByTeam(teamId))?.externalClubId ?? null] as const,
-      ),
-    ),
-  );
-  return new Map(
-    played.map(({ encounter, homeTeamId, awayTeamId }) => [
-      encounter.id,
-      [...latest.get(encounter.id)!.slots]
-        .sort((a, b) => a.officialSlot - b.officialSlot)
-        .map((slot) =>
-          orientSlot(slot, clubs.get(homeTeamId) ?? null, clubs.get(awayTeamId) ?? null),
-        ),
-    ]),
-  );
+  const scores = new Map<EncounterId, readonly PublicMatchScore[]>();
+  for (const { encounter, homeTeamId, awayTeamId } of plans.flatMap(pairedEncounters)) {
+    const result = latest.get(encounter.id);
+    if (!result) continue;
+    const oriented = [...result.slots]
+      .sort((a, b) => a.officialSlot - b.officialSlot)
+      .map((slot) => orientSlot(slot, homeTeamId, awayTeamId));
+    if (oriented.every((score): score is PublicMatchScore => score !== null)) {
+      scores.set(encounter.id, oriented);
+    }
+  }
+  return scores;
 }
 
 function orientSlot(
   slot: OfficialResultSlotSnapshot,
-  homeClubId: string | null,
-  awayClubId: string | null,
-): PublicMatchScore {
-  const reversed =
-    (homeClubId !== null && slot.awayExternalClubId === homeClubId) ||
-    (awayClubId !== null && slot.homeExternalClubId === awayClubId);
-  return reversed
-    ? { homeGoals: slot.awayGoals, awayGoals: slot.homeGoals }
-    : { homeGoals: slot.homeGoals, awayGoals: slot.awayGoals };
+  homeTeamId: TeamId,
+  awayTeamId: TeamId,
+): PublicMatchScore | null {
+  if (slot.homeTeamId === homeTeamId || slot.awayTeamId === awayTeamId) {
+    return { homeGoals: slot.homeGoals, awayGoals: slot.awayGoals };
+  }
+  if (slot.homeTeamId === awayTeamId || slot.awayTeamId === homeTeamId) {
+    return { homeGoals: slot.awayGoals, awayGoals: slot.homeGoals };
+  }
+  return null;
 }
 
 /** Knockout and playoff stages of the active fixture, with Encounter ids turned into positions. */
@@ -238,7 +227,6 @@ export class SchedulingPublicBracketReader implements PublicBracketReaderPort {
   constructor(
     private readonly fixturePlans: Pick<FixturePlanRepository, "listActive">,
     private readonly officialResults: Pick<OfficialResultReaderPort, "listByCompetition">,
-    private readonly connections: Pick<ExternalClubConnectionRepository, "findByTeam">,
   ) {}
 
   async read(scope: PublicCompetitionScope): Promise<PublicBracketSource | null> {
@@ -248,7 +236,7 @@ export class SchedulingPublicBracketReader implements PublicBracketReaderPort {
     ]);
     const plan = plans[0];
     if (!plan) return null;
-    const scores = await officialScores([plan], results, this.connections);
+    const scores = officialScores([plan], results);
     return { timeZone: plan.timeZone, stages: bracketStages(plan, scores) };
   }
 }
