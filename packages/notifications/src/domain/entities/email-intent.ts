@@ -51,7 +51,12 @@ export type EmailIntent = EmailIntentBase &
   (
     | { readonly template: "registration"; readonly requiresAction: boolean }
     | { readonly template: "upcoming_match"; readonly startsAt: string }
-    | { readonly template: "reschedule"; readonly requiresAction: boolean }
+    | {
+        readonly template: "reschedule";
+        readonly requiresAction: boolean;
+        /** The proposal expired unanswered: the organizer resolves the request instead. */
+        readonly escalated: boolean;
+      }
     | { readonly template: "ea_candidates"; readonly candidateCount: number }
     | { readonly template: "proposed_selection"; readonly requiresAction: boolean }
     | { readonly template: "result_or_dispute"; readonly result: "official" | "disputed" }

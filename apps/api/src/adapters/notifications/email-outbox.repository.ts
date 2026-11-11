@@ -30,7 +30,12 @@ const names = {
 const intentSchema: z.ZodType<EmailIntent> = z.discriminatedUnion("template", [
   z.object({ ...names, template: z.literal("registration"), requiresAction: z.boolean() }),
   z.object({ ...names, template: z.literal("upcoming_match"), startsAt: z.string() }),
-  z.object({ ...names, template: z.literal("reschedule"), requiresAction: z.boolean() }),
+  z.object({
+    ...names,
+    template: z.literal("reschedule"),
+    requiresAction: z.boolean(),
+    escalated: z.boolean(),
+  }),
   z.object({ ...names, template: z.literal("ea_candidates"), candidateCount: z.number() }),
   z.object({ ...names, template: z.literal("proposed_selection"), requiresAction: z.boolean() }),
   z.object({

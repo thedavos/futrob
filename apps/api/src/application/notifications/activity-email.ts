@@ -1,10 +1,11 @@
-import type {
-  ActivityAudience,
-  EmailAudienceIntent,
-  EmailIntent,
-  EmailNames,
-  EnqueueEmailsInput,
-  RecordActivityInput,
+import {
+  ACTIVITY_SOURCE,
+  type ActivityAudience,
+  type EmailAudienceIntent,
+  type EmailIntent,
+  type EmailNames,
+  type EnqueueEmailsInput,
+  type RecordActivityInput,
 } from "@futrob/notifications";
 import type { ActorId, CompetitionId, OrganizationId, TeamId } from "@futrob/shared-kernel";
 
@@ -53,7 +54,12 @@ function intentFor(
     case "competition_entry":
       return { ...names, template: "registration", requiresAction };
     case "schedule_change":
-      return { ...names, template: "reschedule", requiresAction };
+      return {
+        ...names,
+        template: "reschedule",
+        requiresAction,
+        escalated: input.source.name === ACTIVITY_SOURCE.scheduleChangeEscalation,
+      };
     case "selection_confirmation":
       return { ...names, template: "proposed_selection", requiresAction };
     case "match_dispute":

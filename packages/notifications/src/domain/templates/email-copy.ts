@@ -63,17 +63,30 @@ const es: LocaleCopy = {
       ],
       action: "Ver partido",
     }),
-    reschedule: (i) => ({
-      subject: `Reprogramación de ${i.encounterLabel ?? "un partido"}`,
-      heading: i.requiresAction ? "Responde a una reprogramación" : "Reprogramación propuesta",
-      body: [
-        `Hay una nueva fecha propuesta para ${i.encounterLabel ?? "un partido"} de ${i.competitionName ?? "tu competición"}.`,
-        i.requiresAction
-          ? "Acéptala, recházala o propón otra antes de que venza el plazo."
-          : "Te avisaremos cuando se resuelva.",
-      ],
-      action: i.requiresAction ? "Responder" : "Ver reprogramación",
-    }),
+    reschedule: (i) =>
+      i.escalated
+        ? {
+            subject: `Reprogramación sin respuesta: ${i.encounterLabel ?? "un partido"}`,
+            heading: "Decide una reprogramación",
+            body: [
+              `La propuesta de nueva fecha para ${i.encounterLabel ?? "un partido"} de ${i.competitionName ?? "tu competición"} venció sin respuesta.`,
+              "Ya no hay una propuesta que responder: resuelve tú la solicitud.",
+            ],
+            action: "Decidir reprogramación",
+          }
+        : {
+            subject: `Reprogramación de ${i.encounterLabel ?? "un partido"}`,
+            heading: i.requiresAction
+              ? "Responde a una reprogramación"
+              : "Reprogramación propuesta",
+            body: [
+              `Hay una nueva fecha propuesta para ${i.encounterLabel ?? "un partido"} de ${i.competitionName ?? "tu competición"}.`,
+              i.requiresAction
+                ? "Acéptala, recházala o propón otra antes de que venza el plazo."
+                : "Te avisaremos cuando se resuelva.",
+            ],
+            action: i.requiresAction ? "Responder" : "Ver reprogramación",
+          },
     ea_candidates: (i) => ({
       subject: `Partidos de EA para ${i.encounterLabel ?? "tu partido"}`,
       heading: "Hay partidos para elegir",
@@ -159,17 +172,28 @@ const en: LocaleCopy = {
       ],
       action: "View match",
     }),
-    reschedule: (i) => ({
-      subject: `Reschedule of ${i.encounterLabel ?? "a match"}`,
-      heading: i.requiresAction ? "Answer a reschedule" : "Reschedule proposed",
-      body: [
-        `A new date is proposed for ${i.encounterLabel ?? "a match"} in ${i.competitionName ?? "your competition"}.`,
-        i.requiresAction
-          ? "Accept it, reject it or propose another date before the deadline."
-          : "We will tell you when it is settled.",
-      ],
-      action: i.requiresAction ? "Answer" : "View reschedule",
-    }),
+    reschedule: (i) =>
+      i.escalated
+        ? {
+            subject: `Reschedule not answered: ${i.encounterLabel ?? "a match"}`,
+            heading: "Decide a reschedule",
+            body: [
+              `The proposed new date for ${i.encounterLabel ?? "a match"} in ${i.competitionName ?? "your competition"} expired without an answer.`,
+              "There is no proposal left to answer: resolve the request yourself.",
+            ],
+            action: "Decide reschedule",
+          }
+        : {
+            subject: `Reschedule of ${i.encounterLabel ?? "a match"}`,
+            heading: i.requiresAction ? "Answer a reschedule" : "Reschedule proposed",
+            body: [
+              `A new date is proposed for ${i.encounterLabel ?? "a match"} in ${i.competitionName ?? "your competition"}.`,
+              i.requiresAction
+                ? "Accept it, reject it or propose another date before the deadline."
+                : "We will tell you when it is settled.",
+            ],
+            action: i.requiresAction ? "Answer" : "View reschedule",
+          },
     ea_candidates: (i) => ({
       subject: `EA matches for ${i.encounterLabel ?? "your match"}`,
       heading: "Matches are ready to select",
