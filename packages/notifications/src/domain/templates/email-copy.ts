@@ -28,6 +28,8 @@ const ES_DECISIONS = {
   schedule_set: "fijó una nueva fecha para el partido",
   schedule_kept: "mantuvo la fecha del partido",
   walkover_intended: "decidió una victoria por incomparecencia",
+  sanction_imposed: "impuso una sanción",
+  sanction_revoked: "revocó una sanción",
 } as const satisfies Record<ActivityOutcome, string>;
 
 const EN_DECISIONS = {
@@ -36,6 +38,8 @@ const EN_DECISIONS = {
   schedule_set: "set a new date for the match",
   schedule_kept: "kept the date of the match",
   walkover_intended: "decided a walkover",
+  sanction_imposed: "imposed a sanction",
+  sanction_revoked: "revoked a sanction",
 } as const satisfies Record<ActivityOutcome, string>;
 
 const es: LocaleCopy = {

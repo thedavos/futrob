@@ -1,4 +1,4 @@
-/** Wakes the product API to anonymize accounts whose deletion grace period ended (ADR-0028). */
+/** Wakes the product API to anonymize accounts whose deletion grace period ended (ADR-0029). */
 export async function runDueAccountDeletions(deps: {
   readonly fetcher: typeof fetch;
   readonly apiBaseUrl: string;

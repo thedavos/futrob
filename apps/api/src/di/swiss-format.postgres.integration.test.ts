@@ -214,6 +214,65 @@ describe.skipIf(!databaseUrl)("Swiss format on Postgres", () => {
     return { approve, confirm, count, modules, plan, planId, propose, round };
   }
 
+  it.each([false, true])(
+    "pairs using an imposed deduction, revoked before final approval=%s",
+    async (revoke) => {
+      const { approve, modules, round } = await setup();
+      const first = await round(1);
+      await approve(first[0]!);
+      const imposed = await modules.sanctions.commands.impose.execute({
+        actorId: OPERATOR,
+        organizationId: ORG,
+        competitionId: COMPETITION,
+        target: { type: "team", teamId: HOME },
+        type: "points_deduction",
+        pointsDeducted: 4,
+        reason: "Ineligible player",
+        requestId: "swiss-deduction",
+      });
+      if (imposed.isErr()) throw imposed.error;
+      expect(await round(1)).toEqual(first);
+      expect(await round(2)).toEqual([]);
+      if (revoke) {
+        const revoked = await modules.sanctions.commands.revoke.execute({
+          actorId: OPERATOR,
+          organizationId: ORG,
+          competitionId: COMPETITION,
+          sanctionId: imposed.value.id,
+          reason: "Appeal accepted",
+          requestId: "swiss-revocation",
+        });
+        if (revoked.isErr()) throw revoked.error;
+      }
+      await approve(first[1]!);
+      const second = await round(2);
+      const rivals = second.map((encounter) =>
+        [encounter.home, encounter.away].flatMap((slot) =>
+          slot.kind === "team" ? [slot.teamId] : [],
+        ),
+      );
+      expect(rivals).toEqual(
+        expect.arrayContaining([
+          expect.arrayContaining([HOME, revoke ? AWAY : FOURTH]),
+          expect.arrayContaining([THIRD, revoke ? FOURTH : AWAY]),
+        ]),
+      );
+      const paired = await round(2);
+      if (!revoke) {
+        const revoked = await modules.sanctions.commands.revoke.execute({
+          actorId: OPERATOR,
+          organizationId: ORG,
+          competitionId: COMPETITION,
+          sanctionId: imposed.value.id,
+          reason: "Appeal accepted after pairing",
+          requestId: "swiss-late-revocation",
+        });
+        if (revoked.isErr()) throw revoked.error;
+        expect(await round(2)).toEqual(paired);
+      }
+    },
+  );
+
   it("plays four Teams to the final through the real approval composition", async () => {
     const { approve, modules, plan, round } = await setup();
     const first = await round(1);
@@ -254,7 +313,7 @@ describe.skipIf(!databaseUrl)("Swiss format on Postgres", () => {
     expect(final?.rows.every((row) => row.played === 2 && row.swiss?.byes === 0)).toBe(true);
 
     const pub = await modules.publicPortal.getStandings.execute({
-      key: asPublicCompetitionKey(COMPETITION),
+      key: asPublicCompetitionKey("org-selection", COMPETITION),
     });
     expect(pub.isOk() && pub.value.swiss?.isFinal).toBe(true);
     if (!pub.isOk()) throw new Error(pub.error.code);

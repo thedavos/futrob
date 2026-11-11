@@ -78,7 +78,7 @@ export interface ActivityWriter {
   email(input: EnqueueEmailsInput): Promise<void>;
 }
 
-/** Email channel (ADR-0008, ADR-0029): queued by commands, sent by the dispatch runner. */
+/** Email channel (ADR-0008, ADR-0030): queued by commands, sent by the dispatch runner. */
 export interface EmailChannel {
   readonly outbox: EmailOutboxRepository;
   /** `null` without a provider: queued email stays pending until one is configured. */

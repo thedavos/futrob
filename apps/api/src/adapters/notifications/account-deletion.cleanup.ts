@@ -17,7 +17,7 @@ export async function closeDeletedActorActivity(
 }
 
 /**
- * Reaction to `identity.actor-deleted` (ADR-0028): the actors row stays as a tombstone, so its
+ * Reaction to `identity.actor-deleted` (ADR-0029): the actors row stays as a tombstone, so its
  * cascades never reach the email channel. Pending email to the actor settles as having no
  * address, every stored request (address, name, body) and provider error goes, and the
  * preferences row with its unsubscribe token is removed.

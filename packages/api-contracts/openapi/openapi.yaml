@@ -1700,7 +1700,7 @@ paths:
         - identity
       summary: Schedule deletion of the authenticated account and sign it out everywhere
       description: Requires the current password. Deletion runs after the grace period
-        by anonymizing the account (ADR-0028). Repeating the request keeps the
+        by anonymizing the account (ADR-0029). Repeating the request keeps the
         original date and signs out again.
       requestBody:
         required: true
@@ -4664,6 +4664,141 @@ paths:
         - competitions
       summary: Open registration for a valid draft; format and rules freeze until it
         closes
+  /organizations/{organizationId}/competitions/{competitionId}/sanctions:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+      responses:
+        "201":
+          description: Sanction imposed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionSanction"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400": &a85
+          $ref: "#/components/responses/ApiError"
+        "401": *a85
+        "403": *a85
+        "404": *a85
+        "409": *a85
+      operationId: imposeSanction
+      tags:
+        - competitions
+      summary: Sanction a Team entered in the competition, or one of its players
+      description: "Requires `competitions.sanctions.manage` and a competition in
+        registration, published, paused or finished. `points_deduction` needs
+        `pointsDeducted` (1–100) and rebuilds the table in the same transaction;
+        `match_suspension` needs `suspensionMatches` (1–20);
+        `administrative_defeat` needs the Team's `encounterId` and creates no
+        official result. Failures: 400 `api.validation_error`,
+        `competitions.invalid_sanction`; 403 `authorization.forbidden`; 404
+        `competitions.not_found`; 409 `competitions.sanctions_closed`; 404
+        `competitions.sanction_target_not_found`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImposeSanctionRequest"
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+      responses:
+        "200":
+          description: Sanctions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListCompetitionSanctionsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "401": &a86
+          $ref: "#/components/responses/ApiError"
+        "403": *a86
+        "404": *a86
+      operationId: listCompetitionSanctions
+      tags:
+        - competitions
+      summary: List every sanction of a competition, revoked included
+      description: Requires `competitions.sanctions.read` (organizer and staff).
+        Newest first. Each sanction keeps who imposed it, the reason, when and
+        the request correlation (ADR-0028).
+  /organizations/{organizationId}/competitions/{competitionId}/sanctions/{sanctionId}/revoke:
+    post:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: sanctionId
+          in: path
+      responses:
+        "200":
+          description: Sanction revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionSanction"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400": &a87
+          $ref: "#/components/responses/ApiError"
+        "401": *a87
+        "403": *a87
+        "404": *a87
+        "409": *a87
+      operationId: revokeSanction
+      tags:
+        - competitions
+      summary: Revoke an active sanction
+      description: "Requires `competitions.sanctions.manage`. The sanction is never
+        deleted: the revocation records actor, reason, date and request
+        correlation once. A revoked deduction rebuilds the table. Failures: 400
+        `api.validation_error`, `competitions.invalid_sanction`; 403
+        `authorization.forbidden`; 404 `competitions.not_found`; 409
+        `competitions.sanctions_closed`; 404 `competitions.sanction_not_found`;
+        409 `competitions.sanction_already_revoked`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevokeSanctionRequest"
   /organizations/{organizationId}/competitions/{competitionId}/standings:
     get:
       parameters:
@@ -4688,9 +4823,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a85
+        "401": &a88
           $ref: "#/components/responses/ApiError"
-        "403": *a85
+        "403": *a88
       operationId: getCompetitionStandings
       tags:
         - statistics
@@ -4860,9 +4995,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a86
+        "400": &a89
           $ref: "#/components/responses/ApiError"
-        "403": *a86
+        "403": *a89
       operationId: listCompetitionTeamManagement
       tags:
         - teams
@@ -4896,9 +5031,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": &a87
+        "403": &a90
           $ref: "#/components/responses/ApiError"
-        "404": *a87
+        "404": *a90
       operationId: getCompetitionTeamManagement
       tags:
         - teams
@@ -4928,7 +5063,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a88
+        "401": &a91
           $ref: "#/components/responses/ApiError"
         "402":
           description: The organization's plan does not include this action, or its
@@ -4940,7 +5075,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a88
+        "403": *a91
       operationId: getTeamPerformanceRanking
       tags:
         - statistics
@@ -4970,9 +5105,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a89
+        "401": &a92
           $ref: "#/components/responses/ApiError"
-        "403": *a89
+        "403": *a92
       operationId: getCompetitionTeamStatistics
       tags:
         - statistics
@@ -5006,11 +5141,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a90
+        "400": &a93
           $ref: "#/components/responses/ApiError"
-        "401": *a90
-        "403": *a90
-        "404": *a90
+        "401": *a93
+        "403": *a93
+        "404": *a93
       operationId: connectCompetitionTeamExternalClub
       tags:
         - teams
@@ -5049,9 +5184,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a91
+        "401": &a94
           $ref: "#/components/responses/ApiError"
-        "403": *a91
+        "403": *a94
       operationId: getCompetitionTeamExternalClub
       tags:
         - teams
@@ -5085,12 +5220,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a92
+        "400": &a95
           $ref: "#/components/responses/ApiError"
-        "401": *a92
-        "403": *a92
-        "404": *a92
-        "409": *a92
+        "401": *a95
+        "403": *a95
+        "404": *a95
+        "409": *a95
       operationId: addToTeamRoster
       tags:
         - teams
@@ -5129,9 +5264,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a93
+        "401": &a96
           $ref: "#/components/responses/ApiError"
-        "403": *a93
+        "403": *a96
       operationId: listTeamRoster
       tags:
         - teams
@@ -5165,11 +5300,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a94
+        "400": &a97
           $ref: "#/components/responses/ApiError"
-        "401": *a94
-        "403": *a94
-        "409": *a94
+        "401": *a97
+        "403": *a97
+        "409": *a97
       operationId: createRosterInvitation
       tags:
         - teams
@@ -5214,11 +5349,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a95
+        "400": &a98
           $ref: "#/components/responses/ApiError"
-        "401": *a95
-        "403": *a95
-        "404": *a95
+        "401": *a98
+        "403": *a98
+        "404": *a98
       operationId: changeRosterRole
       tags:
         - teams
@@ -5258,10 +5393,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a96
+        "401": &a99
           $ref: "#/components/responses/ApiError"
-        "403": *a96
-        "409": *a96
+        "403": *a99
+        "409": *a99
       operationId: closeTeamRoster
       tags:
         - teams
@@ -5295,14 +5430,53 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a97
+        "401": &a100
           $ref: "#/components/responses/ApiError"
-        "403": *a97
-        "409": *a97
+        "403": *a100
+        "409": *a100
       operationId: openTeamRoster
       tags:
         - teams
       summary: Unlock the competition team roster
+  /organizations/{organizationId}/competitions/{competitionId}/teams/{teamId}/sanctions:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+          required: true
+          name: organizationId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: competitionId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: teamId
+          in: path
+      responses:
+        "200":
+          description: Sanctions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListCompetitionSanctionsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "401": &a101
+          $ref: "#/components/responses/ApiError"
+        "403": *a101
+      operationId: listTeamSanctions
+      tags:
+        - competitions
+      summary: List the sanctions on a Team and on its players
+      description: "Read-only view for the affected Team. Requires `teams.read` on
+        that Team in this competition: its roster and the competition operators
+        pass; other Teams get 403."
   /organizations/{organizationId}/encounters/{encounterId}:
     get:
       parameters:
@@ -5327,9 +5501,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a98
+        "401": &a102
           $ref: "#/components/responses/ApiError"
-        "404": *a98
+        "404": *a102
       operationId: getEncounterView
       tags:
         - encounters
@@ -5365,11 +5539,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a99
+        "400": &a103
           $ref: "#/components/responses/ApiError"
-        "401": *a99
-        "403": *a99
-        "404": *a99
+        "401": *a103
+        "403": *a103
+        "404": *a103
       operationId: getTeamOfficialSelection
       tags:
         - results
@@ -5400,10 +5574,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a100
+        "401": &a104
           $ref: "#/components/responses/ApiError"
-        "403": *a100
-        "404": *a100
+        "403": *a104
+        "404": *a104
       operationId: getOperatorOfficialSelection
       tags:
         - results
@@ -5436,12 +5610,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a101
+        "400": &a105
           $ref: "#/components/responses/ApiError"
-        "401": *a101
-        "403": *a101
-        "404": *a101
-        "409": *a101
+        "401": *a105
+        "403": *a105
+        "404": *a105
+        "409": *a105
       operationId: openMatchDispute
       tags:
         - results
@@ -5494,12 +5668,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a102
+        "400": &a106
           $ref: "#/components/responses/ApiError"
-        "401": *a102
-        "403": *a102
-        "404": *a102
-        "409": *a102
+        "401": *a106
+        "403": *a106
+        "404": *a106
+        "409": *a106
       operationId: resolveMatchDispute
       tags:
         - results
@@ -5561,12 +5735,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a103
+        "400": &a107
           $ref: "#/components/responses/ApiError"
-        "401": *a103
-        "403": *a103
-        "404": *a103
-        "409": *a103
+        "401": *a107
+        "403": *a107
+        "404": *a107
+        "409": *a107
       operationId: reviewMatchDispute
       tags:
         - results
@@ -5627,12 +5801,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a104
+        "400": &a108
           $ref: "#/components/responses/ApiError"
-        "401": *a104
-        "403": *a104
-        "404": *a104
-        "409": *a104
+        "401": *a108
+        "403": *a108
+        "404": *a108
+        "409": *a108
       operationId: proposeOfficialSelection
       tags:
         - results
@@ -5690,12 +5864,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a105
+        "400": &a109
           $ref: "#/components/responses/ApiError"
-        "401": *a105
-        "403": *a105
-        "404": *a105
-        "409": *a105
+        "401": *a109
+        "403": *a109
+        "404": *a109
+        "409": *a109
       operationId: proposeAlternativeOfficialSelection
       tags:
         - results
@@ -5753,12 +5927,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a106
+        "400": &a110
           $ref: "#/components/responses/ApiError"
-        "401": *a106
-        "403": *a106
-        "404": *a106
-        "409": *a106
+        "401": *a110
+        "403": *a110
+        "404": *a110
+        "409": *a110
       operationId: confirmOfficialSelection
       tags:
         - results
@@ -5816,12 +5990,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a107
+        "400": &a111
           $ref: "#/components/responses/ApiError"
-        "401": *a107
-        "403": *a107
-        "404": *a107
-        "409": *a107
+        "401": *a111
+        "403": *a111
+        "404": *a111
+        "409": *a111
       operationId: rejectOfficialSelection
       tags:
         - results
@@ -5869,9 +6043,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a108
+        "400": &a112
           $ref: "#/components/responses/ApiError"
-        "401": *a108
+        "401": *a112
         "402":
           description: The organization's plan does not include this action, or its
             monthly quota is used
@@ -5882,9 +6056,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a108
-        "404": *a108
-        "409": *a108
+        "403": *a112
+        "404": *a112
+        "409": *a112
       operationId: createOrganizationInvitation
       tags:
         - organizations
@@ -5914,11 +6088,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a109
+        "400": &a113
           $ref: "#/components/responses/ApiError"
-        "401": *a109
-        "403": *a109
-        "404": *a109
+        "401": *a113
+        "403": *a113
+        "404": *a113
       operationId: setOrganizationLogo
       tags:
         - organizations
@@ -6109,12 +6283,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a110
+        "400": &a114
           $ref: "#/components/responses/ApiError"
-        "401": *a110
-        "403": *a110
-        "404": *a110
-        "409": *a110
+        "401": *a114
+        "403": *a114
+        "404": *a114
+        "409": *a114
       operationId: listOrganizationMembers
       tags:
         - organizations
@@ -6146,7 +6320,7 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a111
+        "400": &a115
           $ref: "#/components/responses/ApiError"
         "402":
           description: The organization's plan does not include this action, or its
@@ -6158,9 +6332,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "403": *a111
-        "404": *a111
-        "409": *a111
+        "403": *a115
+        "404": *a115
+        "409": *a115
       operationId: changeOrganizationRole
       tags:
         - authorization
@@ -6190,11 +6364,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a112
+        "400": &a116
           $ref: "#/components/responses/ApiError"
-        "401": *a112
-        "403": *a112
-        "409": *a112
+        "401": *a116
+        "403": *a116
+        "409": *a116
       operationId: createOrganizationTeam
       tags:
         - teams
@@ -6248,9 +6422,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a113
+        "401": &a117
           $ref: "#/components/responses/ApiError"
-        "403": *a113
+        "403": *a117
       operationId: listOrganizationTeams
       tags:
         - teams
@@ -6279,11 +6453,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a114
+        "400": &a118
           $ref: "#/components/responses/ApiError"
-        "401": *a114
-        "403": *a114
-        "404": *a114
+        "401": *a118
+        "403": *a118
+        "404": *a118
       operationId: connectOrganizationTeamExternalClub
       tags:
         - teams
@@ -6317,9 +6491,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a115
+        "401": &a119
           $ref: "#/components/responses/ApiError"
-        "403": *a115
+        "403": *a119
       operationId: getOrganizationTeamExternalClub
       tags:
         - teams
@@ -6367,9 +6541,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a116
+        "400": &a120
           $ref: "#/components/responses/ApiError"
-        "401": *a116
+        "401": *a120
         "402":
           description: The organization's plan does not include this action, or its
             monthly quota is used
@@ -6380,8 +6554,8 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "404": *a116
-        "409": *a116
+        "404": *a120
+        "409": *a120
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptOrganizationInvitation
@@ -6491,9 +6665,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a117
+        "400": &a121
           $ref: "#/components/responses/ApiError"
-        "401": *a117
+        "401": *a121
       operationId: checkOrganizationNameAvailability
       tags:
         - organizations
@@ -6559,9 +6733,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a118
+        "400": &a122
           $ref: "#/components/responses/ApiError"
-        "401": *a118
+        "401": *a122
       operationId: checkOrganizationSlugAvailability
       tags:
         - organizations
@@ -6616,11 +6790,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a119
+        "400": &a123
           $ref: "#/components/responses/ApiError"
-        "401": *a119
-        "403": *a119
-        "404": *a119
+        "401": *a123
+        "403": *a123
+        "404": *a123
       operationId: setMyActiveTeam
       tags:
         - teams
@@ -6691,9 +6865,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a120
+        "400": &a124
           $ref: "#/components/responses/ApiError"
-        "401": *a120
+        "401": *a124
       operationId: listMyActivities
       tags:
         - notifications
@@ -6733,10 +6907,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a121
+        "400": &a125
           $ref: "#/components/responses/ApiError"
-        "401": *a121
-        "404": *a121
+        "401": *a125
+        "404": *a125
       operationId: associateMyPlayerExternalClub
       tags:
         - players
@@ -6761,9 +6935,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a122
+        "400": &a126
           $ref: "#/components/responses/ApiError"
-        "401": *a122
+        "401": *a126
       operationId: addMyPlayerGameAccount
       tags:
         - players
@@ -6796,11 +6970,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a123
+        "400": &a127
           $ref: "#/components/responses/ApiError"
-        "401": *a123
-        "404": *a123
-        "409": *a123
+        "401": *a127
+        "404": *a127
+        "409": *a127
       operationId: updateMyPlayerGameAccount
       tags:
         - players
@@ -6843,10 +7017,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a124
+        "400": &a128
           $ref: "#/components/responses/ApiError"
-        "401": *a124
-        "503": *a124
+        "401": *a128
+        "503": *a128
       operationId: getMyGameProfile
       tags:
         - players
@@ -6912,10 +7086,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a125
+        "400": &a129
           $ref: "#/components/responses/ApiError"
-        "401": *a125
-        "403": *a125
+        "401": *a129
+        "403": *a129
       operationId: getMyMatches
       tags:
         - players
@@ -6965,11 +7139,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a126
+        "400": &a130
           $ref: "#/components/responses/ApiError"
-        "401": *a126
-        "403": *a126
-        "502": *a126
+        "401": *a130
+        "403": *a130
+        "502": *a130
       operationId: getMyRecentMatches
       tags:
         - players
@@ -7011,12 +7185,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a127
+        "400": &a131
           $ref: "#/components/responses/ApiError"
-        "401": *a127
-        "403": *a127
-        "502": *a127
-        "503": *a127
+        "401": *a131
+        "403": *a131
+        "502": *a131
+        "503": *a131
       operationId: getMyRecentMatch
       tags:
         - players
@@ -7194,9 +7368,9 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "401": &a128
+        "401": &a132
           $ref: "#/components/responses/ApiError"
-        "403": *a128
+        "403": *a132
       operationId: getMyStatistics
       tags:
         - players
@@ -7221,120 +7395,6 @@ paths:
       summary: List roster memberships of the authenticated player
       parameters:
         - $ref: "#/components/parameters/RequestId"
-  /public/competitions/{publicKey}:
-    get:
-      parameters:
-        - $ref: "#/components/parameters/RequestId"
-        - schema:
-            type: string
-            minLength: 1
-            maxLength: 128
-          required: true
-          name: publicKey
-          in: path
-      responses:
-        "200":
-          description: Allowlisted portada fields
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GetPublicCompetitionResponse"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-        "404":
-          description: The key is unknown or the competition is not published
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-      operationId: getPublicCompetition
-      tags:
-        - public-portal
-      summary: Read the sanitized portada of a published competition
-      description: "Anonymous and shareable: no session or service credentials are
-        read. Successful responses send `Cache-Control: public, max-age=0,
-        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
-      security: []
-  /public/competitions/{publicKey}/calendar:
-    get:
-      parameters:
-        - $ref: "#/components/parameters/RequestId"
-        - schema:
-            type: string
-            minLength: 1
-            maxLength: 128
-          required: true
-          name: publicKey
-          in: path
-      responses:
-        "200":
-          description: Encounters with both teams known, earliest first
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GetPublicCalendarResponse"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-        "404":
-          description: The key is unknown or the competition is not published
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-      operationId: getPublicCalendar
-      tags:
-        - public-portal
-      summary: Read the calendar of a published competition
-      description: "Anonymous and shareable: no session or service credentials are
-        read. Successful responses send `Cache-Control: public, max-age=0,
-        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
-      security: []
-  /public/competitions/{publicKey}/standings:
-    get:
-      parameters:
-        - $ref: "#/components/parameters/RequestId"
-        - schema:
-            type: string
-            minLength: 1
-            maxLength: 128
-          required: true
-          name: publicKey
-          in: path
-      responses:
-        "200":
-          description: Table rows with team names; empty before the first approved result
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GetPublicStandingsResponse"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-        "404":
-          description: The key is unknown or the competition is not published
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-      operationId: getPublicStandings
-      tags:
-        - public-portal
-      summary: Read the official table of a published competition
-      description: "Anonymous and shareable: no session or service credentials are
-        read. Successful responses send `Cache-Control: public, max-age=0,
-        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
-      security: []
   /public/email/unsubscribe:
     post:
       responses:
@@ -7381,6 +7441,352 @@ paths:
                 - token
       parameters:
         - $ref: "#/components/parameters/RequestId"
+  /public/organizations/{organizationSlug}/competitions/{competitionKey}:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+          required: true
+          name: organizationSlug
+          in: path
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: competitionKey
+          in: path
+      responses:
+        "200":
+          description: Allowlisted portada fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicCompetitionResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The organization or competition is unknown, the competition belongs
+            to another organization, or it is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicCompetition
+      tags:
+        - public-portal
+      summary: Read the sanitized portada of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
+  /public/organizations/{organizationSlug}/competitions/{competitionKey}/bracket:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+          required: true
+          name: organizationSlug
+          in: path
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: competitionKey
+          in: path
+      responses:
+        "200":
+          description: Knockout and playoff stages; null without a fixture or an
+            elimination stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicBracketResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The organization or competition is unknown, the competition belongs
+            to another organization, or it is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicBracket
+      tags:
+        - public-portal
+      summary: Read the elimination bracket of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
+  /public/organizations/{organizationSlug}/competitions/{competitionKey}/calendar:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+          required: true
+          name: organizationSlug
+          in: path
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: competitionKey
+          in: path
+      responses:
+        "200":
+          description: Encounters with both teams known, earliest first, with the approved
+            goals per match
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicCalendarResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The organization or competition is unknown, the competition belongs
+            to another organization, or it is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicCalendar
+      tags:
+        - public-portal
+      summary: Read the calendar and official scores of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
+  /public/organizations/{organizationSlug}/competitions/{competitionKey}/rankings/{kind}:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+          required: true
+          name: organizationSlug
+          in: path
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: competitionKey
+          in: path
+        - schema:
+            type: string
+            enum:
+              - scorer
+              - assister
+              - rating
+              - mvp
+              - goalkeeper
+          required: true
+          name: kind
+          in: path
+      responses:
+        "200":
+          description: Players by their roster game account; empty before the first
+            projection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicRankingResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "400":
+          description: Unknown ranking kind
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The organization or competition is unknown, the competition belongs
+            to another organization, or it is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicRanking
+      tags:
+        - public-portal
+      summary: Read one official player ranking of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
+  /public/organizations/{organizationSlug}/competitions/{competitionKey}/rules:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+          required: true
+          name: organizationSlug
+          in: path
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: competitionKey
+          in: path
+      responses:
+        "200":
+          description: Format, team range and per-stage scoring; no approval workflow
+            settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicRulesResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The organization or competition is unknown, the competition belongs
+            to another organization, or it is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicRules
+      tags:
+        - public-portal
+      summary: Read the public rules of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
+  /public/organizations/{organizationSlug}/competitions/{competitionKey}/standings:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+          required: true
+          name: organizationSlug
+          in: path
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: competitionKey
+          in: path
+      responses:
+        "200":
+          description: Table rows with team names; empty before the first approved result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicStandingsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The organization or competition is unknown, the competition belongs
+            to another organization, or it is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicStandings
+      tags:
+        - public-portal
+      summary: Read the official table of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
+  /public/organizations/{organizationSlug}/competitions/{competitionKey}/teams:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+          required: true
+          name: organizationSlug
+          in: path
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          required: true
+          name: competitionKey
+          in: path
+      responses:
+        "200":
+          description: Team names, alphabetical
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicTeamsResponse"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+        "404":
+          description: The organization or competition is unknown, the competition belongs
+            to another organization, or it is not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+      operationId: getPublicTeams
+      tags:
+        - public-portal
+      summary: List the approved teams of a published competition
+      description: "Anonymous and shareable: no session or service credentials are
+        read. Successful responses send `Cache-Control: public, max-age=0,
+        s-maxage=30, stale-while-revalidate=60`; errors are `no-store`."
+      security: []
   /public/plans:
     get:
       responses:
@@ -7476,12 +7882,12 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a129
+        "400": &a133
           $ref: "#/components/responses/ApiError"
-        "401": *a129
-        "403": *a129
-        "404": *a129
-        "409": *a129
+        "401": *a133
+        "403": *a133
+        "404": *a133
+        "409": *a133
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: respondToRosterInvitation
@@ -7515,11 +7921,11 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
-        "400": &a130
+        "400": &a134
           $ref: "#/components/responses/ApiError"
-        "401": *a130
-        "404": *a130
-        "409": *a130
+        "401": *a134
+        "404": *a134
+        "409": *a134
         "429":
           $ref: "#/components/responses/RateLimited"
       operationId: acceptRosterInvitation
@@ -9322,6 +9728,101 @@ components:
         - maxRosterSize
         - rankingEligibility
         - createdAt
+    CompetitionSanction:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        competitionId:
+          type: string
+          minLength: 1
+        targetType:
+          type: string
+          enum:
+            - team
+            - player
+        teamId:
+          type: string
+          minLength: 1
+        teamName:
+          type:
+            - string
+            - "null"
+        playerProfileId:
+          type:
+            - string
+            - "null"
+        playerName:
+          type:
+            - string
+            - "null"
+        type:
+          type: string
+          enum:
+            - warning
+            - points_deduction
+            - match_suspension
+            - administrative_defeat
+        pointsDeducted:
+          type:
+            - integer
+            - "null"
+        suspensionMatches:
+          type:
+            - integer
+            - "null"
+        encounterId:
+          type:
+            - string
+            - "null"
+        reason:
+          type: string
+        imposedByActorId:
+          type: string
+          minLength: 1
+        imposedAt:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+        revocation:
+          type:
+            - object
+            - "null"
+          properties:
+            actorId:
+              type: string
+              minLength: 1
+            revokedAt:
+              type: string
+              format: date-time
+            reason:
+              type: string
+            requestId:
+              type: string
+          required:
+            - actorId
+            - revokedAt
+            - reason
+            - requestId
+      required:
+        - id
+        - competitionId
+        - targetType
+        - teamId
+        - teamName
+        - playerProfileId
+        - playerName
+        - type
+        - pointsDeducted
+        - suspensionMatches
+        - encounterId
+        - reason
+        - imposedByActorId
+        - imposedAt
+        - requestId
+        - revocation
     CompetitionSchedule:
       type: object
       properties:
@@ -9369,6 +9870,9 @@ components:
           type: integer
         points:
           type: integer
+        pointsDeducted:
+          type: integer
+          minimum: 0
         form:
           type: array
           items:
@@ -9383,7 +9887,6 @@ components:
           properties:
             buchholz:
               type: integer
-              minimum: 0
             byes:
               type: integer
               minimum: 0
@@ -9452,6 +9955,9 @@ components:
                 type: integer
               points:
                 type: integer
+              pointsDeducted:
+                type: integer
+                minimum: 0
               form:
                 type: array
                 items:
@@ -9466,7 +9972,6 @@ components:
                 properties:
                   buchholz:
                     type: integer
-                    minimum: 0
                   byes:
                     type: integer
                     minimum: 0
@@ -13187,6 +13692,9 @@ components:
                     type: integer
                   points:
                     type: integer
+                  pointsDeducted:
+                    type: integer
+                    minimum: 0
                   form:
                     type: array
                     items:
@@ -13201,7 +13709,6 @@ components:
                     properties:
                       buchholz:
                         type: integer
-                        minimum: 0
                       byes:
                         type: integer
                         minimum: 0
@@ -16590,6 +17097,265 @@ components:
         - recentChanges
         - pendingRequest
       additionalProperties: false
+    GetPublicBracketResponse:
+      type: object
+      properties:
+        bracket:
+          type:
+            - object
+            - "null"
+          properties:
+            timeZone:
+              type: string
+            stages:
+              type: array
+              items:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    enum:
+                      - knockout
+                      - playoffs
+                  rounds:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        number:
+                          type: integer
+                          exclusiveMinimum: 0
+                        scheduledStartAt:
+                          type: string
+                          format: date-time
+                        encounters:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              order:
+                                type: integer
+                                exclusiveMinimum: 0
+                              scheduledStartAt:
+                                type: string
+                                format: date-time
+                              officialMatchCount:
+                                anyOf:
+                                  - type: number
+                                    enum:
+                                      - 1
+                                  - type: number
+                                    enum:
+                                      - 2
+                              home:
+                                oneOf:
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - team
+                                      name:
+                                        type: string
+                                    required:
+                                      - kind
+                                      - name
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - bye
+                                    required:
+                                      - kind
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - winner
+                                      roundNumber:
+                                        type: integer
+                                        exclusiveMinimum: 0
+                                      order:
+                                        type: integer
+                                        exclusiveMinimum: 0
+                                    required:
+                                      - kind
+                                      - roundNumber
+                                      - order
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - group_rank
+                                      group:
+                                        type: string
+                                        pattern: ^[A-Z]$
+                                      rank:
+                                        type: integer
+                                        exclusiveMinimum: 0
+                                    required:
+                                      - kind
+                                      - group
+                                      - rank
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - stage_rank
+                                      rank:
+                                        type: integer
+                                        exclusiveMinimum: 0
+                                    required:
+                                      - kind
+                                      - rank
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - pending
+                                    required:
+                                      - kind
+                                    additionalProperties: false
+                              away:
+                                oneOf:
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - team
+                                      name:
+                                        type: string
+                                    required:
+                                      - kind
+                                      - name
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - bye
+                                    required:
+                                      - kind
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - winner
+                                      roundNumber:
+                                        type: integer
+                                        exclusiveMinimum: 0
+                                      order:
+                                        type: integer
+                                        exclusiveMinimum: 0
+                                    required:
+                                      - kind
+                                      - roundNumber
+                                      - order
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - group_rank
+                                      group:
+                                        type: string
+                                        pattern: ^[A-Z]$
+                                      rank:
+                                        type: integer
+                                        exclusiveMinimum: 0
+                                    required:
+                                      - kind
+                                      - group
+                                      - rank
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - stage_rank
+                                      rank:
+                                        type: integer
+                                        exclusiveMinimum: 0
+                                    required:
+                                      - kind
+                                      - rank
+                                    additionalProperties: false
+                                  - type: object
+                                    properties:
+                                      kind:
+                                        type: string
+                                        enum:
+                                          - pending
+                                    required:
+                                      - kind
+                                    additionalProperties: false
+                              status:
+                                type: string
+                                enum:
+                                  - scheduled
+                                  - awaiting_result
+                                  - official
+                                  - closed
+                              score:
+                                type:
+                                  - array
+                                  - "null"
+                                items:
+                                  type: object
+                                  properties:
+                                    homeGoals:
+                                      type: integer
+                                      minimum: 0
+                                    awayGoals:
+                                      type: integer
+                                      minimum: 0
+                                  required:
+                                    - homeGoals
+                                    - awayGoals
+                                  additionalProperties: false
+                                minItems: 1
+                                maxItems: 2
+                            required:
+                              - order
+                              - scheduledStartAt
+                              - officialMatchCount
+                              - home
+                              - away
+                              - status
+                              - score
+                            additionalProperties: false
+                      required:
+                        - number
+                        - scheduledStartAt
+                        - encounters
+                      additionalProperties: false
+                required:
+                  - kind
+                  - rounds
+                additionalProperties: false
+          required:
+            - timeZone
+            - stages
+          additionalProperties: false
+      required:
+        - bracket
+      additionalProperties: false
     GetPublicCalendarResponse:
       type: object
       properties:
@@ -16619,12 +17385,32 @@ components:
                       - scheduled
                       - awaiting_result
                       - official
+                  score:
+                    type:
+                      - array
+                      - "null"
+                    items:
+                      type: object
+                      properties:
+                        homeGoals:
+                          type: integer
+                          minimum: 0
+                        awayGoals:
+                          type: integer
+                          minimum: 0
+                      required:
+                        - homeGoals
+                        - awayGoals
+                      additionalProperties: false
+                    minItems: 1
+                    maxItems: 2
                 required:
                   - roundNumber
                   - scheduledStartAt
                   - homeTeamName
                   - awayTeamName
                   - status
+                  - score
                 additionalProperties: false
           required:
             - timeZone
@@ -16722,6 +17508,172 @@ components:
       required:
         - competition
       additionalProperties: false
+    GetPublicRankingResponse:
+      type: object
+      properties:
+        ranking:
+          type: object
+          properties:
+            kind:
+              type: string
+              enum:
+                - scorer
+                - assister
+                - rating
+                - mvp
+                - goalkeeper
+            rows:
+              type: array
+              items:
+                type: object
+                properties:
+                  position:
+                    type: integer
+                    exclusiveMinimum: 0
+                  playerName:
+                    type: string
+                  teamName:
+                    type:
+                      - string
+                      - "null"
+                  value:
+                    type: number
+                  matchesPlayed:
+                    type: integer
+                    minimum: 0
+                required:
+                  - position
+                  - playerName
+                  - teamName
+                  - value
+                  - matchesPlayed
+                additionalProperties: false
+            updatedAt:
+              type:
+                - string
+                - "null"
+              format: date-time
+          required:
+            - kind
+            - rows
+            - updatedAt
+          additionalProperties: false
+      required:
+        - ranking
+      additionalProperties: false
+    GetPublicRulesResponse:
+      type: object
+      properties:
+        rules:
+          type: object
+          properties:
+            format:
+              type: string
+              enum:
+                - league
+                - knockout
+                - groups-knockout
+                - league-playoffs
+                - swiss
+            teams:
+              type:
+                - object
+                - "null"
+              properties:
+                min:
+                  type: integer
+                  exclusiveMinimum: 0
+                max:
+                  type:
+                    - integer
+                    - "null"
+                  exclusiveMinimum: 0
+              required:
+                - min
+                - max
+              additionalProperties: false
+            stages:
+              type: array
+              items:
+                type: object
+                properties:
+                  stage:
+                    type: string
+                    enum:
+                      - regular
+                      - knockout
+                  winPoints:
+                    type: number
+                  drawPoints:
+                    type: number
+                  lossPoints:
+                    type: number
+                  officialMatchesPerEncounter:
+                    anyOf:
+                      - type: number
+                        enum:
+                          - 1
+                      - type: number
+                        enum:
+                          - 2
+                  resolutionMode:
+                    type: string
+                    enum:
+                      - independent_matches
+                      - aggregate_score
+                  rescheduling:
+                    oneOf:
+                      - type: object
+                        properties:
+                          allowed:
+                            type: boolean
+                            enum:
+                              - false
+                        required:
+                          - allowed
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          allowed:
+                            type: boolean
+                            enum:
+                              - true
+                          maxPerTeam:
+                            type:
+                              - integer
+                              - "null"
+                            minimum: 0
+                          minimumNoticeHours:
+                            type: integer
+                            minimum: 0
+                        required:
+                          - allowed
+                          - maxPerTeam
+                          - minimumNoticeHours
+                        additionalProperties: false
+                required:
+                  - stage
+                  - winPoints
+                  - drawPoints
+                  - lossPoints
+                  - officialMatchesPerEncounter
+                  - resolutionMode
+                  - rescheduling
+                additionalProperties: false
+            maxRosterSize:
+              type:
+                - integer
+                - "null"
+              exclusiveMinimum: 0
+          required:
+            - format
+            - teams
+            - stages
+            - maxRosterSize
+          additionalProperties: false
+      required:
+        - rules
+      additionalProperties: false
     GetPublicStandingsResponse:
       type: object
       properties:
@@ -16771,7 +17723,6 @@ components:
                     maxItems: 5
                   buchholz:
                     type: integer
-                    minimum: 0
                   byes:
                     type: integer
                     minimum: 0
@@ -16826,6 +17777,22 @@ components:
           additionalProperties: false
       required:
         - standings
+      additionalProperties: false
+    GetPublicTeamsResponse:
+      type: object
+      properties:
+        teams:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+            required:
+              - name
+            additionalProperties: false
+      required:
+        - teams
       additionalProperties: false
     GetTeamExternalClubResponse:
       type:
@@ -17172,6 +18139,63 @@ components:
         - service
         - apiVersion
         - db
+    ImposeSanctionRequest:
+      type: object
+      properties:
+        target:
+          oneOf:
+            - type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - team
+                teamId:
+                  type: string
+                  minLength: 1
+              required:
+                - type
+                - teamId
+            - type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - player
+                playerProfileId:
+                  type: string
+                  minLength: 1
+              required:
+                - type
+                - playerProfileId
+        type:
+          type: string
+          enum:
+            - warning
+            - points_deduction
+            - match_suspension
+            - administrative_defeat
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+        pointsDeducted:
+          type:
+            - integer
+            - "null"
+        suspensionMatches:
+          type:
+            - integer
+            - "null"
+        encounterId:
+          type:
+            - string
+            - "null"
+          minLength: 1
+      required:
+        - target
+        - type
+        - reason
     InspectCompetitionInvitationResponse:
       type: object
       properties:
@@ -17463,6 +18487,8 @@ components:
                       - schedule_set
                       - schedule_kept
                       - walkover_intended
+                      - sanction_imposed
+                      - sanction_revoked
                       - null
                 required:
                   - competitionName
@@ -17707,6 +18733,108 @@ components:
       required:
         - competition
         - encounters
+    ListCompetitionSanctionsResponse:
+      type: object
+      properties:
+        sanctions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              competitionId:
+                type: string
+                minLength: 1
+              targetType:
+                type: string
+                enum:
+                  - team
+                  - player
+              teamId:
+                type: string
+                minLength: 1
+              teamName:
+                type:
+                  - string
+                  - "null"
+              playerProfileId:
+                type:
+                  - string
+                  - "null"
+              playerName:
+                type:
+                  - string
+                  - "null"
+              type:
+                type: string
+                enum:
+                  - warning
+                  - points_deduction
+                  - match_suspension
+                  - administrative_defeat
+              pointsDeducted:
+                type:
+                  - integer
+                  - "null"
+              suspensionMatches:
+                type:
+                  - integer
+                  - "null"
+              encounterId:
+                type:
+                  - string
+                  - "null"
+              reason:
+                type: string
+              imposedByActorId:
+                type: string
+                minLength: 1
+              imposedAt:
+                type: string
+                format: date-time
+              requestId:
+                type: string
+              revocation:
+                type:
+                  - object
+                  - "null"
+                properties:
+                  actorId:
+                    type: string
+                    minLength: 1
+                  revokedAt:
+                    type: string
+                    format: date-time
+                  reason:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                  - actorId
+                  - revokedAt
+                  - reason
+                  - requestId
+            required:
+              - id
+              - competitionId
+              - targetType
+              - teamId
+              - teamName
+              - playerProfileId
+              - playerName
+              - type
+              - pointsDeducted
+              - suspensionMatches
+              - encounterId
+              - reason
+              - imposedByActorId
+              - imposedAt
+              - requestId
+              - revocation
+      required:
+        - sanctions
     ListEncounterCandidatesResponse:
       oneOf:
         - type: object
@@ -22012,6 +23140,535 @@ components:
         - availableAt
         - leaseExpiresAt
         - updatedAt
+    PublicBracketEncounter:
+      type: object
+      properties:
+        order:
+          type: integer
+          exclusiveMinimum: 0
+        scheduledStartAt:
+          type: string
+          format: date-time
+        officialMatchCount:
+          anyOf:
+            - type: number
+              enum:
+                - 1
+            - type: number
+              enum:
+                - 2
+        home:
+          oneOf:
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - team
+                name:
+                  type: string
+              required:
+                - kind
+                - name
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - bye
+              required:
+                - kind
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - winner
+                roundNumber:
+                  type: integer
+                  exclusiveMinimum: 0
+                order:
+                  type: integer
+                  exclusiveMinimum: 0
+              required:
+                - kind
+                - roundNumber
+                - order
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - group_rank
+                group:
+                  type: string
+                  pattern: ^[A-Z]$
+                rank:
+                  type: integer
+                  exclusiveMinimum: 0
+              required:
+                - kind
+                - group
+                - rank
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - stage_rank
+                rank:
+                  type: integer
+                  exclusiveMinimum: 0
+              required:
+                - kind
+                - rank
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - pending
+              required:
+                - kind
+              additionalProperties: false
+        away:
+          oneOf:
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - team
+                name:
+                  type: string
+              required:
+                - kind
+                - name
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - bye
+              required:
+                - kind
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - winner
+                roundNumber:
+                  type: integer
+                  exclusiveMinimum: 0
+                order:
+                  type: integer
+                  exclusiveMinimum: 0
+              required:
+                - kind
+                - roundNumber
+                - order
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - group_rank
+                group:
+                  type: string
+                  pattern: ^[A-Z]$
+                rank:
+                  type: integer
+                  exclusiveMinimum: 0
+              required:
+                - kind
+                - group
+                - rank
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - stage_rank
+                rank:
+                  type: integer
+                  exclusiveMinimum: 0
+              required:
+                - kind
+                - rank
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - pending
+              required:
+                - kind
+              additionalProperties: false
+        status:
+          type: string
+          enum:
+            - scheduled
+            - awaiting_result
+            - official
+            - closed
+        score:
+          type:
+            - array
+            - "null"
+          items:
+            type: object
+            properties:
+              homeGoals:
+                type: integer
+                minimum: 0
+              awayGoals:
+                type: integer
+                minimum: 0
+            required:
+              - homeGoals
+              - awayGoals
+            additionalProperties: false
+          minItems: 1
+          maxItems: 2
+      required:
+        - order
+        - scheduledStartAt
+        - officialMatchCount
+        - home
+        - away
+        - status
+        - score
+      additionalProperties: false
+    PublicBracketSide:
+      oneOf:
+        - type: object
+          properties:
+            kind:
+              type: string
+              enum:
+                - team
+            name:
+              type: string
+          required:
+            - kind
+            - name
+          additionalProperties: false
+        - type: object
+          properties:
+            kind:
+              type: string
+              enum:
+                - bye
+          required:
+            - kind
+          additionalProperties: false
+        - type: object
+          properties:
+            kind:
+              type: string
+              enum:
+                - winner
+            roundNumber:
+              type: integer
+              exclusiveMinimum: 0
+            order:
+              type: integer
+              exclusiveMinimum: 0
+          required:
+            - kind
+            - roundNumber
+            - order
+          additionalProperties: false
+        - type: object
+          properties:
+            kind:
+              type: string
+              enum:
+                - group_rank
+            group:
+              type: string
+              pattern: ^[A-Z]$
+            rank:
+              type: integer
+              exclusiveMinimum: 0
+          required:
+            - kind
+            - group
+            - rank
+          additionalProperties: false
+        - type: object
+          properties:
+            kind:
+              type: string
+              enum:
+                - stage_rank
+            rank:
+              type: integer
+              exclusiveMinimum: 0
+          required:
+            - kind
+            - rank
+          additionalProperties: false
+        - type: object
+          properties:
+            kind:
+              type: string
+              enum:
+                - pending
+          required:
+            - kind
+          additionalProperties: false
+    PublicBracketStage:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - knockout
+            - playoffs
+        rounds:
+          type: array
+          items:
+            type: object
+            properties:
+              number:
+                type: integer
+                exclusiveMinimum: 0
+              scheduledStartAt:
+                type: string
+                format: date-time
+              encounters:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    order:
+                      type: integer
+                      exclusiveMinimum: 0
+                    scheduledStartAt:
+                      type: string
+                      format: date-time
+                    officialMatchCount:
+                      anyOf:
+                        - type: number
+                          enum:
+                            - 1
+                        - type: number
+                          enum:
+                            - 2
+                    home:
+                      oneOf:
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - team
+                            name:
+                              type: string
+                          required:
+                            - kind
+                            - name
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - bye
+                          required:
+                            - kind
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - winner
+                            roundNumber:
+                              type: integer
+                              exclusiveMinimum: 0
+                            order:
+                              type: integer
+                              exclusiveMinimum: 0
+                          required:
+                            - kind
+                            - roundNumber
+                            - order
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - group_rank
+                            group:
+                              type: string
+                              pattern: ^[A-Z]$
+                            rank:
+                              type: integer
+                              exclusiveMinimum: 0
+                          required:
+                            - kind
+                            - group
+                            - rank
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - stage_rank
+                            rank:
+                              type: integer
+                              exclusiveMinimum: 0
+                          required:
+                            - kind
+                            - rank
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - pending
+                          required:
+                            - kind
+                          additionalProperties: false
+                    away:
+                      oneOf:
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - team
+                            name:
+                              type: string
+                          required:
+                            - kind
+                            - name
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - bye
+                          required:
+                            - kind
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - winner
+                            roundNumber:
+                              type: integer
+                              exclusiveMinimum: 0
+                            order:
+                              type: integer
+                              exclusiveMinimum: 0
+                          required:
+                            - kind
+                            - roundNumber
+                            - order
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - group_rank
+                            group:
+                              type: string
+                              pattern: ^[A-Z]$
+                            rank:
+                              type: integer
+                              exclusiveMinimum: 0
+                          required:
+                            - kind
+                            - group
+                            - rank
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - stage_rank
+                            rank:
+                              type: integer
+                              exclusiveMinimum: 0
+                          required:
+                            - kind
+                            - rank
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - pending
+                          required:
+                            - kind
+                          additionalProperties: false
+                    status:
+                      type: string
+                      enum:
+                        - scheduled
+                        - awaiting_result
+                        - official
+                        - closed
+                    score:
+                      type:
+                        - array
+                        - "null"
+                      items:
+                        type: object
+                        properties:
+                          homeGoals:
+                            type: integer
+                            minimum: 0
+                          awayGoals:
+                            type: integer
+                            minimum: 0
+                        required:
+                          - homeGoals
+                          - awayGoals
+                        additionalProperties: false
+                      minItems: 1
+                      maxItems: 2
+                  required:
+                    - order
+                    - scheduledStartAt
+                    - officialMatchCount
+                    - home
+                    - away
+                    - status
+                    - score
+                  additionalProperties: false
+            required:
+              - number
+              - scheduledStartAt
+              - encounters
+            additionalProperties: false
+      required:
+        - kind
+        - rounds
+      additionalProperties: false
     PublicCalendarEntry:
       type: object
       properties:
@@ -22031,12 +23688,32 @@ components:
             - scheduled
             - awaiting_result
             - official
+        score:
+          type:
+            - array
+            - "null"
+          items:
+            type: object
+            properties:
+              homeGoals:
+                type: integer
+                minimum: 0
+              awayGoals:
+                type: integer
+                minimum: 0
+            required:
+              - homeGoals
+              - awayGoals
+            additionalProperties: false
+          minItems: 1
+          maxItems: 2
       required:
         - roundNumber
         - scheduledStartAt
         - homeTeamName
         - awayTeamName
         - status
+        - score
       additionalProperties: false
     PublicCompetition:
       type: object
@@ -22168,6 +23845,85 @@ components:
           required:
             - state
             - reason
+    PublicMatchScore:
+      type: object
+      properties:
+        homeGoals:
+          type: integer
+          minimum: 0
+        awayGoals:
+          type: integer
+          minimum: 0
+      required:
+        - homeGoals
+        - awayGoals
+      additionalProperties: false
+    PublicStageRules:
+      type: object
+      properties:
+        stage:
+          type: string
+          enum:
+            - regular
+            - knockout
+        winPoints:
+          type: number
+        drawPoints:
+          type: number
+        lossPoints:
+          type: number
+        officialMatchesPerEncounter:
+          anyOf:
+            - type: number
+              enum:
+                - 1
+            - type: number
+              enum:
+                - 2
+        resolutionMode:
+          type: string
+          enum:
+            - independent_matches
+            - aggregate_score
+        rescheduling:
+          oneOf:
+            - type: object
+              properties:
+                allowed:
+                  type: boolean
+                  enum:
+                    - false
+              required:
+                - allowed
+              additionalProperties: false
+            - type: object
+              properties:
+                allowed:
+                  type: boolean
+                  enum:
+                    - true
+                maxPerTeam:
+                  type:
+                    - integer
+                    - "null"
+                  minimum: 0
+                minimumNoticeHours:
+                  type: integer
+                  minimum: 0
+              required:
+                - allowed
+                - maxPerTeam
+                - minimumNoticeHours
+              additionalProperties: false
+      required:
+        - stage
+        - winPoints
+        - drawPoints
+        - lossPoints
+        - officialMatchesPerEncounter
+        - resolutionMode
+        - rescheduling
+      additionalProperties: false
     PublicStandingRow:
       type: object
       properties:
@@ -22209,7 +23965,6 @@ components:
           maxItems: 5
         buchholz:
           type: integer
-          minimum: 0
         byes:
           type: integer
           minimum: 0
@@ -22726,6 +24481,15 @@ components:
       required:
         - expectedVersion
         - commandKey
+        - reason
+    RevokeSanctionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+      required:
         - reason
     RosterInvitationInboxItem:
       type: object
@@ -24861,7 +26625,7 @@ components:
     ApiError:
       description: API error
       headers:
-        X-Request-ID: &a131
+        X-Request-ID: &a135
           $ref: "#/components/headers/RequestId"
       content:
         application/json:
@@ -24870,7 +26634,7 @@ components:
     RateLimited:
       description: Rate limit exceeded
       headers:
-        X-Request-ID: *a131
+        X-Request-ID: *a135
         Retry-After:
           $ref: "#/components/headers/RetryAfter"
       content:

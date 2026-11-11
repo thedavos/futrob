@@ -24,7 +24,7 @@ function requestEmailJson<T>(input: {
   });
 }
 
-/** Email channel settings through the web BFF (ADR-0029). */
+/** Email channel settings through the web BFF (ADR-0030). */
 export const emailBrowserClient = {
   getPreferences(): Promise<EmailPreferencesDto> {
     return requestEmailJson({

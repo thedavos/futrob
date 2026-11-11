@@ -1,4 +1,10 @@
-import type { ActorId, CompetitionId, EncounterId, OrganizationId } from "@futrob/shared-kernel";
+import type {
+  ActorId,
+  CompetitionId,
+  EncounterId,
+  OrganizationId,
+  TeamId,
+} from "@futrob/shared-kernel";
 import type { ExternalReference, ProviderPlayerMatchStats } from "@futrob/game-data";
 
 export type OfficialResultStatus = "approved" | "voided";
@@ -17,6 +23,13 @@ export interface OfficialResultSlotSnapshot {
   readonly gameEdition: string;
   readonly platform: string;
   readonly players: readonly ProviderPlayerMatchStats[];
+  /**
+   * Team each provider side's club stood for when the result was approved, so later
+   * re-links of ExternalClubConnections cannot reinterpret it. Null when the club was not
+   * connected to either Encounter team; absent on rows that predate it.
+   */
+  readonly homeTeamId?: TeamId | null;
+  readonly awayTeamId?: TeamId | null;
 }
 
 export interface OfficialResult {

@@ -1,7 +1,7 @@
 import { authSessionListSchema, type AuthSession } from "@futrob/sdk";
 import { AUTH_BASE_URL, AUTH_ORIGIN } from "@/config/env";
 import { z } from "zod";
-import { getSession, saveSession } from "@/modules/identity/session-store";
+import { getSession, replaceSessionTokenIfCurrent } from "@/modules/identity/session-store";
 
 /**
  * Better Auth account endpoints (`/api/auth/*`) called with this device's bearer. Revoking a
@@ -71,16 +71,15 @@ export async function changeAccountPassword(input: {
   currentPassword: string;
   newPassword: string;
 }): Promise<void> {
-  const { payload } = await callAuth("/change-password", {
+  const { payload, token } = await callAuth("/change-password", {
     method: "POST",
     body: { ...input, revokeOtherSessions: true },
   });
   // Revoking the other sessions also replaces this one; keep the new bearer or the next call
-  // would sign this device out too.
+  // would sign this device out too. Only the session that sent the request may take it.
   const parsed = changePasswordResponseSchema.safeParse(payload);
-  const session = await getSession();
-  if (parsed.success && parsed.data.token && session) {
-    await saveSession({ ...session, token: parsed.data.token });
+  if (parsed.success && parsed.data.token) {
+    await replaceSessionTokenIfCurrent(token, parsed.data.token);
   }
 }
 

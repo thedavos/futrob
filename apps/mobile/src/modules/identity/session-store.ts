@@ -143,6 +143,28 @@ export function clearSessionIfCurrent(token: string): Promise<boolean> {
   });
 }
 
+/**
+ * Swaps the stored bearer for `nextToken` only if the session still holds `previousToken`.
+ * A rotation answered after a sign-out or account switch must not graft one account's bearer
+ * onto another account's identity.
+ */
+export function replaceSessionTokenIfCurrent(
+  previousToken: string,
+  nextToken: string,
+): Promise<boolean> {
+  return serializeWrite(async () => {
+    if ((await credentials.getItemAsync(TOKEN_KEY)) !== previousToken) return false;
+    try {
+      await credentials.setItemAsync(TOKEN_KEY, nextToken);
+    } catch (cause) {
+      await removeCredentials();
+      throw cause;
+    }
+    startGeneration();
+    return true;
+  });
+}
+
 export const SESSION_STORE_KEYS = {
   token: TOKEN_KEY,
   user: USER_KEY,

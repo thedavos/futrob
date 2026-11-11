@@ -86,49 +86,51 @@ npm run cli -- e2e-golden-path --actor <actorId>
 
 ### Integración (requieren `npm run dev`)
 
-| Comando                                                    | Descripción                                                                 |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `api-health`                                               | `GET /meta/health` (estado API + DB: `ok` / `skipped` / `error`)            |
-| `org-name-check <name>`                                    | Disponibilidad de nombre de organización                                    |
-| `org-create <name> [--slug s] [--time-zone tz]`            | Crea organización (zona por defecto `UTC`)                                  |
-| `org-slug-check <slug> [--org id]`                         | Disponibilidad de slug, con sugerencia                                      |
-| `org-profile <orgId>`                                      | Perfil: nombre, slug, zona horaria y escudo                                 |
-| `org-mine`                                                 | Membresías del actor                                                        |
-| `org-invite <orgId> <email> [--role role]`                 | Invitación staff de organización                                            |
-| `onboarding-status`                                        | Estado de onboarding del actor                                              |
-| `account-deletion-status`                                  | Estado de eliminación de la cuenta: fecha y bloqueos                        |
-| `account-deletion-request`                                 | Programa la eliminación; contraseña en `FUTROB_ACCOUNT_PASSWORD`            |
-| `account-deletion-cancel`                                  | Cancela la eliminación durante el plazo                                     |
-| `comp-create <orgId> <name>`                               | Draft de competición (`--edition --platform --region --tz --format`)        |
-| `comp-list <orgId>` / `comp-show <orgId> <compId>`         | Listar / ver draft                                                          |
-| `comp-publish <orgId> <compId>`                            | Publica la competición                                                      |
-| `comp-registration-open <orgId> <compId>`                  | Abre inscripciones (`draft → registration`; formato y reglas se congelan)   |
-| `comp-registration-close <orgId> <compId>`                 | Cierra inscripciones y vuelve a borrador; conserva las inscripciones        |
-| `comp-apply <competitionId> <teamName> [--key k]`          | Postula un equipo nuevo (queda `pending`; el actor es capitán)              |
-| `comp-application <competitionId>`                         | Muestra la solicitud del actor en esa competición                           |
-| `comp-invite-team <orgId> <compId> <actorId> <label>`      | Invita a un jugador a ser capitán de un equipo nuevo                        |
-| `comp-invite-link <orgId> <compId> [--regenerate]`         | Obtiene o regenera el enlace compartible de inscripción                     |
-| `entry-invite-accept <teamName> (--id id \| --code code)`  | Acepta una invitación y crea el equipo aprobado                             |
-| `comp-explore` / `comp-explore-show <id>`                  | Catálogo autenticado de competiciones publicadas                            |
-| `participant-add/list`                                     | Participantes de competición                                                |
-| `entry-register/approve/reject`                            | Ciclo de entries de equipos                                                 |
-| `standings <orgId> <compId>`                               | Tabla de posiciones                                                         |
-| `team-create/team-list`                                    | Equipos de la organización                                                  |
-| `roster-list/add/close/open`                               | Roster por competición                                                      |
-| `club-link <orgId> <compId> <teamId> <clubId> <clubName>`  | Vincula club EA al equipo                                                   |
-| `fixture-generate/current/show`                            | Genera y consulta el fixture actual o uno por id (`--rounds N` para suizo)  |
-| `swiss-withdraw <orgId> <compId> <planId> <teamId>`        | Retira un equipo de un fixture suizo (`--reason`, `--request-id`)           |
-| `swiss-close-round <orgId> <compId> <planId> <ronda>`      | Cierra sin resultado lo no jugado de la ronda actual (`--reason`)           |
-| `snapshot-set <encounterId ...>`                           | Upsert de schedule snapshot                                                 |
-| `club-search/get/matches`                                  | Clubes EA vía game-data                                                     |
-| `sync-job-enqueue/run/run-next`                            | Jobs de sincronización EA (endpoints internos)                              |
-| `provider-health [providerKey]`                            | Salud del proveedor (circuit breaker)                                       |
-| `plans`, `org-plan`, `org-entitlements <orgId>`            | Catálogo, plan efectivo con uso y entitlements (ADR-0025)                   |
-| `org-plan-assign <orgId> <plan> --reason "..."`            | Asignación manual de plan por superusuario, auditada                        |
-| `billing-smoke --actor <org> --superuser <su>`             | Gratis: cupo de sync, dedupe sin consumo, 2.ª competición; luego Pro        |
-| `player-me`, `my-stats`, `my-matches`, `my-next-encounter` | Perfil, estadísticas personales y próximo enfrentamiento                    |
-| `e2e-golden-path`                                          | Flujo completo: ping → org → draft → team ×2 → entry ×2 → publish → fixture |
-| `e2e-golden-path --format swiss --superuser <id>`          | Igual con 4 equipos y suizo; el superusuario asigna Pro a la organización   |
+| Comando                                                     | Descripción                                                                 |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `api-health`                                                | `GET /meta/health` (estado API + DB: `ok` / `skipped` / `error`)            |
+| `org-name-check <name>`                                     | Disponibilidad de nombre de organización                                    |
+| `org-create <name> [--slug s] [--time-zone tz]`             | Crea organización (zona por defecto `UTC`)                                  |
+| `org-slug-check <slug> [--org id]`                          | Disponibilidad de slug, con sugerencia                                      |
+| `org-profile <orgId>`                                       | Perfil: nombre, slug, zona horaria y escudo                                 |
+| `org-mine`                                                  | Membresías del actor                                                        |
+| `org-invite <orgId> <email> [--role role]`                  | Invitación staff de organización                                            |
+| `onboarding-status`                                         | Estado de onboarding del actor                                              |
+| `account-deletion-status`                                   | Estado de eliminación de la cuenta: fecha y bloqueos                        |
+| `account-deletion-request`                                  | Programa la eliminación; contraseña en `FUTROB_ACCOUNT_PASSWORD`            |
+| `account-deletion-cancel`                                   | Cancela la eliminación durante el plazo                                     |
+| `comp-create <orgId> <name>`                                | Draft de competición (`--edition --platform --region --tz --format`)        |
+| `comp-list <orgId>` / `comp-show <orgId> <compId>`          | Listar / ver draft                                                          |
+| `comp-publish <orgId> <compId>`                             | Publica la competición                                                      |
+| `comp-registration-open <orgId> <compId>`                   | Abre inscripciones (`draft → registration`; formato y reglas se congelan)   |
+| `comp-registration-close <orgId> <compId>`                  | Cierra inscripciones y vuelve a borrador; conserva las inscripciones        |
+| `comp-apply <competitionId> <teamName> [--key k]`           | Postula un equipo nuevo (queda `pending`; el actor es capitán)              |
+| `comp-application <competitionId>`                          | Muestra la solicitud del actor en esa competición                           |
+| `comp-invite-team <orgId> <compId> <actorId> <label>`       | Invita a un jugador a ser capitán de un equipo nuevo                        |
+| `comp-invite-link <orgId> <compId> [--regenerate]`          | Obtiene o regenera el enlace compartible de inscripción                     |
+| `entry-invite-accept <teamName> (--id id \| --code code)`   | Acepta una invitación y crea el equipo aprobado                             |
+| `comp-explore` / `comp-explore-show <id>`                   | Catálogo autenticado de competiciones publicadas                            |
+| `participant-add/list`                                      | Participantes de competición                                                |
+| `entry-register/approve/reject`                             | Ciclo de entries de equipos                                                 |
+| `standings <orgId> <compId>`                                | Tabla de posiciones                                                         |
+| `team-create/team-list`                                     | Equipos de la organización                                                  |
+| `roster-list/add/close/open`                                | Roster por competición                                                      |
+| `club-link <orgId> <compId> <teamId> <clubId> <clubName>`   | Vincula club EA al equipo                                                   |
+| `fixture-generate/current/show`                             | Genera y consulta el fixture actual o uno por id (`--rounds N` para suizo)  |
+| `swiss-withdraw <orgId> <compId> <planId> <teamId>`         | Retira un equipo de un fixture suizo (`--reason`, `--request-id`)           |
+| `swiss-close-round <orgId> <compId> <planId> <ronda>`       | Cierra sin resultado lo no jugado de la ronda actual (`--reason`)           |
+| `snapshot-set <encounterId ...>`                            | Upsert de schedule snapshot                                                 |
+| `club-search/get/matches`                                   | Clubes EA vía game-data                                                     |
+| `sync-job-enqueue/run/run-next`                             | Jobs de sincronización EA (endpoints internos)                              |
+| `provider-health [providerKey]`                             | Salud del proveedor (circuit breaker)                                       |
+| `plans`, `org-plan`, `org-entitlements <orgId>`             | Catálogo, plan efectivo con uso y entitlements (ADR-0025)                   |
+| `org-plan-assign <orgId> <plan> --reason "..."`             | Asignación manual de plan por superusuario, auditada                        |
+| `billing-smoke --actor <org> --superuser <su>`              | Gratis: cupo de sync, dedupe sin consumo, 2.ª competición; luego Pro        |
+| `player-me`, `my-stats`, `my-matches`, `my-next-encounter`  | Perfil, estadísticas personales y próximo enfrentamiento                    |
+| `sanction-list <orgId> <compId> [--team <teamId>]`          | Sanciones de la competición o de un equipo (ADR-0028)                       |
+| `sanctions-smoke <orgId> <compId> <teamId> --outsider <id>` | Outsider recibe 403; el descuento baja la tabla y revocarlo la restaura     |
+| `e2e-golden-path`                                           | Flujo completo: ping → org → draft → team ×2 → entry ×2 → publish → fixture |
+| `e2e-golden-path --format swiss --superuser <id>`           | Igual con 4 equipos y suizo; el superusuario asigna Pro a la organización   |
 
 Flags comunes en integración: `--json`, `--base-url URL`, `--actor ID`.
 
@@ -175,6 +177,7 @@ apps/cli/
     │   ├── domain-smoke-game-data.ts
     │   ├── statistics-smoke.ts
     │   ├── results-smoke.ts
+    │   ├── sanctions.ts
     │   ├── swiss-smoke.ts
     │   ├── email-smoke.ts
     │   ├── api-health.ts / onboarding.ts

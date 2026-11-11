@@ -31,6 +31,8 @@ const subjectSchema = z
         "schedule_set",
         "schedule_kept",
         "walkover_intended",
+        "sanction_imposed",
+        "sanction_revoked",
       ])
       .nullish(),
   })

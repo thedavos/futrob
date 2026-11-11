@@ -62,6 +62,10 @@ export type {
   CompetitionMatchRulesQuery,
   CompetitionMatchRulesReaderPort,
 } from "./domain/ports/competition-match-rules-reader.port.ts";
+export type {
+  CompetitionPointDeduction,
+  CompetitionPointDeductionReaderPort,
+} from "./domain/ports/competition-point-deduction-reader.port.ts";
 export type { CompetitionPlayoffSpotsReaderPort } from "./domain/ports/competition-playoff-spots-reader.port.ts";
 export type {
   CompetitionSwissProgress,

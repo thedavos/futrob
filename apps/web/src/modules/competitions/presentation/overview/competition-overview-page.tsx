@@ -10,6 +10,8 @@ import type {
   ListCompetitionEncountersResponse,
 } from "@futrob/api-contracts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { isPubliclyVisibleStatus } from "@futrob/public-portal";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { RESULT_PERMISSION } from "@futrob/results";
 import * as stylex from "@stylexjs/stylex";
 import {
@@ -26,6 +28,8 @@ import {
 import { media } from "@futrob/ui/styles/media.stylex";
 import { usePendingActivitiesQuery } from "@/modules/notifications/presentation/activity-queries.ts";
 import { organizationCompetitionStatusLabel } from "@/modules/organizations/presentation/organization-home-copy.ts";
+import { useOrganizationProfileQuery } from "@/modules/organizations/presentation/organization-queries.ts";
+import { portalPath } from "@/modules/public-portal/presentation/public-portal-model.ts";
 import { useCompetitionEncountersQuery } from "@/modules/results/presentation/encounter-queries.ts";
 import { useCompetitionTeamManagementQuery } from "@/modules/teams/presentation/competition-team-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -96,6 +100,8 @@ export interface CompetitionOverviewViewProps {
   readonly activities: OverviewSlice<readonly ActivityEntryDto[]>;
   /** Fixed «now» for deterministic relative times; defaults to the current time. */
   readonly now?: Date;
+  /** The organization's public slug, once read; the portal link needs it. */
+  readonly organizationSlug?: string | null;
 }
 
 function mapSlice<Data, Shown>(
@@ -121,10 +127,18 @@ export function CompetitionOverviewView({
   entries,
   now = new Date(),
   organizationId,
+  organizationSlug = null,
   teams,
 }: CompetitionOverviewViewProps) {
   const { t } = useI18n();
   const entryCounts = entries.status === "ready" ? countEntries(entries.data) : null;
+  // Only a publicly visible competition has a portal; a draft would answer 404 to a spectator.
+  const portalHref =
+    competition.status === "ready" &&
+    organizationSlug !== null &&
+    isPubliclyVisibleStatus(competition.data.status)
+      ? portalPath({ organizationSlug, competitionKey: competitionId })
+      : null;
 
   return (
     <main {...applyStyles(styles.main)}>
@@ -148,6 +162,18 @@ export function CompetitionOverviewView({
               }
             >
               {t("competition.overview.continueSetup")}
+            </Button>
+          </PageHeaderActions>
+        ) : null}
+        {portalHref ? (
+          <PageHeaderActions>
+            <Button
+              render={<a href={portalHref} rel="noopener" target="_blank" />}
+              role="link"
+              variant="outline"
+            >
+              <ArrowSquareOutIcon aria-hidden="true" />
+              {t("competition.overview.viewPortal")}
             </Button>
           </PageHeaderActions>
         ) : null}
@@ -248,6 +274,7 @@ function OperatorOverview({
   const encounters = useCompetitionEncountersQuery(organizationId, competitionId);
   const participants = useCompetitionParticipantsQuery(organizationId, competitionId);
   const teams = useCompetitionTeamManagementQuery(organizationId, competitionId);
+  const profile = useOrganizationProfileQuery(organizationId);
   // The sidebar queue reads the same key, so the overview adds no request of its own.
   const activities = usePendingActivitiesQuery(
     canReviewResults
@@ -263,6 +290,7 @@ function OperatorOverview({
       encounters={sliceOf(encounters, (data) => data)}
       entries={sliceOf(participants, (data) => data.participants)}
       organizationId={organizationId}
+      organizationSlug={profile.data?.slug ?? null}
       teams={sliceOf(teams, (data) => data.pages[0]?.items ?? [])}
     />
   );

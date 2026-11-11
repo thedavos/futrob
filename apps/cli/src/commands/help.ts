@@ -85,6 +85,9 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   my-stats
   my-matches
   my-next-encounter
+  sanction-list <orgId> <compId> [--team <teamId>]
+  sanctions-smoke <orgId> <compId> <teamId> --outsider <actorId> [--points 3]
+                          Outsider 403, descuento en la tabla, revocar la restaura
   e2e-golden-path         Org → comp → team → entry → publish → fixture (smoke completo)
                           [--format league|swiss] [--superuser <id>] (suizo exige plan Pro)
 

@@ -15,6 +15,7 @@ import { createPlayersResource } from "./resources/players.ts";
 import { createActivitiesResource } from "./resources/activities.ts";
 import { createEntryInvitationsResource } from "./resources/entry-invitations.ts";
 import { createEmailResource } from "./resources/email.ts";
+import { createSanctionsResource } from "./resources/sanctions.ts";
 
 export type CreateFutrobClientOptions = HttpClientOptions;
 
@@ -38,6 +39,7 @@ export function createFutrobClient(options: CreateFutrobClientOptions) {
     activities: createActivitiesResource(http),
     entryInvitations: createEntryInvitationsResource(http),
     email: createEmailResource(http),
+    sanctions: createSanctionsResource(http),
   };
 }
 
