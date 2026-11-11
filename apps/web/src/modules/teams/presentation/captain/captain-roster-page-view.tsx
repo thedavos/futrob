@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type {
   CompetitionTeamManagementDetailResponse,
   ExternalClubDto,
@@ -54,6 +55,8 @@ export type CaptainRosterPageViewProps = {
   readonly onSetRosterOpen: (open: boolean) => Promise<void>;
   readonly onSearchClubs: (query: string) => Promise<readonly ExternalClubDto[]>;
   readonly onConnectClub: (club: ExternalClubDto) => Promise<void>;
+  /** Read-only sections below the roster, such as the Team's sanctions. */
+  readonly footer?: ReactNode;
 };
 
 export function CaptainRosterPageView(props: CaptainRosterPageViewProps) {
@@ -102,6 +105,7 @@ function RosterContent({
   capabilities,
   busy,
   writable,
+  footer,
   onChangeRole,
   onSetRosterOpen,
 }: CaptainRosterPageViewProps & {
@@ -185,6 +189,7 @@ function RosterContent({
           </EmptyState>
         ) : null}
       </section>
+      {footer}
     </>
   );
 }

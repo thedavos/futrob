@@ -571,6 +571,43 @@
         "summary": "Revoke an audited platform superuser"
       }
     },
+    "/billing/plan-requests": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Open requests, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPlanRequestsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listPlanRequests",
+        "tags": [
+          "billing"
+        ],
+        "summary": "List organizations waiting for a plan (platform superuser)",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/competitions/explore": {
       "get": {
         "parameters": [
@@ -4241,6 +4278,108 @@
         "summary": "Read the organization's effective plan, quota usage and recent plan changes"
       }
     },
+    "/organizations/{organizationId}/billing/plan-request": {
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request withdrawn or none open",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "cancelOrganizationPlanRequest",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Withdraw the organization's open plan request",
+        "description": "Succeeds when no request is open."
+      },
+      "put": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Open request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOrganizationPlanResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "requestOrganizationPlan",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Ask for a paid plan (organizer, manual purchase without payments)",
+        "description": "Stores the organization's single open request; repeating it keeps one and asking for another plan replaces it. It never changes the plan: a platform superuser assigns it after billing happens outside the product.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestOrganizationPlanRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/organizations/{organizationId}/competitions": {
       "post": {
         "parameters": [
@@ -6781,6 +6920,215 @@
         "summary": "Open registration for a valid draft; format and rules freeze until it closes"
       }
     },
+    "/organizations/{organizationId}/competitions/{competitionId}/sanctions": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sanction imposed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionSanction"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "imposeSanction",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Sanction a Team entered in the competition, or one of its players",
+        "description": "Requires `competitions.sanctions.manage` and a competition in registration, published, paused or finished. `points_deduction` needs `pointsDeducted` (1–100) and rebuilds the table in the same transaction; `match_suspension` needs `suspensionMatches` (1–20); `administrative_defeat` needs the Team's `encounterId` and creates no official result. Failures: 400 `api.validation_error`, `competitions.invalid_sanction`; 403 `authorization.forbidden`; 404 `competitions.not_found`; 409 `competitions.sanctions_closed`; 404 `competitions.sanction_target_not_found`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImposeSanctionRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sanctions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCompetitionSanctionsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listCompetitionSanctions",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "List every sanction of a competition, revoked included",
+        "description": "Requires `competitions.sanctions.read` (organizer and staff). Newest first. Each sanction keeps who imposed it, the reason, when and the request correlation (ADR-0028)."
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/sanctions/{sanctionId}/revoke": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "sanctionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sanction revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionSanction"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "revokeSanction",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "Revoke an active sanction",
+        "description": "Requires `competitions.sanctions.manage`. The sanction is never deleted: the revocation records actor, reason, date and request correlation once. A revoked deduction rebuilds the table. Failures: 400 `api.validation_error`, `competitions.invalid_sanction`; 403 `authorization.forbidden`; 404 `competitions.not_found`; 409 `competitions.sanctions_closed`; 404 `competitions.sanction_not_found`; 409 `competitions.sanction_already_revoked`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeSanctionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/organizations/{organizationId}/competitions/{competitionId}/standings": {
       "get": {
         "parameters": [
@@ -7824,6 +8172,68 @@
           "teams"
         ],
         "summary": "Unlock the competition team roster"
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/teams/{teamId}/sanctions": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "teamId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sanctions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCompetitionSanctionsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listTeamSanctions",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "List the sanctions on a Team and on its players",
+        "description": "Read-only view for the affected Team. Requires `teams.read` on that Team in this competition: its roster and the competition operators pass; other Teams get 403."
       }
     },
     "/organizations/{organizationId}/encounters/{encounterId}": {
@@ -13861,6 +14271,135 @@
           "createdAt"
         ]
       },
+      "CompetitionSanction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "competitionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetType": {
+            "type": "string",
+            "enum": [
+              "team",
+              "player"
+            ]
+          },
+          "teamId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "teamName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "playerProfileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "playerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "warning",
+              "points_deduction",
+              "match_suspension",
+              "administrative_defeat"
+            ]
+          },
+          "pointsDeducted": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "suspensionMatches": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "encounterId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "imposedByActorId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "imposedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "revocation": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "actorId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "revokedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "actorId",
+              "revokedAt",
+              "reason",
+              "requestId"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "competitionId",
+          "targetType",
+          "teamId",
+          "teamName",
+          "playerProfileId",
+          "playerName",
+          "type",
+          "pointsDeducted",
+          "suspensionMatches",
+          "encounterId",
+          "reason",
+          "imposedByActorId",
+          "imposedAt",
+          "requestId",
+          "revocation"
+        ]
+      },
       "CompetitionSchedule": {
         "type": "object",
         "properties": {
@@ -13925,6 +14464,10 @@
           "points": {
             "type": "integer"
           },
+          "pointsDeducted": {
+            "type": "integer",
+            "minimum": 0
+          },
           "form": {
             "type": "array",
             "items": {
@@ -13941,8 +14484,7 @@
             "type": "object",
             "properties": {
               "buchholz": {
-                "type": "integer",
-                "minimum": 0
+                "type": "integer"
               },
               "byes": {
                 "type": "integer",
@@ -14034,6 +14576,10 @@
                 "points": {
                   "type": "integer"
                 },
+                "pointsDeducted": {
+                  "type": "integer",
+                  "minimum": 0
+                },
                 "form": {
                   "type": "array",
                   "items": {
@@ -14050,8 +14596,7 @@
                   "type": "object",
                   "properties": {
                     "buchholz": {
-                      "type": "integer",
-                      "minimum": 0
+                      "type": "integer"
                     },
                     "byes": {
                       "type": "integer",
@@ -19289,6 +19834,10 @@
                     "points": {
                       "type": "integer"
                     },
+                    "pointsDeducted": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
                     "form": {
                       "type": "array",
                       "items": {
@@ -19305,8 +19854,7 @@
                       "type": "object",
                       "properties": {
                         "buchholz": {
-                          "type": "integer",
-                          "minimum": 0
+                          "type": "integer"
                         },
                         "byes": {
                           "type": "integer",
@@ -24095,6 +24643,30 @@
               ],
               "additionalProperties": false
             }
+          },
+          "pendingRequest": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "planKey": {
+                "type": "string",
+                "enum": [
+                  "pro",
+                  "league"
+                ]
+              },
+              "requestedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "planKey",
+              "requestedAt"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -24104,7 +24676,8 @@
           "subscription",
           "quotas",
           "usage",
-          "recentChanges"
+          "recentChanges",
+          "pendingRequest"
         ],
         "additionalProperties": false
       },
@@ -24999,8 +25572,7 @@
                       "maxItems": 5
                     },
                     "buchholz": {
-                      "type": "integer",
-                      "minimum": 0
+                      "type": "integer"
                     },
                     "byes": {
                       "type": "integer",
@@ -25570,6 +26142,91 @@
           "db"
         ]
       },
+      "ImposeSanctionRequest": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "team"
+                    ]
+                  },
+                  "teamId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "type",
+                  "teamId"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "player"
+                    ]
+                  },
+                  "playerProfileId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "type",
+                  "playerProfileId"
+                ]
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "warning",
+              "points_deduction",
+              "match_suspension",
+              "administrative_defeat"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "pointsDeducted": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "suspensionMatches": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "encounterId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          }
+        },
+        "required": [
+          "target",
+          "type",
+          "reason"
+        ]
+      },
       "InspectCompetitionInvitationResponse": {
         "type": "object",
         "properties": {
@@ -25958,6 +26615,8 @@
                         "schedule_set",
                         "schedule_kept",
                         "walkover_intended",
+                        "sanction_imposed",
+                        "sanction_revoked",
                         null
                       ]
                     }
@@ -26304,6 +26963,146 @@
           "encounters"
         ]
       },
+      "ListCompetitionSanctionsResponse": {
+        "type": "object",
+        "properties": {
+          "sanctions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "competitionId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "targetType": {
+                  "type": "string",
+                  "enum": [
+                    "team",
+                    "player"
+                  ]
+                },
+                "teamId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "teamName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "playerProfileId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "playerName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "warning",
+                    "points_deduction",
+                    "match_suspension",
+                    "administrative_defeat"
+                  ]
+                },
+                "pointsDeducted": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "suspensionMatches": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "encounterId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "imposedByActorId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "imposedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "requestId": {
+                  "type": "string"
+                },
+                "revocation": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "actorId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "revokedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "reason": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "actorId",
+                    "revokedAt",
+                    "reason",
+                    "requestId"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "competitionId",
+                "targetType",
+                "teamId",
+                "teamName",
+                "playerProfileId",
+                "playerName",
+                "type",
+                "pointsDeducted",
+                "suspensionMatches",
+                "encounterId",
+                "reason",
+                "imposedByActorId",
+                "imposedAt",
+                "requestId",
+                "revocation"
+              ]
+            }
+          }
+        },
+        "required": [
+          "sanctions"
+        ]
+      },
       "ListEncounterCandidatesResponse": {
         "oneOf": [
           {
@@ -26625,6 +27424,47 @@
         "required": [
           "invitations"
         ]
+      },
+      "ListPlanRequestsResponse": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "organizationId": {
+                  "type": "string"
+                },
+                "organizationName": {
+                  "type": "string"
+                },
+                "planKey": {
+                  "type": "string",
+                  "enum": [
+                    "pro",
+                    "league"
+                  ]
+                },
+                "requestedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "organizationId",
+                "organizationName",
+                "planKey",
+                "requestedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "requests"
+        ],
+        "additionalProperties": false
       },
       "ListPublicCompetitionsResponse": {
         "type": "object",
@@ -33530,8 +34370,7 @@
             "maxItems": 5
           },
           "buchholz": {
-            "type": "integer",
-            "minimum": 0
+            "type": "integer"
           },
           "byes": {
             "type": "integer",
@@ -33823,6 +34662,56 @@
           "commandKey",
           "responder"
         ]
+      },
+      "RequestOrganizationPlanRequest": {
+        "type": "object",
+        "properties": {
+          "planKey": {
+            "type": "string",
+            "enum": [
+              "pro",
+              "league"
+            ]
+          }
+        },
+        "required": [
+          "planKey"
+        ],
+        "additionalProperties": false
+      },
+      "RequestOrganizationPlanResponse": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "planKey": {
+                "type": "string",
+                "enum": [
+                  "pro",
+                  "league"
+                ]
+              },
+              "requestedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "planKey",
+              "requestedAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "organizationId",
+          "request"
+        ],
+        "additionalProperties": false
       },
       "ResolveMatchDisputeRequest": {
         "type": "object",
@@ -34229,6 +35118,19 @@
         "required": [
           "expectedVersion",
           "commandKey",
+          "reason"
+        ]
+      },
+      "RevokeSanctionRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "required": [
           "reason"
         ]
       },

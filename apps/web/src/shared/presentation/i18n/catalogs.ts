@@ -143,7 +143,15 @@ const es = {
   "billing.plan.status.trialing": "Prueba hasta el {date}",
   "billing.plan.status.past_due": "Pago pendiente",
   "billing.plan.status.lapsed": "{plan} terminó; se aplica Gratis",
-  "billing.plan.upgrade": "Para pasar a {plan}, escríbenos. Por ahora asignamos los planes a mano.",
+  "billing.request.hint":
+    "Pedir un plan no cobra nada: lo activamos a mano y tu plan cambia cuando lo hacemos.",
+  "billing.request.action": "Solicitar {plan}",
+  "billing.request.pending":
+    "Pediste el plan {plan} el {date}. Lo activaremos a mano; hasta entonces sigues con {current}.",
+  "billing.request.cancel": "Cancelar solicitud",
+  "billing.request.error": "No pudimos registrar tu solicitud. Inténtalo de nuevo.",
+  "billing.request.cancelError": "No pudimos cancelar tu solicitud. Inténtalo de nuevo.",
+  "billing.request.staffOnly": "Solo el organizador puede pedir un cambio de plan.",
   "billing.plan.topPlan": "Tienes el plan más completo.",
   "billing.plan.compare": "Ver planes",
   "billing.usage.title": "Uso",
@@ -232,7 +240,9 @@ const es = {
   "pricing.cta.free": "Empezar gratis",
   "pricing.cta.paid": "Crear cuenta",
   "pricing.note.free": "No necesitas tarjeta.",
-  "pricing.note.paid": "Empiezas en Gratis y activamos {plan} a mano cuando nos escribas.",
+  "pricing.note.paid":
+    "Empiezas en Gratis, pides {plan} desde tu organización y lo activamos a mano.",
+  "pricing.comingSoon": "Próximamente",
   "pricing.perMonth": "{count} sincronizaciones al mes",
   "pricing.fairUse": "{count} sincronizaciones al mes (uso justo)",
   "pricing.staff": "Hasta {count} personas de staff",
@@ -504,6 +514,97 @@ const es = {
   "common.back": "Volver",
   "common.skip": "Omitir por ahora",
   "common.retry": "Reintentar",
+  "notFound.title": "No encontramos esta página",
+  "notFound.description": "El enlace puede estar mal escrito o la página ya no existe.",
+  "notFound.visitor.action": "Volver al inicio",
+  "notFound.member.action": "Ir a tu espacio",
+  "routeError.title": "Algo no ha ido bien",
+  "routeError.description": "Ha ocurrido un fallo inesperado. Puedes reintentar esta página.",
+  "legal.nav.aria": "Documentos legales",
+  "legal.nav.terms": "Términos de servicio",
+  "legal.nav.privacy": "Política de privacidad",
+  "legal.nav.refunds": "Reembolsos",
+  "legal.related": "Otros documentos",
+  "legal.signup.lead": "Al crear una cuenta aceptas los",
+  "legal.signup.joiner": " y la ",
+  "legal.signup.end": ".",
+  "legal.draft.title": "Borrador pendiente de revisión legal",
+  "legal.draft.body":
+    "Este texto describe cómo funciona Futrob hoy. No es asesoramiento jurídico y puede cambiar antes de publicarse como política definitiva.",
+  "legal.updated": ({ date }) => `Última actualización: ${date}`,
+  "legal.terms.meta.title": "Términos de servicio",
+  "legal.terms.meta.description":
+    "Condiciones de uso de Futrob para competiciones de EA SPORTS FC Clubs.",
+  "legal.terms.title": "Términos de servicio",
+  "legal.terms.description":
+    "Reglas de la cuenta, el uso aceptable y cómo Futrob trata los datos de EA.",
+  "legal.terms.service.title": "El servicio",
+  "legal.terms.service.body":
+    "Futrob es un producto de Davion Software para operar competiciones de EA SPORTS FC Clubs. Está disponible en español e inglés. Al crear una cuenta aceptas estas condiciones en el estado en que se publican.",
+  "legal.terms.accounts.title": "Cuentas",
+  "legal.terms.accounts.body":
+    "Necesitas una cuenta con un correo y una contraseña. Eres responsable de lo que hagas con ella. No compartas el acceso ni te hagas pasar por otra persona. Si detectas un uso indebido, avisa al operador.",
+  "legal.terms.results.title": "Competiciones y resultados oficiales",
+  "legal.terms.results.body":
+    "Un partido observado en EA no es oficial en Futrob hasta que un capitán lo selecciona y el resultado se aprueba. La sincronización con EA no oficializa nada. Solo los resultados oficiales aprobados actualizan clasificación, rankings y el portal público.",
+  "legal.terms.use.title": "Uso aceptable",
+  "legal.terms.use.body":
+    "Usa Futrob para organizar y jugar competiciones de forma honesta. No intentes falsear resultados, abusar de invitaciones, atacar el servicio ni usar datos de otros participantes fuera de la competición. El operador puede suspender una cuenta que rompa estas reglas.",
+  "legal.terms.ea.title": "Datos de EA",
+  "legal.terms.ea.body":
+    "Los datos de EA Clubs son observaciones del proveedor. Futrob no pide ni guarda credenciales de EA. EA SPORTS y FC Clubs son marcas de sus titulares; Futrob no está afiliado ni respaldado por EA.",
+  "legal.terms.liability.title": "Responsabilidad",
+  "legal.terms.liability.body":
+    "El servicio se ofrece tal cual, en la medida que permite la ley. Futrob no garantiza que EA esté disponible, que un sync coincida con lo que viste en el juego, ni que una competición termine de una forma concreta. Este apartado es un borrador y no limita derechos que no se puedan limitar.",
+  "legal.terms.changes.title": "Cambios",
+  "legal.terms.changes.body":
+    "Podemos actualizar estos términos cuando cambie el producto. La fecha de la última actualización aparece arriba. Si el cambio es sustancial, lo indicaremos en el producto cuando exista un canal para avisarte.",
+  "legal.privacy.meta.title": "Política de privacidad",
+  "legal.privacy.meta.description":
+    "Qué datos guarda Futrob, cómo usa las observaciones de EA y cómo pedir la baja de la cuenta.",
+  "legal.privacy.title": "Política de privacidad",
+  "legal.privacy.description":
+    "Qué guardamos, para qué y cómo puedes pedir que borremos tu cuenta.",
+  "legal.privacy.who.title": "Quiénes somos",
+  "legal.privacy.who.body":
+    "Futrob lo opera Davion Software. Tratamos los datos para que puedas crear una cuenta, unirte a organizaciones y competiciones, y ver resultados oficiales.",
+  "legal.privacy.data.title": "Datos que guardamos",
+  "legal.privacy.data.body":
+    "Cuenta: nombre, correo y el hash de la contraseña (Better Auth). Perfil del actor, organizaciones, competiciones, equipos y plantillas que creas o a las que te unes, invitaciones, actividad y los planes o cupos asignados a tu organización.",
+  "legal.privacy.data.body2":
+    "No vendemos estos datos. Los usamos para operar el producto, diagnosticar fallos y cumplir las reglas de la competición que organizas o juegas.",
+  "legal.privacy.ea.title": "Datos de EA",
+  "legal.privacy.ea.body":
+    "Si asocias un club o una cuenta de juego, guardamos los identificadores que declares y las observaciones de partidos que llegan de la API de EA Clubs. Futrob no pide ni almacena usuario o contraseña de EA.",
+  "legal.privacy.providers.title": "Proveedores",
+  "legal.privacy.providers.body":
+    "Cloudflare (web, auth y almacenamiento de archivos), Railway (API de producto y Postgres) y Sentry (diagnóstico de errores en producción). El correo transaccional usará un proveedor de email cuando ese canal esté listo; hoy no enviamos ese correo.",
+  "legal.privacy.retention.title": "Conservación",
+  "legal.privacy.retention.body":
+    "Guardamos los datos mientras la cuenta esté abierta. Algunos registros de competición pueden permanecer si otros participantes aún los necesitan (por ejemplo un resultado oficial). Las copias de seguridad se conservan un tiempo limitado y luego se rotan.",
+  "legal.privacy.deletion.title": "Eliminación de la cuenta",
+  "legal.privacy.deletion.body":
+    "Puedes pedir que borremos tu cuenta desde el perfil cuando esa función esté en el producto. Mientras tanto, pide la baja al operador desde la cuenta o el canal de soporte que publique Futrob.",
+  "legal.privacy.deletion.body2":
+    "Al borrar el acceso quitamos perfil y datos de cuenta. Conservaremos los registros de competición que otros participantes aún necesiten, como resultados oficiales ya aprobados y plantillas de un equipo que sigue en juego.",
+  "legal.privacy.contact.title": "Contacto",
+  "legal.privacy.contact.body":
+    "Escribe al operador de Futrob (Davion Software) desde la cuenta o el canal de soporte publicado en el producto. No inventes un correo: cuando el canal transaccional exista, lo indicaremos aquí.",
+  "legal.refunds.meta.title": "Reembolsos",
+  "legal.refunds.meta.description":
+    "Futrob no cobra con tarjeta en esta fase. Cómo se tramitará un reembolso cuando existan cargos.",
+  "legal.refunds.title": "Reembolsos",
+  "legal.refunds.description":
+    "No hay cobros automáticos en el producto actual. Esta página existirá para el proveedor de pagos cuando los haya.",
+  "legal.refunds.current.title": "Producto actual",
+  "legal.refunds.current.body":
+    "En esta fase Futrob no cobra con tarjeta ni procesa pagos automáticos. Los planes se asignan a mano. No hay un cargo que reembolsar en el producto público.",
+  "legal.refunds.charges.title": "Cuando existan cargos",
+  "legal.refunds.charges.body":
+    "Si un plan de pago se asigna de forma manual, el operador tramita cualquier devolución. Cuando un proveedor de pagos entre en el producto, esta política describirá plazos y el canal para pedir el reembolso.",
+  "legal.refunds.ask.title": "Cómo pedirlo",
+  "legal.refunds.ask.body":
+    "Contacta al operador de Futrob (Davion Software) desde la cuenta o el canal de soporte publicado. Conserva el identificador de la organización y, si lo hay, el del cargo.",
   "common.edit": "Editar",
   "common.pending": "Pendiente",
   "common.seconds": ({ seconds }) => `${seconds} s`,
@@ -570,6 +671,88 @@ const es = {
   "activity.decision.scheduleSet": "Nueva fecha fijada por el organizador",
   "activity.decision.scheduleKept": "El organizador mantuvo la fecha",
   "activity.decision.walkoverIntended": "El organizador decidió victoria por incomparecencia",
+  "activity.decision.sanctionImposed": "El organizador impuso una sanción",
+  "activity.decision.sanctionRevoked": "El organizador revocó una sanción",
+  "pages.competition.sanctions.title": "Sanciones",
+  "pages.competition.sanctions.subtitle":
+    "Advertencias, descuentos de puntos, suspensiones y derrotas administrativas de la competición.",
+  "sanctions.list.label": "Sanciones de la competición",
+  "sanctions.list.loading": "Cargando sanciones",
+  "sanctions.list.error": "No pudimos cargar las sanciones.",
+  "sanctions.list.empty.title": "Sin sanciones",
+  "sanctions.list.empty.description":
+    "Cuando sanciones a un equipo o a un jugador aparecerá aquí, con su motivo y quién la impuso.",
+  "sanctions.list.notFound.title": "Sanciones no disponibles",
+  "sanctions.list.notFound.description":
+    "Esta competición no es de esta organización o tu cuenta no puede ver sus sanciones.",
+  "sanctions.team.title": "Sanciones",
+  "sanctions.team.label": "Sanciones del equipo",
+  "sanctions.team.loading": "Cargando las sanciones del equipo",
+  "sanctions.team.error": "No pudimos cargar las sanciones del equipo.",
+  "sanctions.team.empty": "Tu equipo no tiene sanciones en esta competición.",
+  "sanctions.team.forbidden": "No puedes ver las sanciones de este equipo.",
+  "sanctions.type.warning": "Advertencia",
+  "sanctions.type.pointsDeduction": "Descuento de puntos",
+  "sanctions.type.matchSuspension": "Suspensión",
+  "sanctions.type.administrativeDefeat": "Derrota administrativa",
+  "sanctions.detail.points": ({ count }) => (count === 1 ? "−1 punto" : `−${count} puntos`),
+  "sanctions.detail.matches": ({ count }) => (count === 1 ? "1 partido" : `${count} partidos`),
+  "sanctions.detail.encounter": "Sobre un partido de la competición",
+  "sanctions.target.team": "Equipo",
+  "sanctions.target.player": "Jugador",
+  "sanctions.target.unnamedTeam": "Equipo sin nombre disponible",
+  "sanctions.target.unnamedPlayer": "Jugador sin nombre disponible",
+  "sanctions.column.sanction": "Sanción",
+  "sanctions.column.target": "Sancionado",
+  "sanctions.column.reason": "Motivo",
+  "sanctions.column.imposedAt": "Impuesta",
+  "sanctions.column.status": "Estado",
+  "sanctions.column.actions": "Acciones",
+  "sanctions.status.active": "Vigente",
+  "sanctions.status.revoked": "Revocada",
+  "sanctions.reason": "Motivo",
+  "sanctions.reasonRequired": "Escribe un motivo de al menos 3 caracteres.",
+  "sanctions.impose.trigger": "Sancionar",
+  "sanctions.impose.title": "Nueva sanción",
+  "sanctions.impose.description":
+    "Queda registrada con tu nombre, el motivo y la fecha. No se puede borrar: solo revocar.",
+  "sanctions.impose.target": "A quién",
+  "sanctions.impose.type": "Tipo",
+  "sanctions.impose.team": "Equipo",
+  "sanctions.impose.teamPlaceholder": "Elige un equipo",
+  "sanctions.impose.teamsError": "No se pudieron cargar los equipos.",
+  "sanctions.impose.playersError": "No se pudo cargar la plantilla del equipo.",
+  "sanctions.impose.encountersError": "No se pudieron cargar los partidos del equipo.",
+  "sanctions.impose.noTeams": "No hay equipos aprobados",
+  "sanctions.impose.teamRequired": "Elige el equipo.",
+  "sanctions.impose.player": "Jugador",
+  "sanctions.impose.playerPlaceholder": "Elige un jugador",
+  "sanctions.impose.playerNeedsTeam": "Elige primero el equipo",
+  "sanctions.impose.playerRequired": "Elige el jugador.",
+  "sanctions.impose.points": "Puntos a descontar",
+  "sanctions.impose.pointsInvalid": "Escribe un número entero entre 1 y 100.",
+  "sanctions.impose.matches": "Partidos de suspensión",
+  "sanctions.impose.matchesInvalid": "Escribe un número entero entre 1 y 20.",
+  "sanctions.impose.encounter": "Partido",
+  "sanctions.impose.encounterPlaceholder": "Elige el partido",
+  "sanctions.impose.noEncounters": "Este equipo no tiene partidos",
+  "sanctions.impose.encounterRequired": "Elige el partido.",
+  "sanctions.impose.encounterOption": ({ round, home, away }) =>
+    `Jornada ${round}: ${home} vs ${away}`,
+  "sanctions.impose.confirm": "Registrar sanción",
+  "sanctions.revoke.trigger": "Revocar",
+  "sanctions.revoke.title": "Revocar sanción",
+  "sanctions.revoke.description": ({ type, target }) =>
+    `${type} a ${target}. Seguirá en la lista como revocada, con tu nombre y el motivo.`,
+  "sanctions.revoke.confirm": "Revocar sanción",
+  "errors.competitions.invalid_sanction": "Revisa los datos de la sanción.",
+  "errors.competitions.sanction_target_not_found":
+    "El equipo, jugador o partido ya no está en esta competición.",
+  "errors.competitions.sanction_not_found": "Esa sanción no existe en esta competición.",
+  "errors.competitions.sanction_already_revoked": "Esa sanción ya estaba revocada.",
+  "errors.competitions.sanctions_closed":
+    "En el estado actual de la competición no se pueden registrar ni revocar sanciones.",
+  "errors.competitions.sanction_failed": "No pudimos guardar la sanción. Inténtalo nuevamente.",
   "activity.decision.generic": "Decisión del organizador",
   "activity.competitionEntry.pending": "Revisar inscripción",
   "activity.competitionEntry.watching": "Inscripción pendiente",
@@ -581,6 +764,10 @@ const es = {
   "activity.error": "No se pudo cargar la actividad.",
   "activity.page.title": "Actividad",
   "activity.page.description": "Todo lo que pasó en la organización, lo más reciente primero.",
+  "activity.personal.description":
+    "Tus invitaciones y la actividad de tus equipos, lo más reciente primero.",
+  "activity.personal.empty":
+    "Aquí verás tus invitaciones y la actividad de los equipos que representas.",
   "activity.page.loadMore": "Cargar más",
   "activity.page.loadingMore": "Cargando más actividad",
   "activity.page.empty.title": "Sin actividad todavía",
@@ -2277,6 +2464,37 @@ const es = {
   "shell.account.feedback": "Enviar feedback",
   "shell.account.settings": "Configuración",
   "shell.account.providerHealth": "Salud del proveedor",
+  "shell.account.planAdmin": "Planes y solicitudes",
+  "pages.admin.billing.title": "Planes y solicitudes",
+  "pages.admin.billing.subtitle":
+    "Solicitudes de plan de las organizaciones y asignación manual. Solo para superusuarios.",
+  "billing.admin.checkingAccess": "Comprobando permisos…",
+  "billing.admin.accessUnavailable": "No pudimos comprobar tus permisos para ver este panel.",
+  "billing.admin.denied.title": "No tienes acceso a este panel",
+  "billing.admin.denied.description": "Asignar planes es solo para superusuarios.",
+  "billing.admin.loading": "Cargando las solicitudes…",
+  "billing.admin.error": "No pudimos cargar las solicitudes.",
+  "billing.admin.queue.title": "Solicitudes pendientes",
+  "billing.admin.queue.empty": "No hay solicitudes pendientes.",
+  "billing.admin.queue.organization": "Organización",
+  "billing.admin.queue.plan": "Plan pedido",
+  "billing.admin.queue.date": "Pedida el",
+  "billing.admin.queue.action": "Acción",
+  "billing.admin.queue.assignLabel": "Asignar",
+  "billing.admin.queue.assign": "Asignar {plan} a {organization}",
+  "billing.admin.form.title": "Asignar un plan",
+  "billing.admin.form.description":
+    "Úsalo cuando el cobro ya se confirmó fuera del producto. El cambio queda en el historial de la organización.",
+  "billing.admin.form.organizationId": "ID de la organización",
+  "billing.admin.form.plan": "Plan",
+  "billing.admin.form.reason": "Motivo",
+  "billing.admin.form.reasonHint": "Ej.: pago recibido por transferencia el 10 de noviembre.",
+  "billing.admin.form.submit": "Asignar plan",
+  "billing.admin.form.submitting": "Asignando…",
+  "billing.admin.form.success": "Asignamos el plan {plan} a la organización {organizationId}.",
+  "billing.admin.form.forbidden": "No tienes permiso para asignar planes.",
+  "billing.admin.form.notFound": "No encontramos esa organización.",
+  "billing.admin.form.error": "No pudimos asignar el plan. Revisa los datos e inténtalo de nuevo.",
   "providerHealth.title": "Salud del proveedor EA",
   "providerHealth.subtitle":
     "Estado, métricas y fallos recientes de la integración con EA Clubs. Solo para superusuarios.",
@@ -2753,7 +2971,20 @@ export interface MessageParamsByKey {
 
   readonly "billing.plan.status.trialing": { readonly date: string };
   readonly "billing.plan.status.lapsed": { readonly plan: string };
-  readonly "billing.plan.upgrade": { readonly plan: string };
+  readonly "billing.request.action": { readonly plan: string };
+  readonly "billing.request.pending": {
+    readonly current: string;
+    readonly date: string;
+    readonly plan: string;
+  };
+  readonly "billing.admin.queue.assign": {
+    readonly organization: string;
+    readonly plan: string;
+  };
+  readonly "billing.admin.form.success": {
+    readonly organizationId: string;
+    readonly plan: string;
+  };
   readonly "billing.usage.value": { readonly limit: number; readonly used: number };
   readonly "billing.usage.unlimited": { readonly used: number };
   readonly "billing.usage.resets": { readonly date: string };
@@ -2825,6 +3056,14 @@ export interface MessageParamsByKey {
   readonly "disputes.list.open": { readonly home: string; readonly away: string };
   readonly "disputes.list.kickoff": { readonly when: string };
   readonly "disputes.list.waiting": { readonly since: string };
+  readonly "sanctions.detail.points": { readonly count: number };
+  readonly "sanctions.detail.matches": { readonly count: number };
+  readonly "sanctions.impose.encounterOption": {
+    readonly round: number;
+    readonly home: string;
+    readonly away: string;
+  };
+  readonly "sanctions.revoke.description": { readonly type: string; readonly target: string };
   readonly "teamPerformance.unmatched": { readonly count: number };
   readonly "teamPerformance.criteria.windowValue": { readonly recent: number };
   readonly "teamPerformance.criteria.eligibilityValue": { readonly minimum: number };
@@ -2890,6 +3129,7 @@ export interface MessageParamsByKey {
   readonly "encounter.selection.history.selected": { readonly proposal: string };
   readonly "encounter.selection.history.acknowledged": { readonly count: number };
   readonly "common.seconds": { readonly seconds: number };
+  readonly "legal.updated": { readonly date: string };
   readonly "gameData.clubSearch.retryIn": { readonly seconds: number };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
@@ -3196,7 +3436,15 @@ const en: Catalog = {
   "billing.plan.status.trialing": "Trial until {date}",
   "billing.plan.status.past_due": "Payment due",
   "billing.plan.status.lapsed": "{plan} ended; Free applies",
-  "billing.plan.upgrade": "To move to {plan}, contact us. For now we assign plans by hand.",
+  "billing.request.hint":
+    "Requesting a plan charges nothing: we activate it by hand and your plan changes when we do.",
+  "billing.request.action": "Request {plan}",
+  "billing.request.pending":
+    "You asked for the {plan} plan on {date}. We'll activate it by hand; until then you stay on {current}.",
+  "billing.request.cancel": "Cancel request",
+  "billing.request.error": "We couldn't record your request. Try again.",
+  "billing.request.cancelError": "We couldn't cancel your request. Try again.",
+  "billing.request.staffOnly": "Only the organizer can ask for a plan change.",
   "billing.plan.topPlan": "You are on the most complete plan.",
   "billing.plan.compare": "Compare plans",
   "billing.usage.title": "Usage",
@@ -3284,7 +3532,9 @@ const en: Catalog = {
   "pricing.cta.free": "Start free",
   "pricing.cta.paid": "Create account",
   "pricing.note.free": "No card needed.",
-  "pricing.note.paid": "You start on Free and we activate {plan} by hand when you contact us.",
+  "pricing.note.paid":
+    "You start on Free, request {plan} from your organization and we activate it by hand.",
+  "pricing.comingSoon": "Coming soon",
   "pricing.perMonth": "{count} syncs a month",
   "pricing.fairUse": "{count} syncs a month (fair use)",
   "pricing.staff": "Up to {count} staff",
@@ -3558,6 +3808,94 @@ const en: Catalog = {
   "common.back": "Back",
   "common.skip": "Skip for now",
   "common.retry": "Try again",
+  "notFound.title": "We couldn't find this page",
+  "notFound.description": "The link may be mistyped, or the page no longer exists.",
+  "notFound.visitor.action": "Back to home",
+  "notFound.member.action": "Go to your space",
+  "routeError.title": "Something went wrong",
+  "routeError.description": "An unexpected failure happened. You can try this page again.",
+  "legal.nav.aria": "Legal documents",
+  "legal.nav.terms": "Terms of service",
+  "legal.nav.privacy": "Privacy policy",
+  "legal.nav.refunds": "Refunds",
+  "legal.related": "Other documents",
+  "legal.signup.lead": "By creating an account you accept the",
+  "legal.signup.joiner": " and the ",
+  "legal.signup.end": ".",
+  "legal.draft.title": "Draft pending legal review",
+  "legal.draft.body":
+    "This text describes how Futrob works today. It is not legal advice and may change before it is published as a final policy.",
+  "legal.updated": ({ date }) => `Last updated: ${date}`,
+  "legal.terms.meta.title": "Terms of service",
+  "legal.terms.meta.description": "Terms for using Futrob to run EA SPORTS FC Clubs competitions.",
+  "legal.terms.title": "Terms of service",
+  "legal.terms.description": "Account rules, acceptable use, and how Futrob treats EA data.",
+  "legal.terms.service.title": "The service",
+  "legal.terms.service.body":
+    "Futrob is a Davion Software product for operating EA SPORTS FC Clubs competitions. It is available in Spanish and English. Creating an account means you accept these terms as published.",
+  "legal.terms.accounts.title": "Accounts",
+  "legal.terms.accounts.body":
+    "You need an account with an email and a password. You are responsible for what you do with it. Do not share access or impersonate someone else. If you see misuse, tell the operator.",
+  "legal.terms.results.title": "Competitions and official results",
+  "legal.terms.results.body":
+    "A match observed in EA is not official in Futrob until a captain selects it and the result is approved. Syncing with EA never officializes a result. Only approved official results update standings, rankings, and the public portal.",
+  "legal.terms.use.title": "Acceptable use",
+  "legal.terms.use.body":
+    "Use Futrob to organize and play competitions honestly. Do not fake results, abuse invitations, attack the service, or use other participants' data outside the competition. The operator may suspend an account that breaks these rules.",
+  "legal.terms.ea.title": "EA data",
+  "legal.terms.ea.body":
+    "EA Clubs data are observations from the provider. Futrob does not ask for or store EA login credentials. EA SPORTS and FC Clubs are trademarks of their owners; Futrob is not affiliated with or endorsed by EA.",
+  "legal.terms.liability.title": "Liability",
+  "legal.terms.liability.body":
+    "The service is provided as is, to the extent the law allows. Futrob does not warrant that EA will be available, that a sync will match what you saw in the game, or that a competition will finish a particular way. This section is a draft and does not limit rights that cannot be limited.",
+  "legal.terms.changes.title": "Changes",
+  "legal.terms.changes.body":
+    "We may update these terms when the product changes. The last-updated date is at the top. If a change is material, we will note it in the product once there is a channel to tell you.",
+  "legal.privacy.meta.title": "Privacy policy",
+  "legal.privacy.meta.description":
+    "What Futrob stores, how it uses EA observations, and how to ask for account deletion.",
+  "legal.privacy.title": "Privacy policy",
+  "legal.privacy.description": "What we store, why, and how you can ask us to delete your account.",
+  "legal.privacy.who.title": "Who we are",
+  "legal.privacy.who.body":
+    "Futrob is operated by Davion Software. We process data so you can create an account, join organizations and competitions, and see official results.",
+  "legal.privacy.data.title": "Data we store",
+  "legal.privacy.data.body":
+    "Account: name, email, and the password hash (Better Auth). Actor profile, organizations, competitions, teams and rosters you create or join, invitations, activity, and plan entitlements assigned to your organization.",
+  "legal.privacy.data.body2":
+    "We do not sell this data. We use it to run the product, diagnose failures, and apply the rules of the competition you organize or play.",
+  "legal.privacy.ea.title": "EA data",
+  "legal.privacy.ea.body":
+    "If you associate a club or a game account, we store the identifiers you declare and match observations from the EA Clubs API. Futrob does not ask for or store EA usernames or passwords.",
+  "legal.privacy.providers.title": "Providers",
+  "legal.privacy.providers.body":
+    "Cloudflare (web, auth, and file storage), Railway (product API and Postgres), and Sentry (error diagnostics in production). Transactional email will use an email provider when that channel ships; we do not send that mail today.",
+  "legal.privacy.retention.title": "Retention",
+  "legal.privacy.retention.body":
+    "We keep data while the account is open. Some competition records may remain if other participants still need them (for example an official result). Backups are kept for a limited period and then rotated.",
+  "legal.privacy.deletion.title": "Account deletion",
+  "legal.privacy.deletion.body":
+    "You can ask us to delete your account from your profile when that flow ships. Until then, ask the operator for deletion from the account or the support channel Futrob publishes.",
+  "legal.privacy.deletion.body2":
+    "Deleting access removes your profile and account data. We will keep competition records that other participants still need, such as approved official results and rosters of a team still in play.",
+  "legal.privacy.contact.title": "Contact",
+  "legal.privacy.contact.body":
+    "Write to the Futrob operator (Davion Software) from the account or the support channel published in the product. Do not invent an email address: when the transactional channel exists, we will list it here.",
+  "legal.refunds.meta.title": "Refunds",
+  "legal.refunds.meta.description":
+    "Futrob does not charge cards in this phase. How a refund will be handled when charges exist.",
+  "legal.refunds.title": "Refunds",
+  "legal.refunds.description":
+    "There are no automated charges in the current product. This page will exist for the payments provider when they do.",
+  "legal.refunds.current.title": "Current product",
+  "legal.refunds.current.body":
+    "In this phase Futrob does not charge cards or process automated payments. Plans are assigned by hand. There is no charge to refund in the public product.",
+  "legal.refunds.charges.title": "When charges exist",
+  "legal.refunds.charges.body":
+    "If a paid plan is assigned manually, the operator handles any refund. When a payments provider joins the product, this policy will describe timelines and the channel to request a refund.",
+  "legal.refunds.ask.title": "How to ask",
+  "legal.refunds.ask.body":
+    "Contact the Futrob operator (Davion Software) from the account or the published support channel. Keep the organization identifier and, if there is one, the charge identifier.",
   "common.edit": "Edit",
   "common.pending": "Pending",
   "common.seconds": ({ seconds }) => `${seconds}s`,
@@ -3624,6 +3962,88 @@ const en: Catalog = {
   "activity.decision.scheduleSet": "New date set by the organizer",
   "activity.decision.scheduleKept": "The organizer kept the date",
   "activity.decision.walkoverIntended": "The organizer decided a walkover",
+  "activity.decision.sanctionImposed": "The organizer imposed a sanction",
+  "activity.decision.sanctionRevoked": "The organizer revoked a sanction",
+  "pages.competition.sanctions.title": "Sanctions",
+  "pages.competition.sanctions.subtitle":
+    "Warnings, point deductions, suspensions and administrative defeats in this competition.",
+  "sanctions.list.label": "Competition sanctions",
+  "sanctions.list.loading": "Loading sanctions",
+  "sanctions.list.error": "We couldn't load the sanctions.",
+  "sanctions.list.empty.title": "No sanctions",
+  "sanctions.list.empty.description":
+    "When you sanction a team or a player it shows up here, with the reason and who imposed it.",
+  "sanctions.list.notFound.title": "Sanctions unavailable",
+  "sanctions.list.notFound.description":
+    "This competition isn't part of this organization, or your account can't see its sanctions.",
+  "sanctions.team.title": "Sanctions",
+  "sanctions.team.label": "Team sanctions",
+  "sanctions.team.loading": "Loading the team's sanctions",
+  "sanctions.team.error": "We couldn't load the team's sanctions.",
+  "sanctions.team.empty": "Your team has no sanctions in this competition.",
+  "sanctions.team.forbidden": "You can't see this team's sanctions.",
+  "sanctions.type.warning": "Warning",
+  "sanctions.type.pointsDeduction": "Point deduction",
+  "sanctions.type.matchSuspension": "Suspension",
+  "sanctions.type.administrativeDefeat": "Administrative defeat",
+  "sanctions.detail.points": ({ count }) => (count === 1 ? "−1 point" : `−${count} points`),
+  "sanctions.detail.matches": ({ count }) => (count === 1 ? "1 match" : `${count} matches`),
+  "sanctions.detail.encounter": "For a match in this competition",
+  "sanctions.target.team": "Team",
+  "sanctions.target.player": "Player",
+  "sanctions.target.unnamedTeam": "Team name unavailable",
+  "sanctions.target.unnamedPlayer": "Player name unavailable",
+  "sanctions.column.sanction": "Sanction",
+  "sanctions.column.target": "Sanctioned",
+  "sanctions.column.reason": "Reason",
+  "sanctions.column.imposedAt": "Imposed",
+  "sanctions.column.status": "Status",
+  "sanctions.column.actions": "Actions",
+  "sanctions.status.active": "Active",
+  "sanctions.status.revoked": "Revoked",
+  "sanctions.reason": "Reason",
+  "sanctions.reasonRequired": "Write a reason of at least 3 characters.",
+  "sanctions.impose.trigger": "Sanction",
+  "sanctions.impose.title": "New sanction",
+  "sanctions.impose.description":
+    "It's recorded with your name, the reason and the date. It can't be deleted, only revoked.",
+  "sanctions.impose.target": "Who",
+  "sanctions.impose.type": "Type",
+  "sanctions.impose.team": "Team",
+  "sanctions.impose.teamPlaceholder": "Choose a team",
+  "sanctions.impose.teamsError": "Unable to load the teams.",
+  "sanctions.impose.playersError": "Unable to load the team roster.",
+  "sanctions.impose.encountersError": "Unable to load the team's matches.",
+  "sanctions.impose.noTeams": "No approved teams",
+  "sanctions.impose.teamRequired": "Choose the team.",
+  "sanctions.impose.player": "Player",
+  "sanctions.impose.playerPlaceholder": "Choose a player",
+  "sanctions.impose.playerNeedsTeam": "Choose the team first",
+  "sanctions.impose.playerRequired": "Choose the player.",
+  "sanctions.impose.points": "Points to deduct",
+  "sanctions.impose.pointsInvalid": "Enter a whole number from 1 to 100.",
+  "sanctions.impose.matches": "Matches suspended",
+  "sanctions.impose.matchesInvalid": "Enter a whole number from 1 to 20.",
+  "sanctions.impose.encounter": "Match",
+  "sanctions.impose.encounterPlaceholder": "Choose the match",
+  "sanctions.impose.noEncounters": "This team has no matches",
+  "sanctions.impose.encounterRequired": "Choose the match.",
+  "sanctions.impose.encounterOption": ({ round, home, away }) =>
+    `Round ${round}: ${home} vs ${away}`,
+  "sanctions.impose.confirm": "Record sanction",
+  "sanctions.revoke.trigger": "Revoke",
+  "sanctions.revoke.title": "Revoke sanction",
+  "sanctions.revoke.description": ({ type, target }) =>
+    `${type} for ${target}. It stays listed as revoked, with your name and the reason.`,
+  "sanctions.revoke.confirm": "Revoke sanction",
+  "errors.competitions.invalid_sanction": "Check the sanction details.",
+  "errors.competitions.sanction_target_not_found":
+    "That team, player or match is no longer in this competition.",
+  "errors.competitions.sanction_not_found": "That sanction doesn't exist in this competition.",
+  "errors.competitions.sanction_already_revoked": "That sanction was already revoked.",
+  "errors.competitions.sanctions_closed":
+    "Sanctions can't be recorded or revoked in the competition's current state.",
+  "errors.competitions.sanction_failed": "We couldn't save the sanction. Try again.",
   "activity.decision.generic": "Organizer decision",
   "activity.competitionEntry.pending": "Review entry",
   "activity.competitionEntry.watching": "Entry pending",
@@ -3635,6 +4055,9 @@ const en: Catalog = {
   "activity.error": "Activity could not be loaded.",
   "activity.page.title": "Activity",
   "activity.page.description": "Everything that happened in the organization, newest first.",
+  "activity.personal.description": "Your invitations and your teams' activity, newest first.",
+  "activity.personal.empty":
+    "Your invitations and activity for the teams you represent will appear here.",
   "activity.page.loadMore": "Load more",
   "activity.page.loadingMore": "Loading more activity",
   "activity.page.empty.title": "No activity yet",
@@ -5300,6 +5723,37 @@ const en: Catalog = {
   "shell.account.feedback": "Send feedback",
   "shell.account.settings": "Settings",
   "shell.account.providerHealth": "Provider health",
+  "shell.account.planAdmin": "Plans and requests",
+  "pages.admin.billing.title": "Plans and requests",
+  "pages.admin.billing.subtitle":
+    "Organizations' plan requests and manual assignment. For superusers only.",
+  "billing.admin.checkingAccess": "Checking permissions…",
+  "billing.admin.accessUnavailable": "We couldn't check your permissions for this panel.",
+  "billing.admin.denied.title": "You don't have access to this panel",
+  "billing.admin.denied.description": "Assigning plans is for superusers only.",
+  "billing.admin.loading": "Loading requests…",
+  "billing.admin.error": "We couldn't load the requests.",
+  "billing.admin.queue.title": "Pending requests",
+  "billing.admin.queue.empty": "There are no pending requests.",
+  "billing.admin.queue.organization": "Organization",
+  "billing.admin.queue.plan": "Requested plan",
+  "billing.admin.queue.date": "Requested on",
+  "billing.admin.queue.action": "Action",
+  "billing.admin.queue.assignLabel": "Assign",
+  "billing.admin.queue.assign": "Assign {plan} to {organization}",
+  "billing.admin.form.title": "Assign a plan",
+  "billing.admin.form.description":
+    "Use it once payment is confirmed outside the product. The change is recorded in the organization's history.",
+  "billing.admin.form.organizationId": "Organization ID",
+  "billing.admin.form.plan": "Plan",
+  "billing.admin.form.reason": "Reason",
+  "billing.admin.form.reasonHint": "E.g. payment received by bank transfer on November 10.",
+  "billing.admin.form.submit": "Assign plan",
+  "billing.admin.form.submitting": "Assigning…",
+  "billing.admin.form.success": "We assigned the {plan} plan to organization {organizationId}.",
+  "billing.admin.form.forbidden": "You don't have permission to assign plans.",
+  "billing.admin.form.notFound": "We couldn't find that organization.",
+  "billing.admin.form.error": "We couldn't assign the plan. Check the details and try again.",
   "providerHealth.title": "EA provider health",
   "providerHealth.subtitle":
     "Status, metrics and recent failures of the EA Clubs integration. Superusers only.",

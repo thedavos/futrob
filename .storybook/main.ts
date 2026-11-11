@@ -170,6 +170,10 @@ const config: StorybookConfig = {
           replacement: resolve(configDir, "mocks/auth-client.ts"),
         },
         {
+          find: /^@\/observability\/capture-unexpected-error(?:\.ts)?$/,
+          replacement: resolve(configDir, "mocks/capture-unexpected-error.ts"),
+        },
+        {
           find: /^@\/modules\/organizations\/presentation\/organizations-browser-client(?:\.ts)?$/,
           replacement: organizationsStoryClient,
         },

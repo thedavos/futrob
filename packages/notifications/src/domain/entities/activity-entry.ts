@@ -78,6 +78,8 @@ export const ACTIVITY_OUTCOME = {
   scheduleSet: "schedule_set",
   scheduleKept: "schedule_kept",
   walkoverIntended: "walkover_intended",
+  sanctionImposed: "sanction_imposed",
+  sanctionRevoked: "sanction_revoked",
 } as const;
 
 export type ActivityOutcome = (typeof ACTIVITY_OUTCOME)[keyof typeof ACTIVITY_OUTCOME];

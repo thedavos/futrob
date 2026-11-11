@@ -1,9 +1,10 @@
 import {
   fixturePlanSchema,
+  getPublicStandingsResponseSchema,
   getCompetitionStandingsResponseSchema,
   type FixturePlanDto,
 } from "@futrob/api-contracts";
-import { asActorId } from "@futrob/shared-kernel";
+import { asActorId, asCompetitionId, asEncounterId, asOrganizationId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import { expectMatchesOpenApi } from "@/http/contract/openapi-contract.ts";
 import {
@@ -221,6 +222,67 @@ describe("Swiss fixture HTTP contract", () => {
 
     const missingReason = await context.post(`/fixtures/${fixture.id}/swiss/rounds/1/close`, {});
     expect(missingReason.status).toBe(400);
+  });
+
+  it("serves negative Buchholz on private and public standings after a deduction", async () => {
+    const context = await setup();
+    const fixture = await publishedSwiss(context);
+    const encounter = fixture.stages[0]!.rounds[0]!.encounters[0]!;
+    if (encounter.home.kind !== "team" || encounter.away.kind !== "team")
+      throw new Error("Expected a paired table");
+    await context.modules.results.results.append({
+      id: "swiss-sanction-result",
+      encounterId: asEncounterId(encounter.id),
+      organizationId: asOrganizationId(context.organizationId),
+      competitionId: asCompetitionId(context.competitionId),
+      revision: 1,
+      status: "approved",
+      approvedAt: new Date("2030-09-01T03:00:00Z"),
+      approvedBy: asActorId(ORGANIZER),
+      slots: [
+        {
+          officialSlot: 1,
+          providerMatchRef: { providerKey: "ea-clubs", externalId: "swiss-sanction-match" },
+          homeExternalClubId: "swiss-home",
+          awayExternalClubId: "swiss-away",
+          homeGoals: 1,
+          awayGoals: 0,
+          occurredAt: new Date("2030-09-01T02:00:00Z"),
+          gameEdition: "fc26",
+          platform: "playstation",
+          players: [],
+        },
+      ],
+    });
+    const opponentTeamId = encounter.away.teamId;
+    const imposed = await context.post("/sanctions", {
+      target: { type: "team", teamId: encounter.home.teamId },
+      type: "points_deduction",
+      pointsDeducted: 6,
+      reason: "Ineligible lineup",
+    });
+    expect(imposed.status).toBe(201);
+    const privateResponse = await context.app.request(`${context.base}/standings`, {
+      headers: serviceHeaders(ORGANIZER),
+    });
+    expect(privateResponse.status).toBe(200);
+    const privateTable = await parseResponse(
+      getCompetitionStandingsResponseSchema,
+      privateResponse,
+    );
+    expect(
+      privateTable.standings?.rows.find((row) => row.teamId === opponentTeamId)?.swiss?.buchholz,
+    ).toBe(-3);
+    const organization = await context.modules.organizations.repositories.organizations.getById(
+      asOrganizationId(context.organizationId),
+    );
+    if (!organization) throw new Error("organization fixture missing");
+    const publicResponse = await context.app.request(
+      `/api/v1/public/organizations/${organization.slug}/competitions/${context.competitionId}/standings`,
+    );
+    expect(publicResponse.status).toBe(200);
+    const publicTable = await parseResponse(getPublicStandingsResponseSchema, publicResponse);
+    expect(publicTable.standings.rows.some((row) => row.buchholz === -3)).toBe(true);
   });
 
   it("has no table before any official result", async () => {

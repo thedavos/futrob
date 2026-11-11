@@ -22,11 +22,15 @@ export type ActivityDestination =
         | "/orgs/$orgId/competitions/$competitionId/disputes"
         | "/orgs/$orgId/competitions/$competitionId/encounters"
         | "/orgs/$orgId/competitions/$competitionId/teams"
+        | "/orgs/$orgId/competitions/$competitionId/sanctions"
         | "/orgs/$orgId/competitions/$competitionId";
       readonly params: { readonly orgId: string; readonly competitionId: string };
     }
   | {
-      readonly to: "/player/competitions/$competitionId/matches";
+      readonly to:
+        | "/player/competitions/$competitionId/matches"
+        | "/player/competitions/$competitionId/team"
+        | "/player/competitions/$competitionId";
       readonly params: { readonly competitionId: string };
     }
   | { readonly to: "/invitations"; readonly params?: undefined }
@@ -108,6 +112,10 @@ function decisionTitleKey(
       return "activity.decision.scheduleKept";
     case "walkover_intended":
       return "activity.decision.walkoverIntended";
+    case "sanction_imposed":
+      return "activity.decision.sanctionImposed";
+    case "sanction_revoked":
+      return "activity.decision.sanctionRevoked";
     case null:
       return "activity.decision.generic";
   }
@@ -177,10 +185,20 @@ function destination(entry: ActivityEntryDto): ActivityDestination | null {
     return entry.kind === "roster_invitation" ? { to: "/invitations" } : null;
   }
   if (!competitionId) return null;
+  const isSanction =
+    entry.kind === "organizer_decision" &&
+    (entry.subject.outcome === "sanction_imposed" || entry.subject.outcome === "sanction_revoked");
   if (entry.audience === "team") {
+    if (isSanction) {
+      return { to: "/player/competitions/$competitionId/team", params: { competitionId } };
+    }
+    if (entry.resourceType === "competition") {
+      return { to: "/player/competitions/$competitionId", params: { competitionId } };
+    }
     return { to: "/player/competitions/$competitionId/matches", params: { competitionId } };
   }
   const params = { orgId: entry.organizationId, competitionId };
+  if (isSanction) return { to: "/orgs/$orgId/competitions/$competitionId/sanctions", params };
   switch (entry.kind) {
     case "match_dispute":
       return { to: "/orgs/$orgId/competitions/$competitionId/disputes", params };

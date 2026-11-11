@@ -37,6 +37,7 @@ export const sourceSnapshot: CompetitionFixtureSourceSnapshot = {
     knockout: "aggregate_score",
   },
   standingPoints: { winPoints: 3, drawPoints: 1, lossPoints: 0 },
+  pointDeductions: [],
   approvedParticipants: [asTeamId("team-a"), asTeamId("team-b")],
 };
 

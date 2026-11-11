@@ -5,6 +5,9 @@ export interface AuthWorkerEnv {
   readonly BETTER_AUTH_SECRET?: string;
   readonly BETTER_AUTH_URL?: string;
   readonly BETTER_AUTH_TRUSTED_ORIGINS?: string;
+  readonly NODE_ENV?: string;
+  readonly SENTRY_DSN?: string;
+  readonly SENTRY_ENVIRONMENT?: string;
 }
 
 export interface AuthEnv {

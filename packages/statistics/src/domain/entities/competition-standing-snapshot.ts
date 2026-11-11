@@ -19,7 +19,13 @@ export interface CompetitionStandingRow {
   readonly goalsFor: number;
   readonly goalsAgainst: number;
   readonly goalDifference: number;
+  /** Match points minus `pointsDeducted`; negative when deductions exceed them. */
   readonly points: number;
+  /**
+   * Points taken away by active sanctions (ADR-0028). Absent on snapshots stored before
+   * deductions existed, which read as 0.
+   */
+  readonly pointsDeducted?: number;
   /** Latest official results, oldest first, at most `STANDING_FORM_LENGTH`. */
   readonly form: readonly StandingFormResult[];
   /** Swiss only. `points` above already include the bye credit. */

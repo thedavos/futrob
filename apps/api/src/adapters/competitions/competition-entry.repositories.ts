@@ -120,8 +120,8 @@ export class PostgresCompetitionEntryRepository implements CompetitionEntryRepos
        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (competition_id, team_id) DO UPDATE
        SET status = CASE
-         WHEN competition_entries.status = 'pending' AND EXCLUDED.status = 'approved'
-         THEN 'approved'
+         WHEN competition_entries.status = 'pending' AND EXCLUDED.status IN ('approved', 'rejected')
+         THEN EXCLUDED.status
          ELSE competition_entries.status
        END
        RETURNING id, organization_id, competition_id, team_id, status, created_at, creation_key`,

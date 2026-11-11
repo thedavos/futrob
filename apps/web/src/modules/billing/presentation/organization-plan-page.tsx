@@ -18,12 +18,17 @@ import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
-import { useOrganizationPlanQuery } from "./billing-queries.ts";
+import {
+  useCancelPlanRequestMutation,
+  useOrganizationPlanQuery,
+  useRequestPlanMutation,
+} from "./billing-queries.ts";
 import {
   PlanChangesCard,
   PlanFeaturesCard,
   PlanSummaryCard,
   PlanUsageCard,
+  type PlanRequestControls,
 } from "./organization-plan-sections.tsx";
 import { styles } from "./organization-plan.styles.ts";
 
@@ -34,6 +39,7 @@ export type OrganizationPlanState =
   | {
       readonly kind: "ready";
       readonly plan: GetOrganizationPlanResponse;
+      readonly request?: PlanRequestControls;
       /** A background refresh failed; the last plan stays on screen. */
       readonly refreshRetry?: () => void;
     };
@@ -42,6 +48,22 @@ export function OrganizationPlanRoute({ organizationId }: { readonly organizatio
   const queryClient = useQueryClient();
   const access = useCan({ organizationId }, BILLING_PERMISSION.read);
   const query = useOrganizationPlanQuery(organizationId, access.allowed);
+  const canRequest = useCan({ organizationId }, BILLING_PERMISSION.plansRequest);
+  const requestPlan = useRequestPlanMutation(organizationId);
+  const cancelRequest = useCancelPlanRequestMutation(organizationId);
+  const request: PlanRequestControls = {
+    canRequest: canRequest.allowed,
+    busy: requestPlan.isPending || cancelRequest.isPending,
+    failure: requestPlan.isError ? "request" : cancelRequest.isError ? "cancel" : null,
+    onRequest: (planKey) => {
+      cancelRequest.reset();
+      requestPlan.mutate({ planKey });
+    },
+    onCancel: () => {
+      requestPlan.reset();
+      cancelRequest.mutate();
+    },
+  };
 
   const state: OrganizationPlanState = (() => {
     // Access is decided first, so a revoked role never sees a cached plan.
@@ -64,6 +86,7 @@ export function OrganizationPlanRoute({ organizationId }: { readonly organizatio
       return {
         kind: "ready",
         plan: read.value,
+        request,
         refreshRetry: query.isRefetchError ? () => void query.refetch() : undefined,
       };
     }
@@ -127,7 +150,7 @@ export function OrganizationPlanPageView({ state }: { readonly state: Organizati
                 ) : null}
                 <div {...applyStyles(styles.grid)}>
                   <PlanUsageCard plan={state.plan} />
-                  <PlanSummaryCard plan={state.plan} />
+                  <PlanSummaryCard plan={state.plan} request={state.request} />
                   <PlanFeaturesCard plan={state.plan} />
                   <PlanChangesCard changes={state.plan.recentChanges} />
                 </div>

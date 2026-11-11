@@ -1,6 +1,7 @@
 import {
   AssignOrganizationPlanUseCase,
   type PlanChangeAuditRepository,
+  type PlanRequestRepository,
   type QuotaLedgerPort,
   type SubscriptionRepository,
 } from "@futrob/billing";
@@ -17,6 +18,7 @@ export interface BillingAdapters {
   readonly ledger: QuotaLedgerPort;
   readonly subscriptions: SubscriptionRepository;
   readonly audit: PlanChangeAuditRepository;
+  readonly requests: PlanRequestRepository;
 }
 
 const at = new Date("2026-10-15T12:00:00.000Z");
@@ -252,5 +254,55 @@ export function billingAdapterContract(create: () => Promise<BillingAdapters>) {
 
     expect((await subscriptions.findForActor(actorId))?.planKey).toBe("player_premium");
     expect(await subscriptions.findForOrganization(CONTRACT_ORG)).toBeNull();
+  });
+}
+
+const requestedAt = new Date("2026-10-15T12:00:00.000Z");
+
+function planRequest(id: string, organizationId: typeof CONTRACT_ORG, minutes: number) {
+  return {
+    id,
+    organizationId,
+    planKey: "pro" as const,
+    requestedByActorId: CONTRACT_SUPERUSER,
+    status: "pending" as const,
+    createdAt: new Date(requestedAt.getTime() + minutes * 60_000),
+    resolvedAt: null,
+  };
+}
+
+/** Plan requests: one open request per organization, oldest first, scoped by organization. */
+export function planRequestAdapterContract(create: () => Promise<BillingAdapters>) {
+  it("finds only the pending request of the organization and lists the queue oldest first", async () => {
+    const { requests } = await create();
+    await requests.save(planRequest("request-b", CONTRACT_OTHER_ORG, 5));
+    await requests.save(planRequest("request-a", CONTRACT_ORG, 1));
+
+    expect(await requests.findPendingForOrganization(CONTRACT_ORG)).toMatchObject({
+      id: "request-a",
+      planKey: "pro",
+      status: "pending",
+      resolvedAt: null,
+    });
+    expect((await requests.listPending(10)).map((request) => request.id)).toEqual([
+      "request-a",
+      "request-b",
+    ]);
+    expect(await requests.listPending(1)).toHaveLength(1);
+  });
+
+  it("drops a request from the pending queue once it is resolved", async () => {
+    const { requests } = await create();
+    const pending = planRequest("request-a", CONTRACT_ORG, 1);
+    await requests.save(pending);
+
+    await requests.save({
+      ...pending,
+      status: "fulfilled",
+      resolvedAt: new Date("2026-10-16T08:00:00.000Z"),
+    });
+
+    expect(await requests.findPendingForOrganization(CONTRACT_ORG)).toBeNull();
+    expect(await requests.listPending(10)).toEqual([]);
   });
 }

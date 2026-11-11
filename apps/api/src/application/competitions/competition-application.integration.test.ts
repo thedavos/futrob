@@ -1,3 +1,9 @@
+import {
+  applyToCompetitionResponseSchema,
+  competitionEntrySchema,
+  getMyCompetitionApplicationResponseSchema,
+  listActivitiesResponseSchema,
+} from "@futrob/api-contracts";
 import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { randomUUID } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
@@ -133,6 +139,74 @@ describe.skipIf(!databaseUrl)("competition application Postgres atomicity", () =
         requires_action: true,
         team_name: "Rollback team",
       },
+    ]);
+  });
+  it("persists rejection, closes pending activity, and records the decision only once", async () => {
+    await seedActors(pool, "rejection-organizer", "rejection-applicant");
+    const modules = createModules({
+      fetcher: stubFetch,
+      eaClubsBaseUrl: "https://example.test",
+      pool,
+    });
+    const app = createApp({
+      modules,
+      internalJobSecret: INTERNAL_JOB_SECRET,
+      correlationLogger: { info: () => undefined, error: () => undefined },
+      checkDbHealth: async () => "ok",
+    });
+    const created = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders("rejection-organizer"),
+      body: JSON.stringify({
+        name: "Rejection proof",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const org = created.organizationId;
+    const comp = created.competition.competition.id;
+    const base = `/api/v1/organizations/${org}/competitions/${comp}`;
+    await app.request(`${base}/registration/open`, {
+      method: "POST",
+      headers: serviceHeaders("rejection-organizer"),
+    });
+    const applied = await parseResponse(
+      applyToCompetitionResponseSchema,
+      await app.request(`/api/v1/competitions/explore/${comp}/application`, {
+        method: "POST",
+        headers: serviceHeaders("rejection-applicant"),
+        body: JSON.stringify({ teamName: "Rejected team", creationKey: "rejected-team-key" }),
+      }),
+    );
+    const reject = () =>
+      app.request(`${base}/entries/${applied.entryId}/reject`, {
+        method: "POST",
+        headers: serviceHeaders("rejection-organizer"),
+      });
+    const response = await reject();
+    expect(response.status).toBe(200);
+    expect(await parseResponse(competitionEntrySchema, response)).toMatchObject({
+      status: "rejected",
+    });
+    const current = await parseResponse(
+      getMyCompetitionApplicationResponseSchema,
+      await app.request(`/api/v1/competitions/explore/${comp}/application`, {
+        headers: serviceHeaders("rejection-applicant"),
+      }),
+    );
+    expect(current.application).toMatchObject({ entryId: applied.entryId, status: "rejected" });
+    expect((await reject()).status).toBe(409);
+    const feed = await parseResponse(
+      listActivitiesResponseSchema,
+      await app.request(`/api/v1/organizations/${org}/activities`, {
+        headers: serviceHeaders("rejection-organizer"),
+      }),
+    );
+    expect(
+      feed.activities.map((row) => [row.kind, row.status, row.subject.outcome]).sort(),
+    ).toEqual([
+      ["competition_entry", "closed", null],
+      ["organizer_decision", "closed", "entry_rejected"],
     ]);
   });
 });

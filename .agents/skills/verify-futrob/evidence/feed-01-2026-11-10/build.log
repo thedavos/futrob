@@ -1,0 +1,555 @@
+
+> futrob@0.1.0 build
+> npm run web:build
+
+
+> futrob@0.1.0 web:build
+> cross-env NODE_ENV=production vp build apps/web
+
+transforming...
+✓ 7156 modules transformed.
+rendering chunks...
+computing gzip size...
+apps/web/dist/client/.assetsignore                                                                0.02 kB
+apps/web/dist/client/assets/gamepad-xndbmcA1.svg                                                 11.74 kB │ gzip:   5.31 kB
+apps/web/dist/client/assets/club-finder-B-0W2K7-.svg                                             19.12 kB │ gzip:  14.23 kB
+apps/web/dist/client/assets/manrope-latin-wght-normal-DHIcAJRg.woff2                             24.83 kB
+apps/web/dist/client/assets/background-stripes-DUACMXE5.png                                      99.83 kB
+apps/web/dist/client/.vite/manifest.json                                                        104.08 kB │ gzip:  11.35 kB
+apps/web/dist/client/assets/background-default-C5W8w2KU.png                                     142.64 kB
+apps/web/dist/client/assets/background-match-D7xiXjlk.png                                       155.13 kB
+apps/web/dist/client/assets/trophy-lightning-Dah4YQr6.png                                       216.23 kB
+apps/web/dist/client/assets/illustration-empty-standings-Ce8sVQSe.png                           244.15 kB
+apps/web/dist/client/assets/trophy-cup-DoGPy8c0.png                                             249.47 kB
+apps/web/dist/client/assets/trophy-BCdqZdnP.png                                                 274.81 kB
+apps/web/dist/client/assets/trophy-groups-NVIzgpS_.png                                          285.44 kB
+apps/web/dist/client/assets/illustration-pending-bracket-B_hmwTVC.png                           303.38 kB
+apps/web/dist/client/assets/illustration-no-matches-BSojKMYO.png                                306.04 kB
+apps/web/dist/client/assets/trophy-supercup-DHQof8Zf.png                                        311.94 kB
+apps/web/dist/client/assets/trophy-playoffs-CG4TE0lC.png                                        337.94 kB
+apps/web/dist/client/assets/trophy-pre-season-Cs11QM6A.png                                      349.85 kB
+apps/web/dist/client/assets/trophy-amistosos-ycGVKnmo.png                                       403.68 kB
+apps/web/dist/client/assets/illustration-dispute-C4SWbav-.png                                   405.10 kB
+apps/web/dist/client/assets/illustration-create-competition-C5wkSZfm.png                        411.92 kB
+apps/web/dist/client/assets/illustration-game-data-sync-SJ9rB05X.png                            415.72 kB
+apps/web/dist/client/assets/illustration-invitations-DiRFoix7.png                               423.74 kB
+apps/web/dist/client/assets/illustration-squad-DwIonK2M.png                                     426.07 kB
+apps/web/dist/client/assets/trophy-league-9X4u9bbR.png                                          436.58 kB
+apps/web/dist/client/assets/illustration-permissions-BdRXlZOM.png                               442.44 kB
+apps/web/dist/client/assets/illustration-my-stats-BWUjUTii.png                                  472.40 kB
+apps/web/dist/client/assets/illustration-empty-matches-MudxHU2V.png                             473.74 kB
+apps/web/dist/client/assets/illustration-sports-venue-B80BjFfA.png                              479.05 kB
+apps/web/dist/client/assets/illustration-registration-2F6_5Ybh.png                              502.07 kB
+apps/web/dist/client/assets/illustration-pending-fixtures-D6quHbeU.png                          511.54 kB
+apps/web/dist/client/assets/illustration-rules-CAO7eDj9.png                                     530.46 kB
+apps/web/dist/client/assets/styles-CvmKV3cE.css                                                  17.14 kB │ gzip:   3.86 kB
+apps/web/dist/client/assets/player-profile-charts-u668kLOp.css                                   74.34 kB │ gzip:  15.88 kB
+apps/web/dist/client/assets/queryOptions-Dfvzj6n2.js                                              0.03 kB │ gzip:   0.05 kB
+apps/web/dist/client/assets/dispute-review-anchor-D4elE8QW.js                                     0.04 kB │ gzip:   0.06 kB
+apps/web/dist/client/assets/trophy-gYNVb2vP.js                                                    0.05 kB │ gzip:   0.07 kB
+apps/web/dist/client/assets/gamepad-f5SQwHLs.js                                                   0.05 kB │ gzip:   0.07 kB
+apps/web/dist/client/assets/club-finder-CR93wNc4.js                                               0.05 kB │ gzip:   0.07 kB
+apps/web/dist/client/assets/background-stripes-sKdrUecV.js                                        0.06 kB │ gzip:   0.08 kB
+apps/web/dist/client/assets/illustration-invitations-CaUbnH0Y.js                                  0.06 kB │ gzip:   0.08 kB
+apps/web/dist/client/assets/illustration-permissions-CnXVRaNY.js                                  0.06 kB │ gzip:   0.08 kB
+apps/web/dist/client/assets/illustration-empty-standings-D2FzY0MB.js                              0.07 kB │ gzip:   0.09 kB
+apps/web/dist/client/assets/illustration-pending-fixtures-CtpNHhkX.js                             0.07 kB │ gzip:   0.09 kB
+apps/web/dist/client/assets/player_.activity-Q_rOQPvq.js                                          0.09 kB │ gzip:   0.10 kB
+apps/web/dist/client/assets/invalidate-effective-access-BgCl1c8r.js                               0.12 kB │ gzip:   0.13 kB
+apps/web/dist/client/assets/workspace-selection-context-qlXL1_41.js                               0.14 kB │ gzip:   0.14 kB
+apps/web/dist/client/assets/player_.matches-Bw1bfDI8.js                                           0.14 kB │ gzip:   0.14 kB
+apps/web/dist/client/assets/run-once-by-key-BHxeR578.js                                           0.16 kB │ gzip:   0.13 kB
+apps/web/dist/client/assets/players-0LkSjMBZ.js                                                   0.16 kB │ gzip:   0.15 kB
+apps/web/dist/client/assets/analytics-p806eb05.js                                                 0.16 kB │ gzip:   0.15 kB
+apps/web/dist/client/assets/platform-label-D2JlyakL.js                                            0.16 kB │ gzip:   0.13 kB
+apps/web/dist/client/assets/invitations-H4s0_S0g.js                                               0.16 kB │ gzip:   0.16 kB
+apps/web/dist/client/assets/initials-from-name-Cwh1QnYX.js                                        0.18 kB │ gzip:   0.15 kB
+apps/web/dist/client/assets/schedule-change-browser-client-Cgtuc4An.js                            0.18 kB │ gzip:   0.17 kB
+apps/web/dist/client/assets/useRouter-BHfDPQTU.js                                                 0.18 kB │ gzip:   0.16 kB
+apps/web/dist/client/assets/sr-only-BGDVuch3.js                                                   0.19 kB │ gzip:   0.19 kB
+apps/web/dist/client/assets/patch-query-data-DLtuWdKj.js                                          0.21 kB │ gzip:   0.16 kB
+apps/web/dist/client/assets/localized-head-Di-_x7N9.js                                            0.23 kB │ gzip:   0.20 kB
+apps/web/dist/client/assets/useRouterState-C_HpCrqi.js                                            0.23 kB │ gzip:   0.19 kB
+apps/web/dist/client/assets/game-data-queries-CWIrZWzP.js                                         0.23 kB │ gzip:   0.19 kB
+apps/web/dist/client/assets/team-scope-BBgfZs3z.js                                                0.24 kB │ gzip:   0.18 kB
+apps/web/dist/client/assets/activity-CQ5lrluw.js                                                  0.25 kB │ gzip:   0.20 kB
+apps/web/dist/client/assets/onboarding-BjVHSaAp.js                                                0.25 kB │ gzip:   0.20 kB
+apps/web/dist/client/assets/player_.competitions_._competitionId_.team.roster-Bxj0Klek.js         0.27 kB │ gzip:   0.21 kB
+apps/web/dist/client/assets/roster-aq3liFLN.js                                                    0.27 kB │ gzip:   0.21 kB
+apps/web/dist/client/assets/player-matches-search-dyzK1J3U.js                                     0.27 kB │ gzip:   0.21 kB
+apps/web/dist/client/assets/player_.competitions_._competitionId_.team.invitations-Y6ETHbdK.js    0.27 kB │ gzip:   0.21 kB
+apps/web/dist/client/assets/roster-invitation-link-Vm75BpAB.js                                    0.27 kB │ gzip:   0.23 kB
+apps/web/dist/client/assets/invitations-CiV75-ua.js                                               0.28 kB │ gzip:   0.21 kB
+apps/web/dist/client/assets/encounters-CMIwzsm-.js                                                0.28 kB │ gzip:   0.21 kB
+apps/web/dist/client/assets/safe-redirect-lKEdpByR.js                                             0.29 kB │ gzip:   0.19 kB
+apps/web/dist/client/assets/player_.competitions_._competitionId_.team.index-BT3aatwf.js          0.30 kB │ gzip:   0.22 kB
+apps/web/dist/client/assets/team-CrDPJzyc.js                                                      0.30 kB │ gzip:   0.23 kB
+apps/web/dist/client/assets/metric-stat-value-PHQsTlKW.js                                         0.31 kB │ gzip:   0.23 kB
+apps/web/dist/client/assets/matches-B-ar-87u.js                                                   0.31 kB │ gzip:   0.23 kB
+apps/web/dist/client/assets/ea-club-search-meta-C6j1ta2N.js                                       0.32 kB │ gzip:   0.25 kB
+apps/web/dist/client/assets/use-focus-when-idle-MvwTqFEQ.js                                       0.32 kB │ gzip:   0.23 kB
+apps/web/dist/client/assets/stored-refusal-CGYDHiF8.js                                            0.35 kB │ gzip:   0.24 kB
+apps/web/dist/client/assets/accept._token-QvPAMRXn.js                                             0.36 kB │ gzip:   0.27 kB
+apps/web/dist/client/assets/onboarding-invitation-handoff-BvBGsIV8.js                             0.37 kB │ gzip:   0.27 kB
+apps/web/dist/client/assets/onboarding-B_oLDOD1.js                                                0.39 kB │ gzip:   0.28 kB
+apps/web/dist/client/assets/useSelector-C2ssZCqU.js                                               0.40 kB │ gzip:   0.28 kB
+apps/web/dist/client/assets/time-B01SxlRU.js                                                      0.41 kB │ gzip:   0.24 kB
+apps/web/dist/client/assets/useNavigate-DqMjF85N.js                                               0.42 kB │ gzip:   0.29 kB
+apps/web/dist/client/assets/ea-logo-2SJbCbOF.js                                                   0.43 kB │ gzip:   0.34 kB
+apps/web/dist/client/assets/_plainToken-CS_HTN7r.js                                               0.44 kB │ gzip:   0.32 kB
+apps/web/dist/client/assets/browser-json-request-CNEBLJrS.js                                      0.45 kB │ gzip:   0.31 kB
+apps/web/dist/client/assets/retry-alert-DPXBaJ6N.js                                               0.47 kB │ gzip:   0.34 kB
+apps/web/dist/client/assets/page-scaffold-sZvrGWvX.js                                             0.50 kB │ gzip:   0.31 kB
+apps/web/dist/client/assets/plan-upsell-alert-CMPOLoxA.js                                         0.50 kB │ gzip:   0.33 kB
+apps/web/dist/client/assets/use-effective-permissions-p12nF1xO.js                                 0.53 kB │ gzip:   0.35 kB
+apps/web/dist/client/assets/onboarding-C3hodPHr.js                                                0.53 kB │ gzip:   0.32 kB
+apps/web/dist/client/assets/support-fields-Bs7l6oX_.js                                            0.59 kB │ gzip:   0.16 kB
+apps/web/dist/client/assets/useMatch-B1gMG5ad.js                                                  0.61 kB │ gzip:   0.39 kB
+apps/web/dist/client/assets/_invitationId-DfFStgRa.js                                             0.64 kB │ gzip:   0.42 kB
+apps/web/dist/client/assets/player-match-view-calendar-CvdQDpv0.js                                0.65 kB │ gzip:   0.36 kB
+apps/web/dist/client/assets/player_.competitions_._competitionId_.matches-Dpt_NheF.js             0.67 kB │ gzip:   0.37 kB
+apps/web/dist/client/assets/roster-player-cell-B2zagHa_.js                                        0.70 kB │ gzip:   0.45 kB
+apps/web/dist/client/assets/rolldown-runtime-hePW80VL.js                                          0.71 kB │ gzip:   0.42 kB
+apps/web/dist/client/assets/organization-home-copy-B0ncF_Tk.js                                    0.72 kB │ gzip:   0.33 kB
+apps/web/dist/client/assets/permissions-CoE8Skvs.js                                               0.75 kB │ gzip:   0.40 kB
+apps/web/dist/client/assets/account.styles-kGzhvTku.js                                            0.76 kB │ gzip:   0.35 kB
+apps/web/dist/client/assets/use-form-validation-vHLWbom_.js                                       0.76 kB │ gzip:   0.45 kB
+apps/web/dist/client/assets/use-retry-after-countdown-CLMgnu0W.js                                 0.77 kB │ gzip:   0.46 kB
+apps/web/dist/client/assets/onboarding-step-meta-BeTvKDR9.js                                      0.78 kB │ gzip:   0.39 kB
+apps/web/dist/client/assets/competition-cover-assets-L9InAmOO.js                                  0.82 kB │ gzip:   0.43 kB
+apps/web/dist/client/assets/statistics-queries-DWJIn0Sf.js                                        0.94 kB │ gzip:   0.46 kB
+apps/web/dist/client/assets/competition-draft-meta-i4EZwwRa.js                                    0.96 kB │ gzip:   0.49 kB
+apps/web/dist/client/assets/explore-search-SLFV_VEu.js                                            1.04 kB │ gzip:   0.54 kB
+apps/web/dist/client/assets/competition-encounters-page.styles-LA6U58af.js                        1.05 kB │ gzip:   0.54 kB
+apps/web/dist/client/assets/time-zone-options-uYm4SZKL.js                                         1.09 kB │ gzip:   0.63 kB
+apps/web/dist/client/assets/auth-form-helpers-CY2GN6MC.js                                         1.13 kB │ gzip:   0.73 kB
+apps/web/dist/client/assets/useInfiniteQuery-Dp_27qoJ.js                                          1.15 kB │ gzip:   0.49 kB
+apps/web/dist/client/assets/src-6T6h87YH.js                                                       1.16 kB │ gzip:   0.51 kB
+apps/web/dist/client/assets/plan-copy-BrYVbxk1.js                                                 1.20 kB │ gzip:   0.46 kB
+apps/web/dist/client/assets/club-BFduT2lI.js                                                      1.21 kB │ gzip:   0.64 kB
+apps/web/dist/client/assets/entry-invitation-copy-Dh_ofGjU.js                                     1.27 kB │ gzip:   0.56 kB
+apps/web/dist/client/assets/auth-resume-BIS37bln.js                                               1.29 kB │ gzip:   0.64 kB
+apps/web/dist/client/assets/club-crest-avatar-CFOYASkZ.js                                         1.30 kB │ gzip:   0.76 kB
+apps/web/dist/client/assets/src-BQ_V2Ktw.js                                                       1.32 kB │ gzip:   0.45 kB
+apps/web/dist/client/assets/profile-kpi-BwVmLikh.js                                               1.35 kB │ gzip:   0.75 kB
+apps/web/dist/client/assets/organization-avatar-B0dJaa5W.js                                       1.38 kB │ gzip:   0.85 kB
+apps/web/dist/client/assets/match-pitch-surface-DRE-1VqT.js                                       1.43 kB │ gzip:   0.74 kB
+apps/web/dist/client/assets/CaretUp.es-BEeDNN40.js                                                1.51 kB │ gzip:   0.57 kB
+apps/web/dist/client/assets/identity-browser-client-DtE1w13H.js                                   1.67 kB │ gzip:   0.65 kB
+apps/web/dist/client/assets/MinusCircle.es-2247B71z.js                                            1.74 kB │ gzip:   0.63 kB
+apps/web/dist/client/assets/game-data-browser-client-C42h0xvP.js                                  1.80 kB │ gzip:   0.69 kB
+apps/web/dist/client/assets/workspace-selection-C_i7IFPJ.js                                       1.81 kB │ gzip:   0.66 kB
+apps/web/dist/client/assets/preload-helper-JEItCJ1W.js                                            1.86 kB │ gzip:   1.00 kB
+apps/web/dist/client/assets/Clock.es-Durvvg4V.js                                                  1.87 kB │ gzip:   0.66 kB
+apps/web/dist/client/assets/encounter-queries-sYwif8Xu.js                                         1.88 kB │ gzip:   0.68 kB
+apps/web/dist/client/assets/ChartBar.es-CRHaJWsa.js                                               1.88 kB │ gzip:   0.70 kB
+apps/web/dist/client/assets/add-club-dialog-OhP75pd6.js                                           1.89 kB │ gzip:   0.97 kB
+apps/web/dist/client/assets/competition-standings-queries-BjZPEbiY.js                             1.92 kB │ gzip:   0.95 kB
+apps/web/dist/client/assets/LockSimple.es-scUDqBof.js                                             1.97 kB │ gzip:   0.68 kB
+apps/web/dist/client/assets/statistics-browser-client-CgzqhdXd.js                                 1.97 kB │ gzip:   0.83 kB
+apps/web/dist/client/assets/organization-BvK6G7jk.js                                              2.08 kB │ gzip:   0.96 kB
+apps/web/dist/client/assets/workspace-access-BEnf6edB.js                                          2.13 kB │ gzip:   0.83 kB
+apps/web/dist/client/assets/intention-DSde_N8E.js                                                 2.14 kB │ gzip:   0.91 kB
+apps/web/dist/client/assets/CalendarBlank.es-CKCbN7Qo.js                                          2.28 kB │ gzip:   0.73 kB
+apps/web/dist/client/assets/Pulse.es-BeH-ywvy.js                                                  2.31 kB │ gzip:   0.90 kB
+apps/web/dist/client/assets/private-content-gate-BpD7fNLB.js                                      2.32 kB │ gzip:   1.14 kB
+apps/web/dist/client/assets/organization-queries-CaMM9P99.js                                      2.33 kB │ gzip:   0.82 kB
+apps/web/dist/client/assets/useMutation-CVak2qB9.js                                               2.40 kB │ gzip:   1.00 kB
+apps/web/dist/client/assets/accept-AKRinCEb.js                                                    2.42 kB │ gzip:   1.22 kB
+apps/web/dist/client/assets/organization-recent-activity-DnPXoY2e.js                              2.45 kB │ gzip:   1.11 kB
+apps/web/dist/client/assets/_auth-DArMjbVK.js                                                     2.49 kB │ gzip:   1.20 kB
+apps/web/dist/client/assets/ListBullets.es-Cp-CL3OD.js                                            2.51 kB │ gzip:   0.74 kB
+apps/web/dist/client/assets/PencilSimple.es-D11FOXy-.js                                           2.52 kB │ gzip:   0.91 kB
+apps/web/dist/client/assets/captain-invitations-page-Cd__uX6M.js                                  2.54 kB │ gzip:   1.07 kB
+apps/web/dist/client/assets/competition-labels-CtfyW3Xw.js                                        2.57 kB │ gzip:   0.82 kB
+apps/web/dist/client/assets/shell-action-bar-Dvu8jV6P.js                                          2.62 kB │ gzip:   1.10 kB
+apps/web/dist/client/assets/club-search-result-item-CHR631Ts.js                                   2.63 kB │ gzip:   1.22 kB
+apps/web/dist/client/assets/ClockCounterClockwise.es-DIZH9OfF.js                                  2.69 kB │ gzip:   1.08 kB
+apps/web/dist/client/assets/player-queries-DTa7-X8z.js                                            2.76 kB │ gzip:   0.89 kB
+apps/web/dist/client/assets/activity-feed-list-CqMi9N5p.js                                        2.76 kB │ gzip:   1.17 kB
+apps/web/dist/client/assets/accept-AIGn948R.js                                                    2.76 kB │ gzip:   1.45 kB
+apps/web/dist/client/assets/platform-logo-BnzCPpiS.js                                             2.85 kB │ gzip:   1.39 kB
+apps/web/dist/client/assets/platform-choice-BopQ2Y70.js                                           2.89 kB │ gzip:   1.35 kB
+apps/web/dist/client/assets/invitation-D_WvA495.js                                                2.99 kB │ gzip:   1.31 kB
+apps/web/dist/client/assets/organization-activity-page-VZfSpJIC.js                                2.99 kB │ gzip:   1.17 kB
+apps/web/dist/client/assets/orgs-BdRehkas.js                                                      2.99 kB │ gzip:   1.29 kB
+apps/web/dist/client/assets/player-match-row-DWupyaTg.js                                          3.06 kB │ gzip:   1.38 kB
+apps/web/dist/client/assets/IdentificationBadge.es-C-IedAFn.js                                    3.24 kB │ gzip:   1.07 kB
+apps/web/dist/client/assets/teams-browser-client-DSNsRMBG.js                                      3.26 kB │ gzip:   1.08 kB
+apps/web/dist/client/assets/competitions-BY4wDyhR.js                                              3.34 kB │ gzip:   1.61 kB
+apps/web/dist/client/assets/ArrowsClockwise.es-B3ZXe2NQ.js                                        3.35 kB │ gzip:   1.20 kB
+apps/web/dist/client/assets/entry-invitation-queries-DySrQGSR.js                                  3.35 kB │ gzip:   1.32 kB
+apps/web/dist/client/assets/ShieldPlus.es-B0aQrPVu.js                                             3.42 kB │ gzip:   1.25 kB
+apps/web/dist/client/assets/player_.competitions-BST41yoB.js                                      3.51 kB │ gzip:   1.57 kB
+apps/web/dist/client/assets/useQueries-Dwygra64.js                                                3.56 kB │ gzip:   1.54 kB
+apps/web/dist/client/assets/support-error-alert-Cn22_zwB.js                                       3.57 kB │ gzip:   1.50 kB
+apps/web/dist/client/assets/link._code-CbCZ-yDk.js                                                3.58 kB │ gzip:   1.62 kB
+apps/web/dist/client/assets/status-screen-BJlUg-DP.js                                             3.66 kB │ gzip:   1.57 kB
+apps/web/dist/client/assets/competition-team-queries-BSJ3ko8t.js                                  3.72 kB │ gzip:   1.33 kB
+apps/web/dist/client/assets/player_.ea-clubs-DYV4frgj.js                                          3.74 kB │ gzip:   1.76 kB
+apps/web/dist/client/assets/fileRoute-BeSXFQdY.js                                                 3.77 kB │ gzip:   1.22 kB
+apps/web/dist/client/assets/competition-queries-5EgnS9WK.js                                       3.88 kB │ gzip:   1.27 kB
+apps/web/dist/client/assets/player-match-view-BbbtzHkI.js                                         3.89 kB │ gzip:   1.49 kB
+apps/web/dist/client/assets/player_.profile-B4ELKpct.js                                           3.99 kB │ gzip:   1.50 kB
+apps/web/dist/client/assets/captain-roster-page-Dx88Up_3.js                                       4.11 kB │ gzip:   1.59 kB
+apps/web/dist/client/assets/player_.competitions_._competitionId_.stats-CCpSfIsL.js               4.15 kB │ gzip:   1.45 kB
+apps/web/dist/client/assets/competitions-browser-client-tOTWBvOx.js                               4.25 kB │ gzip:   1.28 kB
+apps/web/dist/client/assets/game-account-EGlr_QK6.js                                              4.28 kB │ gzip:   1.67 kB
+apps/web/dist/client/assets/permissions-BGJx9fME.js                                               4.30 kB │ gzip:   1.47 kB
+apps/web/dist/client/assets/link-5UJ49-v4.js                                                      4.34 kB │ gzip:   2.22 kB
+apps/web/dist/client/assets/disputes-Cuko9z_v.js                                                  4.37 kB │ gzip:   1.63 kB
+apps/web/dist/client/assets/login-B0AxPfOf.js                                                     4.54 kB │ gzip:   2.12 kB
+apps/web/dist/client/assets/organization-profile-fields-wUYFZgyj.js                               4.57 kB │ gzip:   1.70 kB
+apps/web/dist/client/assets/competition-encounters-page-DU44qPXr.js                               4.61 kB │ gzip:   1.67 kB
+apps/web/dist/client/assets/review-YR3g03_r.js                                                    4.62 kB │ gzip:   1.87 kB
+apps/web/dist/client/assets/onboarding-shell-DxGtn9Q7.js                                          4.74 kB │ gzip:   2.05 kB
+apps/web/dist/client/assets/provider-match-detail-model-CjPiuxuw.js                               4.97 kB │ gzip:   1.54 kB
+apps/web/dist/client/assets/settings-KY9FbKzi.js                                                  5.05 kB │ gzip:   2.04 kB
+apps/web/dist/client/assets/new-DU0NEt4n.js                                                       5.30 kB │ gzip:   2.20 kB
+apps/web/dist/client/assets/schedule-resolution-time-BITrdBK4.js                                  5.57 kB │ gzip:   2.10 kB
+apps/web/dist/client/assets/ea-club-link-form-D5S1B8Fo.js                                         5.80 kB │ gzip:   2.39 kB
+apps/web/dist/client/assets/landing-header-B6vAPfDh.js                                            6.15 kB │ gzip:   2.18 kB
+apps/web/dist/client/assets/signup-Sx5rv1gK.js                                                    6.19 kB │ gzip:   2.56 kB
+apps/web/dist/client/assets/explore-viewer-relation-DbQ0y6J9.js                                   6.20 kB │ gzip:   2.15 kB
+apps/web/dist/client/assets/competition-fixture-labels-SR5p4oj_.js                                6.21 kB │ gzip:   2.29 kB
+apps/web/dist/client/assets/pricing-1doXlsrz.js                                                   6.31 kB │ gzip:   2.19 kB
+apps/web/dist/client/assets/use-captain-team-detail-7kIKquXA.js                                   6.75 kB │ gzip:   2.26 kB
+apps/web/dist/client/assets/removable-D6pxXxpk.js                                                 7.26 kB │ gzip:   2.78 kB
+apps/web/dist/client/assets/player_.competitions_._competitionId-BOj2dSe1.js                      7.78 kB │ gzip:   2.35 kB
+apps/web/dist/client/assets/use-workspace-selection-BW0UPt0H.js                                   8.02 kB │ gzip:   2.75 kB
+apps/web/dist/client/assets/competition-profile-fields-value-CGg0J18s.js                          8.80 kB │ gzip:   3.21 kB
+apps/web/dist/client/assets/teams-Bsd9Ydaw.js                                                     9.29 kB │ gzip:   3.24 kB
+apps/web/dist/client/assets/entry-invitation-accept-page-DqwIkDLr.js                              9.38 kB │ gzip:   3.65 kB
+apps/web/dist/client/assets/rules-DzmGw6-u.js                                                     9.66 kB │ gzip:   2.89 kB
+apps/web/dist/client/assets/src-DtSBTjW5.js                                                      10.37 kB │ gzip:   3.19 kB
+apps/web/dist/client/assets/onboarding-flow-CBtgMZ9x.js                                          10.79 kB │ gzip:   3.84 kB
+apps/web/dist/client/assets/plan-D8UFdNEw.js                                                     11.47 kB │ gzip:   3.86 kB
+apps/web/dist/client/assets/query-keys-CX1QzhEf.js                                               11.55 kB │ gzip:   3.89 kB
+apps/web/dist/client/assets/SealCheck.es-DcKWsD5f.js                                             11.59 kB │ gzip:   3.65 kB
+apps/web/dist/client/assets/new-Br2xzj6q.js                                                      11.79 kB │ gzip:   4.25 kB
+apps/web/dist/client/assets/provider-health-CGbVjAEa.js                                          12.03 kB │ gzip:   3.83 kB
+apps/web/dist/client/assets/provider-match-scoreboard-DmQz6Ew5.js                                12.65 kB │ gzip:   3.92 kB
+apps/web/dist/client/assets/competition-team-actions-4_UVQDBV.js                                 12.77 kB │ gzip:   4.41 kB
+apps/web/dist/client/assets/rankings-EyduV_3L.js                                                 13.23 kB │ gzip:   4.18 kB
+apps/web/dist/client/assets/player_.statistics-CCutU5yK.js                                       13.52 kB │ gzip:   4.47 kB
+apps/web/dist/client/assets/_orgId-WdidwEc5.js                                                   13.80 kB │ gzip:   4.76 kB
+apps/web/dist/client/assets/stats-CMXkK0lc.js                                                    13.83 kB │ gzip:   4.58 kB
+apps/web/dist/client/assets/routes-BsRAse_i.js                                                   15.63 kB │ gzip:   4.78 kB
+apps/web/dist/client/assets/bracket-Csc_BkL0.js                                                  15.68 kB │ gzip:   5.31 kB
+apps/web/dist/client/assets/_competitionId-K0OQNwcX.js                                           15.99 kB │ gzip:   4.85 kB
+apps/web/dist/client/assets/team-performance-BmvccPhM.js                                         17.51 kB │ gzip:   5.38 kB
+apps/web/dist/client/assets/player_.competitions_.explore-DDXHTVy4.js                            18.58 kB │ gzip:   6.09 kB
+apps/web/dist/client/assets/standings-D1I9422w.js                                                19.03 kB │ gzip:   6.62 kB
+apps/web/dist/client/assets/activity-view-BHWh5LIW.js                                            19.19 kB │ gzip:   5.39 kB
+apps/web/dist/client/assets/invitations-BJmm96Do.js                                              19.68 kB │ gzip:   6.24 kB
+apps/web/dist/client/assets/teams.lazy-XE89IFRV.js                                               20.75 kB │ gzip:   6.45 kB
+apps/web/dist/client/assets/player_.matches.index-AlmyaBf_.js                                    24.40 kB │ gzip:   7.15 kB
+apps/web/dist/client/assets/members-DFv2FhVP.js                                                  25.29 kB │ gzip:   7.40 kB
+apps/web/dist/client/assets/player_.game-accounts-TwMz0yQB.js                                    27.22 kB │ gzip:   7.32 kB
+apps/web/dist/client/assets/auth-client-z9LHhZtC.js                                              31.22 kB │ gzip:  11.78 kB
+apps/web/dist/client/assets/browser-api-error-L15c3TWp.js                                        32.35 kB │ gzip:   7.24 kB
+apps/web/dist/client/assets/player_.matches._providerKey._externalMatchId--7_t0Kt9.js            32.65 kB │ gzip:   8.73 kB
+apps/web/dist/client/assets/createServerFn-CJw3lU9I.js                                           35.97 kB │ gzip:  12.41 kB
+apps/web/dist/client/assets/player-CC5Wg2yI.js                                                   47.48 kB │ gzip:  12.27 kB
+apps/web/dist/client/assets/fixture-Ceor7_kE.js                                                  48.85 kB │ gzip:  13.91 kB
+apps/web/dist/client/assets/_app-DgJFgOE0.js                                                     57.33 kB │ gzip:  16.37 kB
+apps/web/dist/client/assets/matchContext-eKxLEcOM.js                                             59.55 kB │ gzip:  21.09 kB
+apps/web/dist/client/assets/src-DlD6GvkF.js                                                      76.78 kB │ gzip:  22.64 kB
+apps/web/dist/client/assets/setup.lazy--65DUEbg.js                                               82.12 kB │ gzip:  23.26 kB
+apps/web/dist/client/assets/encounters_._encounterId-CZ7c5Gao.js                                 88.27 kB │ gzip:  22.19 kB
+apps/web/dist/client/assets/index-C79HqOYz.js                                                    90.75 kB │ gzip:  26.46 kB
+apps/web/dist/client/assets/zod-BLzXNS_s.js                                                      90.77 kB │ gzip:  24.93 kB
+apps/web/dist/client/assets/react-m4zOD1fB.js                                                   219.00 kB │ gzip:  68.32 kB
+apps/web/dist/client/assets/base-ui-BGMhbnO4.js                                                 249.16 kB │ gzip:  82.48 kB
+apps/web/dist/client/assets/src-BZ1rTr1E.js                                                     258.40 kB │ gzip:  64.82 kB
+apps/web/dist/client/assets/i18n-provider-DKzh1phK.js                                           293.80 kB │ gzip:  67.96 kB
+apps/web/dist/client/assets/player-profile-charts-D3otMV_e.js                                   411.88 kB │ gzip: 116.77 kB
+
+✓ built in 8.87s
+transforming...
+✓ 7744 modules transformed.
+rendering chunks...
+Using secrets defined in apps/web/.dev.vars
+computing gzip size...
+apps/web/dist/server/.dev.vars                                                                      1.01 kB
+apps/web/dist/server/wrangler.json                                                                  1.72 kB │ gzip:   0.86 kB
+apps/web/dist/server/assets/gamepad-xndbmcA1.svg                                                   11.74 kB │ gzip:   5.31 kB
+apps/web/dist/server/assets/club-finder-B-0W2K7-.svg                                               19.12 kB │ gzip:  14.23 kB
+apps/web/dist/server/assets/manrope-latin-wght-normal-DHIcAJRg.woff2                               24.83 kB
+apps/web/dist/server/assets/background-stripes-DUACMXE5.png                                        99.83 kB
+apps/web/dist/server/.vite/manifest.json                                                          106.77 kB │ gzip:  12.47 kB
+apps/web/dist/server/assets/background-default-C5W8w2KU.png                                       142.64 kB
+apps/web/dist/server/assets/background-match-D7xiXjlk.png                                         155.13 kB
+apps/web/dist/server/assets/trophy-lightning-Dah4YQr6.png                                         216.23 kB
+apps/web/dist/server/assets/illustration-empty-standings-Ce8sVQSe.png                             244.15 kB
+apps/web/dist/server/assets/trophy-cup-DoGPy8c0.png                                               249.47 kB
+apps/web/dist/server/assets/trophy-BCdqZdnP.png                                                   274.81 kB
+apps/web/dist/server/assets/trophy-groups-NVIzgpS_.png                                            285.44 kB
+apps/web/dist/server/assets/illustration-pending-bracket-B_hmwTVC.png                             303.38 kB
+apps/web/dist/server/assets/illustration-no-matches-BSojKMYO.png                                  306.04 kB
+apps/web/dist/server/assets/trophy-supercup-DHQof8Zf.png                                          311.94 kB
+apps/web/dist/server/assets/trophy-playoffs-CG4TE0lC.png                                          337.94 kB
+apps/web/dist/server/assets/trophy-pre-season-Cs11QM6A.png                                        349.85 kB
+apps/web/dist/server/assets/trophy-amistosos-ycGVKnmo.png                                         403.68 kB
+apps/web/dist/server/assets/illustration-dispute-C4SWbav-.png                                     405.10 kB
+apps/web/dist/server/assets/illustration-create-competition-C5wkSZfm.png                          411.92 kB
+apps/web/dist/server/assets/illustration-game-data-sync-SJ9rB05X.png                              415.72 kB
+apps/web/dist/server/assets/illustration-invitations-DiRFoix7.png                                 423.74 kB
+apps/web/dist/server/assets/illustration-squad-DwIonK2M.png                                       426.07 kB
+apps/web/dist/server/assets/trophy-league-9X4u9bbR.png                                            436.58 kB
+apps/web/dist/server/assets/illustration-permissions-BdRXlZOM.png                                 442.44 kB
+apps/web/dist/server/assets/illustration-my-stats-BWUjUTii.png                                    472.40 kB
+apps/web/dist/server/assets/illustration-empty-matches-MudxHU2V.png                               473.74 kB
+apps/web/dist/server/assets/illustration-sports-venue-B80BjFfA.png                                479.05 kB
+apps/web/dist/server/assets/illustration-registration-2F6_5Ybh.png                                502.07 kB
+apps/web/dist/server/assets/illustration-pending-fixtures-D6quHbeU.png                            511.54 kB
+apps/web/dist/server/assets/illustration-rules-CAO7eDj9.png                                       530.46 kB
+apps/web/dist/server/assets/styles-CvmKV3cE.css                                                    17.14 kB │ gzip:   3.86 kB
+apps/web/dist/server/assets/player-profile-charts-u668kLOp.css                                     74.34 kB │ gzip:  15.88 kB
+apps/web/dist/server/assets/trophy-B-rO7zz6.js                                                      0.18 kB │ gzip:   0.15 kB │ map:     0.21 kB
+apps/web/dist/server/assets/gamepad-CnOA7iAX.js                                                     0.18 kB │ gzip:   0.15 kB │ map:     0.21 kB
+apps/web/dist/server/assets/club-finder-Cfft9PBq.js                                                 0.20 kB │ gzip:   0.16 kB │ map:     0.22 kB
+apps/web/dist/server/assets/queryOptions-jgruxSaY.js                                                0.21 kB │ gzip:   0.17 kB │ map:     0.39 kB
+apps/web/dist/server/assets/background-stripes-DX3JrsTQ.js                                          0.24 kB │ gzip:   0.16 kB │ map:     0.24 kB
+apps/web/dist/server/assets/illustration-invitations-BoNPo2gq.js                                    0.27 kB │ gzip:   0.17 kB │ map:     0.25 kB
+apps/web/dist/server/assets/illustration-permissions-CtT-20kb.js                                    0.27 kB │ gzip:   0.17 kB │ map:     0.25 kB
+apps/web/dist/server/assets/empty-plugin-adapters-D9UWiqvJ.js                                       0.28 kB │ gzip:   0.19 kB │ map:     0.50 kB
+apps/web/dist/server/assets/illustration-empty-standings-DX2ScrVl.js                                0.29 kB │ gzip:   0.17 kB │ map:     0.26 kB
+apps/web/dist/server/assets/illustration-pending-fixtures-CEXl-wKJ.js                               0.29 kB │ gzip:   0.17 kB │ map:     0.26 kB
+apps/web/dist/server/assets/player_.activity-LEytRC9s.js                                            0.30 kB │ gzip:   0.21 kB │ map:     0.65 kB
+apps/web/dist/server/assets/dispute-review-anchor-cC1wKPa1.js                                       0.32 kB │ gzip:   0.24 kB │ map:     0.35 kB
+apps/web/dist/server/assets/sr-only-BcF2v9K5.js                                                     0.34 kB │ gzip:   0.27 kB │ map:     0.63 kB
+apps/web/dist/server/assets/platform-label-BjiLMVpw.js                                              0.37 kB │ gzip:   0.24 kB │ map:     0.61 kB
+apps/web/dist/server/assets/invalidate-effective-access-D0W_o0dq.js                                 0.40 kB │ gzip:   0.26 kB │ map:     0.56 kB
+apps/web/dist/server/assets/initials-from-name-BXQDdzwB.js                                          0.43 kB │ gzip:   0.28 kB │ map:     0.75 kB
+apps/web/dist/server/assets/player_.matches-CpPZMUeE.js                                             0.44 kB │ gzip:   0.29 kB │ map:     0.69 kB
+apps/web/dist/server/assets/createServerRpc-BUCJ89W3.js                                             0.45 kB │ gzip:   0.30 kB │ map:     0.77 kB
+apps/web/dist/server/assets/players-Xtd5Uw_B.js                                                     0.47 kB │ gzip:   0.31 kB │ map:     0.63 kB
+apps/web/dist/server/assets/invitations-DLGTXXvL.js                                                 0.48 kB │ gzip:   0.31 kB │ map:     0.65 kB
+apps/web/dist/server/assets/analytics-R0aSLYux.js                                                   0.50 kB │ gzip:   0.31 kB │ map:     0.70 kB
+apps/web/dist/server/assets/workspace-selection-context-qyycljT-.js                                 0.51 kB │ gzip:   0.34 kB │ map:     0.64 kB
+apps/web/dist/server/assets/worker-env-BIEwLlB8.js                                                  0.51 kB │ gzip:   0.34 kB │ map:     0.45 kB
+apps/web/dist/server/assets/schedule-change-browser-client-C8D1KCnH.js                              0.52 kB │ gzip:   0.33 kB │ map:     0.73 kB
+apps/web/dist/server/assets/game-data-queries-CMg638Gc.js                                           0.55 kB │ gzip:   0.33 kB │ map:     1.83 kB
+apps/web/dist/server/assets/utils-DyqzPW_I.js                                                       0.57 kB │ gzip:   0.37 kB │ map:     0.75 kB
+apps/web/dist/server/assets/onboarding-DF7lxYTi.js                                                  0.58 kB │ gzip:   0.36 kB │ map:     0.81 kB
+apps/web/dist/server/assets/activity-DnCB8fT0.js                                                    0.62 kB │ gzip:   0.35 kB │ map:     0.90 kB
+apps/web/dist/server/assets/createSsrRpc-BeWLTCnb.js                                                0.65 kB │ gzip:   0.39 kB │ map:     1.07 kB
+apps/web/dist/server/assets/metric-stat-value-B7cexnfJ.js                                           0.67 kB │ gzip:   0.40 kB │ map:     1.02 kB
+apps/web/dist/server/assets/encounters-CgT48qfm.js                                                  0.67 kB │ gzip:   0.38 kB │ map:     1.08 kB
+apps/web/dist/server/assets/localized-head-PCa0Lf0t.js                                              0.67 kB │ gzip:   0.42 kB │ map:     1.13 kB
+apps/web/dist/server/assets/roster-CGpewrqb.js                                                      0.68 kB │ gzip:   0.38 kB │ map:     1.04 kB
+apps/web/dist/server/assets/team-xBAgMa5O.js                                                        0.69 kB │ gzip:   0.40 kB │ map:     1.07 kB
+apps/web/dist/server/assets/matches-C4Cp-Weu.js                                                     0.70 kB │ gzip:   0.40 kB │ map:     1.14 kB
+apps/web/dist/server/assets/player_.competitions_._competitionId_.team.roster-CChzS6tW.js           0.71 kB │ gzip:   0.38 kB │ map:     1.03 kB
+apps/web/dist/server/assets/player_.competitions_._competitionId_.team.index-DS2mjt3w.js            0.71 kB │ gzip:   0.40 kB │ map:     1.07 kB
+apps/web/dist/server/assets/invitations-WxjfZ9T8.js                                                 0.72 kB │ gzip:   0.39 kB │ map:     1.11 kB
+apps/web/dist/server/assets/player-matches-search-BNBvc-XV.js                                       0.72 kB │ gzip:   0.42 kB │ map:     1.24 kB
+apps/web/dist/server/assets/player_.competitions_._competitionId_.team.invitations-CacdlzzN.js      0.74 kB │ gzip:   0.39 kB │ map:     1.10 kB
+apps/web/dist/server/assets/run-once-by-key-CS30In8R.js                                             0.75 kB │ gzip:   0.46 kB │ map:     1.17 kB
+apps/web/dist/server/assets/patch-query-data-B3pZdicr.js                                            0.78 kB │ gzip:   0.42 kB │ map:     1.57 kB
+apps/web/dist/server/assets/team-scope-DuODiubr.js                                                  0.78 kB │ gzip:   0.36 kB │ map:     1.45 kB
+apps/web/dist/server/assets/ea-logo-Dj4Ok6LZ.js                                                     0.83 kB │ gzip:   0.56 kB │ map:     1.01 kB
+apps/web/dist/server/assets/browser-json-request-DgiEMMKm.js                                        0.87 kB │ gzip:   0.48 kB │ map:     2.04 kB
+apps/web/dist/server/assets/safe-redirect-CFRaMQdd.js                                               0.92 kB │ gzip:   0.45 kB │ map:     1.49 kB
+apps/web/dist/server/assets/onboarding-DyaohkRa.js                                                  0.94 kB │ gzip:   0.49 kB │ map:     3.31 kB
+apps/web/dist/server/assets/roster-invitation-link-CvCqJcHO.js                                      0.94 kB │ gzip:   0.53 kB │ map:     1.28 kB
+apps/web/dist/server/assets/browser-api-error-BX3DXx4k.js                                           0.96 kB │ gzip:   0.49 kB │ map:     1.59 kB
+apps/web/dist/server/assets/use-focus-when-idle-BQNmlPI1.js                                         0.98 kB │ gzip:   0.56 kB │ map:     1.30 kB
+apps/web/dist/server/assets/useRouter-CtSs3NSN.js                                                   1.00 kB │ gzip:   0.53 kB │ map:     1.58 kB
+apps/web/dist/server/assets/accept._token-B3slNtNH.js                                               1.04 kB │ gzip:   0.51 kB │ map:     2.14 kB
+apps/web/dist/server/assets/useRouterState-vWb1zsf3.js                                              1.05 kB │ gzip:   0.58 kB │ map:     1.69 kB
+apps/web/dist/server/assets/support-fields-BO2nVZT6.js                                              1.07 kB │ gzip:   0.32 kB │ map:     2.22 kB
+apps/web/dist/server/assets/retry-alert-DUnDmuMn.js                                                 1.09 kB │ gzip:   0.60 kB │ map:     1.59 kB
+apps/web/dist/server/assets/time-aZ-lYNmu.js                                                        1.10 kB │ gzip:   0.53 kB │ map:     2.73 kB
+apps/web/dist/server/assets/stored-refusal-COoVidSl.js                                              1.15 kB │ gzip:   0.61 kB │ map:     2.29 kB
+apps/web/dist/server/assets/account.styles-CeMUCMrL.js                                              1.16 kB │ gzip:   0.47 kB │ map:     2.07 kB
+apps/web/dist/server/assets/_plainToken-BDiQ3BY5.js                                                 1.17 kB │ gzip:   0.56 kB │ map:     2.50 kB
+apps/web/dist/server/assets/get-public-plans.functions-BkYQq8qA.js                                  1.19 kB │ gzip:   0.61 kB │ map:     1.60 kB
+apps/web/dist/server/assets/use-effective-permissions-CD5SX-IH.js                                   1.19 kB │ gzip:   0.57 kB │ map:     1.69 kB
+apps/web/dist/server/assets/onboarding-BxF00Zt6.js                                                  1.21 kB │ gzip:   0.58 kB │ map:     4.17 kB
+apps/web/dist/server/assets/onboarding-invitation-handoff-Bu04LaMk.js                               1.22 kB │ gzip:   0.63 kB │ map:     1.53 kB
+apps/web/dist/server/assets/ea-club-search-meta-D_A6vB2V.js                                         1.22 kB │ gzip:   0.63 kB │ map:     1.78 kB
+apps/web/dist/server/assets/plan-upsell-alert-HUvNYva7.js                                           1.28 kB │ gzip:   0.66 kB │ map:     1.52 kB
+apps/web/dist/server/assets/organization-home-copy-DgLb3t7m.js                                      1.30 kB │ gzip:   0.54 kB │ map:     2.37 kB
+apps/web/dist/server/assets/page-scaffold-B22sG3ea.js                                               1.34 kB │ gzip:   0.64 kB │ map:     2.09 kB
+apps/web/dist/server/assets/_invitationId-CokVDDXG.js                                               1.35 kB │ gzip:   0.64 kB │ map:     2.16 kB
+apps/web/dist/server/assets/onboarding-step-meta-Dm32gHiw.js                                        1.36 kB │ gzip:   0.60 kB │ map:     2.82 kB
+apps/web/dist/server/assets/__23tanstack-start-server-fn-resolver-KXqCZICK.js                       1.39 kB │ gzip:   0.64 kB
+apps/web/dist/server/assets/src-C5uutTB8.js                                                         1.41 kB │ gzip:   0.62 kB │ map:    12.54 kB
+apps/web/dist/server/assets/player-match-view-calendar-Bu9vN3lG.js                                  1.49 kB │ gzip:   0.63 kB │ map:     3.13 kB
+apps/web/dist/server/assets/useSelector-BACQVvP9.js                                                 1.52 kB │ gzip:   0.74 kB │ map:     1.93 kB
+apps/web/dist/server/assets/competition-cover-assets-DivqnXWH.js                                    1.54 kB │ gzip:   0.71 kB │ map:     3.57 kB
+apps/web/dist/server/assets/lazyRouteComponent-Bo3EH9F7.js                                          1.55 kB │ gzip:   0.77 kB │ map:     2.72 kB
+apps/web/dist/server/assets/competition-encounters-page.styles-h51S_Wsn.js                          1.55 kB │ gzip:   0.66 kB │ map:     2.88 kB
+apps/web/dist/server/assets/useMatch-DKzaobBV.js                                                    1.55 kB │ gzip:   0.74 kB │ map:     2.90 kB
+apps/web/dist/server/assets/player_.competitions_._competitionId_.matches-BK0SpZM8.js               1.59 kB │ gzip:   0.65 kB │ map:     2.63 kB
+apps/web/dist/server/assets/locale.functions-CYbulnVa.js                                            1.62 kB │ gzip:   0.71 kB │ map:     1.97 kB
+apps/web/dist/server/assets/roster-player-cell-DkAMlO7K.js                                          1.66 kB │ gzip:   0.74 kB │ map:     2.28 kB
+apps/web/dist/server/assets/redirect-jkG3vMHM.js                                                    1.75 kB │ gzip:   0.86 kB │ map:     2.58 kB
+apps/web/dist/server/assets/plan-copy-Bq9YA6Do.js                                                   1.77 kB │ gzip:   0.71 kB │ map:     2.85 kB
+apps/web/dist/server/assets/rolldown-runtime-7_rZTKki.js                                            1.79 kB │ gzip:   0.80 kB
+apps/web/dist/server/assets/competition-draft-meta-CLBM5ar9.js                                      1.81 kB │ gzip:   0.71 kB │ map:     2.91 kB
+apps/web/dist/server/assets/permissions-Daw5cCm4.js                                                 1.82 kB │ gzip:   0.72 kB │ map:     3.84 kB
+apps/web/dist/server/assets/entry-invitation-copy-Dmn5OION.js                                       1.85 kB │ gzip:   0.83 kB │ map:     2.61 kB
+apps/web/dist/server/assets/useNavigate-BOmmlZce.js                                                 1.87 kB │ gzip:   0.87 kB │ map:     2.37 kB
+apps/web/dist/server/assets/use-retry-after-countdown-B2EplS6r.js                                   1.94 kB │ gzip:   0.79 kB │ map:     3.22 kB
+apps/web/dist/server/assets/manifest-COuFouQ6.js                                                    1.98 kB │ gzip:   0.75 kB │ map:     3.47 kB
+apps/web/dist/server/assets/start-1IBMjEdh.js                                                       2.01 kB │ gzip:   0.79 kB │ map:     3.39 kB
+apps/web/dist/server/assets/use-form-validation-CZw6z4e2.js                                         2.11 kB │ gzip:   0.90 kB │ map:     3.97 kB
+apps/web/dist/server/assets/statistics-queries-DmoJXJka.js                                          2.13 kB │ gzip:   0.72 kB │ map:     4.39 kB
+apps/web/dist/server/assets/club-CGWkharz.js                                                        2.25 kB │ gzip:   0.97 kB │ map:     3.45 kB
+apps/web/dist/server/assets/club-crest-avatar-CmvCSS3W.js                                           2.28 kB │ gzip:   1.03 kB │ map:     3.58 kB
+apps/web/dist/server/assets/time-zone-options-JyPWow_S.js                                           2.31 kB │ gzip:   1.11 kB │ map:     3.96 kB
+apps/web/dist/server/assets/get-onboarding-bootstrap.functions-gxQozChV.js                          2.32 kB │ gzip:   0.99 kB │ map:     4.07 kB
+apps/web/dist/server/assets/CaretUp.es-BVcPk-9Q.js                                                  2.38 kB │ gzip:   0.76 kB │ map:     3.14 kB
+apps/web/dist/server/assets/explore-search-B8Zlv2Ek.js                                              2.44 kB │ gzip:   0.93 kB │ map:     4.69 kB
+apps/web/dist/server/assets/auth-form-helpers-CzxLxfrM.js                                           2.52 kB │ gzip:   1.12 kB │ map:     3.65 kB
+apps/web/dist/server/assets/i18n-provider-CModH1pO.js                                               2.60 kB │ gzip:   1.06 kB │ map:     4.96 kB
+apps/web/dist/server/assets/match-pitch-surface-DnUg2yTI.js                                         2.62 kB │ gzip:   1.00 kB │ map:     4.18 kB
+apps/web/dist/server/assets/MinusCircle.es-DL_JC0fD.js                                              2.62 kB │ gzip:   0.83 kB │ map:     3.39 kB
+apps/web/dist/server/assets/Clock.es-Bo_EKj2p.js                                                    2.73 kB │ gzip:   0.86 kB │ map:     3.48 kB
+apps/web/dist/server/assets/ChartBar.es-CJmc_nIP.js                                                 2.75 kB │ gzip:   0.90 kB │ map:     3.52 kB
+apps/web/dist/server/assets/profile-kpi-BTCXV9bf.js                                                 2.83 kB │ gzip:   1.17 kB │ map:     4.24 kB
+apps/web/dist/server/assets/auth-resume-Dyk_i32J.js                                                 2.83 kB │ gzip:   1.11 kB │ map:     5.19 kB
+apps/web/dist/server/assets/LockSimple.es-66MGcfrO.js                                               2.85 kB │ gzip:   0.87 kB │ map:     3.66 kB
+apps/web/dist/server/assets/CalendarBlank.es-CJsFT1ZR.js                                            3.17 kB │ gzip:   0.93 kB │ map:     3.99 kB
+apps/web/dist/server/assets/Pulse.es-DtzU1v_o.js                                                    3.17 kB │ gzip:   1.11 kB │ map:     3.95 kB
+apps/web/dist/server/assets/game-data-browser-client-BiP3bc3Z.js                                    3.34 kB │ gzip:   0.94 kB │ map:     6.25 kB
+apps/web/dist/server/assets/organization-avatar-BZsSLbNW.js                                         3.36 kB │ gzip:   1.50 kB │ map:     5.42 kB
+apps/web/dist/server/assets/ListBullets.es-C1tRs99N.js                                              3.39 kB │ gzip:   0.94 kB │ map:     4.16 kB
+apps/web/dist/server/assets/PencilSimple.es-magZzmzO.js                                             3.40 kB │ gzip:   1.12 kB │ map:     4.22 kB
+apps/web/dist/server/assets/ClockCounterClockwise.es-DnXGQcrl.js                                    3.60 kB │ gzip:   1.29 kB │ map:     4.41 kB
+apps/web/dist/server/assets/createCsrfMiddleware-w621SzuP.js                                        3.64 kB │ gzip:   1.16 kB │ map:     8.24 kB
+apps/web/dist/server/assets/request-correlation-BdaylPWT.js                                         3.82 kB │ gzip:   1.36 kB │ map:     9.02 kB
+apps/web/dist/server/assets/add-club-dialog-UXQDi7MH.js                                             3.88 kB │ gzip:   1.42 kB │ map:     5.64 kB
+apps/web/dist/server/assets/platform-logo-_OrZOZDj.js                                               3.91 kB │ gzip:   1.66 kB │ map:     5.12 kB
+apps/web/dist/server/assets/identity-browser-client-zrZ3G54r.js                                     3.92 kB │ gzip:   0.95 kB │ map:     7.21 kB
+apps/web/dist/server/assets/organization-WR-rrY4U.js                                                4.01 kB │ gzip:   1.43 kB │ map:     5.92 kB
+apps/web/dist/server/assets/intention-BK19heib.js                                                   4.02 kB │ gzip:   1.35 kB │ map:     6.34 kB
+apps/web/dist/server/assets/workspace-selection-CdlxU9Pk.js                                         4.03 kB │ gzip:   1.09 kB │ map:    10.12 kB
+apps/web/dist/server/assets/encounter-queries-4oAumsJT.js                                           4.05 kB │ gzip:   1.06 kB │ map:     6.59 kB
+apps/web/dist/server/assets/IdentificationBadge.es-BuXLb6Mj.js                                      4.15 kB │ gzip:   1.27 kB │ map:     4.99 kB
+apps/web/dist/server/assets/shell-action-bar-DzjTbst1.js                                            4.20 kB │ gzip:   1.40 kB │ map:     5.99 kB
+apps/web/dist/server/assets/ArrowsClockwise.es-C8B90Rs8.js                                          4.25 kB │ gzip:   1.41 kB │ map:     5.03 kB
+apps/web/dist/server/assets/statistics-browser-client-BSCVyHUY.js                                   4.26 kB │ gzip:   1.15 kB │ map:     7.62 kB
+apps/web/dist/server/assets/ShieldPlus.es-DzMiRqVg.js                                               4.30 kB │ gzip:   1.46 kB │ map:     5.12 kB
+apps/web/dist/server/assets/_auth-CT-YTDso.js                                                       4.36 kB │ gzip:   1.55 kB │ map:     7.34 kB
+apps/web/dist/server/assets/competition-labels-Dh2xoBEm.js                                          4.42 kB │ gzip:   1.36 kB │ map:     8.20 kB
+apps/web/dist/server/assets/organization-recent-activity-BduUyAjf.js                                4.53 kB │ gzip:   1.53 kB │ map:     7.71 kB
+apps/web/dist/server/assets/club-search-result-item-BeuivoaR.js                                     4.54 kB │ gzip:   1.56 kB │ map:     7.73 kB
+apps/web/dist/server/assets/workspace-access-xOyc_7oF.js                                            4.60 kB │ gzip:   1.47 kB │ map:     7.48 kB
+apps/web/dist/server/assets/competition-standings-queries-DBCThGp2.js                               4.77 kB │ gzip:   1.67 kB │ map:     8.10 kB
+apps/web/dist/server/assets/accept-CAHYNuab.js                                                      4.95 kB │ gzip:   1.78 kB │ map:     7.46 kB
+apps/web/dist/server/assets/activity-feed-list-C8HmXPFH.js                                          5.19 kB │ gzip:   1.61 kB │ map:     8.25 kB
+apps/web/dist/server/assets/private-content-gate-7RGj82p8.js                                        5.20 kB │ gzip:   1.95 kB │ map:     8.59 kB
+apps/web/dist/server/assets/player-queries-De5Lj7fF.js                                              5.21 kB │ gzip:   1.29 kB │ map:     9.73 kB
+apps/web/dist/server/assets/captain-invitations-page-BpidB99H.js                                    5.40 kB │ gzip:   1.58 kB │ map:     9.35 kB
+apps/web/dist/server/assets/useInfiniteQuery-D3avfj3J.js                                            5.52 kB │ gzip:   1.66 kB │ map:     7.35 kB
+apps/web/dist/server/assets/permissions-CH4IDuzp.js                                                 5.59 kB │ gzip:   1.93 kB │ map:    18.23 kB
+apps/web/dist/server/assets/invitation-FgkgnPF0.js                                                  5.61 kB │ gzip:   1.88 kB │ map:     8.64 kB
+apps/web/dist/server/assets/organization-queries-VnuuM3oG.js                                        5.65 kB │ gzip:   1.30 kB │ map:    10.31 kB
+apps/web/dist/server/assets/accept-BOKKDAYQ.js                                                      5.71 kB │ gzip:   2.06 kB │ map:     8.61 kB
+apps/web/dist/server/assets/organization-activity-page-Cjo3fEzB.js                                  5.85 kB │ gzip:   1.64 kB │ map:     9.31 kB
+apps/web/dist/server/assets/orgs-DB-6yEZP.js                                                        5.89 kB │ gzip:   1.73 kB │ map:     9.26 kB
+apps/web/dist/server/assets/platform-choice-m0jJJ_IT.js                                             6.01 kB │ gzip:   1.87 kB │ map:     9.82 kB
+apps/web/dist/server/assets/status-screen-zmtCMfG5.js                                               6.11 kB │ gzip:   2.06 kB │ map:     9.34 kB
+apps/web/dist/server/assets/support-error-alert-D0w8ozmX.js                                         6.43 kB │ gzip:   1.98 kB │ map:    10.04 kB
+apps/web/dist/server/assets/competitions-CojYCie1.js                                                6.46 kB │ gzip:   2.13 kB │ map:     9.80 kB
+apps/web/dist/server/assets/player-match-row-CvElrKCp.js                                            6.73 kB │ gzip:   2.02 kB │ map:    11.33 kB
+apps/web/dist/server/assets/link-CjHN-rir.js                                                        6.88 kB │ gzip:   2.57 kB │ map:    17.50 kB
+apps/web/dist/server/assets/player_.ea-clubs-F9YEbuY6.js                                            7.17 kB │ gzip:   2.35 kB │ map:    10.66 kB
+apps/web/dist/server/assets/player_.competitions-CxLNnaUD.js                                        7.29 kB │ gzip:   2.19 kB │ map:    11.16 kB
+apps/web/dist/server/assets/teams-browser-client-BnrLwDMD.js                                        7.42 kB │ gzip:   1.57 kB │ map:    13.86 kB
+apps/web/dist/server/assets/link._code-DY1YRsdp.js                                                  7.65 kB │ gzip:   2.36 kB │ map:    12.70 kB
+apps/web/dist/server/assets/review-BlcnMVgO.js                                                      7.74 kB │ gzip:   2.49 kB │ map:    13.18 kB
+apps/web/dist/server/assets/entry-invitation-queries-CsQrZLmv.js                                    8.06 kB │ gzip:   2.06 kB │ map:    14.58 kB
+apps/web/dist/server/assets/player_.competitions_._competitionId_.stats-Btgc_dJw.js                 8.14 kB │ gzip:   2.06 kB │ map:    13.65 kB
+apps/web/dist/server/assets/competition-team-queries-C6Xhs5kb.js                                    8.20 kB │ gzip:   2.12 kB │ map:    15.28 kB
+apps/web/dist/server/assets/utils-CPas-Ynl.js                                                       8.22 kB │ gzip:   3.49 kB │ map:    16.03 kB
+apps/web/dist/server/assets/game-account-Dq6AdafT.js                                                8.32 kB │ gzip:   2.34 kB │ map:    12.37 kB
+apps/web/dist/server/assets/player_.profile-PnUQLzu7.js                                             8.44 kB │ gzip:   2.18 kB │ map:    13.09 kB
+apps/web/dist/server/assets/captain-roster-page-CWqTs3u-.js                                         8.55 kB │ gzip:   2.35 kB │ map:    14.78 kB
+apps/web/dist/server/assets/disputes-CAOo_eNk.js                                                    8.57 kB │ gzip:   2.35 kB │ map:    13.89 kB
+apps/web/dist/server/assets/explore-viewer-relation-C-FRENLE.js                                     8.59 kB │ gzip:   2.50 kB │ map:    13.75 kB
+apps/web/dist/server/assets/schedule-resolution-time-jtw9RX6i.js                                    8.64 kB │ gzip:   2.89 kB │ map:    26.10 kB
+apps/web/dist/server/assets/onboarding-shell-Qq42gq_L.js                                            8.72 kB │ gzip:   2.70 kB │ map:    14.16 kB
+apps/web/dist/server/assets/competition-encounters-page-DJsDM81x.js                                 8.80 kB │ gzip:   2.27 kB │ map:    14.02 kB
+apps/web/dist/server/assets/login-CfePocss.js                                                       8.84 kB │ gzip:   2.86 kB │ map:    13.74 kB
+apps/web/dist/server/assets/player-match-view-ClqQXxkC.js                                           8.84 kB │ gzip:   2.40 kB │ map:    19.34 kB
+apps/web/dist/server/assets/competitions-browser-client-D6uQuJim.js                                 8.86 kB │ gzip:   1.93 kB │ map:    16.15 kB
+apps/web/dist/server/assets/provider-match-detail-model-C2Y5wy9q.js                                 8.99 kB │ gzip:   2.29 kB │ map:    22.41 kB
+apps/web/dist/server/assets/organization-profile-fields-D_QmiGJ1.js                                 9.33 kB │ gzip:   2.51 kB │ map:    15.45 kB
+apps/web/dist/server/assets/competition-queries-KwFI0teV.js                                         9.94 kB │ gzip:   2.30 kB │ map:    17.18 kB
+apps/web/dist/server/assets/settings-kBbGMHnM.js                                                   10.39 kB │ gzip:   3.05 kB │ map:    18.14 kB
+apps/web/dist/server/assets/new-D3jn3P8Z.js                                                        10.69 kB │ gzip:   3.27 kB │ map:    20.86 kB
+apps/web/dist/server/assets/ea-club-link-form-BPu8CusZ.js                                          11.31 kB │ gzip:   3.25 kB │ map:    20.30 kB
+apps/web/dist/server/assets/pricing-CHCV-qyW.js                                                    11.70 kB │ gzip:   3.22 kB │ map:    20.37 kB
+apps/web/dist/server/assets/landing-header-DIzJLe2w.js                                             11.74 kB │ gzip:   2.90 kB │ map:    18.93 kB
+apps/web/dist/server/assets/competition-fixture-labels-CAGyXGy3.js                                 11.86 kB │ gzip:   3.59 kB │ map:    26.71 kB
+apps/web/dist/server/assets/fileRoute-DzhDPBvo.js                                                  12.07 kB │ gzip:   2.91 kB │ map:    25.16 kB
+apps/web/dist/server/assets/Match-Ad2UE6U6.js                                                      12.22 kB │ gzip:   3.41 kB │ map:    24.61 kB
+apps/web/dist/server/assets/SealCheck.es-C_PBLE2P.js                                               12.47 kB │ gzip:   3.88 kB │ map:    13.33 kB
+apps/web/dist/server/assets/signup-1dKIh3V5.js                                                     12.63 kB │ gzip:   3.45 kB │ map:    19.38 kB
+apps/web/dist/server/assets/useMutation-2lpbLcFc.js                                                13.44 kB │ gzip:   4.07 kB │ map:    17.39 kB
+apps/web/dist/server/assets/src-BYxrk0TB.js                                                        13.58 kB │ gzip:   3.81 kB │ map:    24.27 kB
+apps/web/dist/server/assets/use-captain-team-detail-DLJOehFf.js                                    14.64 kB │ gzip:   3.65 kB │ map:    24.08 kB
+apps/web/dist/server/assets/competition-profile-fields-value-OaIOlP76.js                           15.76 kB │ gzip:   4.28 kB │ map:    25.68 kB
+apps/web/dist/server/assets/player_.competitions_._competitionId-2Csn7riZ.js                       16.16 kB │ gzip:   3.38 kB │ map:    24.44 kB
+apps/web/dist/server/assets/useQueries-C25UYEVv.js                                                 17.47 kB │ gzip:   5.31 kB │ map:    24.49 kB
+apps/web/dist/server/assets/use-workspace-selection-BeJwyWQy.js                                    17.64 kB │ gzip:   4.24 kB │ map:    33.56 kB
+apps/web/dist/server/assets/rules-DiPhNrKz.js                                                      18.31 kB │ gzip:   4.12 kB │ map:    30.06 kB
+apps/web/dist/server/assets/entry-invitation-accept-page-B726_AVA.js                               18.91 kB │ gzip:   5.21 kB │ map:    30.35 kB
+apps/web/dist/server/assets/teams-Bvf6oIVC.js                                                      19.55 kB │ gzip:   4.74 kB │ map:    32.75 kB
+apps/web/dist/server/assets/createServerFn-CrOk_Wqn.js                                             20.69 kB │ gzip:   6.06 kB │ map:    38.76 kB
+apps/web/dist/server/assets/provider-health-DnoW8fOC.js                                            21.03 kB │ gzip:   4.94 kB │ map:    33.24 kB
+apps/web/dist/server/assets/internal-request-response-Dc-xkp5q.js                                  21.23 kB │ gzip:   5.89 kB │ map:    45.36 kB
+apps/web/dist/server/assets/plan-DZBcalUx.js                                                       22.16 kB │ gzip:   5.36 kB │ map:    38.66 kB
+apps/web/dist/server/assets/provider-match-scoreboard-CRLHao3v.js                                  22.17 kB │ gzip:   5.19 kB │ map:    38.00 kB
+apps/web/dist/server/assets/onboarding-flow-BNG9r8d_.js                                            22.19 kB │ gzip:   6.01 kB │ map:    45.40 kB
+apps/web/dist/server/assets/competition-team-actions-DjTUcKrA.js                                   23.34 kB │ gzip:   5.73 kB │ map:    35.82 kB
+apps/web/dist/server/assets/new-wNuotoEY.js                                                        23.44 kB │ gzip:   5.93 kB │ map:    38.76 kB
+apps/web/dist/server/assets/player_.statistics-CiawH-8p.js                                         25.10 kB │ gzip:   6.06 kB │ map:    43.69 kB
+apps/web/dist/server/assets/stats-DgrZ0oxM.js                                                      26.15 kB │ gzip:   6.37 kB │ map:    46.66 kB
+apps/web/dist/server/assets/rankings-D_K4RjRr.js                                                   26.18 kB │ gzip:   6.11 kB │ map:    48.59 kB
+apps/web/dist/server/assets/activity-view-D_4hc-pW.js                                              26.60 kB │ gzip:   6.59 kB │ map:    41.88 kB
+apps/web/dist/server/assets/_orgId-B_Lqd7VH.js                                                     26.65 kB │ gzip:   6.35 kB │ map:    42.62 kB
+apps/web/dist/server/assets/routes-DXFbr0Q4.js                                                     29.20 kB │ gzip:   6.22 kB │ map:    49.58 kB
+apps/web/dist/server/assets/_competitionId-5jdieiwD.js                                             30.39 kB │ gzip:   6.75 kB │ map:    51.47 kB
+apps/web/dist/server/assets/bracket-Cx6L-bdo.js                                                    30.61 kB │ gzip:   7.68 kB │ map:    58.48 kB
+apps/web/dist/server/assets/standings-qKNlojwu.js                                                  31.70 kB │ gzip:   8.21 kB │ map:    52.49 kB
+apps/web/dist/server/assets/player_.competitions_.explore-BJtdN0MI.js                              32.06 kB │ gzip:   7.82 kB │ map:    47.40 kB
+apps/web/dist/server/assets/team-performance-ByZYvkgG.js                                           32.40 kB │ gzip:   7.34 kB │ map:    57.63 kB
+apps/web/dist/server/assets/teams.lazy-CNEGUxZd.js                                                 35.62 kB │ gzip:   8.03 kB │ map:    56.24 kB
+apps/web/dist/server/assets/invitations-BL6ndp8Y.js                                                35.92 kB │ gzip:   8.21 kB │ map:    56.45 kB
+apps/web/dist/server/assets/query-keys-BoTOHQag.js                                                 38.09 kB │ gzip:   9.68 kB │ map:    60.29 kB
+apps/web/dist/server/assets/_tanstack-start-manifest_v-Bi_zEHED.js                                 38.24 kB │ gzip:   5.41 kB
+apps/web/dist/server/assets/removable-CgQkCQPR.js                                                  39.32 kB │ gzip:  11.09 kB │ map:    56.54 kB
+apps/web/dist/server/assets/player_.matches.index-BK7Y4MoQ.js                                      45.81 kB │ gzip:   9.68 kB │ map:    80.64 kB
+apps/web/dist/server/assets/members-D6FOPcyj.js                                                    48.79 kB │ gzip:   9.94 kB │ map:    81.21 kB
+apps/web/dist/server/assets/player_.game-accounts-BvT1be2e.js                                      54.19 kB │ gzip:   9.85 kB │ map:    86.25 kB
+apps/web/dist/server/assets/player_.matches._providerKey._externalMatchId-DYt7O92Y.js              59.84 kB │ gzip:  11.57 kB │ map:   108.56 kB
+apps/web/dist/server/assets/auth-client-ciZION1k.js                                                69.21 kB │ gzip:  19.30 kB │ map:   144.01 kB
+apps/web/dist/server/assets/product-api-client-D14BIbr9.js                                         72.77 kB │ gzip:  11.48 kB │ map:   158.05 kB
+apps/web/dist/server/assets/player-wAV7o2QV.js                                                     83.31 kB │ gzip:  15.86 kB │ map:   141.31 kB
+apps/web/dist/server/assets/fixture-CTHBGHSh.js                                                    94.08 kB │ gzip:  20.30 kB │ map:   167.45 kB
+apps/web/dist/server/assets/_app-CQ6jhFR0.js                                                      107.48 kB │ gzip:  22.70 kB │ map:   183.96 kB
+apps/web/dist/server/assets/matchContext-DpgfX0XI.js                                              114.09 kB │ gzip:  28.24 kB │ map:   258.18 kB
+apps/web/dist/server/assets/setup.lazy-fN456ZIR.js                                                151.78 kB │ gzip:  31.99 kB │ map:   240.60 kB
+apps/web/dist/server/assets/encounters_._encounterId-DvMaJqSb.js                                  166.09 kB │ gzip:  32.75 kB │ map:   304.82 kB
+apps/web/dist/server/assets/zod-CDlfj26j.js                                                       178.85 kB │ gzip:  38.63 kB │ map:   489.86 kB
+apps/web/dist/server/assets/create-authenticated-product-api-client-DF0jF7SC.js                   182.75 kB │ gzip:  42.72 kB │ map:   351.83 kB
+apps/web/dist/server/assets/locale-CxdPqwsG.js                                                    315.05 kB │ gzip:  69.35 kB │ map:   428.83 kB
+apps/web/dist/server/assets/router-DCj6qMcg.js                                                    329.27 kB │ gzip:  55.66 kB │ map:   862.90 kB
+apps/web/dist/server/assets/src-Cv3uD1qV.js                                                       355.83 kB │ gzip:  71.76 kB │ map:   540.33 kB
+apps/web/dist/server/assets/react-DF_Ur50W.js                                                     486.90 kB │ gzip:  94.27 kB │ map:   850.25 kB
+apps/web/dist/server/index.js                                                                     618.95 kB │ gzip: 148.55 kB │ map: 1,582.79 kB
+apps/web/dist/server/assets/src-Bb1YoQcs.js                                                       668.34 kB │ gzip:  87.45 kB │ map: 1,562.05 kB
+apps/web/dist/server/assets/base-ui-BQoAl5ET.js                                                   693.08 kB │ gzip: 153.16 kB │ map: 1,439.33 kB
+apps/web/dist/server/assets/player-profile-charts-DdJ03SYD.js                                   1,016.59 kB │ gzip: 223.22 kB │ map: 2,090.41 kB
+
+[plugin vite:css-post] [33m[SOURCEMAP_BROKEN] [0mSourcemap is likely to be incorrect: a plugin (vite:css-post) was used to transform files, but didn't generate a sourcemap for the transformation. Consult the plugin documentation for help: https://rolldown.rs/guide/troubleshooting#warning-sourcemap-is-likely-to-be-incorrect
+
+✓ built in 12.13s
+
+exit=0

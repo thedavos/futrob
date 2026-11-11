@@ -36,15 +36,18 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 ## Features
 
 - [Plan y uso](./billing-plan.md) covers the organization plan page, 402 upsell states and `/pricing`.
-- [Landing](./landing.md) covers the public marketing page, CTAs, and the mechanism section. **Seed proof target.**
-- [Auth](./auth.md) covers login, signup, session gate, and secret-mismatch failure.
+- [Landing](./landing.md) covers the public marketing page, CTAs, the mechanism section, and footer legal pages. **Seed proof target.**
+- [Missing routes](./not-found.md) covers unmatched URLs (HTTP 404) and the global unexpected-error page.
+- [Auth](./auth.md) covers login, signup, signup consent links, session gate, and secret-mismatch failure.
 - [Onboarding (player)](./onboarding-player.md) covers intention → optional account/club → `/player`.
 - [Player matches](./player-matches.md) covers personal matches, empty club state, and official stats separation.
 - [Competition setup](./competition-setup.md) covers org + draft + setup in the UI, with the CLI golden path as the API twin.
 - [Swiss format](./swiss-format.md) covers the Swiss setup, plan upsell, web fixture generation, rows, withdrawal, round closing and the standings.
 - [Explore competitions](./explore-competitions.md) covers the authenticated catalog, URL filters, detail and share.
 - [Results / Match Center](./results-match-center.md) covers the encounters lists, preview, Team negotiation, organizer review, conflicts, recovery and permissions.
+- [Sanctions](./sanctions.md) covers the competition `Sanciones` page, impose and revoke, the Team's read-only section on `Mi equipo`, standings deductions and permissions.
 - [Public competition portal](./public-portal.md) covers the signed-out portal, its sections and empty states, the 404, crawling (robots.txt, sitemap.xml, per-page metadata) and the organizer's `Ver portal público` link.
+- [Activity feed](./activity-feed.md) covers organization and personal home/full feeds, Pending, audiences, replay, and the FEED-01 action lifecycle.
 
 ## Not mapped yet (do not fake-drive)
 

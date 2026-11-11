@@ -4,6 +4,11 @@ BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000
 APP_BASE_URL=http://localhost:3000
 # Local Wrangler / Vite plugin. Skips BFF rate limits (club search, invitations).
 ENVIRONMENT=development
+# Keep NODE_ENV=development so Sentry never sends from this machine.
+NODE_ENV=development
+# Production only: `wrangler secret put SENTRY_DSN --config apps/web/wrangler.jsonc`
+# SENTRY_DSN=
+# SENTRY_ENVIRONMENT=production
 # Overrides wrangler.jsonc so the BFF talks to local apps/api, not production.
 FUTROB_API_BASE_URL=http://localhost:8787/api/v1
 INTERNAL_JOB_SECRET=replace-with-the-same-value-as-apps-api

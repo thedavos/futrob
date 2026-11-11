@@ -1,12 +1,15 @@
 import { RequirePremiumAnalyticsUseCase } from "@futrob/analytics";
 import {
   AssignOrganizationPlanUseCase,
+  CancelOrganizationPlanRequestUseCase,
   CheckOrganizationFeatureUseCase,
   ConsumeOrganizationQuotaUseCase,
   GetOrganizationEntitlementsUseCase,
   GetOrganizationPlanUseCase,
   ListOrganizationPlansUseCase,
+  ListPendingPlanRequestsUseCase,
   ReleaseOrganizationQuotaUseCase,
+  RequestOrganizationPlanUseCase,
   ResolveActorEntitlementsUseCase,
   ResolveOrganizationEntitlementsUseCase,
 } from "@futrob/billing";
@@ -17,8 +20,9 @@ import type {
   TransactionPort,
 } from "@futrob/shared-kernel";
 import type { CompetitionRepository } from "@futrob/competitions";
-import type { MembershipRepository } from "@futrob/organizations";
+import type { MembershipRepository, OrganizationRepository } from "@futrob/organizations";
 import type { Pool } from "pg";
+import { PendingPlanRequestsQuery } from "@/application/billing/pending-plan-requests.query.ts";
 import { OrganizationPlanUsageQuery } from "@/application/billing/organization-plan-usage.query.ts";
 import {
   BillingCompetitionPlanLimits,
@@ -28,6 +32,10 @@ import {
   BillingStaffSeatLimit,
 } from "@/adapters/billing/plan-limit.bridges.ts";
 import { InMemoryPlanCatalog, PostgresPlanCatalog } from "@/adapters/billing/plan-catalog.ts";
+import {
+  InMemoryPlanRequestRepository,
+  PostgresPlanRequestRepository,
+} from "@/adapters/billing/plan-requests.ts";
 import { InMemoryQuotaLedger, PostgresQuotaLedger } from "@/adapters/billing/quota-ledger.ts";
 import {
   InMemoryPlanChangeAuditRepository,
@@ -53,6 +61,9 @@ export function createBillingModule(
   const audit = deps.pool
     ? new PostgresPlanChangeAuditRepository(deps.pool)
     : new InMemoryPlanChangeAuditRepository();
+  const requests = deps.pool
+    ? new PostgresPlanRequestRepository(deps.pool)
+    : new InMemoryPlanRequestRepository();
   const ledger = deps.pool ? new PostgresQuotaLedger(deps.pool) : new InMemoryQuotaLedger();
   const resolve = new ResolveOrganizationEntitlementsUseCase({
     catalog,
@@ -85,6 +96,7 @@ export function createBillingModule(
         resolve,
         ledger,
         audit,
+        requests,
         clock: deps.clock,
       }),
       getOrganizationEntitlements: new GetOrganizationEntitlementsUseCase({
@@ -96,9 +108,31 @@ export function createBillingModule(
         catalog,
         subscriptions,
         audit,
+        requests,
         transaction: deps.transaction,
         clock: deps.clock,
         ids: deps.ids,
+      }),
+      requestOrganizationPlan: new RequestOrganizationPlanUseCase({
+        authorization: deps.authorization,
+        catalog,
+        resolve,
+        subscriptions,
+        requests,
+        transaction: deps.transaction,
+        clock: deps.clock,
+        ids: deps.ids,
+      }),
+      cancelOrganizationPlanRequest: new CancelOrganizationPlanRequestUseCase({
+        authorization: deps.authorization,
+        subscriptions,
+        requests,
+        transaction: deps.transaction,
+        clock: deps.clock,
+      }),
+      listPendingPlanRequests: new ListPendingPlanRequestsUseCase({
+        authorization: deps.authorization,
+        requests,
       }),
       /** Gate prepared for analytics use cases; nothing consumes it yet (ADR-0025). */
       requirePremiumAnalytics: new RequirePremiumAnalyticsUseCase(premiumAnalyticsAccess),
@@ -123,7 +157,13 @@ export type BillingModule = ReturnType<typeof createBillingModule>;
 export function withPlanUsage(
   billing: BillingModule,
   competitions: Pick<CompetitionRepository, "listByOrganization">,
-  memberships: Pick<MembershipRepository, "countByRole">,
+  {
+    memberships,
+    organizations,
+  }: {
+    readonly memberships: Pick<MembershipRepository, "countByRole">;
+    readonly organizations: Pick<OrganizationRepository, "getByIds">;
+  },
 ) {
   return {
     ...billing,
@@ -131,6 +171,10 @@ export function withPlanUsage(
       plan: billing.useCases.getOrganizationPlan,
       competitions,
       memberships,
+    }),
+    pendingPlanRequests: new PendingPlanRequestsQuery({
+      pending: billing.useCases.listPendingPlanRequests,
+      organizations,
     }),
   };
 }

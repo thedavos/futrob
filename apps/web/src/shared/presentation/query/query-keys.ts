@@ -22,6 +22,7 @@ export const queryKeys = {
       [...queryKeys.activities.all, "organization", organizationId, query] as const,
     organizationFeed: (organizationId: string) =>
       [...queryKeys.activities.all, "organization", organizationId, "feed"] as const,
+    mineFeed: () => [...queryKeys.activities.all, "mine", "feed"] as const,
     mine: (query: ActivityQueryKey) => [...queryKeys.activities.all, "mine", query] as const,
   },
   encounters: {
@@ -74,6 +75,8 @@ export const queryKeys = {
     plan: (organizationId: string) => [...queryKeys.billing.all, "plan", organizationId] as const,
     /** Anonymous plan catalog (`/public/plans`); the same for every actor. */
     publicPlans: () => [...queryKeys.billing.all, "public-plans"] as const,
+    /** Superuser queue of organizations waiting for a plan. */
+    planRequests: () => [...queryKeys.billing.all, "plan-requests"] as const,
   },
   authorization: {
     all: ["authorization"] as const,
@@ -116,6 +119,11 @@ export const queryKeys = {
     publicEntryInvitationLink: (code: string) =>
       [...queryKeys.competitions.all, "public-entry-invitation-link", code] as const,
     myEntryInvitations: () => [...queryKeys.competitions.all, "my-entry-invitations"] as const,
+    /** Every sanctions list of the competition; the Team's own read nests under it. */
+    sanctions: (organizationId: string, competitionId: string) =>
+      [...queryKeys.competitions.all, "sanctions", organizationId, competitionId] as const,
+    teamSanctions: (organizationId: string, competitionId: string, teamId: string) =>
+      [...queryKeys.competitions.sanctions(organizationId, competitionId), "team", teamId] as const,
   },
   teams: {
     all: ["teams"] as const,

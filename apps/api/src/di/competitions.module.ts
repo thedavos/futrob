@@ -34,6 +34,7 @@ import {
   RegisterInvitedEntryUseCase,
   type CompetitionDiscoveryReader,
   type CompetitionPlanLimitsPort,
+  type CompetitionSanctionRepository,
   type EntryInvitationRepository,
   type CompetitionEntryRepository,
   type CompetitionMembershipRepository,
@@ -59,6 +60,10 @@ import {
   PostgresEntryInvitationRepository,
   RandomEntryInvitationCodePort,
 } from "@/adapters/competitions/entry-invitation.repositories.ts";
+import {
+  InMemoryCompetitionSanctionRepository,
+  PostgresCompetitionSanctionRepository,
+} from "@/adapters/competitions/sanction.repositories.ts";
 import { InMemoryCompetitionDiscoveryReader } from "@/adapters/competitions/in-memory-discovery.reader.ts";
 import {
   InMemoryCompetitionMembershipRepository,
@@ -114,8 +119,13 @@ export function createCompetitionsModule(input: {
     codes: new RandomEntryInvitationCodePort(),
     ...shared,
   };
+  const sanctions: CompetitionSanctionRepository = input.pool
+    ? new PostgresCompetitionSanctionRepository(input.pool)
+    : new InMemoryCompetitionSanctionRepository();
   return {
     repository: competitions,
+    /** Append-only sanctions (ADR-0028); commands are composed in `sanctions.composition.ts`. */
+    sanctionRepository: sanctions,
     discovery,
     membershipRepository: memberships,
     entryRepository: entries,

@@ -1,0 +1,66 @@
+$ FEED_EVIDENCE_DIR=.agents/skills/verify-futrob/evidence/feed-01-2026-11-10 apps/api/node_modules/.bin/tsx --tsconfig apps/api/tsconfig.json .agents/skills/verify-futrob/helpers/feed-01-live.mjs invitations
+{
+  "action": "create directed roster invitation",
+  "result": {
+    "invitationId": "1a65042c-630d-4d5b-a76f-623428bdef0f"
+  }
+}
+{
+  "action": "invitee pending",
+  "result": [
+    {
+      "id": "6bd955e2-66b4-4f78-ac97-efae8e226741",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "audience": "actor",
+      "kind": "roster_invitation",
+      "status": "open",
+      "requiresAction": true,
+      "resourceType": "roster_invitation",
+      "resourceId": "1a65042c-630d-4d5b-a76f-623428bdef0f",
+      "subject": {
+        "competitionName": "Clausura 26",
+        "encounterLabel": null,
+        "teamName": "Cóndores FC",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:36:39.303Z",
+      "closedAt": null,
+      "expiresAt": "2026-11-17T00:36:39.303Z",
+      "lastEventAt": "2026-11-10T00:36:39.303Z"
+    }
+  ]
+}
+{
+  "action": "decline directed invitation",
+  "result": {
+    "status": "declined",
+    "membership": null
+  }
+}
+{
+  "action": "closed invitation readback",
+  "result": [
+    {
+      "id": "6bd955e2-66b4-4f78-ac97-efae8e226741",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "audience": "actor",
+      "kind": "roster_invitation",
+      "status": "closed",
+      "requiresAction": true,
+      "resourceType": "roster_invitation",
+      "resourceId": "1a65042c-630d-4d5b-a76f-623428bdef0f",
+      "subject": {
+        "competitionName": "Clausura 26",
+        "encounterLabel": null,
+        "teamName": "Cóndores FC",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:36:39.303Z",
+      "closedAt": "2026-11-10T00:36:39.344Z",
+      "expiresAt": "2026-11-17T00:36:39.303Z",
+      "lastEventAt": "2026-11-10T00:36:39.344Z"
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import type {
 } from "@/application/teams/team-roster-management.use-case.ts";
 import type { CompetitionApplicationFlow } from "@/application/competitions/competition-application.flow.ts";
 import type { EntryInvitationsComposition } from "./entry-invitations.composition.ts";
+import type { SanctionsComposition } from "./sanctions.composition.ts";
 import type { SchedulingModule } from "./scheduling.module.ts";
 import type { GameDataModule } from "./game-data.module.ts";
 import type { OnboardingCompletionFlow } from "@/application/identity/onboarding-completion.flow.ts";
@@ -42,6 +43,8 @@ export interface AppModules {
   readonly competitionApplications: CompetitionApplicationFlow;
   readonly competitions: CompetitionsModule;
   readonly entryInvitations: EntryInvitationsComposition;
+  /** Impose and revoke with their table rebuild and activity in one transaction (ADR-0028). */
+  readonly sanctions: SanctionsComposition;
   /** Every selection command composed with its transaction, lock and projection. */
   readonly officialSelection: OfficialSelectionCommands;
   /** Withdrawal and round closing composed with their transaction and locks (ADR-0027). */

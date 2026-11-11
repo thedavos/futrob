@@ -1,0 +1,103 @@
+
+> futrob@0.1.0 test
+> vp test --project web apps/web/src/modules/notifications/presentation/activity-screens.test.tsx
+
+
+ RUN  v4.1.11 /home/user/code/futrob
+
+ ❯ |web| src/modules/notifications/presentation/activity-screens.test.tsx (8 tests | 1 failed) 1332ms
+     × shows the player's own recent activity with a capped list and personal full-feed link 1005ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |web| src/modules/notifications/presentation/activity-screens.test.tsx > activity screens > shows the player's own recent activity with a capped list and personal full-feed link
+TestingLibraryElementError: Unable to find role="list" and name "Actividad reciente"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33mclass[39m=[32m"card__styles.root x3megex x1d6lyd0 x1bd4okg card__styles.flat xmkeg23 x1y0btm7 x1g77ebn organization-recent-activity__styles.card x78zum5 xeuugli xdt5ytf"[39m
+      [33mdata-slot[39m=[32m"card"[39m
+      [33mdata-variant[39m=[32m"flat"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"card__styles.header organization-recent-activity__styles.header x78zum5 x1q0g3np x6s0dn4 x1qughib x8233eu xomzojh"[39m
+        [33mdata-slot[39m=[32m"card-header"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"typography__typography.host x1ghz6dp x1mzt3pk typography__typography.heading typography__typography.title xw94upl x1ip4m1d xonyhx xe1nkb2 x1w2vvpw"[39m
+          [33mdata-look[39m=[32m"heading"[39m
+          [33mdata-slot[39m=[32m"heading"[39m
+        [36m>[39m
+          [0mActividad reciente[0m
+        [36m</h2>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card__styles.content organization-recent-activity__styles.content x78zum5 xdt5ytf x8233eu xexx8yu x1qhpy6z x10l3h1t"[39m
+        [33mdata-slot[39m=[32m"card-content"[39m
+      [36m>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"typography__typography.host x1ghz6dp x1mzt3pk typography__typography.caption xhx0s27 x12u1zed xz7slsp xwu0lci x1fzhlzt text-tone__textTone.muted x4xfwvg"[39m
+          [33mdata-slot[39m=[32m"caption"[39m
+          [33mdata-tone[39m=[32m"muted"[39m
+        [36m>[39m
+          [0mTodavía no hay actividad. Disputas, confirmaciones, invitaciones y publicaciones aparecerán aquí.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33mclass[39m=[32m"card__styles.root x3megex x1d6lyd0 x1bd4okg card__styles.flat xmkeg23 x1y0btm7 x1g77ebn organization-recent-activity__styles.card x78zum5 xeuugli xdt5ytf"[39m
+      [33mdata-slot[39m=[32m"card"[39m
+      [33mdata-variant[39m=[32m"flat"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"card__styles.header organization-recent-activity__styles.header x78zum5 x1q0g3np x6s0dn4 x1qughib x8233eu xomzojh"[39m
+        [33mdata-slot[39m=[32m"card-header"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"typography__typography.host x1ghz6dp x1mzt3pk typography__typography.heading typography__typography.title xw94upl x1ip4m1d xonyhx xe1nkb2 x1w2vvpw"[39m
+          [33mdata-look[39m=[32m"heading"[39m
+          [33mdata-slot[39m=[32m"heading"[39m
+        [36m>[39m
+          [0mActividad reciente[0m
+        [36m</h2>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card__styles.content organization-recent-activity__styles.content x78zum5 xdt5ytf x8233eu xexx8yu x1qhpy6z x10l3h1t"[39m
+        [33mdata-slot[39m=[32m"card-content"[39m
+      [36m>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"typography__typography.host x1ghz6dp x1mzt3pk typography__typography.caption xhx0s27 x12u1zed xz7slsp xwu0lci x1fzhlzt text-tone__textTone.muted x4xfwvg"[39m
+          [33mdata-slot[39m=[32m"caption"[39m
+          [33mdata-tone[39m=[32m"muted"[39m
+        [36m>[39m
+          [0mTodavía no hay actividad. Disputas, confirmaciones, invitaciones y publicaciones aparecerán aquí.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper ../../node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/modules/notifications/presentation/activity-screens.test.tsx:272:33
+    270|     listMine.mockResolvedValue(page(many(12, "personal").map(row => ({…
+    271|     renderWith(<OrganizationRecentActivity organizationId={ORG} {...{ …
+    272|     const recent = await screen.findByRole("list", { name: "Actividad …
+       |                                 ^
+    273|     expect(within(recent).getAllByRole("listitem")).toHaveLength(10);
+    274|     expect(within(recent).getByText("Match personal-0 · Liga A")).toBe…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  00:33:49
+   Duration  17.27s (transform 2.52s, setup 1.29s, import 8.44s, tests 1.33s, environment 5.91s)

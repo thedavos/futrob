@@ -17,6 +17,7 @@ import {
   type PerformanceRankingAccessPort,
   type CompetitionSwissStandingReaderPort,
   type RankingSnapshotRepository,
+  type CompetitionPointDeductionReaderPort,
 } from "@futrob/statistics";
 import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
 import type { EncounterReaderPort, OfficialResultReaderPort } from "@futrob/results";
@@ -101,6 +102,8 @@ export function createStatisticsModule(deps: {
   authorization: AuthorizationPort;
   performanceRankingAccess: PerformanceRankingAccessPort;
   encounterReader?: EncounterReaderPort;
+  /** Active sanction deductions, applied by projection and rebuild alike (ADR-0028). */
+  pointDeductions?: CompetitionPointDeductionReaderPort;
   transaction: TransactionPort;
   eventPublisher: EventPublisherPort;
 }): StatisticsModule {
@@ -180,6 +183,7 @@ export function createStatisticsModule(deps: {
     teamCompetitionStats,
     standings,
     matchRules,
+    pointDeductions: deps.pointDeductions,
     rebuildRankings,
     teamPerformanceLock,
     rebuildTeamPerformance,
@@ -211,6 +215,7 @@ export function createStatisticsModule(deps: {
         teamCompetitionStats,
         standings,
         matchRules,
+        pointDeductions: deps.pointDeductions,
         rebuildRankings,
         teamPerformanceLock,
         teamPerformanceSources,

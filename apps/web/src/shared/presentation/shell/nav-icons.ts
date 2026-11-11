@@ -13,6 +13,7 @@ import {
   MedalIcon,
   PresentationChartIcon,
   ScalesIcon,
+  SealWarningIcon,
   SoccerBallIcon,
   SquaresFourIcon,
   TicketIcon,
@@ -42,6 +43,7 @@ export const SHELL_NAV_ICONS = {
   bracket: TreeStructureIcon,
   rankings: MedalIcon,
   disputes: ScalesIcon,
+  sanctions: SealWarningIcon,
   analytics: PresentationChartIcon,
   rules: BookOpenTextIcon,
 } satisfies Record<ShellNavIconId, Icon>;
