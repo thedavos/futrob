@@ -228,6 +228,38 @@ describe("email notifications", () => {
     expect(critical?.text).not.toContain("Dejar de recibir");
   });
 
+  it("skips a pending retry of a non-critical email once the recipient opts out", async () => {
+    const h = emailHarness();
+    await h.enqueue.execute({
+      eventId: "entry:1",
+      organizationId: ORG_A,
+      actorId: PROPOSER,
+      audiences: [
+        {
+          audience: {
+            organizationId: ORG_A,
+            competitionId: CMP,
+            audience: "actor",
+            audienceId: ORGANIZER,
+          },
+          intent: registration,
+        },
+      ],
+    });
+    h.sender.failures.push({ retryable: true });
+    expect(await h.dispatch.execute()).toMatchObject({ sent: 0, retried: 1 });
+
+    const token = h.preferences.rows.get(ORGANIZER)?.unsubscribeToken ?? "";
+    expect((await h.unsubscribe.execute({ token })).isOk()).toBe(true);
+    h.clock.current = new Date(h.clock.current.getTime() + minutes(1));
+
+    expect(await h.dispatch.execute()).toEqual({ sent: 0, retried: 0, failed: 0, skipped: 1 });
+    expect(h.sender.inbox).toEqual([]);
+    expect((await h.outbox.listByEvent("entry:1")).map((row) => row.skipReason)).toEqual([
+      "opted_out",
+    ]);
+  });
+
   it("rejects an unknown unsubscribe token", async () => {
     const h = emailHarness();
     const result = await h.unsubscribe.execute({ token: "forged" });

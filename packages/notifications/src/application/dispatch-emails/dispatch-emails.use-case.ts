@@ -85,8 +85,6 @@ export class DispatchEmailsUseCase {
     delivery: EmailDelivery,
     contact: EmailContact | undefined,
   ): Promise<EmailDeliveryOutcome> {
-    // A started send keeps its request: the idempotency key belongs to that exact body.
-    if (delivery.message) return this.send(delivery, delivery.message);
     const skipped = (reason: EmailSkipReason): EmailDeliveryOutcome => ({
       kind: "skipped",
       reason,
@@ -99,6 +97,8 @@ export class DispatchEmailsUseCase {
     if (!isCriticalEmail(delivery.intent.template) && !preferences.nonCriticalEmail) {
       return skipped(EMAIL_SKIP_REASON.optedOut);
     }
+    // A started send keeps its request: the idempotency key belongs to that exact body.
+    if (delivery.message) return this.send(delivery, delivery.message);
     if (!contact) return skipped(EMAIL_SKIP_REASON.noAddress);
 
     const rendered = renderEmail({
