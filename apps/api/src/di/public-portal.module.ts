@@ -6,6 +6,7 @@ import {
   GetPublicRulesUseCase,
   GetPublicStandingsUseCase,
   GetPublicTeamsUseCase,
+  ListPublicCompetitionsUseCase,
 } from "@futrob/public-portal";
 import type {
   CompetitionDiscoveryReader,
@@ -28,6 +29,7 @@ import type {
 } from "@futrob/teams";
 import {
   CompetitionsPublicRulesReader,
+  DiscoveryPublishedCompetitionDirectory,
   OrganizationScopedPublishedCompetitionReader,
   RosterPublicPlayerDirectory,
   SchedulingPublicBracketReader,
@@ -39,7 +41,7 @@ import {
 
 export function createPublicPortalModule(input: {
   readonly clock: ClockPort;
-  readonly organizations: Pick<OrganizationRepository, "getBySlug">;
+  readonly organizations: Pick<OrganizationRepository, "getBySlug" | "getByIds">;
   readonly discovery: CompetitionDiscoveryReader;
   readonly competitions: Pick<CompetitionRepository, "findById">;
   readonly entries: Pick<CompetitionEntryRepository, "listByCompetition">;
@@ -61,6 +63,9 @@ export function createPublicPortalModule(input: {
   );
   const teams = new TeamsPublicTeamDirectory(input.teams, input.entries);
   return {
+    listCompetitions: new ListPublicCompetitionsUseCase(
+      new DiscoveryPublishedCompetitionDirectory(input.discovery, input.organizations),
+    ),
     getCompetition: new GetPublicCompetitionUseCase(competitions),
     getStandings: new GetPublicStandingsUseCase({
       competitions,

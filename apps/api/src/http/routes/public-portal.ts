@@ -7,6 +7,7 @@ import {
   getPublicRulesResponseSchema,
   getPublicStandingsResponseSchema,
   getPublicTeamsResponseSchema,
+  listPublicCompetitionsResponseSchema,
 } from "@futrob/api-contracts";
 import { asPublicCompetitionKey, type PublicBracket } from "@futrob/public-portal";
 import type { AppDeps } from "@/app.ts";
@@ -20,6 +21,7 @@ import {
   getPublicRulesRoute,
   getPublicStandingsRoute,
   getPublicTeamsRoute,
+  listPublicCompetitionsRoute,
 } from "@/http/openapi/routes/public-portal.ts";
 import { publicJsonResponse } from "@/utils/http-response.ts";
 
@@ -34,6 +36,19 @@ const keyOf = (params: { readonly organizationSlug: string; readonly competition
 export function registerPublicPortalRoutes(app: Hono, deps: AppDeps): void {
   const router = createOpenApiRouter();
   const { publicPortal } = deps.modules;
+
+  router.openapi(listPublicCompetitionsRoute, async () => {
+    const { competitions } = await publicPortal.listCompetitions.execute();
+    return publicJsonResponse(
+      listPublicCompetitionsResponseSchema.parse({
+        competitions: competitions.map((item) => ({
+          organizationSlug: item.organizationSlug,
+          competitionKey: item.competitionKey,
+          updatedAt: item.updatedAt.toISOString(),
+        })),
+      }),
+    );
+  });
 
   router.openapi(getPublicCompetitionRoute, async (c) => {
     const result = await publicPortal.getCompetition.execute({ key: keyOf(c.req.valid("param")) });

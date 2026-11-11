@@ -23,6 +23,7 @@ export type {
   PublicCalendar,
   PublicCalendarEntry,
   PublicCompetition,
+  PublicCompetitionListing,
   PublicEncounterStatus,
   PublicMatchScore,
   PublicRanking,
@@ -69,6 +70,14 @@ export type {
   PublicRulesReaderPort,
   PublicRulesSource,
 } from "./domain/ports/public-rules-reader.port.ts";
+export type {
+  PublishedCompetitionDirectoryEntry,
+  PublishedCompetitionDirectoryPort,
+} from "./domain/ports/published-competition-directory.port.ts";
+export {
+  ListPublicCompetitionsUseCase,
+  MAX_PUBLIC_COMPETITIONS,
+} from "./application/list-public-competitions/list-public-competitions.use-case.ts";
 export type { PublicTeamDirectoryPort } from "./domain/ports/public-team-directory.port.ts";
 export { GetPublicCompetitionUseCase } from "./application/get-public-competition/get-public-competition.use-case.ts";
 export {
