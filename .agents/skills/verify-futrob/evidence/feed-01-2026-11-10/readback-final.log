@@ -1,0 +1,299 @@
+$ FEED_EVIDENCE_DIR=.agents/skills/verify-futrob/evidence/feed-01-2026-11-10 apps/api/node_modules/.bin/tsx --tsconfig apps/api/tsconfig.json .agents/skills/verify-futrob/helpers/feed-01-live.mjs readback
+{
+  "action": "publication and retry readback",
+  "result": [
+    {
+      "id": "899a675e-425f-4481-a53b-067fea56d727",
+      "organizationId": "fe5cb4e7-5352-4a42-93fb-385eb031d855",
+      "competitionId": "a611f39a-027f-4e65-985f-fbe8cd23077c",
+      "audience": "organization",
+      "kind": "competition_published",
+      "status": "closed",
+      "requiresAction": false,
+      "resourceType": "competition",
+      "resourceId": "a611f39a-027f-4e65-985f-fbe8cd23077c",
+      "subject": {
+        "competitionName": "Liga CLI-1794270550095",
+        "encounterLabel": null,
+        "teamName": null,
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:29:10.374Z",
+      "closedAt": "2026-11-10T00:29:10.374Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:29:10.374Z"
+    }
+  ]
+}
+{
+  "action": "final lifecycle readback",
+  "result": {
+    "suffix": ":round:4:encounter:1",
+    "rows": [
+      {
+        "id": "88903c10-68b8-40f8-8ade-0d3b8c12b56a",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "selection_confirmation",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:4:encounter:1",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Inti United vs Cóndores FC",
+          "teamName": "Inti United",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:34:02.745Z",
+        "closedAt": "2026-11-10T00:34:02.982Z",
+        "expiresAt": "2026-11-11T00:34:02.745Z",
+        "lastEventAt": "2026-11-10T00:34:02.982Z"
+      }
+    ]
+  }
+}
+{
+  "action": "final lifecycle readback",
+  "result": {
+    "suffix": ":round:5:encounter:1",
+    "rows": [
+      {
+        "id": "a585fe29-4de1-4f77-a297-14ba94f86d6f",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "match_dispute",
+        "status": "closed",
+        "requiresAction": true,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:5:encounter:1",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Cóndores FC vs Deportivo Llama",
+          "teamName": null,
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:34:03.743Z",
+        "closedAt": "2026-11-10T00:34:04.015Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T00:34:04.015Z"
+      },
+      {
+        "id": "dede0b09-3c1e-4ce0-8f79-ee32f1bdc678",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "selection_confirmation",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:5:encounter:1",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Cóndores FC vs Deportivo Llama",
+          "teamName": "Deportivo Llama",
+          "outcome": null
+        },
+        "openedAt": "2026-11-09T04:27:41.368Z",
+        "closedAt": "2026-11-10T00:34:03.743Z",
+        "expiresAt": "2026-11-10T04:27:41.368Z",
+        "lastEventAt": "2026-11-10T00:34:03.743Z"
+      }
+    ]
+  }
+}
+{
+  "action": "final lifecycle readback",
+  "result": {
+    "suffix": ":round:7:encounter:4",
+    "rows": [
+      {
+        "id": "bc5a42be-2b93-474f-8b5c-a951cc852f88",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "schedule_change",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:4",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Sporting Quipu vs Inti United",
+          "teamName": "Sporting Quipu",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:36:18.075Z",
+        "closedAt": "2026-11-10T00:36:18.542Z",
+        "expiresAt": "2026-11-10T12:36:18.075Z",
+        "lastEventAt": "2026-11-10T00:36:18.542Z"
+      },
+      {
+        "id": "ca775673-bac2-4115-943b-a681acc65740",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "schedule_change",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:4",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Sporting Quipu vs Inti United",
+          "teamName": "Inti United",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:36:17.912Z",
+        "closedAt": "2026-11-10T00:36:18.075Z",
+        "expiresAt": "2026-11-10T12:36:17.912Z",
+        "lastEventAt": "2026-11-10T00:36:18.075Z"
+      }
+    ]
+  }
+}
+{
+  "action": "final lifecycle readback",
+  "result": {
+    "suffix": ":round:7:encounter:3",
+    "rows": [
+      {
+        "id": "f5761be4-9be8-416d-9b23-85dd73c3920d",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "organizer_decision",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": null,
+          "outcome": "schedule_kept"
+        },
+        "openedAt": "2026-11-10T12:37:41.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      },
+      {
+        "id": "f40aefa5-d0f7-4177-bb05-ad3cca4b6b74",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "schedule_change",
+        "status": "closed",
+        "requiresAction": true,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": null,
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T12:37:41.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      },
+      {
+        "id": "b6b502f5-b589-4d20-ad6f-8ecb82c29f40",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "schedule_change",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": "Racing Totora",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:37:40.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": "2026-11-10T12:37:40.854Z",
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      }
+    ]
+  }
+}
+{
+  "action": "final directed invitation readback",
+  "result": [
+    {
+      "id": "6bd955e2-66b4-4f78-ac97-efae8e226741",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "audience": "actor",
+      "kind": "roster_invitation",
+      "status": "closed",
+      "requiresAction": true,
+      "resourceType": "roster_invitation",
+      "resourceId": "1a65042c-630d-4d5b-a76f-623428bdef0f",
+      "subject": {
+        "competitionName": "Clausura 26",
+        "encounterLabel": null,
+        "teamName": "Cóndores FC",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:36:39.303Z",
+      "closedAt": "2026-11-10T00:36:39.344Z",
+      "expiresAt": "2026-11-17T00:36:39.303Z",
+      "lastEventAt": "2026-11-10T00:36:39.344Z"
+    }
+  ]
+}
+{
+  "action": "rejected registration application and retry readback",
+  "result": {
+    "application": {
+      "application": {
+        "entryId": "108e57d1-df95-4230-8a5d-eda15968079e",
+        "status": "rejected",
+        "teamId": "be6e253a-dd0b-406a-b95e-0e528202f720",
+        "teamName": "FEED-01 reject",
+        "createdAt": "2026-11-10T00:41:20.492Z"
+      }
+    },
+    "activity": [
+      {
+        "id": "5eaac6f0-1c6c-4410-a675-3106f144cadd",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "audience": "team",
+        "kind": "organizer_decision",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "competition",
+        "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "subject": {
+          "competitionName": "Apertura Inscripciones",
+          "encounterLabel": null,
+          "teamName": "FEED-01 reject",
+          "outcome": "entry_rejected"
+        },
+        "openedAt": "2026-11-10T00:41:20.566Z",
+        "closedAt": "2026-11-10T00:41:20.566Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T00:41:20.566Z"
+      }
+    ]
+  }
+}
+{
+  "action": "verification complete",
+  "result": {
+    "mode": "readback",
+    "verified": true
+  }
+}
+
+exit=0

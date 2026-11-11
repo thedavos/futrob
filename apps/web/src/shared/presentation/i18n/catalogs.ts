@@ -591,6 +591,10 @@ const es = {
   "activity.error": "No se pudo cargar la actividad.",
   "activity.page.title": "Actividad",
   "activity.page.description": "Todo lo que pasó en la organización, lo más reciente primero.",
+  "activity.personal.description":
+    "Tus invitaciones y la actividad de tus equipos, lo más reciente primero.",
+  "activity.personal.empty":
+    "Aquí verás tus invitaciones y la actividad de los equipos que representas.",
   "activity.page.loadMore": "Cargar más",
   "activity.page.loadingMore": "Cargando más actividad",
   "activity.page.empty.title": "Sin actividad todavía",
@@ -3583,6 +3587,9 @@ const en: Catalog = {
   "activity.error": "Activity could not be loaded.",
   "activity.page.title": "Activity",
   "activity.page.description": "Everything that happened in the organization, newest first.",
+  "activity.personal.description": "Your invitations and your teams' activity, newest first.",
+  "activity.personal.empty":
+    "Your invitations and activity for the teams you represent will appear here.",
   "activity.page.loadMore": "Load more",
   "activity.page.loadingMore": "Loading more activity",
   "activity.page.empty.title": "No activity yet",
