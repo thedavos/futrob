@@ -17,8 +17,10 @@ const competition = {
   coverPreset: null,
 };
 
+const REF = { organizationSlug: "liga-norte", competitionKey: "copa" };
+
 describe("public portal SDK resource", () => {
-  it("reads the three resources anonymously and encodes the key", async () => {
+  it("reads every resource anonymously and encodes both parts of the key", async () => {
     const requests: { url: string; authorization: string | null }[] = [];
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
@@ -31,28 +33,36 @@ describe("public portal SDK resource", () => {
         if (url.endsWith("/calendar")) {
           return Response.json({ calendar: { timeZone: "America/Lima", entries: [] } });
         }
+        if (url.endsWith("/teams")) return Response.json({ teams: [] });
+        if (url.endsWith("/bracket")) return Response.json({ bracket: null });
+        if (url.endsWith("/rules")) {
+          return Response.json({
+            rules: { format: "league", teams: null, stages: [], maxRosterSize: null },
+          });
+        }
+        if (url.endsWith("/rankings/mvp")) {
+          return Response.json({ ranking: { kind: "mvp", rows: [], updatedAt: null } });
+        }
         return Response.json({ competition });
       }),
     });
 
-    await client.publicPortal.getCompetition("copa barranco/1");
-    await client.publicPortal.getStandings("copa barranco/1");
-    await client.publicPortal.getCalendar("copa barranco/1");
+    const ref = { organizationSlug: "liga/norte", competitionKey: "copa barranco/1" };
+    await client.publicPortal.getCompetition(ref);
+    await client.publicPortal.getStandings(ref);
+    await client.publicPortal.getCalendar(ref);
+    await client.publicPortal.getTeams(ref);
+    await client.publicPortal.getRules(ref);
+    await client.publicPortal.getBracket(ref);
+    await client.publicPortal.getRanking(ref, "mvp");
 
-    expect(requests).toEqual([
-      {
-        url: "https://app.example.com/api/v1/public/competitions/copa%20barranco%2F1",
-        authorization: null,
-      },
-      {
-        url: "https://app.example.com/api/v1/public/competitions/copa%20barranco%2F1/standings",
-        authorization: null,
-      },
-      {
-        url: "https://app.example.com/api/v1/public/competitions/copa%20barranco%2F1/calendar",
-        authorization: null,
-      },
-    ]);
+    const base =
+      "https://app.example.com/api/v1/public/organizations/liga%2Fnorte/competitions/copa%20barranco%2F1";
+    expect(requests).toEqual(
+      ["", "/standings", "/calendar", "/teams", "/rules", "/bracket", "/rankings/mvp"].map(
+        (suffix) => ({ url: `${base}${suffix}`, authorization: null }),
+      ),
+    );
   });
 
   it("refuses a body that carries a private key the contract does not allow", async () => {
@@ -63,7 +73,7 @@ describe("public portal SDK resource", () => {
       ),
     });
 
-    await expect(client.publicPortal.getCompetition("copa")).rejects.toThrow();
+    await expect(client.publicPortal.getCompetition(REF)).rejects.toThrow();
   });
 
   it("surfaces the not-found code for an unpublished competition", async () => {
@@ -80,9 +90,7 @@ describe("public portal SDK resource", () => {
       ),
     });
 
-    const error = await client.publicPortal
-      .getStandings("draft")
-      .catch((caught: unknown) => caught);
+    const error = await client.publicPortal.getStandings(REF).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(FutrobApiError);
     expect(error).toMatchObject({ status: 404, code: "public_portal.competition_not_found" });
   });

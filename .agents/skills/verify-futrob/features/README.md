@@ -46,11 +46,11 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 - [Explore competitions](./explore-competitions.md) covers the authenticated catalog, URL filters, detail and share.
 - [Results / Match Center](./results-match-center.md) covers the encounters lists, preview, Team negotiation, organizer review, conflicts, recovery and permissions.
 - [Sanctions](./sanctions.md) covers the competition `Sanciones` page, impose and revoke, the Team's read-only section on `Mi equipo`, standings deductions and permissions.
+- [Public competition portal](./public-portal.md) covers the signed-out portal, its sections and empty states, the 404 and the organizer's `Ver portal público` link.
 - [Activity feed](./activity-feed.md) covers organization and personal home/full feeds, Pending, audiences, replay, and the FEED-01 action lifecycle.
 
 ## Not mapped yet (do not fake-drive)
 
-- Public competition portal — no public routes. Authenticated explore is not that portal.
 - Native mobile — auth foundation only; `AC-MOB-*` requires iOS/Android builds.
 - Onboarding invitation and organizer paths — real, but not in this seed; do not claim them via the player path.
 - Player club / game-account / invitations — live routes (`/player/ea-clubs`, `/player/game-accounts`, `/invitations/accept/*`, `/roster-invitations/accept/*`). Visible from `/player` (`Añadir club`, `Vincular cuenta`, sidebar). Not in this seed. `/player/competitions/explore` is mapped.

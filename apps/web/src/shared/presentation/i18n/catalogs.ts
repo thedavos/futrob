@@ -2846,6 +2846,106 @@ const es = {
   "fixture.rounds.current": "Próxima",
   "fixture.rounds.emptyRound": "Sin enfrentamientos con estos filtros.",
   "fixture.rounds.scroll": ({ stage }) => `Jornadas de ${stage}`,
+  "portal.nav.label": "Secciones de la competición",
+  "portal.section.cover": "Portada",
+  "portal.section.calendar": "Calendario y resultados",
+  "portal.section.standings": "Tabla",
+  "portal.section.bracket": "Bracket",
+  "portal.section.teams": "Equipos",
+  "portal.section.rankings": "Rankings",
+  "portal.section.rules": "Reglamento",
+  "portal.status.published": "En juego",
+  "portal.status.paused": "En pausa",
+  "portal.status.finished": "Finalizada",
+  "portal.header.eyebrow": "Competición pública",
+  "portal.header.teams": ({ count }) => (count === 1 ? "1 equipo" : `${count} equipos`),
+  "portal.header.timeZone": ({ zone }) => `Horarios en ${zone}`,
+  "portal.footer.poweredBy": "Publicado con Futrob",
+  "portal.footer.home": "Conoce Futrob",
+  "portal.meta.description": ({ name }) =>
+    `Calendario, resultados, tabla, bracket y rankings de ${name}, publicados en Futrob.`,
+  "portal.loading": "Cargando la sección",
+  "portal.error.title": "No pudimos cargar esta sección",
+  "portal.error.description":
+    "Puede ser un problema temporal. Vuelve a intentarlo en unos segundos.",
+  "portal.error.retry": "Reintentar",
+  "portal.notFound.title": "Esta competición no está disponible",
+  "portal.notFound.description":
+    "Revisa el enlace. Si es correcto, la competición todavía no está publicada.",
+  "portal.notFound.action": "Ir a Futrob",
+  "portal.cover.upcoming": "Próximos enfrentamientos",
+  "portal.cover.upcoming.empty": "No quedan enfrentamientos por jugar.",
+  "portal.cover.results": "Últimos resultados",
+  "portal.cover.results.empty": "Aún no hay resultados oficiales.",
+  "portal.cover.calendarLink": "Ver calendario completo",
+  "portal.noFixture.title": "El calendario aún no está publicado",
+  "portal.noFixture.description":
+    "Cuando la organización genere el fixture, verás aquí cada jornada y sus resultados.",
+  "portal.calendar.round": ({ round }) => `Jornada ${round}`,
+  "portal.encounter.status.scheduled": "Programado",
+  "portal.encounter.status.awaiting_result": "Pendiente de resultado",
+  "portal.encounter.status.official": "Oficial",
+  "portal.encounter.status.closed": "Cerrado",
+  "portal.encounter.versus": "vs",
+  "portal.encounter.label": ({ home, away }) => `${home} contra ${away}`,
+  "portal.encounter.score": ({ score }) => `Resultado oficial ${score}`,
+  "portal.standings.caption": "Tabla oficial, calculada solo con resultados oficializados.",
+  "portal.standings.empty.title": "Aún no hay tabla",
+  "portal.standings.empty.description":
+    "La tabla aparece cuando la organización oficializa el primer resultado.",
+  "portal.standings.col.wins": "G",
+  "portal.standings.col.wins.full": "Ganados",
+  "portal.standings.col.draws": "E",
+  "portal.standings.col.draws.full": "Empatados",
+  "portal.standings.col.losses": "P",
+  "portal.standings.col.losses.full": "Perdidos",
+  "portal.standings.col.goalsFor": "GF",
+  "portal.standings.col.goalsFor.full": "Goles a favor",
+  "portal.standings.col.goalsAgainst": "GC",
+  "portal.standings.col.goalsAgainst.full": "Goles en contra",
+  "portal.bracket.stage.knockout": "Eliminatorias",
+  "portal.bracket.stage.playoffs": "Playoffs",
+  "portal.bracket.round": ({ round }) => `Ronda ${round}`,
+  "portal.bracket.encounter": ({ order }) => `Cruce ${order}`,
+  "portal.bracket.side.bye": "Descanso",
+  "portal.bracket.side.winner": ({ round, order }) => `Ganador del cruce ${order} (ronda ${round})`,
+  "portal.bracket.side.groupRank": ({ group, rank }) => `${rank}.º del grupo ${group}`,
+  "portal.bracket.side.stageRank": ({ rank }) => `${rank}.º de la fase anterior`,
+  "portal.bracket.side.pending": "Por definir",
+  "portal.teams.empty.title": "Aún no hay equipos confirmados",
+  "portal.teams.empty.description":
+    "Los equipos aparecen aquí cuando la organización aprueba su inscripción.",
+  "portal.rankings.kinds": "Tipo de ranking",
+  "portal.rankings.col.player": "Jugador",
+  "portal.rankings.col.team": "Equipo",
+  "portal.rankings.col.matches": "PJ",
+  "portal.rankings.col.matches.full": "Partidos jugados",
+  "portal.rankings.empty.title": "Aún no hay datos para este ranking",
+  "portal.rankings.empty.description":
+    "Los rankings se calculan con las estadísticas de los partidos oficializados.",
+  "portal.rules.format": "Formato",
+  "portal.rules.teams": "Equipos",
+  "portal.rules.teams.range": ({ min, max }) => `De ${min} a ${max}`,
+  "portal.rules.teams.min": ({ min }) => `Desde ${min}`,
+  "portal.rules.roster": "Plantilla máxima",
+  "portal.rules.roster.value": ({ count }) => `${count} jugadores`,
+  "portal.rules.roster.default": "La de la plataforma",
+  "portal.rules.stage.regular": "Fase regular",
+  "portal.rules.stage.knockout": "Eliminatorias",
+  "portal.rules.points": "Puntos (victoria, empate, derrota)",
+  "portal.rules.matches": "Partidos oficiales por enfrentamiento",
+  "portal.rules.resolution": "Cómo se decide un enfrentamiento",
+  "portal.rules.resolution.independent_matches": "Cada partido suma por separado",
+  "portal.rules.resolution.aggregate_score": "Marcador global",
+  "portal.rules.rescheduling": "Reprogramaciones",
+  "portal.rules.rescheduling.none": "No se permiten",
+  "portal.rules.rescheduling.limited": ({ count, hours }) =>
+    `Hasta ${count} por equipo, con ${hours} h de aviso`,
+  "portal.rules.rescheduling.unlimited": ({ hours }) => `Sin límite, con ${hours} h de aviso`,
+  "portal.rules.empty.title": "El reglamento aún no está publicado",
+  "portal.rules.empty.description":
+    "La organización todavía no ha guardado las reglas de esta competición.",
+  "competition.overview.viewPortal": "Ver portal público",
 } satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof es;
@@ -3204,6 +3304,22 @@ export interface MessageParamsByKey {
   readonly "fixture.close.title": { readonly number: number };
   readonly "fixture.close.done": { readonly number: number };
   readonly "fixture.withdraw.done": { readonly team: string };
+  readonly "portal.header.teams": { readonly count: number };
+  readonly "portal.header.timeZone": { readonly zone: string };
+  readonly "portal.meta.description": { readonly name: string };
+  readonly "portal.calendar.round": { readonly round: number };
+  readonly "portal.encounter.label": { readonly home: string; readonly away: string };
+  readonly "portal.encounter.score": { readonly score: string };
+  readonly "portal.bracket.round": { readonly round: number };
+  readonly "portal.bracket.encounter": { readonly order: number };
+  readonly "portal.bracket.side.winner": { readonly round: number; readonly order: number };
+  readonly "portal.bracket.side.groupRank": { readonly group: string; readonly rank: number };
+  readonly "portal.bracket.side.stageRank": { readonly rank: number };
+  readonly "portal.rules.teams.range": { readonly min: number; readonly max: number };
+  readonly "portal.rules.teams.min": { readonly min: number };
+  readonly "portal.rules.roster.value": { readonly count: number };
+  readonly "portal.rules.rescheduling.limited": { readonly count: number; readonly hours: number };
+  readonly "portal.rules.rescheduling.unlimited": { readonly hours: number };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -5982,6 +6098,104 @@ const en: Catalog = {
   "fixture.rounds.current": "Up next",
   "fixture.rounds.emptyRound": "No encounters match these filters.",
   "fixture.rounds.scroll": ({ stage }) => `${stage} rounds`,
+  "portal.nav.label": "Competition sections",
+  "portal.section.cover": "Overview",
+  "portal.section.calendar": "Fixtures and results",
+  "portal.section.standings": "Table",
+  "portal.section.bracket": "Bracket",
+  "portal.section.teams": "Teams",
+  "portal.section.rankings": "Rankings",
+  "portal.section.rules": "Rules",
+  "portal.status.published": "In play",
+  "portal.status.paused": "Paused",
+  "portal.status.finished": "Finished",
+  "portal.header.eyebrow": "Public competition",
+  "portal.header.teams": ({ count }) => (count === 1 ? "1 team" : `${count} teams`),
+  "portal.header.timeZone": ({ zone }) => `Times in ${zone}`,
+  "portal.footer.poweredBy": "Published with Futrob",
+  "portal.footer.home": "Discover Futrob",
+  "portal.meta.description": ({ name }) =>
+    `Fixtures, results, table, bracket and rankings for ${name}, published on Futrob.`,
+  "portal.loading": "Loading the section",
+  "portal.error.title": "We couldn't load this section",
+  "portal.error.description": "It may be a temporary problem. Try again in a few seconds.",
+  "portal.error.retry": "Try again",
+  "portal.notFound.title": "This competition isn't available",
+  "portal.notFound.description":
+    "Check the link. If it is right, the competition isn't published yet.",
+  "portal.notFound.action": "Go to Futrob",
+  "portal.cover.upcoming": "Upcoming encounters",
+  "portal.cover.upcoming.empty": "No encounters left to play.",
+  "portal.cover.results": "Latest results",
+  "portal.cover.results.empty": "No official results yet.",
+  "portal.cover.calendarLink": "See all fixtures",
+  "portal.noFixture.title": "The fixtures aren't published yet",
+  "portal.noFixture.description":
+    "Once the organization generates the fixtures, every round and its results show up here.",
+  "portal.calendar.round": ({ round }) => `Round ${round}`,
+  "portal.encounter.status.scheduled": "Scheduled",
+  "portal.encounter.status.awaiting_result": "Awaiting result",
+  "portal.encounter.status.official": "Official",
+  "portal.encounter.status.closed": "Closed",
+  "portal.encounter.versus": "vs",
+  "portal.encounter.label": ({ home, away }) => `${home} against ${away}`,
+  "portal.encounter.score": ({ score }) => `Official score ${score}`,
+  "portal.standings.caption": "Official table, built only from officialized results.",
+  "portal.standings.empty.title": "No table yet",
+  "portal.standings.empty.description":
+    "The table appears once the organization officializes the first result.",
+  "portal.standings.col.wins": "W",
+  "portal.standings.col.wins.full": "Won",
+  "portal.standings.col.draws": "D",
+  "portal.standings.col.draws.full": "Drawn",
+  "portal.standings.col.losses": "L",
+  "portal.standings.col.losses.full": "Lost",
+  "portal.standings.col.goalsFor": "GF",
+  "portal.standings.col.goalsFor.full": "Goals for",
+  "portal.standings.col.goalsAgainst": "GA",
+  "portal.standings.col.goalsAgainst.full": "Goals against",
+  "portal.bracket.stage.knockout": "Knockout",
+  "portal.bracket.stage.playoffs": "Playoffs",
+  "portal.bracket.round": ({ round }) => `Round ${round}`,
+  "portal.bracket.encounter": ({ order }) => `Tie ${order}`,
+  "portal.bracket.side.bye": "Bye",
+  "portal.bracket.side.winner": ({ round, order }) => `Winner of tie ${order} (round ${round})`,
+  "portal.bracket.side.groupRank": ({ group, rank }) => `Group ${group}, place ${rank}`,
+  "portal.bracket.side.stageRank": ({ rank }) => `Place ${rank} of the previous stage`,
+  "portal.bracket.side.pending": "To be decided",
+  "portal.teams.empty.title": "No confirmed teams yet",
+  "portal.teams.empty.description":
+    "Teams show up here once the organization approves their entry.",
+  "portal.rankings.kinds": "Ranking type",
+  "portal.rankings.col.player": "Player",
+  "portal.rankings.col.team": "Team",
+  "portal.rankings.col.matches": "MP",
+  "portal.rankings.col.matches.full": "Matches played",
+  "portal.rankings.empty.title": "No data for this ranking yet",
+  "portal.rankings.empty.description": "Rankings are built from the stats of officialized matches.",
+  "portal.rules.format": "Format",
+  "portal.rules.teams": "Teams",
+  "portal.rules.teams.range": ({ min, max }) => `${min} to ${max}`,
+  "portal.rules.teams.min": ({ min }) => `From ${min}`,
+  "portal.rules.roster": "Maximum roster",
+  "portal.rules.roster.value": ({ count }) => `${count} players`,
+  "portal.rules.roster.default": "The platform default",
+  "portal.rules.stage.regular": "Regular stage",
+  "portal.rules.stage.knockout": "Knockout",
+  "portal.rules.points": "Points (win, draw, loss)",
+  "portal.rules.matches": "Official matches per encounter",
+  "portal.rules.resolution": "How an encounter is decided",
+  "portal.rules.resolution.independent_matches": "Each match counts on its own",
+  "portal.rules.resolution.aggregate_score": "Aggregate score",
+  "portal.rules.rescheduling": "Rescheduling",
+  "portal.rules.rescheduling.none": "Not allowed",
+  "portal.rules.rescheduling.limited": ({ count, hours }) =>
+    `Up to ${count} per team, with ${hours} h notice`,
+  "portal.rules.rescheduling.unlimited": ({ hours }) => `No limit, with ${hours} h notice`,
+  "portal.rules.empty.title": "The rules aren't published yet",
+  "portal.rules.empty.description":
+    "The organization hasn't saved the rules of this competition yet.",
+  "competition.overview.viewPortal": "View public portal",
 };
 
 export const catalogs = { es, en } as const satisfies Record<Locale, Catalog>;

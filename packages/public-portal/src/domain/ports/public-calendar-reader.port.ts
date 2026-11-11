@@ -1,4 +1,5 @@
 import type { TeamId } from "@futrob/shared-kernel";
+import type { PublicMatchScore } from "../entities/public-competition.ts";
 import type { PublicCompetitionScope } from "./published-competition-reader.port.ts";
 
 /** One scheduled Encounter whose two sides are already known teams. */
@@ -7,8 +8,11 @@ export interface PublicCalendarSourceEntry {
   readonly scheduledStartAt: Date;
   readonly homeTeamId: TeamId;
   readonly awayTeamId: TeamId;
-  /** Whether an approved OfficialResult exists. The result itself is not exposed here. */
-  readonly official: boolean;
+  /**
+   * Goals of the approved OfficialResult in slot order, home-oriented; null while none is
+   * approved. Nothing else of the result reaches this port.
+   */
+  readonly officialScore: readonly PublicMatchScore[] | null;
 }
 
 export interface PublicCalendarReaderPort {
