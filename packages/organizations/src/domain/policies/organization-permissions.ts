@@ -10,6 +10,7 @@ export const ORGANIZATION_PERMISSION = {
   grantsManage: "authorization.grants.manage",
   rolesManage: "authorization.roles.manage",
   auditRead: "authorization.audit.read",
+  auditTrailRead: "organizations.audit.read",
   superusersManage: "authorization.superusers.manage",
 } as const satisfies Record<string, Permission>;
 

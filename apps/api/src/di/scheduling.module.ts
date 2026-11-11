@@ -159,6 +159,8 @@ export function createSchedulingModule(input: {
     transaction: input.transaction,
   };
   return {
+    fixtureAudit,
+    swissActions,
     encounters,
     encounterWindow,
     encounterAuthorization,

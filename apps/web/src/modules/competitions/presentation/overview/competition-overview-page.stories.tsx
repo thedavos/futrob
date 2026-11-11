@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   Outlet,
@@ -209,6 +210,18 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
 const meta = {
   title: "Product/Competition/Overview",
   parameters: { layout: "fullscreen" },
+  decorators: [
+    function WithQueryClient(Story) {
+      const [queryClient] = useState(
+        () => new QueryClient({ defaultOptions: { queries: { enabled: false } } }),
+      );
+      return (
+        <QueryClientProvider client={queryClient}>
+          <Story />
+        </QueryClientProvider>
+      );
+    },
+  ],
   args: { scenario: "ready", locale: "es" },
   argTypes: {
     scenario: {

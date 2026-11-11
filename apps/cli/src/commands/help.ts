@@ -82,6 +82,9 @@ Integración (requieren npm run dev; auth: FUTROB_INTERNAL_JOB_SECRET + --actor)
   my-matches
   my-next-encounter
   sanction-list <orgId> <compId> [--team <teamId>]
+  audit-list <orgId> [--competition id] [--by-actor id] [--action code] [--from ISO] [--to ISO] [--cursor cursor] [--limit 25]
+  audit-smoke <orgId> --outsider <actorId> [--competition id]
+                          Auditoría paginada, filtros, aislamiento y outsider 403
   sanctions-smoke <orgId> <compId> <teamId> --outsider <actorId> [--points 3]
                           Outsider 403, descuento en la tabla, revocar la restaura
   e2e-golden-path         Org → comp → team → entry → publish → fixture (smoke completo)
