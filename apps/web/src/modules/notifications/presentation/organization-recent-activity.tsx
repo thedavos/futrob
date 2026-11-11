@@ -18,8 +18,8 @@ import {
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { ActivityFeedList, ActivityFeedSkeleton } from "./activity-feed-list.tsx";
 import { ActivityClientError } from "./activity-browser-client.ts";
-import { useOrganizationRecentActivityQuery } from "./activity-queries.ts";
-import { ORGANIZATION_RECENT_ACTIVITY_LIMIT } from "./activity-sources.ts";
+import { useRecentActivityQuery } from "./activity-queries.ts";
+import { RECENT_ACTIVITY_LIMIT, type ActivityFeedSource } from "./activity-sources.ts";
 
 const styles = stylex.create({
   card: {
@@ -67,16 +67,12 @@ export type OrganizationRecentActivityState =
   | { readonly status: "error"; readonly retry: () => void }
   | { readonly status: "success"; readonly activities: readonly ActivityEntryDto[] };
 
-/**
- * «Actividad reciente» of the organization home: the latest activity of every kind, at most
- * ten rows, with a link to the full feed whenever there is something to show.
- */
-export function OrganizationRecentActivityView({
-  organizationId,
+function RecentActivityView({
+  source,
   state,
   now,
 }: {
-  readonly organizationId: string;
+  readonly source: ActivityFeedSource;
   readonly state: OrganizationRecentActivityState;
   readonly now?: Date;
 }) {
@@ -90,7 +86,13 @@ export function OrganizationRecentActivityView({
         {hasRows ? (
           <TextLink
             className={styles.action}
-            render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId/activity" />}
+            render={
+              source.kind === "organization" ? (
+                <Link params={{ orgId: source.organizationId }} to="/orgs/$orgId/activity" />
+              ) : (
+                <Link to="/player/activity" />
+              )
+            }
             text="caption"
           >
             {t("activity.recent.viewAll")}
@@ -109,12 +111,16 @@ export function OrganizationRecentActivityView({
           </div>
         ) : null}
         {state.status === "success" && state.activities.length === 0 ? (
-          <Caption>{t("activity.recent.empty")}</Caption>
+          <Caption>
+            {t(
+              source.kind === "organization" ? "activity.recent.empty" : "activity.personal.empty",
+            )}
+          </Caption>
         ) : null}
         {hasRows ? (
           <ActivityFeedList
             label={t("activity.recent.title")}
-            activities={state.activities.slice(0, ORGANIZATION_RECENT_ACTIVITY_LIMIT)}
+            activities={state.activities.slice(0, RECENT_ACTIVITY_LIMIT)}
             now={now}
           />
         ) : null}
@@ -123,18 +129,46 @@ export function OrganizationRecentActivityView({
   );
 }
 
-export function OrganizationRecentActivity({
-  organizationId,
-}: {
-  readonly organizationId: string;
-}) {
-  const query = useOrganizationRecentActivityQuery(organizationId);
-  // Members who do not operate the organization have no feed to read: show nothing.
+function RecentActivity({ source }: { readonly source: ActivityFeedSource }) {
+  const query = useRecentActivityQuery(source);
   if (query.error instanceof ActivityClientError && query.error.status === 403) return null;
   const state: OrganizationRecentActivityState = query.isPending
     ? { status: "pending" }
     : query.isError
       ? { status: "error", retry: () => void query.refetch() }
       : { status: "success", activities: query.data.activities };
-  return <OrganizationRecentActivityView organizationId={organizationId} state={state} />;
+  return <RecentActivityView source={source} state={state} />;
+}
+
+export function OrganizationRecentActivityView({
+  organizationId,
+  ...props
+}: {
+  readonly organizationId: string;
+  readonly state: OrganizationRecentActivityState;
+  readonly now?: Date;
+}) {
+  return <RecentActivityView source={{ kind: "organization", organizationId }} {...props} />;
+}
+
+export function OrganizationRecentActivity({
+  organizationId,
+}: {
+  readonly organizationId: string;
+}) {
+  return <RecentActivity source={{ kind: "organization", organizationId }} />;
+}
+
+export function PlayerRecentActivity() {
+  return <RecentActivity source={{ kind: "mine" }} />;
+}
+
+export function PlayerRecentActivityView({
+  state,
+  now,
+}: {
+  readonly state: OrganizationRecentActivityState;
+  readonly now?: Date;
+}) {
+  return <RecentActivityView source={{ kind: "mine" }} state={state} now={now} />;
 }

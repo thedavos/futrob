@@ -571,6 +571,43 @@
         "summary": "Revoke an audited platform superuser"
       }
     },
+    "/billing/plan-requests": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Open requests, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPlanRequestsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listPlanRequests",
+        "tags": [
+          "billing"
+        ],
+        "summary": "List organizations waiting for a plan (platform superuser)",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
+      }
+    },
     "/competitions/explore": {
       "get": {
         "parameters": [
@@ -4239,6 +4276,108 @@
           "billing"
         ],
         "summary": "Read the organization's effective plan, quota usage and recent plan changes"
+      }
+    },
+    "/organizations/{organizationId}/billing/plan-request": {
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request withdrawn or none open",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "cancelOrganizationPlanRequest",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Withdraw the organization's open plan request",
+        "description": "Succeeds when no request is open."
+      },
+      "put": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Open request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOrganizationPlanResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "requestOrganizationPlan",
+        "tags": [
+          "billing"
+        ],
+        "summary": "Ask for a paid plan (organizer, manual purchase without payments)",
+        "description": "Stores the organization's single open request; repeating it keeps one and asking for another plan replaces it. It never changes the plan: a platform superuser assigns it after billing happens outside the product.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestOrganizationPlanRequest"
+              }
+            }
+          }
+        }
       }
     },
     "/organizations/{organizationId}/competitions": {
@@ -24062,6 +24201,30 @@
               ],
               "additionalProperties": false
             }
+          },
+          "pendingRequest": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "planKey": {
+                "type": "string",
+                "enum": [
+                  "pro",
+                  "league"
+                ]
+              },
+              "requestedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "planKey",
+              "requestedAt"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -24071,7 +24234,8 @@
           "subscription",
           "quotas",
           "usage",
-          "recentChanges"
+          "recentChanges",
+          "pendingRequest"
         ],
         "additionalProperties": false
       },
@@ -26592,6 +26756,47 @@
         "required": [
           "invitations"
         ]
+      },
+      "ListPlanRequestsResponse": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "organizationId": {
+                  "type": "string"
+                },
+                "organizationName": {
+                  "type": "string"
+                },
+                "planKey": {
+                  "type": "string",
+                  "enum": [
+                    "pro",
+                    "league"
+                  ]
+                },
+                "requestedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "organizationId",
+                "organizationName",
+                "planKey",
+                "requestedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "requests"
+        ],
+        "additionalProperties": false
       },
       "ListPublicPlansResponse": {
         "type": "object",
@@ -33753,6 +33958,56 @@
           "commandKey",
           "responder"
         ]
+      },
+      "RequestOrganizationPlanRequest": {
+        "type": "object",
+        "properties": {
+          "planKey": {
+            "type": "string",
+            "enum": [
+              "pro",
+              "league"
+            ]
+          }
+        },
+        "required": [
+          "planKey"
+        ],
+        "additionalProperties": false
+      },
+      "RequestOrganizationPlanResponse": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "planKey": {
+                "type": "string",
+                "enum": [
+                  "pro",
+                  "league"
+                ]
+              },
+              "requestedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "planKey",
+              "requestedAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "organizationId",
+          "request"
+        ],
+        "additionalProperties": false
       },
       "ResolveMatchDisputeRequest": {
         "type": "object",

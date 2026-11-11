@@ -1,5 +1,6 @@
 import type {
   OrganizationSubscription,
+  PlanRequest,
   PlanChangeSnapshot,
   SubscriptionState,
 } from "@futrob/billing";
@@ -30,6 +31,11 @@ export function subscriptionDto(subscription: OrganizationSubscription) {
   };
 }
 
+/** Only paid plans can be requested, so a stored `free` request would be a defect. */
+export function planRequestDto(request: PlanRequest) {
+  return { planKey: request.planKey, requestedAt: request.createdAt.toISOString() };
+}
+
 export function organizationPlanDto(overview: OrganizationPlanUsage) {
   return {
     organizationId: overview.organizationId,
@@ -49,6 +55,7 @@ export function organizationPlanDto(overview: OrganizationPlanUsage) {
       resetsAt: quota.period.endsAt.toISOString(),
     })),
     usage: overview.usage,
+    pendingRequest: overview.pendingRequest ? planRequestDto(overview.pendingRequest) : null,
     recentChanges: overview.recentChanges.map((change) => ({
       id: change.id,
       changedByActorId: change.changedByActorId,

@@ -13,10 +13,12 @@ import {
   type OrganizationEntitlements,
   type QuotaKey,
 } from "../../domain/entities/plan.ts";
+import type { PlanRequest } from "../../domain/entities/plan-request.ts";
 import type { PlanChangeAuditEntry } from "../../domain/entities/subscription.ts";
 import { BillingForbidden } from "../../domain/errors/billing.errors.ts";
 import { BILLING_PERMISSION } from "../../domain/policies/billing-permissions.ts";
 import { calendarMonthUtc, type QuotaPeriod } from "../../domain/policies/quota-period.ts";
+import type { PlanRequestRepository } from "../../domain/ports/plan-request.repository.ts";
 import type { QuotaLedgerPort } from "../../domain/ports/quota-ledger.port.ts";
 import type { PlanChangeAuditRepository } from "../../domain/ports/subscription.repository.ts";
 import type { OrganizationPlanKey } from "../../domain/value-objects/plan-key.ts";
@@ -36,6 +38,8 @@ export interface QuotaUsage {
 export interface OrganizationPlanOverview extends ResolvedOrganizationPlan {
   readonly quotas: readonly QuotaUsage[];
   readonly recentChanges: readonly PlanChangeAuditEntry[];
+  /** The organization's open request for a paid plan, if any. */
+  readonly pendingRequest: PlanRequest | null;
 }
 
 export interface OrganizationEntitlementsView {
@@ -78,6 +82,7 @@ export class GetOrganizationPlanUseCase {
       readonly resolve: ResolveOrganizationEntitlementsUseCase;
       readonly ledger: QuotaLedgerPort;
       readonly audit: PlanChangeAuditRepository;
+      readonly requests: PlanRequestRepository;
       readonly clock: ClockPort;
     },
   ) {}
@@ -111,7 +116,10 @@ export class GetOrganizationPlanUseCase {
       input.organizationId,
       RECENT_CHANGES_LIMIT,
     );
-    return ok({ ...resolved, quotas, recentChanges });
+    const pendingRequest = await this.deps.requests.findPendingForOrganization(
+      input.organizationId,
+    );
+    return ok({ ...resolved, quotas, recentChanges, pendingRequest });
   }
 }
 

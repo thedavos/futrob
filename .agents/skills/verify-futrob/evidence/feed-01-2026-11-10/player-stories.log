@@ -1,0 +1,17 @@
+
+> futrob@0.1.0 test
+> vp test --project storybook apps/web/src/modules/notifications/presentation/activity.stories.tsx
+
+│
+●  Storybook collects completely anonymous usage telemetry. We use it to
+│  shape Storybook's roadmap and prioritize features. You can learn more,
+│  including how to opt out, at ]8;;https://storybook.js.org/telemetryhttps://storybook.js.org/telemetry]8;;
+
+ RUN  v4.1.11 /home/user/code/futrob
+
+12:38:02 AM [vite] (client) [optimizer] bundling dependencies...
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  00:38:01
+   Duration  7.77s (transform 0ms, setup 1.36s, import 2.07s, tests 1.63s, environment 0ms)

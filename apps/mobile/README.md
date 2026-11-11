@@ -45,7 +45,13 @@ Variables (`.env` local o shell):
 ```sh
 EXPO_PUBLIC_FUTROB_API_BASE_URL=http://localhost:3000
 EXPO_PUBLIC_FUTROB_AUTH_BASE_URL=http://localhost:8788
+# Leave blank locally. Expo Go never sends Sentry events.
+EXPO_PUBLIC_SENTRY_DSN=
 ```
+
+Sentry en nativo usa `@sentry/react-native` y el plugin de Expo. El único dato de
+usuario es el `actorId`. Para source maps en EAS, configura `SENTRY_AUTH_TOKEN`,
+`SENTRY_ORG` y `SENTRY_PROJECT` como secretos de EAS; no los commits.
 
 En dispositivo físico usa la IP LAN de tu máquina, no `localhost`.
 

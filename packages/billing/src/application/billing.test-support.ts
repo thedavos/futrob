@@ -7,6 +7,7 @@ import {
   type Permission,
   Panic,
 } from "@futrob/shared-kernel";
+import type { PlanRequest } from "../domain/entities/plan-request.ts";
 import {
   isOrganizationSubscription,
   type ActorSubscription,
@@ -18,6 +19,7 @@ import {
   DEFAULT_ORGANIZATION_PLANS,
 } from "../domain/policies/default-plan-catalog.ts";
 import type { PlanCatalogPort } from "../domain/ports/plan-catalog.port.ts";
+import type { PlanRequestRepository } from "../domain/ports/plan-request.repository.ts";
 import type { QuotaLedgerPort } from "../domain/ports/quota-ledger.port.ts";
 import type {
   PlanChangeAuditRepository,
@@ -30,6 +32,7 @@ export const ORG = asOrganizationId("org-1");
 export const OTHER_ORG = asOrganizationId("org-2");
 export const SUPERUSER = asActorId("superuser");
 export const ORGANIZER = asActorId("organizer");
+export const STAFF = asActorId("staff");
 
 export function createBillingHarness(start = new Date("2026-10-15T12:00:00.000Z")) {
   let now = start;
@@ -86,6 +89,17 @@ export function createBillingHarness(start = new Date("2026-10-15T12:00:00.000Z"
         .slice(-limit)
         .reverse(),
   };
+  const planRequests = new Map<string, PlanRequest>();
+  const requestRepository: PlanRequestRepository = {
+    findPendingForOrganization: async (id) =>
+      [...planRequests.values()].find((r) => r.organizationId === id && r.status === "pending") ??
+      null,
+    listPending: async (limit) =>
+      [...planRequests.values()].filter((r) => r.status === "pending").slice(0, limit),
+    save: async (request) => {
+      planRequests.set(request.id, request);
+    },
+  };
   const countFor = (organizationId: OrganizationId, quota: string, period: string) =>
     [...usage.entries()].filter(
       ([id, entry]) => id.startsWith(`${organizationId}:${quota}:`) && entry.period === period,
@@ -127,6 +141,8 @@ export function createBillingHarness(start = new Date("2026-10-15T12:00:00.000Z"
     subscriptions: subscriptionRepository,
     audit: auditRepository,
     auditEntries: audit,
+    requests: requestRepository,
+    planRequests: () => [...planRequests.values()],
     ledger,
     authorization,
     clock,

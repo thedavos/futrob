@@ -18,6 +18,7 @@ interface WorkerEnv {
   readonly INTERNAL_JOB_SECRET: string;
   readonly NODE_ENV?: string;
   readonly SENTRY_DSN?: string;
+  readonly SENTRY_ENVIRONMENT?: string;
   readonly JOB_QUEUE?: {
     send(message: GameDataSyncQueueMessage): Promise<void>;
   };

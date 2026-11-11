@@ -1,0 +1,47 @@
+$ npm run cli -- entry-reject 2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea cf7ec205-8850-47ef-9901-81ee3cad4da6 fd5d2fe3-2923-443e-80fd-8b3c9775d1b7 --actor ebcb55b7-1405-4a07-b169-cb7e4bde9a3b --json
+
+> futrob@0.1.0 cli
+> npm run cli -w @futrob/cli -- entry-reject *** *** *** --actor *** --json
+
+
+> @futrob/cli@0.1.0 cli
+> tsx src/main.ts entry-reject *** *** *** --actor *** --json
+
+{
+  "id": "fd5d2fe3-2923-443e-80fd-8b3c9775d1b7",
+  "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+  "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+  "teamId": "9c58357f-6c78-44ac-b123-8f6fe7980f90",
+  "status": "pending",
+  "createdAt": "2026-11-10T00:27:55.055Z"
+}
+
+exit=0
+$ npm run cli -- e2e-golden-path --actor 855e67a4-59e7-4362-9cb3-21f8f130d468 --json
+
+> futrob@0.1.0 cli
+> npm run cli -w @futrob/cli -- e2e-golden-path --actor *** --json
+
+
+> @futrob/cli@0.1.0 cli
+> tsx src/main.ts e2e-golden-path --actor *** --json
+
+→ 1/8 meta.ping
+→ 2/8 organizations.create
+→ 3/8 competitions.createDraft
+→ 4/8 teams.createTeam ×2
+→ 5/8 competitions.registerTeamEntry ×2
+→ 6/8 entries.approve ×2
+→ 7/8 competitions.publish
+→ 8/8 encounters.generateFixture
+Golden path OK
+{
+  "organizationId": "fe5cb4e7-5352-4a42-93fb-385eb031d855",
+  "competitionId": "a611f39a-027f-4e65-985f-fbe8cd23077c",
+  "fixturePlanId": "a611f39a-027f-4e65-985f-fbe8cd23077c:rules:1:generation:1:fp:28cdea94:fixture",
+  "format": "league",
+  "roundCount": 1,
+  "encounterCount": 1
+}
+
+exit=0

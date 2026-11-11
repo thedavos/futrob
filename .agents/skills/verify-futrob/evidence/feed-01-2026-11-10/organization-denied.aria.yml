@@ -1,0 +1,14 @@
+- link "Saltar al contenido":
+  - /url: "#app-main"
+- complementary "Navegación principal":
+  - button "Organización"
+  - button "Colapsar barra lateral"
+  - list
+  - button "Abrir menú de cuenta": JS Julián
+- banner:
+  - paragraph: Sin organización
+- main:
+  - heading "Actividad" [level=1]
+  - paragraph: Todo lo que pasó en la organización, lo más reciente primero.
+  - heading "No puedes ver esta actividad" [level=2]
+  - paragraph: La actividad de la organización es para quien opera sus competiciones.

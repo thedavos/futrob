@@ -3,12 +3,18 @@ import {
   assignOrganizationPlanResponseSchema,
   getOrganizationEntitlementsResponseSchema,
   getOrganizationPlanResponseSchema,
+  listPlanRequestsResponseSchema,
   listPublicPlansResponseSchema,
+  requestOrganizationPlanRequestSchema,
+  requestOrganizationPlanResponseSchema,
   type AssignOrganizationPlanRequest,
   type AssignOrganizationPlanResponse,
   type GetOrganizationEntitlementsResponse,
   type GetOrganizationPlanResponse,
+  type ListPlanRequestsResponse,
   type ListPublicPlansResponse,
+  type RequestOrganizationPlanRequest,
+  type RequestOrganizationPlanResponse,
 } from "@futrob/api-contracts";
 import type { HttpClient, RequestOptions } from "../http.ts";
 import { apiPath } from "../internal/path.ts";
@@ -76,6 +82,41 @@ export function createBillingResource(http: HttpClient) {
         body: assignOrganizationPlanRequestSchema.parse(input),
         options,
         parse: (data) => assignOrganizationPlanResponseSchema.parse(data),
+      });
+    },
+    /** Organizer: ask for a paid plan. Never changes the plan; a superuser assigns it. */
+    async requestOrganizationPlan(
+      organizationId: string,
+      input: RequestOrganizationPlanRequest,
+      options: RequestOptions = {},
+    ): Promise<RequestOrganizationPlanResponse> {
+      return http.request({
+        path: apiPath("organizations", organizationId, "billing", "plan-request"),
+        method: "PUT",
+        body: requestOrganizationPlanRequestSchema.parse(input),
+        options,
+        parse: (data) => requestOrganizationPlanResponseSchema.parse(data),
+      });
+    },
+    /** Organizer: withdraw the open request; succeeds when none is open. */
+    async cancelOrganizationPlanRequest(
+      organizationId: string,
+      options: RequestOptions = {},
+    ): Promise<void> {
+      return http.request({
+        path: apiPath("organizations", organizationId, "billing", "plan-request"),
+        method: "DELETE",
+        options,
+        parse: () => undefined,
+      });
+    },
+    /** Platform superuser only: organizations waiting for a plan, oldest first. */
+    async listPlanRequests(options: RequestOptions = {}): Promise<ListPlanRequestsResponse> {
+      return http.request({
+        path: apiPath("billing", "plan-requests"),
+        method: "GET",
+        options,
+        parse: (data) => listPlanRequestsResponseSchema.parse(data),
       });
     },
   };
