@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Text as RNText, View } from "react-native";
+import { Linking, Text as RNText, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Button, Input, Logo, Screen, Text } from "@/ui";
 import { theme } from "@/theme/theme";
@@ -12,6 +12,9 @@ import {
   AUTH_PASSWORD_HINT,
 } from "@/modules/identity/auth-validation";
 import { localizeAuthMessage, useMobileCopy } from "@/modules/identity/mobile-copy";
+
+const TERMS_URL = "https://futrob.app/terms";
+const PRIVACY_URL = "https://futrob.app/privacy";
 
 interface FieldErrors {
   name?: string | null;
@@ -136,6 +139,33 @@ export default function SignupScreen() {
         </View>
 
         <View style={{ gap: theme.spacing[6] }}>
+          <Text role="caption" color="muted-foreground" style={{ textAlign: "center" }}>
+            {t("signupConsentLead")}{" "}
+            <RNText
+              accessibilityRole="link"
+              onPress={() => void Linking.openURL(TERMS_URL)}
+              style={{
+                fontFamily: theme.fontFamily.medium,
+                color: theme.colors.foreground,
+                textDecorationLine: "underline",
+              }}
+            >
+              {t("terms")}
+            </RNText>
+            {t("signupConsentJoiner")}
+            <RNText
+              accessibilityRole="link"
+              onPress={() => void Linking.openURL(PRIVACY_URL)}
+              style={{
+                fontFamily: theme.fontFamily.medium,
+                color: theme.colors.foreground,
+                textDecorationLine: "underline",
+              }}
+            >
+              {t("privacy")}
+            </RNText>
+            {t("signupConsentEnd")}
+          </Text>
           <Button label={t("signup")} loading={submitting} onPress={handleSignup} />
 
           <Text role="caption" color="muted-foreground" style={{ textAlign: "center" }}>
