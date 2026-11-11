@@ -4,36 +4,48 @@ import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { activityBrowserClient } from "./activity-browser-client.ts";
 import {
   ACTIVITY_FEED_PAGE_SIZE,
-  ORGANIZATION_RECENT_ACTIVITY_LIMIT,
+  RECENT_ACTIVITY_LIMIT,
   PENDING_ACTIVITY_LIMIT,
   type PendingActivitySource,
+  type ActivityFeedSource,
 } from "./activity-sources.ts";
 
-/** Latest activity of every kind for the organization home. */
-export function useOrganizationRecentActivityQuery(organizationId: string) {
-  const query = { limit: ORGANIZATION_RECENT_ACTIVITY_LIMIT };
+function feedKey(source: ActivityFeedSource) {
+  return source.kind === "organization"
+    ? queryKeys.activities.organizationFeed(source.organizationId)
+    : queryKeys.activities.mineFeed();
+}
+
+export function useRecentActivityQuery(source: ActivityFeedSource) {
+  const query = { limit: RECENT_ACTIVITY_LIMIT };
   return useQuery({
-    queryKey: queryKeys.activities.organization(organizationId, query),
-    queryFn: () => activityBrowserClient.listForOrganization(organizationId, query),
+    queryKey:
+      source.kind === "organization"
+        ? queryKeys.activities.organization(source.organizationId, query)
+        : queryKeys.activities.mine(query),
+    queryFn: () =>
+      source.kind === "organization"
+        ? activityBrowserClient.listForOrganization(source.organizationId, query)
+        : activityBrowserClient.listMine(query),
     retry: false,
   });
 }
 
-/** Full organization feed, newest first, one page per «Load more». */
-export function useOrganizationActivityFeedQuery(organizationId: string) {
+export function useActivityFeedQuery(source: ActivityFeedSource) {
   return useInfiniteQuery<
     ListActivitiesResponse,
     Error,
     InfiniteData<ListActivitiesResponse>,
-    ReturnType<typeof queryKeys.activities.organizationFeed>,
+    ReturnType<typeof feedKey>,
     string | undefined
   >({
-    queryKey: queryKeys.activities.organizationFeed(organizationId),
-    queryFn: ({ pageParam }) =>
-      activityBrowserClient.listForOrganization(organizationId, {
-        limit: ACTIVITY_FEED_PAGE_SIZE,
-        cursor: pageParam,
-      }),
+    queryKey: feedKey(source),
+    queryFn: ({ pageParam }) => {
+      const query = { limit: ACTIVITY_FEED_PAGE_SIZE, cursor: pageParam };
+      return source.kind === "organization"
+        ? activityBrowserClient.listForOrganization(source.organizationId, query)
+        : activityBrowserClient.listMine(query);
+    },
     initialPageParam: undefined,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     retry: false,

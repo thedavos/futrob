@@ -72,6 +72,58 @@ describe("billing SDK resource", () => {
     ]);
   });
 
+  it("requests a plan with PUT, withdraws it with DELETE and lists the queue", async () => {
+    const requests: { url: string; method: string; body: unknown }[] = [];
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        const url = requestUrl(input);
+        requests.push({
+          url,
+          method: init?.method ?? "GET",
+          body: init?.body ? JSON.parse(String(init.body)) : null,
+        });
+        if (init?.method === "DELETE") return new Response(null, { status: 204 });
+        if (url.endsWith("/billing/plan-requests")) {
+          return Response.json({
+            requests: [
+              {
+                organizationId: "org 1",
+                organizationName: "Liga",
+                planKey: "pro",
+                requestedAt: "2026-10-29T12:00:00.000Z",
+              },
+            ],
+          });
+        }
+        return Response.json({
+          organizationId: "org 1",
+          request: { planKey: "pro", requestedAt: "2026-10-29T12:00:00.000Z" },
+        });
+      }),
+    });
+
+    const requested = await client.billing.requestOrganizationPlan("org 1", { planKey: "pro" });
+    await client.billing.cancelOrganizationPlanRequest("org 1");
+    const queue = await client.billing.listPlanRequests();
+
+    expect(requested.request.planKey).toBe("pro");
+    expect(queue.requests[0]?.organizationName).toBe("Liga");
+    expect(requests).toEqual([
+      {
+        url: "https://app.example.com/api/v1/organizations/org%201/billing/plan-request",
+        method: "PUT",
+        body: { planKey: "pro" },
+      },
+      {
+        url: "https://app.example.com/api/v1/organizations/org%201/billing/plan-request",
+        method: "DELETE",
+        body: null,
+      },
+      { url: "https://app.example.com/api/v1/billing/plan-requests", method: "GET", body: null },
+    ]);
+  });
+
   it("surfaces plan gating as a 402 FutrobApiError with a recognizable code", async () => {
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",

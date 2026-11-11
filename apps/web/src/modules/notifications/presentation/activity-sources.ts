@@ -4,7 +4,11 @@ import {
   type WorkspaceSelection,
 } from "@/shared/presentation/shell/workspace-selection.ts";
 
-export const ORGANIZATION_RECENT_ACTIVITY_LIMIT = 10;
+export type ActivityFeedSource =
+  | { readonly kind: "organization"; readonly organizationId: string }
+  | { readonly kind: "mine" };
+
+export const RECENT_ACTIVITY_LIMIT = 10;
 export const ACTIVITY_FEED_PAGE_SIZE = 25;
 /** The sidebar reads one page of pending work; the API caps a page at 50. */
 export const PENDING_ACTIVITY_LIMIT = 50;

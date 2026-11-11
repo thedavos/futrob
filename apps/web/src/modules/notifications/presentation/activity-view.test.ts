@@ -139,6 +139,33 @@ describe("activity row view", () => {
     expect(decision(null, "encounter").titleKey).toBe("activity.decision.generic");
   });
 
+  it("opens the readable competition detail for a rejected applicant instead of its matches", () => {
+    const rejected = entry({
+      audience: "team",
+      kind: "organizer_decision",
+      status: "closed",
+      requiresAction: false,
+      resourceType: "competition",
+      resourceId: "cmp-a",
+      subject: {
+        competitionName: "Liga A",
+        teamName: "Halcones",
+        encounterLabel: null,
+        outcome: "entry_rejected",
+      },
+    });
+    expect(activityRowView(rejected, NOW).destination).toEqual({
+      to: "/player/competitions/$competitionId",
+      params: { competitionId: "cmp-a" },
+    });
+    expect(
+      activityRowView(entry({ audience: "team", kind: "schedule_change" }), NOW).destination,
+    ).toEqual({
+      to: "/player/competitions/$competitionId/matches",
+      params: { competitionId: "cmp-a" },
+    });
+  });
+
   it("asks the organizer to review a pending entry and keeps it as a Team entry once closed", () => {
     const pending = entry({ kind: "competition_entry", resourceType: "competition" });
     expect(activityRowView(pending, NOW)).toMatchObject({

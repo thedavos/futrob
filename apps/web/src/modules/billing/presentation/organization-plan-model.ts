@@ -1,4 +1,8 @@
-import type { GetOrganizationPlanResponse, OrganizationPlanKey } from "@futrob/api-contracts";
+import type {
+  GetOrganizationPlanResponse,
+  OrganizationPlanKey,
+  RequestablePlanKey,
+} from "@futrob/api-contracts";
 
 export type UsageId = "activeCompetitions" | "staffMembers" | "providerSyncJobs";
 
@@ -42,11 +46,11 @@ export function usageRows(plan: GetOrganizationPlanResponse): readonly UsageRow[
   ];
 }
 
-/** The next plan up, or null on the top plan. */
-export function nextPlan(key: OrganizationPlanKey): OrganizationPlanKey | null {
-  if (key === "free") return "pro";
-  if (key === "pro") return "league";
-  return null;
+/** Paid plans above the current one, the ones an organizer can ask for. */
+export function requestablePlans(key: OrganizationPlanKey): readonly RequestablePlanKey[] {
+  if (key === "free") return ["pro", "league"];
+  if (key === "pro") return ["league"];
+  return [];
 }
 
 export type PlanStatusView =

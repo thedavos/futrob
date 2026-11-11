@@ -6,6 +6,7 @@ import type {
 } from "@futrob/api-contracts";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { getSession, type Session } from "@/modules/identity/session-store";
+import { bindSentryActor } from "@/observability/sentry";
 import { HOME_ROUTE, LOGIN_ROUTE } from "@/modules/identity/session-gate";
 import {
   EffectiveAccessHttpError,
@@ -40,6 +41,7 @@ export type AuthenticatedShellSnapshot =
   | HomeShellSnapshot;
 
 function loginSnapshot(): AuthenticatedShellSnapshot {
+  bindSentryActor(null);
   return { kind: "login", destination: LOGIN_ROUTE };
 }
 
@@ -118,6 +120,7 @@ export async function loadAuthenticatedShell(
   const scope: AuthorizationScopeDto = organizationId ? { organizationId } : {};
   try {
     const access = await loadEffectiveAccess(client, scope, SHELL_PERMISSIONS);
+    bindSentryActor(access.actorId);
     return homeSnapshot({
       session,
       onboarding,

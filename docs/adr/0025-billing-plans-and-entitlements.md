@@ -87,6 +87,16 @@ Billing usa `TaggedError` con códigos `billing.*` (`billing.quota_exhausted`,
 `statistics.performance_ranking_not_in_plan`. HTTP responde **402** para que el cliente
 muestre un upsell distinto de un 403 de permisos.
 
+### Fase 0: solicitud manual de plan
+
+Sin pagos, el upsell debe llevar a algo accionable. Un organizador pide un plan de pago desde
+«Plan y uso» (`PUT /organizations/:id/billing/plan-request`, solo web): se guarda una única
+solicitud abierta por organización (pedir otro plan la reemplaza, `DELETE` la retira). La
+solicitud nunca cambia entitlements. El cobro ocurre fuera del producto y un superusuario
+asigna el plan desde `/admin/billing` (cola en `GET /billing/plan-requests`, asignación con
+`PUT /organizations/:id/billing/plan`). Asignar el plan pedido cierra la solicitud, y toda
+asignación queda auditada. Los demás roles reciben 403.
+
 ### Fase 1: `PaymentProviderPort`
 
 Billing declara `PaymentProviderPort` (checkout y portal de cliente) y define que los
@@ -158,6 +168,7 @@ Implementado en el checkout (Fase 0). Sin despliegue ni proveedor de pagos.
   [errors.ts](/apps/api/src/http/errors.ts) y
   [contrato](/apps/api/src/http/routes/billing.contract.test.ts). Smoke en vivo:
   `npm run cli -- billing-smoke --actor <organizer> --superuser <superuser>`.
-- Web: página «Plan y uso» (`/orgs/:orgId/settings/plan`), estados de upsell y `/pricing`.
+- Web: página «Plan y uso» (`/orgs/:orgId/settings/plan`, con «Solicitar plan»), panel de
+  superusuario `/admin/billing` (cola de solicitudes y asignación), estados de upsell y `/pricing`.
   Mobile solo lee entitlements (fail-closed) y no ofrece compra.
 - Pendiente de prueba en navegador con `verify-futrob` sobre un stack propio.
