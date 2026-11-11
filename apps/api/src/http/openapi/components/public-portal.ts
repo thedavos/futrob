@@ -6,6 +6,7 @@ import {
   getPublicRulesResponseSchema,
   getPublicStandingsResponseSchema,
   getPublicTeamsResponseSchema,
+  listPublicCompetitionsResponseSchema,
   publicBracketEncounterSchema,
   publicBracketSideSchema,
   publicBracketStageSchema,
@@ -55,4 +56,8 @@ export const GetPublicBracketResponse = namedSchema(
 export const GetPublicRankingResponse = namedSchema(
   "GetPublicRankingResponse",
   getPublicRankingResponseSchema,
+);
+export const ListPublicCompetitionsResponse = namedSchema(
+  "ListPublicCompetitionsResponse",
+  listPublicCompetitionsResponseSchema,
 );

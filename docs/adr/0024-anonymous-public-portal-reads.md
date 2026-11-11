@@ -25,6 +25,11 @@ recursos `.../standings`, `.../calendar`, `.../teams`, `.../rules`, `.../bracket
 servicio. Es un contrato para nuestras propias superficies (web, SSR, móvil), no
 una API de terceros: ADR-0005 sigue vigente para todo lo demás y las rutas privadas no cambian.
 No se añade `?public=true` a rutas con `organizationId`; el grupo público es otro árbol.
+`GET /api/v1/public/competitions` (`ListPublicCompetitionsUseCase`, puerto
+`PublishedCompetitionDirectoryPort`) lista entre organizaciones solo la dirección pública
+(`organizationSlug`, `competitionKey`) y `updatedAt` de las competiciones visibles, sin nombre ni
+ids internos: es la fuente del `sitemap.xml` de la web (SEO-01). El caso de uso vuelve a aplicar
+la política de visibilidad, así que un lector que devuelva un borrador no lo publica.
 
 **La lógica vive en `@futrob/public-portal`**, no en la ruta ni en `statistics`.
 Los casos de uso (`GetPublicCompetitionUseCase`, `GetPublicStandingsUseCase`,
@@ -120,7 +125,12 @@ prueba contra Postgres real ni contra Cloudflare en esta revisión**.
   [prueba HTTP anónima](/apps/api/src/http/routes/public-portal.test.ts).
 - [Adapters](/apps/api/src/adapters/public-portal/readers.ts) y
   [composición](/apps/api/src/di/public-portal.module.ts).
-- SDK: `client.publicPortal.{getCompetition,getStandings,getCalendar,getTeams,getRules,getBracket,getRanking}`.
+- SDK: `client.publicPortal.{listCompetitions,getCompetition,getStandings,getCalendar,getTeams,getRules,getBracket,getRanking}`.
+- Rastreo (SEO-01): `apps/web/src/routes/robots[.]txt.ts`, `sitemap[.]xml.ts` y la
+  [política de rastreo](/apps/web/src/shared/infrastructure/seo/crawl-policy.ts). El portal emite
+  título por sección, canonical, Open Graph y Twitter con la portada; el área autenticada, los
+  enlaces de invitación y el 404 del portal llevan `noindex`. La caché del sitemap es por
+  cabecera (`public, max-age=300, s-maxage=300`), no Cache API.
 - [Rutas web del portal](/apps/web/src/routes/$organizationSlug/$competitionKey.tsx) y
   [presentación](/apps/web/src/modules/public-portal/presentation/), con historias y pruebas de
   vistas; [recetario de verificación](/.agents/skills/verify-futrob/features/public-portal.md).

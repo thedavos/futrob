@@ -6,6 +6,7 @@ import {
   getPublicRulesResponseSchema,
   getPublicStandingsResponseSchema,
   getPublicTeamsResponseSchema,
+  listPublicCompetitionsResponseSchema,
   type GetPublicBracketResponse,
   type GetPublicCalendarResponse,
   type GetPublicCompetitionResponse,
@@ -13,6 +14,7 @@ import {
   type GetPublicRulesResponse,
   type GetPublicStandingsResponse,
   type GetPublicTeamsResponse,
+  type ListPublicCompetitionsResponse,
   type PublicRankingKindDto,
 } from "@futrob/api-contracts";
 import type { HttpClient, RequestOptions } from "../http.ts";
@@ -40,6 +42,15 @@ export function createPublicPortalResource(http: HttpClient) {
       ...rest,
     );
   return {
+    /** Every published, paused or finished competition by public address (sitemap source). */
+    async listCompetitions(options: RequestOptions = {}): Promise<ListPublicCompetitionsResponse> {
+      return http.request({
+        path: apiPath("public", "competitions"),
+        method: "GET",
+        options,
+        parse: (data) => listPublicCompetitionsResponseSchema.parse(data),
+      });
+    },
     async getCompetition(
       ref: PublicCompetitionRef,
       options: RequestOptions = {},

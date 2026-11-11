@@ -1,4 +1,6 @@
 import type {
+  Competition,
+  CompetitionDiscoveryFilter,
   CompetitionDiscoveryReader,
   CompetitionEntryRepository,
   CompetitionRepository,
@@ -24,8 +26,12 @@ import type {
   PublicStandingsReaderPort,
   PublicStandingsSource,
   PublicTeamDirectoryPort,
+  PublicCompetitionStatus,
+  PublishedCompetitionDirectoryEntry,
+  PublishedCompetitionDirectoryPort,
   PublishedCompetitionReaderPort,
 } from "@futrob/public-portal";
+import { asPublicCompetitionKey } from "@futrob/public-portal";
 import type {
   OfficialResult,
   OfficialResultReaderPort,
@@ -85,6 +91,59 @@ export class OrganizationScopedPublishedCompetitionReader implements PublishedCo
       cover: competition.cover,
       approvedTeamCount: record.approvedTeamCount,
     };
+  }
+}
+
+const DIRECTORY_PAGE_SIZE = 200;
+
+/**
+ * Lists public competitions across organizations for the sitemap. It pages the discovery read
+ * model by status and resolves organization slugs in one batch; a competition whose organization
+ * has no slug has no public address and is left out.
+ */
+export class DiscoveryPublishedCompetitionDirectory implements PublishedCompetitionDirectoryPort {
+  constructor(
+    private readonly discovery: Pick<CompetitionDiscoveryReader, "list">,
+    private readonly organizations: Pick<OrganizationRepository, "getByIds">,
+  ) {}
+
+  async listByStatus(
+    statuses: readonly PublicCompetitionStatus[],
+    limit: number,
+  ): Promise<readonly PublishedCompetitionDirectoryEntry[]> {
+    const competitions: Competition[] = [];
+    for (const status of statuses) {
+      let cursor: string | null = null;
+      do {
+        const remaining = limit - competitions.length;
+        if (remaining <= 0) break;
+        const filter: CompetitionDiscoveryFilter = {
+          status,
+          sort: "updated-desc",
+          limit: Math.min(DIRECTORY_PAGE_SIZE, remaining),
+        };
+        const page = await this.discovery.list(cursor ? { ...filter, cursor } : filter);
+        competitions.push(...page.items.map((item) => item.competition));
+        cursor = page.nextCursor;
+      } while (cursor);
+    }
+    const organizationIds = [...new Set(competitions.map((item) => item.organizationId))];
+    const organizations =
+      organizationIds.length > 0 ? await this.organizations.getByIds(organizationIds) : [];
+    const slugs = new Map(
+      organizations.map((organization) => [organization.id, organization.slug]),
+    );
+    return competitions.flatMap((competition) => {
+      const slug = slugs.get(competition.organizationId);
+      if (!slug) return [];
+      return [
+        {
+          key: asPublicCompetitionKey(slug, competition.id),
+          status: competition.status,
+          updatedAt: competition.updatedAt,
+        },
+      ];
+    });
   }
 }
 

@@ -12,6 +12,7 @@ import {
   GetPublicRulesResponse,
   GetPublicStandingsResponse,
   GetPublicTeamsResponse,
+  ListPublicCompetitionsResponse,
 } from "@/http/openapi/components.ts";
 import { defineRoute } from "@/http/openapi/define-route.ts";
 
@@ -153,4 +154,19 @@ export const getPublicRankingRoute = defineRoute({
   },
   errors: [400, 404],
   errorDescriptions: { 400: "Unknown ranking kind", 404: NOT_PUBLISHED },
+});
+
+export const listPublicCompetitionsRoute = defineRoute({
+  method: "get",
+  path: "/public/competitions",
+  operationId: "listPublicCompetitions",
+  tags: ["public-portal"],
+  summary: "List every published competition by its public address",
+  description: `Sitemap source: published, paused and finished competitions of every organization, newest first, with their public address and last update only. ${CACHE_NOTE}`,
+  public: true,
+  success: {
+    status: 200,
+    description: "Public addresses, no names or internal ids",
+    schema: ListPublicCompetitionsResponse,
+  },
 });
