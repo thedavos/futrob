@@ -10,6 +10,7 @@ import { buildAuthEnv } from "../../auth-env.ts";
 import { isAuthSchemaReady } from "../../auth-readiness.ts";
 import { ensureActorForSubject, credentialSubject } from "./actor-provisioner.ts";
 import { upsertActorContactProfile } from "./actor-contact-profile.ts";
+import { createEmailVerificationToken } from "better-auth/api";
 import { createAuth, PASSWORD_RESET_APP_CALLBACK } from "./better-auth.ts";
 import { createAuthDb } from "./database.ts";
 import {
@@ -174,6 +175,7 @@ suite("auth on product Postgres (migration 0043)", () => {
           sendEmailChangeVerification: async ({ to, url }) => {
             links.push({ to, url });
           },
+          sendEmailVerification: async () => {},
           sendPasswordReset: async () => {},
         },
       });
@@ -262,6 +264,7 @@ suite("auth on product Postgres (migration 0043)", () => {
         ids: new CryptoIdGenerator(),
         mail: {
           sendEmailChangeVerification: async () => {},
+          sendEmailVerification: async () => {},
           sendPasswordReset: async ({ to, url }) => {
             links.push({ to, url });
           },
@@ -372,6 +375,7 @@ suite("auth on product Postgres (migration 0043)", () => {
         ids: new CryptoIdGenerator(),
         mail: {
           sendEmailChangeVerification: async () => {},
+          sendEmailVerification: async () => {},
           sendPasswordReset: async ({ to }) => {
             sent.push(to);
           },
@@ -408,6 +412,183 @@ suite("auth on product Postgres (migration 0043)", () => {
         expect((await request("/request-password-reset", { email }, ip)).status).toBe(200);
       }
       expect(sent).toEqual([email, email, email]);
+      await client.end();
+    });
+  });
+
+  it("verifies a new account once, without holding back sign-in, and offers another link", async () => {
+    await withSchema(async ({ connect }) => {
+      const client = await connect();
+      const links: string[] = [];
+      const background: Promise<unknown>[] = [];
+      const secret = "test-secret-at-least-32-characters!!";
+      const auth = createAuth({
+        db: createAuthDb(client),
+        env: buildAuthEnv({
+          APP_BASE_URL: "http://localhost:3000",
+          BETTER_AUTH_SECRET: secret,
+          BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:3000",
+        }),
+        clock: new SystemClock(),
+        ids: new CryptoIdGenerator(),
+        mail: {
+          sendEmailChangeVerification: async () => {},
+          sendEmailVerification: async ({ url }) => {
+            links.push(url);
+          },
+          sendPasswordReset: async () => {},
+        },
+        runInBackground: (task) => {
+          background.push(task);
+        },
+        reportDefect: (cause) => {
+          throw cause;
+        },
+      });
+      const email = `verify-${randomUUID()}@futrob.test`;
+      const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
+        auth.handler(
+          new Request(`http://localhost:3000/api/auth${path}`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              origin: "http://localhost:3000",
+              "cf-connecting-ip": "192.0.2.10",
+              ...headers,
+            },
+            body: JSON.stringify(body),
+          }),
+        );
+      const sessionOf = async (cookie: string) =>
+        (await auth
+          .handler(
+            new Request("http://localhost:3000/api/auth/get-session", { headers: { cookie } }),
+          )
+          .then((response) => response.json())) as { user: { emailVerified: boolean } } | null;
+      const open = async (url: string) => {
+        const response = await auth.handler(new Request(url));
+        expect(response.status).toBe(302);
+        const landing = new URL(response.headers.get("location")!, "http://localhost:3000");
+        return `${landing.pathname}${landing.search}`;
+      };
+      const db = createAuthDb(client);
+
+      // Sign-up still opens a session at once (onboarding follows) and sends one link.
+      const signUp = await post("/sign-up/email", {
+        email,
+        password: "password-at-least-8",
+        name: "Captain",
+        callbackURL: "/player",
+      });
+      expect(signUp.status).toBe(200);
+      await Promise.all(background.splice(0));
+      const cookie = signUp.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ");
+      expect((await sessionOf(cookie))?.user.emailVerified).toBe(false);
+      expect(links).toHaveLength(1);
+      // Whatever the client asked, the link lands on the web page.
+      expect(new URL(links[0]!).searchParams.get("callbackURL")).toBe("/verify-email");
+      expect(await db.select().from(actorContactProfiles)).toMatchObject([
+        { email, emailVerified: false },
+      ]);
+      expect(
+        (await post("/sign-in/email", { email, password: "password-at-least-8" })).status,
+      ).toBe(200);
+
+      // The signed-in account can ask for another link.
+      const resend = await post("/send-verification-email", { email }, { cookie });
+      expect(resend.status).toBe(200);
+      expect(links).toHaveLength(2);
+
+      // The first link verifies; it and every other link are used from then on.
+      expect(await open(links[0]!)).toBe("/verify-email");
+      expect((await sessionOf(cookie))?.user.emailVerified).toBe(true);
+      expect(await db.select().from(actorContactProfiles)).toMatchObject([
+        { email, emailVerified: true },
+      ]);
+      expect(await open(links[0]!)).toBe("/verify-email?error=TOKEN_USED");
+      expect(await open(links[1]!)).toBe("/verify-email?error=TOKEN_USED");
+      const again = await post("/send-verification-email", { email }, { cookie });
+      expect(await again.json()).toMatchObject({ code: "EMAIL_ALREADY_VERIFIED" });
+      expect(links).toHaveLength(2);
+
+      // An expired link for an unverified account lands with its own error.
+      const other = `late-${randomUUID()}@futrob.test`;
+      await post("/sign-up/email", { email: other, password: "password-at-least-8", name: "L" });
+      await Promise.all(background.splice(0));
+      const expired = await createEmailVerificationToken(secret, other, undefined, -60);
+      expect(
+        await open(
+          `http://localhost:3000/api/auth/verify-email?token=${expired}&callbackURL=%2Fverify-email`,
+        ),
+      ).toBe("/verify-email?error=TOKEN_EXPIRED");
+      await client.end();
+    });
+  });
+
+  it("limits verification resends per IP", async () => {
+    await withSchema(async ({ connect }) => {
+      const client = await connect();
+      const sent: string[] = [];
+      const auth = createAuth({
+        db: createAuthDb(client),
+        env: buildAuthEnv({
+          APP_BASE_URL: "http://localhost:3000",
+          BETTER_AUTH_SECRET: "test-secret-at-least-32-characters!!",
+          BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:3000",
+        }),
+        clock: new SystemClock(),
+        ids: new CryptoIdGenerator(),
+        mail: {
+          sendEmailChangeVerification: async () => {},
+          sendEmailVerification: async ({ to }) => {
+            sent.push(to);
+          },
+          sendPasswordReset: async () => {},
+        },
+        reportDefect: (cause) => {
+          throw cause;
+        },
+      });
+      const email = `resend-${randomUUID()}@futrob.test`;
+      const request = (path: string, body: unknown, headers: Record<string, string>) =>
+        auth.handler(
+          new Request(`http://localhost:3000/api/auth${path}`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              origin: "http://localhost:3000",
+              ...headers,
+            },
+            body: JSON.stringify(body),
+          }),
+        );
+      const signUp = await request(
+        "/sign-up/email",
+        { email, password: "password-1", name: "C" },
+        { "cf-connecting-ip": "198.51.100.20" },
+      );
+      const cookie = signUp.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ");
+
+      const statuses = [];
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        statuses.push(
+          (
+            await request(
+              "/send-verification-email",
+              { email },
+              { cookie, "cf-connecting-ip": "198.51.100.21" },
+            )
+          ).status,
+        );
+      }
+      expect(statuses).toEqual([200, 200, 200, 429]);
+      expect(sent).toHaveLength(4);
       await client.end();
     });
   });
@@ -484,6 +665,15 @@ async function withSchema(
     await setup.query(
       await readFile(
         resolve(import.meta.dirname, "../../../../api/migrations/0056_actor_contact_profiles.sql"),
+        "utf8",
+      ),
+    );
+    await setup.query(
+      await readFile(
+        resolve(
+          import.meta.dirname,
+          "../../../../api/migrations/0069_actor_contact_email_verified.sql",
+        ),
         "utf8",
       ),
     );

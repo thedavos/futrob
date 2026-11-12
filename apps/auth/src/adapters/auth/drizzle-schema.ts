@@ -95,6 +95,8 @@ export const actorContactProfiles = pgTable("actor_contact_profiles", {
     .references(() => actors.id, { onDelete: "cascade" }),
   displayName: text("display_name").notNull(),
   email: text("email").notNull(),
+  /** Projection of `auth_users.email_verified` for `email` (migration 0069). */
+  emailVerified: boolean("email_verified").notNull().default(false),
   updatedAt: timestamptz("updated_at").notNull(),
 });
 

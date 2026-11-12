@@ -31,6 +31,30 @@ describe("ResendAuthMail", () => {
     expect(body.html).toContain("Ana &lt;b&gt;");
   });
 
+  it("sends the account verification link with its own subject", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    const mail = new ResendAuthMail({
+      apiKey: "re_synthetic",
+      from: "Futrob <cuenta@futrob.app>",
+      fetcher: async (_url, init) => {
+        bodies.push(JSON.parse(String(init!.body)) as Record<string, unknown>);
+        return Response.json({ id: "email-2" });
+      },
+    });
+
+    await mail.sendEmailVerification({
+      to: "ana@example.test",
+      name: "Ana",
+      url: "https://futrob.app/api/auth/verify-email?token=tok&callbackURL=%2Fverify-email",
+    });
+
+    expect(bodies[0]).toMatchObject({
+      to: ["ana@example.test"],
+      subject: "Confirma tu correo en Futrob",
+    });
+    expect(bodies[0]!.text).toContain("callbackURL=%2Fverify-email");
+  });
+
   it("fails without the recipient or the link in the error", async () => {
     const mail = new ResendAuthMail({
       apiKey: "re_synthetic",

@@ -15,6 +15,8 @@ npm run seed:demo -w @futrob/api -- --reset-only
 - Contraseña de **todas** las cuentas: `Test123`. Los emails son `<cuenta>@demo.futrob.test`.
   Se insertan con el mismo hash scrypt de Better Auth porque el registro exige 8 caracteres;
   el login no valida la longitud.
+- Las cuentas demo nacen con el correo verificado (AUTH-02): no reciben correo de verificación
+  ni muestran el aviso, y no dependen de un proveedor de correo.
 - `--reset` borra solo lo demo: organizaciones creadas por actores demo, filas que apuntan
   a actores demo, partidos EA con prefijo `7770` y las cuentas `@demo.futrob.test`.
 - Las fechas son relativas al momento del seed. Pasados unos días, «Recientes» y los
