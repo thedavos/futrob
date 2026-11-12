@@ -1,4 +1,6 @@
-import { screen } from "@testing-library/react";
+import { AppState, type AppStateStatus } from "react-native";
+import { createMobileQueryClient } from "@/modules/query/create-query-client";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type {
   CompetitionTeamManagementDetailResponse,
@@ -10,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { MOBILE_PERMISSION } from "@/modules/authorization/permissions";
 import { clearSession, saveSession } from "@/modules/identity/session-store";
 import { profile, snapshot } from "@/modules/player-home/player-home.fixtures";
-import { currentLocation } from "../../../test/expo-router";
+import { currentLocation, setTestScreenFocused } from "../../../test/expo-router";
 import { installFakeApi, type FakeRoute } from "../../../test/fake-api";
 import { cleanupApp, renderApp } from "../../../test/render-app";
 
@@ -78,7 +80,7 @@ const fixture: GetCurrentCompetitionFixtureResponse = {
     rulesVersion: 1,
     generationVersion: 1,
     format: "league",
-    timeZone: "UTC",
+    timeZone: "America/Lima",
     homeAndAway: false,
     seed: ["t1", "t2"],
     stages: [
@@ -100,7 +102,7 @@ const fixture: GetCurrentCompetitionFixtureResponse = {
                 order: 1,
                 home: { kind: "team", teamId: "t1" },
                 away: { kind: "team", teamId: "t2" },
-                scheduledStartAt: at,
+                scheduledStartAt: "2026-10-02T21:30:00.000Z",
                 officialMatchCount: 1,
                 series: null,
               },
@@ -159,17 +161,25 @@ afterEach(async () => {
   await clearSession();
   await SecureStore.deleteItemAsync("futrob.mobile.language");
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("competition read views", () => {
-  it("lists the fixture's rounds with both teams named", async () => {
+  it.each(["fixture", "bracket"])("shows the rescheduled encounter kickoff in %s", async (view) => {
     competitionApi([MOBILE_PERMISSION.competitionsRead], {
-      [`${COMPETITION}/fixture`]: json(fixture),
+      [`${COMPETITION}/fixture`]: json({
+        ...fixture,
+        fixture: {
+          ...fixture.fixture,
+          stages: fixture.fixture!.stages.map((stage) => ({ ...stage, kind: "knockout" })),
+        },
+      }),
     });
-    renderApp(`${ROOT}/fixture`);
+    renderApp(`${ROOT}/${view}`);
 
     expect(await screen.findByText("Rayo vs Norte")).toBeTruthy();
-    expect(screen.getByText(/^Jornada 1/)).toBeTruthy();
+    expect(screen.getByText(/^Final ·/)).toBeTruthy();
+    expect(screen.getByText(/2 oct 2026, 16:30/)).toBeTruthy();
   });
 
   it("says there is no schedule yet instead of an empty list", async () => {
@@ -204,3 +214,46 @@ describe("competition read views", () => {
     expect(screen.getByText("Capitán")).toBeTruthy();
   });
 });
+
+for (const trigger of ["screen focus", "app active"] as const) {
+  it(`refreshes stale competition data on ${trigger} without remounting`, async () => {
+    const appStateListeners = new Set<(state: AppStateStatus) => void>();
+    const appStateChanged = (state: AppStateStatus) => {
+      for (const listener of [...appStateListeners]) listener(state);
+    };
+    vi.spyOn(AppState, "addEventListener").mockImplementation((_event, listener) => {
+      appStateListeners.add(listener);
+      return {
+        remove: () => {
+          appStateListeners.delete(listener);
+        },
+      };
+    });
+    const api = competitionApi([MOBILE_PERMISSION.competitionsRead], {
+      [`${COMPETITION}/fixture`]: json(fixture),
+    });
+    const client = createMobileQueryClient();
+    renderApp(`${ROOT}/fixture`, { queryClient: client });
+    expect(await screen.findByText("Rayo vs Norte")).toBeTruthy();
+    await act(async () => {
+      setTestScreenFocused(false);
+      appStateChanged("background");
+      await client.invalidateQueries({ refetchType: "none" });
+    });
+    api.routes[`${COMPETITION}/fixture`] = json({
+      ...fixture,
+      teams: [
+        { teamId: "t1", name: "Sur" },
+        { teamId: "t2", name: "Norte" },
+      ],
+    });
+    await act(async () => {
+      if (trigger === "screen focus") setTestScreenFocused(true);
+      else appStateChanged("active");
+    });
+    expect(await screen.findByText("Sur vs Norte")).toBeTruthy();
+    expect(api.requests.filter((request) => request.path.endsWith("/fixture"))).toHaveLength(2);
+    await waitFor(() => expect(client.isFetching()).toBe(0));
+    client.clear();
+  });
+}

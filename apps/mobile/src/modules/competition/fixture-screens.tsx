@@ -140,7 +140,12 @@ function Round({
       ) : (
         <List>
           {round.encounters.map((encounter) => (
-            <EncounterRow key={encounter.id} encounter={encounter} bracket={bracket} />
+            <EncounterRow
+              key={encounter.id}
+              encounter={encounter}
+              bracket={bracket}
+              timeZone={timeZone}
+            />
           ))}
         </List>
       )}
@@ -151,9 +156,11 @@ function Round({
 function EncounterRow({
   encounter,
   bracket,
+  timeZone,
 }: {
   encounter: FixtureEncounterView;
   bracket: boolean;
+  timeZone: string;
 }) {
   const copy = useCompetitionCopy();
   const home = copy.side(encounter.home);
@@ -166,6 +173,7 @@ function EncounterRow({
     (side) => side.kind === "team" && side.withdrawn,
   );
   const details = [
+    formatDateTime(encounter.scheduledStartAt, copy.locale, timeZone),
     groupLine(encounter, copy),
     bracket && encounter.officialMatchCount === 2
       ? copy.bracket.twoLegs

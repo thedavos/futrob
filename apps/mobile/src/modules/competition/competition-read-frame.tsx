@@ -9,7 +9,12 @@ import { useContextAccessQuery } from "@/modules/navigation/use-context-access";
 import { theme } from "@/theme/theme";
 import { Button, EmptyState, ErrorState, LoadingState, Screen, Text } from "@/ui";
 import { competitionCopy, type CompetitionCopy } from "./competition-copy";
-import { isRefused, type CompetitionScope, type Refused } from "./competition-queries";
+import {
+  useCompetitionRefresh,
+  isRefused,
+  type CompetitionScope,
+  type Refused,
+} from "./competition-queries";
 
 export function useCompetitionCopy(): CompetitionCopy & { readonly locale: string } {
   const { language } = useMobileCopy();
@@ -29,6 +34,7 @@ export function competitionHref(scope: CompetitionScope, path = ""): string {
 
 /** A read view inside the competition's tab shell, which already pads top and bottom. */
 export function CompetitionTabScreen({ title, children }: { title: string; children: ReactNode }) {
+  useCompetitionRefresh(useCompetitionScope());
   return (
     <Screen scroll edges={["left", "right"]} centered={false}>
       <View style={{ gap: theme.spacing[5] }}>
@@ -54,6 +60,7 @@ export function CompetitionStackScreen({
 }) {
   const router = useRouter();
   const scope = useCompetitionScope();
+  useCompetitionRefresh(scope);
   const copy = useCompetitionCopy();
   return (
     <GateBoundary mode="ready">

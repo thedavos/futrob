@@ -1,4 +1,8 @@
-import { useInfiniteQuery, useQueries, useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { AppState } from "react-native";
+import { useFocusEffect } from "expo-router";
+import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
+import { useInfiniteQuery, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   CompetitionDraftDto,
   CompetitionTeamManagementDetailResponse,
@@ -223,4 +227,24 @@ export function useRankingNames(
             for (const result of failed) void result.refetch();
           },
   };
+}
+
+/** Revalidate retained competition screens without crossing the current session's cache. */
+export function useCompetitionRefresh(scope: CompetitionScope) {
+  const client = useQueryClient();
+  const generation = useSessionGeneration();
+  const { organizationId, competitionId } = scope;
+  const refresh = useCallback(() => {
+    const queryKey = mobileQueryKeys
+      .competitionRead(generation, organizationId, competitionId, "")
+      .slice(0, -1);
+    void client.refetchQueries({ queryKey, type: "active", stale: true }, { cancelRefetch: false });
+  }, [client, generation, organizationId, competitionId]);
+  useFocusEffect(refresh);
+  useExternalSync(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") refresh();
+    });
+    return () => subscription.remove();
+  }, [refresh]);
 }
