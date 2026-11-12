@@ -1,12 +1,20 @@
 import type { WorkspaceContext, WorkspaceRole } from "@futrob/sdk";
 import type { MobileLanguage } from "@/modules/identity/mobile-copy";
-import type { ContextTabId } from "./nav-registry";
+import type { ContextLinkId, ContextTabId } from "./nav-registry";
 
 const es = {
   tabs: {
     home: "Inicio",
     overview: "Resumen",
+    fixture: "Calendario",
+    standings: "Clasificación",
     more: "Más",
+  },
+  links: {
+    bracket: "Bracket",
+    rankings: "Rankings",
+    teams: "Equipos",
+    rules: "Reglamento",
   },
   tabBar: "Navegación",
   context: {
@@ -52,7 +60,15 @@ const en = {
   tabs: {
     home: "Home",
     overview: "Overview",
+    fixture: "Schedule",
+    standings: "Standings",
     more: "More",
+  },
+  links: {
+    bracket: "Bracket",
+    rankings: "Rankings",
+    teams: "Teams",
+    rules: "Rules",
   },
   tabBar: "Navigation",
   context: {
@@ -96,6 +112,7 @@ const en = {
 
 type NavigationCopy = {
   tabs: Record<ContextTabId, string>;
+  links: Record<ContextLinkId, string>;
   tabBar: string;
   context: Record<WorkspaceContext["kind"], string>;
   switchContext: (current: string) => string;

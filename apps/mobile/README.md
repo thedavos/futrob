@@ -34,8 +34,9 @@ La implementación actual incluye auth, gate de `actor_onboarding`, los tres cam
   `(tabs)` con su `_layout.tsx`, que monta `ContextTabsLayout`
   (`src/modules/navigation/`): header con el selector de contexto único, la pestaña activa y la
   barra inferior (headless tabs de `expo-router/ui`, 56 dp). Las pestañas de cada contexto
-  viven en `nav-registry.ts`, con el mismo permiso `EffectiveAccess` que web; **Más** agrupa
-  cuenta, idioma y cierre de sesión. El detalle y las operaciones son rutas fuera de `(tabs)`
+  viven en `nav-registry.ts`, con el mismo permiso `EffectiveAccess` que web; **Más** lista
+  los destinos del contexto que no ganan pestaña (`contextLinks`) y luego cuenta, idioma y
+  cierre de sesión. El detalle y las operaciones son rutas fuera de `(tabs)`
   que se apilan encima. El modelo del selector (opciones, rutas, club por defecto) vive en
   `@futrob/sdk` (`buildWorkspaceOptions`, `workspaceContextPath`…).
 - **Onboarding:** `src/modules/identity/onboarding-flow.ts` orquesta el SDK. La API mantiene
@@ -77,6 +78,8 @@ apps/mobile/
 │   ├── (onboarding)/         # intención, formularios y revisión
 │   ├── player/(tabs)/        # espacio personal: Inicio + Más
 │   ├── orgs/                 # selector; orgs/[orgId]/(tabs) y …/competitions/[id]/(tabs)
+│   │                         # competición: Calendario y Clasificación en (tabs); bracket,
+│   │                         # rankings, equipos y reglamento apilados desde Más
 │   └── invitations/accept/   # enlace de invitación
 ├── assets/                    # generados por scripts/generate-assets.mjs
 └── src/
@@ -85,5 +88,6 @@ apps/mobile/
     ├── ui/                    # primitivas móviles (Button, List, Dialog, Tabs…)
     └── modules/
         ├── identity/          # auth-api, session-store, validación (+tests)
+        ├── competition/       # lecturas de competición (modelos puros en @futrob/sdk)
         └── navigation/        # shell por contexto, selector, pestañas y Más
 ```
