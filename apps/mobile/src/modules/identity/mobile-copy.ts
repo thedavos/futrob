@@ -78,6 +78,22 @@ const messages = {
     invitationErrorTitle: "No pudimos abrir la invitación",
     invitationErrorDescription: "Comprueba el enlace e inténtalo de nuevo.",
     wait: "Espera",
+    forgotPassword: "¿Olvidaste tu contraseña?",
+    forgotTitle: "Recupera tu contraseña",
+    forgotSubtitle: "Te enviaremos un enlace para elegir una contraseña nueva.",
+    sendLink: "Enviar enlace",
+    linkSentTitle: "Revisa tu correo",
+    linkSent:
+      "Si hay una cuenta con ese correo, te enviamos un enlace para elegir una contraseña nueva. Vence en 1 hora y solo funciona una vez.",
+    backToLogin: "Volver a iniciar sesión",
+    resetTitle: "Elige una contraseña nueva",
+    newPassword: "Contraseña nueva",
+    savePassword: "Guardar contraseña",
+    passwordUpdatedTitle: "Contraseña actualizada",
+    passwordUpdated: "Cerramos todas tus sesiones. Inicia sesión con tu contraseña nueva.",
+    invalidLinkTitle: "Este enlace ya no sirve",
+    invalidLink: "Ya se usó o venció. Pide otro y usa el más reciente que te llegue.",
+    requestAnotherLink: "Pedir otro enlace",
   },
   en: {
     retry: "Retry",
@@ -151,6 +167,22 @@ const messages = {
     invitationErrorTitle: "We couldn't open the invitation",
     invitationErrorDescription: "Check the link and try again.",
     wait: "Wait",
+    forgotPassword: "Forgot your password?",
+    forgotTitle: "Recover your password",
+    forgotSubtitle: "We'll email you a link to choose a new password.",
+    sendLink: "Send link",
+    linkSentTitle: "Check your email",
+    linkSent:
+      "If an account uses that email, we sent it a link to choose a new password. It expires in 1 hour and works once.",
+    backToLogin: "Back to sign in",
+    resetTitle: "Choose a new password",
+    newPassword: "New password",
+    savePassword: "Save password",
+    passwordUpdatedTitle: "Password updated",
+    passwordUpdated: "We signed you out everywhere. Sign in with your new password.",
+    invalidLinkTitle: "This link no longer works",
+    invalidLink: "It was already used or it expired. Ask for another and use the newest one.",
+    requestAnotherLink: "Ask for another link",
   },
 } as const;
 
@@ -169,6 +201,8 @@ const AUTH_ENGLISH_ERRORS = {
   "No se pudo conectar. Revisa tu conexión e intenta de nuevo.":
     "Couldn't connect. Check your connection and try again.",
   "No se pudo completar. Intenta de nuevo.": "Couldn't complete the request. Try again.",
+  "Demasiados intentos. Espera un minuto e intenta de nuevo.":
+    "Too many attempts. Wait a minute and try again.",
 } as const;
 
 export function localizeAuthMessage(

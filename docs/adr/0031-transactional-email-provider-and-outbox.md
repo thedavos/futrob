@@ -81,8 +81,9 @@ concurrent_idempotent_requests` se reintenta; un `409 invalid_idempotent_request
 - El contenido del email usa nombres guardados al ocurrir el hecho, nunca texto libre de
   usuarios; los errores guardados no contienen destinatario ni cuerpo. La petición fijada sí
   guarda dirección y cuerpo del email ya enviado, en la misma tabla de producto.
-- `apps/auth` reutilizará Resend por HTTP para verificación y restablecimiento; ese cableado
-  queda fuera de MAIL-01.
+- `apps/auth` reutiliza Resend por HTTP (`ResendAuthMail`, AUTH-01) para los enlaces de
+  cuenta. Esos enlaces son secretos de vida corta: se envían al momento, después de responder
+  (`waitUntil`), y no pasan por `email_outbox`, que guarda el cuerpo enviado.
 
 ## Alternativas consideradas
 
@@ -105,7 +106,8 @@ Configuración humana antes de enviar en producción:
 3. Webhook de rebotes y quejas de Resend hacia la API, y supresión local: no implementado.
 4. Disparadores de «próximo partido», «candidatos EA» y «sanción»: las plantillas existen,
    pero esos hechos aún no producen una fila de actividad ni un intent.
-5. Envíos de `apps/auth` por el mismo proveedor.
+5. En el Worker de auth: `AUTH_EMAIL_DELIVERY=resend`, `EMAIL_FROM` y el secreto
+   `RESEND_API_KEY` (cableado en AUTH-01; sin configurar en producción).
 
 ## Estado de implementación y evidencia
 

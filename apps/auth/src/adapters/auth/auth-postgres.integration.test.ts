@@ -10,9 +10,15 @@ import { buildAuthEnv } from "../../auth-env.ts";
 import { isAuthSchemaReady } from "../../auth-readiness.ts";
 import { ensureActorForSubject, credentialSubject } from "./actor-provisioner.ts";
 import { upsertActorContactProfile } from "./actor-contact-profile.ts";
-import { createAuth } from "./better-auth.ts";
+import { createAuth, PASSWORD_RESET_APP_CALLBACK } from "./better-auth.ts";
 import { createAuthDb } from "./database.ts";
-import { authSchema, identitySubjects, actors, actorContactProfiles } from "./drizzle-schema.ts";
+import {
+  authSchema,
+  authVerifications,
+  identitySubjects,
+  actors,
+  actorContactProfiles,
+} from "./drizzle-schema.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = describe.skipIf(!databaseUrl);
@@ -168,6 +174,7 @@ suite("auth on product Postgres (migration 0043)", () => {
           sendEmailChangeVerification: async ({ to, url }) => {
             links.push({ to, url });
           },
+          sendPasswordReset: async () => {},
         },
       });
       const email = `old-${randomUUID()}@futrob.test`;
@@ -235,6 +242,240 @@ suite("auth on product Postgres (migration 0043)", () => {
       expect((await sessionOf(web))?.user.email).toBe(newEmail);
       const db = createAuthDb(client);
       expect(await db.select().from(actorContactProfiles)).toMatchObject([{ email: newEmail }]);
+      await client.end();
+    });
+  });
+
+  it("resets a password with a single-use link without revealing which accounts exist", async () => {
+    await withSchema(async ({ connect }) => {
+      const client = await connect();
+      const links: Array<{ to: string; url: string }> = [];
+      const background: Promise<unknown>[] = [];
+      const auth = createAuth({
+        db: createAuthDb(client),
+        env: buildAuthEnv({
+          APP_BASE_URL: "http://localhost:3000",
+          BETTER_AUTH_SECRET: "test-secret-at-least-32-characters!!",
+          BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:3000",
+        }),
+        clock: new SystemClock(),
+        ids: new CryptoIdGenerator(),
+        mail: {
+          sendEmailChangeVerification: async () => {},
+          sendPasswordReset: async ({ to, url }) => {
+            links.push({ to, url });
+          },
+        },
+        runInBackground: (task) => {
+          background.push(task);
+        },
+        reportDefect: (cause) => {
+          throw cause;
+        },
+      });
+      const email = `reset-${randomUUID()}@futrob.test`;
+      const json = { "content-type": "application/json", origin: "http://localhost:3000" };
+      let ip = 0;
+      const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
+        auth.handler(
+          new Request(`http://localhost:3000/api/auth${path}`, {
+            method: "POST",
+            headers: { ...json, "cf-connecting-ip": `203.0.113.${(ip += 1)}`, ...headers },
+            body: JSON.stringify(body),
+          }),
+        );
+      const cookieOf = (response: Response) =>
+        response.headers
+          .getSetCookie()
+          .map((value) => value.split(";")[0])
+          .join("; ");
+      const sessionOf = async (cookie: string) =>
+        (await auth
+          .handler(
+            new Request("http://localhost:3000/api/auth/get-session", { headers: { cookie } }),
+          )
+          .then((response) => response.json())) as { user: { email: string } } | null;
+      const requestReset = async (address: string, redirectTo = "/reset-password") => {
+        const response = await post("/request-password-reset", { email: address, redirectTo });
+        await Promise.all(background.splice(0));
+        return { status: response.status, body: await response.json() };
+      };
+      const tokenOf = async (url: string) => {
+        const landing = await auth.handler(new Request(url));
+        return new URL(landing.headers.get("location")!);
+      };
+
+      const web = cookieOf(
+        await post("/sign-up/email", { email, password: "old-password-1", name: "Captain" }),
+      );
+      const phone = cookieOf(await post("/sign-in/email", { email, password: "old-password-1" }));
+
+      // Same answer for an account that exists and one that does not; only the first gets mail.
+      const known = await requestReset(email);
+      const unknown = await requestReset(`nobody-${randomUUID()}@futrob.test`);
+      expect(unknown).toEqual(known);
+      expect(known.status).toBe(200);
+      expect(links.map(({ to }) => to)).toEqual([email]);
+
+      // The link lands on the web page with the token, or in the app through its scheme.
+      const landing = await tokenOf(links[0]!.url);
+      expect(`${landing.origin}${landing.pathname}`).toBe("http://localhost:3000/reset-password");
+      const token = landing.searchParams.get("token")!;
+      expect(token).not.toBe("");
+      await requestReset(email, PASSWORD_RESET_APP_CALLBACK);
+      const appLanding = await tokenOf(links[1]!.url);
+      expect(appLanding.href.startsWith(`${PASSWORD_RESET_APP_CALLBACK}?token=`)).toBe(true);
+
+      const reset = await post("/reset-password", { token, newPassword: "new-password-2" });
+      expect(reset.status).toBe(200);
+
+      // The old password stops working and every other session is closed.
+      expect((await post("/sign-in/email", { email, password: "old-password-1" })).status).toBe(
+        401,
+      );
+      await expect(sessionOf(web)).resolves.toBeNull();
+      await expect(sessionOf(phone)).resolves.toBeNull();
+      const fresh = cookieOf(await post("/sign-in/email", { email, password: "new-password-2" }));
+      expect((await sessionOf(fresh))?.user.email).toBe(email);
+
+      // A used link, and any older link of the same account, no longer works.
+      const reused = await post("/reset-password", { token, newPassword: "again-password-3" });
+      expect(reused.status).toBe(400);
+      expect(await reused.json()).toMatchObject({ code: "INVALID_TOKEN" });
+      expect((await tokenOf(links[0]!.url)).searchParams.get("error")).toBe("INVALID_TOKEN");
+      expect((await tokenOf(links[1]!.url)).searchParams.get("error")).toBe("INVALID_TOKEN");
+
+      // An expired link answers the same way.
+      await requestReset(email);
+      const expiring = (await tokenOf(links[2]!.url)).searchParams.get("token")!;
+      const db = createAuthDb(client);
+      await db.update(authVerifications).set({ expiresAt: new Date(Date.UTC(2000, 0, 1)) });
+      expect((await tokenOf(links[2]!.url)).searchParams.get("error")).toBe("INVALID_TOKEN");
+      const expired = await post("/reset-password", { token: expiring, newPassword: "late-pw-4" });
+      expect(await expired.json()).toMatchObject({ code: "INVALID_TOKEN" });
+      await client.end();
+    });
+  });
+
+  it("limits reset requests per IP and reset emails per account", async () => {
+    await withSchema(async ({ connect }) => {
+      const client = await connect();
+      const db = createAuthDb(client);
+      const sent: string[] = [];
+      const auth = createAuth({
+        db,
+        env: buildAuthEnv({
+          APP_BASE_URL: "http://localhost:3000",
+          BETTER_AUTH_SECRET: "test-secret-at-least-32-characters!!",
+          BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:3000",
+        }),
+        clock: new SystemClock(),
+        ids: new CryptoIdGenerator(),
+        mail: {
+          sendEmailChangeVerification: async () => {},
+          sendPasswordReset: async ({ to }) => {
+            sent.push(to);
+          },
+        },
+        reportDefect: (cause) => {
+          throw cause;
+        },
+      });
+      const email = `limit-${randomUUID()}@futrob.test`;
+      const request = (path: string, body: unknown, ip: string) =>
+        auth.handler(
+          new Request(`http://localhost:3000/api/auth${path}`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              origin: "http://localhost:3000",
+              "cf-connecting-ip": ip,
+            },
+            body: JSON.stringify(body),
+          }),
+        );
+      await request("/sign-up/email", { email, password: "password-1", name: "C" }, "198.51.100.1");
+
+      const fromOneIp = [];
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        fromOneIp.push(
+          (await request("/request-password-reset", { email }, "198.51.100.2")).status,
+        );
+      }
+      expect(fromOneIp).toEqual([200, 200, 200, 429]);
+
+      // From other addresses the answer stays 200, but the account gets no more than three links.
+      for (const ip of ["198.51.100.3", "198.51.100.4"]) {
+        expect((await request("/request-password-reset", { email }, ip)).status).toBe(200);
+      }
+      expect(sent).toEqual([email, email, email]);
+      // Suppressed requests leave no token behind, so they do not prolong the cap.
+      expect(await db.select().from(authVerifications)).toHaveLength(3);
+      await client.end();
+    });
+  });
+
+  it("does not count reset links the mail provider failed to send", async () => {
+    await withSchema(async ({ connect }) => {
+      const client = await connect();
+      const db = createAuthDb(client);
+      let providerUp = false;
+      const sent: string[] = [];
+      const defects: Error[] = [];
+      const auth = createAuth({
+        db,
+        env: buildAuthEnv({
+          APP_BASE_URL: "http://localhost:3000",
+          BETTER_AUTH_SECRET: "test-secret-at-least-32-characters!!",
+          BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:3000",
+        }),
+        clock: new SystemClock(),
+        ids: new CryptoIdGenerator(),
+        mail: {
+          sendEmailChangeVerification: async () => {},
+          sendPasswordReset: async ({ url }) => {
+            if (!providerUp) throw new Error("provider down");
+            sent.push(url);
+          },
+        },
+        reportDefect: (cause) => {
+          defects.push(cause);
+        },
+      });
+      const email = `outage-${randomUUID()}@futrob.test`;
+      const request = (path: string, body: unknown, ip: string) =>
+        auth.handler(
+          new Request(`http://localhost:3000/api/auth${path}`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              origin: "http://localhost:3000",
+              "cf-connecting-ip": ip,
+            },
+            body: JSON.stringify(body),
+          }),
+        );
+      await request("/sign-up/email", { email, password: "password-1", name: "C" }, "198.51.100.1");
+
+      for (const ip of ["198.51.100.2", "198.51.100.3", "198.51.100.4"]) {
+        expect((await request("/request-password-reset", { email }, ip)).status).toBe(200);
+      }
+      expect(defects.map(({ message }) => message)).toEqual(Array(3).fill("provider down"));
+      expect(await db.select().from(authVerifications)).toEqual([]);
+
+      // Once the provider recovers, the next request sends a link that works.
+      providerUp = true;
+      expect((await request("/request-password-reset", { email }, "198.51.100.5")).status).toBe(
+        200,
+      );
+      expect(sent).toHaveLength(1);
+      const token = new URL(sent[0]!).pathname.split("/").at(-1);
+      const reset = await request(
+        "/reset-password",
+        { token, newPassword: "new-password-2" },
+        "198.51.100.5",
+      );
+      expect(reset.status).toBe(200);
       await client.end();
     });
   });

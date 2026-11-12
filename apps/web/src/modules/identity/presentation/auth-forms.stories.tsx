@@ -21,6 +21,20 @@ export const Signup: Story = {
   render: () => <AuthRouterDecorator initialPath="/signup" />,
 };
 
+export const ForgotPassword: Story = {
+  render: () => <AuthRouterDecorator initialPath="/forgot-password" />,
+};
+
+export const ResetPassword: Story = {
+  render: () => <AuthRouterDecorator initialPath="/reset-password?token=story-token" />,
+};
+
+/** Enlace usado o vencido: error claro y opción de pedir otro. */
+export const ResetPasswordInvalidLink: Story = {
+  name: "Reset password / Invalid link",
+  render: () => <AuthRouterDecorator initialPath="/reset-password?error=INVALID_TOKEN" />,
+};
+
 /** El usuario puede revelar y volver a ocultar la contraseña sin perder su valor. */
 export const LoginPasswordVisibility: Story = {
   name: "Login / Password visibility",

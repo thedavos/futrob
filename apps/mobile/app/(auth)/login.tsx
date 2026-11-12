@@ -104,6 +104,11 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
           />
+          <Button
+            variant="ghost"
+            label={t("forgotPassword")}
+            onPress={() => router.push("/(auth)/forgot-password")}
+          />
         </View>
 
         <View style={{ gap: theme.spacing[6] }}>
