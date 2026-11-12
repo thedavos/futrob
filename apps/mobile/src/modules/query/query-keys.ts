@@ -19,6 +19,18 @@ export const mobileQueryKeys = {
     [...sessionScope(generation), "account-deletion"] as const,
   playerProfile: (generation: SessionGeneration) =>
     [...sessionScope(generation), "player-profile"] as const,
+  workspaceOptions: (generation: SessionGeneration) =>
+    [...sessionScope(generation), "workspace-options"] as const,
+  contextAccess: (
+    generation: SessionGeneration,
+    scope: { readonly organizationId?: string; readonly competitionId?: string },
+  ) =>
+    [
+      ...sessionScope(generation),
+      "context-access",
+      scope.organizationId,
+      scope.competitionId,
+    ] as const,
   destination: (
     generation: SessionGeneration,
     destination: {

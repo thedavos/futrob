@@ -184,7 +184,9 @@ describe("player home on /player", () => {
     expect(section("Último partido").getByText("6 – 0")).toBeInTheDocument();
     expect(screen.getByText(fixtureKickoff)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "English" }));
+    await user.click(screen.getByRole("tab", { name: "Más" }));
+    await user.click(await screen.findByRole("button", { name: "English" }));
+    await user.click(screen.getByRole("tab", { name: "Home" }));
 
     expect(await screen.findByRole("heading", { name: "Invitations" })).toBeInTheDocument();
     expect(section("Invitations").getByText("2 invitations to answer")).toBeInTheDocument();
@@ -193,7 +195,9 @@ describe("player home on /player", () => {
     expect(screen.getByRole("button", { name: "View competition" })).toBeInTheDocument();
     expect(screen.getByText("Your activity with Cuervos FC1")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Español" }));
+    await user.click(screen.getByRole("tab", { name: "More" }));
+    await user.click(await screen.findByRole("button", { name: "Español" }));
+    await user.click(screen.getByRole("tab", { name: "Inicio" }));
 
     expect(await screen.findByRole("heading", { name: "Invitaciones" })).toBeInTheDocument();
     expect(section("Invitaciones").getByText("2 invitaciones por responder")).toBeInTheDocument();
@@ -326,7 +330,7 @@ describe("player home on /player", () => {
 
     await user.click(await screen.findByRole("button", { name: "Liga Futrob, Liga · En curso" }));
 
-    expect(await screen.findByText("fc26 · league · published")).toBeInTheDocument();
+    expect(await screen.findByText("fc26 · league · En curso")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Liga Futrob" })).toBeInTheDocument();
     expect(currentLocation()?.pathname).toBe("/orgs/org-1/competitions/competition-liga");
   });
@@ -339,16 +343,15 @@ describe("player home on /player", () => {
     renderApp("/player?club=club-cuervos");
 
     await waitFor(() =>
-      expect(api.requests.filter((request) => request.path === "/players/me")).toHaveLength(1),
+      expect(api.requests.map((request) => request.path)).toContain("/players/me/next-encounter"),
     );
     cleanupApp();
     await act(async () => late.resolve(apiError(401)));
 
+    // The home and the context selector both read `/players/me`; every held read is cancelled.
     const pending = api.requests.filter((request) => held.includes(request.path));
-    expect(pending.map((request) => [request.path, request.signal?.aborted])).toEqual([
-      ["/players/me", true],
-      ["/players/me/next-encounter", true],
-    ]);
+    expect(new Set(pending.map((request) => request.path))).toEqual(new Set(held));
+    expect(pending.every((request) => request.signal?.aborted)).toBe(true);
     expect(await getSession()).toMatchObject({ token: "session-token" });
   });
 });
