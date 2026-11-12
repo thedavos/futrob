@@ -13,6 +13,9 @@ export const mobileQueryKeys = {
     [...sessionScope(generation), "onboarding-flow", step] as const,
   playerHome: (generation: SessionGeneration, externalClubId: string | undefined) =>
     [...sessionScope(generation), "player-home", externalClubId] as const,
+  /** Team and organization reads (MOB-06): my teams, roster, members, profile, activity. */
+  teamOrganization: (generation: SessionGeneration, ...parts: readonly (string | undefined)[]) =>
+    [...sessionScope(generation), "team-organization", ...parts] as const,
   accountSessions: (generation: SessionGeneration) =>
     [...sessionScope(generation), "account-sessions"] as const,
   accountDeletion: (generation: SessionGeneration) =>

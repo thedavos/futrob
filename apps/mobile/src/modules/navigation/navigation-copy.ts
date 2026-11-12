@@ -1,6 +1,6 @@
 import type { WorkspaceContext, WorkspaceRole } from "@futrob/sdk";
 import type { MobileLanguage } from "@/modules/identity/mobile-copy";
-import type { ContextTabId } from "./nav-registry";
+import type { ContextTabId, MoreDestinationId } from "./nav-registry";
 
 const es = {
   tabs: {
@@ -45,6 +45,13 @@ const es = {
     accountDescription: "Perfil, seguridad y sesiones",
     languageDescription: "Idioma de la app",
     signOut: "Cerrar sesión",
+  },
+  destinations: {
+    teams: ["Mis equipos", "Tus plantillas y tu equipo activo"],
+    activity: ["Actividad", "Invitaciones, selecciones y decisiones recientes"],
+    team: ["Mi equipo", "Plantilla e invitaciones de tu equipo"],
+    members: ["Miembros", "Quién opera la organización e invitaciones"],
+    settings: ["Ajustes", "Nombre y dirección de la organización"],
   },
 } satisfies NavigationCopy;
 
@@ -92,6 +99,13 @@ const en = {
     languageDescription: "App language",
     signOut: "Sign out",
   },
+  destinations: {
+    teams: ["My teams", "Your rosters and your active team"],
+    activity: ["Activity", "Recent invitations, selections and decisions"],
+    team: ["My team", "Your team's roster and invitations"],
+    members: ["Members", "Who runs the organization, and invitations"],
+    settings: ["Settings", "The organization's name and address"],
+  },
 } satisfies NavigationCopy;
 
 type NavigationCopy = {
@@ -112,6 +126,8 @@ type NavigationCopy = {
     "title" | "account" | "accountDescription" | "languageDescription" | "signOut",
     string
   >;
+  /** Title and description of each «Más» destination. */
+  destinations: Record<MoreDestinationId, readonly [title: string, description: string]>;
 };
 
 export function navigationCopy(language: MobileLanguage): NavigationCopy {

@@ -19,6 +19,11 @@ function scopeOf(context: WorkspaceContext) {
  * after a failure: gated navigation stays hidden until the server allows it.
  */
 export function useContextAccess(context: WorkspaceContext): ReadonlySet<string> | undefined {
+  return useContextAccessQuery(context).data;
+}
+
+/** The query behind `useContextAccess`, for screens that tell loading from failure. */
+export function useContextAccessQuery(context: WorkspaceContext) {
   const generation = useSessionGeneration();
   const scope = scopeOf(context);
   const query = useQuery({
@@ -41,5 +46,5 @@ export function useContextAccess(context: WorkspaceContext): ReadonlySet<string>
     enabled: context.kind !== "personal",
     retry: false,
   });
-  return query.data;
+  return query;
 }
