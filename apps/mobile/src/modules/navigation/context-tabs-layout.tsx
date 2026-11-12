@@ -103,7 +103,13 @@ const ContextTabButton = forwardRef<View, ContextTabButtonProps>(function Contex
       <Text
         role="label"
         color={isFocused ? "foreground" : "muted-foreground"}
-        style={{ fontFamily: isFocused ? theme.fontFamily.semibold : theme.fontFamily.medium }}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
+        style={{
+          fontFamily: isFocused ? theme.fontFamily.semibold : theme.fontFamily.medium,
+          paddingHorizontal: theme.spacing[1],
+        }}
       >
         {label}
       </Text>

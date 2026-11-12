@@ -35,8 +35,9 @@ La implementación actual incluye auth, gate de `actor_onboarding`, los tres cam
   (`src/modules/navigation/`): header con el selector de contexto único, la pestaña activa y la
   barra inferior (headless tabs de `expo-router/ui`, 56 dp). Las pestañas de cada contexto
   viven en `nav-registry.ts`, con el mismo permiso `EffectiveAccess` que web; **Más** agrupa
-  cuenta, idioma y cierre de sesión. El detalle y las operaciones son rutas fuera de `(tabs)`
-  que se apilan encima. El modelo del selector (opciones, rutas, club por defecto) vive en
+  los destinos secundarios del contexto (`MORE_DESTINATIONS`), cuenta, idioma y cierre de
+  sesión. El detalle y las operaciones son rutas fuera de `(tabs)` que se apilan encima
+  (`StackFrame`: atrás, título y contenido). El modelo del selector (opciones, rutas, club por defecto) vive en
   `@futrob/sdk` (`buildWorkspaceOptions`, `workspaceContextPath`…).
 - **Onboarding:** `src/modules/identity/onboarding-flow.ts` orquesta el SDK. La API mantiene
   el paso y las consecuencias de negocio; SecureStore conserva el formulario local por usuario.
@@ -75,7 +76,8 @@ apps/mobile/
 │   ├── index.tsx              # gate de sesión, onboarding y destino
 │   ├── (auth)/               # login/signup → gate u onboarding
 │   ├── (onboarding)/         # intención, formularios y revisión
-│   ├── player/(tabs)/        # espacio personal: Inicio + Más
+│   ├── player/(tabs)/        # espacio personal: Inicio, Partidos, Estadísticas, Competiciones, Más
+│   ├── player/…              # detalle de partido, Clubes EA, Cuentas de juego, Explorar
 │   ├── orgs/                 # selector; orgs/[orgId]/(tabs) y …/competitions/[id]/(tabs)
 │   └── invitations/accept/   # enlace de invitación
 ├── assets/                    # generados por scripts/generate-assets.mjs
@@ -85,5 +87,6 @@ apps/mobile/
     ├── ui/                    # primitivas móviles (Button, List, Dialog, Tabs…)
     └── modules/
         ├── identity/          # auth-api, session-store, validación (+tests)
-        └── navigation/        # shell por contexto, selector, pestañas y Más
+        ├── navigation/        # shell por contexto, selector, pestañas y Más
+        └── player-space/      # espacio del jugador (MOB-02); modelos puros en @futrob/sdk
 ```

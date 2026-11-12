@@ -112,6 +112,9 @@ const router = {
     stack = [...stack.slice(0, -1), parseHref(href)];
     emit();
   },
+  canGoBack() {
+    return stack.length > 1;
+  },
   back() {
     stack = stack.slice(0, -1);
     emit();
