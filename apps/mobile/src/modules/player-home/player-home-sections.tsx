@@ -96,12 +96,14 @@ export function Hero({
   clubs,
   onSelect,
   onOpenCompetition,
+  onOpenEncounter,
   ...slot
 }: SlotProps & {
   model: PlayerHomeModel;
   clubs: readonly PlayerExternalClubAssociationDto[];
   onSelect: (externalClubId: string) => void;
   onOpenCompetition: (encounter: NextEncounterDto) => void;
+  onOpenEncounter: (encounter: NextEncounterDto) => void;
 }) {
   const { copy, language } = slot;
   const hero = model.hero;
@@ -136,7 +138,12 @@ export function Hero({
           <Text role="caption" color="muted-foreground" style={{ textAlign: "center" }}>
             {copy.pending}
           </Text>
-          <Button label={copy.viewCompetition} onPress={() => onOpenCompetition(encounter)} />
+          <Button label={copy.viewEncounter} onPress={() => onOpenEncounter(encounter)} />
+          <Button
+            variant="outline"
+            label={copy.viewCompetition}
+            onPress={() => onOpenCompetition(encounter)}
+          />
         </Card>
       );
     }
