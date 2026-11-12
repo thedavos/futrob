@@ -18,6 +18,7 @@ import { LogAuthMail } from "../mail/log-auth-mail.ts";
 import { ResendAuthMail } from "../mail/resend-auth-mail.ts";
 import {
   countOpenPasswordResets,
+  deletePasswordReset,
   deletePasswordResets,
   PASSWORD_RESET_TTL_SECONDS,
   PASSWORD_RESETS_PER_ACCOUNT,
@@ -137,13 +138,24 @@ export function createAuth(input: {
       // link is single use, expires, and the new password ends every session (AUTH-01).
       // Without a mail adapter the endpoint answers RESET_PASSWORD_DISABLED for every email.
       sendResetPassword: mail
-        ? async ({ user, url }) => {
+        ? async ({ user, url, token }) => {
+            // Better Auth stores the token before calling this. Only delivered links may count
+            // toward the cap, so a suppressed or failed send drops its own token again.
+            let sent = false;
             try {
               const open = await countOpenPasswordResets(input.db, user.id, input.clock.now());
-              if (open > PASSWORD_RESETS_PER_ACCOUNT) return;
-              await mail.sendPasswordReset({ to: user.email, name: user.name, url });
+              if (open <= PASSWORD_RESETS_PER_ACCOUNT) {
+                await mail.sendPasswordReset({ to: user.email, name: user.name, url });
+                sent = true;
+              }
             } catch (cause) {
               input.reportDefect(cause instanceof Error ? cause : new Error("auth.mail.failed"));
+            }
+            if (sent) return;
+            try {
+              await deletePasswordReset(input.db, token);
+            } catch (cause) {
+              input.reportDefect(cause instanceof Error ? cause : new Error("auth.reset.cleanup"));
             }
           }
         : undefined,

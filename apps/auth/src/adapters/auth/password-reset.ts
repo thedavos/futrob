@@ -10,7 +10,7 @@ export const PASSWORD_RESETS_PER_ACCOUNT = 3;
 /** Better Auth stores each reset token as `reset-password:<token>` with the user id as value. */
 const RESET_IDENTIFIER = "reset-password:%";
 
-/** Unexpired reset tokens of a user, including the one just issued. */
+/** Unexpired reset tokens of a user, including the one just issued. Unsent tokens are deleted. */
 export async function countOpenPasswordResets(
   db: Pick<AuthDb, "select">,
   userId: string,
@@ -27,6 +27,16 @@ export async function countOpenPasswordResets(
       ),
     );
   return row?.open ?? 0;
+}
+
+/** Drops one token whose link was never delivered, leaving the user's other links valid. */
+export async function deletePasswordReset(
+  db: Pick<AuthDb, "delete">,
+  token: string,
+): Promise<void> {
+  await db
+    .delete(authVerifications)
+    .where(eq(authVerifications.identifier, `reset-password:${token}`));
 }
 
 /** After a reset, older links of the same user stop working too. */
