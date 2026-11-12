@@ -5,6 +5,7 @@ import { logout } from "@/modules/identity/session-lifecycle";
 import { LOGIN_ROUTE } from "@/modules/identity/session-gate";
 import { useMobileCopy } from "@/modules/identity/mobile-copy";
 import { nativeRoute } from "@/modules/identity/native-route";
+import { EmailVerificationNotice } from "@/modules/account/email-verification-notice";
 import { PlayerHomeScreen } from "@/modules/player-home/player-home-screen";
 import { Button, EmptyState, Logo, Screen, Text } from "@/ui";
 import { theme } from "@/theme/theme";
@@ -53,6 +54,7 @@ function NativeDestinationBody({ destination }: { destination: Destination }) {
           label={language === "es" ? "English" : "Español"}
           onPress={toggleLanguage}
         />
+        <EmailVerificationNotice />
         {query.isError ? (
           <EmptyState
             title={label("No pudimos cargar este espacio", "We couldn't load this space")}

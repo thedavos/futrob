@@ -92,3 +92,30 @@ export async function requestAccountEmailChange(newEmail: string): Promise<void>
     body: { newEmail, callbackURL: "/player/profile" },
   });
 }
+
+/** Where every verification link lands: the web page opens in any browser (apps/auth). */
+const EMAIL_VERIFICATION_CALLBACK = "/verify-email";
+
+const emailStatusSchema = z
+  .object({ user: z.object({ email: z.string(), emailVerified: z.boolean() }) })
+  .nullable();
+
+export interface AccountEmailStatus {
+  readonly email: string;
+  readonly verified: boolean;
+}
+
+/** Whether the signed-in account confirmed its email (AUTH-02); `null` when signed out. */
+export async function getAccountEmailStatus(): Promise<AccountEmailStatus | null> {
+  const { payload } = await callAuth("/get-session", { method: "GET" });
+  const parsed = emailStatusSchema.parse(payload);
+  return parsed === null ? null : { email: parsed.user.email, verified: parsed.user.emailVerified };
+}
+
+/** Sends another verification link to the signed-in account's email. */
+export async function resendEmailVerification(email: string): Promise<void> {
+  await callAuth("/send-verification-email", {
+    method: "POST",
+    body: { email, callbackURL: EMAIL_VERIFICATION_CALLBACK },
+  });
+}

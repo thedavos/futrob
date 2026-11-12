@@ -172,3 +172,52 @@ describe("sessions on mobile", () => {
     await waitFor(() => expect(revoked).toEqual([{ token: "web-token" }]));
   });
 });
+
+describe("email verification on mobile", () => {
+  it("reminds an unverified account and sends another link to the web landing page", async () => {
+    const resends: unknown[] = [];
+    accountApi(
+      { deletion: ACTIVE },
+      {
+        "/players/me/profile": () => Response.json({ code: "x", messageKey: "x" }, { status: 503 }),
+        "/api/auth/get-session": () =>
+          Response.json({ user: { email: ANA.user.email, emailVerified: false } }),
+        "/api/auth/send-verification-email": (_url, init) => {
+          resends.push(JSON.parse(String(init?.body)));
+          return Response.json({ status: true });
+        },
+      },
+    );
+    await saveSession(ANA);
+    const user = userEvent.setup();
+    renderApp("/player");
+
+    expect(await screen.findByText(/Te enviamos un enlace a ana@club.mx/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Enviar otro enlace" }));
+
+    expect(
+      await screen.findByText("Te enviamos otro enlace. Vence en 1 hora."),
+    ).toBeInTheDocument();
+    expect(resends).toEqual([{ email: ANA.user.email, callbackURL: "/verify-email" }]);
+  });
+
+  it("shows nothing once the email is verified", async () => {
+    const checked = Promise.withResolvers<void>();
+    accountApi(
+      { deletion: ACTIVE },
+      {
+        "/players/me/profile": () => Response.json({ code: "x", messageKey: "x" }, { status: 503 }),
+        "/api/auth/get-session": () => {
+          checked.resolve();
+          return Response.json({ user: { email: ANA.user.email, emailVerified: true } });
+        },
+      },
+    );
+    await saveSession(ANA);
+    renderApp("/player");
+
+    await checked.promise;
+    expect(await screen.findByRole("button", { name: "English" })).toBeInTheDocument();
+    expect(screen.queryByText("Confirma tu correo")).toBeNull();
+  });
+});

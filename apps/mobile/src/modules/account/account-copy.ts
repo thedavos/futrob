@@ -79,6 +79,14 @@ const es = {
   cancelDeletion: "Cancelar eliminación",
   cancelError: "No pudimos cancelar la eliminación. Vuelve a intentarlo.",
   signOut: "Cerrar sesión",
+  verifyTitle: "Confirma tu correo",
+  verifyBody: (email: string) =>
+    `Te enviamos un enlace a ${email}. Ábrelo para confirmar que este correo es tuyo.`,
+  verifyResend: "Enviar otro enlace",
+  verifySending: "Enviando…",
+  verifySent: "Te enviamos otro enlace. Vence en 1 hora.",
+  verifyRateLimited: "Demasiados intentos. Espera un minuto e intenta de nuevo.",
+  verifyError: "No pudimos enviar el enlace. Intenta de nuevo.",
 };
 
 export type AccountCopy = typeof es;
@@ -157,6 +165,13 @@ const en: AccountCopy = {
   cancelDeletion: "Cancel deletion",
   cancelError: "We could not cancel the deletion. Try again.",
   signOut: "Sign out",
+  verifyTitle: "Confirm your email",
+  verifyBody: (email) => `We sent a link to ${email}. Open it to confirm this email is yours.`,
+  verifyResend: "Send another link",
+  verifySending: "Sending…",
+  verifySent: "We sent another link. It expires in 1 hour.",
+  verifyRateLimited: "Too many attempts. Wait a minute and try again.",
+  verifyError: "We couldn't send the link. Try again.",
 };
 
 export function accountCopy(language: MobileLanguage): AccountCopy {
