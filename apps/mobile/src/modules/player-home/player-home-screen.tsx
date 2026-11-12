@@ -107,6 +107,11 @@ export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
         onOpenCompetition={(encounter) =>
           open(competitionRoute(encounter.competition.organizationId, encounter.competition.id))
         }
+        onOpenEncounter={(encounter) =>
+          open(
+            `${competitionRoute(encounter.competition.organizationId, encounter.competition.id)}/encounters/${encodeURIComponent(encounter.encounterId)}`,
+          )
+        }
         {...slot}
       />
       <Invitations slot={model.invitations} {...slot} />
