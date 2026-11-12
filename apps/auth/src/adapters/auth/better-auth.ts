@@ -15,8 +15,34 @@ import {
 import { syncCredentialUserContact } from "./actor-contact-profile.ts";
 import type { AuthMailPort } from "../mail/auth-mail.port.ts";
 import { LogAuthMail } from "../mail/log-auth-mail.ts";
+import { ResendAuthMail } from "../mail/resend-auth-mail.ts";
+import {
+  countOpenPasswordResets,
+  deletePasswordResets,
+  PASSWORD_RESET_TTL_SECONDS,
+  PASSWORD_RESETS_PER_ACCOUNT,
+} from "./password-reset.ts";
 
 export type { AuthEnv };
+
+/**
+ * Where a reset link lands after the auth worker checks its token: the web page, or the
+ * native app through its `futrob://` scheme. Clients pass one of these as `redirectTo`.
+ */
+export const PASSWORD_RESET_WEB_CALLBACK = "/reset-password";
+export const PASSWORD_RESET_APP_CALLBACK = "futrob://reset-password";
+
+function createMail(env: AuthEnv): AuthMailPort | undefined {
+  switch (env.AUTH_EMAIL?.delivery) {
+    case "log":
+      return new LogAuthMail();
+    case "resend":
+      return new ResendAuthMail({ apiKey: env.AUTH_EMAIL.apiKey, from: env.AUTH_EMAIL.from });
+    case "disabled":
+    case undefined:
+      return undefined;
+  }
+}
 
 export interface ActorContactSync {
   syncCredentialUser(userId: string): Promise<void>;
@@ -79,6 +105,11 @@ export function createAuth(input: {
   readonly actorProvisioner?: ActorProvisionerPort;
   /** Overrides the adapter chosen by `AUTH_EMAIL_DELIVERY`; tests capture links with it. */
   readonly mail?: AuthMailPort;
+  /**
+   * Runs account email after the response (the Worker's `waitUntil`), so asking for a reset
+   * link takes as long whether or not the account exists. Omitted: email is awaited.
+   */
+  readonly runInBackground?: (task: Promise<unknown>) => void;
   readonly reportDefect: (cause: Error) => void;
 }) {
   if (input.env.BETTER_AUTH_SECRET.length < 32) {
@@ -89,20 +120,38 @@ export function createAuth(input: {
     input.actorProvisioner ??
     createPostgresActorProvisioner({ db: input.db, clock: input.clock, ids: input.ids });
 
-  const mail =
-    input.mail ?? (input.env.AUTH_EMAIL_DELIVERY === "log" ? new LogAuthMail() : undefined);
+  const mail = input.mail ?? createMail(input.env);
 
   return betterAuth({
     appName: "Futrob",
     baseURL: input.env.BETTER_AUTH_URL,
     secret: input.env.BETTER_AUTH_SECRET,
-    trustedOrigins: [...input.env.BETTER_AUTH_TRUSTED_ORIGINS],
+    trustedOrigins: [...input.env.BETTER_AUTH_TRUSTED_ORIGINS, PASSWORD_RESET_APP_CALLBACK],
     database: drizzleAdapter(input.db, {
       provider: "pg",
       schema: authSchema,
     }),
     emailAndPassword: {
       enabled: true,
+      // The answer to a reset request is the same whether or not the account exists; the
+      // link is single use, expires, and the new password ends every session (AUTH-01).
+      // Without a mail adapter the endpoint answers RESET_PASSWORD_DISABLED for every email.
+      sendResetPassword: mail
+        ? async ({ user, url }) => {
+            try {
+              const open = await countOpenPasswordResets(input.db, user.id, input.clock.now());
+              if (open > PASSWORD_RESETS_PER_ACCOUNT) return;
+              await mail.sendPasswordReset({ to: user.email, name: user.name, url });
+            } catch (cause) {
+              input.reportDefect(cause instanceof Error ? cause : new Error("auth.mail.failed"));
+            }
+          }
+        : undefined,
+      resetPasswordTokenExpiresIn: PASSWORD_RESET_TTL_SECONDS,
+      revokeSessionsOnPasswordReset: true,
+      onPasswordReset: async ({ user }) => {
+        await deletePasswordResets(input.db, user.id);
+      },
     },
     // Changing email sends a link to the new address; the old one stays valid until it is
     // opened. Without a mail adapter the endpoint answers CHANGE_EMAIL_DISABLED.
@@ -118,8 +167,11 @@ export function createAuth(input: {
     rateLimit: {
       enabled: true,
       storage: "database",
+      // Per IP; the per-account cap lives in `sendResetPassword`.
+      customRules: { "/request-password-reset": { window: 60, max: 3 } },
     },
     advanced: {
+      backgroundTasks: input.runInBackground ? { handler: input.runInBackground } : undefined,
       ipAddress: {
         ipAddressHeaders: ["cf-connecting-ip"],
       },

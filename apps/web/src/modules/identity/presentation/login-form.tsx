@@ -89,6 +89,14 @@ const styles = stylex.create({
     opacity: 1,
     filter: "blur(0)",
   },
+  passwordLabel: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: "1rem",
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+  },
   actions: {
     display: "flex",
     flexDirection: "column",
@@ -221,7 +229,12 @@ export function LoginForm() {
           name="password"
           validate={(value) => validateLoginField("password", readFormString(value))}
         >
-          <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+          <div {...applyStyles(styles.passwordLabel)}>
+            <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+            <Link className={link.className} style={link.style} to="/forgot-password">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           <InputWithIcon
             autoComplete="current-password"
             disabled={isSubmitting}

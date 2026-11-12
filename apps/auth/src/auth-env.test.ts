@@ -68,4 +68,22 @@ describe("buildAuthEnv", () => {
       "BETTER_AUTH_URL",
     );
   });
+
+  it("requires a Resend key and sender when account email goes through Resend", () => {
+    expect(buildAuthEnv(validEnv).AUTH_EMAIL).toEqual({ delivery: "disabled" });
+    expect(() => buildAuthEnv({ ...validEnv, AUTH_EMAIL_DELIVERY: "resend" })).toThrow(
+      "RESEND_API_KEY",
+    );
+    expect(
+      buildAuthEnv({
+        ...validEnv,
+        AUTH_EMAIL_DELIVERY: "resend",
+        RESEND_API_KEY: "re_synthetic",
+        EMAIL_FROM: "Futrob <cuenta@futrob.app>",
+      }).AUTH_EMAIL,
+    ).toEqual({ delivery: "resend", apiKey: "re_synthetic", from: "Futrob <cuenta@futrob.app>" });
+    expect(() => buildAuthEnv({ ...validEnv, AUTH_EMAIL_DELIVERY: "smtp" })).toThrow(
+      "AUTH_EMAIL_DELIVERY",
+    );
+  });
 });

@@ -1,6 +1,6 @@
 # Auth
 
-Auth lets a visitor create a credentials account or sign in, then lands inside the authenticated app (onboarding or a post-auth destination) with a Better Auth cookie. A wrong password stays on `/login` with a safe error.
+Auth lets a visitor create a credentials account, sign in or reset a forgotten password, then lands inside the authenticated app (onboarding or a post-auth destination) with a Better Auth cookie. A wrong password stays on `/login` with a safe error.
 
 ## Sub-features
 
@@ -11,6 +11,8 @@ Auth lets a visitor create a credentials account or sign in, then lands inside t
 - `auth-signup-destination` sends a new account to `/onboarding` without consulting prior memberships.
 - `auth-gate` sends an anonymous visit to `/login` when opening an `_app` route such as `/player`.
 - `auth-cross-link` moves between `/login` and `/signup` via `Crear una cuenta` and `Iniciar sesión`.
+- `auth-forgot-password` asks for a reset link at `/forgot-password`; the confirmation is identical for known and unknown emails.
+- `auth-reset-password` sets a new password at `/reset-password?token=…`; a used or expired link shows `Este enlace ya no sirve` and `Pedir otro enlace`.
 
 ## How to get to it (user POV)
 
@@ -18,6 +20,7 @@ Auth lets a visitor create a credentials account or sign in, then lands inside t
 - Open `/signup` or choose `Crear cuenta` on the landing header or hero.
 - Open `/player` (or another `_app` route) with no session; the gate redirects to `/login`.
 - After signup, the product sends the actor to onboarding.
+- On `/login`, choose `¿Olvidaste tu contraseña?` next to the `Contraseña` label; the reset email link lands on `/reset-password`.
 
 ## Driving it with verify-futrob
 
@@ -33,6 +36,9 @@ Preconditions:
 - **Signup consent.** On `/signup`, links named `Términos de servicio` (`/terms`) and `Política de privacidad` (`/privacy`) appear before the submit button `Crear cuenta`.
 - **Signup.** On `/signup`, fill the textbox named `Nombre completo` with `Verify Player`, `Correo electrónico` with the disposable address, and `Contraseña` with a value that meets the visible hint (`Mínimo 8 caracteres, incluyendo letras y números.`). Choose `Crear cuenta`. After success the URL is `/onboarding` (or `/onboarding/intention`). The heading `¿Qué quieres hacer primero?` appears. The actor must not land on `/orgs` or `/player` yet.
 - **Login existing.** Sign out if a session remains (`Cerrar sesión` in the account menu after onboarding; otherwise reload `/login` in a fresh profile). Sign in with the disposable credentials. Destination follows `actor_onboarding`: incomplete → `/onboarding`; complete without memberships → `/player`.
+- **Forgot password.** Requires `AUTH_EMAIL_DELIVERY=log` in `apps/auth/.dev.vars`. On `/login`, choose `¿Olvidaste tu contraseña?`. The URL is `/forgot-password`, heading `Recupera tu contraseña`. Fill `Correo electrónico` with the disposable account and choose `Enviar enlace`: the alert `Revisa tu correo` appears. Repeat with `nobody-verify@example.test`: the same alert appears (no enumeration). The auth worker log has one `auth.mail.password_reset` line, for the existing account only.
+- **Reset password.** Open the `url` from that log line. It redirects to `/reset-password?token=…`, heading `Elige una contraseña nueva`. Fill `Contraseña nueva` and `Repetir contraseña`, choose `Guardar contraseña`: the alert `Contraseña actualizada` appears. Signing in with the old password is rejected; the new one works, and any session opened before the reset is gone.
+- **Dead link.** Open the same log `url` again. It lands on `/reset-password?error=INVALID_TOKEN` with `Este enlace ya no sirve` and the link `Pedir otro enlace` (`/forgot-password`).
 - **Proof.** Screenshot + ARIA of the login reject alert, and of the post-signup onboarding heading. Record the disposable email in `NOTES.md` (not the password).
 
 ## Gotchas
@@ -44,5 +50,6 @@ Preconditions:
 - Auth textboxes are labelled (`Correo electrónico`, `Contraseña`, `Nombre completo`). Placeholders (`ejemplo@correo.com`, `Ingresa tu contraseña`, `Crea una contraseña`) are hints, not the accessible name. Target the FieldLabel.
 - Signup password policy is 8+ characters **and** at least one letter and one number. `12345678` fails client validation.
 - Do not put the password, session cookie, or Better Auth token in evidence files.
-- Password-reset is not a shipped entry in this map. Do not invent it.
+- Never record the reset `url` or its token in evidence: it is a credential until used. Redact it in logs you keep.
+- More than 3 reset requests per minute from one IP answer 429 (`Demasiados intentos…`); an account receives at most 3 live links.
 - Mobile `/login` is a different surface. This feature is web only.

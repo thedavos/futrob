@@ -8,17 +8,27 @@ export interface AuthWorkerEnv {
   readonly NODE_ENV?: string;
   readonly SENTRY_DSN?: string;
   readonly SENTRY_ENVIRONMENT?: string;
-  /** `log` writes account emails to the log (development). Unset: email change is disabled. */
+  /**
+   * `resend` sends account emails through Resend (ADR-0031), `log` writes them to the log
+   * (development). Unset: email change and password reset are disabled.
+   */
   readonly AUTH_EMAIL_DELIVERY?: string;
+  /** Resend API key; required with `AUTH_EMAIL_DELIVERY=resend`. A Wrangler secret. */
+  readonly RESEND_API_KEY?: string;
+  /** Sender on the verified domain, such as `Futrob <cuenta@futrob.app>`. */
+  readonly EMAIL_FROM?: string;
 }
 
-export type AuthEmailDelivery = "log" | "disabled";
+export type AuthEmail =
+  | { readonly delivery: "log" | "disabled" }
+  | { readonly delivery: "resend"; readonly apiKey: string; readonly from: string };
 
 export interface AuthEnv {
   readonly BETTER_AUTH_SECRET: string;
   readonly BETTER_AUTH_URL: string;
   readonly BETTER_AUTH_TRUSTED_ORIGINS: readonly string[];
-  readonly AUTH_EMAIL_DELIVERY: AuthEmailDelivery;
+  /** How account emails leave the worker; absent means disabled. */
+  readonly AUTH_EMAIL?: AuthEmail;
 }
 
 const MINIMUM_SECRET_LENGTH = 32;
@@ -70,14 +80,25 @@ export function buildAuthEnv(env: AuthWorkerEnv): AuthEnv {
   }
 
   const delivery = env.AUTH_EMAIL_DELIVERY?.trim() || "disabled";
-  if (delivery !== "log" && delivery !== "disabled") {
-    throw new Error("AUTH_EMAIL_DELIVERY must be `log` or unset");
+  if (delivery !== "log" && delivery !== "resend" && delivery !== "disabled") {
+    throw new Error("AUTH_EMAIL_DELIVERY must be `resend`, `log` or unset");
+  }
+  let email: AuthEmail;
+  if (delivery === "resend") {
+    const apiKey = env.RESEND_API_KEY?.trim();
+    const from = env.EMAIL_FROM?.trim();
+    if (!apiKey || !from) {
+      throw new Error("AUTH_EMAIL_DELIVERY=resend requires RESEND_API_KEY and EMAIL_FROM");
+    }
+    email = { delivery, apiKey, from };
+  } else {
+    email = { delivery };
   }
 
   return {
     BETTER_AUTH_SECRET: secret,
     BETTER_AUTH_URL: authOrigin,
     BETTER_AUTH_TRUSTED_ORIGINS: trustedOrigins,
-    AUTH_EMAIL_DELIVERY: delivery,
+    AUTH_EMAIL: email,
   };
 }

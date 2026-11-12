@@ -68,6 +68,8 @@ const worker = {
     }
 
     let connection: Awaited<ReturnType<typeof connectAuthDatabase>> | undefined;
+    // Account email runs after the response and still needs the connection.
+    const background: Promise<unknown>[] = [];
     try {
       connection = await connectAuthDatabase(env.HYPERDRIVE.connectionString);
       const clock = new SystemClock();
@@ -77,6 +79,9 @@ const worker = {
         env: authEnv,
         clock,
         ids,
+        runInBackground: (task) => {
+          background.push(task);
+        },
         reportDefect: (cause) => {
           console.error(JSON.stringify({ event: "auth.endpoint.failed" }));
           captureWorkerError(cause);
@@ -92,7 +97,8 @@ const worker = {
       );
     } finally {
       if (connection) {
-        ctx.waitUntil(connection.close());
+        const open = connection;
+        ctx.waitUntil(Promise.allSettled(background).then(() => open.close()));
       }
     }
   },
