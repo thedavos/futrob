@@ -11,7 +11,8 @@ import type {
 } from "@futrob/api-contracts";
 import { FutrobApiError } from "@futrob/sdk";
 import { getFutrobClient } from "@/modules/api/futrob-client";
-import { onProductUnauthorized } from "@/modules/identity/session-lifecycle";
+import { onProductUnauthorizedFor } from "@/modules/identity/session-lifecycle";
+import { getSession } from "@/modules/identity/session-store";
 import { mobileQueryKeys } from "@/modules/query/query-keys";
 import { useSessionGeneration } from "@/modules/query/session-query-client-provider";
 
@@ -68,11 +69,13 @@ const isRefusal = (error: Error | null) =>
   error instanceof FutrobApiError && [401, 403, 404].includes(error.status);
 
 async function read<Result>(load: () => Promise<Result>): Promise<Result> {
+  // A 401 ends only the session that sent the request, never one signed in since.
+  const token = (await getSession())?.token;
   try {
     return await load();
   } catch (error) {
-    if (error instanceof FutrobApiError && error.status === 401) {
-      await onProductUnauthorized(() => undefined);
+    if (error instanceof FutrobApiError && error.status === 401 && token) {
+      await onProductUnauthorizedFor(token, () => undefined);
     }
     throw error;
   }
@@ -148,9 +151,13 @@ export function useEncounterScheduleChanges({
         kind: "ready",
         requests: listQuery.data.requests,
         creation: listQuery.data.creation,
-        refreshing: listQuery.isFetching,
-        refreshFailed: listQuery.isRefetchError,
-        refresh: () => void listQuery.refetch(),
+        refreshing: listQuery.isFetching || viewQuery.isFetching,
+        refreshFailed: listQuery.isRefetchError || viewQuery.isRefetchError,
+        // The header and the answer dialogs read the Encounter's schedule, so it rereads too.
+        refresh: () => {
+          void viewQuery.refetch();
+          void listQuery.refetch();
+        },
         commands: {
           create: (body) => run(() => api.createScheduleChangeRequest(encounterId, body)),
           accept: (target, body) =>

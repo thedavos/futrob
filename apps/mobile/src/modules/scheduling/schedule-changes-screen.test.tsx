@@ -342,6 +342,26 @@ describe("rescheduling on the Encounter route", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
+  it("rereads the Encounter with the history so the header shows the new schedule", async () => {
+    const harness = encounterApi({ requests: [openRequest()], creation: NO_CREATION }, {});
+    const user = userEvent.setup();
+    renderApp(ROUTE);
+
+    expect(await screen.findByText("Horario actual: 4 dic 2026, 20:00")).toBeInTheDocument();
+
+    // Another captain's acceptance moved the Encounter while this screen was open.
+    const moved = "2026-12-06T01:00:00.000Z";
+    harness.api.routes["/organizations/org-1/encounters/encounter-1"] = json({
+      ...view,
+      scheduledStartAt: moved,
+      officialMatches: [{ officialSlot: 1, scheduledStartAt: moved }],
+    });
+    harness.state.list = { requests: [], creation: NO_CREATION };
+    await user.click(await screen.findByRole("button", { name: "Actualizar reprogramaciones" }));
+
+    expect(await screen.findByText("Horario actual: 5 dic 2026, 20:00")).toBeInTheDocument();
+  });
+
   it("does not show an Encounter from another competition", async () => {
     encounterApi({ requests: [], creation: NO_CREATION }, {});
     renderApp("/orgs/org-1/competitions/other-competition/encounters/encounter-1");
