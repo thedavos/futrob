@@ -2,6 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { clearSession, getSession, saveSession } from "@/modules/identity/session-store";
+import { createMobileQueryClient } from "@/modules/query/create-query-client";
 import { installFakeApi, type FakeRoute } from "../../../test/fake-api";
 import { currentLocation } from "../../../test/expo-router";
 import { cleanupApp, renderApp } from "../../../test/render-app";
@@ -63,6 +64,51 @@ function accountApi(state: { deletion: unknown }, extra: Record<string, FakeRout
   return { ...api, signOuts };
 }
 
+describe("account navigation on mobile", () => {
+  it("leaves a directly opened account menu through the destination gate", async () => {
+    accountApi({ deletion: ACTIVE });
+    await saveSession(ANA);
+    const user = userEvent.setup();
+    renderApp("/account");
+
+    await screen.findByRole("heading", { name: "Cuenta" });
+    await user.click(screen.getByRole("button", { name: "Volver" }));
+
+    await waitFor(() => expect(currentLocation()?.pathname).toBe("/player"));
+  });
+
+  it.each([
+    ["/account/security", "Seguridad"],
+    ["/account/sessions", "Sesiones"],
+    ["/account/delete", "Eliminar cuenta"],
+  ])("returns from directly opened %s to the account menu", async (route, title) => {
+    accountApi({ deletion: ACTIVE }, { "/api/auth/list-sessions": () => Response.json([]) });
+    await saveSession(ANA);
+    const user = userEvent.setup();
+    renderApp(route);
+
+    await screen.findByRole("heading", { name: title });
+    await user.click(screen.getByRole("button", { name: "Volver" }));
+
+    expect(await screen.findByRole("heading", { name: "Cuenta" })).toBeInTheDocument();
+    expect(currentLocation()?.pathname).toBe("/account");
+  });
+
+  it("returns to the previous account screen when history is available", async () => {
+    accountApi({ deletion: ACTIVE });
+    await saveSession(ANA);
+    const user = userEvent.setup();
+    renderApp("/account");
+
+    await user.click(await screen.findByRole("button", { name: "Seguridad" }));
+    await screen.findByRole("heading", { name: "Seguridad" });
+    await user.click(screen.getByRole("button", { name: "Volver" }));
+
+    expect(await screen.findByRole("heading", { name: "Cuenta" })).toBeInTheDocument();
+    expect(currentLocation()?.pathname).toBe("/account");
+  });
+});
+
 describe("account deletion on mobile", () => {
   it("keeps the account on a wrong password, then schedules it and returns to sign-in", async () => {
     const state = { deletion: ACTIVE as unknown };
@@ -108,6 +154,24 @@ describe("account deletion on mobile", () => {
 
     expect(await screen.findByText(/capitán de Halcones en Apertura/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Eliminar mi cuenta" })).toBeNull();
+  });
+
+  it("can request deletion again immediately after cancelling with a fresh cached status", async () => {
+    const state = { deletion: SCHEDULED as unknown };
+    accountApi(state);
+    await saveSession(ANA);
+    const user = userEvent.setup();
+    const queryClient = createMobileQueryClient();
+    renderApp("/account/deletion-scheduled", { queryClient });
+
+    await screen.findByText("Tu cuenta se eliminará el 10 de diciembre de 2026");
+    await user.click(screen.getByRole("button", { name: "Cancelar eliminación" }));
+    await user.click(await screen.findByRole("button", { name: "Cuenta" }));
+    await user.click(await screen.findByRole("button", { name: "Eliminar cuenta" }));
+
+    expect(await screen.findByLabelText("Contraseña")).toBeInTheDocument();
+    expect(screen.queryByText("Tu cuenta se eliminará el 10 de diciembre de 2026")).toBeNull();
+    queryClient.clear();
   });
 
   it("signs in to the grace screen only, and cancelling restores the app", async () => {
