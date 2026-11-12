@@ -46,3 +46,4 @@ export type { TeamsResource } from "./resources/teams.ts";
 export type { TeamExternalClubsResource } from "./resources/external-clubs.ts";
 export * from "./account/index.ts";
 export * from "./workspace/index.ts";
+export * from "./match-center/index.ts";

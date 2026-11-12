@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { useMobileCopy } from "@/modules/identity/mobile-copy";
@@ -10,9 +11,9 @@ import { navigationCopy } from "./navigation-copy";
 
 /**
  * «Más»: secondary destinations and account actions, the same in every context. Context
- * destinations that do not earn a tab are listed here as they are built.
+ * destinations that do not earn a tab are listed here as they are built (`destinations`).
  */
-export function MoreScreen() {
+export function MoreScreen({ destinations }: { readonly destinations?: ReactNode } = {}) {
   const router = useRouter();
   const { language, t, toggleLanguage } = useMobileCopy();
   const copy = navigationCopy(language);
@@ -23,6 +24,7 @@ export function MoreScreen() {
         <Text role="heading" accessibilityRole="header">
           {copy.more.title}
         </Text>
+        {destinations}
         <List>
           <ListItem
             title={copy.more.account}

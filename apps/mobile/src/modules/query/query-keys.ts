@@ -13,6 +13,52 @@ export const mobileQueryKeys = {
     [...sessionScope(generation), "onboarding-flow", step] as const,
   playerHome: (generation: SessionGeneration, externalClubId: string | undefined) =>
     [...sessionScope(generation), "player-home", externalClubId] as const,
+  /** Every club's home, for invalidation after a command changes the next Encounter. */
+  playerHomes: (generation: SessionGeneration) =>
+    [...sessionScope(generation), "player-home"] as const,
+  /** Every Encounter read of the session, refreshed together after a selection command. */
+  encounters: (generation: SessionGeneration) =>
+    [...sessionScope(generation), "encounters"] as const,
+  encounterView: (generation: SessionGeneration, organizationId: string, encounterId: string) =>
+    [...sessionScope(generation), "encounters", "view", organizationId, encounterId] as const,
+  encounterCandidates: (generation: SessionGeneration, encounterId: string) =>
+    [...sessionScope(generation), "encounters", "candidates", encounterId] as const,
+  /** Representation and approval capabilities scoped to one Encounter (and Team). */
+  encounterAccess: (
+    generation: SessionGeneration,
+    encounterId: string,
+    teamId: string | null,
+    permission: string,
+  ) =>
+    [...sessionScope(generation), "encounters", "access", encounterId, teamId, permission] as const,
+  teamSelection: (
+    generation: SessionGeneration,
+    organizationId: string,
+    encounterId: string,
+    actingTeamId: string,
+  ) =>
+    [
+      ...sessionScope(generation),
+      "encounters",
+      "team-selection",
+      organizationId,
+      encounterId,
+      actingTeamId,
+    ] as const,
+  operatorSelection: (generation: SessionGeneration, organizationId: string, encounterId: string) =>
+    [
+      ...sessionScope(generation),
+      "encounters",
+      "operator-selection",
+      organizationId,
+      encounterId,
+    ] as const,
+  competitionDisputes: (
+    generation: SessionGeneration,
+    organizationId: string,
+    competitionId: string,
+  ) =>
+    [...sessionScope(generation), "encounters", "disputes", organizationId, competitionId] as const,
   accountSessions: (generation: SessionGeneration) =>
     [...sessionScope(generation), "account-sessions"] as const,
   accountDeletion: (generation: SessionGeneration) =>

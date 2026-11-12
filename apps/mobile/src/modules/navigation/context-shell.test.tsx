@@ -138,6 +138,24 @@ describe("context shell", () => {
     expect(screen.queryByRole("tab", { name: "Inicio" })).toBeNull();
   });
 
+  it("lists «Disputas» in a competition's «Más» only for actors who approve results", async () => {
+    shellApi({ allowed: [MOBILE_PERMISSION.encountersResultsApprove] });
+    const user = userEvent.setup();
+    renderApp("/orgs/org-1/competitions/competition-liga/more");
+
+    await user.click(await screen.findByRole("button", { name: "Disputas" }));
+    expect(currentLocation()?.pathname).toBe("/orgs/org-1/competitions/competition-liga/disputes");
+  });
+
+  it("hides «Disputas» from a competition's «Más» without approval", async () => {
+    shellApi({ allowed: [MOBILE_PERMISSION.competitionsRead] });
+    renderApp("/orgs/org-1/competitions/competition-liga/more");
+
+    expect(await screen.findByRole("button", { name: "Cuenta" })).toBeInTheDocument();
+    await screen.findByRole("button", { name: "Cambiar de contexto. Actual: Liga Futrob" });
+    expect(screen.queryByRole("button", { name: "Disputas" })).toBeNull();
+  });
+
   it("shows a recoverable error when the spaces fail to load, then the spaces on retry", async () => {
     const api = shellApi({ allowed: [MOBILE_PERMISSION.organizationsRead] });
     const served = api.routes["/organizations/mine"]!;
