@@ -1,0 +1,42 @@
+{
+  "cli": {
+    "version": ">=16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "node": "24.22.1",
+      "distribution": "internal",
+      "environment": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {
+      "node": "24.22.1",
+      "distribution": "store",
+      "environment": "production",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_FUTROB_API_BASE_URL": "https://futrob.app",
+        "EXPO_PUBLIC_FUTROB_AUTH_BASE_URL": "https://futrob.app",
+        "EXPO_PUBLIC_SENTRY_ENVIRONMENT": "production"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      },
+      "ios": {}
+    }
+  }
+}

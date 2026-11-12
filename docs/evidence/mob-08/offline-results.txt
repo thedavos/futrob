@@ -1,0 +1,12 @@
+iOS icon RGB bytes match main. Removed alpha without a visual change.
+icon.png: 1024x1024, alpha=false
+store-icon.png: 512x512, alpha=false
+adaptive-icon.png: 1024x1024, alpha=true
+Offline iOS entitlement: applinks:futrob.app
+Offline Android manifest: autoVerify HTTPS futrob.app, invitation prefixes only.
+Both claimed invitation prefixes have existing Expo Router routes.
+Apple template paths match the Android invitation prefixes. Owner signing IDs are still required.
+App Store es-ES: name=6, subtitle=22, description=391, keywords=47 characters
+App Store en-US: name=6, subtitle=19, description=347, keywords=51 characters
+Play es-ES: title=6, shortDescription=57, fullDescription=391 characters
+Play en-US: title=6, shortDescription=58, fullDescription=347 characters

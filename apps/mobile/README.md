@@ -74,3 +74,10 @@ apps/mobile/
     ├── ui/                    # primitivas móviles (Button, Input, Text…)
     └── modules/identity/      # auth-api, session-store, validación (+tests)
 ```
+
+## Publicación
+
+[Preparar la publicación](release/README.md) documenta los perfiles EAS Build y Submit,
+los enlaces universales de invitación, los iconos y las fichas ES/EN de ambas tiendas.
+La configuración queda en el repositorio; los identificadores de firma, la asociación
+del dominio, las builds, la verificación nativa y la publicación requieren pasos del dueño.
