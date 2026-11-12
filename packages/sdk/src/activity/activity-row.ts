@@ -146,8 +146,8 @@ function about(entry: ActivityEntryDto): string | null {
 }
 
 function subtitle(entry: ActivityEntryDto): string | null {
-  const parts = [about(entry), entry.subject.competitionName].filter(
-    (part): part is string => Boolean(part),
+  const parts = [about(entry), entry.subject.competitionName].filter((part): part is string =>
+    Boolean(part),
   );
   return parts.length > 0 ? parts.join(" · ") : null;
 }
@@ -179,9 +179,22 @@ export function activityRow(entry: ActivityEntryDto, now: Date): ActivityRow {
   };
 }
 
-/** Compact relative time for rows: «hace 3 h», «ayer». */
+/**
+ * Compact relative time for rows: «hace 3 h», «ayer». Runtimes without
+ * `Intl.RelativeTimeFormat` (Hermes on React Native) get the time today, else the date.
+ */
 export function formatActivityTime(at: string, locale: string, now: Date): string {
-  const seconds = Math.round((new Date(at).getTime() - now.getTime()) / 1000);
+  const date = new Date(at);
+  const seconds = Math.round((date.getTime() - now.getTime()) / 1000);
+  // SAFETY: the lib types declare RelativeTimeFormat everywhere, but Hermes (React Native)
+  // ships Intl without it; widening to `undefined` only makes that real absence checkable.
+  if ((Intl.RelativeTimeFormat as typeof Intl.RelativeTimeFormat | undefined) === undefined) {
+    const sameDay = date.toDateString() === now.toDateString();
+    return new Intl.DateTimeFormat(
+      locale,
+      sameDay ? { hour: "2-digit", minute: "2-digit" } : { day: "numeric", month: "short" },
+    ).format(date);
+  }
   const format = new Intl.RelativeTimeFormat(locale, { numeric: "auto", style: "short" });
   if (Math.abs(seconds) < 60) return format.format(0, "minute");
   const minutes = Math.round(seconds / 60);
