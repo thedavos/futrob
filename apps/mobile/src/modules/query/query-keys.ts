@@ -13,6 +13,16 @@ export const mobileQueryKeys = {
     [...sessionScope(generation), "onboarding-flow", step] as const,
   playerHome: (generation: SessionGeneration, externalClubId: string | undefined) =>
     [...sessionScope(generation), "player-home", externalClubId] as const,
+  /** Every club's home, for invalidation after the next Encounter may have moved. */
+  playerHomes: (generation: SessionGeneration) =>
+    [...sessionScope(generation), "player-home"] as const,
+  /** Every Encounter read of the session: views and their schedule change requests. */
+  encounters: (generation: SessionGeneration) =>
+    [...sessionScope(generation), "encounters"] as const,
+  encounterView: (generation: SessionGeneration, organizationId: string, encounterId: string) =>
+    [...sessionScope(generation), "encounters", "view", organizationId, encounterId] as const,
+  scheduleChanges: (generation: SessionGeneration, encounterId: string) =>
+    [...sessionScope(generation), "encounters", "schedule-changes", encounterId] as const,
   accountSessions: (generation: SessionGeneration) =>
     [...sessionScope(generation), "account-sessions"] as const,
   accountDeletion: (generation: SessionGeneration) =>

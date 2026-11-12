@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { FutrobApiError } from "@futrob/sdk";
-import { handleProductError, logout } from "./session-lifecycle.ts";
+import { handleProductError, logout, onProductUnauthorizedFor } from "./session-lifecycle.ts";
 import {
   getSession,
   resetSessionCredentialStore,
@@ -53,6 +53,32 @@ describe("session lifecycle", () => {
     await expect(getSession()).resolves.toBeNull();
     expect(destinations).toEqual(["/(auth)/login"]);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("a late 401 for an earlier session keeps the session signed in since", async () => {
+    await saveSession({
+      token: "bearer-token-b",
+      user: { id: "user-2", name: "Bea", email: "bea@club.mx" },
+    });
+    const destinations: string[] = [];
+
+    await onProductUnauthorizedFor("bearer-token-a", () => destinations.push("/(auth)/login"));
+
+    await expect(getSession()).resolves.toMatchObject({ token: "bearer-token-b" });
+    expect(destinations).toEqual([]);
+  });
+
+  it("a 401 for the current session clears it and shows login", async () => {
+    await saveSession({
+      token: "bearer-token-a",
+      user: { id: "user-1", name: "Ana", email: "ana@club.mx" },
+    });
+    const destinations: string[] = [];
+
+    await onProductUnauthorizedFor("bearer-token-a", () => destinations.push("/(auth)/login"));
+
+    await expect(getSession()).resolves.toBeNull();
+    expect(destinations).toEqual(["/(auth)/login"]);
   });
 
   it("logout calls remote sign-out then clears SecureStore", async () => {
