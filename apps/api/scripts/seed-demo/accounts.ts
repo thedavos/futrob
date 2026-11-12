@@ -69,8 +69,8 @@ export async function createDemoAccount(
       [CREDENTIAL_IDENTITY_PROVIDER, userId, actorId, createdAt],
     );
     await client.query(
-      `INSERT INTO actor_contact_profiles (actor_id, display_name, email, updated_at)
-       VALUES ($1, $2, $3, $4)`,
+      `INSERT INTO actor_contact_profiles (actor_id, display_name, email, email_verified, updated_at)
+       VALUES ($1, $2, $3, true, $4)`,
       [actorId, input.name, email, createdAt],
     );
     await client.query("COMMIT");

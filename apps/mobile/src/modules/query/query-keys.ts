@@ -17,6 +17,8 @@ export const mobileQueryKeys = {
     [...sessionScope(generation), "account-sessions"] as const,
   accountDeletion: (generation: SessionGeneration) =>
     [...sessionScope(generation), "account-deletion"] as const,
+  emailVerification: (generation: SessionGeneration) =>
+    [...sessionScope(generation), "email-verification"] as const,
   playerProfile: (generation: SessionGeneration) =>
     [...sessionScope(generation), "player-profile"] as const,
   destination: (

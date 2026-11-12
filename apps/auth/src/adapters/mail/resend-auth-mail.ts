@@ -19,6 +19,15 @@ const PASSWORD_RESET: LinkCopy = {
   action: "Elegir una contraseña nueva",
 };
 
+const EMAIL_VERIFICATION: LinkCopy = {
+  subject: "Confirma tu correo en Futrob",
+  body: [
+    "Gracias por crear tu cuenta. Confirma que este correo es tuyo para que Futrob sepa a quién escribirle.",
+    "El enlace vence en 1 hora y solo funciona una vez. Si no creaste una cuenta en Futrob, ignora este correo.",
+  ],
+  action: "Confirmar correo",
+};
+
 const EMAIL_CHANGE: LinkCopy = {
   subject: "Confirma tu nuevo correo en Futrob",
   body: [
@@ -44,6 +53,10 @@ export class ResendAuthMail implements AuthMailPort {
 
   async sendEmailChangeVerification(input: AuthLinkEmail): Promise<void> {
     await this.send(input, EMAIL_CHANGE);
+  }
+
+  async sendEmailVerification(input: AuthLinkEmail): Promise<void> {
+    await this.send(input, EMAIL_VERIFICATION);
   }
 
   async sendPasswordReset(input: AuthLinkEmail): Promise<void> {

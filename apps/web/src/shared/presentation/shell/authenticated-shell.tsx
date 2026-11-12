@@ -44,6 +44,7 @@ import {
 import { workspaceRoleMessageKey } from "@/shared/presentation/shell/workspace-role-icons.ts";
 import { ShellCommandButtons } from "@/shared/presentation/shell/shell-command-buttons.tsx";
 import { DesktopSidebar, MobileNav } from "@/shared/presentation/shell/shell-sidebar-nav.tsx";
+import { EmailVerificationNotice } from "@/modules/identity/presentation/email-verification.tsx";
 
 const styles = stylex.create({
   skipLink: {
@@ -183,6 +184,7 @@ function AuthenticatedShellFrame({ children }: { readonly children: ReactNode })
               workspace={workspace}
               workspaceRoleLabel={workspaceRoleLabel}
             />
+            <EmailVerificationNotice />
             <div id="app-main" {...applyStyles(styles.main)}>
               {children}
             </div>

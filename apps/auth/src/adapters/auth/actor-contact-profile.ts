@@ -10,6 +10,7 @@ export async function upsertActorContactProfile(
     readonly actorId: ActorId;
     readonly displayName: string;
     readonly email: string;
+    readonly emailVerified: boolean;
     readonly updatedAt: Date;
   },
 ): Promise<void> {
@@ -19,6 +20,7 @@ export async function upsertActorContactProfile(
       actorId: input.actorId,
       displayName: input.displayName,
       email: input.email,
+      emailVerified: input.emailVerified,
       updatedAt: input.updatedAt,
     })
     .onConflictDoUpdate({
@@ -26,6 +28,7 @@ export async function upsertActorContactProfile(
       set: {
         displayName: input.displayName,
         email: input.email,
+        emailVerified: input.emailVerified,
         updatedAt: input.updatedAt,
       },
       // A sync that read an older auth_users row must not overwrite a newer projection.
@@ -43,6 +46,7 @@ export async function syncCredentialUserContact(
     .select({
       name: authUsers.name,
       email: authUsers.email,
+      emailVerified: authUsers.emailVerified,
       updatedAt: authUsers.updatedAt,
     })
     .from(authUsers)
@@ -54,6 +58,7 @@ export async function syncCredentialUserContact(
     actorId,
     displayName: user.name,
     email: user.email,
+    emailVerified: user.emailVerified,
     updatedAt: user.updatedAt,
   });
 }
