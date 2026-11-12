@@ -14,14 +14,35 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.futrob.app"
+      "bundleIdentifier": "com.futrob.app",
+      "associatedDomains": ["applinks:futrob.app"]
     },
     "android": {
       "package": "com.futrob.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#101214"
-      }
+        "backgroundColor": "#101214",
+        "monochromeImage": "./assets/adaptive-icon.png"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "futrob.app",
+              "pathPrefix": "/invitations/accept/"
+            },
+            {
+              "scheme": "https",
+              "host": "futrob.app",
+              "pathPrefix": "/roster-invitations/accept/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "plugins": [
       "expo-router",

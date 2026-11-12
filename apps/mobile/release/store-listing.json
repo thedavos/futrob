@@ -1,0 +1,43 @@
+{
+  "appStore": {
+    "primaryCategory": "SPORTS",
+    "locales": {
+      "es-ES": {
+        "name": "Futrob",
+        "subtitle": "Tu espacio de FC Clubs",
+        "description": "Futrob conecta a jugadores y organizadores de competiciones de FC Clubs.\n\nAccede a tu espacio personal, consulta tu actividad y acepta invitaciones de competición o plantilla. Gestiona el idioma, la seguridad y las sesiones de tu cuenta. También puedes solicitar la eliminación de tu cuenta desde la app.\n\nDisponible en español e inglés. Necesitas una cuenta de Futrob y conexión a internet.",
+        "keywords": "FC Clubs,fútbol,equipos,competiciones,jugadores",
+        "supportUrl": "https://futrob.app",
+        "marketingUrl": "https://futrob.app",
+        "privacyPolicyUrl": "https://futrob.app/privacy"
+      },
+      "en-US": {
+        "name": "Futrob",
+        "subtitle": "Your FC Clubs space",
+        "description": "Futrob connects players and competition organizers in FC Clubs.\n\nOpen your personal space, view your activity and accept competition or roster invitations. Manage your account language, security and sessions. You can also request account deletion in the app.\n\nAvailable in Spanish and English. Requires a Futrob account and an internet connection.",
+        "keywords": "FC Clubs,football,soccer,teams,competitions,players",
+        "supportUrl": "https://futrob.app",
+        "marketingUrl": "https://futrob.app",
+        "privacyPolicyUrl": "https://futrob.app/privacy"
+      }
+    }
+  },
+  "googlePlay": {
+    "category": "SPORTS",
+    "defaultLanguage": "es-ES",
+    "locales": {
+      "es-ES": {
+        "title": "Futrob",
+        "shortDescription": "Tu espacio personal, invitaciones y cuenta para FC Clubs.",
+        "fullDescription": "Futrob conecta a jugadores y organizadores de competiciones de FC Clubs.\n\nAccede a tu espacio personal, consulta tu actividad y acepta invitaciones de competición o plantilla. Gestiona el idioma, la seguridad y las sesiones de tu cuenta. También puedes solicitar la eliminación de tu cuenta desde la app.\n\nDisponible en español e inglés. Necesitas una cuenta de Futrob y conexión a internet."
+      },
+      "en-US": {
+        "title": "Futrob",
+        "shortDescription": "Your personal space, invitations and account for FC Clubs.",
+        "fullDescription": "Futrob connects players and competition organizers in FC Clubs.\n\nOpen your personal space, view your activity and accept competition or roster invitations. Manage your account language, security and sessions. You can also request account deletion in the app.\n\nAvailable in Spanish and English. Requires a Futrob account and an internet connection."
+      }
+    },
+    "website": "https://futrob.app",
+    "privacyPolicyUrl": "https://futrob.app/privacy"
+  }
+}
