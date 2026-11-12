@@ -31,6 +31,14 @@ export const mobileQueryKeys = {
       scope.organizationId,
       scope.competitionId,
     ] as const,
+  /** One competition read (`fixture`, `standings`, `team:<id>`…) for the session. */
+  competitionRead: (
+    generation: SessionGeneration,
+    organizationId: string,
+    competitionId: string,
+    resource: string,
+  ) =>
+    [...sessionScope(generation), "competition", organizationId, competitionId, resource] as const,
   destination: (
     generation: SessionGeneration,
     destination: {

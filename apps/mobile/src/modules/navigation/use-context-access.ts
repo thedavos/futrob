@@ -19,9 +19,14 @@ function scopeOf(context: WorkspaceContext) {
  * after a failure: gated navigation stays hidden until the server allows it.
  */
 export function useContextAccess(context: WorkspaceContext): ReadonlySet<string> | undefined {
+  return useContextAccessQuery(context).data;
+}
+
+/** The access query itself, for screens that must tell «checking» from «could not check». */
+export function useContextAccessQuery(context: WorkspaceContext) {
   const generation = useSessionGeneration();
   const scope = scopeOf(context);
-  const query = useQuery({
+  return useQuery({
     queryKey: mobileQueryKeys.contextAccess(generation, scope),
     queryFn: async ({ signal }) => {
       try {
@@ -41,5 +46,4 @@ export function useContextAccess(context: WorkspaceContext): ReadonlySet<string>
     enabled: context.kind !== "personal",
     retry: false,
   });
-  return query.data;
 }
