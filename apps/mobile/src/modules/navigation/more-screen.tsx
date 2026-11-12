@@ -6,13 +6,15 @@ import { logout } from "@/modules/identity/session-lifecycle";
 import { LOGIN_ROUTE } from "@/modules/identity/session-gate";
 import { theme } from "@/theme/theme";
 import { Button, List, ListItem, Screen, Text } from "@/ui";
+import type { WorkspaceContext } from "@futrob/sdk";
+import { MORE_DESTINATIONS, type MoreDestination } from "./nav-registry";
 import { navigationCopy } from "./navigation-copy";
 
 /**
  * «Más»: secondary destinations and account actions, the same in every context. Context
  * destinations that do not earn a tab are listed here as they are built.
  */
-export function MoreScreen() {
+export function MoreScreen({ context }: { context: WorkspaceContext["kind"] }) {
   const router = useRouter();
   const { language, t, toggleLanguage } = useMobileCopy();
   const copy = navigationCopy(language);
@@ -23,6 +25,21 @@ export function MoreScreen() {
         <Text role="heading" accessibilityRole="header">
           {copy.more.title}
         </Text>
+        {MORE_DESTINATIONS[context].length > 0 ? (
+          <List>
+            {MORE_DESTINATIONS[context].map((destination: MoreDestination) => {
+              const [title, description] = copy.destinations[destination.id];
+              return (
+                <ListItem
+                  key={destination.id}
+                  title={title}
+                  description={description}
+                  onPress={() => router.push(nativeRoute(destination.href))}
+                />
+              );
+            })}
+          </List>
+        ) : null}
         <List>
           <ListItem
             title={copy.more.account}
