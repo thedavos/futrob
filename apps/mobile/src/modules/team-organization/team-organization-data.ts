@@ -9,23 +9,15 @@ import type {
 import { FutrobApiError, type TeamScope } from "@futrob/sdk";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { allowedPermissionSet, MOBILE_PERMISSION } from "@/modules/authorization/permissions";
-import { onProductUnauthorized } from "@/modules/identity/session-lifecycle";
 import type { SessionGeneration } from "@/modules/identity/session-store";
 import { mobileQueryKeys } from "@/modules/query/query-keys";
 import { useSessionGeneration } from "@/modules/query/session-query-client-provider";
 
-/** A 401 ends the session here, as every other mobile read does; the caller still sees it. */
-async function guarded<T>(run: () => Promise<T>): Promise<T> {
-  try {
-    return await run();
-  } catch (error) {
-    if (error instanceof FutrobApiError && error.status === 401) {
-      await onProductUnauthorized(() => undefined);
-    }
-    throw error;
-  }
-}
-
+/**
+ * 401s need no handling here: the client clears the stored session only when the rejected
+ * bearer is still the current one, so an older session's late answer never ends a newer one.
+ * Screens send a 401 back to login through `isUnauthorized`.
+ */
 export function isUnauthorized(error: Error | null): boolean {
   return error instanceof FutrobApiError && error.status === 401;
 }
@@ -54,7 +46,7 @@ export function useMyTeams() {
   const generation = useSessionGeneration();
   return useQuery({
     queryKey: mobileQueryKeys.teamOrganization(generation, "my-teams"),
-    queryFn: ({ signal }) => guarded(() => getFutrobClient().players.listTeams({ signal })),
+    queryFn: ({ signal }) => getFutrobClient().players.listTeams({ signal }),
     retry: false,
   });
 }
@@ -64,7 +56,7 @@ export function useSetActiveTeam() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (rosterMembershipId: string) =>
-      guarded(() => getFutrobClient().players.setActiveTeam({ rosterMembershipId })),
+      getFutrobClient().players.setActiveTeam({ rosterMembershipId }),
     onSuccess: () =>
       Promise.all([
         queryClient.invalidateQueries({
@@ -89,8 +81,10 @@ export function useTeamAccess(scope: TeamScope | undefined) {
       scope?.teamId,
     ),
     queryFn: async ({ signal }) => {
-      const access = await guarded(() =>
-        getFutrobClient().authorization.getEffectiveAccess(scope!, TEAM_PERMISSIONS, { signal }),
+      const access = await getFutrobClient().authorization.getEffectiveAccess(
+        scope!,
+        TEAM_PERMISSIONS,
+        { signal },
       );
       return allowedPermissionSet(access);
     },
@@ -114,13 +108,11 @@ export function useTeamDetail(scope: TeamScope | undefined, enabled: boolean) {
   return useQuery({
     queryKey: teamDetailKey(generation, scope),
     queryFn: ({ signal }) =>
-      guarded(() =>
-        getFutrobClient().teams.getCompetitionTeamManagement(
-          scope!.organizationId,
-          scope!.competitionId,
-          scope!.teamId,
-          { signal },
-        ),
+      getFutrobClient().teams.getCompetitionTeamManagement(
+        scope!.organizationId,
+        scope!.competitionId,
+        scope!.teamId,
+        { signal },
       ),
     enabled: scope !== undefined && enabled,
     retry: false,
@@ -136,7 +128,7 @@ function useTeamMutation<Input, Output>(
   const generation = useSessionGeneration();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: Input) => guarded(() => run(scope, input)),
+    mutationFn: (input: Input) => run(scope, input),
     onSuccess: () =>
       refresh
         ? queryClient.invalidateQueries({ queryKey: teamDetailKey(generation, scope) })
@@ -190,7 +182,7 @@ export function useOrganizationMembers(organizationId: string, enabled: boolean)
   return useQuery({
     queryKey: membersKey(generation, organizationId),
     queryFn: ({ signal }) =>
-      guarded(() => getFutrobClient().organizations.listMembers(organizationId, { signal })),
+      getFutrobClient().organizations.listMembers(organizationId, { signal }),
     enabled,
     retry: false,
   });
@@ -201,11 +193,9 @@ export function useChangeOrganizationRole(organizationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { actorId: string; role: ChangeOrganizationRoleRequest["role"] }) =>
-      guarded(() =>
-        getFutrobClient().authorization.changeOrganizationRole(organizationId, input.actorId, {
-          role: input.role,
-        }),
-      ),
+      getFutrobClient().authorization.changeOrganizationRole(organizationId, input.actorId, {
+        role: input.role,
+      }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: membersKey(generation, organizationId) }),
   });
@@ -214,7 +204,7 @@ export function useChangeOrganizationRole(organizationId: string) {
 export function useCreateOrganizationInvitation(organizationId: string) {
   return useMutation({
     mutationFn: (input: CreateOrganizationInvitationRequest) =>
-      guarded(() => getFutrobClient().organizations.createInvitation(organizationId, input)),
+      getFutrobClient().organizations.createInvitation(organizationId, input),
   });
 }
 
@@ -226,8 +216,7 @@ export function useOrganizationProfile(organizationId: string, enabled: boolean)
   const generation = useSessionGeneration();
   return useQuery({
     queryKey: profileKey(generation, organizationId),
-    queryFn: ({ signal }) =>
-      guarded(() => getFutrobClient().organizations.get(organizationId, { signal })),
+    queryFn: ({ signal }) => getFutrobClient().organizations.get(organizationId, { signal }),
     enabled,
     retry: false,
   });
@@ -238,7 +227,7 @@ export function useUpdateOrganizationProfile(organizationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: UpdateOrganizationProfileRequest) =>
-      guarded(() => getFutrobClient().organizations.updateProfile(organizationId, input)),
+      getFutrobClient().organizations.updateProfile(organizationId, input),
     onSuccess: (profile) => {
       queryClient.setQueryData(profileKey(generation, organizationId), profile);
       // The context selector names organizations from the workspace options.
@@ -260,11 +249,9 @@ export function useActivityFeed(source: { readonly organizationId?: string }) {
       // The first page has no cursor; "" stands for it.
       const input = { limit: ACTIVITY_PAGE_SIZE, cursor: pageParam || undefined };
       const activities = getFutrobClient().activities;
-      return guarded(() =>
-        source.organizationId
-          ? activities.listForOrganization(source.organizationId, input, { signal })
-          : activities.listMine(input, { signal }),
-      );
+      return source.organizationId
+        ? activities.listForOrganization(source.organizationId, input, { signal })
+        : activities.listMine(input, { signal });
     },
     initialPageParam: "",
     getNextPageParam: (page) => page.nextCursor ?? undefined,

@@ -11,10 +11,11 @@ import type {
 import * as SecureStore from "expo-secure-store";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { MOBILE_PERMISSION } from "@/modules/authorization/permissions";
-import { clearSession, saveSession } from "@/modules/identity/session-store";
+import { createTestMobileQueryClient } from "@/modules/query/create-query-client";
+import { clearSession, getSession, saveSession } from "@/modules/identity/session-store";
 import { profile, snapshot } from "@/modules/player-home/player-home.fixtures";
 import { currentLocation } from "../../../test/expo-router";
-import { installFakeApi, type FakeRoute } from "../../../test/fake-api";
+import { apiError, installFakeApi, type FakeRoute } from "../../../test/fake-api";
 import { cleanupApp, renderApp } from "../../../test/render-app";
 
 const date = "2026-09-01T00:00:00.000Z";
@@ -282,6 +283,45 @@ describe("My teams", () => {
       within(await screen.findByRole("dialog")).getByRole("button", { name: "Ver plantilla" }),
     );
     expect(currentLocation()?.pathname).toBe("/orgs/org-1/competitions/competition-copa/team");
+  });
+
+  it("keeps a newer session when an older session's change answers 401", async () => {
+    let answer: (response: Response) => void = () => undefined;
+    api(
+      {},
+      {
+        "/players/me/active-team": () =>
+          new Promise<Response>((resolve) => {
+            answer = resolve;
+          }),
+      },
+    );
+    const user = userEvent.setup();
+    const queryClient = createTestMobileQueryClient();
+    renderApp("/player/teams", { queryClient });
+
+    await user.click(await screen.findByRole("button", { name: "Tigres FC" }));
+    const makeActive = within(await screen.findByRole("dialog")).getByRole("button", {
+      name: "Usar como equipo activo",
+    });
+    await user.click(makeActive);
+    await waitFor(() => expect(makeActive).toHaveAttribute("aria-disabled", "true"));
+    await saveSession({
+      token: "newer-session-token",
+      user: { id: "actor-2", name: "Bea", email: "bea@example.com" },
+    });
+    answer(apiError(401));
+
+    // The change has settled, 401 handling included, once its mutation is no longer pending.
+    await waitFor(() =>
+      expect(
+        queryClient
+          .getMutationCache()
+          .getAll()
+          .map((m) => m.state.status),
+      ).toEqual(["error"]),
+    );
+    expect(await getSession()).toMatchObject({ token: "newer-session-token" });
   });
 
   it("says so when the actor has no Team yet", async () => {
@@ -556,7 +596,7 @@ describe("Organization settings", () => {
 });
 
 describe("Activity", () => {
-  it("pages through the organization feed and opens a row's Team", async () => {
+  it("pages through the organization feed", async () => {
     api(
       {},
       {
@@ -579,7 +619,37 @@ describe("Activity", () => {
     expect(await screen.findByText("Competición publicada")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Cargar más" })).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Confirmar selección" }));
+    await user.click(screen.getByRole("button", { name: "Competición publicada" }));
+    expect(currentLocation()?.pathname).toBe("/orgs/org-1/competitions/competition-liga");
+  });
+
+  it("links a row only to a screen that shows or answers it", async () => {
+    api(
+      {},
+      {
+        "/players/me/activities": json({
+          activities: [
+            activity("selection"),
+            activity("dispute", { kind: "match_dispute", requiresAction: false }),
+            activity("sent", {
+              kind: "roster_invitation",
+              requiresAction: false,
+              resourceType: "roster_invitation",
+            }),
+          ],
+          nextCursor: null,
+        }),
+      },
+    );
+    const user = userEvent.setup();
+    renderApp("/player/activity");
+
+    // Selections and disputes are answered in the match center, which mobile does not have yet.
+    expect(await screen.findByText("Confirmar selección")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar selección" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Resolver disputa" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Invitación enviada" }));
     expect(currentLocation()?.pathname).toBe("/orgs/org-1/competitions/competition-liga/team");
   });
 

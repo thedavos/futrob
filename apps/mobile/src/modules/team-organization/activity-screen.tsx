@@ -4,7 +4,7 @@ import {
   activityRow,
   formatActivityTime,
   workspaceContextPath,
-  type ActivityDestination,
+  type ActivityRow,
 } from "@futrob/sdk";
 import { useMobileCopy } from "@/modules/identity/mobile-copy";
 import { nativeRoute } from "@/modules/identity/native-route";
@@ -15,10 +15,20 @@ import { teamOrganizationCopy } from "./team-organization-copy";
 import { isForbidden, isUnauthorized, useActivityFeed } from "./team-organization-data";
 import { LoginRedirect } from "./team-organization-states";
 
-/** Native route a row leads to; `null` when mobile has no screen for it (it stays a fact). */
-function destinationHref(destination: ActivityDestination | null): string | null {
+/**
+ * Native route a row leads to: only a screen that shows or answers the fact. Selections,
+ * reschedules, disputes and entry reviews are answered in screens mobile does not have yet
+ * (match center, competition operations), so those rows stay facts without a link.
+ */
+function destinationHref(row: ActivityRow): string | null {
+  const { destination } = row;
   if (!destination) return null;
   switch (destination.kind) {
+    case "roster_invitations":
+      // Inicio lists the actor's pending roster invitations with their answers.
+      return "/player";
+    case "entry_invitation":
+      return null;
     case "competition":
     case "team": {
       const competition = workspaceContextPath({
@@ -26,13 +36,14 @@ function destinationHref(destination: ActivityDestination | null): string | null
         organizationId: destination.organizationId,
         competitionId: destination.competitionId,
       });
-      return destination.kind === "team" ? `${competition}/team` : competition;
+      if (row.title === "competitionPublished") return competition;
+      // The Team page shows its roster, invitations and entry status.
+      const teamFact =
+        row.title.startsWith("invitation.") ||
+        row.title === "decision.entryApproved" ||
+        row.title === "decision.entryRejected";
+      return destination.kind === "team" && teamFact ? `${competition}/team` : null;
     }
-    case "roster_invitations":
-      // Inicio lists the actor's pending roster invitations with their answers.
-      return "/player";
-    case "entry_invitation":
-      return null;
   }
 }
 
@@ -88,7 +99,7 @@ export function ActivityScreen({ organizationId }: { organizationId?: string }) 
       <>
         <List label={copy.activity.title}>
           {rows.map((row) => {
-            const href = destinationHref(row.destination);
+            const href = destinationHref(row);
             const time = formatActivityTime(row.at, language, now);
             return (
               <ListItem
