@@ -134,7 +134,8 @@ function DeletionScheduledBody() {
   });
   const cancel = useMutation({
     mutationFn: () => getFutrobClient().identity.cancelAccountDeletion(),
-    onSuccess: async () => {
+    onSuccess: async (status) => {
+      queryClient.setQueryData(mobileQueryKeys.accountDeletion(generation), status);
       await queryClient.resetQueries({ queryKey: mobileQueryKeys.sessionGate(generation) });
       router.replace(nativeRoute("/"));
     },

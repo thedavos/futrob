@@ -33,7 +33,7 @@ export function AccountMenuScreen() {
   const go = (route: string) => router.push(nativeRoute(route));
   return (
     <GateBoundary mode="ready">
-      <AccountFrame title={copy.title}>
+      <AccountFrame title={copy.title} backHref="/">
         <View style={{ gap: theme.spacing[2] }}>
           <Text role="title" accessibilityRole="header">
             {copy.preferences}

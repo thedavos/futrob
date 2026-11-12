@@ -12,7 +12,15 @@ export function useAccountCopy() {
   return { ...mobile, copy: accountCopy(mobile.language) };
 }
 
-export function AccountFrame({ title, children }: { title: string; children: ReactNode }) {
+export function AccountFrame({
+  title,
+  children,
+  backHref = "/account",
+}: {
+  title: string;
+  children: ReactNode;
+  backHref?: string;
+}) {
   const router = useRouter();
   const { copy } = useAccountCopy();
   return (
@@ -23,7 +31,7 @@ export function AccountFrame({ title, children }: { title: string; children: Rea
             variant="ghost"
             label={copy.back}
             onPress={() =>
-              router.canGoBack() ? router.back() : router.replace(nativeRoute("/account"))
+              router.canGoBack() ? router.back() : router.replace(nativeRoute(backHref))
             }
           />
         </View>
