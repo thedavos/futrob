@@ -5,8 +5,21 @@ import { logout } from "@/modules/identity/session-lifecycle";
 import { LOGIN_ROUTE } from "@/modules/identity/session-gate";
 import { useMobileCopy } from "@/modules/identity/mobile-copy";
 import { nativeRoute } from "@/modules/identity/native-route";
+import type { CompetitionDto } from "@futrob/api-contracts";
+import { playerHomeCopy } from "@/modules/player-home/player-home-copy";
 import { PlayerHomeScreen } from "@/modules/player-home/player-home-screen";
-import { Button, EmptyState, Logo, Screen, Text } from "@/ui";
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  List,
+  ListItem,
+  ListSection,
+  LoadingState,
+  Logo,
+  Screen,
+  Text,
+} from "@/ui";
 import { theme } from "@/theme/theme";
 import { MOBILE_PERMISSION } from "./permissions.ts";
 import {
@@ -23,6 +36,13 @@ export function NativeDestination({ destination }: { destination: Destination })
   );
 }
 
+/** The picker and competition setup are standalone stack screens; the rest live in a shell. */
+function isStandalone(destination: Destination): boolean {
+  return (
+    destination.kind === "picker" || (destination.kind === "competition" && !!destination.setup)
+  );
+}
+
 function NativeDestinationBody({ destination }: { destination: Destination }) {
   const router = useRouter();
   const { language, toggleLanguage } = useMobileCopy();
@@ -32,36 +52,46 @@ function NativeDestinationBody({ destination }: { destination: Destination }) {
   const competitionId = "competitionId" in destination ? destination.competitionId : undefined;
   const go = (route: string) => router.push(nativeRoute(route));
   const label = (es: string, en: string) => (language === "es" ? es : en);
+  const statusLabel = playerHomeCopy(language).status;
   const organization = data?.memberships.find((item) => item.organizationId === orgId);
   const competition = data?.competitions.find(
     (item) => item.id === competitionId && item.organizationId === orgId,
   );
+  const standalone = isStandalone(destination);
 
   if (isUnauthorizedDestination(query.error ?? null)) {
     return <Redirect href={LOGIN_ROUTE} />;
   }
 
   return (
-    <Screen scroll>
+    <Screen scroll edges={standalone ? undefined : ["left", "right"]} centered={standalone}>
       <View style={{ gap: theme.spacing[5], maxWidth: 520, width: "100%", alignSelf: "center" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing[3] }}>
-          <Logo height={32} accessibilityLabel="Futrob" />
-          <Text role="label">Futrob</Text>
-        </View>
-        <Button
-          variant="ghost"
-          label={language === "es" ? "English" : "Español"}
-          onPress={toggleLanguage}
-        />
+        {standalone ? (
+          <>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing[3] }}>
+              <Logo height={32} accessibilityLabel="Futrob" />
+              <Text role="label">Futrob</Text>
+            </View>
+            <Button
+              variant="ghost"
+              label={language === "es" ? "English" : "Español"}
+              onPress={toggleLanguage}
+            />
+          </>
+        ) : null}
         {query.isError ? (
-          <EmptyState
+          <ErrorState
             title={label("No pudimos cargar este espacio", "We couldn't load this space")}
-            action={
-              <Button label={label("Reintentar", "Retry")} onPress={() => void query.refetch()} />
-            }
+            description={label(
+              "Comprueba la conexión e inténtalo de nuevo.",
+              "Check your connection and try again.",
+            )}
+            retryLabel={label("Reintentar", "Retry")}
+            retrying={query.isFetching}
+            onRetry={() => void query.refetch()}
           />
         ) : !data ? (
-          <Text>{label("Cargando…", "Loading…")}</Text>
+          <LoadingState label={label("Cargando…", "Loading…")} />
         ) : (
           <>
             {destination.kind === "player" ? (
@@ -73,37 +103,36 @@ function NativeDestinationBody({ destination }: { destination: Destination }) {
                 </Text>
                 {data.memberships.length === 0 ? (
                   <EmptyState title={label("Sin organizaciones", "No organizations")} />
-                ) : null}
-                {data.memberships.map((item) => (
-                  <Button
-                    key={item.organizationId}
-                    variant="outline"
-                    label={item.organizationName}
-                    onPress={() => go(`/orgs/${encodeURIComponent(item.organizationId)}`)}
-                  />
-                ))}
+                ) : (
+                  <List>
+                    {data.memberships.map((item) => (
+                      <ListItem
+                        key={item.organizationId}
+                        title={item.organizationName}
+                        onPress={() => go(`/orgs/${encodeURIComponent(item.organizationId)}`)}
+                      />
+                    ))}
+                  </List>
+                )}
               </>
             ) : destination.kind === "organization" ? (
               <>
                 <Text role="heading" accessibilityRole="header">
                   {organization?.organizationName ?? label("Organización", "Organization")}
                 </Text>
-                {data.permissions.has(MOBILE_PERMISSION.competitionsRead)
-                  ? data.competitions
-                      .filter((item) => item.organizationId === orgId)
-                      .map((item) => (
-                        <Button
-                          key={item.id}
-                          variant="outline"
-                          label={`${item.name} · ${item.status}`}
-                          onPress={() =>
-                            go(
-                              `/orgs/${encodeURIComponent(orgId!)}/competitions/${encodeURIComponent(item.id)}`,
-                            )
-                          }
-                        />
-                      ))
-                  : null}
+                {data.permissions.has(MOBILE_PERMISSION.competitionsRead) ? (
+                  <OrganizationCompetitions
+                    competitions={data.competitions.filter((item) => item.organizationId === orgId)}
+                    title={label("Competiciones", "Competitions")}
+                    emptyTitle={label("Sin competiciones todavía", "No competitions yet")}
+                    statusLabel={statusLabel}
+                    onOpen={(id) =>
+                      go(
+                        `/orgs/${encodeURIComponent(orgId!)}/competitions/${encodeURIComponent(id)}`,
+                      )
+                    }
+                  />
+                ) : null}
               </>
             ) : (
               <>
@@ -112,7 +141,8 @@ function NativeDestinationBody({ destination }: { destination: Destination }) {
                 </Text>
                 {competition ? (
                   <Text color="muted-foreground">
-                    {competition.gameEdition} · {competition.format} · {competition.status}
+                    {competition.gameEdition} · {competition.format} ·{" "}
+                    {statusLabel[competition.status]}
                   </Text>
                 ) : (
                   <EmptyState
@@ -144,29 +174,63 @@ function NativeDestinationBody({ destination }: { destination: Destination }) {
                 }
               />
             ) : null}
-            {destination.kind !== "player" ? (
+            {standalone ? (
               <Button
                 variant="ghost"
                 label={label("Mi espacio", "My space")}
                 onPress={() => go("/player")}
               />
             ) : null}
-            {data.memberships.length > 0 && destination.kind !== "picker" ? (
-              <Button
-                variant="ghost"
-                label={label("Organizaciones", "Organizations")}
-                onPress={() => go("/orgs")}
-              />
-            ) : null}
           </>
         )}
-        <Button variant="ghost" label={label("Cuenta", "Account")} onPress={() => go("/account")} />
-        <Button
-          variant="ghost"
-          label={label("Cerrar sesión", "Sign out")}
-          onPress={() => void logout(() => router.replace(LOGIN_ROUTE))}
-        />
+        {standalone ? (
+          <>
+            <Button
+              variant="ghost"
+              label={label("Cuenta", "Account")}
+              onPress={() => go("/account")}
+            />
+            <Button
+              variant="ghost"
+              label={label("Cerrar sesión", "Sign out")}
+              onPress={() => void logout(() => router.replace(LOGIN_ROUTE))}
+            />
+          </>
+        ) : null}
       </View>
     </Screen>
+  );
+}
+
+function OrganizationCompetitions({
+  competitions,
+  title,
+  emptyTitle,
+  statusLabel,
+  onOpen,
+}: {
+  competitions: readonly CompetitionDto[];
+  title: string;
+  emptyTitle: string;
+  statusLabel: Record<CompetitionDto["status"], string>;
+  onOpen: (competitionId: string) => void;
+}) {
+  return (
+    <ListSection title={title}>
+      {competitions.length === 0 ? (
+        <EmptyState title={emptyTitle} />
+      ) : (
+        <List>
+          {competitions.map((item) => (
+            <ListItem
+              key={item.id}
+              title={item.name}
+              description={statusLabel[item.status]}
+              onPress={() => onOpen(item.id)}
+            />
+          ))}
+        </List>
+      )}
+    </ListSection>
   );
 }

@@ -1,4 +1,11 @@
-import { useSyncExternalStore, type ComponentType } from "react";
+import {
+  createContext,
+  Fragment,
+  useContext,
+  useSyncExternalStore,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
 
 export type Href = string;
@@ -6,6 +13,8 @@ export type Href = string;
 /**
  * In-memory stand-in for the subset of Expo Router the app uses. Screen tests mount the real
  * `app/` route files through `TestRouter`; navigation changes which route file is rendered.
+ * Nested `_layout.tsx` files (not the root one) wrap the routes below their folder and render
+ * the route where they place a slot (`TabSlot` in `test/expo-router-ui.tsx`).
  */
 
 type RouteParams = Record<string, string>;
@@ -16,7 +25,10 @@ type RouteEntry = {
   readonly component: ComponentType;
 };
 
+type LayoutEntry = { readonly segments: readonly string[]; readonly component: ComponentType };
+
 let routes: readonly RouteEntry[] = [];
+let layouts: readonly LayoutEntry[] = [];
 let stack: Location[] = [];
 const listeners = new Set<() => void>();
 
@@ -34,8 +46,14 @@ function withoutGroups(segments: readonly string[]): string[] {
 
 /** `files` keys are paths relative to `app/`, such as `(auth)/login.tsx` or `orgs/[orgId]/index.tsx`. */
 export function registerRoutes(files: Record<string, { default: ComponentType }>) {
+  layouts = Object.entries(files)
+    .filter(([file]) => file !== "_layout.tsx" && file.endsWith("/_layout.tsx"))
+    .map(([file, module]) => ({
+      segments: splitPath(file).slice(0, -1),
+      component: module.default,
+    }));
   routes = Object.entries(files)
-    .filter(([file]) => !file.startsWith("_"))
+    .filter(([file]) => !file.split("/").some((segment) => segment.startsWith("_")))
     .map(([file, module]) => {
       const segments = splitPath(file.replace(/\.tsx$/, ""));
       if (segments.at(-1) === "index") segments.pop();
@@ -60,13 +78,20 @@ function match(entry: RouteEntry, wanted: readonly string[], keepGroups: boolean
   return params;
 }
 
+function dynamicCount(entry: RouteEntry): number {
+  return entry.segments.filter((segment) => /^\[.+\]$/.test(segment)).length;
+}
+
 function resolve(pathname: string) {
   const segments = splitPath(pathname);
   for (const keepGroups of [true, false]) {
-    const candidates = keepGroups ? routes : [...routes].sort((a, b) => +a.grouped - +b.grouped);
+    // Like Expo Router, a static segment beats a dynamic one (`player/(tabs)` over `(onboarding)/[step]`).
+    const candidates = keepGroups
+      ? routes
+      : [...routes].sort((a, b) => dynamicCount(a) - dynamicCount(b) || +a.grouped - +b.grouped);
     for (const entry of candidates) {
       const params = match(entry, keepGroups ? segments : withoutGroups(segments), keepGroups);
-      if (params) return { component: entry.component, params };
+      if (params) return { component: entry.component, params, segments: entry.segments };
     }
   }
   throw new Error(`No app route matches ${pathname}`);
@@ -121,6 +146,11 @@ export function useLocalSearchParams() {
   return { ...resolve(location.pathname).params, ...location.params };
 }
 
+/** In the test router the focused route is the only route, so global params equal local ones. */
+export function useGlobalSearchParams() {
+  return useLocalSearchParams();
+}
+
 export function useFocusEffect(effect: () => void | (() => void)) {
   useExternalSync(effect, [effect]);
 }
@@ -140,12 +170,34 @@ Stack.Screen = function StackScreen() {
   return null;
 };
 
+const SlotContext = createContext<ReactNode>(null);
+
+/** What a layout's slot renders: the route (or inner layout) below it. */
+export function useTestSlot(): ReactNode {
+  return useContext(SlotContext);
+}
+
+export function usePathname(): string {
+  return useLocation().pathname;
+}
+
 /** Renders the route on top of the stack; a new stack entry mounts a fresh screen. */
 export function TestRouter({ initialHref }: { initialHref: string }) {
   if (stack.length === 0) stack = [parseHref(initialHref)];
   const location = useLocation();
-  const { component: Screen } = resolve(location.pathname);
-  return <Screen key={`${stack.length}:${location.pathname}`} />;
+  const { component: Screen, segments } = resolve(location.pathname);
+  const wrapping = layouts
+    .filter((layout) => layout.segments.every((segment, index) => segments[index] === segment))
+    .sort((a, b) => b.segments.length - a.segments.length);
+  const tree = wrapping.reduce<ReactNode>(
+    (inner, { component: Layout }) => (
+      <SlotContext.Provider value={inner}>
+        <Layout />
+      </SlotContext.Provider>
+    ),
+    <Screen />,
+  );
+  return <Fragment key={`${stack.length}:${location.pathname}`}>{tree}</Fragment>;
 }
 
 export function currentLocation(): Location | undefined {
