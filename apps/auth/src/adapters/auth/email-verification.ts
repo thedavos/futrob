@@ -1,4 +1,5 @@
 import { createAuthMiddleware } from "better-auth/api";
+import { verifyJWT } from "better-auth/crypto";
 import { z } from "zod";
 
 /** A verification link lives one hour (Better Auth's default, stated here for the email copy). */
@@ -45,17 +46,28 @@ export function withVerificationCallback(url: string): string {
   return link.toString();
 }
 
+/** A request to the resend endpoint, as opposed to the sign-up that sends the first link. */
+export function isResendRequest(request: Request | undefined): request is Request {
+  return (
+    request !== undefined && new URL(request.url).pathname.endsWith("/send-verification-email")
+  );
+}
+
 /**
  * Better Auth's verification links are stateless, so opening one again after the account is
  * verified would redirect as if it had just worked. Answer a reused link like a dead one:
  * it verified once, and the landing page offers another while the account still needs it.
+ * Only a token signed with this worker's secret is checked against the account; any other
+ * goes on to Better Auth, which answers INVALID_TOKEN whatever account it names.
  */
 export const rejectUsedVerificationLink = createAuthMiddleware(async (ctx) => {
   if (ctx.path !== "/verify-email") return;
   const query = z.object({ token: z.string() }).safeParse(ctx.query);
   if (!query.success) return;
-  const claims = readClaims(query.data.token);
-  if (claims === null || claims.updateTo !== undefined) return;
+  const parsed = claimsSchema.safeParse(await verifyJWT(query.data.token, ctx.context.secret));
+  if (!parsed.success) return;
+  const claims = parsed.data;
+  if (claims.updateTo !== undefined) return;
   const found = await ctx.context.internalAdapter.findUserByEmail(claims.email);
   if (!found?.user.emailVerified) return;
   throw ctx.redirect(`${EMAIL_VERIFICATION_CALLBACK}?error=${EMAIL_VERIFICATION_LINK_USED}`);

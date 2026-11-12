@@ -524,6 +524,79 @@ suite("auth on product Postgres (migration 0043)", () => {
           `http://localhost:3000/api/auth/verify-email?token=${expired}&callbackURL=%2Fverify-email`,
         ),
       ).toBe("/verify-email?error=TOKEN_EXPIRED");
+
+      // A token this worker did not sign says nothing about the account it names.
+      const forged = (address: string) =>
+        `http://localhost:3000/api/auth/verify-email?token=e30.${btoa(
+          JSON.stringify({ email: address }),
+        ).replaceAll("=", "")}.invalid&callbackURL=%2Fverify-email`;
+      for (const address of [email, other, `nobody-${randomUUID()}@futrob.test`]) {
+        expect(await open(forged(address))).toBe("/verify-email?error=INVALID_TOKEN");
+      }
+      await client.end();
+    });
+  });
+
+  it("keeps sign-up open when mail fails, and tells only a signed-in resend", async () => {
+    await withSchema(async ({ connect }) => {
+      const client = await connect();
+      const defects: Error[] = [];
+      const auth = createAuth({
+        db: createAuthDb(client),
+        env: buildAuthEnv({
+          APP_BASE_URL: "http://localhost:3000",
+          BETTER_AUTH_SECRET: "test-secret-at-least-32-characters!!",
+          BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:3000",
+        }),
+        clock: new SystemClock(),
+        ids: new CryptoIdGenerator(),
+        mail: {
+          sendEmailChangeVerification: async () => {},
+          sendEmailVerification: async () => {
+            throw new Error("mail provider down");
+          },
+          sendPasswordReset: async () => {},
+        },
+        reportDefect: (cause) => {
+          defects.push(cause);
+        },
+      });
+      const email = `down-${randomUUID()}@futrob.test`;
+      const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
+        auth.handler(
+          new Request(`http://localhost:3000/api/auth${path}`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              origin: "http://localhost:3000",
+              "cf-connecting-ip": "192.0.2.30",
+              ...headers,
+            },
+            body: JSON.stringify(body),
+          }),
+        );
+
+      const signUp = await post("/sign-up/email", {
+        email,
+        password: "password-at-least-8",
+        name: "Captain",
+      });
+      expect(signUp.status).toBe(200);
+      const cookie = signUp.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ");
+      expect(cookie).not.toBe("");
+
+      // Anonymous: the same answer as for an account that does not exist.
+      expect((await post("/send-verification-email", { email })).status).toBe(200);
+      // Signed in: the failure shows, so the account can try again.
+      expect((await post("/send-verification-email", { email }, { cookie })).status).toBe(500);
+      expect(defects.map((defect) => defect.message)).toEqual([
+        "mail provider down",
+        "mail provider down",
+        "mail provider down",
+      ]);
       await client.end();
     });
   });

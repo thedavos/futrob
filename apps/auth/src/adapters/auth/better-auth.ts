@@ -25,6 +25,7 @@ import {
 import {
   EMAIL_VERIFICATION_TTL_SECONDS,
   isEmailChangeToken,
+  isResendRequest,
   rejectUsedVerificationLink,
   withVerificationCallback,
 } from "./email-verification.ts";
@@ -127,8 +128,10 @@ export function createAuth(input: {
     createPostgresActorProvisioner({ db: input.db, clock: input.clock, ids: input.ids });
 
   const mail = input.mail ?? createMail(input.env);
+  // Set once the instance exists; only a failed verification resend asks it.
+  let isSignedIn = async (_headers: Headers): Promise<boolean> => false;
 
-  return betterAuth({
+  const auth = betterAuth({
     appName: "Futrob",
     baseURL: input.env.BETTER_AUTH_URL,
     secret: input.env.BETTER_AUTH_SECRET,
@@ -168,12 +171,14 @@ export function createAuth(input: {
       ? {
           sendOnSignUp: true,
           expiresIn: EMAIL_VERIFICATION_TTL_SECONDS,
-          sendVerificationEmail: async ({ user, url, token }) => {
+          sendVerificationEmail: async ({ user, url, token }, request) => {
             if (isEmailChangeToken(token)) {
               await mail.sendEmailChangeVerification({ to: user.email, name: user.name, url });
               return;
             }
-            // A failed send must not fail sign-up; the account can ask for another link.
+            // A failed send must not fail sign-up; the account can ask for another link. A
+            // signed-in resend fails visibly so it can retry; an anonymous one answers as if it
+            // sent, so the reply never tells which accounts exist.
             try {
               await mail.sendEmailVerification({
                 to: user.email,
@@ -181,6 +186,9 @@ export function createAuth(input: {
                 url: withVerificationCallback(url),
               });
             } catch (cause) {
+              if (isResendRequest(request) && (await isSignedIn(request.headers))) {
+                throw cause;
+              }
               input.reportDefect(cause instanceof Error ? cause : new Error("auth.mail.failed"));
             }
           },
@@ -219,6 +227,8 @@ export function createAuth(input: {
       })),
     ],
   });
+  isSignedIn = async (headers) => (await auth.api.getSession({ headers })) !== null;
+  return auth;
 }
 
 export type FutrobAuth = ReturnType<typeof createAuth>;
