@@ -104,6 +104,8 @@ export const en: MatchCenterCopy = {
     `Match ${slot}: ${home} ${homeGoals}–${awayGoals} ${away}`,
   slotUnmatchedScore: (slot) => `Match ${slot}: played by other clubs`,
   slotMissing: (slot) => `Match ${slot}: no longer among the candidates`,
+  slotMatch: (match) => `EA match ${match}`,
+  slotPlayed: (match, time) => `EA match ${match} · played ${time}`,
   historyTitle: "Selection history",
   historyHide: "Hide history",
   historyByOperator: "Organization",

@@ -128,6 +128,8 @@ export const es = {
     `Partido ${slot}: ${home} ${homeGoals}–${awayGoals} ${away}`,
   slotUnmatchedScore: (slot: number) => `Partido ${slot}: jugado por otros clubes`,
   slotMissing: (slot: number) => `Partido ${slot}: ya no figura entre los candidatos`,
+  slotMatch: (match: string) => `Partido EA ${match}`,
+  slotPlayed: (match: string, time: string) => `Partido EA ${match} · jugado ${time}`,
   historyTitle: "Historial de la selección",
   historyHide: "Ocultar historial",
   historyByOperator: "Organización",

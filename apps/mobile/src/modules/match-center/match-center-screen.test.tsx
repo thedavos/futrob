@@ -8,7 +8,8 @@ import type {
 } from "@futrob/api-contracts";
 import { matchCenterFixtures as fx } from "@futrob/sdk/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { clearSession, saveSession } from "@/modules/identity/session-store";
+import { clearSession, getSession, saveSession } from "@/modules/identity/session-store";
+import { formatInCompetitionZone } from "./match-center-copy";
 import { apiError, installFakeApi, type FakeRoute } from "../../../test/fake-api";
 import { currentLocation } from "../../../test/expo-router";
 import { cleanupApp, renderApp } from "../../../test/render-app";
@@ -259,7 +260,8 @@ describe("Match Center on the Encounter route", () => {
     expect(within(dialog).getByText("Escribe un motivo para continuar.")).toBeTruthy();
     expect(harness.sent).toEqual([]);
 
-    await user.type(within(dialog).getByLabelText("Motivo"), fx.rejectionReason);
+    await user.click(within(dialog).getByLabelText("Motivo"));
+    await user.paste(fx.rejectionReason);
     await user.click(within(dialog).getByRole("button", { name: "Rechazar propuesta" }));
 
     expect(
@@ -296,7 +298,8 @@ describe("Match Center on the Encounter route", () => {
 
     await user.click(await screen.findByRole("button", { name: "Abrir disputa" }));
     const dialog = screen.getByRole("dialog", { name: "Abrir una disputa" });
-    await user.type(within(dialog).getByLabelText("Motivo"), "Jugamos otro partido.");
+    await user.click(within(dialog).getByLabelText("Motivo"));
+    await user.paste("Jugamos otro partido.");
     await user.click(within(dialog).getByRole("button", { name: "Abrir disputa" }));
 
     expect(await screen.findByText("Disputa abierta.")).toBeTruthy();
@@ -346,6 +349,85 @@ describe("Match Center on the Encounter route", () => {
     expect(screen.getByText("Maderas FC no tiene un club EA conectado.")).toBeTruthy();
   });
 
+  it("keeps a session signed in after an earlier session's command is answered with 401", async () => {
+    const harness = matchCenterApi({
+      access: { away: true },
+      selection: fx.pendingSelection(["confirm", "reject", "propose_alternative"]),
+    });
+    const confirm = `${SELECTION}/proposals/proposal-1/confirm`;
+    let answer: (response: Response) => void = () => undefined;
+    harness.api.routes[confirm] = () =>
+      new Promise<Response>((resolve) => {
+        answer = resolve;
+      });
+    const user = userEvent.setup();
+    renderApp(ROUTE);
+
+    await user.click(await screen.findByRole("button", { name: "Confirmar propuesta" }));
+    const dialog = screen.getByRole("dialog", { name: "Confirmar la propuesta del rival" });
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar" }));
+    expect(harness.api.requests.some((request) => request.path === confirm)).toBe(true);
+
+    const next = {
+      token: "next-session-token",
+      user: { id: "actor-2", name: "B", email: "b@example.com" },
+    };
+    await saveSession(next);
+    const unauthorized = apiError(401);
+    answer(unauthorized);
+
+    // Once the stale command has read its 401, B is still signed in and still on the Encounter.
+    await vi.waitFor(() => expect(unauthorized.bodyUsed).toBe(true));
+    expect(await screen.findByText("Esperando confirmación del rival")).toBeTruthy();
+    expect(await getSession()).toEqual(next);
+  });
+
+  it("tells apart proposals whose match 2 shares clubs and score by the EA match and its time", async () => {
+    const rematch = { ...candidate("m-5", 1, 1, 0), occurredAt: "2026-09-17T02:40:00.000Z" };
+    const harness = matchCenterApi({
+      access: { approve: true },
+      selection: { ...fx.reviewCase(), proposals: [fx.homeProposal, fx.awayRematch] },
+    });
+    harness.api.routes["/encounters/encounter-1/candidates"] = json({
+      ...candidates,
+      candidates: [...candidates.candidates, rematch],
+    });
+    const played = (id: string, iso: string) =>
+      `Partido EA ${id} · jugado ${formatInCompetitionZone(iso, "America/Lima", "es")}`;
+    const m2 = played("m-2", "2026-09-17T01:45:00.000Z");
+    const m5 = played("m-5", rematch.occurredAt);
+    const user = userEvent.setup();
+    renderApp(ROUTE);
+
+    await user.click(await screen.findByRole("button", { name: "Aprobar una propuesta" }));
+    const dialog = screen.getByRole("dialog", { name: "Aprobar una propuesta" });
+    const home = within(dialog).getByRole("radio", { name: /Propuesta 1 · ronda 1/ });
+    const away = within(dialog).getByRole("radio", { name: /Propuesta 2 · ronda 1/ });
+    expect(within(home).getByText(m2)).toBeTruthy();
+    expect(within(home).queryByText(m5)).toBeNull();
+    expect(within(away).getByText(m5)).toBeTruthy();
+    expect(within(away).queryByText(m2)).toBeNull();
+  });
+
+  it("still names the EA match of a proposal whose candidates are gone", async () => {
+    const harness = matchCenterApi({
+      access: { away: true },
+      selection: fx.pendingSelection(["confirm", "reject", "propose_alternative"]),
+    });
+    harness.api.routes["/encounters/encounter-1/candidates"] = json({
+      ...candidates,
+      candidates: [],
+    });
+    const user = userEvent.setup();
+    renderApp(ROUTE);
+
+    await user.click(await screen.findByRole("button", { name: "Confirmar propuesta" }));
+    const dialog = screen.getByRole("dialog", { name: "Confirmar la propuesta del rival" });
+    expect(within(dialog).getByText("Partido 1: ya no figura entre los candidatos")).toBeTruthy();
+    expect(within(dialog).getByText("Partido EA m-1")).toBeTruthy();
+    expect(within(dialog).getByText("Partido EA m-2")).toBeTruthy();
+  });
+
   it("asks the operator to acknowledge integrity warnings before approving", async () => {
     const harness = matchCenterApi({
       access: { approve: true },
@@ -364,7 +446,8 @@ describe("Match Center on the Encounter route", () => {
     await user.click(await screen.findByRole("button", { name: "Aprobar una propuesta" }));
     const dialog = screen.getByRole("dialog", { name: "Aprobar una propuesta" });
     await user.click(within(dialog).getByRole("radio", { name: /Propuesta 2 · ronda 1/ }));
-    await user.type(within(dialog).getByLabelText("Motivo"), fx.approvalReason);
+    await user.click(within(dialog).getByLabelText("Motivo"));
+    await user.paste(fx.approvalReason);
     await user.click(within(dialog).getByRole("button", { name: "Aprobar propuesta" }));
     expect(
       within(dialog).getByText("Confirma que revisaste los avisos de integridad para aprobar."),

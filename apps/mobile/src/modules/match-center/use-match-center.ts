@@ -11,7 +11,6 @@ import type {
 import {
   beginAttempt,
   commandOutcomeOf,
-  FutrobApiError,
   isSelectionRefusal,
   type Attempt,
   type CommandOutcome,
@@ -24,7 +23,6 @@ import {
 import { randomUUID } from "expo-crypto";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { allowedPermissionSet, MOBILE_PERMISSION } from "@/modules/authorization/permissions";
-import { onProductUnauthorized } from "@/modules/identity/session-lifecycle";
 import { mobileQueryKeys } from "@/modules/query/query-keys";
 import { useSessionGeneration } from "@/modules/query/session-query-client-provider";
 
@@ -76,20 +74,12 @@ const SIDES: readonly TeamSide[] = ["home", "away"];
 const PROPOSE = MOBILE_PERMISSION.encountersOfficialSelectionPropose;
 const APPROVE = MOBILE_PERMISSION.encountersResultsApprove;
 
-/** 401 ends the session; 403 and 404 are refusals, never retried or shown as «no data». */
+/**
+ * 403 and 404 are refusals, never retried or shown as «no data». A 401 ends the session in the
+ * transport (`getFutrobClient`), and only when the rejected bearer is still the stored one.
+ */
 const retryUnlessRefused = (attempt: number, error: Error) =>
   !isSelectionRefusal(error) && attempt < 2;
-
-async function read<Result>(load: () => Promise<Result>): Promise<Result> {
-  try {
-    return await load();
-  } catch (error) {
-    if (error instanceof FutrobApiError && error.status === 401) {
-      await onProductUnauthorized(() => undefined);
-    }
-    throw error;
-  }
-}
 
 /**
  * The Match Center of one Encounter, read like web's Encounter route: candidates and both
@@ -113,7 +103,7 @@ export function useMatchCenter({
   const viewQuery = useQuery({
     queryKey: mobileQueryKeys.encounterView(generation, organizationId, encounterId),
     queryFn: ({ signal }) =>
-      read(() => getFutrobClient().encounters.getView(organizationId, encounterId, { signal })),
+      getFutrobClient().encounters.getView(organizationId, encounterId, { signal }),
     retry: retryUnlessRefused,
   });
   const view = viewQuery.data;
@@ -122,24 +112,21 @@ export function useMatchCenter({
   const candidatesQuery = useQuery({
     queryKey: mobileQueryKeys.encounterCandidates(generation, encounterId),
     queryFn: ({ signal }) =>
-      read(() => getFutrobClient().results.listEncounterCandidates(encounterId, { signal })),
+      getFutrobClient().results.listEncounterCandidates(encounterId, { signal }),
     enabled: belongsHere,
     retry: retryUnlessRefused,
   });
 
   const accessQuery = (teamId: string | null, permission: PermissionDto) => ({
     queryKey: mobileQueryKeys.encounterAccess(generation, encounterId, teamId, permission),
-    queryFn: ({ signal }: { signal: AbortSignal }) =>
-      read(async () => {
-        const scope: AuthorizationScopeDto = { organizationId, competitionId, encounterId };
-        if (teamId) scope.teamId = teamId;
-        const access = await getFutrobClient().authorization.getEffectiveAccess(
-          scope,
-          [permission],
-          { signal },
-        );
-        return allowedPermissionSet(access).has(permission);
-      }),
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+      const scope: AuthorizationScopeDto = { organizationId, competitionId, encounterId };
+      if (teamId) scope.teamId = teamId;
+      const access = await getFutrobClient().authorization.getEffectiveAccess(scope, [permission], {
+        signal,
+      });
+      return allowedPermissionSet(access).has(permission);
+    },
     enabled: belongsHere,
     retry: false,
     staleTime: 30_000,
@@ -312,7 +299,7 @@ function useSelectionRead<Intent>({
 }): SelectionRead<Intent> {
   const query = useQuery({
     queryKey,
-    queryFn: ({ signal }) => read(() => load(signal)),
+    queryFn: ({ signal }) => load(signal),
     enabled,
     retry: retryUnlessRefused,
   });
@@ -328,7 +315,7 @@ function useSelectionRead<Intent>({
       refresh,
       submit: async (attempt): Promise<CommandOutcome> => {
         try {
-          await read(() => send(attempt));
+          await send(attempt);
         } catch (error) {
           const outcome =
             error instanceof Error
@@ -380,11 +367,9 @@ export function useCompetitionDisputes(organizationId: string, competitionId: st
   return useQuery({
     queryKey: mobileQueryKeys.competitionDisputes(generation, organizationId, competitionId),
     queryFn: ({ signal }) =>
-      read(() =>
-        getFutrobClient().results.listCompetitionDisputes(organizationId, competitionId, {
-          signal,
-        }),
-      ),
+      getFutrobClient().results.listCompetitionDisputes(organizationId, competitionId, {
+        signal,
+      }),
     retry: retryUnlessRefused,
   });
 }

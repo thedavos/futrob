@@ -11,6 +11,8 @@ import {
   currentProposalOf,
   previewEncounter,
   type SelectionRead,
+  type SlotPreview,
+  type SlotSelection,
   type Submission,
 } from "@futrob/sdk";
 import type { MobileLanguage } from "@/modules/identity/mobile-copy";
@@ -147,28 +149,13 @@ export function SelectionSummary({
 
 export function ProposalSlots({
   proposal,
-  view,
-  copy,
-  candidates,
+  ...shared
 }: Shared & { readonly proposal: OfficialSelectionProposalDto }) {
+  const { view, copy, candidates } = shared;
   const preview = previewEncounter(view, candidates, assignmentsOf(proposal.slots));
   return (
     <View style={{ gap: theme.spacing[1] }}>
-      {preview.slots.map((slot) => (
-        <Text key={slot.slot}>
-          {slot.kind === "scored"
-            ? copy.slotScore(
-                slot.slot,
-                view.home.name,
-                slot.score.home,
-                slot.score.away,
-                view.away.name,
-              )
-            : slot.kind === "unmatched"
-              ? copy.slotUnmatchedScore(slot.slot)
-              : copy.slotMissing(slot.slot)}
-        </Text>
-      ))}
+      <SlotLines {...shared} previews={preview.slots} sent={proposal.slots} />
       {preview.series.kind === "single" || preview.series.kind === "aggregate" ? (
         <Text role="caption" color="muted-foreground">
           {outcomeText(preview.series.outcome, view, copy)}
@@ -176,6 +163,90 @@ export function ProposalSlots({
       ) : null}
     </View>
   );
+}
+
+/**
+ * One line per official slot: what it counts and which EA match backs it. Matches between the
+ * same clubs can share a score, so the reference and when it was played tell them apart; a
+ * proposal whose candidate is gone still names the reference it sent.
+ */
+export function SlotLines({
+  previews,
+  sent = [],
+  view,
+  copy,
+  at,
+}: Pick<Shared, "view" | "copy" | "at"> & {
+  readonly previews: readonly SlotPreview[];
+  readonly sent?: readonly SlotSelection[];
+}) {
+  return (
+    <View style={{ gap: theme.spacing[1] }}>
+      {previews.map((preview) => {
+        const line = slotLine(preview, sent, view, copy, at);
+        return (
+          <View key={preview.slot}>
+            <Text>{line.summary}</Text>
+            {line.match ? (
+              <Text role="caption" color="muted-foreground">
+                {line.match}
+              </Text>
+            ) : null}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** What one official slot counts, and which EA match backs it when one does. */
+type SlotLine = { readonly summary: string; readonly match: string | null };
+
+function slotLine(
+  preview: SlotPreview,
+  sent: readonly SlotSelection[],
+  view: EncounterViewDto,
+  copy: MatchCenterCopy,
+  at: (iso: string) => string,
+): SlotLine {
+  const slot = preview.slot;
+  switch (preview.kind) {
+    case "scored":
+      return {
+        summary: copy.slotScore(
+          slot,
+          view.home.name,
+          preview.score.home,
+          preview.score.away,
+          view.away.name,
+        ),
+        match: copy.slotPlayed(
+          preview.candidate.reference.externalId,
+          at(preview.candidate.occurredAt),
+        ),
+      };
+    case "unmatched":
+      return {
+        summary: copy.slotUnmatchedScore(slot),
+        match: copy.slotPlayed(
+          preview.candidate.reference.externalId,
+          at(preview.candidate.occurredAt),
+        ),
+      };
+    case "unassigned": {
+      const selection = sent.find((row) => row.officialSlot === slot);
+      return selection
+        ? {
+            summary: copy.slotMissing(slot),
+            match: copy.slotMatch(selection.providerMatchRef.externalId),
+          }
+        : { summary: `${copy.slot(slot)}: ${copy.slotUnassigned}`, match: null };
+    }
+    default: {
+      const exhaustive: never = preview;
+      return exhaustive;
+    }
+  }
 }
 
 export function ProposalList({

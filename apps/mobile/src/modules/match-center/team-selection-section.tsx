@@ -24,6 +24,7 @@ import {
   History,
   ProposalList,
   ProposalSlots,
+  SlotLines,
   RefreshRow,
   SelectionSummary,
   SubmissionNotice,
@@ -192,7 +193,7 @@ function TeamCommandDialog({
   readonly selection: OfficialSelectionViewDto;
   readonly onSubmit: () => "slots" | "reason" | "proposal" | null;
 }) {
-  const { copy, view } = shared;
+  const { copy } = shared;
   const [missing, setMissing] = useState<"slots" | "reason" | "proposal" | null>(null);
   const text = copy.command[command];
   const pending = draft.submission.status === "pending";
@@ -232,21 +233,7 @@ function TeamCommandDialog({
       {needsSlots(command) ? (
         <View style={{ gap: theme.spacing[1] }}>
           <Text role="label">{copy.dialogSlots}</Text>
-          {preview.slots.map((slot) => (
-            <Text key={slot.slot}>
-              {slot.kind === "scored"
-                ? copy.slotScore(
-                    slot.slot,
-                    view.home.name,
-                    slot.score.home,
-                    slot.score.away,
-                    view.away.name,
-                  )
-                : slot.kind === "unmatched"
-                  ? copy.slotUnmatchedScore(slot.slot)
-                  : `${copy.slot(slot.slot)}: ${copy.slotUnassigned}`}
-            </Text>
-          ))}
+          <SlotLines {...shared} previews={preview.slots} />
           {missing === "slots" ? (
             <Text color="danger" accessibilityRole="alert">
               {copy.dialogSlotsIncomplete}
