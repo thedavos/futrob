@@ -12,7 +12,7 @@ it.each([
   const fetch = vi.fn(async () => Response.json({}));
   vi.stubGlobal("fetch", fetch);
   const outcome = await Effect.runPromiseExit(auditList(["org", ...flags]));
-  expect(Exit.isFailure(outcome) && Cause.failureOption(outcome.cause)).toMatchObject({
+  expect(Exit.isFailure(outcome) && Cause.findErrorOption(outcome.cause)).toMatchObject({
     value: expect.any(UsageError),
   });
   expect(fetch).not.toHaveBeenCalled();

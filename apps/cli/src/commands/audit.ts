@@ -1,4 +1,4 @@
-import { Effect, Either } from "effect";
+import { Effect, Result } from "effect";
 import {
   listOrganizationAuditQuerySchema,
   type ListOrganizationAuditResponse,
@@ -54,7 +54,7 @@ export function auditSmoke(raw: string[]): Effect.Effect<number, CliError> {
       return yield* new UsageError({ message: "Falta --outsider <actorId>.", usage: SMOKE_USAGE });
     const config: ClientConfig = { baseUrl: common.baseUrl, actorId: common.actorId };
     const competitionId = flagString(common.flags, "competition");
-    const refused = yield* Effect.either(
+    const refused = yield* Effect.result(
       apiCall({ ...config, actorId: outsider }, (client) =>
         client.audit.list(organizationId, { competitionId }),
       ),
@@ -83,7 +83,9 @@ export function auditSmoke(raw: string[]): Effect.Effect<number, CliError> {
       : null;
     const checks = {
       outsiderRefused:
-        Either.isLeft(refused) && refused.left instanceof ApiError && refused.left.status === 403,
+        Result.isFailure(refused) &&
+        refused.failure instanceof ApiError &&
+        refused.failure.status === 403,
       organizationIsolation: entries.every((entry) => entry.organizationId === organizationId),
       competitionIsolation:
         !competitionId || entries.every((entry) => entry.competitionId === competitionId),
