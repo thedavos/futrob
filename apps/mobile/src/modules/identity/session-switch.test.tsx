@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { GetMyPlayerProfileResponse, MembershipSummaryDto } from "@futrob/api-contracts";
 import type { QueryClient } from "@tanstack/react-query";
@@ -123,14 +123,32 @@ function installAccountsApi({ ana, beto }: ReturnType<typeof accounts>) {
 }
 
 async function signIn(user: ReturnType<typeof userEvent.setup>, account: Account) {
-  await user.type(await screen.findByPlaceholderText("ejemplo@correo.com"), account.user.email);
-  await user.type(screen.getByPlaceholderText("Ingresa tu contraseña"), "contraseña-segura-2026");
+  await user.click(await screen.findByPlaceholderText("ejemplo@correo.com"));
+  await user.paste(account.user.email);
+  await user.click(screen.getByPlaceholderText("Ingresa tu contraseña"));
+  await user.paste("contraseña-segura-2026");
   await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
 }
 
 async function signOut(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole("tab", { name: "Más" }));
   await user.click(await screen.findByRole("button", { name: "Cerrar sesión" }));
   await screen.findByRole("button", { name: "Iniciar sesión" });
+}
+
+/** Opens the context selector and returns whether it lists the organization `name`. */
+async function selectorListsOrganization(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string,
+): Promise<boolean> {
+  await user.click(await screen.findByRole("button", { name: /^Cambiar de contexto/ }));
+  const dialog = within(await screen.findByRole("dialog"));
+  const organizations = within(
+    (await dialog.findByRole("heading", { name: "Organizaciones" })).parentElement!,
+  );
+  const listed = organizations.queryByRole("button", { name }) !== null;
+  await user.click(dialog.getByRole("button", { name: "Cerrar" }));
+  return listed;
 }
 
 function renderSignedInApp() {
@@ -165,7 +183,7 @@ describe("switching accounts on one device", () => {
     expect(await screen.findByText("2 invitaciones por responder")).toBeInTheDocument();
     expect(cachedText(queryClient)).toMatch(/actor-ana/);
     expect(screen.getByRole("button", { name: "MADERAS FC" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Organizaciones" })).toBeInTheDocument();
+    expect(await selectorListsOrganization(user, "Liga de Ana")).toBe(true);
 
     await signOut(user);
     expect(api.signOuts).toEqual([`Bearer ${ana.token}`]);
@@ -176,7 +194,7 @@ describe("switching accounts on one device", () => {
     expect(currentLocation()).toEqual({ pathname: "/player", params: { club: "club-cuervos" } });
     expect(screen.queryByText("2 invitaciones por responder")).toBeNull();
     expect(screen.queryByRole("button", { name: "MADERAS FC" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Organizaciones" })).toBeNull();
+    expect(await selectorListsOrganization(user, "Liga de Ana")).toBe(false);
     await expect(getSession()).resolves.toMatchObject({ token: beto.token, user: beto.user });
   });
 
@@ -193,7 +211,7 @@ describe("switching accounts on one device", () => {
     const user = userEvent.setup();
     renderSignedInApp();
 
-    await screen.findByText("Cargando…");
+    await screen.findByRole("progressbar", { name: "Cargando…" });
     await signOut(user);
     await signIn(user, beto);
     expect(await screen.findByText("1 invitación por responder")).toBeInTheDocument();
@@ -202,7 +220,7 @@ describe("switching accounts on one device", () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(screen.getByText("1 invitación por responder")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Organizaciones" })).toBeNull();
+    expect(await selectorListsOrganization(user, "Liga de Ana")).toBe(false);
   });
 
   it("keeps the next account signed in when the previous account's request settles as 401", async () => {
@@ -218,7 +236,7 @@ describe("switching accounts on one device", () => {
     const user = userEvent.setup();
     renderSignedInApp();
 
-    await screen.findByText("Cargando…");
+    await screen.findByRole("progressbar", { name: "Cargando…" });
     await signOut(user);
     await signIn(user, beto);
     expect(await screen.findByText("1 invitación por responder")).toBeInTheDocument();
@@ -239,7 +257,7 @@ describe("switching accounts on one device", () => {
 
     expect(await screen.findByText("2 invitaciones por responder")).toBeInTheDocument();
     ana.revoked = true;
-    await user.click(screen.getByRole("button", { name: "Organizaciones" }));
+    await user.click(screen.getByRole("button", { name: /^Cambiar de contexto/ }));
 
     expect(await screen.findByRole("button", { name: "Iniciar sesión" })).toBeInTheDocument();
     await expect(getSession()).resolves.toBeNull();
@@ -248,7 +266,7 @@ describe("switching accounts on one device", () => {
     await signIn(user, beto);
     expect(await screen.findByText("1 invitación por responder")).toBeInTheDocument();
     expect(screen.queryByText("2 invitaciones por responder")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Organizaciones" })).toBeNull();
+    expect(await selectorListsOrganization(user, "Liga de Ana")).toBe(false);
   });
 
   it("reads fresh data when the same account signs back in", async () => {
@@ -283,6 +301,6 @@ describe("switching accounts on one device", () => {
     await signIn(user, beto);
     expect(await screen.findByText("1 invitación por responder")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "MADERAS FC" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Organizaciones" })).toBeNull();
+    expect(await selectorListsOrganization(user, "Liga de Ana")).toBe(false);
   });
 });
