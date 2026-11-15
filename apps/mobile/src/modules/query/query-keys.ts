@@ -13,6 +13,12 @@ export const mobileQueryKeys = {
     [...sessionScope(generation), "onboarding-flow", step] as const,
   playerHome: (generation: SessionGeneration, externalClubId: string | undefined) =>
     [...sessionScope(generation), "player-home", externalClubId] as const,
+  /** Prefix of every player-home snapshot, for invalidation after game data changes. */
+  playerHomeAll: (generation: SessionGeneration) =>
+    [...sessionScope(generation), "player-home"] as const,
+  /** Player-space reads (MOB-02): matches, statistics, competitions, explore, club search. */
+  playerSpace: (generation: SessionGeneration, ...parts: readonly (string | undefined)[]) =>
+    [...sessionScope(generation), "player-space", ...parts] as const,
   accountSessions: (generation: SessionGeneration) =>
     [...sessionScope(generation), "account-sessions"] as const,
   accountDeletion: (generation: SessionGeneration) =>
