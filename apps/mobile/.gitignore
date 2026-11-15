@@ -5,3 +5,5 @@ expo-env.d.ts
 .env*.local
 ios/
 android/
+credentials.json
+credentials/

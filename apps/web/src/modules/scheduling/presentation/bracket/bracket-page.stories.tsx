@@ -186,12 +186,12 @@ export const AccessibleList: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "Ver eliminatorias en lista" }));
-    await waitFor(() =>
-      expect(canvas.getByRole("link", { name: /Cuervos FC vs Maderas FC/ })).toBeVisible(),
-    );
-    await expect(
-      canvas.getByRole("link", { name: /^Ganador de octavos 1 vs Ganador de octavos 2/ }),
-    ).toBeVisible();
+    await waitFor(async () => {
+      await expect(canvas.getByRole("link", { name: /Cuervos FC vs Maderas FC/ })).toBeVisible();
+      await expect(
+        canvas.getByRole("link", { name: /^Ganador de octavos 1 vs Ganador de octavos 2/ }),
+      ).toBeVisible();
+    });
   },
 };
 

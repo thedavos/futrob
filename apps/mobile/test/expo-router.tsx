@@ -104,6 +104,9 @@ function parseHref(href: string): Location {
 }
 
 const router = {
+  canGoBack() {
+    return stack.length > 1;
+  },
   push(href: string) {
     stack = [...stack, parseHref(href)];
     emit();
@@ -111,9 +114,6 @@ const router = {
   replace(href: string) {
     stack = [...stack.slice(0, -1), parseHref(href)];
     emit();
-  },
-  canGoBack() {
-    return stack.length > 1;
   },
   back() {
     stack = stack.slice(0, -1);

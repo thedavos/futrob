@@ -208,6 +208,27 @@ describe("context shell", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps a club opened by link across personal tabs without using the selector", async () => {
+    shellApi();
+    const user = userEvent.setup();
+    renderApp("/player?club=club-maderas");
+
+    expect(
+      await screen.findByRole("button", { name: "Cambiar de contexto. Actual: MADERAS FC" }),
+    ).toBeInTheDocument();
+
+    await user.click(await screen.findByRole("tab", { name: "Más" }));
+    expect(currentLocation()?.pathname).toBe("/player/more");
+    expect(
+      await screen.findByRole("button", { name: "Cambiar de contexto. Actual: MADERAS FC" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Inicio" }));
+    await waitFor(() =>
+      expect(currentLocation()).toEqual({ pathname: "/player", params: { club: "club-maderas" } }),
+    );
+  });
+
   it("relabels the header and tabs when the language changes in «Más»", async () => {
     shellApi({ allowed: [MOBILE_PERMISSION.organizationsRead] });
     const user = userEvent.setup();

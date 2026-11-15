@@ -43,6 +43,19 @@ La implementación actual incluye auth, gate de `actor_onboarding`, los tres cam
   el paso y las consecuencias de negocio; SecureStore conserva el formulario local por usuario.
   Los enlaces `futrob://invitations/accept/<token>` guardan el token hasta completar auth.
 
+## Cuenta
+
+`/account` está disponible desde el espacio personal y los contextos de organización
+y competición. Reutiliza los flujos de AUTH-03 para preferencias ES/EN, correo,
+contraseña, sesiones y eliminación de cuenta con cancelación durante el plazo de gracia.
+Abrir Cuenta sin historial permite volver al destino autenticado resuelto por la API.
+Una sesión revocada vuelve al login; una respuesta de una sesión anterior no cierra
+la cuenta que haya iniciado sesión después. Al cancelar la eliminación, el estado
+local se actualiza con la respuesta de la API antes de regresar a la app.
+
+Los tests de pantallas usan React Native Web con auth y API simulados. No sustituyen
+la verificación nativa de iOS y Android exigida por `AC-MOB-*`.
+
 ## Desarrollo
 
 ```bash
@@ -90,3 +103,10 @@ apps/mobile/
         ├── navigation/        # shell por contexto, selector, pestañas y Más
         └── player-space/      # espacio del jugador (MOB-02); modelos puros en @futrob/sdk
 ```
+
+## Publicación
+
+[Preparar la publicación](release/README.md) documenta los perfiles EAS Build y Submit,
+los enlaces universales de invitación, los iconos y las fichas ES/EN de ambas tiendas.
+La configuración queda en el repositorio; los identificadores de firma, la asociación
+del dominio, las builds, la verificación nativa y la publicación requieren pasos del dueño.
