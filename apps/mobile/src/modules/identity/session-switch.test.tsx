@@ -123,8 +123,10 @@ function installAccountsApi({ ana, beto }: ReturnType<typeof accounts>) {
 }
 
 async function signIn(user: ReturnType<typeof userEvent.setup>, account: Account) {
-  await user.type(await screen.findByPlaceholderText("ejemplo@correo.com"), account.user.email);
-  await user.type(screen.getByPlaceholderText("Ingresa tu contraseña"), "contraseña-segura-2026");
+  await user.click(await screen.findByPlaceholderText("ejemplo@correo.com"));
+  await user.paste(account.user.email);
+  await user.click(screen.getByPlaceholderText("Ingresa tu contraseña"));
+  await user.paste("contraseña-segura-2026");
   await user.click(screen.getByRole("button", { name: "Iniciar sesión" }));
 }
 
