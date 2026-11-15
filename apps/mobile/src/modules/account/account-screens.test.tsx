@@ -166,6 +166,7 @@ describe("account deletion on mobile", () => {
 
     await screen.findByText("Tu cuenta se eliminará el 10 de diciembre de 2026");
     await user.click(screen.getByRole("button", { name: "Cancelar eliminación" }));
+    await user.click(await screen.findByRole("tab", { name: "Más" }));
     await user.click(await screen.findByRole("button", { name: "Cuenta" }));
     await user.click(await screen.findByRole("button", { name: "Eliminar cuenta" }));
 
