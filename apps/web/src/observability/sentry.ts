@@ -37,7 +37,7 @@ function cloudflareSentryOptions<
     dsn: options.dsn,
     environment: options.environment,
     tracesSampleRate: options.tracesSampleRate,
-    sendDefaultPii: false,
+    dataCollection: options.dataCollection,
     initialScope: { tags: { ...options.initialScope.tags } },
     beforeSend(event, hint) {
       return applySentryEventPolicy(event, hint);
@@ -56,7 +56,12 @@ export function withWorkerSentry<
   },
   T,
 >(handler: T): T {
-  return Sentry.withSentry((env: Env) => cloudflareSentryOptions(env), handler);
+  // SAFETY: TanStack Start's fetch is (Request, RequestOptions?), not Cloudflare's
+  // (Request, Env, ExecutionContext). withSentry still wraps the handler object.
+  return Sentry.withSentry(
+    (env: Env) => cloudflareSentryOptions(env),
+    handler as Parameters<typeof Sentry.withSentry>[1],
+  ) as T;
 }
 
 /** No-op unless the SDK was initialized (dev stays console-only). */

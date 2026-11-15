@@ -46,14 +46,14 @@ describe("API Sentry", () => {
     const options = init.mock.calls[0]?.[0] as {
       dsn: string;
       environment: string;
-      sendDefaultPii: boolean;
+      dataCollection: { userInfo: boolean; httpBodies: unknown[] };
       initialScope: { tags: Record<string, string> };
       beforeSend: (event: object, hint: object) => object | null;
     };
     expect(options).toMatchObject({
       dsn: "https://public@o0.ingest.sentry.io/1",
       environment: "staging",
-      sendDefaultPii: false,
+      dataCollection: { userInfo: false, httpBodies: [] },
       initialScope: { tags: { service: "api", environment: "staging" } },
     });
     const requestId = "9b020aa7-9c5e-4cca-b8ea-daeb047c6dca";

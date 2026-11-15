@@ -234,7 +234,9 @@ describe("event scrubbing", () => {
       service: "auth",
     });
     expect(options?.initialScope.tags).toEqual({ service: "auth", environment: "production" });
-    expect(options?.sendDefaultPii).toBe(false);
+    expect(options?.dataCollection.userInfo).toBe(false);
+    expect(options?.dataCollection.httpBodies).toEqual([]);
+    expect(options?.dataCollection.queues).toBe(false);
     const rejected = { extra: { token: "session-token" } };
     expect(
       applySentryEventPolicy(rejected, { originalException: { code: "auth.invalid_credentials" } }),

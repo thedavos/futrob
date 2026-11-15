@@ -35,7 +35,7 @@ function cloudflareSentryOptions<
     dsn: options.dsn,
     environment: options.environment,
     tracesSampleRate: options.tracesSampleRate,
-    sendDefaultPii: false,
+    dataCollection: options.dataCollection,
     initialScope: { tags: { ...options.initialScope.tags } },
     beforeSend(event, hint) {
       return applySentryEventPolicy(event, hint);

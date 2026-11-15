@@ -9,6 +9,7 @@ export {
   scrubSentryEvent,
   sentrySdkOptions,
   sentryServiceTags,
+  sentryV10DataCollection,
   withRequestIdTag,
   FUTROB_SENTRY_SERVICES,
   SENTRY_TRACES_SAMPLE_RATE,

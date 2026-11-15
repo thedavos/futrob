@@ -11,6 +11,27 @@ export type FutrobSentryService = (typeof FUTROB_SENTRY_SERVICES)[number];
 
 export const SENTRY_TRACES_SAMPLE_RATE = 0.1;
 
+/**
+ * v10 `sendDefaultPii: false` baseline. v11 `dataCollection` collects more
+ * unless this is set (docs.sentry.io migration v10-to-v11).
+ */
+const SENTRY_IP_DENYLIST = ["forwarded", "-ip", "remote-", "via", "-user"] as const;
+
+export const sentryV10DataCollection = {
+  userInfo: false,
+  cookies: false,
+  httpHeaders: {
+    request: { deny: [...SENTRY_IP_DENYLIST] },
+    response: { deny: [...SENTRY_IP_DENYLIST] },
+  },
+  httpBodies: [],
+  urlQueryParams: { deny: [...SENTRY_IP_DENYLIST] },
+  genAI: { inputs: false, outputs: false },
+  databaseQueryData: false,
+  graphQL: { document: false, variables: false },
+  queues: false,
+};
+
 const REQUEST_ID_HEADER_NAMES = ["x-request-id", "X-Request-ID"] as const;
 const REQUEST_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -176,7 +197,7 @@ export function sentrySdkOptions(input: SentryInitInput) {
     dsn: config.dsn,
     environment: config.environment,
     tracesSampleRate: config.tracesSampleRate,
-    sendDefaultPii: false as const,
+    dataCollection: sentryV10DataCollection,
     initialScope: { tags: sentryServiceTags(config) },
   };
 }
