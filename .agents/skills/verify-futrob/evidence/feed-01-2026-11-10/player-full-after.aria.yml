@@ -1,0 +1,136 @@
+- link "Saltar al contenido":
+  - /url: "#app-main"
+- complementary "Navegación principal":
+  - button "Abrir menú de cuenta": PP Pablo
+  - button "Colapsar barra lateral"
+  - button "Atlético Pumas"
+  - paragraph: Pendientes
+  - list:
+    - listitem:
+      - link "Confirmar selección Sporting Quipu vs Atlético Pumas · Clausura 26 hace 20 h":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+  - list:
+    - listitem:
+      - link "Inicio":
+        - /url: /player
+    - listitem:
+      - link "Competiciones":
+        - /url: /player/competitions
+    - listitem:
+      - link "Datos de juego":
+        - /url: /player/game-accounts
+    - listitem:
+      - link "Mis partidos":
+        - /url: /player/matches
+    - listitem:
+      - link "Mis estadísticas":
+        - /url: /player/statistics
+    - listitem:
+      - link "Invitaciones":
+        - /url: /invitations
+- banner:
+  - paragraph: Capi_Puma Atlético Pumas
+- main:
+  - heading "Actividad" [level=1]
+  - paragraph: Tus invitaciones y la actividad de tus equipos, lo más reciente primero.
+  - list "Actividad":
+    - listitem:
+      - link "Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26 dentro de 12 h":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26
+        - time: dentro de 12 h
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Apertura Inscripciones hace 24 min":
+        - /url: /player/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6
+        - text: Inscripción aprobada Atlético Pumas · Apertura Inscripciones
+        - time: hace 24 min
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Torneo Verano 25 hace 24 min":
+        - /url: /player/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07
+        - text: Inscripción aprobada Atlético Pumas · Torneo Verano 25
+        - time: hace 24 min
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Mundialito hace 24 min":
+        - /url: /player/competitions/5c3033d1-0403-4e1c-981c-309c374ed3ce
+        - text: Inscripción aprobada Atlético Pumas · Mundialito
+        - time: hace 24 min
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Copa Relámpago hace 24 min":
+        - /url: /player/competitions/9016a92a-0e1e-4017-9a77-50a1362054b1
+        - text: Inscripción aprobada Atlético Pumas · Copa Relámpago
+        - time: hace 24 min
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Clausura 26 hace 24 min":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a
+        - text: Inscripción aprobada Atlético Pumas · Clausura 26
+        - time: hace 24 min
+    - listitem:
+      - link "Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26 hace 4 h":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26
+        - time: hace 4 h
+    - listitem:
+      - link "Confirmar selección Sporting Quipu vs Atlético Pumas · Clausura 26 hace 20 h":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Confirmar selección Sporting Quipu vs Atlético Pumas · Clausura 26
+        - time: hace 20 h
+    - listitem:
+      - link "Selección respondida Unión Chasqui vs Atlético Pumas · Clausura 26 hace 8 d":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Selección respondida Unión Chasqui vs Atlético Pumas · Clausura 26
+        - time: hace 8 d
+    - listitem:
+      - link "Selección respondida Real Vicuña vs Atlético Pumas · Clausura 26 hace 15 d":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Selección respondida Real Vicuña vs Atlético Pumas · Clausura 26
+        - time: hace 15 d
+    - listitem:
+      - link "Selección respondida Sporting Quipu vs Atlético Pumas · Mundialito hace 17 d":
+        - /url: /player/competitions/5c3033d1-0403-4e1c-981c-309c374ed3ce/matches
+        - text: Selección respondida Sporting Quipu vs Atlético Pumas · Mundialito
+        - time: hace 17 d
+    - listitem:
+      - link "Selección respondida Inti United vs Atlético Pumas · Clausura 26 hace 22 d":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Selección respondida Inti United vs Atlético Pumas · Clausura 26
+        - time: hace 22 d
+    - listitem:
+      - link "Selección respondida Racing Totora vs Atlético Pumas · Clausura 26 hace 29 d":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Selección respondida Racing Totora vs Atlético Pumas · Clausura 26
+        - time: hace 29 d
+    - listitem:
+      - link "Selección respondida Inti United vs Atlético Pumas · Torneo Verano 25 hace 107 d":
+        - /url: /player/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07/matches
+        - text: Selección respondida Inti United vs Atlético Pumas · Torneo Verano 25
+        - time: hace 107 d
+    - listitem:
+      - link "Selección respondida Real Vicuña vs Atlético Pumas · Torneo Verano 25 hace 114 d":
+        - /url: /player/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07/matches
+        - text: Selección respondida Real Vicuña vs Atlético Pumas · Torneo Verano 25
+        - time: hace 114 d
+    - listitem:
+      - link "Selección respondida Cóndores FC vs Atlético Pumas · Torneo Verano 25 hace 121 d":
+        - /url: /player/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07/matches
+        - text: Selección respondida Cóndores FC vs Atlético Pumas · Torneo Verano 25
+        - time: hace 121 d
+    - listitem:
+      - link "Selección respondida Deportivo Llama vs Atlético Pumas · Torneo Verano 25 hace 128 d":
+        - /url: /player/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07/matches
+        - text: Selección respondida Deportivo Llama vs Atlético Pumas · Torneo Verano 25
+        - time: hace 128 d
+    - listitem:
+      - link "Selección respondida Sporting Quipu vs Atlético Pumas · Torneo Verano 25 hace 135 d":
+        - /url: /player/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07/matches
+        - text: Selección respondida Sporting Quipu vs Atlético Pumas · Torneo Verano 25
+        - time: hace 135 d
+    - listitem:
+      - link "Selección respondida Real Vicuña vs Atlético Pumas · Torneo Verano 25 hace 142 d":
+        - /url: /player/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07/matches
+        - text: Selección respondida Real Vicuña vs Atlético Pumas · Torneo Verano 25
+        - time: hace 142 d
+    - listitem:
+      - link "Selección respondida Inti United vs Atlético Pumas · Torneo Verano 25 hace 149 d":
+        - /url: /player/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07/matches
+        - text: Selección respondida Inti United vs Atlético Pumas · Torneo Verano 25
+        - time: hace 149 d

@@ -1,4 +1,5 @@
 import { TaggedError, type Permission } from "@futrob/shared-kernel";
+import type { CompetitionFormat } from "../entities/competition.ts";
 
 export class CompetitionNotFound extends TaggedError("CompetitionNotFound")<{
   code: "competitions.not_found";
@@ -38,6 +39,8 @@ export class EntryCreationKeyConflict extends TaggedError("EntryCreationKeyConfl
 }> {}
 
 export type CreateCompetitionDraftError =
+  | CompetitionPlanLimitReached
+  | CompetitionFormatNotInPlan
   | CompetitionProfileError
   | InvalidCompetitionName
   | InvalidCompetitionGameEdition
@@ -46,6 +49,7 @@ export type CreateCompetitionDraftError =
   | CompetitionAuthorizationForbidden;
 
 export type UpdateCompetitionDraftError =
+  | CompetitionFormatNotInPlan
   | CompetitionNotFound
   | CompetitionNotEditable
   | CompetitionProfileError
@@ -161,6 +165,7 @@ export class CompetitionPublishBlocked extends TaggedError("CompetitionPublishBl
 }> {}
 
 export type RegisterTeamEntryError =
+  | CompetitionPlanLimitReached
   | CompetitionNotFound
   | CompetitionNotEditable
   | CompetitionCapacityReached
@@ -174,6 +179,7 @@ export type RemoveCompetitionParticipantError =
   | CompetitionAuthorizationForbidden;
 
 export type ApproveCompetitionEntryError =
+  | CompetitionPlanLimitReached
   | EntryNotFound
   | EntryAlreadyDecided
   | CompetitionNotFound
@@ -184,3 +190,18 @@ export type RejectCompetitionEntryError =
   | EntryNotFound
   | EntryAlreadyDecided
   | CompetitionAuthorizationForbidden;
+
+/** The plan blocks new usage only; existing competitions and entries stay (ADR-0025). */
+export class CompetitionPlanLimitReached extends TaggedError("CompetitionPlanLimitReached")<{
+  code: "competitions.plan_limit_reached";
+  message: string;
+  limit: "active_competitions" | "teams_per_competition";
+  max: number;
+}> {}
+
+export class CompetitionFormatNotInPlan extends TaggedError("CompetitionFormatNotInPlan")<{
+  code: "competitions.format_not_in_plan";
+  message: string;
+  format: CompetitionFormat;
+  allowedFormats: readonly CompetitionFormat[];
+}> {}

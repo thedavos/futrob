@@ -3,10 +3,7 @@
 import { useId, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
-  Alert,
-  AlertDescription,
   applyStyles,
-  Button,
   ChoiceGroup,
   Field,
   FieldError,
@@ -15,12 +12,10 @@ import {
   typography,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
-import { InfoIcon } from "@phosphor-icons/react";
 import type { GamePlatformDto } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import { FieldsetError } from "@/shared/presentation/forms/fieldset-error.tsx";
 import { GameEditionField } from "@/shared/presentation/forms/game-edition-field.tsx";
-import { knownGameEditions } from "@/shared/presentation/forms/known-game-editions.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { PlatformChoice } from "@/shared/presentation/forms/platform-choice.tsx";
@@ -36,44 +31,6 @@ const styles = stylex.create({
     width: "100%",
     maxWidth: "42rem",
     gap: "2rem",
-  },
-  reuseAlert: {
-    gridTemplateColumns: {
-      default: null,
-      [media.sm]: "auto minmax(0, 1fr) auto",
-    },
-    alignItems: {
-      default: null,
-      [media.sm]: "center",
-    },
-    columnGap: {
-      default: null,
-      [media.sm]: "1rem",
-    },
-  },
-  reuseIcon: {
-    marginTop: {
-      default: null,
-      [media.sm]: 0,
-    },
-  },
-  reuseAction: {
-    gridColumnStart: {
-      default: 2,
-      [media.sm]: 3,
-    },
-    gridRowStart: {
-      default: null,
-      [media.sm]: 1,
-    },
-    marginTop: {
-      default: "0.5rem",
-      [media.sm]: 0,
-    },
-    width: {
-      default: "100%",
-      [media.sm]: "auto",
-    },
   },
   fieldGap: {
     gap: "0.75rem",
@@ -95,9 +52,6 @@ const styles = stylex.create({
   },
 });
 
-const reuseAlert = applyStyles(styles.reuseAlert);
-const reuseIcon = applyStyles(styles.reuseIcon);
-const reuseAction = applyStyles(styles.reuseAction);
 const fieldGap = applyStyles(styles.fieldGap);
 const platformGrid = applyStyles(styles.platformGrid);
 
@@ -157,34 +111,10 @@ export function GameAccountStep() {
       currentStepId="game-account"
       description={t("onboarding.account.description")}
       error={flow.error}
-      steps={stepsForPath(t, path)}
+      steps={stepsForPath(t, path, flow.draft.organizationAccountStep)}
       title={t("onboarding.account.title")}
     >
       <div {...applyStyles(styles.body)}>
-        {path === "organization" &&
-        flow.draft.competitionPlatform &&
-        flow.draft.competitionGameEdition.trim() ? (
-          <Alert className={reuseAlert.className} style={reuseAlert.style} variant="info">
-            <InfoIcon aria-hidden="true" className={reuseIcon.className} style={reuseIcon.style} />
-            <AlertDescription>{t("onboarding.account.reuse.description")}</AlertDescription>
-            <Button
-              className={reuseAction.className}
-              onClick={() =>
-                flow.updateDraft({
-                  platform: flow.draft.competitionPlatform,
-                  gameEdition: flow.draft.competitionGameEdition,
-                  customGameEdition: !knownGameEditions.some(
-                    (edition) => edition === flow.draft.competitionGameEdition,
-                  ),
-                })
-              }
-              style={reuseAction.style}
-              variant="outline"
-            >
-              {t("onboarding.account.reuse.action")}
-            </Button>
-          </Alert>
-        ) : null}
         <Field
           className={fieldGap.className}
           invalid={Boolean(validationError && !draft.gameAccountIdentifier.trim())}
@@ -267,13 +197,16 @@ export function GameAccountStep() {
         onBack={() =>
           void flow.goTo(
             path === "organization"
-              ? "competition"
+              ? "organization"
               : path === "invitation"
                 ? "invitation"
                 : "intention",
             path,
           )
         }
+        // Identity is declared, never verified (DEC-073): the CTA saves what was typed.
+        // With nothing typed, skipping is the only way forward.
+        disabled={!hasAny}
         onPrimary={continueAfterAccount}
         onSkip={() => {
           flow.clearGameAccount();
@@ -282,12 +215,8 @@ export function GameAccountStep() {
         }}
         primaryLabel={
           path === "player"
-            ? hasAny
-              ? t("onboarding.account.continue")
-              : t("onboarding.account.linkContinue")
-            : hasAny
-              ? t("onboarding.account.review")
-              : t("onboarding.account.linkReview")
+            ? t("onboarding.account.saveContinue")
+            : t("onboarding.account.saveReview")
         }
       />
     </OnboardingShell>

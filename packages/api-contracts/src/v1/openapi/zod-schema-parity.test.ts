@@ -4,9 +4,13 @@ import { apiErrorSchema } from "../errors.ts";
 import { pingResponseSchema } from "../meta/ping.response.ts";
 import {
   encounterScheduleSnapshotSchema,
+  getCurrentCompetitionFixtureResponseSchema,
   listEncounterCandidatesResponseSchema,
 } from "../encounters/schemas.ts";
-import { scheduleChangeRequestSchema } from "../encounters/schemas.ts";
+import {
+  listScheduleChangeRequestsResponseSchema,
+  scheduleChangeRequestSchema,
+} from "../encounters/schedule-change-requests.ts";
 import { providerSyncJobResponseSchema } from "../game-data/schemas.ts";
 import {
   officialSelectionCommandResponseSchema,
@@ -26,11 +30,17 @@ describe("Zod and OpenAPI required/enum parity", () => {
       ["PingResponse", pingResponseSchema, "output"],
       ["ListEncounterCandidatesResponse", listEncounterCandidatesResponseSchema, "output"],
       ["EncounterScheduleSnapshot", encounterScheduleSnapshotSchema, "output"],
+      [
+        "GetCurrentCompetitionFixtureResponse",
+        getCurrentCompetitionFixtureResponseSchema,
+        "output",
+      ],
       ["GetCompetitionStandingsResponse", getCompetitionStandingsResponseSchema, "output"],
       ["OfficialSelectionView", officialSelectionViewSchema, "output"],
       ["OfficialSelectionCommandResponse", officialSelectionCommandResponseSchema, "output"],
       ["ProposeOfficialSelectionRequest", proposeOfficialSelectionRequestSchema, "input"],
       ["ScheduleChangeRequest", scheduleChangeRequestSchema, "output"],
+      ["ListScheduleChangeRequestsResponse", listScheduleChangeRequestsResponseSchema, "output"],
       ["ProviderSyncJobResponse", providerSyncJobResponseSchema, "output"],
     ] as const;
 

@@ -1,0 +1,9 @@
+# Archivos ignorados por git que Claude Code y Codex copian a cada worktree nuevo.
+# Ver AGENTS.md -> "Local env files". Solo se copian si están en .gitignore.
+.env
+apps/api/.env
+apps/auth/.env
+apps/auth/.dev.vars
+apps/web/.env
+apps/web/.dev.vars
+apps/mobile/.env

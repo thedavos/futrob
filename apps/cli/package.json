@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@futrob/logger": "0.1.0",
+    "@futrob/notifications": "0.1.0",
     "@futrob/results": "0.1.0",
     "@futrob/scheduling": "0.1.0",
     "@futrob/sdk": "0.1.0",
@@ -23,8 +24,8 @@
     "effect": "^4.0.4"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
-    "tsx": "4.23.15",
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.13",
     "typescript": "6.0.2"
   }
 }

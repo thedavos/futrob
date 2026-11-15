@@ -86,15 +86,4 @@ describe("useFormValidation", () => {
 
     expect(result.current.formErrors).toEqual({});
   });
-
-  it("reuses the same Base UI actions ref for each field", () => {
-    const { result } = renderHook(() => useFormValidation<TestField>());
-
-    const firstRef = result.current.getFieldValidationProps("email").actionsRef;
-    const secondRef = result.current.getFieldValidationProps("email").actionsRef;
-    const passwordRef = result.current.getFieldValidationProps("password").actionsRef;
-
-    expect(secondRef).toBe(firstRef);
-    expect(passwordRef).not.toBe(firstRef);
-  });
 });

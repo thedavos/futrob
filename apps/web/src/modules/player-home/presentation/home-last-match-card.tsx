@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowsClockwiseIcon, CalendarBlankIcon, CircleNotchIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, Button, Caption, Heading, Subtitle } from "@futrob/ui";
+import { applyStyles, Badge, Button, Caption, Heading, Subtitle, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { MatchAppearanceStrip } from "@/modules/statistics/presentation/player-match-appearance.tsx";
@@ -78,10 +78,6 @@ const styles = stylex.create({
     alignItems: "center",
     gap: "0.25rem",
     maxWidth: "24rem",
-  },
-  emptyTitle: {
-    fontWeight: 600,
-    fontSize: "var(--text-lg)",
   },
   emptyActions: {
     display: "flex",
@@ -229,7 +225,7 @@ export function HomeLastMatchCard({
               <CalendarBlankIcon aria-hidden size={ICON_SIZE} {...applyStyles(styles.icon)} />
             </span>
             <div {...applyStyles(styles.emptyCopy)}>
-              <Heading className={styles.emptyTitle}>
+              <Heading className={typography.title}>
                 {t("player.home.lastMatch.emptyTitle")}
               </Heading>
               <Subtitle>{t("player.home.lastMatch.emptySubtitle")}</Subtitle>

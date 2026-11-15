@@ -1,11 +1,43 @@
+import type { EffectiveAccessDto } from "@futrob/api-contracts";
+import { BILLING_PERMISSION } from "@futrob/billing";
+import { SHELL_PERMISSIONS, allowedPermissionSet } from "@/context/permissions.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
+import { RESULT_PERMISSION } from "@futrob/results";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { TEAM_PERMISSION } from "@futrob/teams";
-import { contextNavFor, generalNavFor } from "./nav-registry.ts";
+import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
+import {
+  accountNavItems,
+  contextNavFor,
+  generalNavFor,
+  resolveActiveNavHref,
+} from "./nav-registry.ts";
 import { WORKSPACE_SELECTION_KIND } from "./workspace-selection.ts";
 
 describe("generalNavFor", () => {
+  it("uses the active locale for personal navigation and the account menu", () => {
+    const english = createTranslator("en");
+    const personal = generalNavFor({ kind: WORKSPACE_SELECTION_KIND.personal }, undefined, english);
+    expect(personal.items.map((item) => item.label)).toEqual([
+      "Home",
+      "Competitions",
+      "Game data",
+      "My matches",
+      "My statistics",
+      "Invitations",
+    ]);
+    expect(accountNavItems(english).map((item) => item.label)).toEqual([
+      "Profile",
+      "Send feedback",
+      "Settings",
+      "Terms of service",
+      "Privacy policy",
+      "Refunds",
+    ]);
+    expect(accountNavItems().map((item) => item.label)).toContain("Perfil");
+  });
+
   it("filters organization items by effective permissions only", () => {
     const section = generalNavFor(
       {
@@ -115,6 +147,31 @@ describe("contextNavFor", () => {
     expect([...player.items, ...operator.items].filter((item) => item.stub)).toEqual([]);
   });
 
+  it("lists disputes only for actors who can approve results", () => {
+    const competition = {
+      kind: WORKSPACE_SELECTION_KIND.competition,
+      competitionId: "c1",
+      organizationId: "org-1",
+    } as const;
+    const editor = contextNavFor(
+      competition,
+      new Set([COMPETITION_PERMISSION.update, COMPETITION_PERMISSION.read]),
+    );
+    const approver = contextNavFor(
+      competition,
+      new Set([
+        COMPETITION_PERMISSION.update,
+        COMPETITION_PERMISSION.read,
+        RESULT_PERMISSION.resultApprove,
+      ]),
+    );
+
+    expect(editor.items.map((item) => item.id)).not.toContain("disputes");
+    expect(approver.items.find((item) => item.id === "disputes")).toMatchObject({
+      href: "/orgs/org-1/competitions/c1/disputes",
+    });
+  });
+
   it("hides Mi equipo without teams.read", () => {
     const section = contextNavFor(
       {
@@ -144,5 +201,114 @@ describe("contextNavFor", () => {
     for (const item of [...player.items, ...operator.items]) {
       expect(item.icon, item.id).toBeTruthy();
     }
+  });
+});
+
+describe("plan navigation from shell bootstrap permissions", () => {
+  const selection = {
+    kind: WORKSPACE_SELECTION_KIND.organization,
+    organizationId: "org-1",
+  } as const;
+  const effectiveAccess = (role: string, billingAllowed: boolean): EffectiveAccessDto => ({
+    actorId: "actor-1",
+    scope: { organizationId: "org-1" },
+    roles: [{ scopeType: "organization", scopeId: "org-1", role }],
+    permissions: SHELL_PERMISSIONS.map((permission) => ({
+      permission,
+      allowed: permission === BILLING_PERMISSION.read && billingAllowed,
+      decidedAt: "organization",
+    })),
+  });
+  it.each(["organizer", "staff"])(
+    "shows Plan y uso for an authorized %s using the actual probes",
+    (role) => {
+      const permissions = allowedPermissionSet(effectiveAccess(role, true));
+      expect(
+        generalNavFor(selection, permissions).items.find((item) => item.id === "plan"),
+      ).toMatchObject({
+        href: "/orgs/org-1/settings/plan",
+      });
+    },
+  );
+  it("hides Plan y uso when billing.read is denied", () => {
+    const permissions = allowedPermissionSet(effectiveAccess("staff", false));
+    expect(generalNavFor(selection, permissions).items.map((item) => item.id)).not.toContain(
+      "plan",
+    );
+  });
+});
+
+describe("sanctions navigation from shell bootstrap permissions", () => {
+  it("lets a sanctions reader reach the page without competition editing access", () => {
+    const section = contextNavFor(
+      {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        organizationId: "org-1",
+        competitionId: "competition-1",
+      },
+      new Set([COMPETITION_PERMISSION.sanctionsRead]),
+    );
+
+    expect(section.items.map((item) => item.id)).toEqual(["sanctions"]);
+  });
+
+  it.each([true, false])("follows the sanctions read decision %s", (canRead) => {
+    const access: EffectiveAccessDto = {
+      actorId: "actor-1",
+      scope: { organizationId: "org-1", competitionId: "competition-1" },
+      roles: [],
+      permissions: SHELL_PERMISSIONS.map((permission) => ({
+        permission,
+        allowed: permission === COMPETITION_PERMISSION.sanctionsRead ? canRead : true,
+        decidedAt: "competition",
+      })),
+    };
+    const items = contextNavFor(
+      {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        organizationId: "org-1",
+        competitionId: "competition-1",
+      },
+      allowedPermissionSet(access),
+    ).items;
+    const href = "/orgs/org-1/competitions/competition-1/sanctions";
+
+    expect(items.some((item) => item.href === href)).toBe(canRead);
+    if (canRead) expect(resolveActiveNavHref(href, items)).toBe(href);
+  });
+});
+
+describe("audit navigation from effective access", () => {
+  it.each([true, false])("follows the audit-read decision %s in both contexts", (allowed) => {
+    const access: EffectiveAccessDto = {
+      actorId: "actor-1",
+      scope: { organizationId: "org-1", competitionId: "competition-1" },
+      roles: [],
+      permissions: SHELL_PERMISSIONS.map((permission) => ({
+        permission,
+        allowed: permission === ORGANIZATION_PERMISSION.auditTrailRead && allowed,
+        decidedAt: "organization",
+      })),
+    };
+    const permissions = allowedPermissionSet(access);
+    const organizationItems = generalNavFor(
+      { kind: WORKSPACE_SELECTION_KIND.organization, organizationId: "org-1" },
+      permissions,
+    ).items;
+    const competitionItems = contextNavFor(
+      {
+        kind: WORKSPACE_SELECTION_KIND.competition,
+        organizationId: "org-1",
+        competitionId: "competition-1",
+      },
+      permissions,
+    ).items;
+    expect(organizationItems.some((item) => item.href === "/orgs/org-1/settings/audit")).toBe(
+      allowed,
+    );
+    expect(
+      competitionItems.some((item) => item.href === "/orgs/org-1/competitions/competition-1/audit"),
+    ).toBe(allowed);
+    if (allowed) expect(competitionItems.map((item) => item.id)).toEqual(["audit"]);
   });
 });

@@ -120,6 +120,20 @@ export const getMyMatchesResponseSchema = z.object({
 
 export type GetMyMatchesResponse = z.infer<typeof getMyMatchesResponseSchema>;
 
+export const standingFormResultSchema = z.enum(["win", "draw", "loss"]);
+
+/** Latest official results, oldest first. */
+export const standingFormSchema = z.array(standingFormResultSchema).max(5);
+
+export const swissProgressSchema = z.object({
+  roundsTotal: z.number().int().nonnegative(),
+  roundsCompleted: z.number().int().nonnegative(),
+  currentRound: z.number().int().positive().nullable(),
+  isFinal: z.boolean(),
+});
+
+export type SwissProgressDto = z.infer<typeof swissProgressSchema>;
+
 export const competitionStandingRowSchema = z.object({
   position: z.number().int().positive(),
   teamId: z.string().min(1),
@@ -130,7 +144,19 @@ export const competitionStandingRowSchema = z.object({
   goalsFor: z.number().int().nonnegative(),
   goalsAgainst: z.number().int().nonnegative(),
   goalDifference: z.number().int(),
+  /** Match points minus `pointsDeducted`; negative when deductions exceed them. */
   points: z.number().int(),
+  /** Points taken away by active sanctions (ADR-0028). Absent on tables stored before them. */
+  pointsDeducted: z.number().int().nonnegative().optional(),
+  form: standingFormSchema,
+  /** Swiss only. `points` already include the bye credit; `played` and W/D/L never do. */
+  swiss: z
+    .object({
+      buchholz: z.number().int(),
+      byes: z.number().int().nonnegative(),
+      withdrawn: z.boolean(),
+    })
+    .optional(),
 });
 
 export type CompetitionStandingRowDto = z.infer<typeof competitionStandingRowSchema>;
@@ -138,10 +164,17 @@ export type CompetitionStandingRowDto = z.infer<typeof competitionStandingRowSch
 export const competitionStandingSnapshotSchema = z.object({
   competitionId: z.string().min(1),
   organizationId: z.string().min(1),
-  formulaVersion: z.literal("points-gd-gf-v1"),
+  formulaVersion: z.enum(["points-gd-gf-v1", "swiss-points-buchholz-gd-gf-v1"]),
   rows: z.array(competitionStandingRowSchema),
   sourceRevisionMax: z.number().int().nonnegative(),
   updatedAt: z.string().datetime(),
+  /**
+   * Teams that reach the playoffs from this table. Null when the format has no playoffs stage,
+   * or once a playoffs result is approved and the table no longer ranks the league alone.
+   */
+  playoffSpots: z.number().int().positive().nullable(),
+  /** Round progress of a Swiss fixture; null in every other format. */
+  swiss: swissProgressSchema.nullable(),
 });
 
 export type CompetitionStandingSnapshotDto = z.infer<typeof competitionStandingSnapshotSchema>;
@@ -222,3 +255,9 @@ export const getCompetitionRankingsResponseSchema = z.object({
 });
 
 export type GetCompetitionRankingsResponse = z.infer<typeof getCompetitionRankingsResponseSchema>;
+
+export const rebuildCompetitionStatisticsResponseSchema = z.object({
+  competitionId: z.string().min(1),
+  officialResultsProjected: z.number().int().nonnegative(),
+  contributionsProjected: z.number().int().nonnegative(),
+});

@@ -1,147 +1,188 @@
-import { describe, expect, it } from "vite-plus/test";
+import { randomUUID } from "node:crypto";
+import { readdir, readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { afterAll, describe, expect, it } from "vite-plus/test";
+import { Pool } from "pg";
 import type { ActorOnboardingPort } from "@futrob/identity";
 import { asActorId } from "@futrob/shared-kernel";
-import { z } from "zod";
-import { asPgPool, type FakePgQueryable } from "@/adapters/persistence/pg-test-double.ts";
-
+import { seedActors } from "@/testing/seed-actors.ts";
 import { InMemoryActorOnboardingRepository } from "./in-memory-actor-onboarding.repository.ts";
 import { PostgresActorOnboardingRepository } from "./postgres-actor-onboarding.repository.ts";
 
-const onboardingPathSchema = z.enum(["player", "organization", "invitation"]);
-const onboardingStepSchema = z.enum([
-  "intention",
-  "organization",
-  "competition",
-  "game",
-  "invitation",
-  "game-account",
-  "club",
-  "team",
-  "review",
-]);
-interface StoredRow {
-  actor_id: string;
-  onboarding_completed: boolean;
-  onboarding_completed_at: string | null;
-  onboarding_version: number | null;
-  onboarding_path: z.infer<typeof onboardingPathSchema> | null;
-  onboarding_current_step: z.infer<typeof onboardingStepSchema> | null;
+type HistoryRow = readonly [string, string | null, string | null, number, string];
+
+interface RepositoryCase {
+  readonly repository: ActorOnboardingPort;
+  history(): Promise<readonly HistoryRow[]>;
 }
 
-class FakeActorOnboardingPool {
-  private readonly rows = new Map<string, StoredRow>();
+const databaseUrl = process.env.TEST_DATABASE_URL;
+const migrationsDirectory = resolve(import.meta.dirname, "../../../migrations");
+const pools: Pool[] = [];
+/** The Postgres case migrates a fresh schema per test, which alone takes several seconds. */
+const TEST_TIMEOUT_MS = 60_000;
 
-  async connect(): Promise<FakePgQueryable> {
-    throw new Error("connect not used");
+afterAll(async () => {
+  for (const pool of pools.splice(0)) {
+    const schema = (await pool.query("SELECT current_schema() AS schema")).rows[0].schema;
+    await pool.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
+    await pool.end();
   }
-
-  seed(row: StoredRow) {
-    this.rows.set(row.actor_id, row);
-  }
-
-  async query(text: string, values?: readonly unknown[]) {
-    const actorId = String(values?.[0]);
-    if (text.includes("SELECT actor_id")) {
-      const row = this.rows.get(actorId);
-      return { rows: row ? [row] : [] };
-    }
-
-    if (text.includes("VALUES ($1, FALSE")) {
-      if (!values) throw new Error("expected onboarding insert values");
-      const existing = this.rows.get(actorId);
-      if (!existing?.onboarding_completed) {
-        this.rows.set(actorId, {
-          actor_id: actorId,
-          onboarding_completed: false,
-          onboarding_completed_at: null,
-          onboarding_version: null,
-          onboarding_path: onboardingPathSchema.parse(values[1]),
-          onboarding_current_step: onboardingStepSchema.parse(values[2]),
-        });
-      }
-      return { rows: [] };
-    }
-
-    if (text.includes("VALUES ($1, TRUE")) {
-      if (!values) throw new Error("expected onboarding completion values");
-      const existing = this.rows.get(actorId);
-      if (!existing?.onboarding_completed) {
-        this.rows.set(actorId, {
-          actor_id: actorId,
-          onboarding_completed: true,
-          onboarding_completed_at: String(values[1]),
-          onboarding_version: Number(values[2]),
-          onboarding_path: onboardingPathSchema.parse(values[3]),
-          onboarding_current_step: null,
-        });
-      }
-      return { rows: [] };
-    }
-
-    throw new Error(`Unexpected query: ${text}`);
-  }
-}
-
-function repositoryCases(): Array<[string, () => ActorOnboardingPort]> {
-  return [
-    ["in-memory", () => new InMemoryActorOnboardingRepository()],
-    [
-      "Postgres",
-      () => new PostgresActorOnboardingRepository(asPgPool(new FakeActorOnboardingPool())),
-    ],
-  ];
-}
-
-describe.each(repositoryCases())("actor onboarding %s repository", (_name, createRepository) => {
-  it("saves, retrieves and completes progress while clearing the current step", async () => {
-    const repository = createRepository();
-    const actorId = asActorId("actor-resume");
-
-    await repository.saveProgress({
-      actorId,
-      path: "player",
-      currentStep: "game-account",
-      updatedAt: new Date("2026-07-30T10:00:00.000Z"),
-    });
-
-    await expect(repository.findByActor(actorId)).resolves.toMatchObject({
-      completed: false,
-      path: "player",
-      currentStep: "game-account",
-    });
-
-    await repository.saveCompleted({
-      actorId,
-      completedAt: new Date("2026-07-30T11:00:00.000Z"),
-      version: 1,
-      path: "player",
-    });
-
-    await expect(repository.findByActor(actorId)).resolves.toEqual({
-      actorId,
-      completed: true,
-      completedAt: new Date("2026-07-30T11:00:00.000Z"),
-      version: 1,
-      path: "player",
-      currentStep: null,
-    });
-  });
 });
 
-it("normalizes a legacy Postgres team step at the persistence boundary", async () => {
-  const pool = new FakeActorOnboardingPool();
-  pool.seed({
-    actor_id: "actor-legacy-team",
-    onboarding_completed: false,
-    onboarding_completed_at: null,
-    onboarding_version: null,
-    onboarding_path: "player",
-    onboarding_current_step: "team",
-  });
-  const repository = new PostgresActorOnboardingRepository(asPgPool(pool));
+function inMemoryCase(): RepositoryCase {
+  const repository = new InMemoryActorOnboardingRepository();
+  return {
+    repository,
+    async history() {
+      return repository.events.map((event) => [
+        event.kind,
+        event.path,
+        event.kind === "step-entered" ? event.step : null,
+        event.version,
+        event.occurredAt.toISOString(),
+      ]);
+    },
+  };
+}
 
-  await expect(repository.findByActor(asActorId("actor-legacy-team"))).resolves.toMatchObject({
-    path: "player",
-    currentStep: "club",
-  });
-});
+async function postgresCase(): Promise<RepositoryCase> {
+  const schema = `actor_onboarding_${randomUUID().replaceAll("-", "")}`;
+  const admin = new Pool({ connectionString: databaseUrl });
+  await admin.query(`CREATE SCHEMA "${schema}"`);
+  await admin.end();
+  const pool = new Pool({ connectionString: databaseUrl, options: `-c search_path=${schema}` });
+  pools.push(pool);
+  const files = (await readdir(migrationsDirectory)).filter((file) => file.endsWith(".sql")).sort();
+  for (const file of files) {
+    await pool.query(await readFile(resolve(migrationsDirectory, file), "utf8"));
+  }
+  await seedActors(pool, "actor-resume", "actor-funnel");
+  return {
+    repository: new PostgresActorOnboardingRepository(pool),
+    async history() {
+      const result = await pool.query(
+        `SELECT kind, onboarding_path, onboarding_step, onboarding_version,
+                to_char(occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS at
+         FROM actor_onboarding_events ORDER BY id`,
+      );
+      return result.rows.map((row) => [
+        row.kind,
+        row.onboarding_path,
+        row.onboarding_step,
+        row.onboarding_version,
+        row.at,
+      ]);
+    },
+  };
+}
+
+const cases: Array<[string, () => Promise<RepositoryCase> | RepositoryCase]> = [
+  ["in-memory", inMemoryCase],
+];
+if (databaseUrl) cases.push(["Postgres", postgresCase]);
+
+describe.each(cases)(
+  "actor onboarding %s repository",
+  { timeout: TEST_TIMEOUT_MS },
+  (_name, createCase) => {
+    it("saves, retrieves and completes progress while clearing the current step", async () => {
+      const { repository } = await createCase();
+      const actorId = asActorId("actor-resume");
+
+      await repository.saveProgress({
+        actorId,
+        path: "player",
+        currentStep: "game-account",
+        version: 3,
+        updatedAt: new Date("2026-07-30T10:00:00.000Z"),
+      });
+
+      await expect(repository.findByActor(actorId)).resolves.toMatchObject({
+        completed: false,
+        path: "player",
+        currentStep: "game-account",
+      });
+
+      await repository.saveCompleted({
+        actorId,
+        completedAt: new Date("2026-07-30T11:00:00.000Z"),
+        version: 1,
+        path: "player",
+      });
+
+      await expect(repository.findByActor(actorId)).resolves.toEqual({
+        actorId,
+        completed: true,
+        completedAt: new Date("2026-07-30T11:00:00.000Z"),
+        version: 1,
+        path: "player",
+        currentStep: null,
+      });
+    });
+
+    it("records one history entry per real transition, none for repeats or after completion", async () => {
+      const { repository, history } = await createCase();
+      const actorId = asActorId("actor-funnel");
+      const progress = (
+        path: "player" | null,
+        currentStep: "intention" | "game-account" | "club" | "review",
+        at: string,
+      ) =>
+        repository.saveProgress({
+          actorId,
+          path,
+          currentStep,
+          version: 3,
+          updatedAt: new Date(at),
+        });
+
+      await progress(null, "intention", "2026-11-02T10:00:00.000Z");
+      await progress("player", "game-account", "2026-11-02T10:01:00.000Z");
+      await progress("player", "game-account", "2026-11-02T10:01:30.000Z");
+      await progress("player", "club", "2026-11-02T10:02:00.000Z");
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        await repository.saveCompleted({
+          actorId,
+          path: "player",
+          version: 3,
+          completedAt: new Date("2026-11-02T10:03:00.000Z"),
+        });
+      }
+      await progress("player", "review", "2026-11-02T10:04:00.000Z");
+
+      await expect(history()).resolves.toEqual([
+        ["step-entered", null, "intention", 3, "2026-11-02T10:00:00.000Z"],
+        ["step-entered", "player", "game-account", 3, "2026-11-02T10:01:00.000Z"],
+        ["step-entered", "player", "club", 3, "2026-11-02T10:02:00.000Z"],
+        ["completed", "player", null, 3, "2026-11-02T10:03:00.000Z"],
+      ]);
+    });
+
+    it("never lets a pathless entry write replace a chosen path", async () => {
+      const { repository, history } = await createCase();
+      const actorId = asActorId("actor-resume");
+      const save = (path: "player" | null, currentStep: "intention" | "game-account", at: string) =>
+        repository.saveProgress({
+          actorId,
+          path,
+          currentStep,
+          version: 3,
+          updatedAt: new Date(at),
+        });
+
+      await save(null, "intention", "2026-11-02T10:00:00.000Z");
+      await save("player", "game-account", "2026-11-02T10:01:00.000Z");
+      await save(null, "intention", "2026-11-02T10:02:00.000Z");
+
+      await expect(repository.findByActor(actorId)).resolves.toMatchObject({
+        path: "player",
+        currentStep: "game-account",
+      });
+      await expect(history()).resolves.toEqual([
+        ["step-entered", null, "intention", 3, "2026-11-02T10:00:00.000Z"],
+        ["step-entered", "player", "game-account", 3, "2026-11-02T10:01:00.000Z"],
+      ]);
+    });
+  },
+);

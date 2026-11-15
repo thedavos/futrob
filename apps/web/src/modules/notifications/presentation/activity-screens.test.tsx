@@ -10,9 +10,13 @@ import {
   createTestQueryClient,
   QueryTestProvider,
 } from "@/shared/presentation/query/query-test-utils.tsx";
-import type { ActivityListQuery } from "./activity-browser-client.ts";
-import { OrganizationActivityPage } from "./organization-activity-page.tsx";
-import { OrganizationRecentActivity } from "./organization-recent-activity.tsx";
+import { ActivityClientError, type ActivityListQuery } from "./activity-browser-client.ts";
+import { EmailUnsubscribePage } from "./email-unsubscribe-page.tsx";
+import { OrganizationActivityPage, PlayerActivityPage } from "./organization-activity-page.tsx";
+import {
+  OrganizationRecentActivity,
+  PlayerRecentActivity,
+} from "./organization-recent-activity.tsx";
 import { ShellPendingQueue } from "./shell-pending-queue.tsx";
 
 const listForOrganization =
@@ -71,7 +75,12 @@ function entry(
     requiresAction: true,
     resourceType: "encounter",
     resourceId: "enc-1",
-    subject: { competitionName: "Liga A", encounterLabel: "Cuervos vs Halcones", teamName: null },
+    subject: {
+      competitionName: "Liga A",
+      encounterLabel: "Cuervos vs Halcones",
+      teamName: null,
+      outcome: null,
+    },
     openedAt: "2026-10-07T10:00:00.000Z",
     closedAt: null,
     expiresAt: null,
@@ -94,7 +103,7 @@ const publication = entry({
   requiresAction: false,
   resourceType: "competition",
   resourceId: "cmp-a",
-  subject: { competitionName: "Liga A", encounterLabel: null, teamName: null },
+  subject: { competitionName: "Liga A", encounterLabel: null, teamName: null, outcome: null },
   openedAt: "2026-10-07T11:00:00.000Z",
   closedAt: "2026-10-07T11:00:00.000Z",
   lastEventAt: "2026-10-07T11:00:00.000Z",
@@ -177,6 +186,73 @@ describe("activity screens", () => {
     expect(await within(recent).findByText("Disputa resuelta")).toBeTruthy();
   });
 
+  it("lists a schedule change, an entry and the organizer's decision, and queues what awaits the organizer", async () => {
+    const reschedule = entry({
+      id: "reschedule",
+      kind: "schedule_change",
+      openedAt: "2026-10-07T09:00:00.000Z",
+      lastEventAt: "2026-10-07T09:00:00.000Z",
+    });
+    const application = entry({
+      id: "application",
+      kind: "competition_entry",
+      resourceType: "competition",
+      resourceId: "cmp-a",
+      subject: {
+        competitionName: "Liga A",
+        encounterLabel: null,
+        teamName: "Cuervos",
+        outcome: null,
+      },
+      openedAt: "2026-10-07T10:00:00.000Z",
+      lastEventAt: "2026-10-07T10:00:00.000Z",
+    });
+    const decision = entry({
+      id: "decision",
+      kind: "organizer_decision",
+      status: "closed",
+      requiresAction: false,
+      resourceType: "competition",
+      resourceId: "cmp-a",
+      subject: {
+        competitionName: "Liga A",
+        encounterLabel: null,
+        teamName: "Halcones",
+        outcome: "entry_rejected",
+      },
+      openedAt: "2026-10-07T11:00:00.000Z",
+      closedAt: "2026-10-07T11:00:00.000Z",
+      lastEventAt: "2026-10-07T11:00:00.000Z",
+    });
+    listForOrganization.mockImplementation(async (_organizationId, query) =>
+      query?.requiresAction
+        ? page([application, reschedule])
+        : page([decision, application, reschedule]),
+    );
+    renderWith(operatorQueue());
+
+    const pending = screen.getByRole("navigation", { name: "Pendientes" });
+    expect(await within(pending).findByText("Revisar inscripción")).toBeTruthy();
+    expect(within(pending).getByText("Decidir reprogramación")).toBeTruthy();
+    expect(within(pending).queryByText("Inscripción rechazada")).toBeNull();
+
+    const recent = await screen.findByRole("list", { name: "Actividad reciente" });
+    const titles = within(recent)
+      .getAllByRole("listitem")
+      .map((item) => item.querySelector("span span")?.textContent);
+    expect(titles).toEqual([
+      "Inscripción rechazada",
+      "Revisar inscripción",
+      "Decidir reprogramación",
+    ]);
+    expect(
+      within(recent).getByText("Inscripción rechazada").closest("a")?.getAttribute("href"),
+    ).toBe("/orgs/org-a/competitions/cmp-a/teams");
+    expect(
+      within(recent).getByText("Decidir reprogramación").closest("a")?.getAttribute("href"),
+    ).toBe("/orgs/org-a/competitions/cmp-a/encounters");
+  });
+
   it("shows at most ten rows with a link to the full feed, and no link when empty", async () => {
     listForOrganization.mockResolvedValue(page(many(12, "row"), "cursor"));
     renderWith(<OrganizationRecentActivity organizationId={ORG} />);
@@ -193,6 +269,24 @@ describe("activity screens", () => {
     expect(screen.queryByRole("link", { name: "Ver toda la actividad" })).toBeNull();
   });
 
+  it("shows the player's own recent activity with a capped list and personal full-feed link", async () => {
+    listForOrganization.mockResolvedValue(page([]));
+    listMine.mockResolvedValue(
+      page(
+        many(12, "personal").map((row) => ({ ...row, audience: "team" })),
+        "next",
+      ),
+    );
+    renderWith(<PlayerRecentActivity />);
+    const recent = await screen.findByRole("list", { name: "Actividad reciente" });
+    expect(within(recent).getAllByRole("listitem")).toHaveLength(10);
+    expect(within(recent).getByText("Match personal-0 · Liga A")).toBeTruthy();
+    expect(within(recent).queryByText("Match personal-10 · Liga A")).toBeNull();
+    expect(screen.getByRole("link", { name: "Ver toda la actividad" }).getAttribute("href")).toBe(
+      "/player/activity",
+    );
+  });
+
   it("pages the full feed with «Cargar más» until the last page", async () => {
     const first = many(25, "first");
     const second = many(5, "second");
@@ -207,6 +301,68 @@ describe("activity screens", () => {
     await waitFor(() => expect(within(feed).getAllByRole("listitem")).toHaveLength(30));
     expect(screen.queryByRole("button", { name: "Cargar más" })).toBeNull();
     expect(listForOrganization).toHaveBeenLastCalledWith(ORG, { limit: 25, cursor: "next" });
+  });
+
+  it("pages the player's full feed and keeps its copy personal", async () => {
+    listMine.mockImplementation(async (query) =>
+      query?.cursor === "personal-next"
+        ? page([
+            entry({
+              id: "last-personal",
+              audience: "team",
+              subject: { ...dispute.subject, encounterLabel: "Personal final match" },
+            }),
+          ])
+        : page(
+            many(25, "personal-page").map((row) => ({ ...row, audience: "team" })),
+            "personal-next",
+          ),
+    );
+    renderWith(<PlayerActivityPage />);
+    const feed = await screen.findByRole("list", { name: "Actividad" });
+    expect(within(feed).getAllByRole("listitem")).toHaveLength(25);
+    expect(
+      screen.getByText("Tus invitaciones y la actividad de tus equipos, lo más reciente primero."),
+    ).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Cargar más" }));
+    expect(await within(feed).findByText("Personal final match · Liga A")).toBeTruthy();
+    expect(within(feed).getAllByRole("listitem")).toHaveLength(26);
+    expect(screen.queryByRole("button", { name: "Cargar más" })).toBeNull();
+  });
+
+  it("gives an empty player feed personal guidance and no full-feed CTA", async () => {
+    listMine.mockResolvedValue(page([]));
+    renderWith(<PlayerRecentActivity />);
+    expect(
+      await screen.findByText(
+        "Aquí verás tus invitaciones y la actividad de los equipos que representas.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Ver toda la actividad" })).toBeNull();
+    cleanup();
+    renderWith(<PlayerActivityPage />);
+    expect(await screen.findByText("Sin actividad todavía")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Aquí verás tus invitaciones y la actividad de los equipos que representas.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("retries a failed personal activity read and shows the recovered row", async () => {
+    listMine.mockRejectedValueOnce(new Error("unavailable")).mockResolvedValue(
+      page([
+        entry({
+          id: "recovered-personal",
+          audience: "team",
+          subject: { ...dispute.subject, encounterLabel: "Recovered match" },
+        }),
+      ]),
+    );
+    renderWith(<PlayerActivityPage />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo cargar la actividad.");
+    await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(await screen.findByText("Recovered match · Liga A")).toBeTruthy();
   });
 
   it("tells a member without access that the feed is not theirs", async () => {
@@ -256,7 +412,12 @@ describe("activity screens", () => {
           kind: "roster_invitation",
           resourceType: "roster_invitation",
           resourceId: "inv-1",
-          subject: { competitionName: "Liga A", encounterLabel: null, teamName: "Cuervos" },
+          subject: {
+            competitionName: "Liga A",
+            encounterLabel: null,
+            teamName: "Cuervos",
+            outcome: null,
+          },
         }),
       ]),
     );
@@ -267,5 +428,41 @@ describe("activity screens", () => {
     expect(link?.getAttribute("href")).toBe("/invitations");
     expect(screen.getByText("Cuervos · Liga A")).toBeTruthy();
     expect(listForOrganization).not.toHaveBeenCalled();
+  });
+});
+
+describe("email unsubscribe page", () => {
+  it("turns non-critical email off only after the person confirms", async () => {
+    const unsubscribe = vi.fn(async () => ({ nonCriticalEmail: false as const }));
+    renderWith(<EmailUnsubscribePage token="tok-1" unsubscribe={unsubscribe} />);
+
+    expect(unsubscribe).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Dejar de recibirlos" }));
+
+    expect((await screen.findByRole("status")).textContent).toContain("Configuración");
+    expect(unsubscribe).toHaveBeenCalledWith("tok-1");
+    expect(screen.getByText("Ir a Futrob").closest("a")?.getAttribute("href")).toBe("/");
+  });
+
+  it("explains an unknown or missing link, and keeps the button after a failure", async () => {
+    const unknown = vi.fn(async () => {
+      throw new ActivityClientError(404, "notifications.unknown_unsubscribe_token");
+    });
+    renderWith(<EmailUnsubscribePage token="forged" unsubscribe={unknown} />);
+    await userEvent.click(screen.getByRole("button", { name: "Dejar de recibirlos" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("no es válido");
+    cleanup();
+
+    renderWith(<EmailUnsubscribePage token={null} />);
+    expect(screen.getByRole("alert").textContent).toContain("no es válido");
+    cleanup();
+
+    const offline = vi.fn(async () => {
+      throw new ActivityClientError(503, "api.unavailable");
+    });
+    renderWith(<EmailUnsubscribePage token="tok-1" unsubscribe={offline} />);
+    await userEvent.click(screen.getByRole("button", { name: "Dejar de recibirlos" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Vuelve a intentarlo");
+    expect(screen.getByRole("button", { name: "Dejar de recibirlos" })).toBeTruthy();
   });
 });

@@ -35,19 +35,30 @@ Each feature file starts with an H1 and one paragraph. Then exactly four H2s: `S
 
 ## Features
 
-- [Landing](./landing.md) covers the public marketing page, CTAs, and the mechanism section. **Seed proof target.**
-- [Auth](./auth.md) covers login, signup, session gate, and secret-mismatch failure.
+- [Plan y uso](./billing-plan.md) covers the organization plan page, 402 upsell states and `/pricing`.
+- [Landing](./landing.md) covers the public marketing page, CTAs, the mechanism section, and footer legal pages. **Seed proof target.**
+- [Missing routes](./not-found.md) covers unmatched URLs (HTTP 404) and the global unexpected-error page.
+- [Auth](./auth.md) covers login, signup, signup consent links, session gate, and secret-mismatch failure.
 - [Onboarding (player)](./onboarding-player.md) covers intention → optional account/club → `/player`.
 - [Player matches](./player-matches.md) covers personal matches, empty club state, and official stats separation.
 - [Competition setup](./competition-setup.md) covers org + draft + setup in the UI, with the CLI golden path as the API twin.
+- [Swiss format](./swiss-format.md) covers the Swiss setup, plan upsell, web fixture generation, rows, withdrawal, round closing and the standings.
 - [Explore competitions](./explore-competitions.md) covers the authenticated catalog, URL filters, detail and share.
+- [Results / Match Center](./results-match-center.md) covers the encounters lists, preview, Team negotiation, organizer review, conflicts, recovery and permissions.
+- [Sanctions](./sanctions.md) covers the competition `Sanciones` page, impose and revoke, the Team's read-only section on `Mi equipo`, standings deductions and permissions.
+- [Audit](./audit.md) covers organization settings and competition audit navigation, filters, pagination, linked objects and denied reads.
+- [Public competition portal](./public-portal.md) covers the signed-out portal, its sections and empty states, the 404, crawling (robots.txt, sitemap.xml, per-page metadata) and the organizer's `Ver portal público` link.
+- [Activity feed](./activity-feed.md) covers organization and personal home/full feeds, Pending, audiences, replay, and the FEED-01 action lifecycle.
 
 ## Not mapped yet (do not fake-drive)
 
-- Public competition portal — no public routes. Authenticated explore is not that portal.
-- Match Center / official selection / confirmation — no scheduling or results UI.
 - Native mobile — auth foundation only; `AC-MOB-*` requires iOS/Android builds.
 - Onboarding invitation and organizer paths — real, but not in this seed; do not claim them via the player path.
 - Player club / game-account / invitations — live routes (`/player/ea-clubs`, `/player/game-accounts`, `/invitations/accept/*`, `/roster-invitations/accept/*`). Visible from `/player` (`Añadir club`, `Vincular cuenta`, sidebar). Not in this seed. `/player/competitions/explore` is mapped.
 - Org picker `/orgs` (`Tus organizaciones`) and teams console `/orgs/$orgId/competitions/$competitionId/teams` — shipped operator screens. `competition-setup` covers create + wizard, including the competitions-index empty CTA `Nueva competición`; do not treat the full index, org home, or teams console as proven through setup.
+- Organization team directory `/orgs/$orgId/teams` (`Equipos`) and members `/orgs/$orgId/settings/members` (`Miembros y roles`) — shipped; visible in the org shell. Org `Jugadores` `/orgs/$orgId/players` and org `Invitaciones` `/orgs/$orgId/invitations` are `PageScaffold` only (same shell). Do not treat those scaffolds as the mapped members or teams consoles.
+- Official competition reads after publish: standings `/orgs/$orgId/competitions/$competitionId/standings` (`Clasificación`), rankings `.../rankings`, team performance `.../team-performance` (`Rendimiento de equipos`), rules `.../rules` (`Reglamento`). Sidebar entries on a competition; not this seed.
+- Encounter reschedule (`Solicitar reprogramación` on the Encounter). Visible from `results-match-center`; driving it is not that feature's seed.
+- Public entry-invitation link `/entry-invitations/link/$code` (`apps/web/src/routes/entry-invitations/link.$code.tsx`). Signed-out preview; not the authenticated accept routes already listed above.
+- Player competition matches `/player/competitions/$competitionId/matches` — same Encounter list as the Team route in `results-match-center`, after resolving the organization from the viewer's accessible competitions. The competitions index still opens `/orgs/$orgId/competitions/$competitionId/matches`.
 - Team invitations from setup participants (`Invitar equipo`) — visible on the mapped wizard; driving invitations is not this seed.

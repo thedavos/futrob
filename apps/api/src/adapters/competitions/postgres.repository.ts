@@ -1,10 +1,9 @@
 import type {
   Competition,
   CompetitionDraft,
-  CompetitionMembership,
-  CompetitionMembershipRepository,
   CompetitionMatchRules,
   CompetitionRepository,
+  CompetitionRankingEligibility,
   CompetitionRules,
   CompetitionStatus,
 } from "@futrob/competitions";
@@ -25,12 +24,10 @@ import {
   asCompetitionId,
   asOrganizationId,
   type CompetitionId,
-  type ActorId,
   type OrganizationId,
 } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
-import { z } from "zod";
-import { pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
+import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 import {
   getPgExecutor,
   isInPgTransaction,
@@ -112,13 +109,15 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     const rulesResult = await executor.query(
       `INSERT INTO competition_rules (
          competition_id, version, regular_stage, knockout_stage, away_goals_enabled,
-         max_roster_size, created_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+         max_roster_size, ranking_minimum_matches, ranking_minimum_team_minutes_ratio, created_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT (competition_id, version) DO UPDATE SET
          regular_stage = EXCLUDED.regular_stage,
          knockout_stage = EXCLUDED.knockout_stage,
          away_goals_enabled = EXCLUDED.away_goals_enabled,
-         max_roster_size = EXCLUDED.max_roster_size
+         max_roster_size = EXCLUDED.max_roster_size,
+         ranking_minimum_matches = EXCLUDED.ranking_minimum_matches,
+         ranking_minimum_team_minutes_ratio = EXCLUDED.ranking_minimum_team_minutes_ratio
        RETURNING *`,
       [
         competition.id,
@@ -127,6 +126,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         draft.rules.knockoutStage,
         draft.rules.awayGoalsEnabled,
         draft.rules.maxRosterSize,
+        draft.rules.rankingEligibility?.minimumMatches ?? null,
+        draft.rules.rankingEligibility?.minimumTeamMinutesRatio ?? null,
         draft.rules.createdAt.toISOString(),
       ],
     );
@@ -206,7 +207,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
   async findRulesByCompetitionId(competitionId: CompetitionId): Promise<CompetitionRules | null> {
     const result = await getPgExecutor(this.pool).query(
       `SELECT competition_id, version, regular_stage, knockout_stage, away_goals_enabled,
-              max_roster_size, created_at
+              max_roster_size, ranking_minimum_matches, ranking_minimum_team_minutes_ratio,
+              created_at
        FROM competition_rules
        WHERE competition_id = $1 AND version = 1`,
       [competitionId],
@@ -227,6 +229,21 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     return result.rows.map((row) => rehydrateCompetition(row));
   }
 
+  async listNamesByOrganization(organizationId: OrganizationId, limit: number) {
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, name
+       FROM competitions
+       WHERE organization_id = $1
+       ORDER BY id ASC
+       LIMIT $2`,
+      [organizationId, limit],
+    );
+    return result.rows.map((row) => ({
+      id: asCompetitionId(pgTextSchema.parse(row.id)),
+      name: pgTextSchema.parse(row.name),
+    }));
+  }
+
   private async findOne(
     where: string,
     values: readonly unknown[],
@@ -238,6 +255,8 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
               r.knockout_stage,
               r.away_goals_enabled,
               r.max_roster_size,
+              r.ranking_minimum_matches,
+              r.ranking_minimum_team_minutes_ratio,
               r.created_at AS rules_created_at
        FROM competitions c
        INNER JOIN competition_rules r ON r.competition_id = c.id AND r.version = 1
@@ -255,75 +274,12 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
         knockout_stage: row.knockout_stage,
         away_goals_enabled: row.away_goals_enabled,
         max_roster_size: row.max_roster_size,
+        ranking_minimum_matches: row.ranking_minimum_matches,
+        ranking_minimum_team_minutes_ratio: row.ranking_minimum_team_minutes_ratio,
         created_at: row.rules_created_at,
       }),
     };
   }
-}
-
-export class PostgresCompetitionMembershipRepository implements CompetitionMembershipRepository {
-  constructor(private readonly pool: Pool) {}
-
-  async add(membership: CompetitionMembership): Promise<CompetitionMembership> {
-    const result = await getPgExecutor(this.pool).query(
-      `INSERT INTO competition_memberships (
-         organization_id, competition_id, actor_id, role, created_at
-       ) VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (competition_id, actor_id) DO UPDATE SET role = competition_memberships.role
-       RETURNING organization_id, competition_id, actor_id, role, created_at`,
-      [
-        membership.organizationId,
-        membership.competitionId,
-        membership.actorId,
-        membership.role,
-        membership.createdAt.toISOString(),
-      ],
-    );
-    return rehydrateCompetitionMembership(result.rows[0]);
-  }
-
-  async updateRole(membership: CompetitionMembership): Promise<CompetitionMembership> {
-    const result = await getPgExecutor(this.pool).query(
-      `UPDATE competition_memberships
-       SET role = $4
-       WHERE organization_id = $1 AND competition_id = $2 AND actor_id = $3
-       RETURNING organization_id, competition_id, actor_id, role, created_at`,
-      [membership.organizationId, membership.competitionId, membership.actorId, membership.role],
-    );
-    return rehydrateCompetitionMembership(result.rows[0]);
-  }
-
-  async findByCompetitionAndActor(
-    competitionId: CompetitionId,
-    actorId: ActorId,
-  ): Promise<CompetitionMembership | null> {
-    const result = await getPgExecutor(this.pool).query(
-      `SELECT organization_id, competition_id, actor_id, role, created_at
-       FROM competition_memberships
-       WHERE competition_id = $1 AND actor_id = $2`,
-      [competitionId, actorId],
-    );
-    return result.rows[0] ? rehydrateCompetitionMembership(result.rows[0]) : null;
-  }
-
-  async listByActor(actorId: ActorId): Promise<readonly CompetitionMembership[]> {
-    const result = await getPgExecutor(this.pool).query(
-      `SELECT organization_id, competition_id, actor_id, role, created_at
-       FROM competition_memberships
-       WHERE actor_id = $1
-       ORDER BY created_at DESC`,
-      [actorId],
-    );
-    return result.rows.map(rehydrateCompetitionMembership);
-  }
-}
-
-export interface CompetitionMembershipRow {
-  organization_id: string;
-  competition_id: string;
-  actor_id: string;
-  role: string;
-  created_at: Date | string;
 }
 
 export interface CompetitionRow {
@@ -356,19 +312,9 @@ export interface CompetitionRulesRow {
   knockout_stage: CompetitionMatchRules | null;
   away_goals_enabled?: boolean;
   max_roster_size: number | null;
+  ranking_minimum_matches?: number | null;
+  ranking_minimum_team_minutes_ratio?: number | null;
   created_at: Date | string;
-}
-
-const competitionMembershipRoleSchema = z.enum(["staff", "captain", "player"]);
-
-function rehydrateCompetitionMembership(row: CompetitionMembershipRow): CompetitionMembership {
-  return {
-    organizationId: asOrganizationId(row.organization_id),
-    competitionId: asCompetitionId(row.competition_id),
-    actorId: asActorId(row.actor_id),
-    role: competitionMembershipRoleSchema.parse(row.role),
-    createdAt: pgTimestampSchema.parse(row.created_at),
-  };
 }
 
 export function rehydrateCompetition(row: CompetitionRow): Competition {
@@ -401,6 +347,19 @@ function rehydrateRules(row: CompetitionRulesRow): CompetitionRules {
     knockoutStage: row.knockout_stage ?? null,
     awayGoalsEnabled: false,
     maxRosterSize: row.max_roster_size ?? null,
+    rankingEligibility: rehydrateRankingEligibility(row),
     createdAt: new Date(row.created_at),
+  };
+}
+
+function rehydrateRankingEligibility(
+  row: CompetitionRulesRow,
+): CompetitionRankingEligibility | null {
+  if (row.ranking_minimum_matches == null || row.ranking_minimum_team_minutes_ratio == null) {
+    return null;
+  }
+  return {
+    minimumMatches: Number(row.ranking_minimum_matches),
+    minimumTeamMinutesRatio: Number(row.ranking_minimum_team_minutes_ratio),
   };
 }

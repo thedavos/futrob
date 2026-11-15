@@ -32,7 +32,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Avatar",
+  title: "Components/Data display/Avatar",
+  tags: ["autodocs"],
   component: Avatar,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof Avatar>;

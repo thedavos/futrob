@@ -38,6 +38,8 @@ describe("statistics module projection", () => {
     await officialResults.append(result);
     const statistics = createStatisticsModule({
       pool: null,
+      fixtureSource: { load: async () => null },
+      performanceRankingAccess: { includesPerformanceRanking: async () => true },
       resultReader: {
         getApprovedByEncounter: (encounterId) =>
           officialResults.findApprovedByEncounter(encounterId),
@@ -49,6 +51,7 @@ describe("statistics module projection", () => {
       rosters,
       profiles,
       entries: new InMemoryCompetitionEntryRepository(),
+      fixturePlans: { listActive: async () => [] },
       competitions: {
         async findById() {
           return performanceCompetition();
@@ -79,6 +82,20 @@ describe("statistics module projection", () => {
     });
 
     expect(projected.isOk()).toBe(true);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const rebuilt = await statistics.useCases.rebuildCompetitionStatistics.execute({
+        organizationId: result.organizationId,
+        competitionId: result.competitionId,
+      });
+      expect(rebuilt.isOk()).toBe(true);
+      if (rebuilt.isOk())
+        expect(rebuilt.value).toEqual({
+          competitionId: result.competitionId,
+          officialResultsProjected: 1,
+          contributionsProjected: 1,
+        });
+    }
+
     const contributions = await statistics.useCases.listMyMatchContributions.execute({
       actorId: asActorId("actor-1"),
       limit: 20,

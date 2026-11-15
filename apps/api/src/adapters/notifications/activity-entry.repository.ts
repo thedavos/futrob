@@ -24,11 +24,23 @@ const subjectSchema = z
     competitionName: z.string().nullish(),
     encounterLabel: z.string().nullish(),
     teamName: z.string().nullish(),
+    outcome: z
+      .enum([
+        "entry_approved",
+        "entry_rejected",
+        "schedule_set",
+        "schedule_kept",
+        "walkover_intended",
+        "sanction_imposed",
+        "sanction_revoked",
+      ])
+      .nullish(),
   })
   .transform((subject) => ({
     competitionName: subject.competitionName ?? null,
     encounterLabel: subject.encounterLabel ?? null,
     teamName: subject.teamName ?? null,
+    outcome: subject.outcome ?? null,
   }));
 
 const nullableTimestampSchema = z.union([z.null(), pgTimestampSchema]);
@@ -45,6 +57,9 @@ const activityRowSchema = z.object({
     "roster_invitation",
     "competition_published",
     "entry_invitation",
+    "schedule_change",
+    "organizer_decision",
+    "competition_entry",
   ]),
   status: z.enum(["open", "closed"]),
   requires_action: z.boolean(),
@@ -63,6 +78,10 @@ const activityRowSchema = z.object({
     "roster_invitation",
     "competition",
     "entry_invitation",
+    "schedule_change_proposal",
+    "schedule_change_escalation",
+    "organizer_decision",
+    "competition_entry",
   ]),
   source_id: pgTextSchema,
 });

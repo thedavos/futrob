@@ -19,6 +19,12 @@ export function rescheduleScopesConflict(left: RescheduleScope, right: Reschedul
   }
 }
 
+export function sameRescheduleScope(left: RescheduleScope, right: RescheduleScope): boolean {
+  return left.type === "entire_encounter"
+    ? right.type === "entire_encounter"
+    : right.type === "official_match" && left.officialSlot === right.officialSlot;
+}
+
 /** A detached copy, so a stored request never aliases caller input. */
 export function copyRescheduleScope(scope: RescheduleScope): RescheduleScope {
   switch (scope.type) {

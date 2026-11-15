@@ -314,6 +314,59 @@ describe("context discovery SDK resources", () => {
   });
 });
 
+describe("Swiss commands", () => {
+  function recording() {
+    const calls: { url: string; method?: string; requestId: string | null; body: unknown }[] = [];
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        calls.push({
+          url: String(input),
+          method: init?.method,
+          requestId: new Headers(init?.headers).get("X-Request-ID"),
+          body: parseMockJsonBody(init),
+        });
+        return Response.json(fixturePlan());
+      }),
+    });
+    return { calls, client };
+  }
+  const requestId = "1f8c914e-a307-42aa-b2ea-ec6cfefaba83";
+
+  it("withdraws a Team with a stable request ID", async () => {
+    const { calls, client } = recording();
+    await client.encounters.withdrawSwissTeam("org-1", "competition-1", "fixture-1", {
+      teamId: "team-1",
+      reason: "Dropped out",
+      requestId,
+    });
+    expect(calls).toEqual([
+      {
+        url: "https://app.example.com/api/v1/organizations/org-1/competitions/competition-1/fixtures/fixture-1/swiss/withdrawals",
+        method: "POST",
+        requestId,
+        body: { teamId: "team-1", reason: "Dropped out", requestId },
+      },
+    ]);
+  });
+
+  it("closes a round with a stable request ID", async () => {
+    const { calls, client } = recording();
+    await client.encounters.closeSwissRound("org-1", "competition-1", "fixture-1", 2, {
+      reason: "Deadline passed",
+      requestId,
+    });
+    expect(calls).toEqual([
+      {
+        url: "https://app.example.com/api/v1/organizations/org-1/competitions/competition-1/fixtures/fixture-1/swiss/rounds/2/close",
+        method: "POST",
+        requestId,
+        body: { reason: "Deadline passed", requestId },
+      },
+    ]);
+  });
+});
+
 function fixturePlan() {
   return {
     id: "fixture-1",

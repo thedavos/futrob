@@ -10,17 +10,20 @@ import {
   createRoute,
   createRouter,
   isRedirect,
+  redirect,
 } from "@tanstack/react-router";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type {
   AcceptCompetitionInvitationResponse,
   AcceptInvitationRequest,
 } from "@futrob/api-contracts";
+import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
 import { OrganizationsClientError } from "./organizations-browser-client.ts";
 import { AcceptInvitationDeepLink } from "./accept-invitation-deep-link.tsx";
 import {
   forgetInvitationAccept,
   loadCompetitionInvitationAccept,
+  localizeInvitationAcceptFailure,
   resetInvitationAcceptOnceForTests,
   type InvitationAcceptLoaderResult,
 } from "./accept-invitation-once.ts";
@@ -79,6 +82,29 @@ describe("loadCompetitionInvitationAccept", () => {
     expect(mocks.accept).toHaveBeenCalledWith({ token: "competition-token" });
   });
 
+  it("does not redeem the link when the check before accepting fails, and retries it", async () => {
+    mocks.accept.mockResolvedValue(accepted);
+    const check = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error("status unavailable"))
+      .mockImplementationOnce(async () => {
+        throw redirect({
+          to: "/onboarding/invitation",
+          search: { invitation: "competition-token" },
+        });
+      });
+
+    await expect(
+      loadCompetitionInvitationAccept("competition-token", false, check),
+    ).resolves.toMatchObject({ kind: "error" });
+    await expect(
+      loadCompetitionInvitationAccept("competition-token", false, check),
+    ).rejects.toSatisfy(
+      (error: unknown) => isRedirect(error) && error.options.to === "/onboarding/invitation",
+    );
+    expect(mocks.accept).not.toHaveBeenCalled();
+  });
+
   it("does not POST on preload", async () => {
     mocks.accept.mockResolvedValue(accepted);
     await expect(loadCompetitionInvitationAccept("competition-token", true)).resolves.toEqual({
@@ -113,7 +139,8 @@ describe("loadCompetitionInvitationAccept", () => {
     expect(limited).toEqual({
       kind: "error",
       error: {
-        message: "Alcanzaste el límite temporal de invitaciones.",
+        kind: "catalog",
+        messageKey: "invitations.accept.rateLimited",
         requestId: "2170e2f6-a47e-4338-83c3-27c054630800",
         retryAfterSeconds: 2,
       },
@@ -193,7 +220,7 @@ function InvitationAcceptHarness({ token }: Readonly<{ token: string }>) {
         if (result.kind !== "error") return <AcceptInvitationDeepLink error={null} />;
         return (
           <AcceptInvitationDeepLink
-            error={result.error}
+            error={localizeInvitationAcceptFailure(result.error, createTranslator("es"))}
             onRetry={() => {
               forgetInvitationAccept(plainToken);
               void router.invalidate();

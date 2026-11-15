@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { useReducer, type ReactElement } from "react";
 import { Link } from "@tanstack/react-router";
 import type { EncounterViewDto, ListEncounterCandidatesResponse } from "@futrob/api-contracts";
 import {
@@ -32,17 +32,15 @@ import {
   ScheduleChangesSection,
   type ScheduleChangesState,
 } from "@/modules/scheduling/presentation/schedule-changes-section.tsx";
+import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
 import { CandidatesSection } from "./encounter-candidates.tsx";
-import {
-  assignCandidate,
-  clearSlot,
-  NO_ASSIGNMENTS,
-  previewEncounter,
-  type SlotAssignments,
-} from "./encounter-preview.ts";
+import { previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
-import { RetryAlert, type Formats } from "./encounter-parts.tsx";
+import { type Formats } from "./encounter-parts.tsx";
 import { OfficialSlotRow, SeriesPreviewPanel } from "./encounter-slots.tsx";
+import { EMPTY_TEAM_DRAFT, teamDraftReducer } from "./team-selection-draft.ts";
+import { TeamSelectionSection, type TeamSelectionState } from "./team-selection-section.tsx";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type EncounterState =
   | { readonly kind: "loading" }
@@ -67,11 +65,16 @@ export type CandidatesState =
 export function EncounterPageView({
   candidates,
   competitionId,
+  disputeReview,
   encounter,
   organizationId,
   scheduleChanges,
+  teamSelection,
 }: {
+  /** Organization review panel; only an actor who approves results gets one. */
+  readonly disputeReview?: DisputeReviewState;
   readonly scheduleChanges?: ScheduleChangesState;
+  readonly teamSelection?: TeamSelectionState;
   readonly candidates: CandidatesState;
   readonly competitionId: string;
   readonly encounter: EncounterState;
@@ -130,8 +133,10 @@ export function EncounterPageView({
       return (
         <EncounterReady
           candidates={candidates}
+          disputeReview={disputeReview}
           scheduleChanges={scheduleChanges}
           encountersLink={encountersLink}
+          teamSelection={teamSelection}
           view={encounter.view}
         />
       );
@@ -144,17 +149,22 @@ export function EncounterPageView({
 
 function EncounterReady({
   candidates,
+  disputeReview,
   encountersLink,
   scheduleChanges,
+  teamSelection,
   view,
 }: {
   readonly candidates: CandidatesState;
+  readonly disputeReview?: DisputeReviewState;
   readonly encountersLink: ReactElement;
   readonly scheduleChanges?: ScheduleChangesState;
+  readonly teamSelection?: TeamSelectionState;
   readonly view: EncounterViewDto;
 }) {
   const { locale, t } = useI18n();
-  const [assignments, setAssignments] = useState<SlotAssignments>(NO_ASSIGNMENTS);
+  const [draft, dispatch] = useReducer(teamDraftReducer, EMPTY_TEAM_DRAFT);
+  const { assignments } = draft.input;
   const formats: Formats = {
     kickoff: new Intl.DateTimeFormat(locale, {
       timeZone: view.competition.timeZone,
@@ -181,6 +191,19 @@ function EncounterReady({
         <EncounterHero formats={formats} t={t} view={view} />
       </header>
       {scheduleChanges ? <ScheduleChangesSection state={scheduleChanges} view={view} /> : null}
+      {teamSelection ? (
+        <TeamSelectionSection
+          candidates={candidateList}
+          dispatch={dispatch}
+          draft={draft}
+          encounter={view}
+          preview={preview}
+          state={teamSelection}
+        />
+      ) : null}
+      {disputeReview ? (
+        <DisputeReviewSection candidates={candidateList} encounter={view} state={disputeReview} />
+      ) : null}
       <section aria-labelledby="encounter-slots" {...applyStyles(styles.section)}>
         <div {...applyStyles(styles.sectionCopy)}>
           <SectionTitle id="encounter-slots">{t("encounter.slots.title")}</SectionTitle>
@@ -191,7 +214,7 @@ function EncounterReady({
             <OfficialSlotRow
               formats={formats}
               key={slot.slot}
-              onClear={() => setAssignments((current) => clearSlot(current, slot.slot))}
+              onClear={() => dispatch({ type: "clear_slot", slot: slot.slot })}
               preview={slot}
               t={t}
               view={view}
@@ -203,7 +226,7 @@ function EncounterReady({
       <CandidatesSection
         assignments={assignments}
         formats={formats}
-        onAssign={(slot, key) => setAssignments((current) => assignCandidate(current, slot, key))}
+        onAssign={(slot, key) => dispatch({ type: "assign", slot, key })}
         state={candidates}
         t={t}
         view={view}
@@ -257,14 +280,14 @@ function EncounterHero({
     <Card {...applyStyles(styles.hero)}>
       <MatchPitchSurface away={crest(view.away)} home={crest(view.home)}>
         <div {...applyStyles(styles.heroBody)}>
-          <div {...applyStyles(styles.matchup)}>
+          <div {...applyStyles(styles.matchup, styles.scrim)}>
             <TeamIdentity label={t("encounter.side.home")} side={view.home} />
             <span aria-hidden="true" {...applyStyles(styles.vs)}>
               {t("encounter.vs")}
             </span>
             <TeamIdentity label={t("encounter.side.away")} side={view.away} />
           </div>
-          <div {...applyStyles(styles.heroMeta)}>
+          <div {...applyStyles(styles.heroMeta, styles.scrim)}>
             <Badge className={styles.roundBadge} variant="neutral">
               {view.round
                 ? `${view.competition.name} · ${

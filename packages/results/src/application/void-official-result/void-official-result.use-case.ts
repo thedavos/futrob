@@ -76,6 +76,9 @@ export class VoidOfficialResultUseCase {
       );
     }
 
+    // A retry targets this revision, not an approval created after it was voided.
+    if (existing.status === "voided") return ok(existing);
+
     // Void every approved revision for the encounter so an older approval cannot
     // remain live after the latest revision is voided and stats are cleared.
     const approved = (await this.deps.results.listByEncounter(existing.encounterId)).filter(

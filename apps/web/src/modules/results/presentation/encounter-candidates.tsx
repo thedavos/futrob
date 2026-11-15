@@ -31,7 +31,8 @@ import {
   type SlotAssignments,
 } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
-import { RetryAlert, type Formats } from "./encounter-parts.tsx";
+import { type Formats } from "./encounter-parts.tsx";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export function CandidatesSection({
   assignments,

@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { FutrobApiError } from "@futrob/sdk";
+import { FutrobApiError, resolvePersonalExternalClubId } from "@futrob/sdk";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { onProductUnauthorized } from "@/modules/identity/session-lifecycle";
 import { mobileQueryKeys } from "@/modules/query/query-keys";
+import { useSessionGeneration } from "@/modules/query/session-query-client-provider";
 import { loadPlayerHome } from "./load-player-home";
 import type { PlayerHomeSnapshot } from "./player-home-model";
 
@@ -16,14 +17,18 @@ type PlayerHomeLoad = {
 };
 
 /**
- * Loads the six-source snapshot for one club. Without a club, the profile is read first and its
- * first association is handed to the caller as `initialClub`, so the snapshot loads once, for
- * that club. A retry keeps the current snapshot on screen until the next one settles; a club
+ * Loads the six-source snapshot for one club. Without a club, the profile is read first and the
+ * preferred club (if still associated) or the first association is handed to the caller as
+ * `initialClub`, so the snapshot loads once, for that club. A retry keeps the current snapshot on screen until the next one settles; a club
  * change never presents the previous club's data.
  */
-export function usePlayerHome(externalClubId: string | undefined): PlayerHomeLoad {
+export function usePlayerHome(
+  externalClubId: string | undefined,
+  preferredClubId?: string,
+): PlayerHomeLoad {
+  const generation = useSessionGeneration();
   const profileQuery = useQuery({
-    queryKey: mobileQueryKeys.playerProfile(),
+    queryKey: mobileQueryKeys.playerProfile(generation),
     queryFn: async ({ signal }) => {
       try {
         return await getFutrobClient().players.getProfile({ signal });
@@ -37,9 +42,12 @@ export function usePlayerHome(externalClubId: string | undefined): PlayerHomeLoa
     enabled: externalClubId === undefined,
     retry: false,
   });
-  const firstClub = profileQuery.data?.externalClubs[0]?.externalClubId;
+  const defaultClub = resolvePersonalExternalClubId(
+    preferredClubId,
+    profileQuery.data?.externalClubs.map((club) => club.externalClubId) ?? [],
+  );
   const homeQuery = useQuery({
-    queryKey: mobileQueryKeys.playerHome(externalClubId),
+    queryKey: mobileQueryKeys.playerHome(generation, externalClubId),
     queryFn: async ({ signal }) => {
       try {
         return await loadPlayerHome({ externalClubId, signal });
@@ -52,7 +60,7 @@ export function usePlayerHome(externalClubId: string | undefined): PlayerHomeLoa
     },
     enabled:
       externalClubId !== undefined ||
-      (profileQuery.isFetched && firstClub === undefined && !isUnauthorized(profileQuery.error)),
+      (profileQuery.isFetched && defaultClub === undefined && !isUnauthorized(profileQuery.error)),
     retry: false,
   });
 
@@ -64,7 +72,7 @@ export function usePlayerHome(externalClubId: string | undefined): PlayerHomeLoa
     snapshot,
     loading,
     failed: homeQuery.isError && !snapshot && !isUnauthorized(error),
-    initialClub: externalClubId === undefined ? firstClub : undefined,
+    initialClub: externalClubId === undefined ? defaultClub : undefined,
     unauthorized: isUnauthorized(error),
     retry: () => {
       void profileQuery.refetch();

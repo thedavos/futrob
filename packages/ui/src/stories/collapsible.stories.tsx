@@ -73,7 +73,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Collapsible",
+  title: "Components/Layout/Collapsible",
+  tags: ["autodocs"],
   component: Collapsible,
   parameters: { layout: "centered" },
   args: {

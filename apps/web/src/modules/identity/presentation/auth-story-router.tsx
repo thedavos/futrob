@@ -14,6 +14,7 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import { AuthFormHeader } from "@/modules/identity/presentation/auth-form-header.tsx";
 import { LoginForm } from "@/modules/identity/presentation/login-form.tsx";
 import { SignupForm } from "@/modules/identity/presentation/signup-form.tsx";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 const styles = stylex.create({
   shell: {
@@ -103,12 +104,26 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     component: () => <StubPage label="Organización (stub de Storybook)" />,
   });
 
+  const termsRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/terms",
+    component: () => <StubPage label="Términos (stub de Storybook)" />,
+  });
+
+  const privacyRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/privacy",
+    component: () => <StubPage label="Privacidad (stub de Storybook)" />,
+  });
+
   const routeTree = rootRoute.addChildren([
     loginRoute,
     signupRoute,
     onboardingRoute,
     orgsRoute,
     orgRoute,
+    termsRoute,
+    privacyRoute,
   ]);
 
   return createRouter({
@@ -119,5 +134,9 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
 
 export function AuthRouterDecorator({ initialPath }: { initialPath: "/login" | "/signup" }) {
   const router = useMemo(() => createAuthStoryRouter(initialPath), [initialPath]);
-  return <RouterProvider router={router} />;
+  return (
+    <I18nProvider initialLocale="es">
+      <RouterProvider router={router} />
+    </I18nProvider>
+  );
 }

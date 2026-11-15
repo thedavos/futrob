@@ -32,4 +32,28 @@ describe("competition profile contracts", () => {
       }).success;
     expect([parse("2026-10-12"), parse("12/10/2026")]).toEqual([true, false]);
   });
+
+  it("accepts ranking eligibility minimums and rejects values outside the range", () => {
+    const base = {
+      name: "Liga",
+      gameEdition: "FC 26",
+      platform: "pc",
+      region: "america",
+      timeZone: "UTC",
+      format: "league",
+      rules: { regularStage: null, knockoutStage: null, maxRosterSize: null },
+    };
+    const parse = (rankingEligibility: unknown) =>
+      updateCompetitionDraftRequestSchema.safeParse({
+        ...base,
+        rules: { ...base.rules, rankingEligibility },
+      }).success;
+    expect(parse({ minimumMatches: 1, minimumTeamMinutesRatio: 0.25 })).toBe(true);
+    expect(parse(null)).toBe(true);
+    expect(
+      updateCompetitionDraftRequestSchema.safeParse({ ...base, rules: base.rules }).success,
+    ).toBe(true);
+    expect(parse({ minimumMatches: -1, minimumTeamMinutesRatio: 0.25 })).toBe(false);
+    expect(parse({ minimumMatches: 1, minimumTeamMinutesRatio: 1.2 })).toBe(false);
+  });
 });

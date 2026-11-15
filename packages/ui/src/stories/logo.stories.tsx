@@ -122,7 +122,8 @@ const playgroundLogo = applyStyles(styles.playgroundLogo);
 const brandLogo = applyStyles(styles.brandLogo);
 
 const meta = {
-  title: "Primitives/Logo",
+  title: "Foundations/Logo",
+  tags: ["autodocs"],
   component: Logo,
   parameters: {
     layout: "centered",

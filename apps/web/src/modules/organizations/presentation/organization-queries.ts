@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  ChangeOrganizationRoleRequest,
   AcceptInvitationRequest,
   CreateInvitationRequest,
+  CreateOrganizationInvitationRequest,
   CreateOrganizationRequest,
   OrganizationNameAvailabilityRequest,
   OrganizationSlugAvailabilityRequest,
@@ -9,7 +11,10 @@ import type {
 } from "@futrob/api-contracts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { changeOrganizationLogo } from "./change-organization-logo.ts";
-import { organizationsBrowserClient } from "./organizations-browser-client.ts";
+import {
+  OrganizationsClientError,
+  organizationsBrowserClient,
+} from "./organizations-browser-client.ts";
 
 export function useMyMembershipsQuery() {
   return useQuery({
@@ -87,6 +92,13 @@ export function useAcceptInvitationMutation() {
   });
 }
 
+export function useCreateOrganizationInvitationMutation(organizationId: string) {
+  return useMutation({
+    mutationFn: (input: CreateOrganizationInvitationRequest) =>
+      organizationsBrowserClient.createOrganizationInvitation(organizationId, input),
+  });
+}
+
 export function useCreateCompetitionInvitationMutation(
   organizationId: string,
   competitionId: string,
@@ -94,5 +106,75 @@ export function useCreateCompetitionInvitationMutation(
   return useMutation({
     mutationFn: (input: CreateInvitationRequest) =>
       organizationsBrowserClient.createCompetitionInvitation(organizationId, competitionId, input),
+  });
+}
+
+export function organizationMembersQueryOptions(organizationId: string) {
+  return {
+    queryKey: queryKeys.organizations.members(organizationId),
+    queryFn: async ({ signal }: { readonly signal: AbortSignal }) => {
+      try {
+        return {
+          kind: "data" as const,
+          ...(await organizationsBrowserClient.listMembers(organizationId, { signal })),
+        };
+      } catch (error) {
+        if (error instanceof OrganizationsClientError && [401, 403, 404].includes(error.status)) {
+          return { kind: "denied" as const };
+        }
+        throw error;
+      }
+    },
+  };
+}
+
+type OrganizationMembersQueryData = Awaited<
+  ReturnType<ReturnType<typeof organizationMembersQueryOptions>["queryFn"]>
+>;
+
+export function useOrganizationMembersQuery(organizationId: string, enabled: boolean) {
+  return useQuery({ ...organizationMembersQueryOptions(organizationId), enabled });
+}
+
+export function useChangeMemberRoleMutation(organizationId: string, actorId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: ChangeOrganizationRoleRequest) =>
+      organizationsBrowserClient.changeMemberRole(organizationId, actorId, input),
+    onSuccess: async (assignment) => {
+      // Keep the confirmed role even if the refresh below fails; access is left to the refresh.
+      queryClient.setQueryData(
+        queryKeys.organizations.members(organizationId),
+        (current: OrganizationMembersQueryData | undefined) =>
+          current?.kind === "data"
+            ? {
+                ...current,
+                members: current.members.map((member) =>
+                  member.actorId === assignment.actorId
+                    ? { ...member, role: assignment.role }
+                    : member,
+                ),
+              }
+            : current,
+      );
+      // A role change can alter the manager's own capabilities and workspace list.
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.organizations.members(organizationId),
+        }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.organizations.mine() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.authorization.all }),
+      ]);
+    },
+  });
+}
+
+export function useMemberGrantsQuery(organizationId: string, actorId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.organizations.memberGrants(organizationId, actorId),
+    queryFn: ({ signal }) =>
+      organizationsBrowserClient.listMemberGrants(organizationId, actorId, { signal }),
+    enabled,
   });
 }

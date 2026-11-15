@@ -56,7 +56,7 @@ function RulesPreview(props: ComponentProps<typeof RulesStep>) {
 }
 
 const meta = {
-  title: "Product/Organizer/Competition rules",
+  title: "Product/Organizer/Competition setup/Rules step",
   component: RulesStep,
   parameters: { layout: "padded" },
   decorators: [

@@ -1,0 +1,308 @@
+- link "Saltar al contenido":
+  - /url: "#app-main"
+- complementary "Navegación principal":
+  - button "Abrir menú de cuenta": PA Patricia
+  - button "Colapsar barra lateral"
+  - button "Liga Andina"
+  - paragraph: Pendientes
+  - list:
+    - listitem:
+      - link "Decidir reprogramación Deportivo Llama vs Atlético Pumas · Clausura 26 dentro de 12 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+    - listitem:
+      - link "Decidir reprogramación Real Vicuña vs Cóndores FC · Clausura 26 dentro de 12 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+    - listitem:
+      - link "Revisar inscripción Inti United · Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+    - listitem:
+      - link "Decidir reprogramación Sporting Quipu vs Racing Totora · Clausura 26 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+    - listitem:
+      - link "Resolver disputa Sporting Quipu vs Deportivo Llama · Clausura 26 hace 8 d":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/disputes
+    - listitem:
+      - link "Resolver disputa Unión Chasqui vs Atlético Pumas · Clausura 26 hace 8 d":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/disputes
+  - list:
+    - listitem:
+      - link "Inicio":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea
+    - listitem:
+      - link "Competiciones":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions
+    - listitem:
+      - link "Equipos":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/teams
+    - listitem:
+      - link "Jugadores":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/players
+    - listitem:
+      - link "Invitaciones":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/invitations
+    - listitem:
+      - link "Miembros y roles":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/settings/members
+    - listitem:
+      - link "Plan y uso":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/settings/plan
+    - listitem:
+      - link "Ajustes":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/settings
+- banner:
+  - paragraph: Liga Andina Organizador
+- main:
+  - heading "Actividad" [level=1]
+  - paragraph: Todo lo que pasó en la organización, lo más reciente primero.
+  - list "Actividad":
+    - listitem:
+      - link "Decidir reprogramación Deportivo Llama vs Atlético Pumas · Clausura 26 dentro de 12 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Decidir reprogramación Deportivo Llama vs Atlético Pumas · Clausura 26
+        - time: dentro de 12 h
+    - listitem:
+      - link "El organizador mantuvo la fecha Deportivo Llama vs Racing Totora · Clausura 26 dentro de 12 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: El organizador mantuvo la fecha Deportivo Llama vs Racing Totora · Clausura 26
+        - time: dentro de 12 h
+    - listitem:
+      - link "Reprogramación respondida Deportivo Llama vs Racing Totora · Clausura 26 dentro de 12 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Reprogramación respondida Deportivo Llama vs Racing Totora · Clausura 26
+        - time: dentro de 12 h
+    - listitem:
+      - link "Reprogramación respondida Deportivo Llama vs Racing Totora · Clausura 26 dentro de 12 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Reprogramación respondida Deportivo Llama vs Racing Totora · Clausura 26
+        - time: dentro de 12 h
+    - listitem:
+      - link "Decidir reprogramación Real Vicuña vs Cóndores FC · Clausura 26 dentro de 12 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Decidir reprogramación Real Vicuña vs Cóndores FC · Clausura 26
+        - time: dentro de 12 h
+    - listitem:
+      - link "Reprogramación respondida Real Vicuña vs Cóndores FC · Clausura 26 dentro de 12 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Reprogramación respondida Real Vicuña vs Cóndores FC · Clausura 26
+        - time: dentro de 12 h
+    - listitem:
+      - link "Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26 dentro de 12 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26
+        - time: dentro de 12 h
+    - listitem:
+      - link "Disputa resuelta Unión Chasqui vs Racing Totora · Clausura 26 dentro de 2 h":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/disputes
+        - text: Disputa resuelta Unión Chasqui vs Racing Totora · Clausura 26
+        - time: dentro de 2 h
+    - listitem:
+      - link "Inscripción rechazada FEED-01 reject · Apertura Inscripciones hace 9 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción rechazada FEED-01 reject · Apertura Inscripciones
+        - time: hace 9 min
+    - listitem:
+      - link "Inscripción de equipo FEED-01 reject · Apertura Inscripciones hace 9 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción de equipo FEED-01 reject · Apertura Inscripciones
+        - time: hace 9 min
+    - listitem:
+      - link "Inscripción aprobada FEED-01 approve · Apertura Inscripciones hace 9 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción aprobada FEED-01 approve · Apertura Inscripciones
+        - time: hace 9 min
+    - listitem:
+      - link "Inscripción de equipo FEED-01 approve · Apertura Inscripciones hace 9 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción de equipo FEED-01 approve · Apertura Inscripciones
+        - time: hace 9 min
+    - listitem:
+      - link "Invitación respondida Cóndores FC · Clausura 26 hace 13 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/teams
+        - text: Invitación respondida Cóndores FC · Clausura 26
+        - time: hace 13 min
+    - listitem:
+      - link "Reprogramación respondida Sporting Quipu vs Inti United · Clausura 26 hace 14 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Reprogramación respondida Sporting Quipu vs Inti United · Clausura 26
+        - time: hace 14 min
+    - listitem:
+      - link "Reprogramación respondida Sporting Quipu vs Inti United · Clausura 26 hace 14 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Reprogramación respondida Sporting Quipu vs Inti United · Clausura 26
+        - time: hace 14 min
+    - listitem:
+      - link "Disputa resuelta Cóndores FC vs Deportivo Llama · Clausura 26 hace 16 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/disputes
+        - text: Disputa resuelta Cóndores FC vs Deportivo Llama · Clausura 26
+        - time: hace 16 min
+    - listitem:
+      - link "Selección respondida Cóndores FC vs Deportivo Llama · Clausura 26 hace 16 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Selección respondida Cóndores FC vs Deportivo Llama · Clausura 26
+        - time: hace 16 min
+    - listitem:
+      - link "Selección respondida Inti United vs Cóndores FC · Clausura 26 hace 16 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Selección respondida Inti United vs Cóndores FC · Clausura 26
+        - time: hace 16 min
+    - listitem:
+      - link "Inscripción rechazada Deportivo Llama · Apertura Inscripciones hace 18 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción rechazada Deportivo Llama · Apertura Inscripciones
+        - time: hace 18 min
+    - listitem:
+      - link "Inscripción de equipo Deportivo Llama · Apertura Inscripciones hace 18 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción de equipo Deportivo Llama · Apertura Inscripciones
+        - time: hace 18 min
+    - listitem:
+      - link "Inscripción aprobada Real Vicuña · Apertura Inscripciones hace 18 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción aprobada Real Vicuña · Apertura Inscripciones
+        - time: hace 18 min
+    - listitem:
+      - link "Inscripción de equipo Real Vicuña · Apertura Inscripciones hace 18 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción de equipo Real Vicuña · Apertura Inscripciones
+        - time: hace 18 min
+    - listitem:
+      - link "Invitación a competición respondida Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6
+        - text: Invitación a competición respondida Apertura Inscripciones
+        - time: hace 22 min
+    - listitem:
+      - link "Equipo invitado Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6
+        - text: Equipo invitado Apertura Inscripciones
+        - time: hace 22 min
+    - listitem:
+      - link "Invitación enviada Atlético Pumas · Clausura 26 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/teams
+        - text: Invitación enviada Atlético Pumas · Clausura 26
+        - time: hace 22 min
+    - listitem:
+      - link "Invitación enviada Cóndores FC · Clausura 26 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/teams
+        - text: Invitación enviada Cóndores FC · Clausura 26
+        - time: hace 22 min
+    - listitem:
+      - link "Revisar inscripción Inti United · Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Revisar inscripción Inti United · Apertura Inscripciones
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción aprobada Atlético Pumas · Apertura Inscripciones
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción de equipo Atlético Pumas · Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción de equipo Atlético Pumas · Apertura Inscripciones
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción de equipo Cóndores FC · Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción de equipo Cóndores FC · Apertura Inscripciones
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción aprobada Cóndores FC · Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción aprobada Cóndores FC · Apertura Inscripciones
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción de equipo Halcones Sin Club · Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción de equipo Halcones Sin Club · Apertura Inscripciones
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción aprobada Halcones Sin Club · Apertura Inscripciones hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6/teams
+        - text: Inscripción aprobada Halcones Sin Club · Apertura Inscripciones
+        - time: hace 22 min
+    - listitem:
+      - link "Reprogramación respondida Sporting Quipu vs Racing Totora · Clausura 26 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Reprogramación respondida Sporting Quipu vs Racing Totora · Clausura 26
+        - time: hace 22 min
+    - listitem:
+      - link "Decidir reprogramación Sporting Quipu vs Racing Totora · Clausura 26 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Decidir reprogramación Sporting Quipu vs Racing Totora · Clausura 26
+        - time: hace 22 min
+    - listitem:
+      - link "Selección respondida Real Vicuña vs Racing Totora · Clausura 26 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/encounters
+        - text: Selección respondida Real Vicuña vs Racing Totora · Clausura 26
+        - time: hace 22 min
+    - listitem:
+      - link "Competición publicada Copa Relámpago hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/9016a92a-0e1e-4017-9a77-50a1362054b1
+        - text: Competición publicada Copa Relámpago
+        - time: hace 22 min
+    - listitem:
+      - link "Competición publicada Mundialito hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/5c3033d1-0403-4e1c-981c-309c374ed3ce
+        - text: Competición publicada Mundialito
+        - time: hace 22 min
+    - listitem:
+      - link "Competición publicada Clausura 26 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a
+        - text: Competición publicada Clausura 26
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción de equipo Unión Chasqui · Copa Relámpago hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/9016a92a-0e1e-4017-9a77-50a1362054b1/teams
+        - text: Inscripción de equipo Unión Chasqui · Copa Relámpago
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción aprobada Unión Chasqui · Copa Relámpago hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/9016a92a-0e1e-4017-9a77-50a1362054b1/teams
+        - text: Inscripción aprobada Unión Chasqui · Copa Relámpago
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción aprobada Unión Chasqui · Mundialito hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/5c3033d1-0403-4e1c-981c-309c374ed3ce/teams
+        - text: Inscripción aprobada Unión Chasqui · Mundialito
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción de equipo Unión Chasqui · Mundialito hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/5c3033d1-0403-4e1c-981c-309c374ed3ce/teams
+        - text: Inscripción de equipo Unión Chasqui · Mundialito
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción aprobada Unión Chasqui · Clausura 26 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/teams
+        - text: Inscripción aprobada Unión Chasqui · Clausura 26
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción de equipo Unión Chasqui · Clausura 26 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/teams
+        - text: Inscripción de equipo Unión Chasqui · Clausura 26
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción aprobada Racing Totora · Copa Relámpago hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/9016a92a-0e1e-4017-9a77-50a1362054b1/teams
+        - text: Inscripción aprobada Racing Totora · Copa Relámpago
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción de equipo Racing Totora · Copa Relámpago hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/9016a92a-0e1e-4017-9a77-50a1362054b1/teams
+        - text: Inscripción de equipo Racing Totora · Copa Relámpago
+        - time: hace 22 min
+    - listitem:
+      - link "Competición publicada Torneo Verano 25 hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07
+        - text: Competición publicada Torneo Verano 25
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción de equipo Racing Totora · Mundialito hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/5c3033d1-0403-4e1c-981c-309c374ed3ce/teams
+        - text: Inscripción de equipo Racing Totora · Mundialito
+        - time: hace 22 min
+    - listitem:
+      - link "Inscripción aprobada Racing Totora · Mundialito hace 22 min":
+        - /url: /orgs/2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea/competitions/5c3033d1-0403-4e1c-981c-309c374ed3ce/teams
+        - text: Inscripción aprobada Racing Totora · Mundialito
+        - time: hace 22 min
+  - button "Cargar más"

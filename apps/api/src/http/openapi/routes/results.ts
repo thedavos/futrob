@@ -1,7 +1,10 @@
 import { defineRoute } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
 import {
+  VoidOfficialResultRequest,
+  VoidOfficialResultResponse,
   ConfirmOfficialSelectionRequest,
+  ListCompetitionDisputesResponse,
   OfficialSelectionCommandResponse,
   OfficialSelectionView,
   OpenMatchDisputeRequest,
@@ -154,6 +157,23 @@ export const getOperatorOfficialSelectionRoute = defineRoute({
   errors: [401, 403, 404],
 });
 
+export const listCompetitionDisputesRoute = defineRoute({
+  method: "get",
+  path: "/organizations/{organizationId}/competitions/{competitionId}/disputes",
+  operationId: "listCompetitionDisputes",
+  tags: ["results"],
+  summary: "List the competition's selections waiting on an operator decision",
+  description:
+    "Selections in `disputed` or `organizer_review`, longest waiting first. Each Encounter is decided on `encounters.results.approve` at its own scope, so a specific deny hides it. A missing competition and an actor without the capability anywhere in it both answer 404 `competitions.not_found`. Dispute reasons are not included; read them from the Encounter's operator selection view.",
+  params: pathParams(["organizationId", "competitionId"]),
+  success: {
+    status: 200,
+    description: "Operator dispute queue",
+    schema: ListCompetitionDisputesResponse,
+  },
+  errors: [401, 404],
+});
+
 export const openMatchDisputeRoute = defineRoute({
   method: "post",
   path: "/organizations/{organizationId}/encounters/{encounterId}/official-selection/disputes",
@@ -204,6 +224,24 @@ export const resolveMatchDisputeRoute = defineRoute({
     status: 200,
     description: "Command outcome or its replay",
     schema: OfficialSelectionCommandResponse,
+  },
+  errors: [400, 401, 403, 404, 409],
+});
+
+export const voidOfficialResultRoute = defineRoute({
+  method: "post",
+  path: "/official-results/{officialResultId}/void",
+  operationId: "voidOfficialResult",
+  tags: ["results"],
+  summary: "Void an approved result and remove its official statistics",
+  description:
+    "Requires encounters.results.approve on the stored result scope. Uses the trusted service actor. Repeated calls converge without duplicate audit entries. Preserves approval history and releases provider references.",
+  params: pathParams(["officialResultId"]),
+  body: VoidOfficialResultRequest,
+  success: {
+    status: 200,
+    description: "Voided official result",
+    schema: VoidOfficialResultResponse,
   },
   errors: [400, 401, 403, 404, 409],
 });

@@ -56,5 +56,7 @@ export const styles = stylex.create({
   actions: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" },
   warning: { color: colors.warning },
   reason: { whiteSpace: "pre-wrap", overflowWrap: "anywhere" },
+  statusBadge: { alignSelf: "flex-start" },
+  summary: { fontSize: "var(--text-lg)", lineHeight: "1.75rem", overflowWrap: "anywhere" },
   skeleton: { minHeight: "6rem", width: "100%" },
 });

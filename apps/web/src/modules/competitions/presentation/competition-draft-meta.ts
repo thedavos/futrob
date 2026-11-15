@@ -22,6 +22,7 @@ export const competitionFormats: readonly { value: CompetitionFormatDto; label: 
   { value: "knockout", label: "Eliminación directa" },
   { value: "groups-knockout", label: "Grupos + eliminación" },
   { value: "league-playoffs", label: "Liga + playoffs" },
+  { value: "swiss", label: "Sistema suizo" },
 ];
 
 export const competitionTimeZones = timeZoneOptions;

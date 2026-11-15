@@ -15,6 +15,22 @@ export function useEncounterViewQuery(organizationId: string, encounterId: strin
   });
 }
 
+export function useCompetitionEncountersQuery(organizationId: string, competitionId: string) {
+  return useQuery({
+    queryKey: queryKeys.encounters.competition(organizationId, competitionId),
+    queryFn: () => encounterBrowserClient.listCompetitionEncounters(organizationId, competitionId),
+    retry: retryUnlessRefused,
+  });
+}
+
+export function useCompetitionDisputesQuery(organizationId: string, competitionId: string) {
+  return useQuery({
+    queryKey: queryKeys.encounters.disputes(organizationId, competitionId),
+    queryFn: () => encounterBrowserClient.listCompetitionDisputes(organizationId, competitionId),
+    retry: retryUnlessRefused,
+  });
+}
+
 export function useEncounterCandidatesQuery(encounterId: string, enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.encounters.candidates(encounterId),

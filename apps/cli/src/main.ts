@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { run as resultVoid } from "./commands/void-official-result.ts";
 import type { Effect } from "effect";
 import { HELP_TEXT, run as help } from "./commands/help.ts";
 import { run as ping } from "./commands/ping.ts";
@@ -6,6 +7,8 @@ import { run as domainSmoke } from "./commands/domain-smoke.ts";
 import { run as domainSmokeGameData } from "./commands/domain-smoke-game-data.ts";
 import { run as statisticsSmoke } from "./commands/statistics-smoke.ts";
 import { run as resultsSmoke } from "./commands/results-smoke.ts";
+import { run as swissSmoke } from "./commands/swiss-smoke.ts";
+import { run as emailSmoke } from "./commands/email-smoke.ts";
 import { run as apiHealth } from "./commands/api-health.ts";
 import { run as clubSearch } from "./commands/search-clubs.ts";
 import {
@@ -18,6 +21,12 @@ import {
 } from "./commands/organizations.ts";
 import { run as onboardingStatus } from "./commands/onboarding.ts";
 import {
+  accountDeletionCancel,
+  accountDeletionRequest,
+  accountDeletionStatus,
+} from "./commands/account-deletion.ts";
+import {
+  statisticsRebuild,
   compCreate,
   compExplore,
   compExploreShow,
@@ -44,7 +53,14 @@ import {
   teamCreate,
   teamList,
 } from "./commands/teams.ts";
-import { fixtureGenerate, fixtureShow, snapshotSet } from "./commands/scheduling.ts";
+import {
+  fixtureCurrent,
+  fixtureGenerate,
+  fixtureShow,
+  snapshotSet,
+  swissCloseRound,
+  swissWithdraw,
+} from "./commands/scheduling.ts";
 import {
   clubGet,
   clubMatches,
@@ -55,7 +71,16 @@ import {
 } from "./commands/game-data.ts";
 import { compInviteLink, compInviteTeam, entryInviteAccept } from "./commands/entry-invitations.ts";
 import { myMatches, myNextEncounter, myStats, playerMe } from "./commands/players.ts";
+import { sanctionList, sanctionsSmoke } from "./commands/sanctions.ts";
+import { auditList, auditSmoke } from "./commands/audit.ts";
 import { run as e2eGoldenPath } from "./commands/e2e-golden-path.ts";
+import {
+  billingSmoke,
+  orgEntitlements,
+  orgPlan,
+  orgPlanAssign,
+  plans,
+} from "./commands/billing.ts";
 import type { CliError } from "./lib/errors.ts";
 import { printError } from "./lib/print.ts";
 import { runProgram } from "./lib/run-program.ts";
@@ -63,12 +88,16 @@ import { runProgram } from "./lib/run-program.ts";
 type Handler = (args: string[]) => Effect.Effect<number, CliError>;
 
 const commands = {
+  "result-void": (args) => resultVoid(args),
   help: () => help(),
   ping: () => ping(),
   "domain-smoke": () => domainSmoke(),
   "domain-smoke-game-data": () => domainSmokeGameData(),
+  "statistics-rebuild": (args) => statisticsRebuild(args),
   "statistics-smoke": () => statisticsSmoke(),
   "results-smoke": () => resultsSmoke(),
+  "swiss-smoke": () => swissSmoke(),
+  "email-smoke": () => emailSmoke(),
 
   "api-health": (args) => apiHealth(args),
 
@@ -80,6 +109,9 @@ const commands = {
   "org-invite": (args) => orgInvite(args),
 
   "onboarding-status": (args) => onboardingStatus(args),
+  "account-deletion-status": (args) => accountDeletionStatus(args),
+  "account-deletion-request": (args) => accountDeletionRequest(args),
+  "account-deletion-cancel": (args) => accountDeletionCancel(args),
 
   "comp-create": (args) => compCreate(args),
   "comp-list": (args) => compList(args),
@@ -100,6 +132,10 @@ const commands = {
   "entry-approve": (args) => entryApprove(args),
   "entry-reject": (args) => entryReject(args),
   standings: (args) => standings(args),
+  "sanction-list": (args) => sanctionList(args),
+  "sanctions-smoke": (args) => sanctionsSmoke(args),
+  "audit-list": (args) => auditList(args),
+  "audit-smoke": (args) => auditSmoke(args),
 
   "team-create": (args) => teamCreate(args),
   "team-list": (args) => teamList(args),
@@ -110,13 +146,21 @@ const commands = {
   "club-link": (args) => clubLink(args),
 
   "fixture-generate": (args) => fixtureGenerate(args),
+  "fixture-current": (args) => fixtureCurrent(args),
   "fixture-show": (args) => fixtureShow(args),
+  "swiss-withdraw": (args) => swissWithdraw(args),
+  "swiss-close-round": (args) => swissCloseRound(args),
   "snapshot-set": (args) => snapshotSet(args),
 
   "club-search": (args) => clubSearch(args),
   "club-get": (args) => clubGet(args),
   "club-matches": (args) => clubMatches(args),
   "sync-job-enqueue": (args) => syncJobEnqueue(args),
+  plans: (args) => plans(args),
+  "org-plan": (args) => orgPlan(args),
+  "org-entitlements": (args) => orgEntitlements(args),
+  "org-plan-assign": (args) => orgPlanAssign(args),
+  "billing-smoke": (args) => billingSmoke(args),
   "sync-job-run": (args) => syncJobRun(args),
   "sync-job-run-next": (args) => syncJobRunNext(args),
   "provider-health": (args) => providerHealth(args),

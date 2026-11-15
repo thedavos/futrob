@@ -157,6 +157,21 @@ export class EditFixtureEncounterUseCase {
           }
           return ok(plan);
         }
+        if (plan.format === "swiss") {
+          if (input.homeTeamId || input.awayTeamId) {
+            return err(invalid("Swiss pairings come from the standings and cannot be edited"));
+          }
+          // Series is null on a bye and on a closed encounter: projecting either would revive it.
+          if (!before.series) {
+            return err(
+              new FixtureEncounterNotEditable({
+                code: "scheduling.fixture_encounter_not_editable",
+                message: "A bye or a closed Swiss encounter cannot be edited",
+                encounterId: input.encounterId,
+              }),
+            );
+          }
+        }
         if (!(await this.deps.editGuard.canEdit(input))) {
           return err(
             new FixtureEncounterNotEditable({

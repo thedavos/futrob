@@ -102,6 +102,7 @@ export async function seedComposition(backend: {
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: 11,
+      rankingEligibility: null,
       createdAt: NOW,
     },
   });

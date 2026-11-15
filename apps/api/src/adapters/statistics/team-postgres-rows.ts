@@ -17,6 +17,7 @@ import type {
 import { COMPETITION_STANDING_FORMULA_VERSION, RANKING_FORMULA_VERSION } from "@futrob/statistics";
 import {
   competitionStandingRowSchema,
+  standingFormSchema,
   teamStatisticPartialFlagsSchema,
   teamStatisticRatesSchema,
   teamStatisticTotalsSchema,
@@ -168,8 +169,13 @@ export function rehydrateTeamCompetitionStats(row: TeamCompetitionStatsRow): Tea
   };
 }
 
+// Snapshots written before form existed have no `form`; they get one on the next projection or rebuild.
+const storedStandingRowSchema = competitionStandingRowSchema.extend({
+  form: standingFormSchema.default([]),
+});
+
 export function rehydrateStandingSnapshot(row: StandingSnapshotRow): CompetitionStandingSnapshot {
-  const rows = parseJsonColumn(z.array(competitionStandingRowSchema), row.rows).map((standing) => ({
+  const rows = parseJsonColumn(z.array(storedStandingRowSchema), row.rows).map((standing) => ({
     ...standing,
     teamId: asTeamId(standing.teamId),
   }));

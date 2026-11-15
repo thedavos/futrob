@@ -15,12 +15,15 @@ const styles = stylex.create({
     borderStyle: "solid",
     paddingInline: "0.5rem",
     paddingBlock: "0.125rem",
-    fontSize: "0.75rem",
+    fontSize: "var(--text-xs)",
     lineHeight: "1rem",
-    fontWeight: 600,
+    fontWeight: "var(--font-weight-semibold)",
     whiteSpace: "nowrap",
   },
+  // Neutral and outline pills sit next to entity names in dense rows; 500 keeps them quieter.
+  // Status variants keep 600 because the status is the message.
   neutral: {
+    fontWeight: "var(--font-weight-medium)",
     borderColor: colors.border,
     backgroundColor: colors.muted,
     color: colors.mutedForeground,
@@ -56,6 +59,7 @@ const styles = stylex.create({
     color: colors.emphasis,
   },
   outline: {
+    fontWeight: "var(--font-weight-medium)",
     borderColor: colors.borderStrong,
     backgroundColor: "transparent",
     color: colors.foreground,

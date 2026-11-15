@@ -16,7 +16,7 @@ const firstStep: CompetitionSetupActionBarProps = {
   canGoBack: false,
   canContinue: true,
   canSave: true,
-  saving: false,
+  saving: null,
   busy: false,
   onBack: noop,
   onSave: noop,
@@ -61,7 +61,7 @@ function SetupBar(props: CompetitionSetupActionBarProps) {
 }
 
 const meta = {
-  title: "Product/Organizer/Competition setup action bar",
+  title: "Product/Organizer/Competition setup/Action bar",
   component: CompetitionSetupActionBarStart,
   args: {
     step: 1,

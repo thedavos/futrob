@@ -31,7 +31,11 @@ const styles = stylex.create({
       default: "1.5rem",
       [media.sm]: "1.25rem",
     },
-    color: colors.foreground,
+    // Disabled values stay readable (tertiary on the muted fill) instead of fading with opacity.
+    color: {
+      default: colors.foreground,
+      ":disabled": colors.textTertiary,
+    },
     transitionProperty: "background-color, border-color, box-shadow",
     transitionDuration: "var(--duration-normal)",
     transitionTimingFunction: "var(--ease-emphasized)",
@@ -48,12 +52,8 @@ const styles = stylex.create({
       default: null,
       ":disabled": "not-allowed",
     },
-    opacity: {
-      default: 1,
-      ":disabled": 0.6,
-    },
     "::placeholder": {
-      color: colors.mutedForeground,
+      color: colors.textTertiary,
     },
   },
   heightDefault: {

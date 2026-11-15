@@ -15,6 +15,7 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { NumberField, RuleToggle, SelectField, StepHeading } from "./competition-setup-fields.tsx";
 
 const TIEBREAKS = ["Puntos", "Diferencia de goles", "Goles a favor"] as const;
+const SWISS_TIEBREAKS = ["Puntos", "Buchholz", "Diferencia de goles", "Goles a favor"] as const;
 
 type StageKey = "regularStage" | "knockoutStage";
 
@@ -133,7 +134,11 @@ export function RulesStep({
   const knockoutLabel = form.format === "league-playoffs" ? "Playoffs" : "Eliminación";
   const stages: Stage[] = [];
   if (form.rules.regularStage) {
-    stages.push({ key: "regularStage", label: "Etapa regular", rules: form.rules.regularStage });
+    stages.push({
+      key: "regularStage",
+      label: form.format === "swiss" ? "Fase suiza" : "Etapa regular",
+      rules: form.rules.regularStage,
+    });
   }
   if (form.rules.knockoutStage) {
     stages.push({ key: "knockoutStage", label: knockoutLabel, rules: form.rules.knockoutStage });
@@ -340,7 +345,7 @@ export function RulesStep({
           <div {...applyStyles(styles.subsection)}>
             <StepHeading copy="Se aplicarán en este orden." title="Criterios de desempate" />
             <ol {...applyStyles(styles.tiebreaks)}>
-              {TIEBREAKS.map((criterion, index) => (
+              {(form.format === "swiss" ? SWISS_TIEBREAKS : TIEBREAKS).map((criterion, index) => (
                 <li key={criterion} {...applyStyles(styles.tiebreak)}>
                   <span {...applyStyles(styles.tiebreakIndex)}>{index + 1}</span>
                   <span>{criterion}</span>

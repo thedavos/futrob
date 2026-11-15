@@ -1,0 +1,134 @@
+- link "Saltar al contenido":
+  - /url: "#app-main"
+- complementary "Navegación principal":
+  - button "Abrir menú de cuenta": PP Pablo
+  - button "Colapsar barra lateral"
+  - button "Atlético Pumas"
+  - paragraph: Pendientes
+  - list:
+    - listitem:
+      - link "Confirmar selección Sporting Quipu vs Atlético Pumas · Clausura 26 hace 20 h":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+  - list:
+    - listitem:
+      - link "Inicio":
+        - /url: /player
+    - listitem:
+      - link "Competiciones":
+        - /url: /player/competitions
+    - listitem:
+      - link "Datos de juego":
+        - /url: /player/game-accounts
+    - listitem:
+      - link "Mis partidos":
+        - /url: /player/matches
+    - listitem:
+      - link "Mis estadísticas":
+        - /url: /player/statistics
+    - listitem:
+      - link "Invitaciones":
+        - /url: /invitations
+- banner:
+  - paragraph: Capi_Puma Atlético Pumas
+- main:
+  - heading "Inicio" [level=1]
+  - paragraph: Tu actividad con Atlético Pumas
+  - button "Actualizar partidos"
+  - heading "Tu próximo enfrentamiento" [level=2]
+  - text: Mundialito · Jornada 2 Cóndores FC VS Atlético Pumas vie, 13 nov, 19:00 Pendiente de jugar
+  - button "Ver competición"
+  - heading "Sin invitaciones pendientes" [level=2]
+  - paragraph: Cuando un club te invite, podrás responder aquí.
+  - link "Ver historial":
+    - /url: /invitations
+  - heading "Identificador de juego" [level=2]
+  - text: Capi_Puma
+  - paragraph: Registrado en EA Clubs.
+  - paragraph: Sirve para reconocer tus apariciones.
+  - region "Resumen"
+  - heading "Todavía no hay partidos registrados" [level=2]
+  - paragraph: No hay apariciones tuyas en el club seleccionado.
+  - button "Actualizar partidos"
+  - button "Revisar identificador"
+  - heading "Mis competiciones" [level=2]
+  - link "Ver todas":
+    - /url: /player/competitions
+  - link "Clausura 26 Competición oficial · En curso En curso":
+    - /url: /player/competitions
+    - text: Clausura 26
+    - paragraph: Competición oficial · En curso
+    - text: En curso
+  - link "Copa Relámpago Eliminatoria · En curso En curso":
+    - /url: /player/competitions
+    - text: Copa Relámpago
+    - paragraph: Eliminatoria · En curso
+    - text: En curso
+  - link "Mundialito Grupos y eliminatoria · En curso En curso":
+    - /url: /player/competitions
+    - text: Mundialito
+    - paragraph: Grupos y eliminatoria · En curso
+    - text: En curso
+  - link "Torneo Verano 25 Liga y playoffs · Finalizada Finalizada":
+    - /url: /player/competitions
+    - text: Torneo Verano 25
+    - paragraph: Liga y playoffs · Finalizada
+    - text: Finalizada
+  - link "Apertura Inscripciones Competición oficial · Inscripciones abiertas Inscripciones abiertas":
+    - /url: /player/competitions
+    - text: Apertura Inscripciones
+    - paragraph: Competición oficial · Inscripciones abiertas
+    - text: Inscripciones abiertas
+  - heading "Actividad reciente" [level=2]
+  - link "Ver toda la actividad":
+    - /url: /player/activity
+  - list "Actividad reciente":
+    - listitem:
+      - link "Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26 dentro de 12 h":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26
+        - time: dentro de 12 h
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Apertura Inscripciones hace 24 min":
+        - /url: /player/competitions/cf7ec205-8850-47ef-9901-81ee3cad4da6
+        - text: Inscripción aprobada Atlético Pumas · Apertura Inscripciones
+        - time: hace 24 min
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Torneo Verano 25 hace 24 min":
+        - /url: /player/competitions/435a6fa3-50ca-4280-84f1-5c246f3afe07
+        - text: Inscripción aprobada Atlético Pumas · Torneo Verano 25
+        - time: hace 24 min
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Mundialito hace 24 min":
+        - /url: /player/competitions/5c3033d1-0403-4e1c-981c-309c374ed3ce
+        - text: Inscripción aprobada Atlético Pumas · Mundialito
+        - time: hace 24 min
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Copa Relámpago hace 24 min":
+        - /url: /player/competitions/9016a92a-0e1e-4017-9a77-50a1362054b1
+        - text: Inscripción aprobada Atlético Pumas · Copa Relámpago
+        - time: hace 24 min
+    - listitem:
+      - link "Inscripción aprobada Atlético Pumas · Clausura 26 hace 24 min":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a
+        - text: Inscripción aprobada Atlético Pumas · Clausura 26
+        - time: hace 24 min
+    - listitem:
+      - link "Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26 hace 4 h":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Reprogramación respondida Deportivo Llama vs Atlético Pumas · Clausura 26
+        - time: hace 4 h
+    - listitem:
+      - link "Confirmar selección Sporting Quipu vs Atlético Pumas · Clausura 26 hace 20 h":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Confirmar selección Sporting Quipu vs Atlético Pumas · Clausura 26
+        - time: hace 20 h
+    - listitem:
+      - link "Selección respondida Unión Chasqui vs Atlético Pumas · Clausura 26 hace 8 d":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Selección respondida Unión Chasqui vs Atlético Pumas · Clausura 26
+        - time: hace 8 d
+    - listitem:
+      - link "Selección respondida Real Vicuña vs Atlético Pumas · Clausura 26 hace 15 d":
+        - /url: /player/competitions/94265d8e-4977-41f6-89da-035e5f23a72a/matches
+        - text: Selección respondida Real Vicuña vs Atlético Pumas · Clausura 26
+        - time: hace 15 d

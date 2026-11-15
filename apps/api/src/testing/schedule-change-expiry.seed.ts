@@ -63,6 +63,7 @@ export function competitionDraft(hours: number, organizerRequired: boolean): Com
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: at,
     },
   };

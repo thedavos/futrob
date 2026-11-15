@@ -6,11 +6,11 @@ import { chartCoordSchema } from "./player-profile-chart-coord.ts";
 const styles = stylex.create({
   axisTick: {
     fill: colors.foreground,
-    fontSize: 11,
+    fontSize: "var(--text-xs)",
   },
   axisTickScore: {
     fill: colors.mutedForeground,
-    fontSize: 10,
+    fontSize: "var(--text-xs)",
     fontVariantNumeric: "tabular-nums",
   },
 });
@@ -25,11 +25,11 @@ type RadarAxisTickVerticalAnchor = "start" | "middle" | "end";
 function radarAxisTickStartDy(verticalAnchor: RadarAxisTickVerticalAnchor | undefined): number {
   switch (verticalAnchor) {
     case "end":
-      return -14;
+      return -16;
     case "start":
       return 12;
     case "middle":
-      return -6;
+      return -7;
     case undefined:
       return 0;
     default: {
@@ -75,7 +75,7 @@ export function RadarAxisTick({
       <tspan dy={radarAxisTickStartDy(verticalAnchor)} x={tickX}>
         {point.category}
       </tspan>
-      <tspan className={score.className} dy={12} style={score.style} x={tickX}>
+      <tspan className={score.className} dy={14} style={score.style} x={tickX}>
         {point.score}
       </tspan>
     </text>

@@ -1,4 +1,10 @@
 import {
+  cancelAccountDeletionResponseSchema,
+  getAccountDeletionResponseSchema,
+  requestAccountDeletionRequestSchema,
+  requestAccountDeletionResponseSchema,
+  type AccountDeletionStatusDto,
+  type RequestAccountDeletionRequest,
   completeInvitationOnboardingRequestSchema,
   completeInvitationOnboardingResponseSchema,
   inspectCompetitionInvitationRequestSchema,
@@ -7,9 +13,12 @@ import {
   completeOrganizationOnboardingResponseSchema,
   completePlayerOnboardingRequestSchema,
   completePlayerOnboardingResponseSchema,
+  getActorPreferencesResponseSchema,
   getOnboardingStatusResponseSchema,
   organizationNameAvailabilityRequestSchema,
   organizationNameAvailabilityResponseSchema,
+  saveActorPreferencesRequestSchema,
+  saveActorPreferencesResponseSchema,
   saveOnboardingProgressRequestSchema,
   saveOnboardingProgressResponseSchema,
   type CompleteInvitationOnboardingRequest,
@@ -20,9 +29,12 @@ import {
   type CompleteOrganizationOnboardingResponse,
   type CompletePlayerOnboardingRequest,
   type CompletePlayerOnboardingResponse,
+  type GetActorPreferencesResponse,
   type GetOnboardingStatusResponse,
   type OrganizationNameAvailabilityRequest,
   type OrganizationNameAvailabilityResponse,
+  type SaveActorPreferencesRequest,
+  type SaveActorPreferencesResponse,
   type SaveOnboardingProgressRequest,
   type SaveOnboardingProgressResponse,
   type RequestId,
@@ -44,7 +56,7 @@ export class IdentityOnboardingClientError extends Error {
 
 async function requestIdentityJson<T>(input: {
   readonly path?: string;
-  readonly method: "GET" | "POST" | "PATCH";
+  readonly method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   readonly body?: unknown;
   readonly schema: z.ZodType<T>;
 }): Promise<T> {
@@ -65,6 +77,32 @@ async function requestIdentityJson<T>(input: {
 }
 
 export const identityBrowserClient = {
+  getAccountDeletion(): Promise<AccountDeletionStatusDto> {
+    return requestIdentityJson({
+      path: "/api/v1/identity/account/deletion",
+      method: "GET",
+      schema: getAccountDeletionResponseSchema,
+    });
+  },
+
+  /** Schedules deletion and ends every session, this one included. */
+  requestAccountDeletion(input: RequestAccountDeletionRequest): Promise<AccountDeletionStatusDto> {
+    return requestIdentityJson({
+      path: "/api/v1/identity/account/deletion",
+      method: "POST",
+      body: requestAccountDeletionRequestSchema.parse(input),
+      schema: requestAccountDeletionResponseSchema,
+    });
+  },
+
+  cancelAccountDeletion(): Promise<AccountDeletionStatusDto> {
+    return requestIdentityJson({
+      path: "/api/v1/identity/account/deletion",
+      method: "DELETE",
+      schema: cancelAccountDeletionResponseSchema,
+    });
+  },
+
   checkOrganizationName(
     input: OrganizationNameAvailabilityRequest,
   ): Promise<OrganizationNameAvailabilityResponse> {
@@ -74,6 +112,24 @@ export const identityBrowserClient = {
       method: "POST",
       body,
       schema: organizationNameAvailabilityResponseSchema,
+    });
+  },
+
+  getActorPreferences(): Promise<GetActorPreferencesResponse> {
+    return requestIdentityJson({
+      path: "/api/v1/identity/preferences",
+      method: "GET",
+      schema: getActorPreferencesResponseSchema,
+    });
+  },
+
+  saveActorPreferences(input: SaveActorPreferencesRequest): Promise<SaveActorPreferencesResponse> {
+    const body = saveActorPreferencesRequestSchema.parse(input);
+    return requestIdentityJson({
+      path: "/api/v1/identity/preferences",
+      method: "PUT",
+      body,
+      schema: saveActorPreferencesResponseSchema,
     });
   },
 

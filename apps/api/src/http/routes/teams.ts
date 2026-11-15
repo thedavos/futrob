@@ -144,7 +144,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     const teamId = asTeamId(params.teamId);
     const parsed = c.req.valid("json");
 
-    const result = await deps.modules.teams.addToRoster.execute({
+    const result = await deps.modules.audit.commands.addToRoster.execute({
       actorId: asActorId(c.get("actorId")),
       organizationId,
       competitionId,
@@ -206,7 +206,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     const teamId = asTeamId(params.teamId);
     const parsed = c.req.valid("json");
 
-    const result = await deps.modules.teams.connectTeamExternalClub.execute({
+    const result = await deps.modules.audit.commands.connectTeamExternalClub.execute({
       actorId: asActorId(c.get("actorId")),
       organizationId,
       teamId,
@@ -245,7 +245,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
     const competitionId = asCompetitionId(params.competitionId);
     const teamId = asTeamId(params.teamId);
     const parsed = c.req.valid("json");
-    const result = await deps.modules.teams.connectTeamExternalClub.execute({
+    const result = await deps.modules.audit.commands.connectTeamExternalClub.execute({
       actorId: asActorId(c.get("actorId")),
       organizationId,
       competitionId,
@@ -307,7 +307,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
 
   secured.openapi(acceptRosterInvitationRoute, async (c) => {
     const parsed = c.req.valid("json");
-    const result = await deps.modules.activityCommands.acceptRosterInvitation.execute({
+    const result = await deps.modules.audit.commands.acceptRosterInvitation.execute({
       token: parsed.token,
       actorId: asActorId(c.get("actorId")),
     });
@@ -352,7 +352,7 @@ export function registerTeamRoutes(app: Hono, deps: AppDeps): void {
 
   secured.openapi(respondToRosterInvitationRoute, async (c) => {
     const parsed = c.req.valid("json");
-    const result = await deps.modules.activityCommands.respondToRosterInvitation.execute({
+    const result = await deps.modules.audit.commands.respondToRosterInvitation.execute({
       invitationId: c.req.valid("param").invitationId,
       actorId: asActorId(c.get("actorId")),
       action: parsed.action,

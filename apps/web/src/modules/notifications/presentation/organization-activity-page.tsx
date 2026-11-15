@@ -21,7 +21,8 @@ import {
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { ActivityClientError } from "./activity-browser-client.ts";
 import { ActivityFeedList, ActivityFeedSkeleton } from "./activity-feed-list.tsx";
-import { useOrganizationActivityFeedQuery } from "./activity-queries.ts";
+import { useActivityFeedQuery } from "./activity-queries.ts";
+import type { ActivityFeedSource } from "./activity-sources.ts";
 
 const styles = stylex.create({
   main: {
@@ -62,9 +63,11 @@ export type OrganizationActivityPageState =
     };
 
 function FeedBody({
+  personal,
   state,
   now,
 }: {
+  readonly personal: boolean;
   readonly state: OrganizationActivityPageState;
   readonly now?: Date;
 }) {
@@ -110,7 +113,9 @@ function FeedBody({
             </EmptyStateIcon>
             <EmptyStateCopy>
               <EmptyStateTitle>{t("activity.page.empty.title")}</EmptyStateTitle>
-              <EmptyStateDescription>{t("activity.page.empty.description")}</EmptyStateDescription>
+              <EmptyStateDescription>
+                {t(personal ? "activity.personal.empty" : "activity.page.empty.description")}
+              </EmptyStateDescription>
             </EmptyStateCopy>
           </EmptyState>
         );
@@ -141,11 +146,12 @@ function FeedBody({
   }
 }
 
-/** Every activity of the organization, newest first, a page at a time. */
 export function OrganizationActivityPageView({
+  personal = false,
   state,
   now,
 }: {
+  readonly personal?: boolean;
   readonly state: OrganizationActivityPageState;
   readonly now?: Date;
 }) {
@@ -154,15 +160,17 @@ export function OrganizationActivityPageView({
     <main {...applyStyles(styles.main)}>
       <PageHeader>
         <PageHeaderTitle>{t("activity.page.title")}</PageHeaderTitle>
-        <PageHeaderDescription>{t("activity.page.description")}</PageHeaderDescription>
+        <PageHeaderDescription>
+          {t(personal ? "activity.personal.description" : "activity.page.description")}
+        </PageHeaderDescription>
       </PageHeader>
-      <FeedBody now={now} state={state} />
+      <FeedBody personal={personal} now={now} state={state} />
     </main>
   );
 }
 
-export function OrganizationActivityPage({ organizationId }: { readonly organizationId: string }) {
-  const query = useOrganizationActivityFeedQuery(organizationId);
+function ActivityPage({ source }: { readonly source: ActivityFeedSource }) {
+  const query = useActivityFeedQuery(source);
   let state: OrganizationActivityPageState;
   if (query.isPending) {
     state = { status: "pending" };
@@ -180,5 +188,13 @@ export function OrganizationActivityPage({ organizationId }: { readonly organiza
       loadMore: () => void query.fetchNextPage(),
     };
   }
-  return <OrganizationActivityPageView state={state} />;
+  return <OrganizationActivityPageView personal={source.kind === "mine"} state={state} />;
+}
+
+export function OrganizationActivityPage({ organizationId }: { readonly organizationId: string }) {
+  return <ActivityPage source={{ kind: "organization", organizationId }} />;
+}
+
+export function PlayerActivityPage() {
+  return <ActivityPage source={{ kind: "mine" }} />;
 }

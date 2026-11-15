@@ -5,6 +5,7 @@ import { buildAuthEnv, type AuthEnv, type AuthWorkerEnv } from "./auth-env.ts";
 import { isAuthSchemaReady } from "./auth-readiness.ts";
 import { SystemClock } from "./clock.ts";
 import { CryptoIdGenerator } from "./id-generator.ts";
+import { captureWorkerError, withWorkerSentry } from "./observability/sentry.ts";
 
 /**
  * futrob-auth — standalone Better Auth Worker (ADR-0015).
@@ -43,7 +44,7 @@ async function health(env: AuthWorkerEnv): Promise<Response> {
   }
 }
 
-export default {
+const worker = {
   async fetch(request: Request, env: AuthWorkerEnv, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
@@ -71,10 +72,20 @@ export default {
       connection = await connectAuthDatabase(env.HYPERDRIVE.connectionString);
       const clock = new SystemClock();
       const ids: IdGeneratorPort = new CryptoIdGenerator();
-      const auth = createAuth({ db: connection.db, env: authEnv, clock, ids });
+      const auth = createAuth({
+        db: connection.db,
+        env: authEnv,
+        clock,
+        ids,
+        reportDefect: (cause) => {
+          console.error(JSON.stringify({ event: "auth.endpoint.failed" }));
+          captureWorkerError(cause);
+        },
+      });
       return await auth.handler(request);
-    } catch {
+    } catch (cause) {
       console.error(JSON.stringify({ event: "auth.request.failed" }));
+      captureWorkerError(cause);
       return Response.json(
         { code: "auth.unhandled", messageKey: "errors.auth.unhandled" },
         { status: 500 },
@@ -86,3 +97,5 @@ export default {
     }
   },
 } satisfies ExportedHandler<AuthWorkerEnv>;
+
+export default withWorkerSentry(worker);

@@ -14,6 +14,10 @@ class SingleJobRepository implements ProviderSyncJobRepository {
     return Promise.resolve(this.job);
   }
 
+  findActiveByDedupeKey(): Promise<ProviderSyncJob | null> {
+    return Promise.resolve(null);
+  }
+
   claimNext(input: Parameters<ProviderSyncJobRepository["claimNext"]>[0]) {
     if (this.job.status === "succeeded" || this.job.status === "dead") return Promise.resolve(null);
     const running: RunningProviderSyncJob = {
@@ -31,6 +35,14 @@ class SingleJobRepository implements ProviderSyncJobRepository {
 
   findById() {
     return Promise.resolve(this.job);
+  }
+
+  findLatest(input: { readonly organizationId: string; readonly dedupeKey: string }) {
+    return Promise.resolve(
+      this.job.organizationId === input.organizationId && this.job.dedupeKey === input.dedupeKey
+        ? this.job
+        : null,
+    );
   }
 
   recordIngestion(input: Parameters<ProviderSyncJobRepository["recordIngestion"]>[0]) {

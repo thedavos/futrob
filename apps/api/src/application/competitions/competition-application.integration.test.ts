@@ -1,8 +1,14 @@
+import {
+  applyToCompetitionResponseSchema,
+  competitionEntrySchema,
+  getMyCompetitionApplicationResponseSchema,
+  listActivitiesResponseSchema,
+} from "@futrob/api-contracts";
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { randomUUID } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
-import { completeOrganizationOnboardingResponseSchema } from "@futrob/api-contracts";
 import { err } from "@futrob/shared-kernel";
 import { RosterCompetitionConflict } from "@futrob/teams";
 import { createApp } from "@/app.ts";
@@ -58,7 +64,7 @@ describe.skipIf(!databaseUrl)("competition application Postgres atomicity", () =
       checkDbHealth: async () => "ok",
     });
     const organizer = "application-rollback-organizer";
-    const created = await app.request("/api/v1/identity/onboarding/organization", {
+    const created = await createOrganizationCompetitionFixture(app, {
       method: "POST",
       headers: serviceHeaders(organizer),
       body: JSON.stringify({
@@ -67,8 +73,7 @@ describe.skipIf(!databaseUrl)("competition application Postgres atomicity", () =
         gameAccount: null,
       }),
     });
-    expect(created.status).toBe(200);
-    const organization = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+    const organization = created;
     const competitionId = organization.competition.competition.id;
     const opened = await app.request(
       `/api/v1/organizations/${organization.organizationId}/competitions/${competitionId}/registration/open`,
@@ -112,9 +117,96 @@ describe.skipIf(!databaseUrl)("competition application Postgres atomicity", () =
         ])
       ).rows,
     ).toEqual([]);
+    // The activity written with the entry rolls back with it.
+    expect(
+      (await pool.query("SELECT id FROM activity_entries WHERE kind = 'competition_entry'")).rows,
+    ).toEqual([]);
     claim.mockRestore();
     const retried = await apply();
     expect(retried.status).toBe(201);
     expect(await retried.json()).toMatchObject({ teamName: "Rollback team", status: "pending" });
+    expect(
+      (
+        await pool.query(
+          `SELECT audience, status, requires_action, subject->>'teamName' AS team_name
+           FROM activity_entries WHERE kind = 'competition_entry'`,
+        )
+      ).rows,
+    ).toEqual([
+      {
+        audience: "organization",
+        status: "open",
+        requires_action: true,
+        team_name: "Rollback team",
+      },
+    ]);
+  });
+  it("persists rejection, closes pending activity, and records the decision only once", async () => {
+    await seedActors(pool, "rejection-organizer", "rejection-applicant");
+    const modules = createModules({
+      fetcher: stubFetch,
+      eaClubsBaseUrl: "https://example.test",
+      pool,
+    });
+    const app = createApp({
+      modules,
+      internalJobSecret: INTERNAL_JOB_SECRET,
+      correlationLogger: { info: () => undefined, error: () => undefined },
+      checkDbHealth: async () => "ok",
+    });
+    const created = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders("rejection-organizer"),
+      body: JSON.stringify({
+        name: "Rejection proof",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const org = created.organizationId;
+    const comp = created.competition.competition.id;
+    const base = `/api/v1/organizations/${org}/competitions/${comp}`;
+    await app.request(`${base}/registration/open`, {
+      method: "POST",
+      headers: serviceHeaders("rejection-organizer"),
+    });
+    const applied = await parseResponse(
+      applyToCompetitionResponseSchema,
+      await app.request(`/api/v1/competitions/explore/${comp}/application`, {
+        method: "POST",
+        headers: serviceHeaders("rejection-applicant"),
+        body: JSON.stringify({ teamName: "Rejected team", creationKey: "rejected-team-key" }),
+      }),
+    );
+    const reject = () =>
+      app.request(`${base}/entries/${applied.entryId}/reject`, {
+        method: "POST",
+        headers: serviceHeaders("rejection-organizer"),
+      });
+    const response = await reject();
+    expect(response.status).toBe(200);
+    expect(await parseResponse(competitionEntrySchema, response)).toMatchObject({
+      status: "rejected",
+    });
+    const current = await parseResponse(
+      getMyCompetitionApplicationResponseSchema,
+      await app.request(`/api/v1/competitions/explore/${comp}/application`, {
+        headers: serviceHeaders("rejection-applicant"),
+      }),
+    );
+    expect(current.application).toMatchObject({ entryId: applied.entryId, status: "rejected" });
+    expect((await reject()).status).toBe(409);
+    const feed = await parseResponse(
+      listActivitiesResponseSchema,
+      await app.request(`/api/v1/organizations/${org}/activities`, {
+        headers: serviceHeaders("rejection-organizer"),
+      }),
+    );
+    expect(
+      feed.activities.map((row) => [row.kind, row.status, row.subject.outcome]).sort(),
+    ).toEqual([
+      ["competition_entry", "closed", null],
+      ["organizer_decision", "closed", "entry_rejected"],
+    ]);
   });
 });

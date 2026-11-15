@@ -198,6 +198,23 @@ describe("confirm", () => {
     expect(h.selections.liveClaimKeys(first.selection.id)).toEqual(["ea-clubs:m-1"]);
   });
 
+  it("freezes which team each provider side stood for, even when EA recorded them reversed", async () => {
+    const h = await setup();
+    // At approval the Encounter's home team plays as EA's away club and vice versa.
+    const encounter = h.reader.encounters.get(ENCOUNTER)!;
+    h.reader.encounters.set(ENCOUNTER, {
+      ...encounter,
+      homeExternalClubId: "club-away",
+      awayExternalClubId: "club-home",
+    });
+    const first = unwrap(await h.propose(["m-1"]));
+    const out = unwrap(await h.useCases.confirm.execute(rivalInput(h, 1, first.proposal!.id)));
+
+    expect(out.approvedResult?.slots).toMatchObject([
+      { homeExternalClubId: "club-home", homeTeamId: AWAY, awayTeamId: HOME },
+    ]);
+  });
+
   it("CA-03: neither the proposer nor another representative of its team can confirm", async () => {
     const h = await setup();
     const first = unwrap(await h.propose(["m-1"]));

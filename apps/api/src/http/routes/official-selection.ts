@@ -1,10 +1,18 @@
+import { apiErrorResponse, failureToHttp } from "@/http/errors.ts";
 import type { OfficialSelectionCommandOutput } from "@futrob/results";
-import { asEncounterId, asOrganizationId, asTeamId, type Result } from "@futrob/shared-kernel";
+import {
+  asCompetitionId,
+  asEncounterId,
+  asOrganizationId,
+  asTeamId,
+  type Result,
+} from "@futrob/shared-kernel";
 import { type Context, type Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
 import {
   teamOfficialSelectionFailureToHttp,
   operatorOfficialSelectionFailureToHttp,
+  toCompetitionDisputesDto,
   toOfficialSelectionCommandResponse,
   toOfficialSelectionViewDto,
   type TeamOfficialSelectionError,
@@ -13,9 +21,11 @@ import {
 import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
+  voidOfficialResultRoute,
   confirmOfficialSelectionRoute,
   getOperatorOfficialSelectionRoute,
   getTeamOfficialSelectionRoute,
+  listCompetitionDisputesRoute,
   openMatchDisputeRoute,
   proposeAlternativeOfficialSelectionRoute,
   proposeOfficialSelectionRoute,
@@ -82,6 +92,22 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
     });
     if (outcome.isErr()) return operatorOfficialSelectionFailureToHttp(outcome.error);
     return jsonResponse(toOfficialSelectionViewDto(outcome.value));
+  });
+
+  secured.openapi(listCompetitionDisputesRoute, async (c) => {
+    const params = c.req.valid("param");
+    const list = await deps.modules.listCompetitionDisputes.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+    });
+    if (!list) {
+      return apiErrorResponse(404, {
+        code: "competitions.not_found",
+        messageKey: "errors.competitions.not_found",
+      });
+    }
+    return jsonResponse(toCompetitionDisputesDto(list));
   });
 
   secured.openapi(reviewMatchDisputeRoute, async (c) => {
@@ -178,5 +204,32 @@ export function registerOfficialSelectionRoutes(app: Hono, deps: AppDeps): void 
     );
   });
 
+  secured.openapi(voidOfficialResultRoute, async (c) => {
+    const { officialResultId } = c.req.valid("param");
+    const body = c.req.valid("json");
+    const outcome = await deps.modules.voidOfficialResultAndUnproject.execute({
+      actorId: c.get("actorId"),
+      officialResultId,
+      reason: body.reason,
+    });
+    if (outcome.isErr())
+      return failureToHttp(
+        outcome.error,
+        outcome.error.code === "results.official_result_forbidden"
+          ? 403
+          : outcome.error.code === "scheduling.advancement_not_reversible"
+            ? 409
+            : 404,
+      );
+    const result = outcome.value;
+    return jsonResponse({
+      id: result.id,
+      revision: result.revision,
+      status: result.status,
+      approvalBasis: result.approvalBasis ?? null,
+      proposalId: result.proposalId ?? null,
+      approvedAt: result.approvedAt.toISOString(),
+    });
+  });
   app.route("/", secured);
 }

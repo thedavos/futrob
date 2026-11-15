@@ -1,0 +1,32 @@
+- link "Saltar al contenido":
+  - /url: "#app-main"
+- complementary "Navegación principal":
+  - button "Añadir club"
+  - button "Colapsar barra lateral"
+  - list:
+    - listitem:
+      - link "Inicio":
+        - /url: /player
+    - listitem:
+      - link "Competiciones":
+        - /url: /player/competitions
+    - listitem:
+      - link "Datos de juego":
+        - /url: /player/game-accounts
+    - listitem:
+      - link "Mis partidos":
+        - /url: /player/matches
+    - listitem:
+      - link "Mis estadísticas":
+        - /url: /player/statistics
+    - listitem:
+      - link "Invitaciones":
+        - /url: /invitations
+  - button "Abrir menú de cuenta": EE Elena
+- banner:
+  - paragraph: Sin organización
+- main:
+  - heading "Actividad" [level=1]
+  - paragraph: Tus invitaciones y la actividad de tus equipos, lo más reciente primero.
+  - heading "Sin actividad todavía" [level=2]
+  - paragraph: Aquí verás tus invitaciones y la actividad de los equipos que representas.

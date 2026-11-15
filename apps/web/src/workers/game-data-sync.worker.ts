@@ -1,4 +1,7 @@
-import { providerSyncJobResponseSchema } from "@futrob/api-contracts";
+import {
+  enqueueDueProviderSyncsResponseSchema,
+  providerSyncJobResponseSchema,
+} from "@futrob/api-contracts";
 
 const MAX_QUEUE_DELAY_SECONDS = 43_200;
 
@@ -49,6 +52,25 @@ export async function handleGameDataSyncJob(
     };
   }
   return { action: "ack" };
+}
+
+export async function enqueueDueProviderSyncs(deps: {
+  readonly fetcher: typeof fetch;
+  readonly apiBaseUrl: string;
+  readonly internalJobSecret: string;
+  readonly publish?: (message: GameDataSyncQueueMessage) => Promise<void>;
+}): Promise<void> {
+  const response = await deps.fetcher(
+    `${deps.apiBaseUrl.replace(/\/$/, "")}/internal/game-data/sync-jobs/enqueue-due`,
+    { method: "POST", headers: { Authorization: `Bearer ${deps.internalJobSecret}` } },
+  );
+  if (!response.ok) {
+    throw new Error(`Provider sync enqueue returned ${response.status}`);
+  }
+  const body = enqueueDueProviderSyncsResponseSchema.parse(await response.json());
+  const publish = deps.publish;
+  if (!publish) return;
+  await Promise.all(body.jobs.map((job) => publish({ jobId: job.id, requestId: job.requestId })));
 }
 
 export async function recoverNextProviderSyncJob(deps: {

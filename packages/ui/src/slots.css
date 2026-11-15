@@ -72,6 +72,15 @@
   border-bottom-width: 0;
 }
 
+/* `stickyHeader`: header cells stay on top while the container scrolls. Opaque fill: the
+   same 60 % muted tint flattened over the surface so rows do not show through. */
+[data-slot="table"][data-sticky-header="true"] [data-slot="table-head"] {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background-color: color-mix(in oklab, var(--muted) 60%, var(--surface));
+}
+
 [data-slot="table"][data-density="dense"] [data-slot="table-head"],
 [data-slot="table"][data-density="dense"] [data-slot="table-cell"] {
   height: var(--control-height-dense);
@@ -92,14 +101,14 @@
 [data-slot="field"][data-disabled="true"] [data-slot="field-label"] {
   pointer-events: none;
   cursor: not-allowed;
-  opacity: 0.5;
+  color: var(--text-disabled);
 }
 
 /* Ancestor group: old Label `group-data-[disabled=true]`. */
 :is([data-disabled], [data-disabled="true"]) [data-slot="label"] {
   pointer-events: none;
   cursor: not-allowed;
-  opacity: 0.5;
+  color: var(--text-disabled);
 }
 
 /* Following sibling of a disabled control: old Label `peer-disabled`. */
@@ -111,7 +120,7 @@
   )
   ~ [data-slot="label"] {
   cursor: not-allowed;
-  opacity: 0.5;
+  color: var(--text-disabled);
 }
 
 [data-slot="input"]::file-selector-button {

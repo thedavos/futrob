@@ -139,10 +139,6 @@ export function OnboardingShell({
     if (error) errorRef.current?.focus();
   }, [error]);
 
-  useExternalSync(() => {
-    document.title = `${title} | Futrob`;
-  }, [title]);
-
   const supportCopy: SupportErrorAlertCopy = {
     retryAfter: (seconds) => t("support.retryAfter", { seconds }),
     codeLabel: t("support.codeLabel"),

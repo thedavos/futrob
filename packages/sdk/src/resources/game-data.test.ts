@@ -93,4 +93,27 @@ describe("createFutrobClient gameData", () => {
       }),
     ).resolves.toMatchObject({ id: "job-1", status: "queued" });
   });
+
+  it("asks the service to enqueue due syncs", async () => {
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        expect(requestUrl(input)).toBe(
+          "https://api.example.com/api/v1/internal/game-data/sync-jobs/enqueue-due",
+        );
+        expect(init?.method).toBe("POST");
+        return Response.json({
+          enqueued: 1,
+          alreadyCovered: 0,
+          deferred: 0,
+          jobs: [{ id: "job-due", requestId: "request-due" }],
+        });
+      }),
+    });
+
+    await expect(client.gameData.syncJobs.enqueueDue()).resolves.toMatchObject({
+      enqueued: 1,
+      jobs: [{ id: "job-due" }],
+    });
+  });
 });

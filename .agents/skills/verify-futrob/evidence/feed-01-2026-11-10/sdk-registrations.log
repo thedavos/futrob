@@ -1,0 +1,369 @@
+$ FEED_EVIDENCE_DIR=.agents/skills/verify-futrob/evidence/feed-01-2026-11-10 apps/api/node_modules/.bin/tsx --tsconfig apps/api/tsconfig.json .agents/skills/verify-futrob/helpers/feed-01-live.mjs registrations
+{
+  "action": "pending before decision",
+  "result": [
+    {
+      "id": "a84c1713-4e13-4e1a-8c64-cbbd96e0b80b",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "competition_entry",
+      "status": "open",
+      "requiresAction": true,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Deportivo Llama",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:55.074Z",
+      "closedAt": null,
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:55.074Z"
+    },
+    {
+      "id": "7ec64d61-4ebd-473a-8de2-ab4b2c41119a",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "competition_entry",
+      "status": "open",
+      "requiresAction": true,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Inti United",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:55.055Z",
+      "closedAt": null,
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:55.055Z"
+    },
+    {
+      "id": "807415ff-e746-4d63-8633-a9e743d0d92b",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "competition_entry",
+      "status": "open",
+      "requiresAction": true,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Real Vicuña",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:55.036Z",
+      "closedAt": null,
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:55.036Z"
+    }
+  ]
+}
+{
+  "action": "approve registration",
+  "result": {
+    "id": "2e03970c-4fda-40e9-9c4a-cf76f25f020b",
+    "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+    "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+    "teamId": "17ae5337-23b8-4260-a612-61b90734bfc2",
+    "status": "approved",
+    "createdAt": "2026-11-10T00:27:55.036Z"
+  }
+}
+{
+  "action": "reject registration",
+  "result": {
+    "id": "429212d2-38a2-44c2-9cdb-4f310d87db9c",
+    "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+    "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+    "teamId": "d09f548e-4232-4092-8f10-df4cceca2abb",
+    "status": "rejected",
+    "createdAt": "2026-11-10T00:27:55.074Z"
+  }
+}
+{
+  "action": "registration activity readback",
+  "result": [
+    {
+      "id": "32c72efa-1589-4ce6-bc43-b0ef6ffc8241",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "organizer_decision",
+      "status": "closed",
+      "requiresAction": false,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Deportivo Llama",
+        "outcome": "entry_rejected"
+      },
+      "openedAt": "2026-11-10T00:31:55.847Z",
+      "closedAt": "2026-11-10T00:31:55.847Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:31:55.847Z"
+    },
+    {
+      "id": "a84c1713-4e13-4e1a-8c64-cbbd96e0b80b",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "competition_entry",
+      "status": "closed",
+      "requiresAction": true,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Deportivo Llama",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:55.074Z",
+      "closedAt": "2026-11-10T00:31:55.846Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:31:55.846Z"
+    },
+    {
+      "id": "c6d8a35a-1248-49c7-a0f2-10862f6c92b0",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "organizer_decision",
+      "status": "closed",
+      "requiresAction": false,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Real Vicuña",
+        "outcome": "entry_approved"
+      },
+      "openedAt": "2026-11-10T00:31:55.446Z",
+      "closedAt": "2026-11-10T00:31:55.446Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:31:55.446Z"
+    },
+    {
+      "id": "807415ff-e746-4d63-8633-a9e743d0d92b",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "competition_entry",
+      "status": "closed",
+      "requiresAction": true,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Real Vicuña",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:55.036Z",
+      "closedAt": "2026-11-10T00:31:55.442Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:31:55.442Z"
+    },
+    {
+      "id": "4507332b-d64a-4dd7-94ee-d3fec48cede7",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "entry_invitation",
+      "status": "closed",
+      "requiresAction": false,
+      "resourceType": "entry_invitation",
+      "resourceId": "6b032480-7eb1-4c40-923b-74d7a0a02728",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": null,
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:55.388Z",
+      "closedAt": "2026-11-10T00:27:55.402Z",
+      "expiresAt": "2026-11-24T00:27:55.388Z",
+      "lastEventAt": "2026-11-10T00:27:55.402Z"
+    },
+    {
+      "id": "c85c4a4e-72ab-47d9-bc41-f689ba8c7c34",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "entry_invitation",
+      "status": "open",
+      "requiresAction": false,
+      "resourceType": "entry_invitation",
+      "resourceId": "095a0f23-2bb7-4a1c-b8c3-c118272fb7f3",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": null,
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:55.375Z",
+      "closedAt": null,
+      "expiresAt": "2026-11-24T00:27:55.375Z",
+      "lastEventAt": "2026-11-10T00:27:55.375Z"
+    },
+    {
+      "id": "7ec64d61-4ebd-473a-8de2-ab4b2c41119a",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "competition_entry",
+      "status": "open",
+      "requiresAction": true,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Inti United",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:55.055Z",
+      "closedAt": null,
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:55.055Z"
+    },
+    {
+      "id": "2de0c8de-09f6-490f-80f0-14e0c2203a67",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "organizer_decision",
+      "status": "closed",
+      "requiresAction": false,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Atlético Pumas",
+        "outcome": "entry_approved"
+      },
+      "openedAt": "2026-11-10T00:27:54.928Z",
+      "closedAt": "2026-11-10T00:27:54.928Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:54.928Z"
+    },
+    {
+      "id": "aba43f22-1ea1-4872-8fbb-f233af89150e",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "competition_entry",
+      "status": "closed",
+      "requiresAction": true,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Atlético Pumas",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:54.902Z",
+      "closedAt": "2026-11-10T00:27:54.927Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:54.927Z"
+    },
+    {
+      "id": "7398138a-001e-464d-96e0-eb4d3e3b88a2",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "competition_entry",
+      "status": "closed",
+      "requiresAction": true,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Cóndores FC",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:54.746Z",
+      "closedAt": "2026-11-10T00:27:54.780Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:54.780Z"
+    },
+    {
+      "id": "0228790b-8968-430a-be1e-973689759d57",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "organizer_decision",
+      "status": "closed",
+      "requiresAction": false,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Cóndores FC",
+        "outcome": "entry_approved"
+      },
+      "openedAt": "2026-11-10T00:27:54.780Z",
+      "closedAt": "2026-11-10T00:27:54.780Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:54.780Z"
+    },
+    {
+      "id": "c494cfb8-256b-4145-8f75-e3491d6c6519",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "competition_entry",
+      "status": "closed",
+      "requiresAction": true,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Halcones Sin Club",
+        "outcome": null
+      },
+      "openedAt": "2026-11-10T00:27:54.653Z",
+      "closedAt": "2026-11-10T00:27:54.663Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:54.663Z"
+    },
+    {
+      "id": "9c67ad48-f6c8-46c2-859c-2699dbea8015",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "audience": "organization",
+      "kind": "organizer_decision",
+      "status": "closed",
+      "requiresAction": false,
+      "resourceType": "competition",
+      "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+      "subject": {
+        "competitionName": "Apertura Inscripciones",
+        "encounterLabel": null,
+        "teamName": "Halcones Sin Club",
+        "outcome": "entry_approved"
+      },
+      "openedAt": "2026-11-10T00:27:54.663Z",
+      "closedAt": "2026-11-10T00:27:54.663Z",
+      "expiresAt": null,
+      "lastEventAt": "2026-11-10T00:27:54.663Z"
+    }
+  ]
+}

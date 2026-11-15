@@ -93,6 +93,13 @@ export const m3 = candidate(
   ["club-cuervos", "Cuervos EA", 3],
   ["club-maderas", "Maderas EA", 3],
 );
+/** Same clubs and score as m-2, played an hour later: only its reference and time differ. */
+export const m5 = candidate(
+  "m-5",
+  "2026-09-17T02:40:00.000Z",
+  ["club-maderas", "Maderas EA", 2],
+  ["club-cuervos", "Cuervos EA", 0],
+);
 /** A disconnect cut it short and EA returned partial data. */
 export const m4 = candidate(
   "m-4",

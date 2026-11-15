@@ -63,6 +63,7 @@ function competitionDraft(): CompetitionDraft {
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: new Date("2026-07-31T12:00:00.000Z"),
     },
   };
@@ -101,7 +102,7 @@ describe("createSchedulingModule schedule change requests", () => {
     const listed = await scheduling.listScheduleChangeRequests.execute({ actorId, encounterId });
     expect(listed.isOk()).toBe(true);
     if (listed.isErr()) throw listed.error;
-    expect(listed.value).toEqual([created.value]);
+    expect(listed.value.requests.map((view) => view.request)).toEqual([created.value]);
     expect(events).toHaveLength(1);
     expect(events[0]?.eventName).toBe("scheduling.reschedule-requested");
 
@@ -212,9 +213,14 @@ async function wiredScheduling() {
       },
     },
     transaction: new NoopTransactionPort(),
-    officialResults: { findApprovedByEncounter: async () => null },
+    officialResults: {
+      findApprovedByEncounter: async () => null,
+      listByCompetition: async () => [],
+    },
     officialSelections: { findLatestByEncounter: async () => null },
     encounterMutationLock: new InMemoryEncounterMutationLock(),
+    encounterParticipants: { participantsChanged: async () => undefined },
+    encounterOpenSelection: { cancelOpen: async () => undefined },
     competitions,
   });
   const snapshot = {

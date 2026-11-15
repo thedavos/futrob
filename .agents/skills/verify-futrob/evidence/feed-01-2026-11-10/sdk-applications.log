@@ -1,0 +1,186 @@
+$ FEED_EVIDENCE_DIR=.agents/skills/verify-futrob/evidence/feed-01-2026-11-10 apps/api/node_modules/.bin/tsx --tsconfig apps/api/tsconfig.json .agents/skills/verify-futrob/helpers/feed-01-live.mjs applications
+{
+  "action": "CLI self-service application",
+  "result": {
+    "command": "npm run cli -- comp-apply cf7ec205-8850-47ef-9901-81ee3cad4da6 FEED-01 approve --key feed01-application-approve --actor 4e9e4678-9f7a-492b-96c0-521d89e87b28 --json",
+    "stdout": "\n> futrob@0.1.0 cli\n> npm run cli -w @futrob/cli -- comp-apply *** FEED-01 approve --key feed01-application-approve --actor *** --json\n\n\n> @futrob/cli@0.1.0 cli\n> tsx src/main.ts comp-apply *** FEED-01 approve --key feed01-application-approve --actor *** --json\n\n{\n  \"entryId\": \"d3806653-7ce6-4894-983a-e87cb10717a1\",\n  \"status\": \"pending\",\n  \"teamId\": \"cee50bab-2873-4aeb-a095-5f5623bf417e\",\n  \"teamName\": \"FEED-01 approve\",\n  \"createdAt\": \"2026-11-10T00:41:19.613Z\"\n}\n",
+    "stderr": "",
+    "exitCode": 0
+  }
+}
+{
+  "action": "registration decision readback",
+  "result": {
+    "decision": "approve",
+    "current": {
+      "entryId": "d3806653-7ce6-4894-983a-e87cb10717a1",
+      "status": "approved",
+      "teamId": "cee50bab-2873-4aeb-a095-5f5623bf417e",
+      "teamName": "FEED-01 approve",
+      "createdAt": "2026-11-10T00:41:19.613Z"
+    },
+    "personal": [
+      {
+        "id": "1c5550d3-690c-45de-b598-fb559e010aed",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "audience": "team",
+        "kind": "organizer_decision",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "competition",
+        "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "subject": {
+          "competitionName": "Apertura Inscripciones",
+          "encounterLabel": null,
+          "teamName": "FEED-01 approve",
+          "outcome": "entry_approved"
+        },
+        "openedAt": "2026-11-10T00:41:19.746Z",
+        "closedAt": "2026-11-10T00:41:19.746Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T00:41:19.746Z"
+      }
+    ],
+    "organization": [
+      {
+        "id": "4aea3cd2-f41a-46d4-8f7b-64ff7c3002d2",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "audience": "organization",
+        "kind": "organizer_decision",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "competition",
+        "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "subject": {
+          "competitionName": "Apertura Inscripciones",
+          "encounterLabel": null,
+          "teamName": "FEED-01 approve",
+          "outcome": "entry_approved"
+        },
+        "openedAt": "2026-11-10T00:41:19.746Z",
+        "closedAt": "2026-11-10T00:41:19.746Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T00:41:19.746Z"
+      },
+      {
+        "id": "be96c329-2318-43c4-b338-a208e18b62bd",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "audience": "organization",
+        "kind": "competition_entry",
+        "status": "closed",
+        "requiresAction": true,
+        "resourceType": "competition",
+        "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "subject": {
+          "competitionName": "Apertura Inscripciones",
+          "encounterLabel": null,
+          "teamName": "FEED-01 approve",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:41:19.613Z",
+        "closedAt": "2026-11-10T00:41:19.743Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T00:41:19.743Z"
+      }
+    ]
+  }
+}
+{
+  "action": "CLI self-service application",
+  "result": {
+    "command": "npm run cli -- comp-apply cf7ec205-8850-47ef-9901-81ee3cad4da6 FEED-01 reject --key feed01-application-reject --actor 3c722561-cc4f-47f2-a1fc-bbaccd12ea48 --json",
+    "stdout": "\n> futrob@0.1.0 cli\n> npm run cli -w @futrob/cli -- comp-apply *** FEED-01 reject --key feed01-application-reject --actor *** --json\n\n\n> @futrob/cli@0.1.0 cli\n> tsx src/main.ts comp-apply *** FEED-01 reject --key feed01-application-reject --actor *** --json\n\n{\n  \"entryId\": \"108e57d1-df95-4230-8a5d-eda15968079e\",\n  \"status\": \"pending\",\n  \"teamId\": \"be6e253a-dd0b-406a-b95e-0e528202f720\",\n  \"teamName\": \"FEED-01 reject\",\n  \"createdAt\": \"2026-11-10T00:41:20.492Z\"\n}\n",
+    "stderr": "",
+    "exitCode": 0
+  }
+}
+{
+  "action": "registration decision readback",
+  "result": {
+    "decision": "reject",
+    "current": {
+      "entryId": "108e57d1-df95-4230-8a5d-eda15968079e",
+      "status": "rejected",
+      "teamId": "be6e253a-dd0b-406a-b95e-0e528202f720",
+      "teamName": "FEED-01 reject",
+      "createdAt": "2026-11-10T00:41:20.492Z"
+    },
+    "personal": [
+      {
+        "id": "5eaac6f0-1c6c-4410-a675-3106f144cadd",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "audience": "team",
+        "kind": "organizer_decision",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "competition",
+        "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "subject": {
+          "competitionName": "Apertura Inscripciones",
+          "encounterLabel": null,
+          "teamName": "FEED-01 reject",
+          "outcome": "entry_rejected"
+        },
+        "openedAt": "2026-11-10T00:41:20.566Z",
+        "closedAt": "2026-11-10T00:41:20.566Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T00:41:20.566Z"
+      }
+    ],
+    "organization": [
+      {
+        "id": "38678676-0012-4a46-a64a-2f72e980b447",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "audience": "organization",
+        "kind": "organizer_decision",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "competition",
+        "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "subject": {
+          "competitionName": "Apertura Inscripciones",
+          "encounterLabel": null,
+          "teamName": "FEED-01 reject",
+          "outcome": "entry_rejected"
+        },
+        "openedAt": "2026-11-10T00:41:20.566Z",
+        "closedAt": "2026-11-10T00:41:20.566Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T00:41:20.566Z"
+      },
+      {
+        "id": "12197fbd-eebb-4e25-be21-082075b59872",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "audience": "organization",
+        "kind": "competition_entry",
+        "status": "closed",
+        "requiresAction": true,
+        "resourceType": "competition",
+        "resourceId": "cf7ec205-8850-47ef-9901-81ee3cad4da6",
+        "subject": {
+          "competitionName": "Apertura Inscripciones",
+          "encounterLabel": null,
+          "teamName": "FEED-01 reject",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:41:20.492Z",
+        "closedAt": "2026-11-10T00:41:20.565Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T00:41:20.565Z"
+      }
+    ]
+  }
+}
+{
+  "action": "verification complete",
+  "result": {
+    "mode": "applications",
+    "verified": true
+  }
+}

@@ -36,7 +36,7 @@ const styles = stylex.create({
     userSelect: "none",
   },
   description: {
-    fontSize: "0.75rem",
+    fontSize: "var(--text-xs)",
     lineHeight: 1.55,
     color: colors.mutedForeground,
   },
@@ -44,7 +44,7 @@ const styles = stylex.create({
     display: "flex",
     alignItems: "flex-start",
     gap: "0.375rem",
-    fontSize: "0.75rem",
+    fontSize: "var(--text-xs)",
     lineHeight: 1.55,
     color: colors.danger,
   },

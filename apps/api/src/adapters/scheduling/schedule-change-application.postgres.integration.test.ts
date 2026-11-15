@@ -1019,6 +1019,7 @@ function competitionDraft(requiresOrganizerApproval: boolean): CompetitionDraft 
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: at,
     },
   };

@@ -1,0 +1,12 @@
+
+> futrob@0.1.0 test
+> vp test --project api apps/api/src/application/competitions/competition-application.integration.test.ts
+
+
+ RUN  v4.1.11 /home/user/code/futrob
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  00:31:26
+   Duration  9.56s (transform 2.62s, setup 62ms, import 3.77s, tests 5.62s, environment 0ms)

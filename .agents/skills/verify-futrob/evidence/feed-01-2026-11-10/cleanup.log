@@ -1,0 +1,6 @@
+cleanup: stopping process group 42085 (pid 42085)
+cleanup: removed .run lock; evidence kept under /home/user/code/futrob/.agents/skills/verify-futrob/evidence/
+
+exit=0
+futrob-feed01-postgres
+exited

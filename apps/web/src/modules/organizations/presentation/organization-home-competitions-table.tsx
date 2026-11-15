@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
   TextLink,
+  typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import {
@@ -56,10 +57,6 @@ const styles = stylex.create({
     justifyContent: "space-between",
     gap: "0.75rem",
     padding: "1.25rem",
-  },
-  title: {
-    fontWeight: 600,
-    fontSize: "var(--text-lg)",
   },
   action: {
     display: "inline-flex",
@@ -173,7 +170,7 @@ export function OrganizationHomeCompetitionsTable({
   return (
     <Card className={styles.card}>
       <CardHeader className={styles.header}>
-        <Heading className={styles.title} id={titleId}>
+        <Heading className={typography.title} id={titleId}>
           {t("org.home.competitions")}
         </Heading>
         <TextLink

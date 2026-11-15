@@ -1,9 +1,5 @@
-import {
-  inviteRoleSchema,
-  orgMembershipRoleSchema,
-  redeemPolicySchema,
-} from "@futrob/api-contracts";
 import type {
+  OrgMembershipRole,
   InvitationRepository,
   MembershipRepository,
   MembershipSummary,
@@ -15,6 +11,11 @@ import type {
   OrganizationRepository,
 } from "@futrob/organizations";
 import {
+  inviteRoleSchema,
+  orgMembershipRoleSchema,
+  redeemPolicySchema,
+} from "@futrob/api-contracts";
+import {
   DEFAULT_ORGANIZATION_LOGO,
   INVITATION_STATUS,
   parseOrganizationLogo,
@@ -22,7 +23,13 @@ import {
   REDEEM_POLICY,
 } from "@futrob/organizations";
 import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
-import { asActorId, asCompetitionId, asOrganizationId, Panic } from "@futrob/shared-kernel";
+import {
+  asActorId,
+  asCompetitionId,
+  asOrganizationId,
+  compareTime,
+  Panic,
+} from "@futrob/shared-kernel";
 import { z } from "zod";
 import { pgTextSchema, pgTimestampSchema } from "@/adapters/persistence/pg-scalar.ts";
 
@@ -135,6 +142,16 @@ export class InMemoryMembershipRepository implements MembershipRepository {
     );
   }
 
+  async listByOrganization(
+    organizationId: OrganizationId,
+    limit: number,
+  ): Promise<readonly OrganizationMembership[]> {
+    return this.rows
+      .filter((row) => row.organizationId === organizationId)
+      .sort(compareMemberships)
+      .slice(0, limit);
+  }
+
   async updateRole(membership: OrganizationMembership): Promise<OrganizationMembership> {
     const index = this.rows.findIndex(
       (row) =>
@@ -168,10 +185,18 @@ export class InMemoryMembershipRepository implements MembershipRepository {
     return membership;
   }
 
-  async countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number> {
+  async countByRole(organizationId: OrganizationId, role: OrgMembershipRole): Promise<number> {
     return this.rows.filter((row) => row.organizationId === organizationId && row.role === role)
       .length;
   }
+}
+
+function compareMemberships(left: OrganizationMembership, right: OrganizationMembership): number {
+  const byTime = compareTime(left.createdAt, right.createdAt);
+  if (byTime !== 0) return byTime;
+  if (left.actorId < right.actorId) return -1;
+  if (left.actorId > right.actorId) return 1;
+  return 0;
 }
 
 export class InMemoryInvitationRepository implements InvitationRepository {

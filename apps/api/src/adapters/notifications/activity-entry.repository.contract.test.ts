@@ -164,6 +164,64 @@ function contract(name: string, repository: () => ActivityEntryRepository) {
       expect((await items(PENDING)).map((row) => row.sourceId)).toEqual(["dsp-1"]);
     });
 
+    it("stores the kinds, sources and outcome of schedule changes, decisions and entries", async () => {
+      const common = {
+        organizationId: ORG_A,
+        competitionId: CMP_A,
+        resource: { type: "encounter", id: "enc-1" },
+        actorId: OPENER,
+      } as const;
+      await record.execute({
+        ...common,
+        kind: "schedule_change",
+        source: { name: "schedule_change_proposal", id: "prp-1" },
+        subject: { encounterLabel: "Cuervos vs Halcones", teamName: "Halcones" },
+        expiresAt: at("22:00"),
+        recipients: [
+          { audience: "team", audienceId: "tm-away", requiresAction: true },
+          { ...ORG_AUDIENCE, requiresAction: false },
+        ],
+      });
+      await record.execute({
+        ...common,
+        kind: "schedule_change",
+        source: { name: "schedule_change_escalation", id: "req-1" },
+        recipients: [{ ...ORG_AUDIENCE, requiresAction: true }],
+      });
+      await record.execute({
+        ...common,
+        kind: "organizer_decision",
+        source: { name: "organizer_decision", id: "req-1" },
+        subject: { outcome: "walkover_intended" },
+        bornClosed: true,
+        recipients: [{ audience: "team", audienceId: "tm-away", requiresAction: false }],
+      });
+      await record.execute({
+        ...common,
+        kind: "competition_entry",
+        source: { name: "competition_entry", id: "ent-1" },
+        resource: { type: "competition", id: CMP_A },
+        subject: { teamName: "Cuervos" },
+        recipients: [{ ...ORG_AUDIENCE, requiresAction: true }],
+      });
+
+      expect(
+        (await items(PENDING)).map((row) => [row.kind, row.sourceName, row.subject.outcome]),
+      ).toEqual(
+        expect.arrayContaining([
+          ["schedule_change", "schedule_change_escalation", null],
+          ["competition_entry", "competition_entry", null],
+        ]),
+      );
+      const decision = await items({
+        audiences: [{ audience: "team", audienceId: "tm-away" }],
+        status: "closed",
+      });
+      expect(decision).toMatchObject([
+        { kind: "organizer_decision", subject: { outcome: "walkover_intended" } },
+      ]);
+    });
+
     it("lists a directed invitation only for its invitee until it expires", async () => {
       await record.execute({
         organizationId: ORG_A,

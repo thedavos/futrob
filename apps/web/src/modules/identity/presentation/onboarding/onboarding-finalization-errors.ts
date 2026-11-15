@@ -45,9 +45,6 @@ export function finalizationError(
     if (error.code === "organizations.name_conflict") {
       return present("errors.organizations.name_conflict");
     }
-    if (error.code.startsWith("competitions.invalid_")) {
-      return present("errors.onboarding.invalidCompetition");
-    }
     if (error.code.startsWith("teams.invalid_")) {
       return present("errors.onboarding.invalidGameAccount");
     }

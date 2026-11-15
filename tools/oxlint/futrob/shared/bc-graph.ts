@@ -16,6 +16,7 @@ export const BOUNDED_CONTEXTS = [
   "analytics",
   "notifications",
   "public-portal",
+  "billing",
 ] as const;
 
 export type BoundedContext = (typeof BOUNDED_CONTEXTS)[number];
@@ -46,6 +47,8 @@ export const ALLOWED_BC_DEPENDENCIES = {
   // notifications consume versioned events via shared contracts, not BC packages.
   notifications: [],
   "public-portal": ["statistics", "competitions"],
+  // billing is a leaf: consumers declare their own plan-limit ports, bridged in apps/api/src/di.
+  billing: [],
 } as const satisfies Record<BoundedContext, readonly BoundedContext[]>;
 
 export type GraphAllowlistEntry = Readonly<{

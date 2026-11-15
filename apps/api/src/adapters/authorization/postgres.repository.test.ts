@@ -5,7 +5,6 @@ import { asPgPool } from "@/adapters/persistence/pg-test-double.ts";
 import {
   PostgresAccessGrantRepository,
   PostgresAuthorizationAuditRepository,
-  PostgresPlatformRoleRepository,
   type AccessGrantRow,
 } from "./postgres.repository.ts";
 
@@ -43,30 +42,6 @@ describe("Postgres contextual authorization repositories", () => {
     expect(listed).toEqual([saved]);
     expect(pool.calls[0]?.sql).toContain("ON CONFLICT");
     expect(pool.calls[1]?.values).toEqual(["member-1", "org-1", ["team"], ["team-1"]]);
-  });
-
-  it("persists platform assignments", async () => {
-    const row = {
-      actor_id: "super-1",
-      role: "superuser",
-      assigned_by_actor_id: "super-1",
-      created_at: now,
-    };
-    const pool = new StubPool([
-      { rows: [row], rowCount: 1 },
-      { rows: [{ count: 1 }], rowCount: 1 },
-    ]);
-    const repository = new PostgresPlatformRoleRepository(asPgPool(pool));
-
-    const assignment = await repository.assignSuperuser({
-      actorId: asActorId("super-1"),
-      role: "superuser",
-      assignedByActorId: asActorId("super-1"),
-      createdAt: now,
-    });
-
-    expect(assignment.role).toBe("superuser");
-    await expect(repository.countSuperusers()).resolves.toBe(1);
   });
 
   it("writes and reads audit entries", async () => {

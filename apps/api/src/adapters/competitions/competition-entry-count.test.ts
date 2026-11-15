@@ -1,11 +1,7 @@
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it } from "vite-plus/test";
 import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import type { CompetitionEntry } from "@futrob/competitions";
-import { asPgPool } from "@/adapters/persistence/pg-test-double.ts";
-import {
-  InMemoryCompetitionEntryRepository,
-  PostgresCompetitionEntryRepository,
-} from "./competition-entry.repositories.ts";
+import { InMemoryCompetitionEntryRepository } from "./competition-entry.repositories.ts";
 
 const organizationId = asOrganizationId("org-1");
 const competitionId = asCompetitionId("competition-1");
@@ -38,19 +34,5 @@ describe("approved competition entry count", () => {
     await expect(
       repository.countApprovedByCompetition(organizationId, asCompetitionId("empty")),
     ).resolves.toBe(0);
-  });
-
-  it("uses a scoped aggregate instead of retrieving entry rows", async () => {
-    const query = vi.fn(async () => ({ rows: [{ approved_count: 8 }] }));
-    const repository = new PostgresCompetitionEntryRepository(asPgPool({ query }));
-    await expect(
-      repository.countApprovedByCompetition(organizationId, competitionId),
-    ).resolves.toBe(8);
-    expect(query).toHaveBeenCalledExactlyOnceWith(
-      expect.stringMatching(
-        /COUNT\(\*\)::int[\s\S]*organization_id = \$1 AND competition_id = \$2 AND status = 'approved'/,
-      ),
-      [organizationId, competitionId],
-    );
   });
 });

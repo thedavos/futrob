@@ -5,6 +5,10 @@ import {
   type CounterScheduleChangeProposalRequest,
   createScheduleChangeRequestSchema,
   type CreateScheduleChangeRequestBody,
+  closeSwissRoundRequestSchema,
+  type CloseSwissRoundRequest,
+  withdrawSwissTeamRequestSchema,
+  type WithdrawSwissTeamRequest,
   editFixtureEncounterRequestSchema,
   type EditFixtureEncounterRequest,
   encounterScheduleSnapshotSchema,
@@ -14,6 +18,10 @@ import {
   fixturePlanSchema,
   type FixturePlanDto,
   generateCompetitionFixtureRequestSchema,
+  getCurrentCompetitionFixtureResponseSchema,
+  type GetCurrentCompetitionFixtureResponse,
+  listCompetitionEncountersResponseSchema,
+  type ListCompetitionEncountersResponse,
   type GenerateCompetitionFixtureRequest,
   listScheduleChangeRequestsResponseSchema,
   type ListScheduleChangeRequestsResponse,
@@ -43,6 +51,18 @@ export function createEncountersResource(http: HttpClient) {
         method: "GET",
         options,
         parse: (data) => encounterViewSchema.parse(data),
+      });
+    },
+    async listByCompetition(
+      organizationId: string,
+      competitionId: string,
+      options: RequestOptions = {},
+    ): Promise<ListCompetitionEncountersResponse> {
+      return http.request({
+        path: apiPath("organizations", organizationId, "competitions", competitionId, "encounters"),
+        method: "GET",
+        options,
+        parse: (data) => listCompetitionEncountersResponseSchema.parse(data),
       });
     },
     async getScheduleSnapshot(
@@ -81,6 +101,18 @@ export function createEncountersResource(http: HttpClient) {
         body: generateCompetitionFixtureRequestSchema.parse(input),
         options,
         parse: (data) => fixturePlanSchema.parse(data),
+      });
+    },
+    async getCurrentFixture(
+      organizationId: string,
+      competitionId: string,
+      options: RequestOptions = {},
+    ): Promise<GetCurrentCompetitionFixtureResponse> {
+      return http.request({
+        path: apiPath("organizations", organizationId, "competitions", competitionId, "fixture"),
+        method: "GET",
+        options,
+        parse: (data) => getCurrentCompetitionFixtureResponseSchema.parse(data),
       });
     },
     async getFixture(
@@ -126,6 +158,61 @@ export function createEncountersResource(http: HttpClient) {
         method: "PATCH",
         requestId,
         body: editFixtureEncounterRequestSchema.parse({ ...input, requestId }),
+        options,
+        parse: (data) => fixturePlanSchema.parse(data),
+      });
+    },
+    async withdrawSwissTeam(
+      organizationId: string,
+      competitionId: string,
+      fixturePlanId: string,
+      input: WithdrawSwissTeamRequest,
+      options: RequestOptions = {},
+    ): Promise<FixturePlanDto> {
+      const requestId = input.requestId ?? crypto.randomUUID();
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "fixtures",
+          fixturePlanId,
+          "swiss",
+          "withdrawals",
+        ),
+        method: "POST",
+        requestId,
+        body: withdrawSwissTeamRequestSchema.parse({ ...input, requestId }),
+        options,
+        parse: (data) => fixturePlanSchema.parse(data),
+      });
+    },
+    async closeSwissRound(
+      organizationId: string,
+      competitionId: string,
+      fixturePlanId: string,
+      roundNumber: number,
+      input: CloseSwissRoundRequest,
+      options: RequestOptions = {},
+    ): Promise<FixturePlanDto> {
+      const requestId = input.requestId ?? crypto.randomUUID();
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "fixtures",
+          fixturePlanId,
+          "swiss",
+          "rounds",
+          String(roundNumber),
+          "close",
+        ),
+        method: "POST",
+        requestId,
+        body: closeSwissRoundRequestSchema.parse({ ...input, requestId }),
         options,
         parse: (data) => fixturePlanSchema.parse(data),
       });

@@ -1,0 +1,307 @@
+$ FEED_EVIDENCE_DIR=.agents/skills/verify-futrob/evidence/feed-01-2026-11-10 apps/api/node_modules/.bin/tsx --tsconfig apps/api/tsconfig.json .agents/skills/verify-futrob/helpers/feed-01-live.mjs reschedules
+{
+  "action": "create reschedule",
+  "result": {
+    "id": "1a99d751-2f4e-4262-a8ae-428ecbd8dff9",
+    "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+    "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+    "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:4",
+    "requestingTeamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85",
+    "initiatedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+    "scope": {
+      "type": "entire_encounter"
+    },
+    "status": "open",
+    "version": 1,
+    "currentProposalId": "1e7f08e1-b877-452f-b6a2-ca8b46e0ebce",
+    "proposals": [
+      {
+        "id": "1e7f08e1-b877-452f-b6a2-ca8b46e0ebce",
+        "proposedStartAt": "2026-11-23T03:00:00.000Z",
+        "proposedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+        "proposedByTeamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85",
+        "reason": "FEED-01 verify schedule change",
+        "createdAt": "2026-11-10T00:36:17.912Z",
+        "responseDeadline": "2026-11-10T12:36:17.912Z"
+      }
+    ],
+    "decisions": [],
+    "actions": [],
+    "allowedActions": [],
+    "respondAs": null,
+    "blockedActions": [],
+    "application": null,
+    "createdAt": "2026-11-10T00:36:17.912Z",
+    "updatedAt": "2026-11-10T00:36:17.912Z"
+  }
+}
+{
+  "action": "reschedule audience readback",
+  "result": {
+    "rival": [
+      {
+        "id": "bd627f3e-1002-4f49-88ab-033f1fc416e4",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "team",
+        "kind": "schedule_change",
+        "status": "open",
+        "requiresAction": true,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:4",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Sporting Quipu vs Inti United",
+          "teamName": "Inti United",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:36:17.912Z",
+        "closedAt": null,
+        "expiresAt": "2026-11-10T12:36:17.912Z",
+        "lastEventAt": "2026-11-10T00:36:17.912Z"
+      }
+    ],
+    "organization": [
+      {
+        "id": "ca775673-bac2-4115-943b-a681acc65740",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "schedule_change",
+        "status": "open",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:4",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Sporting Quipu vs Inti United",
+          "teamName": "Inti United",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:36:17.912Z",
+        "closedAt": null,
+        "expiresAt": "2026-11-10T12:36:17.912Z",
+        "lastEventAt": "2026-11-10T00:36:17.912Z"
+      }
+    ]
+  }
+}
+{
+  "action": "counter reschedule",
+  "result": {
+    "id": "1a99d751-2f4e-4262-a8ae-428ecbd8dff9",
+    "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+    "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+    "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:4",
+    "requestingTeamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85",
+    "initiatedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+    "scope": {
+      "type": "entire_encounter"
+    },
+    "status": "open",
+    "version": 2,
+    "currentProposalId": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+    "proposals": [
+      {
+        "id": "1e7f08e1-b877-452f-b6a2-ca8b46e0ebce",
+        "proposedStartAt": "2026-11-23T03:00:00.000Z",
+        "proposedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+        "proposedByTeamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85",
+        "reason": "FEED-01 verify schedule change",
+        "createdAt": "2026-11-10T00:36:17.912Z",
+        "responseDeadline": "2026-11-10T12:36:17.912Z"
+      },
+      {
+        "id": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+        "proposedStartAt": "2026-11-23T04:00:00.000Z",
+        "proposedByActorId": "1a6735df-4c90-49a4-9f5b-05426f221e6c",
+        "proposedByTeamId": "9c58357f-6c78-44ac-b123-8f6fe7980f90",
+        "reason": "FEED-01 rival counterproposal",
+        "createdAt": "2026-11-10T00:36:18.075Z",
+        "responseDeadline": "2026-11-10T12:36:18.075Z"
+      }
+    ],
+    "decisions": [],
+    "actions": [],
+    "allowedActions": [],
+    "respondAs": null,
+    "blockedActions": [],
+    "application": null,
+    "createdAt": "2026-11-10T00:36:17.912Z",
+    "updatedAt": "2026-11-10T00:36:18.075Z"
+  }
+}
+{
+  "action": "accept reschedule",
+  "result": {
+    "request": {
+      "id": "1a99d751-2f4e-4262-a8ae-428ecbd8dff9",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:4",
+      "requestingTeamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85",
+      "initiatedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+      "scope": {
+        "type": "entire_encounter"
+      },
+      "status": "accepted",
+      "version": 3,
+      "currentProposalId": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+      "proposals": [
+        {
+          "id": "1e7f08e1-b877-452f-b6a2-ca8b46e0ebce",
+          "proposedStartAt": "2026-11-23T03:00:00.000Z",
+          "proposedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+          "proposedByTeamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85",
+          "reason": "FEED-01 verify schedule change",
+          "createdAt": "2026-11-10T00:36:17.912Z",
+          "responseDeadline": "2026-11-10T12:36:17.912Z"
+        },
+        {
+          "id": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+          "proposedStartAt": "2026-11-23T04:00:00.000Z",
+          "proposedByActorId": "1a6735df-4c90-49a4-9f5b-05426f221e6c",
+          "proposedByTeamId": "9c58357f-6c78-44ac-b123-8f6fe7980f90",
+          "reason": "FEED-01 rival counterproposal",
+          "createdAt": "2026-11-10T00:36:18.075Z",
+          "responseDeadline": "2026-11-10T12:36:18.075Z"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "8d2169cc-465f-4bc6-b309-fe1bb0c1bf07",
+          "proposalId": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+          "requestVersion": 2,
+          "kind": "consent",
+          "responder": {
+            "authority": "rival_team",
+            "teamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85"
+          },
+          "actorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+          "reason": null,
+          "createdAt": "2026-11-10T00:36:18.542Z"
+        }
+      ],
+      "actions": [],
+      "allowedActions": [],
+      "respondAs": null,
+      "blockedActions": [],
+      "application": {
+        "id": "607768a7-d2fd-4b9c-9988-2abc9095f37a",
+        "proposalId": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+        "requestVersion": 3,
+        "appliedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+        "previousEncounterStartAt": "2026-11-23T01:00:00.000Z",
+        "appliedEncounterStartAt": "2026-11-23T04:00:00.000Z",
+        "slots": [
+          {
+            "officialSlot": 1,
+            "previousStartAt": "2026-11-23T01:00:00.000Z",
+            "appliedStartAt": "2026-11-23T04:00:00.000Z"
+          },
+          {
+            "officialSlot": 2,
+            "previousStartAt": "2026-11-23T01:00:00.000Z",
+            "appliedStartAt": "2026-11-23T04:00:00.000Z"
+          }
+        ],
+        "appliedAt": "2026-11-10T00:36:18.542Z"
+      },
+      "createdAt": "2026-11-10T00:36:17.912Z",
+      "updatedAt": "2026-11-10T00:36:18.542Z"
+    },
+    "replayed": false
+  }
+}
+{
+  "action": "accepted reschedule readback",
+  "result": {
+    "id": "1a99d751-2f4e-4262-a8ae-428ecbd8dff9",
+    "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+    "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+    "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:4",
+    "requestingTeamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85",
+    "initiatedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+    "scope": {
+      "type": "entire_encounter"
+    },
+    "status": "accepted",
+    "version": 3,
+    "currentProposalId": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+    "proposals": [
+      {
+        "id": "1e7f08e1-b877-452f-b6a2-ca8b46e0ebce",
+        "proposedStartAt": "2026-11-23T03:00:00.000Z",
+        "proposedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+        "proposedByTeamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85",
+        "reason": "FEED-01 verify schedule change",
+        "createdAt": "2026-11-10T00:36:17.912Z",
+        "responseDeadline": "2026-11-10T12:36:17.912Z"
+      },
+      {
+        "id": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+        "proposedStartAt": "2026-11-23T04:00:00.000Z",
+        "proposedByActorId": "1a6735df-4c90-49a4-9f5b-05426f221e6c",
+        "proposedByTeamId": "9c58357f-6c78-44ac-b123-8f6fe7980f90",
+        "reason": "FEED-01 rival counterproposal",
+        "createdAt": "2026-11-10T00:36:18.075Z",
+        "responseDeadline": "2026-11-10T12:36:18.075Z"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "8d2169cc-465f-4bc6-b309-fe1bb0c1bf07",
+        "proposalId": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+        "requestVersion": 2,
+        "kind": "consent",
+        "responder": {
+          "authority": "rival_team",
+          "teamId": "f7004fa9-fc4a-44f3-a28a-7512526c3e85"
+        },
+        "actorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+        "reason": null,
+        "createdAt": "2026-11-10T00:36:18.542Z"
+      }
+    ],
+    "actions": [],
+    "allowedActions": [],
+    "respondAs": null,
+    "blockedActions": [
+      {
+        "action": "accept",
+        "reason": "request_closed"
+      },
+      {
+        "action": "reject",
+        "reason": "request_closed"
+      },
+      {
+        "action": "counter",
+        "reason": "request_closed"
+      }
+    ],
+    "application": {
+      "id": "607768a7-d2fd-4b9c-9988-2abc9095f37a",
+      "proposalId": "2bcd7078-b7f8-4ac0-86a5-b77e301d30f1",
+      "requestVersion": 3,
+      "appliedByActorId": "85149142-1da0-484f-8d3d-a8c0c0f91a22",
+      "previousEncounterStartAt": "2026-11-23T01:00:00.000Z",
+      "appliedEncounterStartAt": "2026-11-23T04:00:00.000Z",
+      "slots": [
+        {
+          "officialSlot": 1,
+          "previousStartAt": "2026-11-23T01:00:00.000Z",
+          "appliedStartAt": "2026-11-23T04:00:00.000Z"
+        },
+        {
+          "officialSlot": 2,
+          "previousStartAt": "2026-11-23T01:00:00.000Z",
+          "appliedStartAt": "2026-11-23T04:00:00.000Z"
+        }
+      ],
+      "appliedAt": "2026-11-10T00:36:18.542Z"
+    },
+    "createdAt": "2026-11-10T00:36:17.912Z",
+    "updatedAt": "2026-11-10T00:36:18.542Z"
+  }
+}

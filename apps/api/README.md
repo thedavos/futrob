@@ -44,9 +44,16 @@ part of this Railway API's OpenAPI document. It uses the Better Auth session and
 `organizations.read` access for the submitted tenant before it persists through the internal API and
 publishes only `jobId` and `requestId` to `JOB_QUEUE`. Queue deliveries use the
 durable `availableAt` value for delayed retries, stop after the configured attempts, and fall through
-to `futrob-job-dlq`. A one-minute Cron calls the service-only `run-next` recovery endpoint so a job
-survives an interrupted publication or Queue delivery. Replaying a message is safe because claim and
-completion are lease-token guarded.
+to `futrob-job-dlq`. A one-minute Cron calls `POST /internal/game-data/sync-jobs/enqueue-due`
+to persist recent-matches jobs for connected EA clubs that have a scheduled or
+awaiting-selection slot inside the candidate window. Active jobs and finished jobs inside a
+15-minute cooldown are excluded before the 240-target read limit. Never-synced targets
+come first, followed by the oldest completed syncs; each tick creates at most 20 jobs.
+This selection uses persisted jobs, so subsequent ticks advance even after an API restart.
+`alreadyCovered` counts targets covered between the feed read and the enqueue guard;
+`deferred` counts unread targets within the returned batch. The same Cron still calls `run-next` so a job survives an
+interrupted publication or Queue delivery. The worker publishes only the jobs that tick created.
+Replaying a message is safe because claim and completion are lease-token guarded.
 
 The API caches successful club searches for 30 seconds and club details for five minutes. A
 five-minute stale window is used only after transient provider failures. Recent matches are not
@@ -124,6 +131,10 @@ npm run api:typecheck
 npm run api:test       # vitest smoke via Vite+ (mocks EA fetch)
 ```
 
+Demo accounts and data for manual testing (local Postgres only, password `Test123`):
+`npm run seed:demo -w @futrob/api -- --reset`. See
+[scripts/seed-demo/README.md](scripts/seed-demo/README.md).
+
 Default port is `8787`. The app boots without a database. Without
 `DATABASE_URL`, `/meta/health` reports `db: "skipped"` rather than crashing.
 
@@ -156,6 +167,9 @@ npm run api
 - Set `TEST_DATABASE_URL` to run the clean/legacy migration integration suite; it creates and
   removes a uniquely named schema without touching existing schemas.
 - Set `DATABASE_URL`, `INTERNAL_JOB_SECRET`, and `EA_CLUBS_BASE_URL` as service variables.
+- Sentry: set `SENTRY_DSN` (and optional `SENTRY_ENVIRONMENT`) only on the production
+  service. Events send when `NODE_ENV=production` and the DSN is present. Leave both
+  unset locally.
 - Start command: `npm run start -w @futrob/api`. Railway injects `PORT`; the app reads it.
 - Health check path: `/api/v1/meta/health`.
 - EA egress relies on browser-like headers (`EA_CLUBS_REQUEST_HEADERS`) so Node

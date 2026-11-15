@@ -1,8 +1,16 @@
-import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import {
+  Outlet,
+  createFileRoute,
+  redirect,
+  type ErrorComponentProps,
+} from "@tanstack/react-router";
 import type { PostAuthDestinationDto } from "@futrob/api-contracts";
+import { authClient } from "@/modules/identity/auth-client.ts";
+import { browserOnboardingDraftStore } from "@/modules/identity/presentation/onboarding/onboarding-draft-storage.ts";
 import { OnboardingFlowProvider } from "@/modules/identity/presentation/onboarding/onboarding-flow.tsx";
 import { getOnboardingBootstrap } from "@/modules/identity/server/get-onboarding-bootstrap.functions.ts";
-import { RouteLoadError, RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
+import { RouteLoadError } from "@/shared/presentation/route-load-state.tsx";
+import { PendingScreen } from "@/shared/presentation/status-screen.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 export const Route = createFileRoute("/_app/onboarding")({
@@ -23,19 +31,30 @@ export const Route = createFileRoute("/_app/onboarding")({
 
 function OnboardingPending() {
   const { t } = useI18n();
-  return <RoutePendingState message={t("onboarding.loading.progress")} />;
+  return <PendingScreen message={t("onboarding.loading.preparing")} />;
 }
 
-function OnboardingLoadError(props: Parameters<typeof RouteLoadError>[0]) {
+function OnboardingLoadError(props: ErrorComponentProps) {
   const { t } = useI18n();
-  return <RouteLoadError {...props} message={t("onboarding.loading.error")} />;
+  return (
+    <RouteLoadError
+      {...props}
+      description={t("onboarding.loading.errorDescription")}
+      title={t("onboarding.loading.error")}
+    />
+  );
 }
 
 function OnboardingLayout() {
   const { initialStatus } = Route.useLoaderData();
+  const userId = authClient.useSession().data?.user.id;
 
   return (
-    <OnboardingFlowProvider initialStatus={initialStatus}>
+    <OnboardingFlowProvider
+      draftStore={userId ? browserOnboardingDraftStore(userId) : undefined}
+      initialStatus={initialStatus}
+      key={userId}
+    >
       <Outlet />
     </OnboardingFlowProvider>
   );

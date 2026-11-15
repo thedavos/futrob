@@ -20,8 +20,17 @@ vi.mock("./teams-browser-client.ts", () => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
-    <a href={to} {...props}>
+  Link: ({
+    to,
+    params,
+    children,
+    ...props
+  }: {
+    to: string;
+    params?: Record<string, string>;
+    children?: ReactNode;
+  }) => (
+    <a href={to.replaceAll(/\$(\w+)/g, (_, key: string) => params?.[key] ?? "")} {...props}>
       {children}
     </a>
   ),
@@ -154,6 +163,9 @@ describe("PlayerCompetitionsPage", () => {
       expect(screen.getByText("Competición c1")).toBeTruthy();
     });
     expect(screen.getByText("Equipo Alpha FC")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /^Competición c1/ }).getAttribute("href")).toBe(
+      "/orgs/o1/competitions/c1/matches",
+    );
     expect(screen.getByRole("button", { name: "Explorar competiciones" })).toBeTruthy();
   });
 });

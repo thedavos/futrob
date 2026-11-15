@@ -2,6 +2,7 @@ import "@/http/openapi/zod-openapi-setup.ts";
 import { serve } from "@hono/node-server";
 import { createPostgresHealth, createPostgresPool } from "@/adapters/persistence/postgres.ts";
 import { createApp } from "@/app.ts";
+import { emailSettingsFrom } from "@/di/email-settings.composition.ts";
 import { loadEnv } from "@/config/env.ts";
 import { consoleCorrelationLogger } from "@/context/request-correlation.ts";
 import {
@@ -26,12 +27,19 @@ registerGlobalSentryHandlers();
 const pool = createPostgresPool(env.databaseUrl);
 const dbHealth = createPostgresHealth(pool);
 
+const email = emailSettingsFrom(env, fetch);
+if (email.sender === null || email.sender === "memory") {
+  apiConsoleLogger.warn("email.provider.not_configured", {
+    mode: email.sender === "memory" ? "memory" : "pending",
+  });
+}
 const modules = createModules({
   fetcher: fetch,
   eaClubsBaseUrl: env.eaClubsBaseUrl,
   pool,
   resultsSystemActorId: env.resultsSystemActorId,
   schedulingSystemActorId: env.schedulingSystemActorId,
+  email,
 });
 if (env.initialSuperuserActorId) {
   try {

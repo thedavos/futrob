@@ -6,17 +6,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DEFAULT_LOCALE } from "@/shared/presentation/i18n/locale.ts";
 import { getUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
-import { AudiencesSection } from "@/shared/presentation/landing/audiences-section.tsx";
 import { DemoSearchSection } from "@/shared/presentation/landing/demo-search-section.tsx";
-import { EncounterRowsSection } from "@/shared/presentation/landing/encounter-rows-section.tsx";
 import { FinalCtaSection } from "@/shared/presentation/landing/final-cta-section.tsx";
 import { LandingHeader } from "@/shared/presentation/landing/landing-header.tsx";
 import { LandingHero } from "@/shared/presentation/landing/landing-hero.tsx";
 import { MechanismSection } from "@/shared/presentation/landing/mechanism-section.tsx";
+import { PlayersSection } from "@/shared/presentation/landing/players-section.tsx";
+import { PortalSection } from "@/shared/presentation/landing/portal-section.tsx";
+import { RescheduleSection } from "@/shared/presentation/landing/reschedule-section.tsx";
 
 const styles = stylex.create({
   main: {
-    minHeight: "100vh",
+    minHeight: "100dvh",
     backgroundColor: colors.background,
     color: colors.foreground,
   },
@@ -48,10 +49,11 @@ function HomePage() {
         <LandingHeader />
         <LandingHero />
       </div>
-      <EncounterRowsSection />
       <MechanismSection />
+      <RescheduleSection />
+      <PortalSection />
+      <PlayersSection />
       <DemoSearchSection />
-      <AudiencesSection />
       <FinalCtaSection />
     </main>
   );

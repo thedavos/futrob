@@ -19,7 +19,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/PageHeader",
+  title: "Components/Layout/PageHeader",
+  tags: ["autodocs"],
   component: PageHeader,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof PageHeader>;

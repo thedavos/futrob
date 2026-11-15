@@ -1,5 +1,4 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
-import { PlayerOnboardingGuard } from "@/modules/statistics/presentation/player-onboarding-guard.tsx";
 import { playerMatchesSearchSchema } from "@/modules/statistics/presentation/player-matches-search.ts";
 
 export const Route = createFileRoute("/_app/player_/matches")({
@@ -8,9 +7,5 @@ export const Route = createFileRoute("/_app/player_/matches")({
 });
 
 function PlayerMatchesLayout() {
-  return (
-    <PlayerOnboardingGuard>
-      <Outlet />
-    </PlayerOnboardingGuard>
-  );
+  return <Outlet />;
 }

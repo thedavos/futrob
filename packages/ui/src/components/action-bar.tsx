@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -19,6 +19,7 @@ const styles = stylex.create({
     backgroundColor: colors.surface,
     paddingInline: "1rem",
     paddingBlock: "0.75rem",
+    paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
   },
   start: {
     marginRight: "auto",
@@ -35,17 +36,29 @@ const styles = stylex.create({
   },
 });
 
-function ActionBar({ className, style, ...props }: React.ComponentProps<"div">) {
+function ActionBar({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return <div data-slot="action-bar" {...applyProps(className, style, styles.root)} {...props} />;
 }
 
-function ActionBarStart({ className, style, ...props }: React.ComponentProps<"div">) {
+function ActionBarStart({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return (
     <div data-slot="action-bar-start" {...applyProps(className, style, styles.start)} {...props} />
   );
 }
 
-function ActionBarEnd({ className, style, ...props }: React.ComponentProps<"div">) {
+function ActionBarEnd({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return (
     <div data-slot="action-bar-end" {...applyProps(className, style, styles.end)} {...props} />
   );

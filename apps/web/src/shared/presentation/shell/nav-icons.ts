@@ -1,10 +1,12 @@
 import type { Icon } from "@futrob/ui";
 import {
   BookOpenTextIcon,
+  ClockCounterClockwiseIcon,
   BuildingsIcon,
   CalendarDotsIcon,
   ChartBarIcon,
   GameControllerIcon,
+  GaugeIcon,
   GearIcon,
   HouseIcon,
   ListBulletsIcon,
@@ -12,6 +14,7 @@ import {
   MedalIcon,
   PresentationChartIcon,
   ScalesIcon,
+  SealWarningIcon,
   SoccerBallIcon,
   SquaresFourIcon,
   TicketIcon,
@@ -33,6 +36,7 @@ export const SHELL_NAV_ICONS = {
   players: UsersThreeIcon,
   organization: BuildingsIcon,
   settings: GearIcon,
+  plan: GaugeIcon,
   overview: SquaresFourIcon,
   fixture: CalendarDotsIcon,
   encounters: SoccerBallIcon,
@@ -40,6 +44,8 @@ export const SHELL_NAV_ICONS = {
   bracket: TreeStructureIcon,
   rankings: MedalIcon,
   disputes: ScalesIcon,
+  sanctions: SealWarningIcon,
+  audit: ClockCounterClockwiseIcon,
   analytics: PresentationChartIcon,
   rules: BookOpenTextIcon,
 } satisfies Record<ShellNavIconId, Icon>;

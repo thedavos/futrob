@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useRef, type Ref } from "react";
+import { useId, useRef, type ReactNode, type Ref } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
+  Badge,
   ChoiceGroup,
   Field,
   FieldDescription,
@@ -18,7 +19,7 @@ import {
   typography,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
-import type { GamePlatformDto } from "@futrob/api-contracts";
+import type { CompetitionFormatDto, GamePlatformDto } from "@futrob/api-contracts";
 import { competitionFormatSchema, competitionRegionSchema } from "@futrob/api-contracts";
 import { GAME_PLATFORM } from "@futrob/shared-kernel";
 import {
@@ -71,6 +72,11 @@ const styles = stylex.create({
       [media.sm]: "repeat(2, minmax(0, 1fr))",
     },
   },
+  formatItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+  },
   selectContent: {
     maxHeight: "var(--available-height)",
     overflowY: "auto",
@@ -93,7 +99,17 @@ export type CompetitionDraftFieldsProps = {
   readonly nameInputRef?: Ref<HTMLInputElement>;
   readonly timeZoneTriggerRef?: Ref<HTMLButtonElement>;
   readonly copy?: CompetitionDraftFieldsCopy;
+  /** Formats the organization's plan leaves out: listed with a badge and not selectable. */
+  readonly formatAvailability?: CompetitionFormatAvailability;
 };
+
+export interface CompetitionFormatAvailability {
+  readonly unavailable: ReadonlySet<CompetitionFormatDto>;
+  /** Short plan name shown next to an unavailable format (e.g. «Pro»). */
+  readonly badgeLabel: string;
+  /** Explains the gate below the select; may hold a link to the plans. */
+  readonly hint?: ReactNode;
+}
 
 export interface CompetitionDraftFieldsCopy {
   readonly nameLabel: string;
@@ -146,6 +162,7 @@ export function CompetitionDraftFields({
   nameInputRef,
   timeZoneTriggerRef,
   copy = defaultCopy,
+  formatAvailability,
 }: CompetitionDraftFieldsProps) {
   const editionLabelId = useId();
   const platformLabelId = useId();
@@ -339,15 +356,28 @@ export function CompetitionDraftFields({
             <SelectValue placeholder={copy.formatPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            {copy.formats.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
+            {copy.formats.map((item) => {
+              const unavailable = formatAvailability?.unavailable.has(item.value) ?? false;
+              return (
+                <SelectItem disabled={unavailable} key={item.value} value={item.value}>
+                  {unavailable ? (
+                    <span {...applyStyles(styles.formatItem)}>
+                      {item.label}{" "}
+                      <Badge variant="emphasis">{formatAvailability?.badgeLabel}</Badge>
+                    </span>
+                  ) : (
+                    item.label
+                  )}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
         {showFormatDescription ? (
           <FieldDescription>{copy.formatDescription}</FieldDescription>
+        ) : null}
+        {formatAvailability?.hint && formatAvailability.unavailable.size > 0 ? (
+          <FieldDescription>{formatAvailability.hint}</FieldDescription>
         ) : null}
         {fieldError?.field === "format" ? (
           <FieldError id={errorId} match>

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { OnboardingStatusDto, PostAuthDestinationDto } from "@futrob/api-contracts";
+import { recordOnboardingEntry } from "./record-onboarding-entry.ts";
 import { withAuthenticatedProductApi } from "@/context/with-authenticated-product-api.server.ts";
 
 export type OnboardingBootstrap =
@@ -18,6 +19,9 @@ export const getOnboardingBootstrap = createServerFn({ method: "GET" }).handler(
       const status = await client.identity.getOnboardingStatus();
 
       if (!status.completed) {
+        await recordOnboardingEntry(status, (input) =>
+          client.identity.saveOnboardingProgress(input),
+        );
         return { status, destination: null };
       }
 

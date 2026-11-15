@@ -37,6 +37,13 @@ describe.skipIf(!databaseUrl)("0051 deadline upgrade retains immutable legacy hi
     }
     const previous = await migrateIsolatedSchema(isolated.pool, directory);
     expect(previous.applied.at(-1)).toBe("0049_provider_sync_ingestion_checkpoint.sql");
+    // The current competition adapter writes nullable ranking columns from 0057.
+    // That change does not alter the pre-0051 deadline rows under test.
+    await copyFile(
+      resolve(MIGRATIONS_DIRECTORY, "0057_competition_ranking_eligibility.sql"),
+      resolve(directory, "0057_competition_ranking_eligibility.sql"),
+    );
+    await migrateIsolatedSchema(isolated.pool, directory);
     const clock = {
       value: new Date("2026-10-04T20:00:00.000Z"),
       now() {

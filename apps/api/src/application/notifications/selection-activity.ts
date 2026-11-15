@@ -6,6 +6,7 @@ import type {
 } from "@futrob/results";
 import type { ActorId } from "@futrob/shared-kernel";
 import type { ActivityWriter } from "@/di/notifications.module.ts";
+import { officialResultEmail } from "./activity-email.ts";
 import { encounterSubject, teamName, type ActivitySubjectReaders } from "./activity-subjects.ts";
 
 /**
@@ -79,6 +80,23 @@ export class SelectionActivityProjector {
             },
           ],
         });
+      }
+    }
+
+    const approved = output.approvedResult;
+    if (approved) {
+      const scheduled = await readEncounter();
+      if (scheduled) {
+        await this.deps.writer.email(
+          officialResultEmail({
+            officialResultId: `${approved.id}:${approved.revision}`,
+            organizationId: approved.organizationId,
+            competitionId: approved.competitionId,
+            teamIds: [scheduled.homeTeamId, scheduled.awayTeamId],
+            approvedBy: approved.approvedBy,
+            names: await encounterSubject(this.deps.readers, scheduled),
+          }),
+        );
       }
     }
 

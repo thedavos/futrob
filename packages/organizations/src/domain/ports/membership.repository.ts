@@ -1,3 +1,4 @@
+import type { OrgMembershipRole } from "../value-objects/organization-membership-role.ts";
 import type { ActorId, OrganizationId } from "@futrob/shared-kernel";
 import type { OrganizationMembership } from "../entities/organization-membership.ts";
 import type { MembershipSummary } from "../value-objects/post-auth-destination.ts";
@@ -9,9 +10,13 @@ export interface MembershipRepository {
     organizationId: OrganizationId,
     actorId: ActorId,
   ): Promise<OrganizationMembership | null>;
+  listByOrganization(
+    organizationId: OrganizationId,
+    limit: number,
+  ): Promise<readonly OrganizationMembership[]>;
   updateRole(membership: OrganizationMembership): Promise<OrganizationMembership>;
   updateRoleProtectingLastOrganizer(
     membership: OrganizationMembership,
   ): Promise<OrganizationMembership | null>;
-  countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number>;
+  countByRole(organizationId: OrganizationId, role: OrgMembershipRole): Promise<number>;
 }

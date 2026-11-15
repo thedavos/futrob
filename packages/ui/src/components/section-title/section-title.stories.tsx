@@ -3,7 +3,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { SectionTitle } from "./section-title.tsx";
 
 const meta = {
-  title: "Primitives/SectionTitle",
+  title: "Components/Typography/SectionTitle",
+  tags: ["autodocs"],
   component: SectionTitle,
   parameters: { layout: "padded" },
   args: {

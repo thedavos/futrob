@@ -1,6 +1,6 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { describe, expect, it } from "vite-plus/test";
 import {
-  completeOrganizationOnboardingResponseSchema,
   createRosterInvitationResponseSchema,
   createTeamResponseSchema,
   listActivitiesResponseSchema,
@@ -56,7 +56,7 @@ async function activities(app: App, path: string, actorId: string) {
 }
 
 async function organizationWithTeams(app: App, organizer: string) {
-  const created = await app.request("/api/v1/identity/onboarding/organization", {
+  const created = await createOrganizationCompetitionFixture(app, {
     method: "POST",
     headers: serviceHeaders(organizer),
     body: JSON.stringify({
@@ -65,7 +65,7 @@ async function organizationWithTeams(app: App, organizer: string) {
       gameAccount: null,
     }),
   });
-  const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+  const body = created;
   const organizationId = body.organizationId;
   const competitionId = body.competition.competition.id;
   await app.request(`/api/v1/organizations/${organizationId}/competitions/${competitionId}`, {
@@ -107,19 +107,29 @@ describe("apps/api http activities", () => {
     expect(published.status).toBe(200);
 
     const feed = await activities(app, `/organizations/${organizationId}/activities`, organizer);
-    expect(feed).toMatchObject({
-      activities: [
-        {
-          kind: "competition_published",
-          status: "closed",
-          requiresAction: false,
-          resourceType: "competition",
-          resourceId: competitionId,
-          subject: { competitionName: "Liga Feed" },
-        },
-      ],
-      nextCursor: null,
+    expect(feed.nextCursor).toBeNull();
+    expect(feed.activities).toHaveLength(3);
+    expect(
+      feed.activities.find((activity) => activity.kind === "competition_published"),
+    ).toMatchObject({
+      status: "closed",
+      requiresAction: false,
+      resourceType: "competition",
+      resourceId: competitionId,
+      subject: { competitionName: "Liga Feed" },
     });
+    expect(feed.activities.filter((activity) => activity.kind === "competition_entry")).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          status: "closed",
+          subject: expect.objectContaining({ teamName: "Halcones" }),
+        }),
+        expect.objectContaining({
+          status: "closed",
+          subject: expect.objectContaining({ teamName: "Cuervos" }),
+        }),
+      ]),
+    );
     const pending = await activities(
       app,
       `/organizations/${organizationId}/activities?status=open&requiresAction=true`,
@@ -191,6 +201,8 @@ describe("apps/api http activities", () => {
     const watched = await activities(app, `/organizations/${organizationId}/activities`, organizer);
     expect(watched.activities.map((row) => [row.kind, row.requiresAction])).toEqual([
       ["roster_invitation", false],
+      ["competition_entry", false],
+      ["competition_entry", false],
     ]);
 
     const declined = await app.request(
@@ -204,7 +216,11 @@ describe("apps/api http activities", () => {
     expect(declined.status).toBe(200);
     expect((await activities(app, mine, invitee)).activities).toEqual([]);
     const after = await activities(app, `/organizations/${organizationId}/activities`, organizer);
-    expect(after.activities.map((row) => row.status)).toEqual(["closed"]);
+    expect(after.activities.map((row) => [row.kind, row.status])).toEqual([
+      ["roster_invitation", "closed"],
+      ["competition_entry", "closed"],
+      ["competition_entry", "closed"],
+    ]);
 
     const second = await app.request(
       `/api/v1/organizations/${organizationId}/competitions/${competitionId}/teams/${teamIds[1]}/roster-invitations`,
@@ -224,7 +240,9 @@ describe("apps/api http activities", () => {
     expect(accepted.status).toBe(201);
     expect((await activities(app, mine, invitee)).activities).toEqual([]);
     const closed = await activities(app, `/organizations/${organizationId}/activities`, organizer);
-    expect(closed.activities.map((row) => row.status)).toEqual(["closed", "closed"]);
+    expect(
+      closed.activities.filter((row) => row.kind === "roster_invitation").map((row) => row.status),
+    ).toEqual(["closed", "closed"]);
   });
 
   it("lists a proposal for the rival captain, not for the proposer", async () => {
@@ -304,5 +322,109 @@ describe("apps/api http activities", () => {
       AWAY_CAPTAIN,
     );
     expect(pending.activities.map((row) => row.resourceId)).toEqual(["enc-proposal-captained"]);
+  });
+  it("asks the organizer to decide an application and tells the applicant Team the decision", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-feed-entry-organizer";
+    const approved = "actor-feed-entry-approved";
+    const rejected = "actor-feed-entry-rejected";
+    const created = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Entry Org",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const { organizationId, competition } = created;
+    const competitionId = competition.competition.id;
+    const base = `/api/v1/organizations/${organizationId}/competitions/${competitionId}`;
+    const configured = await app.request(base, {
+      method: "PATCH",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        ...onboardingCompetition,
+        name: "Liga Entradas",
+        rules: LEAGUE_RULES,
+        teams: { min: 2, max: 4 },
+        schedule: { startsOn: "2026-10-12", endsOn: "2026-12-20" },
+      }),
+    });
+    expect(configured.status).toBe(200);
+    const opened = await app.request(`${base}/registration/open`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+    });
+    expect(opened.status).toBe(200);
+
+    const apply = async (actorId: string, teamName: string) => {
+      const response = await app.request(
+        `/api/v1/competitions/explore/${competitionId}/application`,
+        {
+          method: "POST",
+          headers: serviceHeaders(actorId),
+          body: JSON.stringify({ teamName, creationKey: `apply-${teamName}-key-0001` }),
+        },
+      );
+      expect(response.status).toBe(201);
+      return (await response.json()) as { entryId: string };
+    };
+    const first = await apply(approved, "Aprobados");
+    const second = await apply(rejected, "Rechazados");
+
+    const pending = `/organizations/${organizationId}/activities?status=open&requiresAction=true`;
+    const waiting = await activities(app, pending, organizer);
+    expect(waiting.activities.map((row) => row.resourceId)).toEqual([competitionId, competitionId]);
+    expect(waiting.activities.map((row) => `${row.kind}:${row.subject.teamName}`).sort()).toEqual([
+      "competition_entry:Aprobados",
+      "competition_entry:Rechazados",
+    ]);
+    // The applicant waits; nothing is asked of them.
+    const mineAll = "/players/me/activities";
+    expect((await activities(app, mineAll, approved)).activities).toEqual([]);
+
+    const decide = (entryId: string, decision: "approve" | "reject") =>
+      app.request(`${base}/entries/${entryId}/${decision}`, {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+      });
+    expect((await decide(first.entryId, "approve")).status).toBe(200);
+    expect((await decide(second.entryId, "reject")).status).toBe(200);
+
+    expect((await activities(app, pending, organizer)).activities).toEqual([]);
+    const feed = await activities(app, `/organizations/${organizationId}/activities`, organizer);
+    // Facts of the same instant have no order between them.
+    expect(
+      feed.activities.map((row) => `${row.kind}:${row.status}:${row.subject.outcome}`).sort(),
+    ).toEqual([
+      "competition_entry:closed:null",
+      "competition_entry:closed:null",
+      "organizer_decision:closed:entry_approved",
+      "organizer_decision:closed:entry_rejected",
+    ]);
+    expect(await activities(app, mineAll, approved)).toMatchObject({
+      activities: [
+        {
+          kind: "organizer_decision",
+          audience: "team",
+          status: "closed",
+          requiresAction: false,
+          subject: {
+            competitionName: "Liga Entradas",
+            teamName: "Aprobados",
+            outcome: "entry_approved",
+          },
+        },
+      ],
+    });
+    expect(await activities(app, mineAll, rejected)).toMatchObject({
+      activities: [{ kind: "organizer_decision", subject: { outcome: "entry_rejected" } }],
+    });
+    // Deciding twice does not decide again, nor repeat the fact.
+    expect((await decide(first.entryId, "approve")).status).toBe(409);
+    expect(
+      (await activities(app, `/organizations/${organizationId}/activities`, organizer)).activities,
+    ).toHaveLength(4);
   });
 });

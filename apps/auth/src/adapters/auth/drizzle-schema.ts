@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Drizzle mirror of migration `apps/api/migrations/0043_auth_and_actors.sql`.
+ * Drizzle mirror of migrations `0043_auth_and_actors.sql` and `0056_actor_contact_profiles.sql`.
  * Property names are Better Auth's field names; SQL columns are snake_case.
  */
 const timestamptz = (column: string) => timestamp(column, { withTimezone: true, mode: "date" });
@@ -89,6 +89,15 @@ export const actors = pgTable("actors", {
   createdAt: timestamptz("created_at").notNull(),
 });
 
+export const actorContactProfiles = pgTable("actor_contact_profiles", {
+  actorId: text("actor_id")
+    .primaryKey()
+    .references(() => actors.id, { onDelete: "cascade" }),
+  displayName: text("display_name").notNull(),
+  email: text("email").notNull(),
+  updatedAt: timestamptz("updated_at").notNull(),
+});
+
 export const identitySubjects = pgTable(
   "identity_subjects",
   {
@@ -117,4 +126,5 @@ export const authSchema = {
   rateLimit: authRateLimits,
   actors,
   identitySubjects,
+  actorContactProfiles,
 };

@@ -98,18 +98,24 @@ export class HttpClient {
       const attemptSignals = composeAttemptSignals(options.signal, timeoutMs);
 
       let response: Response;
+      let raw: HttpResponseBody;
       try {
-        response = await this.fetchImpl(url, {
-          method: input.method,
-          headers: await this.buildHeaders(input, options),
-          body: input.body === undefined ? undefined : JSON.stringify(input.body),
-          signal: attemptSignals.signal,
-        });
+        try {
+          response = await this.fetchImpl(url, {
+            method: input.method,
+            headers: await this.buildHeaders(input, options),
+            body: input.body === undefined ? undefined : JSON.stringify(input.body),
+            signal: attemptSignals.signal,
+          });
+          raw = response.status === 204 ? null : parseResponseBody(await response.text());
+        } finally {
+          attemptSignals.dispose();
+        }
       } catch (error) {
-        attemptSignals.dispose();
-        if (options.signal?.aborted) throw error;
+        if (options.signal?.aborted) throw options.signal.reason ?? error;
         const timedOutAfterMs = attemptSignals.timedOutAfterMs();
         if (timedOutAfterMs !== null) throw new FutrobRequestTimeoutError(timedOutAfterMs);
+        if (error instanceof Error && error.name === "AbortError") throw error;
         if (attempt < maxAttempts) {
           await delayWithSignal(nextRetryDelayMs(null, attempt), options.signal);
           continue;
@@ -117,16 +123,7 @@ export class HttpClient {
         throw error;
       }
 
-      let raw: HttpResponseBody = null;
-      if (response.status !== 204) {
-        const parsedBody = httpResponseBodySchema.safeParse(
-          await response.json().catch(() => null),
-        );
-        raw = parsedBody.success ? parsedBody.data : null;
-      }
-
       if (!response.ok) {
-        attemptSignals.dispose();
         if (isRetryableStatus(response.status) && attempt < maxAttempts) {
           const retryAfterRaw = response.headers.get("Retry-After");
           await delayWithSignal(nextRetryDelayMs(retryAfterRaw, attempt), options.signal);
@@ -135,7 +132,6 @@ export class HttpClient {
         throw this.toApiError(response, raw);
       }
 
-      attemptSignals.dispose();
       return input.parse(raw);
     }
   }
@@ -277,6 +273,7 @@ function delayWithSignal(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const onAbort = () => {
       clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
       reject(signal?.reason ?? createAbortError());
     };
     const timer = setTimeout(() => {
@@ -295,4 +292,15 @@ function delayWithSignal(ms: number, signal?: AbortSignal): Promise<void> {
 
 function hasRequestIdHeader(headers: Map<string, string>): boolean {
   return [...headers.keys()].some((key) => key.toLowerCase() === REQUEST_ID_HEADER.toLowerCase());
+}
+
+function parseResponseBody(text: string): HttpResponseBody {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  const parsed = httpResponseBodySchema.safeParse(json);
+  return parsed.success ? parsed.data : null;
 }

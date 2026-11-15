@@ -3,24 +3,29 @@ import {
   ExpireConfirmationWindowUseCase,
   ConfirmOfficialSelectionUseCase,
   GetOfficialSelectionUseCase,
+  ListCompetitionDisputesUseCase,
   ListEncounterCandidatesUseCase,
   OpenMatchDisputeUseCase,
   ProposeAlternativeOfficialSelectionUseCase,
+  InvalidateEncounterCandidatesUseCase,
   RecalculateEncounterCandidatesUseCase,
   RejectOfficialSelectionUseCase,
   ResolveMatchDisputeUseCase,
   ReviewMatchDisputeUseCase,
   SelectOfficialMatchesUseCase,
   VoidOfficialResultUseCase,
+  CancelOpenSelectionUseCase,
   type EncounterCandidateAssociationRepository,
   type EncounterReaderPort,
   type OfficialMatchSelectionRepository,
   type OfficialResultReaderPort,
   type OfficialResultRepository,
   type ProviderMatchReaderPort,
+  type SelectionDisputeReaderPort,
   type TeamRepresentationPort,
 } from "@futrob/results";
 import type {
+  AuthorizationBatchPort,
   AuthorizationPort,
   ClockPort,
   EventPublisherPort,
@@ -42,20 +47,21 @@ import { NodeSelectionCommandDigest } from "@/adapters/results/selection-command
 
 export function createResultsModule(input: {
   readonly pool: Pool | undefined;
-  readonly authorization: AuthorizationPort;
+  readonly authorization: AuthorizationPort & AuthorizationBatchPort;
   readonly eventPublisher: EventPublisherPort;
   readonly encounterReader: EncounterReaderPort;
   readonly providerMatches: ProviderMatchReaderPort;
   readonly teamRepresentation: TeamRepresentationPort;
   readonly results?: OfficialResultRepository;
-  readonly selections?: OfficialMatchSelectionRepository;
+  readonly selections?: OfficialMatchSelectionRepository & SelectionDisputeReaderPort;
   readonly associations?: EncounterCandidateAssociationRepository;
   readonly clock?: ClockPort;
   readonly ids?: IdGeneratorPort;
+  /** Signs a selection cancelled without an organizer behind the change. */
 }) {
   const clock = input.clock ?? new SystemClock();
   const ids = input.ids ?? new CryptoIdGenerator();
-  const selections: OfficialMatchSelectionRepository =
+  const selections: OfficialMatchSelectionRepository & SelectionDisputeReaderPort =
     input.selections ??
     (input.pool
       ? new PostgresOfficialMatchSelectionRepository(input.pool)
@@ -109,6 +115,10 @@ export function createResultsModule(input: {
       associations,
       clock,
     }),
+    invalidateEncounterCandidates: new InvalidateEncounterCandidatesUseCase({
+      associations,
+      clock,
+    }),
     recalculateEncounterCandidates: new RecalculateEncounterCandidatesUseCase({
       encounterReader: input.encounterReader,
       providerMatches: input.providerMatches,
@@ -134,6 +144,16 @@ export function createResultsModule(input: {
       providerMatches: input.providerMatches,
     }),
     getOfficialSelection: new GetOfficialSelectionUseCase({ ...selectionDeps, ...partyDeps }),
+    listCompetitionDisputes: new ListCompetitionDisputesUseCase({
+      disputes: selections,
+      encounterReader: input.encounterReader,
+      authorization: input.authorization,
+    }),
+    cancelOpenSelection: new CancelOpenSelectionUseCase({
+      selections,
+      ids,
+      clock,
+    }),
     voidOfficialResult: new VoidOfficialResultUseCase({
       results,
       selections,

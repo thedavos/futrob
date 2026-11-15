@@ -10,6 +10,7 @@ export interface SignupValues {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
 type SignupFieldValidator = (value: string) => string | null;
@@ -35,4 +36,14 @@ const signupFieldValidators = {
 export function validateSignupField(field: AuthFormField, value: string): string | null {
   const normalizedValue = field === "password" ? value : value.trim();
   return signupFieldValidators[field](normalizedValue);
+}
+
+export type SignupFormField = keyof SignupValues;
+
+export function validatePasswordConfirmation(value: string, password: string): string | null {
+  if (value.length === 0) {
+    return AUTH_VALIDATION_REQUIRED;
+  }
+
+  return value === password ? null : "Las contraseñas no coinciden.";
 }

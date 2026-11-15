@@ -49,6 +49,7 @@ import {
 import { checkRescheduleMinimumNotice } from "../domain/policies/reschedule-minimum-notice.ts";
 import {
   rescheduleScopesConflict,
+  sameRescheduleScope,
   type RescheduleScope,
 } from "../domain/value-objects/reschedule-scope.ts";
 
@@ -350,23 +351,8 @@ function matchesReplay(
     request.encounterId === input.encounterId &&
     request.requestingTeamId === input.requestingTeamId &&
     request.initiatedByActorId === input.actorId &&
-    scopesEqual(request.scope, input.scope) &&
+    sameRescheduleScope(request.scope, input.scope) &&
     proposal.proposedStartAt.getTime() === proposedStartAt.getTime() &&
     proposal.reason === input.reason.trim()
   );
-}
-
-function scopesEqual(left: RescheduleScope, right: RescheduleScope): boolean {
-  if (left.type !== right.type) return false;
-  switch (left.type) {
-    case "entire_encounter":
-      return true;
-    case "official_match":
-      return right.type === "official_match" && left.officialSlot === right.officialSlot;
-    default: {
-      const exhaustiveScope: never = left;
-      void exhaustiveScope;
-      return false;
-    }
-  }
 }

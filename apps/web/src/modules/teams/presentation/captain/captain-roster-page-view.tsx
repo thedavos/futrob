@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type {
   CompetitionTeamManagementDetailResponse,
   ExternalClubDto,
@@ -41,6 +42,7 @@ import { isRosterWritable, type CaptainTeamAccess } from "./captain-team-access.
 import type { CaptainCapabilities } from "./use-captain-team.ts";
 
 export type CaptainRosterPageViewProps = {
+  readonly page?: "captain.roster" | "competitionPlayer.team";
   readonly access: CaptainTeamAccess;
   readonly capabilities: CaptainCapabilities;
   readonly detail: CompetitionTeamManagementDetailResponse | null;
@@ -53,6 +55,8 @@ export type CaptainRosterPageViewProps = {
   readonly onSetRosterOpen: (open: boolean) => Promise<void>;
   readonly onSearchClubs: (query: string) => Promise<readonly ExternalClubDto[]>;
   readonly onConnectClub: (club: ExternalClubDto) => Promise<void>;
+  /** Read-only sections below the roster, such as the Team's sanctions. */
+  readonly footer?: ReactNode;
 };
 
 export function CaptainRosterPageView(props: CaptainRosterPageViewProps) {
@@ -81,11 +85,15 @@ export function CaptainRosterPageView(props: CaptainRosterPageViewProps) {
       }
       detail={detail}
       error={props.error}
-      forbiddenKey="captain.forbidden.roster"
+      forbiddenKey={
+        props.page === "competitionPlayer.team"
+          ? "captain.forbidden.team"
+          : "captain.forbidden.roster"
+      }
       links={props.links}
       onRetry={props.onRetry}
       onRetryDetail={props.onRetryDetail}
-      page="captain.roster"
+      page={props.page ?? "captain.roster"}
     >
       {(loaded) => <RosterContent {...props} detail={loaded} writable={writable} />}
     </CaptainPageFrame>
@@ -97,6 +105,7 @@ function RosterContent({
   capabilities,
   busy,
   writable,
+  footer,
   onChangeRole,
   onSetRosterOpen,
 }: CaptainRosterPageViewProps & {
@@ -180,6 +189,7 @@ function RosterContent({
           </EmptyState>
         ) : null}
       </section>
+      {footer}
     </>
   );
 }

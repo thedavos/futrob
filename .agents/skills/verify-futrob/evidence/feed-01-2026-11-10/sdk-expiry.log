@@ -1,0 +1,364 @@
+$ FEED_EVIDENCE_DIR=.agents/skills/verify-futrob/evidence/feed-01-2026-11-10 apps/api/node_modules/.bin/tsx --tsconfig apps/api/tsconfig.json .agents/skills/verify-futrob/helpers/feed-01-live.mjs expiry
+{
+  "action": "expiry verification clock",
+  "result": {
+    "injectedClockPort": true,
+    "initial": "2026-11-10T00:37:40.854Z",
+    "productionRoutes": true
+  }
+}
+(node:34069) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{
+  "action": "create reschedule",
+  "result": {
+    "id": "7be1ad97-c349-4c2e-9d29-d64a9cc970b4",
+    "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+    "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+    "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+    "requestingTeamId": "d09f548e-4232-4092-8f10-df4cceca2abb",
+    "initiatedByActorId": "3b83c7bc-525f-47cc-9c1b-98c0da3ab09c",
+    "scope": {
+      "type": "entire_encounter"
+    },
+    "status": "open",
+    "version": 1,
+    "currentProposalId": "5ea4f379-87cc-4510-9255-97b1b16012d8",
+    "proposals": [
+      {
+        "id": "5ea4f379-87cc-4510-9255-97b1b16012d8",
+        "proposedStartAt": "2026-11-23T03:00:00.000Z",
+        "proposedByActorId": "3b83c7bc-525f-47cc-9c1b-98c0da3ab09c",
+        "proposedByTeamId": "d09f548e-4232-4092-8f10-df4cceca2abb",
+        "reason": "FEED-01 verify schedule change",
+        "createdAt": "2026-11-10T00:37:40.854Z",
+        "responseDeadline": "2026-11-10T12:37:40.854Z"
+      }
+    ],
+    "decisions": [],
+    "actions": [],
+    "allowedActions": [],
+    "respondAs": null,
+    "blockedActions": [],
+    "application": null,
+    "createdAt": "2026-11-10T00:37:40.854Z",
+    "updatedAt": "2026-11-10T00:37:40.854Z"
+  }
+}
+{
+  "action": "reschedule audience readback",
+  "result": {
+    "rival": [
+      {
+        "id": "676eaf73-f228-4af4-8edd-3faccb4f32e1",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "team",
+        "kind": "schedule_change",
+        "status": "open",
+        "requiresAction": true,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": "Racing Totora",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:37:40.854Z",
+        "closedAt": null,
+        "expiresAt": "2026-11-10T12:37:40.854Z",
+        "lastEventAt": "2026-11-10T00:37:40.854Z"
+      }
+    ],
+    "organization": [
+      {
+        "id": "b6b502f5-b589-4d20-ad6f-8ecb82c29f40",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "schedule_change",
+        "status": "open",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": "Racing Totora",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:37:40.854Z",
+        "closedAt": null,
+        "expiresAt": "2026-11-10T12:37:40.854Z",
+        "lastEventAt": "2026-11-10T00:37:40.854Z"
+      }
+    ]
+  }
+}
+{
+  "action": "run expiry after response deadline",
+  "result": {
+    "clock": "2026-11-10T12:37:41.854Z",
+    "status": 200,
+    "body": {
+      "escalated": 3,
+      "skipped": 0
+    }
+  }
+}
+{
+  "action": "expiry audience readback",
+  "result": {
+    "organizationPending": [
+      {
+        "id": "f40aefa5-d0f7-4177-bb05-ad3cca4b6b74",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "schedule_change",
+        "status": "open",
+        "requiresAction": true,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": null,
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T12:37:41.854Z",
+        "closedAt": null,
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      }
+    ],
+    "rival": [
+      {
+        "id": "676eaf73-f228-4af4-8edd-3faccb4f32e1",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "team",
+        "kind": "schedule_change",
+        "status": "closed",
+        "requiresAction": true,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": "Racing Totora",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:37:40.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": "2026-11-10T12:37:40.854Z",
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      }
+    ]
+  }
+}
+{
+  "action": "resolve expired reschedule",
+  "result": {
+    "request": {
+      "id": "7be1ad97-c349-4c2e-9d29-d64a9cc970b4",
+      "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+      "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+      "encounterId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+      "requestingTeamId": "d09f548e-4232-4092-8f10-df4cceca2abb",
+      "initiatedByActorId": "3b83c7bc-525f-47cc-9c1b-98c0da3ab09c",
+      "scope": {
+        "type": "entire_encounter"
+      },
+      "status": "resolved_by_organizer",
+      "version": 3,
+      "currentProposalId": "5ea4f379-87cc-4510-9255-97b1b16012d8",
+      "proposals": [
+        {
+          "id": "5ea4f379-87cc-4510-9255-97b1b16012d8",
+          "proposedStartAt": "2026-11-23T03:00:00.000Z",
+          "proposedByActorId": "3b83c7bc-525f-47cc-9c1b-98c0da3ab09c",
+          "proposedByTeamId": "d09f548e-4232-4092-8f10-df4cceca2abb",
+          "reason": "FEED-01 verify schedule change",
+          "createdAt": "2026-11-10T00:37:40.854Z",
+          "responseDeadline": "2026-11-10T12:37:40.854Z"
+        }
+      ],
+      "decisions": [],
+      "actions": [
+        {
+          "id": "7c86da90-c5a2-40c7-8f2a-7fbe4d5e1a58",
+          "kind": "schedule_change_expired",
+          "actorId": "demo-system-e9f336b5-6309-4378-a1f2-565ad66dbc7c",
+          "authority": "system",
+          "proposalId": "5ea4f379-87cc-4510-9255-97b1b16012d8",
+          "fromVersion": 1,
+          "toVersion": 2,
+          "responseDeadline": "2026-11-10T12:37:40.854Z",
+          "processedAt": "2026-11-10T12:37:41.854Z",
+          "resolution": null
+        },
+        {
+          "id": "05a7134c-2403-44d3-8dd0-ea0fc42f0b67",
+          "kind": "schedule_change_resolved",
+          "actorId": "ebcb55b7-1405-4a07-b169-cb7e4bde9a3b",
+          "authority": "organizer",
+          "proposalId": "5ea4f379-87cc-4510-9255-97b1b16012d8",
+          "fromVersion": 2,
+          "toVersion": 3,
+          "responseDeadline": "2026-11-10T12:37:40.854Z",
+          "processedAt": "2026-11-10T12:37:41.854Z",
+          "resolution": {
+            "outcome": "schedule_kept",
+            "reason": "FEED-01 preserve original schedule"
+          }
+        }
+      ],
+      "allowedActions": [],
+      "respondAs": null,
+      "blockedActions": [],
+      "application": null,
+      "createdAt": "2026-11-10T00:37:40.854Z",
+      "updatedAt": "2026-11-10T12:37:41.854Z"
+    },
+    "replayed": false
+  }
+}
+{
+  "action": "resolved expiry readback",
+  "result": {
+    "organization": [
+      {
+        "id": "f5761be4-9be8-416d-9b23-85dd73c3920d",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "organizer_decision",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": null,
+          "outcome": "schedule_kept"
+        },
+        "openedAt": "2026-11-10T12:37:41.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      },
+      {
+        "id": "f40aefa5-d0f7-4177-bb05-ad3cca4b6b74",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "schedule_change",
+        "status": "closed",
+        "requiresAction": true,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": null,
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T12:37:41.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      },
+      {
+        "id": "b6b502f5-b589-4d20-ad6f-8ecb82c29f40",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "organization",
+        "kind": "schedule_change",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": "Racing Totora",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:37:40.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": "2026-11-10T12:37:40.854Z",
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      }
+    ],
+    "home": [
+      {
+        "id": "695240f6-5d47-413b-81b8-6dae6df9a4fc",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "team",
+        "kind": "organizer_decision",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": null,
+          "outcome": "schedule_kept"
+        },
+        "openedAt": "2026-11-10T12:37:41.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      }
+    ],
+    "away": [
+      {
+        "id": "676eaf73-f228-4af4-8edd-3faccb4f32e1",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "team",
+        "kind": "schedule_change",
+        "status": "closed",
+        "requiresAction": true,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": "Racing Totora",
+          "outcome": null
+        },
+        "openedAt": "2026-11-10T00:37:40.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": "2026-11-10T12:37:40.854Z",
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      },
+      {
+        "id": "5ba5410b-f823-410d-8072-2c4e7e24b480",
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+        "competitionId": "94265d8e-4977-41f6-89da-035e5f23a72a",
+        "audience": "team",
+        "kind": "organizer_decision",
+        "status": "closed",
+        "requiresAction": false,
+        "resourceType": "encounter",
+        "resourceId": "94265d8e-4977-41f6-89da-035e5f23a72a:rules:1:generation:1:fp:e4a49e16:fixture:stage:1:round:7:encounter:3",
+        "subject": {
+          "competitionName": "Clausura 26",
+          "encounterLabel": "Deportivo Llama vs Racing Totora",
+          "teamName": null,
+          "outcome": "schedule_kept"
+        },
+        "openedAt": "2026-11-10T12:37:41.854Z",
+        "closedAt": "2026-11-10T12:37:41.854Z",
+        "expiresAt": null,
+        "lastEventAt": "2026-11-10T12:37:41.854Z"
+      }
+    ]
+  }
+}

@@ -56,6 +56,7 @@ const es = {
     knockout: "Eliminatoria",
     "groups-knockout": "Grupos y eliminatoria",
     "league-playoffs": "Liga y playoffs",
+    swiss: "Sistema suizo",
   },
   status: {
     draft: "Inscrito",
@@ -121,6 +122,7 @@ const en = {
     knockout: "Knockout",
     "groups-knockout": "Groups and knockout",
     "league-playoffs": "League and playoffs",
+    swiss: "Swiss system",
   },
   status: {
     draft: "Registered",

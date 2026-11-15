@@ -309,12 +309,30 @@ export function buildApprovedResult(input: {
     competitionId: input.encounter.competitionId,
     revision: input.previousRevision + 1,
     status: "approved",
-    slots: input.slots,
+    slots: input.slots.map((slot) => attributeSlot(slot, input.encounter)),
     approvedAt: input.approvedAt,
     approvedBy: input.approvedBy,
     selectionId: input.selectionId,
     proposalId: input.proposalId,
     approvalBasis: input.basis,
+  };
+}
+
+/** Freezes which Encounter team each provider side's club stood for at approval. */
+function attributeSlot(
+  slot: OfficialResultSlotSnapshot,
+  encounter: EncounterScheduleSnapshot,
+): OfficialResultSlotSnapshot {
+  const teamOf = (externalClubId: string): TeamId | null =>
+    externalClubId === encounter.homeExternalClubId
+      ? encounter.homeTeamId
+      : externalClubId === encounter.awayExternalClubId
+        ? encounter.awayTeamId
+        : null;
+  return {
+    ...slot,
+    homeTeamId: teamOf(slot.homeExternalClubId),
+    awayTeamId: teamOf(slot.awayExternalClubId),
   };
 }
 

@@ -102,10 +102,10 @@ export const styles = stylex.create({
     textWrap: "pretty",
   },
   metricValue: {
-    fontSize: "1.75rem",
+    fontSize: "var(--text-3xl)",
     lineHeight: 1,
-    fontWeight: 600,
-    letterSpacing: "-0.02em",
+    fontWeight: "var(--font-weight-semibold)",
+    letterSpacing: "var(--tracking-tight)",
     fontVariantNumeric: "tabular-nums",
   },
   secondary: {

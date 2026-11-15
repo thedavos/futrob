@@ -69,6 +69,7 @@ export class RecordActivityUseCase {
       competitionName: input.subject?.competitionName ?? null,
       encounterLabel: input.subject?.encounterLabel ?? null,
       teamName: input.subject?.teamName ?? null,
+      outcome: input.subject?.outcome ?? null,
     };
     const entries = input.recipients.map((recipient): ActivityEntry => ({
       id: this.deps.ids.generate(),

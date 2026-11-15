@@ -4,6 +4,7 @@ import { raw, ref, type TokenMap } from "./token.ts";
 export const TYPO_ROLES = [
   "display",
   "heading",
+  "title",
   "subtitle",
   "label",
   "body",
@@ -33,11 +34,15 @@ export const TYPOGRAPHY_TOKENS: TokenMap = {
   "text-7xl": raw("4.5rem"),
   "leading-none": raw("1"),
   "leading-tight": raw("1.1"),
+  /** Product titles around 20 px wrap onto two lines; 1.1 makes those lines touch. */
+  "leading-heading": raw("1.25"),
   "leading-snug": raw("1.3"),
   "leading-normal": raw("1.55"),
   "tracking-tight": raw("-0.02em"),
   "tracking-normal": raw("0"),
   "tracking-label": raw("0.04em"),
+  /** Opt-in for uppercase kickers; `tracking-label` is tuned for sentence case. */
+  "tracking-caps": raw("0.06em"),
 
   // Typography roles (consumed by StyleX `typography.*` and mobile StyleSheet)
   "typo-display-size": ref("text-4xl"),
@@ -46,8 +51,12 @@ export const TYPOGRAPHY_TOKENS: TokenMap = {
   "typo-display-tracking": ref("tracking-tight"),
   "typo-heading-size": ref("text-xl"),
   "typo-heading-weight": ref("font-weight-bold"),
-  "typo-heading-leading": ref("leading-tight"),
+  "typo-heading-leading": ref("leading-heading"),
   "typo-heading-tracking": ref("tracking-tight"),
+  "typo-title-size": ref("text-lg"),
+  "typo-title-weight": ref("font-weight-semibold"),
+  "typo-title-leading": ref("leading-snug"),
+  "typo-title-tracking": ref("tracking-normal"),
   "typo-subtitle-size": ref("text-sm"),
   "typo-subtitle-weight": ref("font-weight-regular"),
   "typo-subtitle-leading": ref("leading-normal"),

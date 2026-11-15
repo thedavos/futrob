@@ -29,6 +29,10 @@ export type { PlayerGameAccountRepository } from "./domain/ports/player-game-acc
 export type { PlayerExternalClubAssociationRepository } from "./domain/ports/player-external-club-association.repository.ts";
 export type { TeamRepository } from "./domain/ports/team.repository.ts";
 export type { CompetitionRosterMembershipRepository } from "./domain/ports/competition-roster-membership.repository.ts";
+export type {
+  OrganizationRosterActorAssignment,
+  OrganizationRosterActorReader,
+} from "./domain/ports/organization-roster-actor.reader.ts";
 export type { CompetitionRosterStateRepository } from "./domain/ports/competition-roster-state.repository.ts";
 export type { ExternalClubConnectionRepository } from "./domain/ports/external-club-connection.repository.ts";
 export type { ExternalClubTeamReaderPort } from "./domain/ports/external-club-team-reader.port.ts";

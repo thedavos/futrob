@@ -63,6 +63,7 @@ function draft(
       knockoutStage: knockout,
       awayGoalsEnabled: false,
       maxRosterSize: 11,
+      rankingEligibility: null,
       createdAt: "2026-10-01T00:00:00.000Z",
     },
   };
@@ -93,7 +94,7 @@ const approved: readonly CompetitionEntryDto[] = teams.map((team) => ({
 }));
 
 const meta = {
-  title: "Product/Organizer/Competition review",
+  title: "Product/Organizer/Competition setup/Review step",
   component: ReviewStep,
   parameters: { layout: "padded" },
   decorators: [

@@ -73,6 +73,18 @@ export interface AuthorizationPort {
   }): Promise<EffectiveAccess>;
 }
 
+/**
+ * Decides one permission over many sibling scopes, loading the context they share
+ * once. Each decision equals `decide` on that scope, including its specific grants.
+ */
+export interface AuthorizationBatchPort {
+  decideEach(input: {
+    readonly actorId: ActorId;
+    readonly permission: Permission;
+    readonly scopes: readonly AuthorizationScope[];
+  }): Promise<readonly AuthorizationDecision[]>;
+}
+
 /** Serializes decisions with mutations that can change an actor's effective authority. */
 export interface AuthorizationMutationLockPort {
   runWithActors<T>(

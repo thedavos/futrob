@@ -5,21 +5,22 @@ Relacionado: [overview](/docs/architecture/overview.md) · [dependency-graph](/d
 
 ## Bounded contexts (MVP)
 
-| Módulo          | Responsabilidad                                                                                                                     |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `identity`      | Usuarios, sesiones, autenticación y estado de onboarding del actor                                                                  |
-| `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación                                                       |
-| `competitions`  | Ligas/copas, formatos, etapas, reglas, edición FC, membresías contextuales y descubrimiento autenticado de competiciones publicadas |
-| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes y asociaciones a clubes externos                              |
-| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                                                                |
-| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                                                             |
-| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales                                                       |
-| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                                                                 |
-| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                                                   |
-| `notifications` | Web, email (WhatsApp/push como ampliación)                                                                                          |
-| `public-portal` | Lecturas públicas sanitizadas                                                                                                       |
+| Módulo          | Responsabilidad                                                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identity`      | Usuarios, sesiones, autenticación, estado de onboarding y preferencias del actor                                                               |
+| `organizations` | Organizaciones, membresías de tenant, grants/auditoría y tokens de invitación                                                                  |
+| `competitions`  | Ligas/copas, formatos, etapas, reglas, sanciones, edición FC, membresías contextuales y descubrimiento autenticado de competiciones publicadas |
+| `teams`         | Equipos, perfiles de jugador, cuentas de juego, plantillas, capitanes y asociaciones a clubes externos                                         |
+| `scheduling`    | Jornadas, rondas, enfrentamientos, slots oficiales, reprogramaciones                                                                           |
+| `game-data`     | Proveedores externos, sync, payloads crudos, datos normalizados, health                                                                        |
+| `results`       | Candidatos, selección oficial, confirmaciones, disputas, resultados oficiales                                                                  |
+| `statistics`    | Stats oficiales, proyecciones personales, tablas, rankings, premios                                                                            |
+| `analytics`     | Analíticas premium (equipo, jugador, organizador)                                                                                              |
+| `notifications` | Web, email (WhatsApp/push como ampliación)                                                                                                     |
+| `public-portal` | Lecturas públicas anónimas y sanitizadas de competiciones publicadas ([ADR-0024](/docs/adr/0024-anonymous-public-portal-reads.md))             |
+| `billing`       | Catálogo de planes, suscripciones, entitlements y ledger de cupos ([ADR-0025](/docs/adr/0025-billing-plans-and-entitlements.md))               |
 
-`billing` está fuera del MVP.
+`billing` es una hoja: ningún BC lo importa. Cada consumidor declara su port de límites con su vocabulario y `apps/api/src/di/` lo conecta con billing. Los pagos automatizados siguen fuera del MVP (WONT-05).
 
 ## Capas dentro de un BC
 
@@ -59,10 +60,27 @@ scheduling
   → CompetitionScheduleRulesReaderPort
   → competitions public API
 
+scheduling (retirar o cerrar una ronda suiza)
+  → EncounterOpenSelectionPort
+  → DeferredEncounterOpenSelectionPort (apps/api; rompe el ciclo de composición)
+  → CancelOpenSelectionUseCase (results public API)
+
+statistics (clasificación suiza al leer)
+  → CompetitionSwissStandingReaderPort
+  → FixtureSwissStandingReader (apps/api)
+  → FixturePlanRepository + resultados aprobados
+
 competition discovery (apps/api)
   → CompetitionDiscoveryReader
   → OrganizationRepository.getByIds (nombres de organizador por lote)
   → no abre public-portal ni lectura anónima
+
+public portal (apps/api)
+  → PublishedCompetitionReaderPort (CompetitionDiscoveryReader)
+  → PublicStandingsReaderPort (CompetitionStandingSnapshotRepository)
+  → PublicCalendarReaderPort (FixturePlanRepository + OfficialResultReaderPort, solo "existe resultado")
+  → PublicTeamDirectoryPort (TeamRepository)
+  → proyección por allowlist; sin ActorId, organizationId, ids de equipo ni OfficialResult.slots
 
 onboarding HTTP orchestration
   → organizations / competitions / teams public application APIs
@@ -91,6 +109,12 @@ un `deny` vence dentro del mismo scope y una decisión más específica vence a 
 En presentation (`apps/web`), gatear UI solo con el set `allowed` de EffectiveAccess vía
 `can` / `useCan` / `useCapabilities` y las constantes exportadas por cada BC. No comparar roles
 en React ni inventar strings de permiso fuera del catálogo del BC.
+
+El historial unificado de organización usa `organizations.audit.read`. `organizations`
+posee el contrato de lectura; cada propietario aporta su fuente en `apps/api` y la
+composición combina páginas filtradas sin que un adapter consulte tablas ajenas.
+Los registros existentes se conservan y solo los hechos ausentes reciben nuevas
+escrituras append-only, según [ADR-0029](/docs/adr/0029-unified-organization-audit.md).
 
 En `apps/mobile`, aplicar la misma regla sobre `EffectiveAccess` desde hooks/estado nativos. La app
 no importa bounded contexts ni adapters: consume contratos mediante `@futrob/sdk` y deja la
@@ -142,4 +166,23 @@ analytics.snapshot-generated
 
 ## Persistencia
 
-Los adapters de persistencia de producto viven en `apps/api` y usan Postgres o stores in-memory de desarrollo. `apps/auth` es el único escritor de las tablas de identidad (`auth_*`, `actors`, `identity_subjects`), que viven en el mismo Postgres y su historia de migraciones en `apps/api/migrations` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); `apps/web` conserva infraestructura BFF/Workers (solo escribe `app_rate_limit_windows`) y `apps/mobile` no accede directamente a ninguna persistencia. Cambiar de plataforma no mueve el dominio fuera de packages.
+Los adapters de persistencia de producto viven en `apps/api` y usan Postgres o stores in-memory de desarrollo. `apps/auth` es el único escritor de las tablas de identidad (`auth_*`, `actors`, `identity_subjects`, `actor_contact_profiles`), que viven en el mismo Postgres y su historia de migraciones en `apps/api/migrations` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); `apps/web` conserva infraestructura BFF/Workers (solo escribe `app_rate_limit_windows`) y `apps/mobile` no accede directamente a ninguna persistencia. Cambiar de plataforma no mueve el dominio fuera de packages.
+
+### Directorio de miembros de organización
+
+`organizations` autoriza el directorio con `organizations.memberships.read` y usa
+`ActorContactReader`, API pública de `identity`, para enriquecer solo los actores
+miembros. `apps/auth` mantiene la proyección `actor_contact_profiles` al crear una
+sesión y al actualizar nombre o correo. La migración realiza el backfill de las
+identidades existentes; la API de producto solo lee esta proyección.
+
+El directorio devuelve el conjunto completo hasta 500 miembros, ordenados por fecha
+de incorporación y actor. Lee 501 filas para rechazar el exceso antes del
+enriquecimiento. La búsqueda y el filtro de rol se ejecutan sobre ese conjunto
+en el navegador. El catálogo de competiciones se limita a 100, con lectura de una
+fila adicional y error tipado si se supera. Así el resumen evalúa como máximo
+50 100 pares actor/competición incluyendo al solicitante. Las lecturas de grants,
+asignaciones, plantillas y roles de plataforma se agrupan por los actores acotados.
+El adapter de autorización compone los repositorios públicos de cada propietario
+y reutiliza `resolvePermission`; no revela nombres ni IDs de competiciones que el
+solicitante no pueda leer.

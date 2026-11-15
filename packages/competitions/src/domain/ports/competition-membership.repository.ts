@@ -1,4 +1,4 @@
-import type { ActorId, CompetitionId } from "@futrob/shared-kernel";
+import type { ActorId, CompetitionId, OrganizationId } from "@futrob/shared-kernel";
 import type { CompetitionMembership } from "../entities/competition-membership.ts";
 
 export interface CompetitionMembershipRepository {
@@ -9,4 +9,8 @@ export interface CompetitionMembershipRepository {
     actorId: ActorId,
   ): Promise<CompetitionMembership | null>;
   listByActor(actorId: ActorId): Promise<readonly CompetitionMembership[]>;
+  listForOrganizationActors(
+    organizationId: OrganizationId,
+    actorIds: readonly ActorId[],
+  ): Promise<readonly CompetitionMembership[]>;
 }

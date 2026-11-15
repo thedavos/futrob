@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Logo, PageHeader, PageHeaderDescription, PageHeaderTitle } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
+import { NOINDEX_META } from "@/shared/infrastructure/seo/crawl-policy.ts";
 import { EntryInvitationLinkPage } from "@/modules/competitions/presentation/entry-invitations/entry-invitation-link-page.tsx";
 
 const styles = stylex.create({
@@ -34,7 +35,8 @@ const styles = stylex.create({
 });
 
 export const Route = createFileRoute("/entry-invitations/link/$code")({
-  head: () => ({ meta: [{ title: "Inscribe tu equipo | Futrob" }] }),
+  // The code in the URL is a bearer invitation: keep it out of search results.
+  head: () => ({ meta: [{ title: "Inscribe tu equipo | Futrob" }, NOINDEX_META] }),
   component: EntryInvitationLinkRoute,
 });
 

@@ -3,6 +3,10 @@ import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import type { MobileLanguage } from "@/modules/identity/mobile-copy";
 import { nativeRoute } from "@/modules/identity/native-route";
 import { LOGIN_ROUTE } from "@/modules/identity/session-gate";
+import {
+  rememberPersonalClub,
+  useRememberedPersonalClub,
+} from "@/modules/navigation/personal-club";
 import { theme } from "@/theme/theme";
 import { Button, EmptyState, Text } from "@/ui";
 import { playerHomeCopy } from "./player-home-copy";
@@ -16,6 +20,7 @@ import {
   LastMatch,
   Performance,
 } from "./player-home-sections";
+import { RosterInvitationActions } from "./roster-invitation-actions";
 import { usePlayerHome } from "./use-player-home";
 
 function competitionRoute(organizationId: string, competitionId: string): string {
@@ -23,16 +28,20 @@ function competitionRoute(organizationId: string, competitionId: string): string
 }
 
 /**
- * Personal home on `/player`. The `club` route param selects the club; without it the first
- * associated club becomes the selection (FTR-PLAYER-006), written back to the route.
+ * Personal home on `/player`. The `club` route param selects the club; without it the club this
+ * session last chose, or else the first associated club, becomes the selection (FTR-PLAYER-006),
+ * written back to the route.
  */
 export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
   const router = useRouter();
   const { club } = useLocalSearchParams<{ club?: string }>();
   const copy = playerHomeCopy(language);
-  const home = usePlayerHome(club || undefined);
+  const home = usePlayerHome(club || undefined, useRememberedPersonalClub());
   const open = (route: string) => router.push(nativeRoute(route));
-  const selectClub = (externalClubId: string) => router.setParams({ club: externalClubId });
+  const selectClub = (externalClubId: string) => {
+    rememberPersonalClub(externalClubId);
+    router.setParams({ club: externalClubId });
+  };
 
   if (home.unauthorized) {
     return <Redirect href={LOGIN_ROUTE} />;
@@ -101,6 +110,13 @@ export function PlayerHomeScreen({ language }: { language: MobileLanguage }) {
         {...slot}
       />
       <Invitations slot={model.invitations} {...slot} />
+      {home.snapshot.invitations.kind === "ready" ? (
+        <RosterInvitationActions
+          invitations={home.snapshot.invitations.data.invitations}
+          language={language}
+          refresh={home.retry}
+        />
+      ) : null}
       <EaCard slot={model.eaCard} {...slot} />
       <Performance slot={model.performance} {...slot} />
       <LastMatch slot={model.bottomLeft} {...slot} />

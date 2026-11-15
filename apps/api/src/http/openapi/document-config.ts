@@ -14,6 +14,7 @@ export const OPENAPI_DOCUMENT_INFO = {
       name: "game-data",
       description: "Provider observations (neutral DTOs; EA stays server-side)",
     },
+    { name: "identity", description: "Actor account preferences" },
     { name: "onboarding", description: "Actor onboarding state and path completion" },
     { name: "organizations", description: "Organizations and tenant memberships" },
     { name: "players", description: "Personal player profile and game accounts" },
@@ -27,6 +28,7 @@ export const OPENAPI_DOCUMENT_INFO = {
     { name: "fixtures", description: "Deterministic competition fixture graphs" },
     { name: "results", description: "Official match selection negotiated by the Encounter Teams" },
     { name: "notifications", description: "Activity feeds and pending work per audience" },
+    { name: "billing", description: "Plans, entitlements and quotas (Phase 0, no payments)" },
   ],
 };
 

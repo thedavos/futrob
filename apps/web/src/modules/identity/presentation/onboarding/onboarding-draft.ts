@@ -1,9 +1,6 @@
 "use client";
 
 import type {
-  CompetitionDraftInputDto,
-  CompetitionFormatDto,
-  CompetitionRegionDto,
   GamePlatformDto,
   InspectCompetitionInvitationResponse,
   PlayerExternalClubSelectionInputDto,
@@ -17,13 +14,8 @@ export interface SelectedExternalClubDraft extends PlayerExternalClubSelectionIn
 
 export interface OnboardingDraft {
   readonly organizationName: string;
-  readonly competitionName: string;
-  readonly competitionPlatform: GamePlatformDto | null;
-  readonly competitionRegion: CompetitionRegionDto | null;
-  readonly competitionTimeZone: string;
-  readonly competitionFormat: CompetitionFormatDto | null;
-  readonly competitionGameEdition: string;
-  readonly customCompetitionGameEdition: boolean;
+  readonly organizationTimeZone: string;
+  readonly organizationAccountStep: boolean;
   readonly invitationToken: string;
   readonly invitationPreview: InspectCompetitionInvitationResponse | null;
   readonly gameAccountIdentifier: string;
@@ -36,13 +28,8 @@ export interface OnboardingDraft {
 export function createEmptyDraft(): OnboardingDraft {
   return {
     organizationName: "",
-    competitionName: "",
-    competitionPlatform: null,
-    competitionRegion: null,
-    competitionTimeZone: browserTimeZone(),
-    competitionFormat: null,
-    competitionGameEdition: "",
-    customCompetitionGameEdition: false,
+    organizationTimeZone: browserTimeZone(),
+    organizationAccountStep: false,
     invitationToken: "",
     invitationPreview: null,
     gameAccountIdentifier: "",
@@ -50,30 +37,6 @@ export function createEmptyDraft(): OnboardingDraft {
     gameEdition: "",
     customGameEdition: false,
     selectedExternalClub: null,
-  };
-}
-
-export function competitionFromDraft(draft: OnboardingDraft): CompetitionDraftInputDto | null {
-  const name = draft.competitionName.trim();
-  const gameEdition = draft.competitionGameEdition.trim();
-  const timeZone = draft.competitionTimeZone.trim();
-  if (
-    !name ||
-    !gameEdition ||
-    !draft.competitionPlatform ||
-    !draft.competitionRegion ||
-    !timeZone ||
-    !draft.competitionFormat
-  ) {
-    return null;
-  }
-  return {
-    name,
-    gameEdition,
-    platform: draft.competitionPlatform,
-    region: draft.competitionRegion,
-    timeZone,
-    format: draft.competitionFormat,
   };
 }
 

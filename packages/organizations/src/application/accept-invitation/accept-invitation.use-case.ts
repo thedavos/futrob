@@ -10,6 +10,8 @@ import type { InvitationRepository } from "../../domain/ports/invitation.reposit
 import type { InvitationTokenPort } from "../../domain/ports/invitation-token.port.ts";
 import type { MembershipRepository } from "../../domain/ports/membership.repository.ts";
 import type { OrganizationRepository } from "../../domain/ports/organization.repository.ts";
+import type { StaffSeatLimitPort } from "../../domain/ports/staff-seat-limit.port.ts";
+import { staffSeatError } from "../staff-seats.ts";
 import type { MembershipSummary } from "../../domain/value-objects/post-auth-destination.ts";
 import type {
   CompetitionInviteRole,
@@ -52,6 +54,7 @@ export class AcceptInvitationUseCase {
     private readonly deps: {
       readonly organizations: OrganizationRepository;
       readonly memberships: MembershipRepository;
+      readonly staffSeats: StaffSeatLimitPort;
       readonly invitations: InvitationRepository;
       readonly clock: ClockPort;
       readonly tokens: InvitationTokenPort;
@@ -111,6 +114,9 @@ export class AcceptInvitationUseCase {
       return this.acceptedResult(organization, invitation, input.actorId);
     }
 
+    const seats = await this.staffSeatErrorFor(invitation, input.actorId);
+    if (seats) return err(seats);
+
     const claimed =
       invitation.redeemPolicy === REDEEM_POLICY.multi
         ? await this.claimMulti(tokenHash, input.actorId, now)
@@ -120,6 +126,16 @@ export class AcceptInvitationUseCase {
     }
 
     return this.finalizeAcceptance(organization, claimed.value, input.actorId, now);
+  }
+
+  /** Checked before the claim so a full plan leaves the invitation redeemable later. */
+  private async staffSeatErrorFor(invitation: OrganizationInvitation, actorId: ActorId) {
+    if (membershipRoleForInvitation(invitation) !== "staff") return null;
+    const existing = await this.deps.memberships.findByOrgAndActor(
+      invitation.organizationId,
+      actorId,
+    );
+    return existing ? null : staffSeatError(this.deps, invitation.organizationId);
   }
 
   private async claimSingle(

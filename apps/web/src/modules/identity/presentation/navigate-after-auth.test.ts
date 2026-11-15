@@ -21,7 +21,7 @@ describe("navigateAfterAuth", () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it("ignores unsafe redirectTo and uses signup onboarding default", async () => {
+  it("ignores unsafe redirectTo and sends signup directly to the intention step", async () => {
     const navigate = vi.fn<NavigateFn>();
     const push = vi.fn<(path: string) => void>();
 
@@ -33,6 +33,6 @@ describe("navigateAfterAuth", () => {
     });
 
     expect(push).not.toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith({ to: "/onboarding" });
+    expect(navigate).toHaveBeenCalledExactlyOnceWith({ to: "/onboarding/intention" });
   });
 });

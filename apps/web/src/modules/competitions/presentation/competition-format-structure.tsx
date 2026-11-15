@@ -20,6 +20,7 @@ import {
   encounterResolutionCaption,
   roundRobinNotice,
   seriesNotice,
+  swissNotice,
   type Legs,
 } from "./competition-format-copy.ts";
 
@@ -114,6 +115,20 @@ export function FormatStructure({
         notice={seriesNotice(knockout.officialMatchesPerEncounter)}
         onExpectedTeams={onExpectedTeams}
         onMatches={onKnockoutMatches}
+        showLegs={false}
+      />
+    );
+  }
+
+  if (format === "swiss" && regular) {
+    return (
+      <StructureBand
+        disabled={disabled}
+        expectedTeams={expectedTeams}
+        matches={regular.officialMatchesPerEncounter}
+        notice={swissNotice(regular.officialMatchesPerEncounter)}
+        onExpectedTeams={onExpectedTeams}
+        onMatches={onRegularMatches}
         showLegs={false}
       />
     );

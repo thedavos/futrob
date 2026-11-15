@@ -1,4 +1,7 @@
 import {
+  accountDeletionStatusSchema,
+  runAccountDeletionResponseSchema,
+  actorPreferencesSchema,
   onboardingStatusSchema,
   completeOrganizationOnboardingResponseSchema,
   completeInvitationOnboardingResponseSchema,
@@ -7,6 +10,7 @@ import {
 } from "@futrob/api-contracts";
 import { namedSchema } from "@/http/openapi/named-schema.ts";
 
+export const ActorPreferences = namedSchema("ActorPreferences", actorPreferencesSchema);
 export const OnboardingStatus = namedSchema("OnboardingStatus", onboardingStatusSchema);
 export const CompleteOrganizationOnboardingResponse = namedSchema(
   "CompleteOrganizationOnboardingResponse",
@@ -23,4 +27,12 @@ export const InspectCompetitionInvitationResponse = namedSchema(
 export const CompletePlayerOnboardingResponse = namedSchema(
   "CompletePlayerOnboardingResponse",
   completePlayerOnboardingResponseSchema,
+);
+export const AccountDeletionStatus = namedSchema(
+  "AccountDeletionStatus",
+  accountDeletionStatusSchema,
+);
+export const RunAccountDeletionResponse = namedSchema(
+  "RunAccountDeletionResponse",
+  runAccountDeletionResponseSchema,
 );

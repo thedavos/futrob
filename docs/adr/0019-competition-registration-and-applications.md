@@ -2,6 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-09-27
+- Actualizada: 2026-11-10
 - Relacionado: [ADR-0017](/docs/adr/0017-contextual-capability-authorization.md) · [ADR-0018](/docs/adr/0018-authenticated-competition-discovery.md)
 - Reemplaza en parte: la consecuencia de ADR-0018 «la inscripción por cuenta propia sigue fuera de alcance»
 - Índice: [Registro de decisiones](/docs/adr/README.md)
@@ -70,9 +71,11 @@ Bajar el cupo por debajo de los aprobados responde `competitions.invalid_capacit
 - Explorar filtra y etiqueta «Inscripciones abiertas».
 - El organizador abre y cierra inscripciones desde la configuración.
 - Un actor solo puede tener un equipo por competición.
-- Pendiente: notificar al organizador de nuevas solicitudes (FTR-NTF-001).
-  Hoy no existe consumidor de eventos de `competitions`; la solicitud aparece
-  en la lista de participantes como `pending`.
+- Las solicitudes nuevas generan actividad web pendiente para el organizador.
+  Aprobar o rechazar cierra esa actividad y registra la decisión para la organización
+  y el equipo solicitante, dentro de la misma transacción. No requiere consumidor
+  de eventos. Email y outbox siguen pendientes en MAIL-01, según
+  [ADR-0008](/docs/adr/0008-notifications-web-and-email.md).
 - El control de cupo no bloquea filas: dos aprobaciones simultáneas podrían
   superarlo por uno.
 - Fuera de alcance: fecha de cierre automática y volver a postular después de un
@@ -94,3 +97,7 @@ Bajar el cupo por debajo de los aprobados responde `competitions.invalid_capacit
 - Rutas `registration/open|close` y `explore/:id/application`, SDK y CLI
   (`comp-registration-open|close`, `comp-apply`, `comp-application`).
 - Tests de dominio, API (`competitions.test.ts`), SDK y stories de Explorar.
+
+La verificación [FEED-01](/.agents/skills/verify-futrob/evidence/feed-01-2026-11-10/NOTES.md)
+comprueba aprobación, rechazo, cierre de actividad y reintentos en Postgres local aislado.
+Incluye una regresión HTTP para el rechazo persistido y lectura posterior del solicitante.

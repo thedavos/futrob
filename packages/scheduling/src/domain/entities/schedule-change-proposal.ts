@@ -66,3 +66,11 @@ export function createScheduleChangeProposal(
     responseDeadline: new Date(nowTime + (input.proposalExpiryHours ?? 12) * 3_600_000),
   });
 }
+
+/** Only the other Team, through an actor other than the proposer, answers a proposal. */
+export function isRivalOfProposal(
+  proposal: Pick<ScheduleChangeProposal, "proposedByTeamId" | "proposedByActorId">,
+  party: { readonly teamId: TeamId; readonly actorId: ActorId },
+): boolean {
+  return party.teamId !== proposal.proposedByTeamId && party.actorId !== proposal.proposedByActorId;
+}

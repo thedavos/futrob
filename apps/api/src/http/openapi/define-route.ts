@@ -2,7 +2,11 @@ import { createRoute, type RouteConfig } from "@hono/zod-openapi";
 import type { z } from "zod";
 import { API_ERROR_RESPONSE, RATE_LIMITED_RESPONSE } from "@/http/openapi/responses.ts";
 
-export const OPENAPI_ERROR_STATUSES = [400, 401, 403, 404, 409, 415, 429, 502, 503] as const;
+export const OPENAPI_ERROR_STATUSES = [400, 401, 402, 403, 404, 409, 415, 429, 502, 503] as const;
+
+/** 402 marks plan gating (ADR-0025): the organization's plan does not include the action. */
+export const PLAN_GATED_DESCRIPTION =
+  "The organization's plan does not include this action, or its monthly quota is used";
 
 export type OpenApiErrorStatus = (typeof OPENAPI_ERROR_STATUSES)[number];
 export type OpenApiSuccessStatus = 200 | 201 | 202 | 204;

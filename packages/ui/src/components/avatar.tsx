@@ -1,7 +1,7 @@
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -37,7 +37,11 @@ const styles = stylex.create({
   },
 });
 
-function Avatar({ className, style, ...props }: AvatarPrimitive.Root.Props) {
+type AvatarProps = Omit<AvatarPrimitive.Root.Props, "className"> & {
+  className?: HostClassName | AvatarPrimitive.Root.Props["className"];
+};
+
+function Avatar({ className, style, ...props }: AvatarProps) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"

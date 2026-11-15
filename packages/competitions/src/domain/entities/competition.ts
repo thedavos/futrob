@@ -11,7 +11,12 @@ export type CompetitionStatus =
   | "finished"
   | "archived";
 
-export type CompetitionFormat = "league" | "knockout" | "groups-knockout" | "league-playoffs";
+export type CompetitionFormat =
+  | "league"
+  | "knockout"
+  | "groups-knockout"
+  | "league-playoffs"
+  | "swiss";
 
 export type CompetitionRegion =
   | "america"

@@ -106,7 +106,7 @@ async function submitName(canvas: ReturnType<typeof within>, name = "Liga Norte"
 }
 
 const meta = {
-  title: "Product/Organizer/Organizations/Create",
+  title: "Product/Organizer/Organization/Create",
   parameters: { layout: "fullscreen" },
   args: {
     scenario: "success",

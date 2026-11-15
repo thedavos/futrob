@@ -105,7 +105,7 @@ const styles = stylex.create({
 type StoryArgs = ComponentProps<typeof QueueTaskItem>;
 
 const meta = {
-  title: "Product/Shell/QueueTaskItem",
+  title: "Product/Shell/Queue task item",
   component: QueueTaskItem,
   parameters: { layout: "padded" },
   args: {

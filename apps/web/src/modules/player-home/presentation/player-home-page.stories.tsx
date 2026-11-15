@@ -35,6 +35,7 @@ import {
   recentMatchesNoneFixture,
   recentMatchesSomeFixture,
 } from "./player-home-page.fixtures.ts";
+import { ClubAssociationNotice } from "./club-association-notice.tsx";
 import { PlayerHomePage } from "./player-home-page.tsx";
 
 const styles = stylex.create({
@@ -225,6 +226,10 @@ function scenarioState(id: ScenarioId): HomeStoryState {
 }
 
 function hydrateHomeQueries(client: QueryClient, state: HomeStoryState): void {
+  client.setQueryData(queryKeys.activities.mine({ limit: 10 }), {
+    activities: [],
+    nextCursor: null,
+  });
   if (state.profile !== "pending" && state.profile !== "error") {
     client.setQueryData(queryKeys.players.me(), state.profile);
   }
@@ -265,7 +270,13 @@ function hydrateHomeQueries(client: QueryClient, state: HomeStoryState): void {
   }
 }
 
-function PlayerHomeStoryShell({ scenario }: { readonly scenario: ScenarioId }) {
+function PlayerHomeStoryShell({
+  scenario,
+  clubAssociationFailed = false,
+}: {
+  readonly scenario: ScenarioId;
+  readonly clubAssociationFailed?: boolean;
+}) {
   const state = useMemo(() => scenarioState(scenario), [scenario]);
   const client = useMemo(() => {
     configurePlayerStory({
@@ -299,7 +310,15 @@ function PlayerHomeStoryShell({ scenario }: { readonly scenario: ScenarioId }) {
     const playerRoute = createRoute({
       getParentRoute: () => rootRoute,
       path: "/player",
-      component: () => <PlayerHomePage externalClubId={state.externalClubId} profileReady />,
+      component: () => (
+        <PlayerHomePage
+          externalClubId={state.externalClubId}
+          notice={
+            clubAssociationFailed ? <ClubAssociationNotice onDismiss={() => undefined} /> : null
+          }
+          profileReady
+        />
+      ),
     });
     const stub = (path: string) =>
       createRoute({
@@ -318,7 +337,7 @@ function PlayerHomeStoryShell({ scenario }: { readonly scenario: ScenarioId }) {
       ]),
       history: createMemoryHistory({ initialEntries: ["/player"] }),
     });
-  }, [state.externalClubId]);
+  }, [clubAssociationFailed, state.externalClubId]);
 
   return (
     <QueryClientProvider client={client}>
@@ -529,4 +548,22 @@ export const Mobile: Story = {
   args: { scenario: "matrix01" },
   parameters: { viewport: { defaultViewport: "mobile1" } },
   render: (args) => <PlayerHomeStoryShell key={args.scenario} scenario={args.scenario} />,
+};
+
+/** Onboarding finished but EA did not answer when saving the club (`?clubAssociation=failed`). */
+export const ClubSinAsociar: Story = {
+  name: "Club sin asociar",
+  args: { scenario: "empty" },
+  render: (args) => (
+    <PlayerHomeStoryShell clubAssociationFailed key={args.scenario} scenario={args.scenario} />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("Tu club quedó sin asociar")).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Ir a Clubes EA" })).toHaveAttribute(
+      "href",
+      "/player/ea-clubs",
+    );
+    await expect(canvas.getByRole("button", { name: "Cerrar aviso" })).toBeVisible();
+  },
 };

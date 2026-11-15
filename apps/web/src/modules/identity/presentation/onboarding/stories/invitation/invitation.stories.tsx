@@ -124,3 +124,19 @@ export const ValidPreview: Story = {
     await expect(canvas.getByText("Jugador")).toBeVisible();
   },
 };
+
+export const FromInvitationLink: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway()}
+      initialPath="/onboarding/invitation?invitation=invite-token"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "Únete a una competición" }),
+    ).toBeVisible();
+    await expect(canvas.getByLabelText("Código de invitación")).toHaveValue("invite-token");
+  },
+};

@@ -1,3 +1,4 @@
+import type { OrganizationStaffLimitReached } from "./staff-seat.errors.ts";
 import { TaggedError, type OrganizationId } from "@futrob/shared-kernel";
 
 export class InvitationNotFound extends TaggedError("InvitationNotFound")<{
@@ -54,10 +55,12 @@ export type AcceptInvitationError =
   | InvitationExpired
   | InvitationRevoked
   | InvitationExhausted
-  | OrganizationNotFound;
+  | OrganizationNotFound
+  | OrganizationStaffLimitReached;
 
 export type CreateInvitationError =
   | InvalidInvitationRole
   | InvalidInvitationRedeemPolicy
   | OrganizationNotFound
-  | OrganizationForbidden;
+  | OrganizationForbidden
+  | OrganizationStaffLimitReached;

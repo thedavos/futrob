@@ -38,6 +38,13 @@ export class InMemoryEncounterScheduleRepository
     return this.rows.get(encounterId) ?? null;
   }
 
+  async findByIds(encounterIds: readonly EncounterId[]): Promise<EncounterScheduleSnapshot[]> {
+    return encounterIds.flatMap((encounterId) => {
+      const row = this.rows.get(encounterId);
+      return row ? [row] : [];
+    });
+  }
+
   async upsert(snapshot: EncounterScheduleSnapshot): Promise<EncounterScheduleSnapshot | null> {
     const existing = this.rows.get(snapshot.encounterId);
     if (
@@ -113,6 +120,20 @@ export class PostgresEncounterScheduleRepository
     );
     const row = result.rows[0];
     return row ? rehydrateEncounterScheduleSnapshot(encounterScheduleRowSchema.parse(row)) : null;
+  }
+
+  async findByIds(encounterIds: readonly EncounterId[]): Promise<EncounterScheduleSnapshot[]> {
+    if (encounterIds.length === 0) return [];
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT encounter_id, organization_id, competition_id, stage_id, home_team_id, away_team_id,
+              scheduled_start_at, official_match_count
+       FROM encounter_schedule_snapshots
+       WHERE encounter_id = ANY($1::text[])`,
+      [encounterIds],
+    );
+    return result.rows
+      .map((row) => rehydrateEncounterScheduleSnapshot(encounterScheduleRowSchema.parse(row)))
+      .filter((row): row is EncounterScheduleSnapshot => row !== null);
   }
 
   async upsert(snapshot: EncounterScheduleSnapshot): Promise<EncounterScheduleSnapshot | null> {

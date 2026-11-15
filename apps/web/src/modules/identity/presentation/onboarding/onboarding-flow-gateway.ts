@@ -6,6 +6,7 @@ import type {
   CompleteOrganizationOnboardingRequest,
   CompleteOrganizationOnboardingResponse,
   CompletePlayerOnboardingRequest,
+  CompletePlayerOnboardingResponse,
   ExternalClubDto,
   InspectCompetitionInvitationRequest,
   InspectCompetitionInvitationResponse,
@@ -26,7 +27,9 @@ export interface OnboardingGateway {
   inspectCompetitionInvitation(
     input: InspectCompetitionInvitationRequest,
   ): Promise<InspectCompetitionInvitationResponse>;
-  completePlayer(input: CompletePlayerOnboardingRequest): Promise<void>;
+  completePlayer(
+    input: CompletePlayerOnboardingRequest,
+  ): Promise<Pick<CompletePlayerOnboardingResponse, "externalClubAssociation">>;
   searchExternalClubs(input: SearchClubsQueryInput): Promise<readonly ExternalClubDto[]>;
 }
 
@@ -37,9 +40,7 @@ export const browserOnboardingGateway: OnboardingGateway = {
   acceptInvitation: (input) => identityBrowserClient.completeInvitationOnboarding(input),
   inspectCompetitionInvitation: (input) =>
     identityBrowserClient.inspectCompetitionInvitation(input),
-  async completePlayer(input) {
-    await identityBrowserClient.completePlayerOnboarding(input);
-  },
+  completePlayer: (input) => identityBrowserClient.completePlayerOnboarding(input),
   async searchExternalClubs(input) {
     const result = await gameDataBrowserClient.searchClubs(input);
     if (!result.isOk()) {

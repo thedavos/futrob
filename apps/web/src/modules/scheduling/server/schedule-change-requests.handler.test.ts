@@ -48,6 +48,8 @@ const accepted = {
   ],
   actions: [],
   allowedActions: [],
+  respondAs: null,
+  blockedActions: [],
   application: {
     id: "application-1",
     proposalId: "proposal-1",

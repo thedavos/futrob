@@ -1,6 +1,6 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { describe, expect, it } from "vite-plus/test";
 import {
-  completeOrganizationOnboardingResponseSchema,
   entryInvitationLinkResponseSchema,
   listActivitiesResponseSchema,
   publicEntryInvitationLinkSchema,
@@ -18,7 +18,7 @@ import { parseResponse } from "@/http/parse-response.ts";
 type App = ReturnType<typeof buildApp>;
 
 async function competition(app: App, organizer: string, teams = { min: 2, max: 8 }) {
-  const created = await app.request("/api/v1/identity/onboarding/organization", {
+  const created = await createOrganizationCompetitionFixture(app, {
     method: "POST",
     headers: serviceHeaders(organizer),
     body: JSON.stringify({
@@ -27,7 +27,7 @@ async function competition(app: App, organizer: string, teams = { min: 2, max: 8
       gameAccount: null,
     }),
   });
-  const body = await parseResponse(completeOrganizationOnboardingResponseSchema, created);
+  const body = created;
   const organizationId = body.organizationId;
   const competitionId = body.competition.competition.id;
   return {

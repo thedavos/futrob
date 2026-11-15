@@ -35,14 +35,7 @@ function Card({ title, children }: { title?: string; children: ReactNode }) {
       }}
     >
       {title ? (
-        <Text
-          accessibilityRole="header"
-          style={{
-            fontFamily: theme.fontFamily.semibold,
-            fontSize: theme.textSizes.lg,
-            lineHeight: 24,
-          }}
-        >
+        <Text accessibilityRole="header" role="title">
           {title}
         </Text>
       ) : null}
@@ -268,9 +261,7 @@ function StatTiles({
           <Text role="label" color="muted-foreground">
             {label}
           </Text>
-          <Text role="score" style={{ fontVariant: ["tabular-nums"] }}>
-            {value}
-          </Text>
+          <Text role="score">{value}</Text>
         </View>
       ))}
     </View>
@@ -322,9 +313,7 @@ function LastMatchScore({
         <Text role="caption" numberOfLines={1} style={{ flex: 1, textAlign: "right" }}>
           {home.name}
         </Text>
-        <Text role="score" style={{ fontVariant: ["tabular-nums"] }}>
-          {score}
-        </Text>
+        <Text role="score">{score}</Text>
         <Text role="caption" numberOfLines={1} style={{ flex: 1 }}>
           {away.name}
         </Text>

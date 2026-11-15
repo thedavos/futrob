@@ -32,6 +32,8 @@ import {
 } from "./competition-setup-steps.tsx";
 import { CompetitionSetupActionBarRegistration } from "./competition-setup-action-bar.tsx";
 import { competitionPlatformLabel } from "./competition-draft-meta.ts";
+import { PlanUpsellAlert } from "@/modules/billing/presentation/plan-upsell-alert.tsx";
+import { CompetitionsClientError } from "./competitions-browser-client.ts";
 import { PageAlert } from "./competition-setup-fields.tsx";
 import { useCompetitionEntryInvitations } from "./entry-invitations/use-competition-entry-invitations.tsx";
 import {
@@ -91,6 +93,17 @@ const steps = [
   { id: "participants", label: "Participantes" },
   { id: "review", label: "Revisión" },
 ] as const;
+/**
+ * How "Continuar" leaves each step. Every save sends the whole form, so a failed background save
+ * is repaired by the next one; rules wait for the server because it rejects rules the form allows.
+ */
+const continueSave = {
+  information: "background",
+  format: "background",
+  rules: "confirmed",
+  participants: "none",
+  review: "none",
+} as const satisfies Record<CompetitionSetupStep, "background" | "confirmed" | "none">;
 const SETUP_CAPABILITIES = {
   update: COMPETITION_PERMISSION.update,
   manageParticipants: COMPETITION_PERMISSION.participantsManage,
@@ -122,6 +135,7 @@ export function CompetitionSetupPage({
   const [profileError, setProfileError] = useState<CompetitionProfileFieldError | null>(null);
   const caps = useCapabilities({ organizationId, competitionId }, SETUP_CAPABILITIES);
   const [form, setForm] = useState<UpdateCompetitionDraftRequest | null>(null);
+  const [continueInput, setContinueInput] = useState<UpdateCompetitionDraftRequest | null>(null);
   const draft = draftQuery.data ?? null;
 
   if (draft && form === null) {
@@ -140,7 +154,9 @@ export function CompetitionSetupPage({
   const registrationOpen = status === "registration";
   const readOnly = status !== "draft" || !canUpdate;
   const participantsLocked = status !== "draft" && status !== "registration";
-  const busy = update.isPending || remove.isPending || publish.isPending || registration.isPending;
+  const confirmingContinue = update.isPending && update.variables === continueInput;
+  const busy =
+    confirmingContinue || remove.isPending || publish.isPending || registration.isPending;
   const error =
     update.error ?? remove.error ?? publish.error ?? registration.error ?? coverUpdate.error;
   const invitations = useCompetitionEntryInvitations({
@@ -151,17 +167,29 @@ export function CompetitionSetupPage({
     participantsLocked,
   });
 
-  async function save() {
-    if (!form || !profile || readOnly) return;
+  function savedInput(): UpdateCompetitionDraftRequest | null {
+    if (!form || !profile) return null;
     const invalid = validateCompetitionProfileFields(profile);
     if (invalid) {
       setProfileError(invalid);
-      return;
+      return null;
     }
-    await update.mutateAsync({ ...form, ...toTeamsAndSchedule(profile) });
+    return { ...form, ...toTeamsAndSchedule(profile) };
   }
-  async function continueNext() {
-    if (!readOnly && ["information", "format", "rules"].includes(currentStep)) await save();
+  function save() {
+    const input = readOnly ? null : savedInput();
+    if (input) update.mutate(input);
+  }
+  function continueNext() {
+    const mode = readOnly ? "none" : continueSave[currentStep];
+    if (mode === "none") return move(1);
+    const input = savedInput();
+    if (!input) return;
+    if (mode === "confirmed") {
+      setContinueInput(input);
+      return update.mutate(input, { onSuccess: () => move(1) });
+    }
+    update.mutate(input);
     move(1);
   }
   function move(delta: -1 | 1) {
@@ -208,7 +236,9 @@ export function CompetitionSetupPage({
             </AlertDescription>
           </Alert>
         ) : null}
-        {error ? (
+        {error instanceof CompetitionsClientError && error.status === 402 ? (
+          <PlanUpsellAlert code={error.code} organizationId={organizationId} />
+        ) : error ? (
           <PageAlert>
             No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
           </PageAlert>
@@ -225,7 +255,13 @@ export function CompetitionSetupPage({
                     fieldError: profileError,
                     onChange: (patch) => {
                       setProfile({ ...profile, ...patch });
-                      if (patch.cover) coverUpdate.mutate(patch.cover);
+                      if (patch.cover)
+                        coverUpdate.mutate(patch.cover, {
+                          onError: () =>
+                            setProfile((current) =>
+                              current ? { ...current, cover: draft.competition.cover } : current,
+                            ),
+                        });
                     },
                     onClearFieldError: () => setProfileError(null),
                     value: profile,
@@ -289,8 +325,8 @@ export function CompetitionSetupPage({
         canGoBack={currentStep !== "information"}
         canSave={!readOnly}
         onBack={() => move(-1)}
-        onContinue={() => void continueNext()}
-        onSave={() => void save()}
+        onContinue={continueNext}
+        onSave={save}
         publish={
           currentStep === "review" && !participantsLocked && canPublish
             ? {
@@ -311,7 +347,7 @@ export function CompetitionSetupPage({
               }
             : undefined
         }
-        saving={update.isPending}
+        saving={update.isPending ? (confirmingContinue ? "continue" : "draft") : null}
         step={steps.findIndex((step) => step.id === currentStep) + 1}
         total={steps.length}
       />
@@ -342,12 +378,14 @@ function toUpdateInput(draft: CompetitionDraftDto): UpdateCompetitionDraftReques
       regularStage: draft.rules.regularStage,
       knockoutStage: draft.rules.knockoutStage,
       maxRosterSize: draft.rules.maxRosterSize,
+      rankingEligibility: draft.rules.rankingEligibility,
     },
   };
 }
 function rulesForFormat(format: CompetitionFormatDto): UpdateCompetitionDraftRequest["rules"] {
   const regularStage = format === "knockout" ? null : defaultRules(1, "independent_matches");
-  const knockoutStage = format === "league" ? null : defaultRules(2, "aggregate_score");
+  const knockoutStage =
+    format === "league" || format === "swiss" ? null : defaultRules(2, "aggregate_score");
   return { regularStage, knockoutStage, maxRosterSize: null };
 }
 function defaultRules(

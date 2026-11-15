@@ -145,6 +145,14 @@ const styles = stylex.create({
 export function PlayerInvitationsPage() {
   const { t } = useI18n();
   const invitationsQuery = useMyRosterInvitationsQuery();
+  const respondMutation = useRespondToRosterInvitationMutation();
+  const response: InvitationResponse = {
+    busy: respondMutation.isPending,
+    failedInvitationId: respondMutation.isError
+      ? (respondMutation.variables?.invitationId ?? null)
+      : null,
+    respond: (invitationId, action) => respondMutation.mutate({ invitationId, action }),
+  };
   const [tab, setTab] = useState<InvitationsTab>(INVITATIONS_TAB.pending);
 
   const items = useMemo(() => {
@@ -207,6 +215,7 @@ export function PlayerInvitationsPage() {
                 <PendingPanel
                   items={pending}
                   onSeeHistory={() => setTab(INVITATIONS_TAB.history)}
+                  response={response}
                   showHistoryCta
                 />
               </div>
@@ -218,19 +227,36 @@ export function PlayerInvitationsPage() {
             </TabsContent>
           </Tabs>
         ) : (
-          <PendingPanel items={pending} onSeeHistory={null} showHistoryCta={false} />
+          <PendingPanel
+            items={pending}
+            onSeeHistory={null}
+            response={response}
+            showHistoryCta={false}
+          />
         )}
       </div>
     </main>
   );
 }
 
+/**
+ * Lives on the page, not the panel: an optimistic decline moves the invitation between panels,
+ * and a failure must still be reported after the panels remount.
+ */
+type InvitationResponse = {
+  readonly busy: boolean;
+  readonly failedInvitationId: string | null;
+  readonly respond: (invitationId: string, action: "accept" | "decline") => void;
+};
+
 function PendingPanel({
   items,
+  response,
   showHistoryCta,
   onSeeHistory,
 }: Readonly<{
   items: readonly InvitationInboxViewItem[];
+  response: InvitationResponse;
   showHistoryCta: boolean;
   onSeeHistory: (() => void) | null;
 }>) {
@@ -260,7 +286,7 @@ function PendingPanel({
       </EmptyState>
     );
   }
-  return <InvitationInboxPanel items={items} showActions />;
+  return <InvitationInboxPanel items={items} response={response} />;
 }
 
 /** Exported for Storybook: with tabs hidden sin historial, el vacío no es alcanzable en producto. */
@@ -284,22 +310,26 @@ export function HistoryPanel({ items }: Readonly<{ items: readonly InvitationInb
       </EmptyState>
     );
   }
-  return <InvitationInboxPanel items={items} showActions={false} />;
+  return <InvitationInboxPanel items={items} response={null} />;
 }
 
+/** `response` is null for the history panel, which offers no actions. */
 function InvitationInboxPanel({
   items,
-  showActions,
+  response,
 }: Readonly<{
   items: readonly InvitationInboxViewItem[];
-  showActions: boolean;
+  response: InvitationResponse | null;
 }>) {
-  const respondMutation = useRespondToRosterInvitationMutation();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = filterInvitations(items, search);
-  const selected = filtered.find((item) => item.invitationId === selectedId) ?? filtered[0] ?? null;
+  const selected =
+    filtered.find((item) => item.invitationId === selectedId) ??
+    filtered.find((item) => item.invitationId === response?.failedInvitationId) ??
+    filtered[0] ??
+    null;
 
   return (
     <div {...applyStyles(styles.panel)}>
@@ -312,12 +342,12 @@ function InvitationInboxPanel({
       />
       {selected ? (
         <InvitationDetailCard
-          busy={respondMutation.isPending}
+          busy={response?.busy ?? false}
           item={selected}
-          onAccept={(invitationId) => respondMutation.mutate({ invitationId, action: "accept" })}
-          onDecline={(invitationId) => respondMutation.mutate({ invitationId, action: "decline" })}
-          respondFailed={respondMutation.isError}
-          showActions={showActions}
+          onAccept={(invitationId) => response?.respond(invitationId, "accept")}
+          onDecline={(invitationId) => response?.respond(invitationId, "decline")}
+          respondFailed={response?.failedInvitationId === selected.invitationId}
+          showActions={response !== null}
         />
       ) : null}
     </div>

@@ -4,7 +4,6 @@ import {
   exploreCompetitionsSearchSchema,
   toExploreSearchParams,
 } from "@/modules/competitions/presentation/explore/explore-search.ts";
-import { PlayerOnboardingGuard } from "@/modules/statistics/presentation/player-onboarding-guard.tsx";
 
 export const Route = createFileRoute("/_app/player_/competitions_/explore")({
   validateSearch: exploreCompetitionsSearchSchema,
@@ -15,13 +14,11 @@ function ProtectedPlayerCompetitionsExplore() {
   const navigate = useNavigate({ from: Route.fullPath });
   const search = toExploreSearchParams(Route.useSearch());
   return (
-    <PlayerOnboardingGuard>
-      <PlayerCompetitionsExplorePage
-        onSearchChange={(next) => {
-          void navigate({ search: next, replace: true });
-        }}
-        search={search}
-      />
-    </PlayerOnboardingGuard>
+    <PlayerCompetitionsExplorePage
+      onSearchChange={(next) => {
+        void navigate({ search: next, replace: true });
+      }}
+      search={search}
+    />
   );
 }

@@ -110,7 +110,7 @@ function InviteTeamStory({
 }
 
 const meta = {
-  title: "Product/Competitions/Setup/Invite team",
+  title: "Product/Organizer/Competition setup/Invite team",
   component: InviteTeamStory,
   parameters: { layout: "padded" },
   args: {
@@ -163,10 +163,9 @@ export const FutrobInvite: Story = {
     await userEvent.type(await body.findByRole("searchbox", { name: "Buscar capitán" }), "Con");
     await userEvent.click(await body.findByRole("button", { name: /Cóndor FC/ }));
     await expect(body.getByText("1 jugador seleccionado")).toBeVisible();
-    await userEvent.type(
-      body.getByRole("textbox", { name: "Mensaje" }),
-      "¡Hola! Nos gustaría contar con Cóndor FC.",
-    );
+    const messageField = body.getByRole("textbox", { name: "Mensaje" });
+    await waitFor(() => expect(messageField).toHaveFocus());
+    await userEvent.type(messageField, "¡Hola! Nos gustaría contar con Cóndor FC.");
     await userEvent.click(body.getByRole("button", { name: "Enviar invitación" }));
     await waitFor(() =>
       expect(args.onInvite).toHaveBeenCalledWith({
@@ -271,8 +270,10 @@ export const LinkShare: Story = {
     await expect(body.getByRole("textbox", { name: "Enlace de invitación" })).toHaveValue(
       "https://futrob.app/entry-invitations/link/liga-8K2Mabcd",
     );
-    await userEvent.click(body.getByRole("button", { name: "Copiar enlace" }));
-    await expect(await body.findByRole("button", { name: "Copiado" })).toBeVisible();
+    const copyButton = body.getByRole("button", { name: "Copiar enlace" });
+    await waitFor(() => expect(copyButton).toBeVisible());
+    await userEvent.click(copyButton);
+    await waitFor(() => expect(body.getByRole("button", { name: "Copiado" })).toBeVisible());
     await expect(writeText).toHaveBeenCalledWith(
       "https://futrob.app/entry-invitations/link/liga-8K2Mabcd",
     );

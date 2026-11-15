@@ -90,7 +90,12 @@ export async function freshExpiryDatabase(
       const directory = await mkdtemp(join(tmpdir(), "expiry-legacy-"));
       try {
         for (const name of await readdir(MIGRATIONS_DIRECTORY)) {
-          if (name.endsWith(".sql") && name < "0055")
+          // 0057 only adds nullable ranking columns the current competition adapter writes.
+          // Expiry rows under test stay on the pre-0055 schema.
+          if (
+            name.endsWith(".sql") &&
+            (name < "0055" || name === "0057_competition_ranking_eligibility.sql")
+          )
             await cp(join(MIGRATIONS_DIRECTORY, name), join(directory, name));
         }
         await migrateIsolatedSchema(isolated.pool, directory);
@@ -135,12 +140,17 @@ export async function freshExpiryDatabase(
         `INSERT INTO official_matches (id,encounter_id,organization_id,competition_id,slot,status,scheduled_start_at,created_at) VALUES ($1,$2,$3,$4,$5,'scheduled',$6,$7)`,
         [`expiry-slot-${slot}`, encounter, org, competition, slot, at, P],
       );
-    await new PostgresFixturePlanRepository(isolated.pool).save(fixturePlan());
+    // A legacy schema predates the plan columns; those tests seed it after migrating.
+    if (!options.legacy) await seedExpiryFixturePlan(isolated.pool);
     return isolated;
   } catch (error) {
     await isolated.drop();
     throw error;
   }
+}
+
+export async function seedExpiryFixturePlan(pool: Pool): Promise<void> {
+  await new PostgresFixturePlanRepository(pool).save(fixturePlan());
 }
 
 export function expiryFlow(

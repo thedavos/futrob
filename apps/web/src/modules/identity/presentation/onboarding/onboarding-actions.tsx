@@ -10,6 +10,8 @@ interface OnboardingActionsProps {
   readonly disabled?: boolean;
   readonly loading?: boolean;
   readonly onBack?: () => void;
+  readonly onSecondary?: () => void;
+  readonly secondaryLabel?: string;
   readonly onSkip?: () => void;
   readonly skipLabel?: string;
 }
@@ -90,6 +92,8 @@ export function OnboardingActions({
   disabled,
   loading,
   onBack,
+  onSecondary,
+  secondaryLabel,
   onSkip,
   skipLabel,
 }: OnboardingActionsProps) {
@@ -117,6 +121,11 @@ export function OnboardingActions({
           ) : null}
           {primaryLabel}
         </Button>
+        {onSecondary ? (
+          <Button disabled={loading} onClick={onSecondary} variant="outline">
+            {secondaryLabel}
+          </Button>
+        ) : null}
         {onSkip ? (
           <Button
             className={secondary.className}

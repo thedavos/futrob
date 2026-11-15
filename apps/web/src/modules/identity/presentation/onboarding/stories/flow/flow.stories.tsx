@@ -66,13 +66,11 @@ export const OrganizationPath: Story = {
       canvas.getByRole("textbox", { name: "Nombre de la organización" }),
       "Liga Norte",
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Revisar organización" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
     await expect(
-      await canvas.findByRole("heading", { name: "Configura tu primera competición" }),
+      await canvas.findByRole("heading", { name: "Confirma tu configuración" }),
     ).toBeVisible();
-    await expect(canvas.getByRole("listitem", { current: "step" })).toHaveTextContent(
-      "Competición",
-    );
+    await expect(canvas.getByRole("listitem", { current: "step" })).toHaveTextContent("Confirmar");
     await userEvent.click(canvas.getByRole("button", { name: "Volver" }));
     await expect(
       await canvas.findByRole("heading", { name: "Crea tu organización" }),
@@ -97,7 +95,7 @@ export const OrganizationNameUnavailable: Story = {
       await canvas.findByRole("textbox", { name: "Nombre de la organización" }),
       "Liga Norte",
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Revisar organización" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
     await expect(await canvas.findByText("Ese nombre ya está en uso. Elige otro.")).toBeVisible();
   },
 };
@@ -153,18 +151,6 @@ export const PlayerPath: Story = {
   },
 };
 
-export const ResumeLegacyGame: Story = {
-  render: () => (
-    <OnboardingStoryRouter
-      gateway={createFakeOnboardingGateway({
-        path: "organization",
-        currentStep: "game",
-      })}
-      initialPath="/onboarding/intention"
-    />
-  ),
-};
-
 export const ResumeInvitation: Story = {
   render: () => (
     <OnboardingStoryRouter
@@ -213,7 +199,7 @@ export const InvalidProgressFallsBack: Story = {
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({
         path: "invitation",
-        currentStep: "competition",
+        currentStep: "organization",
       })}
       initialPath="/onboarding/game-account"
     />
@@ -226,7 +212,7 @@ export const InvalidProgressFallsBack: Story = {
   },
 };
 
-export const SaveError: Story = {
+export const SaveFailureKeepsMoving: Story = {
   render: () => (
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway({ failSave: true })}
@@ -237,9 +223,10 @@ export const SaveError: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("radio", { name: /Organizar/ }));
     await userEvent.click(canvas.getByRole("button", { name: "Continuar" }));
-    await expect(await canvas.findByRole("alert")).toHaveTextContent(
-      "No pudimos guardar tu progreso",
-    );
+    await expect(
+      await canvas.findByRole("heading", { name: "Crea tu organización" }),
+    ).toBeVisible();
+    await expect(canvas.queryByRole("alert")).toBeNull();
   },
 };
 
@@ -293,5 +280,29 @@ export const CompleteError: Story = {
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
       "No pudimos finalizar tu configuración",
     );
+  },
+};
+
+/** EA did not answer when saving the club: onboarding finishes and /player shows a notice. */
+export const ClubAssociationFailed: Story = {
+  render: () => (
+    <OnboardingStoryRouter
+      gateway={createFakeOnboardingGateway({
+        path: "player",
+        currentStep: "club",
+        clubAssociation: "failed",
+      })}
+      initialPath="/onboarding/club"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByRole("textbox", { name: "Nombre del club" }), "Fera");
+    await userEvent.click(canvas.getByRole("button", { name: "Buscar club" }));
+    await userEvent.click(await canvas.findByRole("button", { name: /Fera Enjaulada/ }));
+    await userEvent.click(canvas.getByRole("button", { name: "Revisar club" }));
+    await userEvent.click(await canvas.findByRole("button", { name: "Entrar a mi espacio" }));
+    await expect(await canvas.findByText("Tu club quedó sin asociar")).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Ir a Clubes EA" })).toBeVisible();
   },
 };

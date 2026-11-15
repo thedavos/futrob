@@ -128,7 +128,9 @@ export const styles = stylex.create({
   scoreDigit: {
     fontVariantNumeric: "tabular-nums",
   },
+  /** Bold backs the lima hue so the leading digit does not rely on color alone. */
   scoreLead: {
+    fontWeight: "var(--font-weight-bold)",
     color: {
       default: colors.primary,
       ":is(.dark *)": colors.primary,

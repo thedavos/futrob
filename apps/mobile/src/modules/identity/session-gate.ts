@@ -1,35 +1,35 @@
-import type { OnboardingStatusDto, PostAuthDestinationDto } from "@futrob/api-contracts";
-import { FutrobApiError, type FutrobClient } from "@futrob/sdk";
+import {
+  isOnboardingStepAllowed,
+  type OnboardingStatusDto,
+  type PostAuthDestinationDto,
+} from "@futrob/api-contracts";
+import { accountDeletionGate, FutrobApiError, type FutrobClient } from "@futrob/sdk";
 import { getFutrobClient } from "@/modules/api/futrob-client";
 import { getSession } from "./session-store.ts";
 
 export const LOGIN_ROUTE = "/(auth)/login" as const;
 export const HOME_ROUTE = "/(home)" as const;
 export const ONBOARDING_ROUTE = "/(onboarding)/welcome" as const;
+export const ACCOUNT_DELETION_SCHEDULED_ROUTE = "/account/deletion-scheduled" as const;
 
 export type GateResult =
   | { readonly kind: "login"; readonly route: typeof LOGIN_ROUTE }
   | { readonly kind: "onboarding"; readonly route: string; readonly status: OnboardingStatusDto }
   | { readonly kind: "ready"; readonly route: string; readonly destination: PostAuthDestinationDto }
+  | {
+      /** Grace period (ADR-0030): the account only sees its deletion date and how to cancel. */
+      readonly kind: "deletion-scheduled";
+      readonly route: typeof ACCOUNT_DELETION_SCHEDULED_ROUTE;
+      readonly scheduledFor: Date;
+    }
   | { readonly kind: "error"; readonly retryAfterSeconds?: number };
 
 export function routeForOnboardingStatus(status: OnboardingStatusDto): string {
   const step = status.currentStep;
-  if (!status.path || !step || step === "intention") return ONBOARDING_ROUTE;
-  if (step === "game")
-    return status.path === "player"
-      ? "/(onboarding)/game-account"
-      : status.path === "organization"
-        ? "/(onboarding)/organization"
-        : ONBOARDING_ROUTE;
-  const steps = {
-    player: ["game-account", "club", "review"],
-    organization: ["organization", "competition", "game-account", "review"],
-    invitation: ["invitation", "game-account", "review"],
-  } as const;
-  return steps[status.path].some((allowed) => allowed === step)
-    ? `/(onboarding)/${step}`
-    : ONBOARDING_ROUTE;
+  if (!step || step === "intention" || !isOnboardingStepAllowed(status.path, step)) {
+    return ONBOARDING_ROUTE;
+  }
+  return `/(onboarding)/${step}`;
 }
 
 export function routeForPostAuthDestination(destination: PostAuthDestinationDto): string {
@@ -55,6 +55,15 @@ export async function resolveSessionGate(
     const status = await client.identity.getOnboardingStatus();
     if (!status.completed) {
       return { kind: "onboarding", route: routeForOnboardingStatus(status), status };
+    }
+    // Only finished accounts reach the account screens, so only they can be scheduled.
+    const deletion = accountDeletionGate(await client.identity.getAccountDeletion());
+    if (deletion.kind === "scheduled") {
+      return {
+        kind: "deletion-scheduled",
+        route: ACCOUNT_DELETION_SCHEDULED_ROUTE,
+        scheduledFor: deletion.scheduledFor,
+      };
     }
     const { destination } = await client.organizations.resolvePostAuthDestination();
     if (destination.kind === "onboarding") {

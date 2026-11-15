@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import { AUTH_VALIDATION_PASSWORD_LETTER, AUTH_VALIDATION_REQUIRED } from "./auth-form-helpers.ts";
-import { validateSignupField } from "./signup-form-validation.ts";
+import { validatePasswordConfirmation, validateSignupField } from "./signup-form-validation.ts";
 
 describe("validateSignupField", () => {
   it("normalizes text fields before validating them", () => {
@@ -11,5 +11,15 @@ describe("validateSignupField", () => {
 
   it("returns the first unmet password requirement", () => {
     expect(validateSignupField("password", "12345678")).toBe(AUTH_VALIDATION_PASSWORD_LETTER);
+  });
+});
+
+describe("validatePasswordConfirmation", () => {
+  it("requires confirmation and compares passwords exactly, including whitespace", () => {
+    expect(validatePasswordConfirmation("", "clave1234")).toBe(AUTH_VALIDATION_REQUIRED);
+    expect(validatePasswordConfirmation("clave1234", "clave1234")).toBeNull();
+    expect(validatePasswordConfirmation("clave1234 ", "clave1234")).toBe(
+      "Las contraseñas no coinciden.",
+    );
   });
 });

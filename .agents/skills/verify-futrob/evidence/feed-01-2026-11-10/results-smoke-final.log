@@ -1,0 +1,32 @@
+
+> futrob@0.1.0 cli
+> npm run cli -w @futrob/cli -- results-smoke
+
+
+> @futrob/cli@0.1.0 cli
+> tsx src/main.ts results-smoke
+
+results-smoke ok
+{
+  "agreement": {
+    "selectionStatus": "approved",
+    "officialResultId": "id_4",
+    "revision": 1,
+    "score": "3-1"
+  },
+  "dispute": {
+    "selectionStatus": "approved",
+    "disputeStatus": "resolved",
+    "officialResultId": "id_13"
+  },
+  "events": [
+    "results.official-matches-selected",
+    "results.official-selection-confirmed",
+    "results.official-result-approved",
+    "results.official-matches-selected",
+    "results.match-dispute-opened",
+    "results.official-result-approved"
+  ]
+}
+
+exit=0

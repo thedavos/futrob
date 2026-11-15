@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
+import { ProviderSchemaError, ProviderTimeout } from "@futrob/game-data";
 import { createFetch } from "@/http/http-app.harness.ts";
 import { EaClubsGameDataAdapter } from "./ea-clubs-game-data.adapter.ts";
 
@@ -92,4 +93,58 @@ describe("EaClubsGameDataAdapter", () => {
     expect(result.value.matches).toEqual([]);
     expect(outcomes).toEqual(["success"]);
   });
+  it.each(["timeout", "malformed"])(
+    "preserves %s classification through the adapter and health boundary",
+    async (outcome) => {
+      vi.useFakeTimers();
+      let attempts = 0;
+      const outcomes: string[] = [];
+      try {
+        const adapter = new EaClubsGameDataAdapter({
+          baseUrl: "https://example.test",
+          timeoutMs: 100,
+          fetcher: async (_input, init) => {
+            attempts += 1;
+            return outcome === "malformed"
+              ? new Response("{invalid")
+              : new Response(
+                  new ReadableStream({
+                    start(controller) {
+                      init?.signal?.addEventListener(
+                        "abort",
+                        () => controller.error(new TypeError("body aborted")),
+                        { once: true },
+                      );
+                    },
+                  }),
+                );
+          },
+          health: {
+            record: async (event) => {
+              outcomes.push(event.outcome);
+            },
+            getSnapshot: async () => {
+              throw new Error("unused");
+            },
+          },
+        });
+        const pending = adapter.getClubInfo(input);
+        await vi.runAllTimersAsync();
+        const result = await pending;
+        expect(result.isOk()).toBe(false);
+        if (!result.isOk()) {
+          expect(
+            outcome === "timeout"
+              ? ProviderTimeout.is(result.error)
+              : ProviderSchemaError.is(result.error),
+          ).toBe(true);
+        }
+        expect(attempts).toBe(outcome === "timeout" ? 3 : 1);
+        expect(outcomes).toEqual([outcome === "timeout" ? "timeout" : "schema"]);
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
 });

@@ -1,4 +1,4 @@
-import { defineRoute } from "@/http/openapi/define-route.ts";
+import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
 import {
   AccessGrant,
@@ -7,6 +7,7 @@ import {
   CompetitionRoleAssignment,
   EffectiveAccess,
   ManageSuperuserRequest,
+  OrganizationRoleAssignment,
   UpsertAccessGrantRequest,
 } from "@/http/openapi/components.ts";
 import {
@@ -74,8 +75,9 @@ export const changeOrganizationRoleRoute = defineRoute({
   summary: "Change an organization membership role",
   params: pathParams(["organizationId", "actorId"]),
   body: ChangeOrganizationRoleRequest,
-  success: { status: 200, description: "Updated role" },
-  errors: [403, 404, 409],
+  success: { status: 200, description: "Updated role", schema: OrganizationRoleAssignment },
+  errors: [400, 402, 403, 404, 409],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const changeCompetitionRoleRoute = defineRoute({

@@ -1,0 +1,295 @@
+$ FEED_EVIDENCE_DIR=.agents/skills/verify-futrob/evidence/feed-01-2026-11-10 apps/api/node_modules/.bin/tsx --tsconfig apps/api/tsconfig.json .agents/skills/verify-futrob/helpers/feed-01-live.mjs access
+{
+  "action": "effective access and organization isolation",
+  "result": {
+    "account": "superadmin",
+    "access": {
+      "actorId": "855e67a4-59e7-4362-9cb3-21f8f130d468",
+      "scope": {
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea"
+      },
+      "roles": [
+        {
+          "scopeType": "platform",
+          "scopeId": "platform",
+          "role": "superuser"
+        }
+      ],
+      "permissions": [
+        {
+          "permission": "encounters.results.approve",
+          "allowed": true,
+          "decidedAt": "platform"
+        }
+      ]
+    },
+    "organizationFeed": {
+      "status": 200,
+      "count": 1
+    },
+    "personalAudiences": []
+  }
+}
+{
+  "action": "effective access and organization isolation",
+  "result": {
+    "account": "org-pro",
+    "access": {
+      "actorId": "ebcb55b7-1405-4a07-b169-cb7e4bde9a3b",
+      "scope": {
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea"
+      },
+      "roles": [
+        {
+          "scopeType": "organization",
+          "scopeId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+          "role": "organizer"
+        }
+      ],
+      "permissions": [
+        {
+          "permission": "encounters.results.approve",
+          "allowed": true,
+          "decidedAt": "organization"
+        }
+      ]
+    },
+    "organizationFeed": {
+      "status": 200,
+      "count": 1
+    },
+    "personalAudiences": []
+  }
+}
+{
+  "action": "effective access and organization isolation",
+  "result": {
+    "account": "staff",
+    "access": {
+      "actorId": "5f841256-9efa-424f-83b1-0166c474a796",
+      "scope": {
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea"
+      },
+      "roles": [
+        {
+          "scopeType": "organization",
+          "scopeId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea",
+          "role": "member"
+        }
+      ],
+      "permissions": [
+        {
+          "permission": "encounters.results.approve",
+          "allowed": false,
+          "decidedAt": "platform"
+        }
+      ]
+    },
+    "organizationFeed": {
+      "status": 403,
+      "code": "authorization.forbidden"
+    },
+    "personalAudiences": []
+  }
+}
+{
+  "action": "effective access and organization isolation",
+  "result": {
+    "account": "capitan-local",
+    "access": {
+      "actorId": "99e73314-cdff-48cd-a6af-8511a248a4d5",
+      "scope": {
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea"
+      },
+      "roles": [],
+      "permissions": [
+        {
+          "permission": "encounters.results.approve",
+          "allowed": false,
+          "decidedAt": "platform"
+        }
+      ]
+    },
+    "organizationFeed": {
+      "status": 403,
+      "code": "authorization.forbidden"
+    },
+    "personalAudiences": [
+      "team"
+    ]
+  }
+}
+{
+  "action": "effective access and organization isolation",
+  "result": {
+    "account": "subcapitan",
+    "access": {
+      "actorId": "8aa8a1fd-65d2-4da1-9588-1ae73fa1f8bd",
+      "scope": {
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea"
+      },
+      "roles": [],
+      "permissions": [
+        {
+          "permission": "encounters.results.approve",
+          "allowed": false,
+          "decidedAt": "platform"
+        }
+      ]
+    },
+    "organizationFeed": {
+      "status": 403,
+      "code": "authorization.forbidden"
+    },
+    "personalAudiences": [
+      "team"
+    ]
+  }
+}
+{
+  "action": "effective access and organization isolation",
+  "result": {
+    "account": "jugador01",
+    "access": {
+      "actorId": "bc9536cc-d163-4568-b2f6-cd0cd940fc27",
+      "scope": {
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea"
+      },
+      "roles": [],
+      "permissions": [
+        {
+          "permission": "encounters.results.approve",
+          "allowed": false,
+          "decidedAt": "platform"
+        }
+      ]
+    },
+    "organizationFeed": {
+      "status": 403,
+      "code": "authorization.forbidden"
+    },
+    "personalAudiences": []
+  }
+}
+{
+  "action": "effective access and organization isolation",
+  "result": {
+    "account": "espectador",
+    "access": {
+      "actorId": "e3ec54b4-c056-4c61-9a16-9f39580c0ea9",
+      "scope": {
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea"
+      },
+      "roles": [],
+      "permissions": [
+        {
+          "permission": "encounters.results.approve",
+          "allowed": false,
+          "decidedAt": "platform"
+        }
+      ]
+    },
+    "organizationFeed": {
+      "status": 403,
+      "code": "authorization.forbidden"
+    },
+    "personalAudiences": []
+  }
+}
+{
+  "action": "effective access and organization isolation",
+  "result": {
+    "account": "org-free",
+    "access": {
+      "actorId": "af0f298a-b1bf-437a-a80b-fd5745d59d52",
+      "scope": {
+        "organizationId": "2f5d8f0f-95ae-4f1e-a5ae-cb1f66aedeea"
+      },
+      "roles": [],
+      "permissions": [
+        {
+          "permission": "encounters.results.approve",
+          "allowed": false,
+          "decidedAt": "platform"
+        }
+      ]
+    },
+    "organizationFeed": {
+      "status": 403,
+      "code": "authorization.forbidden"
+    },
+    "personalAudiences": []
+  }
+}
+{
+  "action": "organization paging",
+  "result": {
+    "home": [
+      "1dc27f5b-f31d-42c9-aab3-7eb326680e2d",
+      "402703f9-7d46-439c-adee-2a950801b62f",
+      "bc5a42be-2b93-474f-8b5c-a951cc852f88",
+      "ca775673-bac2-4115-943b-a681acc65740",
+      "a585fe29-4de1-4f77-a297-14ba94f86d6f",
+      "dede0b09-3c1e-4ce0-8f79-ee32f1bdc678",
+      "88903c10-68b8-40f8-8ade-0d3b8c12b56a",
+      "32c72efa-1589-4ce6-bc43-b0ef6ffc8241",
+      "a84c1713-4e13-4e1a-8c64-cbbd96e0b80b",
+      "c6d8a35a-1248-49c7-a0f2-10862f6c92b0"
+    ],
+    "first": [
+      "1dc27f5b-f31d-42c9-aab3-7eb326680e2d",
+      "402703f9-7d46-439c-adee-2a950801b62f",
+      "bc5a42be-2b93-474f-8b5c-a951cc852f88",
+      "ca775673-bac2-4115-943b-a681acc65740",
+      "a585fe29-4de1-4f77-a297-14ba94f86d6f",
+      "dede0b09-3c1e-4ce0-8f79-ee32f1bdc678",
+      "88903c10-68b8-40f8-8ade-0d3b8c12b56a",
+      "32c72efa-1589-4ce6-bc43-b0ef6ffc8241",
+      "a84c1713-4e13-4e1a-8c64-cbbd96e0b80b",
+      "c6d8a35a-1248-49c7-a0f2-10862f6c92b0",
+      "807415ff-e746-4d63-8633-a9e743d0d92b",
+      "4507332b-d64a-4dd7-94ee-d3fec48cede7",
+      "c85c4a4e-72ab-47d9-bc41-f689ba8c7c34",
+      "2e9439e2-7ff7-412e-b1f9-96628c9a3e68",
+      "c578b223-af3d-4d59-a906-8d55164015d2",
+      "7ec64d61-4ebd-473a-8de2-ab4b2c41119a",
+      "2de0c8de-09f6-490f-80f0-14e0c2203a67",
+      "aba43f22-1ea1-4872-8fbb-f233af89150e",
+      "7398138a-001e-464d-96e0-eb4d3e3b88a2",
+      "0228790b-8968-430a-be1e-973689759d57",
+      "c494cfb8-256b-4145-8f75-e3491d6c6519",
+      "9c67ad48-f6c8-46c2-859c-2699dbea8015",
+      "57525bc6-9a4b-4230-b419-9fa9b32b5626",
+      "187475e3-f07f-4d56-a75e-dff57d99b76f",
+      "ba9b19cb-bc6f-47ea-bd31-f85dd54ec5d2"
+    ],
+    "second": [
+      "e2f91422-7d0e-4251-949c-00caab92bc88",
+      "ccbb40d5-850c-4e54-afd3-21e2aa1913d8",
+      "33f12171-890f-40e6-9efe-de718167e6df",
+      "d0ba1ba5-3b66-48d8-8382-25bf0e7bdbd8",
+      "4e0073e3-c7d6-4041-a6a6-fe9487f879dd",
+      "cde24247-154f-4020-bc0c-c3b43248cba6",
+      "e1c1d3dc-440f-4cc0-af79-8953b8154aba",
+      "58f1fb1f-72af-4f94-a6bc-13348f2084d9",
+      "08c4a89f-bc36-40cf-a6de-127af968a921",
+      "c3c2a471-51f6-4850-807e-de03bf867b52",
+      "004cce0c-9979-42c3-837e-472838edaf96",
+      "2b9d058d-c5e1-4f93-8c0f-9158d67d09d0",
+      "692d933a-c2e1-47a1-af52-d9fdab4ecaa8",
+      "486f8d8a-d2d5-441c-b834-0f4f6e9201eb",
+      "460d6d52-2bca-4820-9472-db45cf58348b",
+      "260d7d2c-b297-4931-b71c-475c1d0f8b43",
+      "ef984d18-0eb5-4ba7-b256-6e3e011a7d57",
+      "6f01761f-f97d-4616-b1e7-c91390db455b",
+      "d80abd5e-7156-434e-8a62-619ccaaf148a",
+      "abfa4a16-b22d-4c62-bdea-83ca448bceb0",
+      "60128b1e-49b4-45ee-bb26-8a8416fb4517",
+      "e657a8bc-90df-4874-bc8d-552cc6231661",
+      "de20422c-458b-41e3-a584-807888584f44",
+      "a20f05c7-b018-4283-89e0-5fbab62aef4f",
+      "ea0fdc7f-85bd-4d7b-8fda-1447e4950630"
+    ],
+    "nextCursor": "1794270464807.ea0fdc7f-85bd-4d7b-8fda-1447e4950630"
+  }
+}

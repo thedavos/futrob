@@ -1,4 +1,5 @@
-import type { ActorId, ClockPort } from "@futrob/shared-kernel";
+import { err, ok, type ActorId, type ClockPort, type Result } from "@futrob/shared-kernel";
+import { OnboardingPathConflict } from "../../domain/errors/onboarding.errors.ts";
 import type { ActorOnboardingPort } from "../../domain/ports/actor-onboarding.port.ts";
 import {
   CURRENT_ONBOARDING_VERSION,
@@ -12,11 +13,44 @@ export interface CompleteOnboardingInput {
   readonly version?: number;
 }
 
+interface CompletionRequest {
+  readonly actorId: ActorId;
+  readonly path: OnboardingPath;
+}
+
 export class CompleteOnboardingUseCase {
   constructor(
     private readonly actorOnboarding: ActorOnboardingPort,
     private readonly clock: ClockPort,
   ) {}
+
+  /**
+   * Run first inside the completion transaction: locks the actor's onboarding so concurrent
+   * completions serialize, then rejects a path other than the one already completed.
+   * Completing the same path again is allowed, so a retried request converges.
+   */
+  async prepare(input: CompletionRequest): Promise<Result<void, OnboardingPathConflict>> {
+    await this.actorOnboarding.lockActor(input.actorId);
+    return this.check(input);
+  }
+
+  /**
+   * The same rejection without the lock, for a caller that must refuse before slow work
+   * outside the transaction (a provider lookup). `prepare` still decides under the lock.
+   */
+  async check(input: CompletionRequest): Promise<Result<void, OnboardingPathConflict>> {
+    const existing = await this.actorOnboarding.findByActor(input.actorId);
+    if (existing?.completed && existing.path !== null && existing.path !== input.path) {
+      return err(
+        new OnboardingPathConflict({
+          code: "identity.onboarding_path_conflict",
+          message: "identity.onboarding_path_conflict",
+          details: { completedPath: existing.path, requestedPath: input.path },
+        }),
+      );
+    }
+    return ok(undefined);
+  }
 
   async execute(input: CompleteOnboardingInput): Promise<OnboardingStatus> {
     const existing = await this.actorOnboarding.findByActor(input.actorId);

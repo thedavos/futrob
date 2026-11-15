@@ -22,7 +22,10 @@ export default defineConfig({
     alias: {
       "expo-secure-store": path.resolve(rootDir, "test/expo-secure-store.ts"),
       "expo-crypto": path.resolve(rootDir, "test/expo-crypto.ts"),
+      // Before "expo-router": aliases match by prefix and the first match wins.
+      "expo-router/ui": path.resolve(rootDir, "test/expo-router-ui.tsx"),
       "expo-router": path.resolve(rootDir, "test/expo-router.tsx"),
+      "@sentry/react-native": path.resolve(rootDir, "test/sentry.ts"),
       "react-native": "react-native-web",
     },
     server: {

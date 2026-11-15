@@ -1,7 +1,5 @@
 import type { OnboardingDraft } from "./onboarding-draft.ts";
 
-export { isIanaTimeZone } from "@/modules/competitions/presentation/validate-competition-draft-input.ts";
-
 export function validOrganizationName(value: string): boolean {
   const length = value.trim().length;
   return length > 0 && length <= 120;

@@ -79,7 +79,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/ScrollArea",
+  title: "Components/Layout/ScrollArea",
+  tags: ["autodocs"],
   component: ScrollArea,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof ScrollArea>;

@@ -1,4 +1,4 @@
-const { getDefaultConfig } = require("expo/metro-config");
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 const path = require("path");
 
 const projectRoot = __dirname;
@@ -9,7 +9,7 @@ const workspaceRoot = path.resolve(projectRoot, "../..");
 // inside babel; make the absolute app dir available to every transform.
 process.env.EXPO_ROUTER_APP_ROOT = path.join(projectRoot, "app");
 
-const config = getDefaultConfig(projectRoot);
+const config = getSentryExpoConfig(projectRoot);
 
 config.watchFolders = [workspaceRoot];
 

@@ -16,7 +16,14 @@ export { buildRosterInvitationShareUrl } from "./roster-invitation-share-url.ts"
 export { buildEntryInvitationShareUrl, buildWhatsAppShareUrl } from "./entry-invitation-share.ts";
 
 export type { ActivitiesResource, ListActivitiesInput } from "./resources/activities.ts";
+export type { EmailResource } from "./resources/email.ts";
 export type { AuthorizationResource } from "./resources/authorization.ts";
+export {
+  isPlanGatedErrorCode,
+  PLAN_GATED_ERROR_CODES,
+  type BillingResource,
+  type PlanGatedErrorCode,
+} from "./resources/billing.ts";
 export type { CompetitionsResource } from "./resources/competitions.ts";
 export type {
   EntryInvitationsResource,
@@ -28,9 +35,14 @@ export type { IdentityResource } from "./resources/identity.ts";
 export type { MetaResource } from "./resources/meta.ts";
 export type { OrganizationsResource } from "./resources/organizations.ts";
 export type { PlayersResource } from "./resources/players.ts";
+export type { PublicCompetitionRef, PublicPortalResource } from "./resources/public-portal.ts";
 export type { ResultsResource } from "./resources/results.ts";
 export type { RosterInvitationsResource } from "./resources/roster-invitations.ts";
 export type { RostersResource } from "./resources/rosters.ts";
+export type { SanctionsResource } from "./resources/sanctions.ts";
+export type { AuditResource } from "./resources/audit.ts";
 export type { StatisticsResource, GetMyRecentMatchInput } from "./resources/statistics.ts";
 export type { TeamsResource } from "./resources/teams.ts";
 export type { TeamExternalClubsResource } from "./resources/external-clubs.ts";
+export * from "./account/index.ts";
+export * from "./workspace/index.ts";

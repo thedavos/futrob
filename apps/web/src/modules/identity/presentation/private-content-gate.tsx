@@ -4,41 +4,32 @@ import { Activity, useCallback, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Button, hasBrowserWindow, useExternalSync } from "@futrob/ui";
+import { applyStyles, hasBrowserWindow, useExternalSync } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { listenForIdentityChanges } from "@/shared/presentation/query/identity-change.ts";
+import { FailedScreen, PendingScreen } from "@/shared/presentation/status-screen.tsx";
 
 const styles = stylex.create({
-  notice: {
+  // Nothing to read while the tab is hidden: covers the content without a message, so the
+  // pending screen mounts (and starts its reveal delay) only once the tab is visible again.
+  veil: {
     position: "fixed",
     inset: 0,
     zIndex: 100,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "1rem",
-    paddingInline: "1.25rem",
     backgroundColor: colors.background,
-    textAlign: "center",
-  },
-  message: {
-    fontSize: "0.875rem",
-    lineHeight: "1.25rem",
-    color: colors.mutedForeground,
   },
 });
 
 /** Whose answers the cache holds, or `null` once the session is gone. */
 type CacheOwner = string | null;
 
-/** `confirming` covers a hidden tab and a visible one waiting for `get-session`. */
-type GateStatus = "open" | "confirming" | "failed";
+/** `hidden` is a hidden tab; `confirming` a visible one waiting for `get-session`. */
+type GateStatus = "open" | "hidden" | "confirming" | "failed";
 
 function initialStatus(): GateStatus {
-  return hasBrowserWindow() && document.visibilityState === "hidden" ? "confirming" : "open";
+  return hasBrowserWindow() && document.visibilityState === "hidden" ? "hidden" : "open";
 }
 
 /**
@@ -59,7 +50,7 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
   const ownerRef = useRef<CacheOwner>(sessionUserId);
   const [status, setStatus] = useState<GateStatus>(initialStatus);
   // Closed because the tab was hidden, and no check started since.
-  const awaitingVisible = useRef(status === "confirming");
+  const awaitingVisible = useRef(status === "hidden");
   const attempt = useRef(0);
   const focusBeforeHide = useRef<HTMLElement | null>(null);
 
@@ -77,7 +68,8 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
   const confirm = useCallback(async () => {
     const current = ++attempt.current;
     awaitingVisible.current = false;
-    setStatus("confirming");
+    // A notice heard while hidden still checks, but behind the veil.
+    setStatus(document.visibilityState === "visible" ? "confirming" : "hidden");
     const confirmed = await readSessionUserId();
     if (current !== attempt.current) return;
     if (confirmed === undefined) {
@@ -88,7 +80,7 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
       adopt(confirmed);
       authClient.$store.notify("$sessionSignal");
     }
-    setStatus(document.visibilityState === "visible" ? "open" : "confirming");
+    setStatus(document.visibilityState === "visible" ? "open" : "hidden");
   }, [adopt]);
 
   useExternalSync(() => {
@@ -102,7 +94,7 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
       const active = document.activeElement;
       focusBeforeHide.current = active instanceof HTMLElement ? active : null;
       // Commit now: the frame shown when the tab comes back must already hide the content.
-      flushSync(() => setStatus("confirming"));
+      flushSync(() => setStatus("hidden"));
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
     const stopListening = listenForIdentityChanges(() => void confirm());
@@ -134,18 +126,17 @@ export function PrivateContentGate({ children }: Readonly<{ children: ReactNode 
         {children}
       </Activity>
       {status === "failed" ? (
-        <div {...applyStyles(styles.notice)}>
-          <p role="alert" {...applyStyles(styles.message)}>
-            {t("auth.session.checkFailed")}
-          </p>
-          <Button type="button" variant="outline" onClick={() => void confirm()}>
-            {t("common.retry")}
-          </Button>
-        </div>
+        <FailedScreen
+          description={t("auth.session.checkFailedDescription")}
+          onRetry={() => void confirm()}
+          placement="overlay"
+          retryLabel={t("common.retry")}
+          title={t("auth.session.checkFailed")}
+        />
+      ) : status === "hidden" ? (
+        <div {...applyStyles(styles.veil)} />
       ) : open ? null : (
-        <div aria-live="polite" {...applyStyles(styles.notice)}>
-          <p {...applyStyles(styles.message)}>{t("auth.session.checking")}</p>
-        </div>
+        <PendingScreen message={t("auth.session.checking")} placement="overlay" />
       )}
     </>
   );

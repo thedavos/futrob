@@ -1,6 +1,11 @@
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AcceptEntryInvitationRequest, InviteTeamCaptainRequest } from "@futrob/api-contracts";
+import type {
+  AcceptEntryInvitationRequest,
+  InviteTeamCaptainRequest,
+  ListSentEntryInvitationsResponse,
+} from "@futrob/api-contracts";
+import { patchQueryData } from "@/shared/presentation/query/patch-query-data.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
   acceptEntryInvitation,
@@ -50,15 +55,41 @@ export function useEntryInvitationLinkQuery(
 export function useEntryInvitationCommands(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   const sentKey = queryKeys.competitions.entryInvitations(organizationId, competitionId);
+  const refreshSent = () => queryClient.invalidateQueries({ queryKey: sentKey, exact: true });
   const invite = useMutation({
     mutationFn: (input: InviteTeamCaptainRequest) =>
       inviteTeamCaptain(organizationId, competitionId, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: sentKey, exact: true }),
+    onSuccess: refreshSent,
   });
   const revoke = useMutation({
     mutationFn: (invitationId: string) =>
       revokeEntryInvitation(organizationId, competitionId, invitationId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: sentKey, exact: true }),
+    onMutate: async (invitationId) => {
+      const respondedAt = new Date().toISOString();
+      return {
+        rollback: await patchQueryData<ListSentEntryInvitationsResponse>(queryClient, sentKey, {
+          apply: (sent) => ({
+            invitations: sent.invitations.map((invitation) =>
+              invitation.id === invitationId
+                ? { ...invitation, status: "revoked", respondedAt }
+                : invitation,
+            ),
+          }),
+          revert: (sent, previous) => ({
+            invitations: sent.invitations.map((invitation) =>
+              invitation.id === invitationId
+                ? (previous.invitations.find((before) => before.id === invitationId) ?? invitation)
+                : invitation,
+            ),
+          }),
+        }),
+      };
+    },
+    onError: (_error, _invitationId, context) => {
+      context?.rollback();
+      void refreshSent();
+    },
+    onSuccess: refreshSent,
   });
   const regenerateLink = useMutation({
     mutationFn: () => regenerateEntryInvitationLink(organizationId, competitionId),

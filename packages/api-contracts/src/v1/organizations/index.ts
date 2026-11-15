@@ -1,4 +1,12 @@
 export {
+  listOrganizationMembersQuerySchema,
+  memberCompetitionAssignmentSchema,
+  memberCompetitionAccessSchema,
+  organizationMemberSchema,
+  listOrganizationMembersResponseSchema,
+  type OrganizationMemberDto,
+  type MemberCompetitionAccessDto,
+  type ListOrganizationMembersResponse,
   orgMembershipRoleSchema,
   organizationInviteRoleSchema,
   competitionInviteRoleSchema,
@@ -48,3 +56,11 @@ export {
   type ResolvePostAuthDestinationResponse,
   type RedeemPolicyDto,
 } from "./schemas.ts";
+export {
+  organizationAuditEntrySchema,
+  listOrganizationAuditQuerySchema,
+  listOrganizationAuditResponseSchema,
+  type OrganizationAuditEntryDto,
+  type ListOrganizationAuditQuery,
+  type ListOrganizationAuditResponse,
+} from "./audit.schemas.ts";

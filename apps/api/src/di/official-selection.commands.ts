@@ -20,19 +20,23 @@ import type {
   ResolveMatchDisputeInput,
   ReviewMatchDisputeError,
   ReviewMatchDisputeInput,
+  OfficialResult,
   SelectOfficialMatchesInput,
+  VoidOfficialResultError,
   VoidOfficialResultInput,
 } from "@futrob/results";
-import type { EncounterMutationLockPort } from "@futrob/scheduling";
-import type {
-  ActorId,
-  ClockPort,
-  EncounterId,
-  Result,
-  TransactionPort,
+import { AdvancementNotReversible, type EncounterMutationLockPort } from "@futrob/scheduling";
+import {
+  err,
+  type ActorId,
+  type ClockPort,
+  type EncounterId,
+  type Result,
+  type TransactionPort,
 } from "@futrob/shared-kernel";
 import type { SelectionActivityProjector } from "@/application/notifications/selection-activity.ts";
 import type { ResultsModule } from "./results.module.ts";
+import type { SchedulingModule } from "./scheduling.module.ts";
 import type { StatisticsModule } from "./statistics.module.ts";
 
 interface SelectionCommand<Input, Output, Failure> {
@@ -66,16 +70,35 @@ export interface OfficialSelectionCommands {
 }
 
 /**
+ * Converges the fixture's advanced slots with the Encounter's official result (ADR-0016).
+ * A tie keeps the placeholder and leaves the decision to the organizer (DEC-017); any other
+ * failure throws so the surrounding transaction rolls back the result and its projections.
+ */
+async function advanceFixture(
+  scheduling: Pick<SchedulingModule, "advanceFixtureFromOfficialResult">,
+  result: Pick<OfficialResult, "organizationId" | "competitionId" | "encounterId">,
+): Promise<void> {
+  const advanced = await scheduling.advanceFixtureFromOfficialResult.execute({
+    organizationId: result.organizationId,
+    competitionId: result.competitionId,
+    encounterId: result.encounterId,
+  });
+  if (advanced.isOk() || advanced.error.code === "scheduling.tie_requires_organizer_review") return;
+  throw advanced.error;
+}
+
+/**
  * Runs each command in the ADR-0016 shape: transaction, Encounter lock, command, then
- * the statistics projection only when the command really approved a result. A projection
- * failure throws so every write of the command rolls back. A replay never projects again:
- * its approval was projected when it first ran. The activity feed is projected last, in
+ * the statistics projection and the fixture advance only when the command really approved
+ * a result. A projection or advance failure throws so every write of the command rolls
+ * back. A replay never projects again: its approval was projected when it first ran. The activity feed is projected last, in
  * the same transaction; it is idempotent, so replays reconcile it instead of skipping.
  * Commands that can approve acquire the competition lock before the Encounter lock,
  * so concurrent approvals and ranking rebuilds see the complete comparable set.
  */
 export function createOfficialSelectionCommands(deps: {
   readonly results: ResultsModule;
+  readonly scheduling: Pick<SchedulingModule, "advanceFixtureFromOfficialResult">;
   readonly statistics: StatisticsModule;
   readonly transaction: TransactionPort;
   readonly encounterLock: EncounterMutationLockPort;
@@ -103,6 +126,7 @@ export function createOfficialSelectionCommands(deps: {
                   officialResultId: approved.id,
                 });
                 if (!projected.isOk()) throw projected.error;
+                await advanceFixture(deps.scheduling, approved);
               }
               await deps.activity.project(outcome.value, input.actorId);
               return outcome;
@@ -147,12 +171,16 @@ export function createOfficialSelectionCommands(deps: {
 export interface VoidOfficialResultAndUnproject {
   execute(
     input: VoidOfficialResultInput,
-  ): ReturnType<ResultsModule["voidOfficialResult"]["execute"]>;
+  ): Promise<Result<OfficialResult, VoidOfficialResultError | AdvancementNotReversible>>;
 }
 
-/** Voids an official result and removes it from statistics in one transaction. */
+/**
+ * Voids an official result, removes it from statistics and reverts the fixture advance in
+ * one transaction. A later Encounter that already has a selection or result blocks the void.
+ */
 export function createVoidOfficialResultAndUnproject(deps: {
   readonly results: ResultsModule;
+  readonly scheduling: Pick<SchedulingModule, "advanceFixtureFromOfficialResult">;
   readonly statistics: StatisticsModule;
   readonly transaction: TransactionPort;
   readonly encounterLock: EncounterMutationLockPort;
@@ -166,19 +194,25 @@ export function createVoidOfficialResultAndUnproject(deps: {
           : await results.results.findById(input.officialResultId);
       if (!existing) return results.voidOfficialResult.execute(input);
 
-      return deps.transaction.runInTransaction(() =>
-        statistics.ports.teamPerformanceLock.runExclusive(existing.competitionId, async () => {
-          return deps.encounterLock.runExclusive(existing.encounterId, async () => {
-            const voided = await results.voidOfficialResult.execute(input);
-            if (!voided.isOk()) return voided;
-            const projected = await statistics.useCases.projectOfficialResult.execute({
-              officialResultId: voided.value.id,
+      try {
+        return await deps.transaction.runInTransaction(() =>
+          statistics.ports.teamPerformanceLock.runExclusive(existing.competitionId, async () => {
+            return deps.encounterLock.runExclusive(existing.encounterId, async () => {
+              const voided = await results.voidOfficialResult.execute(input);
+              if (!voided.isOk()) return voided;
+              const projected = await statistics.useCases.projectOfficialResult.execute({
+                officialResultId: voided.value.id,
+              });
+              if (!projected.isOk()) throw projected.error;
+              await advanceFixture(deps.scheduling, voided.value);
+              return voided;
             });
-            if (!projected.isOk()) throw projected.error;
-            return voided;
-          });
-        }),
-      );
+          }),
+        );
+      } catch (error) {
+        if (error instanceof AdvancementNotReversible) return err(error);
+        throw error;
+      }
     },
   };
 }

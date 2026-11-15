@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EncounterRoute } from "@/modules/results/presentation/encounter-route.tsx";
+import { localizedHead } from "@/shared/presentation/i18n/localized-head.ts";
 
 export const Route = createFileRoute(
   "/_app/orgs/$orgId/competitions/$competitionId/encounters_/$encounterId",
 )({
-  head: () => ({ meta: [{ title: "Enfrentamiento | Futrob" }] }),
+  head: localizedHead("encounter.documentTitle"),
   component: EncounterPage,
 });
 

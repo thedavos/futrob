@@ -21,9 +21,11 @@ const styles = stylex.create({
   eyebrow: {
     gridColumnStart: 1,
   },
+  /** One ramp step (24 px) above `typography.heading` so the page h1 outranks panel h2s. */
   title: {
     gridColumnStart: 1,
     textWrap: "balance",
+    fontSize: "var(--text-2xl)",
   },
   titleLg: {
     fontSize: {
@@ -111,7 +113,11 @@ function PageHeaderDescription({ className, style, ...props }: ComponentProps<"p
   );
 }
 
-function PageHeaderActions({ className, style, ...props }: ComponentProps<"div">) {
+function PageHeaderActions({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div
       data-slot="page-header-actions"

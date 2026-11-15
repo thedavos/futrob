@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 import { typography } from "#styles/typography";
@@ -88,6 +88,7 @@ const styles = stylex.create({
     borderTopStyle: "solid",
     borderTopColor: colors.borderSubtle,
     padding: "0.75rem",
+    paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
   },
   group: {
     display: "flex",
@@ -268,25 +269,41 @@ function Sidebar({ className, style, ...props }: React.ComponentProps<"aside">) 
   );
 }
 
-function SidebarHeader({ className, style, ...props }: React.ComponentProps<"div">) {
+function SidebarHeader({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return (
     <div data-slot="sidebar-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
-function SidebarContent({ className, style, ...props }: React.ComponentProps<"div">) {
+function SidebarContent({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return (
     <div data-slot="sidebar-content" {...applyProps(className, style, styles.content)} {...props} />
   );
 }
 
-function SidebarFooter({ className, style, ...props }: React.ComponentProps<"div">) {
+function SidebarFooter({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return (
     <div data-slot="sidebar-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
 }
 
-function SidebarGroup({ className, style, ...props }: React.ComponentProps<"div">) {
+function SidebarGroup({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
   return (
     <div data-slot="sidebar-group" {...applyProps(className, style, styles.group)} {...props} />
   );

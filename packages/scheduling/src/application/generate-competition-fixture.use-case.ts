@@ -21,7 +21,6 @@ import {
   InvalidFixtureConfiguration,
   type GenerateCompetitionFixtureError,
 } from "../domain/errors/fixture.errors.ts";
-import type { EncounterCreatedEvent } from "../domain/events/encounter-created.event.ts";
 import type { EncounterScheduleRepository } from "../domain/ports/encounter-schedule.repository.ts";
 import type { FixtureOccupancyGuardPort } from "../domain/ports/fixture-editing.ports.ts";
 import type {
@@ -32,7 +31,9 @@ import type {
 import type { OfficialMatchRepository } from "../domain/ports/official-match.repository.ts";
 import { planEncounters } from "../domain/policies/edit-fixture-encounter.ts";
 import { generateFixturePlan } from "../domain/policies/generate-fixture-plan.ts";
+import { defaultSwissRoundCount, maxSwissRoundCount } from "../domain/policies/pair-swiss-round.ts";
 import { ENCOUNTER_PERMISSION } from "../domain/policies/encounter-permissions.ts";
+import { encounterCreatedEvents } from "./encounter-created-events.ts";
 import { projectFixturePlan, unprojectFixturePlan } from "./project-fixture-encounters.ts";
 
 export interface GenerateCompetitionFixtureInput {
@@ -50,6 +51,9 @@ export interface GenerateCompetitionFixtureInput {
   };
   readonly playoffs?: {
     readonly teamCount: number;
+  };
+  readonly swiss?: {
+    readonly rounds: number;
   };
   readonly requestId?: string;
 }
@@ -161,7 +165,12 @@ export class GenerateCompetitionFixtureUseCase {
         await Promise.all(previous.map((plan) => unprojectFixturePlan(this.deps, plan)));
         await projectFixturePlan(this.deps, saved.plan);
         await this.deps.eventPublisher.publishMany(
-          encounterCreatedEvents(saved.plan, this.deps.clock.now(), input.requestId),
+          encounterCreatedEvents(
+            saved.plan,
+            [...planEncounters(saved.plan)],
+            this.deps.clock.now(),
+            input.requestId,
+          ),
         );
       }
       return ok(saved.plan);
@@ -225,6 +234,23 @@ function buildSpec(
     }
   }
 
+  if (input.swiss && source.format !== "swiss") {
+    return invalid("Only a Swiss fixture takes a number of rounds");
+  }
+  let swiss: FixtureGenerationSpec["swiss"];
+  if (source.format === "swiss") {
+    const rounds = input.swiss?.rounds ?? defaultSwissRoundCount(participants.length);
+    if (input.homeAndAway) return invalid("A Swiss fixture has no return legs");
+    if (
+      !Number.isInteger(rounds) ||
+      rounds < 1 ||
+      rounds > maxSwissRoundCount(participants.length)
+    ) {
+      return invalid("Swiss rounds must be between one and half the Teams, rounded up");
+    }
+    swiss = { rounds };
+  }
+
   const spec = {
     organizationId: source.organizationId,
     competitionId: source.competitionId,
@@ -245,6 +271,9 @@ function buildSpec(
   if (input.playoffs) {
     Object.assign(spec, { playoffs: input.playoffs });
   }
+  if (swiss) {
+    Object.assign(spec, { swiss });
+  }
   return spec;
 }
 
@@ -262,36 +291,4 @@ function isIanaTimeZone(value: string): boolean {
   } catch {
     return false;
   }
-}
-
-function encounterCreatedEvents(
-  plan: FixturePlan,
-  occurredAt: Date,
-  correlationId?: string,
-): EncounterCreatedEvent[] {
-  return plan.stages.flatMap((stage) =>
-    stage.rounds.flatMap((round) =>
-      round.encounters.flatMap((encounter) => {
-        if (encounter.home.kind !== "team" || encounter.away.kind !== "team") return [];
-        const event = {
-          eventName: "scheduling.encounter-created" as const,
-          occurredAt: occurredAt.toISOString(),
-          payload: {
-            encounterId: encounter.id,
-            organizationId: plan.organizationId,
-            competitionId: plan.competitionId,
-            stageId: stage.id,
-            roundId: round.id,
-            homeTeamId: encounter.home.teamId,
-            awayTeamId: encounter.away.teamId,
-            scheduledStartAt: encounter.scheduledStartAt.toISOString(),
-          },
-        };
-        if (correlationId === undefined) {
-          return [event];
-        }
-        return [{ ...event, correlationId }];
-      }),
-    ),
-  );
 }

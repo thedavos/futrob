@@ -4,7 +4,6 @@ import type {
   OfficialResultReaderPort,
 } from "@futrob/results";
 import {
-  assertNever,
   ok,
   type ClockPort,
   type CompetitionId,
@@ -21,8 +20,10 @@ import type {
 } from "../../domain/entities/team-match-contribution.ts";
 import type { ProjectOfficialResultError } from "../../domain/errors/project-official-result.errors.ts";
 import type { CompetitionMatchRulesReaderPort } from "../../domain/ports/competition-match-rules-reader.port.ts";
+import type { CompetitionPointDeductionReaderPort } from "../../domain/ports/competition-point-deduction-reader.port.ts";
 import type { CompetitionStandingSnapshotRepository } from "../../domain/ports/competition-standing-snapshot.repository.ts";
 import type { PlayerCompetitionStatsRepository } from "../../domain/ports/player-competition-stats.repository.ts";
+import type { PlayerIdentityResolverPort } from "../../domain/ports/player-identity-resolver.port.ts";
 import type { PlayerMatchContributionRepository } from "../../domain/ports/player-match-contribution.repository.ts";
 import type { PlayerPersonalStatsRepository } from "../../domain/ports/player-personal-stats.repository.ts";
 import type { TeamCompetitionStatsRepository } from "../../domain/ports/team-competition-stats.repository.ts";
@@ -33,8 +34,9 @@ import {
   buildCompetitionStandings,
   DEFAULT_COMPETITION_MATCH_POINTS,
 } from "../../domain/policies/build-competition-standings.ts";
-import type { ProjectOfficialResultUseCase } from "../project-official-result/project-official-result.use-case.ts";
+import { projectOfficialResultContributions } from "../project-official-result/project-official-result-projection.ts";
 import { loadPointsRulesByEncounter } from "../load-points-rules-by-encounter.ts";
+import { officialSlotTimes } from "../official-slot-times.ts";
 import { addMatchedPlayerProfiles, addMatchedTeams } from "../matched-contribution-ids.ts";
 import type {
   TeamPerformanceRankingLockPort,
@@ -56,7 +58,7 @@ export interface RebuildCompetitionStatisticsOutput {
 
 export interface RebuildCompetitionStatisticsDependencies {
   readonly officialResults: OfficialResultReaderPort;
-  readonly projectOfficialResult: Pick<ProjectOfficialResultUseCase, "execute">;
+  readonly identities: PlayerIdentityResolverPort;
   readonly contributions: PlayerMatchContributionRepository;
   readonly competitionStats: PlayerCompetitionStatsRepository;
   readonly personalStats: PlayerPersonalStatsRepository;
@@ -64,6 +66,8 @@ export interface RebuildCompetitionStatisticsDependencies {
   readonly teamCompetitionStats: TeamCompetitionStatsRepository;
   readonly standings: CompetitionStandingSnapshotRepository;
   readonly matchRules: CompetitionMatchRulesReaderPort;
+  /** Active sanction deductions (ADR-0028); absent means none. */
+  readonly pointDeductions?: CompetitionPointDeductionReaderPort;
   readonly encounterReader?: EncounterReaderPort;
   readonly rebuildRankings: Pick<RebuildCompetitionRankingsUseCase, "execute">;
   readonly teamPerformanceLock?: TeamPerformanceRankingLockPort;
@@ -118,24 +122,17 @@ export class RebuildCompetitionStatisticsUseCase {
       let officialResultsProjected = 0;
       let contributionsProjected = 0;
 
+      // Aggregates and standings are rebuilt once below from the full set, not per result.
       for (const officialResult of latestResults) {
-        switch (officialResult.status) {
-          case "approved": {
-            const projected = await this.deps.projectOfficialResult.execute({
-              officialResultId: officialResult.id,
-              rebuildRankings: false,
-              resolutionMode: frozenByEncounter.get(officialResult.encounterId),
-            });
-            if (!projected.isOk()) throw projected.error;
-            officialResultsProjected += 1;
-            contributionsProjected += projected.value.contributionsProjected;
-            break;
-          }
-          case "voided":
-            break;
-          default:
-            assertNever(officialResult.status, "Unsupported official result status");
-        }
+        const projected = await projectOfficialResultContributions(
+          this.deps,
+          officialResult,
+          frozenByEncounter.get(officialResult.encounterId),
+        );
+        await this.deps.contributions.saveMany(projected.players);
+        await this.deps.teamContributions.saveMany(projected.teams);
+        if (officialResult.status === "approved") officialResultsProjected += 1;
+        contributionsProjected += projected.players.length;
       }
 
       const currentPlayers = await this.deps.contributions.listByCompetition(input.competitionId);
@@ -154,7 +151,13 @@ export class RebuildCompetitionStatisticsUseCase {
         currentTeams,
         affectedTeams,
       );
-      await this.rebuildStandings(input.competitionId, previousTeams, currentTeams);
+      await this.rebuildStandings(
+        input.competitionId,
+        input.organizationId,
+        previousTeams,
+        currentTeams,
+        officialSlotTimes(latestResults),
+      );
 
       return ok({
         competitionId: input.competitionId,
@@ -247,10 +250,20 @@ export class RebuildCompetitionStatisticsUseCase {
 
   private async rebuildStandings(
     competitionId: CompetitionId,
+    scopeOrganizationId: OrganizationId | undefined,
     previous: readonly TeamMatchContribution[],
     current: readonly TeamMatchContribution[],
+    occurredAtBySlot: ReadonlyMap<string, Date>,
   ): Promise<void> {
-    const organizationId = current[0]?.organizationId ?? previous[0]?.organizationId;
+    const contributionOrganizationId = current[0]?.organizationId ?? previous[0]?.organizationId;
+    const deductionOrganizationId = contributionOrganizationId ?? scopeOrganizationId;
+    const pointDeductions = deductionOrganizationId
+      ? ((await this.deps.pointDeductions?.listActive(deductionOrganizationId, competitionId)) ??
+        [])
+      : [];
+    // A competition with neither results nor deductions has no table to keep.
+    const organizationId =
+      contributionOrganizationId ?? (pointDeductions.length > 0 ? scopeOrganizationId : undefined);
     if (!organizationId) {
       await this.deps.standings.deleteByCompetition(competitionId);
       return;
@@ -268,6 +281,8 @@ export class RebuildCompetitionStatisticsUseCase {
         contributions: current,
         pointsRules: DEFAULT_COMPETITION_MATCH_POINTS,
         pointsByEncounter,
+        pointDeductions,
+        occurredAtBySlot,
         updatedAt: this.deps.clock.now(),
       }),
     );

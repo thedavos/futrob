@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { asTeamId } from "@futrob/shared-kernel";
 import { describe, expect, it } from "vite-plus/test";
 import {
   buildResult,
@@ -33,7 +34,16 @@ export function defineOfficialResultContract(
       await expect(harness.results.findById(original.id)).resolves.toEqual(original);
       await expect(harness.results.listByEncounter(encounterId)).resolves.toEqual([original]);
 
-      const next = buildResult(tenant, encounterId, actorId, { revision: 2 });
+      // A revision approved with frozen team attribution keeps it; `original` predates it.
+      const legacy = buildResult(tenant, encounterId, actorId);
+      const next = buildResult(tenant, encounterId, actorId, {
+        revision: 2,
+        slots: legacy.slots.map((slot) => ({
+          ...slot,
+          homeTeamId: asTeamId("team-home"),
+          awayTeamId: null,
+        })),
+      });
       await harness.results.append(next);
       await expect(harness.results.findLatestByEncounter(encounterId)).resolves.toEqual(next);
       await expect(harness.results.findApprovedByEncounter(encounterId)).resolves.toEqual(next);

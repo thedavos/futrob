@@ -54,12 +54,6 @@ const styles = stylex.create({
     display: "grid",
     gap: "0.25rem",
   },
-  title: {
-    margin: 0,
-    fontSize: "1.125rem",
-    lineHeight: "1.5rem",
-    fontWeight: 600,
-  },
   muted: {
     margin: 0,
     color: colors.mutedForeground,
@@ -185,7 +179,7 @@ export function InviteTeamLinkTab({
       ) : (
         <>
           <div {...applyStyles(styles.intro)}>
-            <h3 {...applyStyles(styles.title)}>Comparte la invitación</h3>
+            <h3 {...applyStyles(typography.host, typography.title)}>Comparte la invitación</h3>
             <p {...applyStyles(typography.caption, styles.muted)}>
               Envía este enlace por WhatsApp, Discord o donde prefieras.
             </p>

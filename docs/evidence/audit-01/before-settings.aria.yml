@@ -1,0 +1,51 @@
+- link "Saltar al contenido":
+    - /url: "#app-main"
+- complementary "Navegación principal":
+    - button "Sanciones demo"
+    - button "Colapsar barra lateral"
+    - list:
+        - listitem:
+            - link "Inicio":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1
+        - listitem:
+            - link "Competiciones":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions
+        - listitem:
+            - link "Equipos":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/teams
+        - listitem:
+            - link "Jugadores":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/players
+        - listitem:
+            - link "Invitaciones":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/invitations
+        - listitem:
+            - link "Miembros y roles":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings/members
+        - listitem:
+            - link "Plan y uso":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings/plan
+        - listitem:
+            - link "Ajustes":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings
+    - button "Abrir menú de cuenta": SO Sanctions
+- banner:
+    - paragraph: Sanciones demo Organizador
+- main:
+    - heading "Ajustes de la organización" [level=1]
+    - paragraph: Nombre, slug, zona horaria y escudo de tu organización.
+    - text: Nombre de la organización
+    - textbox "Nombre de la organización":
+        - /placeholder: ej. Liga Nocturna
+        - text: Sanciones demo
+    - paragraph: Es el nombre público de tu organización. Debe ser único.
+    - text: Slug
+    - textbox "Slug": sanciones-demo
+    - paragraph: "Identificador único de tu organización: minúsculas, números y guiones."
+    - text: Zona horaria
+    - combobox "Zona horaria": UTC
+    - paragraph: Es la zona inicial de las competiciones nuevas. No cambia las que ya existen.
+    - text: Escudo
+    - paragraph: PNG, JPEG o WebP de hasta 2 MB. Sin escudo se muestra un monograma.
+    - button "Subir escudo"
+    - button "Guardar cambios" [disabled]

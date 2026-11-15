@@ -1,0 +1,12 @@
+
+> futrob@0.1.0 check
+> vp check && npm run lint:tests
+
+pass: All 2682 files are correctly formatted (1534ms, 4 threads)
+pass: Found no warnings, lint errors, or type errors in 1889 files (8.9s, 4 threads)
+
+> futrob@0.1.0 lint:tests
+> oxlint -c tools/oxlint/tests.oxlintrc.json apps packages tools
+
+
+exit=0

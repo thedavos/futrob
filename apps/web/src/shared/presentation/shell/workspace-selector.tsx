@@ -120,6 +120,7 @@ export function WorkspaceSelector({
   onSelect,
   onRequestAddClub,
   onOpen,
+  borderless = false,
 }: {
   readonly selection: WorkspaceSelection;
   readonly model: WorkspaceSelectorModel;
@@ -127,6 +128,7 @@ export function WorkspaceSelector({
   readonly onRequestAddClub: () => void;
   /** Fired when the menu opens, so the shell can warm the next workspace's access. */
   readonly onOpen?: () => void;
+  readonly borderless?: boolean;
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -191,7 +193,12 @@ export function WorkspaceSelector({
       >
         <DropdownMenuTrigger
           render={
-            <Button className={trigger.className} dense style={trigger.style} variant="outline" />
+            <Button
+              className={trigger.className}
+              dense
+              style={borderless ? { ...trigger.style, paddingInline: "0.625rem" } : trigger.style}
+              variant={borderless ? "ghost" : "outline"}
+            />
           }
         >
           <span {...applyStyles(styles.triggerLabel)}>

@@ -1,4 +1,4 @@
-import type { CompetitionFormatDto } from "@futrob/api-contracts";
+import { defaultSwissRounds, type CompetitionFormatDto } from "@futrob/api-contracts";
 import type { Legs } from "./competition-format-copy.ts";
 
 export type FormatEstimate = {
@@ -44,6 +44,12 @@ function leagueThenPlayoffs(teams: number, cycles: number): FormatEstimate {
   return { rounds: league.rounds + final.rounds, encounters: league.encounters + final.encounters };
 }
 
+/** ⌈log₂ n⌉ rounds of ⌊n/2⌋ encounters; an odd field gives one bye each round. */
+function swiss(teams: number): FormatEstimate {
+  const rounds = defaultSwissRounds(teams);
+  return { rounds, encounters: rounds * Math.floor(teams / 2) };
+}
+
 export function estimateFixtureCounts(
   format: CompetitionFormatDto,
   teams: number,
@@ -60,6 +66,8 @@ export function estimateFixtureCounts(
       return groupsAndKnockout(teams, cycles);
     case "league-playoffs":
       return leagueThenPlayoffs(teams, cycles);
+    case "swiss":
+      return swiss(teams);
     default: {
       const _exhaustive: never = format;
       return _exhaustive;

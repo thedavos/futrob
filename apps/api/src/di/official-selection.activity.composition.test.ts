@@ -5,6 +5,7 @@ import { InMemoryProviderMatchRepository } from "@/adapters/game-data/persistenc
 import {
   AWAY,
   AWAY_CAPTAIN,
+  COMPETITION,
   ENCOUNTER,
   HOME,
   HOME_CAPTAIN,
@@ -209,6 +210,29 @@ describe("official selection activity (composition, in-memory stores)", () => {
       status: "closed",
       closedAt: clock.value,
       closedByActorId: null,
+    });
+  });
+
+  it("closes the dispute when a Swiss withdrawal or round close cancels the selection", async () => {
+    const { modules, listed, propose, openDispute } = await seed();
+    await propose();
+    const { input, dispute } = await openDispute();
+    await modules.officialSelection.openDispute.execute(input);
+    expect((await listed(ORGANIZATION, true)).map((row) => row.sourceId)).toEqual([dispute.id]);
+
+    await modules.encounterOpenSelection.cancelOpen({
+      organizationId: ORG,
+      competitionId: COMPETITION,
+      encounterId: ENCOUNTER,
+      actorId: OPERATOR,
+      reason: "Team withdrew",
+    });
+
+    expect(await listed(ORGANIZATION, true)).toEqual([]);
+    expect(await listed(AWAY_TEAM, true)).toEqual([]);
+    expect(await listed(HOME_TEAM, true)).toEqual([]);
+    expect((await listed(ORGANIZATION)).find((row) => row.sourceId === dispute.id)).toMatchObject({
+      status: "closed",
     });
   });
 });

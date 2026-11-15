@@ -1,11 +1,14 @@
+import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import { randomUUID } from "node:crypto";
 import {
   apiErrorSchema,
-  completeOrganizationOnboardingResponseSchema,
   encounterScheduleSnapshotSchema,
   fixturePlanSchema,
+  listActivitiesResponseSchema,
+  listScheduleChangeRequestsResponseSchema,
   scheduleChangeCommandResponseSchema,
   scheduleChangeRequestSchema,
+  type ScheduleChangeRequestDto,
 } from "@futrob/api-contracts";
 import {
   asActorId,
@@ -14,7 +17,8 @@ import {
   asOrganizationId,
   asTeamId,
 } from "@futrob/shared-kernel";
-import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
+import { renderEmail } from "@futrob/notifications";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import { createApp } from "@/app.ts";
 import { createModules } from "@/di/create-modules.ts";
 import {
@@ -40,8 +44,34 @@ const D1 = "2099-01-15T23:00:00.000Z";
 const D2 = "2099-01-16T23:00:00.000Z";
 const limaSix = (day: number) => ({ year: 2099, month: 1, day, hour: 18, minute: 0, second: 0 });
 
+/** A league whose reschedules need both the rival Team and the organizer. */
+const BOTH_APPROVALS_RULES = {
+  regularStage: {
+    officialMatchesPerEncounter: 1,
+    resolutionMode: "independent_matches",
+    winPoints: 3,
+    drawPoints: 1,
+    lossPoints: 0,
+    allowRescheduling: true,
+    maxReschedulesPerTeam: 2,
+    minimumRescheduleNoticeHours: 12,
+    rescheduleProposalExpiryHours: 12,
+    rescheduleRequiresOpponentApproval: true,
+    rescheduleRequiresOrganizerApproval: true,
+  },
+  knockoutStage: null,
+  maxRosterSize: 16,
+};
+
 const requestOf = async (response: Response) =>
   scheduleChangeRequestSchema.parse(await response.json());
+/** The request as stored; create responses leave the reader's capabilities empty. */
+const stateOf = (request: ScheduleChangeRequestDto): ScheduleChangeRequestDto => ({
+  ...request,
+  allowedActions: [],
+  respondAs: null,
+  blockedActions: [],
+});
 const commandOf = async (response: Response) =>
   scheduleChangeCommandResponseSchema.parse(await response.json());
 const failureOf = async (response: Response) => ({
@@ -67,7 +97,10 @@ describe.each([
   }, TIMEOUT_MS);
 
   /** One organization, one Team vs Team Encounter at D0, and a session per actor. */
-  async function seed(format: "league" | "knockout" = "league") {
+  async function seed(
+    format: "league" | "knockout" = "league",
+    approvals: { readonly organizer: boolean } = { organizer: false },
+  ) {
     const tag = randomUUID().slice(0, 8);
     const actors = {
       organizer: `actor-organizer-${tag}`,
@@ -75,6 +108,7 @@ describe.each([
       awayCaptain: `actor-away-captain-${tag}`,
       awayPlayer: `actor-away-player-${tag}`,
       stranger: `actor-stranger-${tag}`,
+      system: `actor-system-${tag}`,
     };
     if (isolated) await seedActors(isolated.pool, ...Object.values(actors));
     let now = new Date("2026-10-01T12:00:00.000Z");
@@ -90,24 +124,38 @@ describe.each([
       internalJobSecret: INTERNAL_JOB_SECRET,
       correlationLogger: { info: () => undefined, error: () => undefined },
     });
-    const send = (actorId: string, method: "GET" | "POST", path: string, body?: unknown) =>
+    const send = (
+      actorId: string,
+      method: "GET" | "POST" | "PATCH",
+      path: string,
+      body?: unknown,
+    ) =>
       app.request(`/api/v1${path}`, {
         method,
         headers: serviceHeaders(actorId),
         body: body === undefined ? undefined : JSON.stringify(body),
       });
 
-    const onboarded = await parseResponse(
-      completeOrganizationOnboardingResponseSchema,
-      await send(actors.organizer, "POST", "/identity/onboarding/organization", {
+    const onboarded = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders(actors.organizer),
+      body: JSON.stringify({
         name: `Reschedule ${tag}`,
         competition: { ...onboardingCompetition, format },
         gameAccount: null,
       }),
-    );
+    });
     const organizationId = onboarded.organizationId;
     const competitionId = onboarded.competition.competition.id;
     const competitionPath = `/organizations/${organizationId}/competitions/${competitionId}`;
+    if (approvals.organizer) {
+      const patched = await send(actors.organizer, "PATCH", competitionPath, {
+        ...onboardingCompetition,
+        format,
+        rules: BOTH_APPROVALS_RULES,
+      });
+      expect(patched.status).toBe(200);
+    }
     for (const name of ["Alpha", "Beta"]) {
       const added = await send(actors.organizer, "POST", `${competitionPath}/participants`, {
         kind: "new-team",
@@ -211,6 +259,64 @@ describe.each([
   }
 
   it.skipIf(skip)(
+    "lists what the session actor may do with each request and with a new one",
+    async () => {
+      const flow = await seed();
+      const created = await flow.create(15);
+      const listAs = async (actorId: string) =>
+        listScheduleChangeRequestsResponseSchema.parse(
+          await (await flow.send(actorId, "GET", flow.requestsPath)).json(),
+        );
+      const capabilitiesOf = (list: Awaited<ReturnType<typeof listAs>>) =>
+        list.requests.map(({ id, allowedActions, respondAs, blockedActions }) => ({
+          id,
+          allowedActions,
+          respondAs,
+          blockedActions,
+        }));
+      const every = (reason: string) =>
+        ["accept", "reject", "counter"].map((action) => ({ action, reason }));
+
+      const rival = await listAs(flow.actors.awayCaptain);
+      expect(capabilitiesOf(rival)).toEqual([
+        {
+          id: created.id,
+          allowedActions: ["accept", "reject", "counter"],
+          respondAs: { authority: "rival_team", teamId: flow.away },
+          blockedActions: [],
+        },
+      ]);
+      expect(rival.creation.blockedReason).toBeNull();
+      expect(rival.creation.teams).toEqual([{ teamId: flow.away, blockedReason: null }]);
+      expect(rival.creation.scopes[0]).toEqual({
+        scope: { type: "entire_encounter" },
+        currentStartAt: D0,
+        blockedReason: "active_request_exists",
+      });
+
+      expect(capabilitiesOf(await listAs(flow.actors.homeCaptain))).toEqual([
+        {
+          id: created.id,
+          allowedActions: [],
+          respondAs: null,
+          blockedActions: every("own_proposal"),
+        },
+      ]);
+
+      const player = await listAs(flow.actors.awayPlayer);
+      expect(capabilitiesOf(player)).toEqual([
+        {
+          id: created.id,
+          allowedActions: [],
+          respondAs: null,
+          blockedActions: every("permission"),
+        },
+      ]);
+      expect(player.creation).toMatchObject({ blockedReason: "permission", teams: [] });
+    },
+  );
+
+  it.skipIf(skip)(
     "returns notice anchors through HTTP and preserves state until an exact-boundary retry",
     async () => {
       const flow = await seed();
@@ -235,8 +341,10 @@ describe.each([
         details: { anchor: "current" },
       });
       expect(
-        await (await flow.send(flow.actors.homeCaptain, "GET", flow.requestsPath)).json(),
-      ).toEqual({ requests: [] });
+        listScheduleChangeRequestsResponseSchema.parse(
+          await (await flow.send(flow.actors.homeCaptain, "GET", flow.requestsPath)).json(),
+        ).requests,
+      ).toEqual([]);
       expect((await flow.snapshot()).scheduledStartAt).toBe("2099-01-10T23:00:00.000Z");
 
       flow.setNow("2099-01-10T11:00:00.000Z");
@@ -267,9 +375,11 @@ describe.each([
         details: { anchor: "current" },
       });
       expect(
-        await (
-          await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`)
-        ).json(),
+        stateOf(
+          await requestOf(
+            await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`),
+          ),
+        ),
       ).toEqual(created);
       expect((await flow.snapshot()).scheduledStartAt).toBe("2099-01-10T23:00:00.000Z");
 
@@ -325,9 +435,11 @@ describe.each([
         details: { anchor: "proposed" },
       });
       expect(
-        await (
-          await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`)
-        ).json(),
+        stateOf(
+          await requestOf(
+            await flow.send(flow.actors.homeCaptain, "GET", `${flow.requestsPath}/${created.id}`),
+          ),
+        ),
       ).toEqual(created);
       flow.setNow("2099-01-09T12:00:00.000Z");
       const counterResponse = await flow.command(
@@ -860,6 +972,328 @@ describe.each([
         scheduledStartAt: D1,
         officialMatches: [{ officialSlot: 1, scheduledStartAt: D1 }],
       });
+    },
+  );
+  it.skipIf(skip)(
+    "projects the negotiation onto the activity feed: counter, escalation and the organizer decision",
+    async () => {
+      const { actors, away, home, modules, send, create, command, setTime } = await seed();
+      const feedOf = async (path: string, actorId: string) =>
+        parseResponse(listActivitiesResponseSchema, await send(actorId, "GET", path));
+      const negotiation = async (actorId: string, organizationId: string, scope: "org" | "me") => {
+        const path =
+          scope === "org"
+            ? `/organizations/${organizationId}/activities`
+            : "/players/me/activities";
+        const { activities } = await feedOf(path, actorId);
+        return activities
+          .filter((row) => row.kind === "schedule_change" || row.kind === "organizer_decision")
+          .map((row) => ({
+            kind: row.kind,
+            audience: row.audience,
+            status: row.status,
+            requiresAction: row.requiresAction,
+            outcome: row.subject.outcome,
+          }));
+      };
+
+      const created = await create(15);
+      const orgId = created.organizationId;
+      expect(await negotiation(actors.awayCaptain, orgId, "me")).toEqual([
+        {
+          kind: "schedule_change",
+          audience: "team",
+          status: "open",
+          requiresAction: true,
+          outcome: null,
+        },
+      ]);
+      expect(await negotiation(actors.homeCaptain, orgId, "me")).toEqual([]);
+      expect(await negotiation(actors.organizer, orgId, "org")).toEqual([
+        {
+          kind: "schedule_change",
+          audience: "organization",
+          status: "open",
+          requiresAction: false,
+          outcome: null,
+        },
+      ]);
+
+      // A counter moves the question to the other Team and closes the first proposal.
+      const countered = await command(
+        actors.awayCaptain,
+        created,
+        created.currentProposalId,
+        "counter",
+        {
+          expectedVersion: 1,
+          commandKey: "feed-counter",
+          teamId: away,
+          proposedWallTime: limaSix(16),
+          reason: "Away travel conflict",
+        },
+      );
+      expect(countered.status).toBe(200);
+      const proposalId = (await commandOf(countered)).request.currentProposalId;
+      expect(await negotiation(actors.awayCaptain, orgId, "me")).toMatchObject([
+        { status: "closed", requiresAction: true },
+      ]);
+      expect(await negotiation(actors.homeCaptain, orgId, "me")).toMatchObject([
+        { status: "open", requiresAction: true },
+      ]);
+
+      // Nobody answered in time: the organizer must decide, and the Teams are told.
+      setTime("2026-10-02T12:00:01.000Z");
+      const expired = await modules.activityCommands.expireScheduleChangeProposal.execute({
+        actorId: asActorId(actors.organizer),
+        organizationId: asOrganizationId(orgId),
+        encounterId: asEncounterId(created.encounterId),
+        requestId: created.id,
+      });
+      expect(expired.isOk() && expired.value.status).toBe("escalated");
+      expect(await negotiation(actors.homeCaptain, orgId, "me")).toMatchObject([
+        { status: "closed" },
+      ]);
+      const escalated = await negotiation(actors.organizer, orgId, "org");
+      expect(escalated.filter((row) => row.status === "open")).toEqual([
+        {
+          kind: "schedule_change",
+          audience: "organization",
+          status: "open",
+          requiresAction: true,
+          outcome: null,
+        },
+      ]);
+      const pendingForOrganizer = await feedOf(
+        `/organizations/${orgId}/activities?status=open&requiresAction=true`,
+        actors.organizer,
+      );
+      expect(pendingForOrganizer.activities.map((row) => row.kind)).toEqual(["schedule_change"]);
+
+      const resolve = (commandKey: string) =>
+        send(
+          actors.organizer,
+          "POST",
+          `/encounters/${created.encounterId}/schedule-change-requests/${created.id}/resolve`,
+          {
+            proposalId,
+            expectedVersion: 3,
+            commandKey,
+            resolution: { outcome: "schedule_kept", reason: "Keep the agreed fixture" },
+          },
+        );
+      expect((await resolve("feed-resolve")).status).toBe(200);
+      expect((await resolve("feed-resolve")).status).toBe(200);
+
+      const decided = {
+        kind: "organizer_decision",
+        status: "closed",
+        requiresAction: false,
+        outcome: "schedule_kept",
+      };
+      expect(await negotiation(actors.homeCaptain, orgId, "me")).toContainEqual({
+        ...decided,
+        audience: "team",
+      });
+      expect(await negotiation(actors.awayCaptain, orgId, "me")).toContainEqual({
+        ...decided,
+        audience: "team",
+      });
+      const closed = await negotiation(actors.organizer, orgId, "org");
+      expect(closed.filter((row) => row.kind === "organizer_decision")).toEqual([
+        { ...decided, audience: "organization" },
+      ]);
+      expect(closed.filter((row) => row.status === "open")).toEqual([]);
+      expect(home).not.toBe(away);
+    },
+  );
+  /** Open `schedule_change` rows waiting on one reader, as `audience:requiresAction`. */
+  async function pendingReschedules(
+    send: (actorId: string, method: "GET", path: string) => Response | Promise<Response>,
+    actorId: string,
+    path: string,
+  ) {
+    const { activities } = await parseResponse(
+      listActivitiesResponseSchema,
+      await send(actorId, "GET", `${path}?status=open&requiresAction=true`),
+    );
+    return activities
+      .filter((row) => row.kind === "schedule_change")
+      .map((row) => `${row.audience}:${row.resourceId}`);
+  }
+
+  it.skipIf(skip || !postgres)(
+    "rolls back an accepted reschedule and its activity when the fixture update conflicts",
+    async () => {
+      const { actors, away, modules, send, requestsPath, create, command, snapshot } = await seed();
+      const created = await create(15);
+      const mine = (actorId: string) => pendingReschedules(send, actorId, "/players/me/activities");
+      expect(await mine(actors.awayCaptain)).toHaveLength(1);
+
+      const conflict = vi
+        .spyOn(modules.scheduling.fixturePlans, "updateEncounter")
+        .mockResolvedValueOnce(null);
+      const body = {
+        expectedVersion: 1,
+        commandKey: "accept-after-conflict",
+        responder: { authority: "rival_team", teamId: away },
+      };
+      const failed = await command(
+        actors.awayCaptain,
+        created,
+        created.currentProposalId,
+        "accept",
+        body,
+      );
+      expect(await failureOf(failed)).toMatchObject({ code: "scheduling.fixture_update_conflict" });
+      conflict.mockRestore();
+
+      const stored = await requestOf(
+        await send(actors.organizer, "GET", `${requestsPath}/${created.id}`),
+      );
+      expect({ status: stored.status, version: stored.version }).toEqual({
+        status: "open",
+        version: 1,
+      });
+      expect((await snapshot()).scheduledStartAt).toBe(D0);
+      expect(await mine(actors.awayCaptain)).toHaveLength(1);
+
+      // Nothing of the failed attempt survived, so the same command applies cleanly.
+      const retried = await command(
+        actors.awayCaptain,
+        created,
+        created.currentProposalId,
+        "accept",
+        body,
+      );
+      expect(retried.status).toBe(200);
+      expect((await commandOf(retried)).replayed).toBe(false);
+      expect((await snapshot()).scheduledStartAt).toBe(D1);
+      expect(await mine(actors.awayCaptain)).toEqual([]);
+    },
+  );
+
+  it.skipIf(skip)(
+    "keeps the escalation pending when an earlier counter-proposal is replayed",
+    async () => {
+      const { actors, away, modules, send, create, command, setTime } = await seed();
+      const created = await create(15);
+      const orgPending = () =>
+        pendingReschedules(
+          send,
+          actors.organizer,
+          `/organizations/${created.organizationId}/activities`,
+        );
+      const counterBody = {
+        expectedVersion: 1,
+        commandKey: "counter-before-expiry",
+        teamId: away,
+        proposedWallTime: limaSix(16),
+        reason: "Away travel conflict",
+      };
+      const counter = () =>
+        command(actors.awayCaptain, created, created.currentProposalId, "counter", counterBody);
+      expect((await counter()).status).toBe(200);
+
+      setTime("2026-10-02T12:00:01.000Z");
+      const expired = await modules.activityCommands.expireScheduleChangeProposal.execute({
+        actorId: asActorId(actors.system),
+        organizationId: asOrganizationId(created.organizationId),
+        encounterId: asEncounterId(created.encounterId),
+        requestId: created.id,
+      });
+      expect(expired.isOk() && expired.value.status).toBe("escalated");
+      expect(await orgPending()).toEqual([`organization:${created.encounterId}`]);
+
+      // The organizer is emailed to resolve the expired request, not to answer a proposal.
+      const [escalation, ...others] = await modules.notifications.email.outbox.listByEvent(
+        `activity:schedule_change_escalation:${created.id}`,
+      );
+      expect(others).toEqual([]);
+      expect(escalation).toMatchObject({
+        recipientActorId: actors.organizer,
+        intent: { template: "reschedule", requiresAction: true, escalated: true },
+      });
+      const render = (locale: "es" | "en") =>
+        escalation &&
+        renderEmail({
+          intent: escalation.intent,
+          locale,
+          recipientName: "Orga",
+          webBaseUrl: "https://futrob.test",
+          unsubscribeUrl: "https://futrob.test/email/unsubscribe",
+          oneClickUnsubscribeUrl: "https://futrob.test/api/v1/public/email/unsubscribe",
+        });
+      const es = render("es");
+      expect(es?.subject).toMatch(/^Reprogramación sin respuesta: /);
+      expect(es?.text).toContain("venció sin respuesta.");
+      expect(es?.text).toContain("resuelve tú la solicitud.");
+      expect(es?.text).not.toContain("Hay una nueva fecha propuesta");
+      expect(es?.text).toContain("Decidir reprogramación: https://futrob.test/orgs/");
+      const en = render("en");
+      expect(en?.subject).toMatch(/^Reschedule not answered: /);
+      expect(en?.text).toContain("expired without an answer.");
+      expect(en?.text).toContain("resolve the request yourself.");
+      expect(en?.text).not.toContain("before the deadline");
+
+      const replayed = await counter();
+      expect(replayed.status).toBe(200);
+      expect((await commandOf(replayed)).replayed).toBe(true);
+      expect(await orgPending()).toEqual([`organization:${created.encounterId}`]);
+    },
+  );
+
+  it.skipIf(skip)(
+    "asks only the authority still missing once the other consented, in either order",
+    async () => {
+      for (const first of ["rival_team", "organizer"] as const) {
+        const { actors, away, send, create, command } = await seed("league", { organizer: true });
+        const created = await create(15);
+        const orgPending = () =>
+          pendingReschedules(
+            send,
+            actors.organizer,
+            `/organizations/${created.organizationId}/activities`,
+          );
+        const rivalPending = () =>
+          pendingReschedules(send, actors.awayCaptain, "/players/me/activities");
+        expect(await orgPending()).toHaveLength(1);
+        expect(await rivalPending()).toHaveLength(1);
+
+        const consent = (authority: "rival_team" | "organizer") =>
+          command(
+            authority === "rival_team" ? actors.awayCaptain : actors.organizer,
+            created,
+            created.currentProposalId,
+            "accept",
+            {
+              expectedVersion: authority === first ? 1 : 2,
+              commandKey: `consent-${authority}`,
+              responder:
+                authority === "rival_team"
+                  ? { authority: "rival_team", teamId: away }
+                  : { authority: "organizer" },
+            },
+          );
+        const firstConsent = await consent(first);
+        expect(firstConsent.status).toBe(200);
+        expect((await commandOf(firstConsent)).request.status).toBe("open");
+        const stillAsked = first === "rival_team" ? orgPending : rivalPending;
+        const answered = first === "rival_team" ? rivalPending : orgPending;
+        expect(await answered()).toEqual([]);
+        expect(await stillAsked()).toHaveLength(1);
+
+        // A retry of the same consent changes nothing.
+        expect((await consent(first)).status).toBe(200);
+        expect(await answered()).toEqual([]);
+        expect(await stillAsked()).toHaveLength(1);
+
+        const second = await consent(first === "rival_team" ? "organizer" : "rival_team");
+        expect(second.status).toBe(200);
+        expect((await commandOf(second)).request.status).toBe("accepted");
+        expect(await orgPending()).toEqual([]);
+        expect(await rivalPending()).toEqual([]);
+      }
     },
   );
 });

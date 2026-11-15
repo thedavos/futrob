@@ -9,6 +9,7 @@ export async function requestBrowserJson<T>(input: {
   readonly path: string;
   readonly method: "GET" | "PATCH" | "POST" | "PUT" | "DELETE";
   readonly body?: unknown;
+  readonly signal?: AbortSignal;
   readonly schema: z.ZodType<T>;
   readonly fallbackCode: string;
   readonly createError: (
@@ -23,6 +24,7 @@ export async function requestBrowserJson<T>(input: {
 }): Promise<T> {
   const response = await fetch(input.path, {
     method: input.method,
+    signal: input.signal,
     credentials: "include",
     headers:
       input.body === undefined

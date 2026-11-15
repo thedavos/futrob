@@ -85,7 +85,7 @@ export const SignupFieldValidation: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Crear cuenta" }));
 
     const requiredMessages = canvas.getAllByText("Este campo es obligatorio.");
-    await expect(requiredMessages).toHaveLength(3);
+    await expect(requiredMessages).toHaveLength(4);
     for (const message of requiredMessages) {
       const fieldError = message.closest('[data-slot="field-error"]');
       await expect(fieldError).not.toBeNull();
@@ -149,6 +149,7 @@ export const SignupServerError: Story = {
     await userEvent.type(name, "Ana Pérez");
     await userEvent.clear(email);
     await userEvent.type(email, "ya-existe@ejemplo.com");
+    await userEvent.type(canvas.getByLabelText("Repetir contraseña"), "clave1234");
     await userEvent.clear(password);
     await userEvent.type(password, "clave1234");
     await userEvent.click(canvas.getByRole("button", { name: "Crear cuenta" }));
@@ -221,5 +222,29 @@ export const LoginServerError: Story = {
 
     const alert = await canvas.findByRole("alert");
     await expect(alert).toHaveTextContent("El correo o la contraseña no son correctos.");
+  },
+};
+
+export const SignupPasswordConfirmation: Story = {
+  name: "Signup / Password confirmation",
+  render: () => <AuthRouterDecorator initialPath="/signup" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const password = canvas.getByLabelText("Contraseña");
+    const confirmation = canvas.getByLabelText("Repetir contraseña");
+    await userEvent.type(password, "clave1234");
+    await userEvent.type(confirmation, "otra1234");
+    await userEvent.click(canvas.getByLabelText("Nombre completo"));
+    await expect(await canvas.findByText("Las contraseñas no coinciden.")).toBeVisible();
+    await userEvent.clear(confirmation);
+    await userEvent.type(confirmation, "clave1234");
+    await waitFor(() =>
+      expect(canvas.queryByText("Las contraseñas no coinciden.")).not.toBeInTheDocument(),
+    );
+    await userEvent.type(password, "5");
+    await expect(await canvas.findByText("Las contraseñas no coinciden.")).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Mostrar contraseña repetida" }));
+    await expect(confirmation).toHaveAttribute("type", "text");
+    await expect(password).toHaveAttribute("type", "password");
   },
 };

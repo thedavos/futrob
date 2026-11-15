@@ -28,7 +28,7 @@ function props(
     canGoBack: false,
     canContinue: true,
     canSave: true,
-    saving: false,
+    saving: null,
     busy: false,
     onBack: noop,
     onSave: noop,

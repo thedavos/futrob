@@ -6,29 +6,16 @@ import {
   completePlayerOnboardingResponseSchema,
   getOnboardingStatusResponseSchema,
   saveOnboardingProgressResponseSchema,
-  type OnboardingPathDto,
-  type PlayerGameAccountInputDto,
 } from "@futrob/api-contracts";
-import { CompetitionNotFound } from "@futrob/competitions";
 import { InvitationInvalid } from "@futrob/organizations";
 import { organizationProfileDto } from "./organization-dto.ts";
-import type { ExternalClub } from "@futrob/game-data";
-import type {
-  AddPlayerGameAccountError,
-  PlayerExternalClubAssociation,
-  PlayerGameAccount,
-  PlayerProfile,
-} from "@futrob/teams";
 import type { AppDeps } from "@/app.ts";
-import { apiErrorResponse, failureToHttp, isHttpMappableFailure } from "@/http/errors.ts";
-import { TaggedError } from "@futrob/shared-kernel";
-import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
+import { failureToHttp } from "@/http/errors.ts";
 import {
   playerExternalClubAssociationDto,
   playerGameAccountDto,
   playerProfileDto,
 } from "@/http/mappers/player.ts";
-import { competitionDraftDto } from "@/http/mappers/competition.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
   completeInvitationOnboardingRoute,
@@ -41,7 +28,7 @@ import {
 import { jsonResponse } from "@/utils/http-response.ts";
 
 export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
-  const { competitions, gameData, identity, organizations, teams, transaction } = deps.modules;
+  const { competitions, identity, onboardingCompletion, organizations } = deps.modules;
   const secured = createServiceOpenApiRouter(deps.internalJobSecret);
 
   secured.openapi(getOnboardingStatusRoute, async (c) => {
@@ -71,115 +58,54 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
 
   secured.openapi(completeOrganizationOnboardingRoute, async (c) => {
     const parsed = c.req.valid("json");
-    const actorId = c.get("actorId");
-    const conflict = await onboardingPathConflict(identity, actorId, "organization");
-    if (conflict) return conflict;
-
-    try {
-      const body = await transaction.runInTransaction(async () => {
-        const result = await organizations.createOrganization.execute({
-          name: parsed.name,
-          actorId,
-          timeZone: parsed.competition.timeZone,
-          creationKey: `onboarding:organization:${actorId}`,
-        });
-        if (!result.isOk()) throw result.error;
-
-        const competition = await competitions.createDraft.execute({
-          organizationId: result.value.organization.id,
-          actorId,
-          ...parsed.competition,
-          creationKey: `onboarding:competition:${actorId}`,
-        });
-        if (!competition.isOk()) throw competition.error;
-
-        const player = await ensurePlayer(teams, actorId, parsed.gameAccount ?? null);
-        if (!player.ok) throw player.error;
-
-        await identity.completeOnboarding.execute({ actorId, path: "organization" });
-        return completeOrganizationOnboardingResponseSchema.parse({
-          ...organizationProfileDto(result.value.organization),
-          role: result.value.role,
-          competition: competitionDraftDto(competition.value),
-          profile: playerProfileDto(player.profile),
-          gameAccount: player.gameAccount ? playerGameAccountDto(player.gameAccount) : null,
-          destination: {
-            kind: "competition-setup",
-            organizationId: result.value.organization.id,
-            competitionId: competition.value.competition.id,
-          },
-        });
-      });
-      return jsonResponse(body);
-    } catch (error) {
-      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
-        return failureToHttp(error);
-      }
-      throw error;
-    }
+    const completed = await onboardingCompletion.completeOrganization({
+      actorId: c.get("actorId"),
+      name: parsed.name,
+      timeZone: parsed.timeZone,
+      gameAccount: parsed.gameAccount ?? null,
+    });
+    if (!completed.isOk()) return failureToHttp(completed.error);
+    const { organization, profile, gameAccount } = completed.value;
+    return jsonResponse(
+      completeOrganizationOnboardingResponseSchema.parse({
+        ...organizationProfileDto(organization.organization),
+        role: organization.role,
+        profile: playerProfileDto(profile),
+        gameAccount: gameAccount ? playerGameAccountDto(gameAccount) : null,
+        destination: {
+          kind: "organization",
+          organizationId: organization.organization.id,
+        },
+      }),
+    );
   });
 
   secured.openapi(completeInvitationOnboardingRoute, async (c) => {
     const parsed = c.req.valid("json");
-    const actorId = c.get("actorId");
-    const conflict = await onboardingPathConflict(identity, actorId, "invitation");
-    if (conflict) return conflict;
-
-    try {
-      const body = await transaction.runInTransaction(async () => {
-        const result = await organizations.acceptInvitation.execute({
-          token: parsed.token,
-          actorId,
-          requireCompetition: true,
-        });
-        if (!result.isOk()) throw result.error;
-
-        const competitionId = result.value.competitionId!;
-        const competition = await competitions.getDraft.execute({
-          organizationId: result.value.organizationId,
+    const completed = await onboardingCompletion.completeInvitation({
+      actorId: c.get("actorId"),
+      token: parsed.token,
+      gameAccount: parsed.gameAccount ?? null,
+    });
+    if (!completed.isOk()) return failureToHttp(completed.error);
+    const { invitation, competitionId, competitionName, profile, gameAccount } = completed.value;
+    return jsonResponse(
+      completeInvitationOnboardingResponseSchema.parse({
+        organizationId: invitation.organizationId,
+        organizationName: invitation.organizationName,
+        role: invitation.role,
+        competitionRole: invitation.competitionRole,
+        competitionId,
+        competitionName,
+        profile: playerProfileDto(profile),
+        gameAccount: gameAccount ? playerGameAccountDto(gameAccount) : null,
+        destination: {
+          kind: "competition",
+          organizationId: invitation.organizationId,
           competitionId,
-        });
-        if (!competition) {
-          throw new CompetitionNotFound({
-            code: "competitions.not_found",
-            message: "Competition not found",
-          });
-        }
-        const joined = await competitions.join.execute({
-          organizationId: result.value.organizationId,
-          competitionId,
-          actorId,
-          role: result.value.competitionRole!,
-        });
-        if (!joined.isOk()) throw joined.error;
-
-        const player = await ensurePlayer(teams, actorId, parsed.gameAccount ?? null);
-        if (!player.ok) throw player.error;
-
-        await identity.completeOnboarding.execute({ actorId, path: "invitation" });
-        return completeInvitationOnboardingResponseSchema.parse({
-          organizationId: result.value.organizationId,
-          organizationName: result.value.organizationName,
-          role: result.value.role,
-          competitionRole: result.value.competitionRole,
-          competitionId,
-          competitionName: competition.competition.name,
-          profile: playerProfileDto(player.profile),
-          gameAccount: player.gameAccount ? playerGameAccountDto(player.gameAccount) : null,
-          destination: {
-            kind: "competition",
-            organizationId: result.value.organizationId,
-            competitionId,
-          },
-        });
-      });
-      return jsonResponse(body);
-    } catch (error) {
-      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
-        return failureToHttp(error);
-      }
-      throw error;
-    }
+        },
+      }),
+    );
   });
 
   secured.openapi(inspectCompetitionInvitationRoute, async (c) => {
@@ -212,96 +138,23 @@ export function registerOnboardingRoutes(app: Hono, deps: AppDeps): void {
 
   secured.openapi(completePlayerOnboardingRoute, async (c) => {
     const parsed = c.req.valid("json");
-    const actorId = c.get("actorId");
-    const conflict = await onboardingPathConflict(identity, actorId, "player");
-    if (conflict) return conflict;
-
-    const locator = parsed.externalClub ?? null;
-    let resolvedClub: ExternalClub | null = null;
-    if (locator) {
-      const resolved = await gameData.getExternalClub.execute(locator.providerKey, {
-        externalClubId: locator.externalClubId,
-        platform: locator.platform,
-        gameEdition: locator.gameEdition,
-      });
-      if (!resolved.isOk()) return failureToHttp(resolved.error);
-      resolvedClub = resolved.value;
-    }
-
-    try {
-      const body = await transaction.runInTransaction(async () => {
-        const player = await ensurePlayer(teams, actorId, parsed.gameAccount ?? null);
-        if (!player.ok) throw player.error;
-
-        let externalClubs: PlayerExternalClubAssociation[] = [];
-        if (resolvedClub) {
-          const associated = await teams.associatePlayerExternalClub.execute({
-            playerProfileId: player.profile.id,
-            club: resolvedClub,
-          });
-          if (!associated.isOk()) throw associated.error;
-        }
-        const details = await teams.getPlayerProfile.execute({ actorId });
-        externalClubs = [...details.externalClubs];
-
-        await identity.completeOnboarding.execute({ actorId, path: "player" });
-        return completePlayerOnboardingResponseSchema.parse({
-          profile: playerProfileDto(player.profile),
-          gameAccount: player.gameAccount ? playerGameAccountDto(player.gameAccount) : null,
-          externalClubs: externalClubs.map(playerExternalClubAssociationDto),
-          destination: "personal",
-        });
-      });
-      return jsonResponse(body);
-    } catch (error) {
-      if (TaggedError.is(error) && isHttpMappableFailure(error)) {
-        return failureToHttp(error);
-      }
-      throw error;
-    }
+    const completed = await onboardingCompletion.completePlayer({
+      actorId: c.get("actorId"),
+      gameAccount: parsed.gameAccount ?? null,
+      externalClub: parsed.externalClub ?? null,
+    });
+    if (!completed.isOk()) return failureToHttp(completed.error);
+    const { profile, gameAccount, externalClubs, externalClubAssociation } = completed.value;
+    return jsonResponse(
+      completePlayerOnboardingResponseSchema.parse({
+        profile: playerProfileDto(profile),
+        gameAccount: gameAccount ? playerGameAccountDto(gameAccount) : null,
+        externalClubs: externalClubs.map(playerExternalClubAssociationDto),
+        externalClubAssociation,
+        destination: "personal",
+      }),
+    );
   });
 
   app.route("/", secured);
-}
-
-type EnsurePlayerResult =
-  | {
-      readonly ok: true;
-      readonly profile: PlayerProfile;
-      readonly gameAccount: PlayerGameAccount | null;
-    }
-  | {
-      readonly ok: false;
-      readonly error: AddPlayerGameAccountError;
-    };
-
-async function ensurePlayer(
-  teams: AppDeps["modules"]["teams"],
-  actorId: ServiceAuthVariables["actorId"],
-  gameAccountInput: PlayerGameAccountInputDto | null,
-): Promise<EnsurePlayerResult> {
-  const profile = await teams.ensurePlayerProfile.execute({ actorId });
-  if (!gameAccountInput) return { ok: true, profile, gameAccount: null };
-  const added = await teams.addPlayerGameAccount.execute({
-    playerProfileId: profile.id,
-    ...gameAccountInput,
-  });
-  return added.isOk()
-    ? { ok: true, profile, gameAccount: added.value }
-    : { ok: false, error: added.error };
-}
-
-async function onboardingPathConflict(
-  identity: AppDeps["modules"]["identity"],
-  actorId: ServiceAuthVariables["actorId"],
-  requestedPath: OnboardingPathDto,
-): Promise<Response | null> {
-  const status = await identity.getOnboardingStatus.execute({ actorId });
-  if (!status.completed || status.path === requestedPath) return null;
-
-  return apiErrorResponse(409, {
-    code: "identity.onboarding_path_conflict",
-    messageKey: "errors.identity.onboarding_path_conflict",
-    details: { completedPath: status.path ?? undefined, requestedPath },
-  });
 }

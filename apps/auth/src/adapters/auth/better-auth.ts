@@ -1,4 +1,5 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, type BetterAuthOptions } from "better-auth";
+import { isAPIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, customSession } from "better-auth/plugins";
 import type { ActorProvisionerPort } from "@futrob/identity";
@@ -11,17 +12,51 @@ import {
   credentialSubject,
   findActorIdForSubject,
 } from "./actor-provisioner.ts";
+import { syncCredentialUserContact } from "./actor-contact-profile.ts";
+import type { AuthMailPort } from "../mail/auth-mail.port.ts";
+import { LogAuthMail } from "../mail/log-auth-mail.ts";
 
 export type { AuthEnv };
 
-export function createActorProvisioningHooks(actorProvisioner: ActorProvisionerPort) {
+export interface ActorContactSync {
+  syncCredentialUser(userId: string): Promise<void>;
+}
+
+export function createActorProvisioningHooks(
+  actorProvisioner: ActorProvisionerPort,
+  contacts?: ActorContactSync,
+) {
   return {
     session: {
       create: {
         before: async (session: { readonly userId: string }) => {
           await actorProvisioner.ensureActorForSubject(credentialSubject(session.userId));
+          await contacts?.syncCredentialUser(session.userId);
         },
       },
+    },
+    user: {
+      update: {
+        after: async (user: { readonly id: string }) => {
+          await contacts?.syncCredentialUser(user.id);
+        },
+      },
+    },
+  };
+}
+
+/**
+ * Better Auth turns endpoint exceptions into HTTP responses without rethrowing,
+ * so the worker's outer catch never sees them. Report only defects: 4xx
+ * `APIError`s (bad credentials, rate limits) are expected responses.
+ */
+export function createAuthErrorHandler(
+  reportDefect: (cause: Error) => void,
+): NonNullable<BetterAuthOptions["onAPIError"]> {
+  return {
+    onError: (error) => {
+      if (isAPIError(error) && error.statusCode < 500) return;
+      reportDefect(error instanceof Error ? error : new Error("auth.endpoint.failed"));
     },
   };
 }
@@ -42,6 +77,9 @@ export function createAuth(input: {
   readonly clock: ClockPort;
   readonly ids: IdGeneratorPort;
   readonly actorProvisioner?: ActorProvisionerPort;
+  /** Overrides the adapter chosen by `AUTH_EMAIL_DELIVERY`; tests capture links with it. */
+  readonly mail?: AuthMailPort;
+  readonly reportDefect: (cause: Error) => void;
 }) {
   if (input.env.BETTER_AUTH_SECRET.length < 32) {
     throw new Error("auth: BETTER_AUTH_SECRET must contain at least 32 characters");
@@ -50,6 +88,9 @@ export function createAuth(input: {
   const actorProvisioner =
     input.actorProvisioner ??
     createPostgresActorProvisioner({ db: input.db, clock: input.clock, ids: input.ids });
+
+  const mail =
+    input.mail ?? (input.env.AUTH_EMAIL_DELIVERY === "log" ? new LogAuthMail() : undefined);
 
   return betterAuth({
     appName: "Futrob",
@@ -63,6 +104,17 @@ export function createAuth(input: {
     emailAndPassword: {
       enabled: true,
     },
+    // Changing email sends a link to the new address; the old one stays valid until it is
+    // opened. Without a mail adapter the endpoint answers CHANGE_EMAIL_DISABLED.
+    user: { changeEmail: { enabled: mail !== undefined } },
+    emailVerification: mail
+      ? {
+          sendVerificationEmail: async ({ user, url }) => {
+            await mail.sendEmailChangeVerification({ to: user.email, name: user.name, url });
+          },
+        }
+      : undefined,
+    onAPIError: createAuthErrorHandler(input.reportDefect),
     rateLimit: {
       enabled: true,
       storage: "database",
@@ -74,7 +126,9 @@ export function createAuth(input: {
     },
     // Provision before a session is issued. If the database fails, sign-in can be
     // retried and repairs an existing Better Auth user instead of stranding it.
-    databaseHooks: createActorProvisioningHooks(actorProvisioner),
+    databaseHooks: createActorProvisioningHooks(actorProvisioner, {
+      syncCredentialUser: (userId) => syncCredentialUserContact(input.db, userId),
+    }),
     plugins: [
       // `bearer()` lets native clients (apps/mobile) present the session token
       // via `Authorization: Bearer <token>`; browsers keep using cookies.

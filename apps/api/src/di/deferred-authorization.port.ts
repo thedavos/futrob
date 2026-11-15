@@ -1,4 +1,5 @@
 import type {
+  AuthorizationBatchPort,
   AuthorizationPort,
   AuthorizationRequest,
   EffectiveAccess,
@@ -7,17 +8,23 @@ import type {
   AuthorizationScope,
 } from "@futrob/shared-kernel";
 
-/** Breaks composition-time cycles without leaking a service locator into packages. */
-export class DeferredAuthorizationPort implements AuthorizationPort {
-  private target: AuthorizationPort | null = null;
+type AuthorizationTarget = AuthorizationPort & AuthorizationBatchPort;
 
-  bind(target: AuthorizationPort): void {
+/** Breaks composition-time cycles without leaking a service locator into packages. */
+export class DeferredAuthorizationPort implements AuthorizationPort, AuthorizationBatchPort {
+  private target: AuthorizationTarget | null = null;
+
+  bind(target: AuthorizationTarget): void {
     if (this.target) throw new Error("AuthorizationPort is already bound");
     this.target = target;
   }
 
   decide(request: AuthorizationRequest) {
     return this.requireTarget().decide(request);
+  }
+
+  decideEach(input: Parameters<AuthorizationBatchPort["decideEach"]>[0]) {
+    return this.requireTarget().decideEach(input);
   }
 
   getEffectiveAccess(input: {
@@ -28,7 +35,7 @@ export class DeferredAuthorizationPort implements AuthorizationPort {
     return this.requireTarget().getEffectiveAccess(input);
   }
 
-  private requireTarget(): AuthorizationPort {
+  private requireTarget(): AuthorizationTarget {
     if (!this.target) throw new Error("AuthorizationPort has not been bound");
     return this.target;
   }

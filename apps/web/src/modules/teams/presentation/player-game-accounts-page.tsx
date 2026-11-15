@@ -28,6 +28,7 @@ import {
   Separator,
   Subtitle,
   Text,
+  typography,
 } from "@futrob/ui";
 import {
   asEaSearchPlatform,
@@ -234,7 +235,7 @@ function AssociatedClubsSection({
     <Card className={styles.large}>
       <CardHeader className={styles.header}>
         <div {...applyStyles(styles.headerCopy)}>
-          <Heading className={styles.title}>{t("player.gameData.clubs.title")}</Heading>
+          <Heading className={typography.title}>{t("player.gameData.clubs.title")}</Heading>
           <Subtitle>{t("player.gameData.clubs.subtitle")}</Subtitle>
         </div>
         <Button

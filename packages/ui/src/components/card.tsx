@@ -2,7 +2,7 @@ import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
 import { applyProps, type HostClassName } from "#styles/apply";
-import { colors } from "#styles/tokens.stylex";
+import { colors, space } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { typography } from "#styles/typography";
 
@@ -20,13 +20,8 @@ const styles = stylex.create({
   header: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.375rem",
-    padding: "1.5rem",
-  },
-  title: {
-    fontSize: "1.125rem",
-    lineHeight: "1.75rem",
-    fontWeight: 600,
+    gap: space.s1,
+    padding: space.s6,
   },
   description: {
     color: colors.mutedForeground,
@@ -85,7 +80,13 @@ function CardTitle({
   style,
   ...props
 }: Omit<React.ComponentProps<"h3">, "className"> & { className?: HostClassName }) {
-  return <h3 data-slot="card-title" {...applyProps(className, style, styles.title)} {...props} />;
+  return (
+    <h3
+      data-slot="card-title"
+      {...applyProps(className, style, typography.host, typography.title)}
+      {...props}
+    />
+  );
 }
 
 function CardDescription({
@@ -96,7 +97,7 @@ function CardDescription({
   return (
     <p
       data-slot="card-description"
-      {...applyProps(className, style, typography.caption, styles.description)}
+      {...applyProps(className, style, typography.subtitle, styles.description)}
       {...props}
     />
   );

@@ -29,7 +29,8 @@ const styles = stylex.create({
 const playground = applyStyles(styles.playground);
 
 const meta = {
-  title: "Primitives/Alert",
+  title: "Components/Feedback/Alert",
+  tags: ["autodocs"],
   component: Alert,
   parameters: { layout: "centered" },
   args: {

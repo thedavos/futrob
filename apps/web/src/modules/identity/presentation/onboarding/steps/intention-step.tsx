@@ -51,7 +51,11 @@ export function IntentChoiceStep() {
       currentStepId="intention"
       description={t("onboarding.intention.description")}
       error={flow.error}
-      steps={flow.path ? stepsForPath(t, flow.path) : intentionSteps(t)}
+      steps={
+        flow.path
+          ? stepsForPath(t, flow.path, flow.draft.organizationAccountStep)
+          : intentionSteps(t)
+      }
       title={t("onboarding.intention.title")}
     >
       <ChoiceGroup<OnboardingPathDto | "">

@@ -86,7 +86,10 @@ class FakeEncounters {
   }
 }
 
-class FakeRequests implements Pick<ScheduleChangeRequestRepository, "listByEncounter"> {
+class FakeRequests implements Pick<
+  ScheduleChangeRequestRepository,
+  "listByEncounter" | "listActiveByEncounter"
+> {
   constructor(readonly rows: ScheduleChangeRequest[]) {}
 
   async findByIdempotencyKey() {
@@ -129,6 +132,30 @@ function authorization(allowed = true): AuthorizationPort {
   };
 }
 
+function listUseCase(deps: {
+  readonly authorization: AuthorizationPort;
+  readonly encounters: FakeEncounters;
+  readonly requests: FakeRequests;
+}) {
+  return new ListScheduleChangeRequestsUseCase({
+    ...deps,
+    clock: { now: () => now },
+    editGuard: { canRequestScheduleChange: async () => true },
+    matches: { listByEncounter: async () => [] },
+    rules: {
+      getRules: async () => ({
+        allowRescheduling: true,
+        maxReschedulesPerTeam: 2,
+        minimumNoticeHours: 12,
+        proposalExpiryHours: 12,
+        requiresOpponentApproval: true,
+        requiresOrganizerApproval: false,
+      }),
+      countAppliedReschedules: async () => 0,
+    },
+  });
+}
+
 describe("ListScheduleChangeRequestsUseCase", () => {
   it("returns closed history and proposals in deterministic order", async () => {
     const later = new Date("2026-09-15T20:00:00.000Z");
@@ -164,7 +191,7 @@ describe("ListScheduleChangeRequestsUseCase", () => {
       status: "open",
       encounterId: asEncounterId("encounter-2"),
     });
-    const useCase = new ListScheduleChangeRequestsUseCase({
+    const useCase = listUseCase({
       authorization: authorization(true),
       encounters: new FakeEncounters(encounter),
       requests: new FakeRequests([closed, otherEncounter, open]),
@@ -174,16 +201,17 @@ describe("ListScheduleChangeRequestsUseCase", () => {
 
     expect(result.isOk()).toBe(true);
     if (result.isErr()) throw result.error;
-    expect(result.value.map((row) => row.id)).toEqual(["req-open", "req-closed"]);
-    expect(result.value[1]?.status).toBe("rejected");
-    expect(result.value[1]?.proposals.map((proposal) => proposal.id)).toEqual([
+    const requests = result.value.requests.map((view) => view.request);
+    expect(requests.map((row) => row.id)).toEqual(["req-open", "req-closed"]);
+    expect(requests[1]?.status).toBe("rejected");
+    expect(requests[1]?.proposals.map((proposal) => proposal.id)).toEqual([
       "proposal-a",
       "proposal-b",
     ]);
   });
 
   it("does not leak an Encounter the actor cannot read", async () => {
-    const useCase = new ListScheduleChangeRequestsUseCase({
+    const useCase = listUseCase({
       authorization: authorization(false),
       encounters: new FakeEncounters(encounter),
       requests: new FakeRequests([request({ id: "req-open", status: "open" })]),
@@ -198,7 +226,7 @@ describe("ListScheduleChangeRequestsUseCase", () => {
   });
 
   it("returns not found when the Encounter is missing", async () => {
-    const useCase = new ListScheduleChangeRequestsUseCase({
+    const useCase = listUseCase({
       authorization: authorization(true),
       encounters: new FakeEncounters(null),
       requests: new FakeRequests([]),

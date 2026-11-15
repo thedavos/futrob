@@ -211,3 +211,37 @@ export const resolvePostAuthDestinationResponseSchema = z.object({
 export type ResolvePostAuthDestinationResponse = z.infer<
   typeof resolvePostAuthDestinationResponseSchema
 >;
+
+export const listOrganizationMembersQuerySchema = z.strictObject({});
+export const memberCompetitionAssignmentSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  read: z.enum(["allowed", "denied"]),
+  role: z.enum(["staff", "captain", "vice_captain", "player"]).nullable(),
+});
+export const memberCompetitionAccessSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("none") }),
+  z.object({ kind: z.literal("inherited") }),
+  z.object({
+    kind: z.literal("assigned"),
+    competitions: z.array(memberCompetitionAssignmentSchema),
+  }),
+  z.object({
+    kind: z.literal("inherited-with-restriction"),
+    competitions: z.array(memberCompetitionAssignmentSchema),
+  }),
+]);
+export const organizationMemberSchema = z.object({
+  actorId: z.string().min(1),
+  displayName: z.string().nullable(),
+  email: z.string().nullable(),
+  role: orgMembershipRoleSchema,
+  joinedAt: z.iso.datetime(),
+  access: memberCompetitionAccessSchema,
+});
+export const listOrganizationMembersResponseSchema = z.object({
+  members: z.array(organizationMemberSchema).max(500),
+});
+export type OrganizationMemberDto = z.infer<typeof organizationMemberSchema>;
+export type MemberCompetitionAccessDto = z.infer<typeof memberCompetitionAccessSchema>;
+export type ListOrganizationMembersResponse = z.infer<typeof listOrganizationMembersResponseSchema>;

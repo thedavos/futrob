@@ -11,7 +11,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Components/ActionBar",
+  title: "Components/Actions/ActionBar",
+  tags: ["autodocs"],
   component: ActionBar,
   parameters: {
     layout: "padded",

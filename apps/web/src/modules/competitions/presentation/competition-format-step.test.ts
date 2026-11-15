@@ -4,6 +4,7 @@ import {
   matchesPerEncounterSummary,
   roundRobinNotice,
   seriesNotice,
+  swissNotice,
 } from "./competition-format-copy.ts";
 
 describe("format structure copy", () => {
@@ -37,6 +38,13 @@ describe("format structure copy", () => {
     expect(matchesPerEncounterSummary("league-playoffs", 1, 2)).toBe(
       "Liga 1 partido · Playoffs 2 partidos",
     );
+  });
+
+  it("explains a Swiss round without legs and names only its one stage", () => {
+    expect(matchesPerEncounterSummary("swiss", 2, null)).toBe("2 partidos");
+    expect(swissNotice(1)).toContain("nadie repite rival");
+    expect(swissNotice(2)).toContain("2 partidos");
+    expect(swissNotice(1)).not.toContain("vuelta");
   });
 
   it("describes a knockout series from the match count", () => {

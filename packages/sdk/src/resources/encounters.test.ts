@@ -28,9 +28,23 @@ const requestDto = {
   decisions: [],
   actions: [],
   allowedActions: [],
+  respondAs: null,
+  blockedActions: [],
   application: null,
   createdAt: "2026-09-14T20:00:00.000Z",
   updatedAt: "2026-09-14T20:00:00.000Z",
+};
+
+const listedCreation = {
+  blockedReason: null,
+  teams: [{ teamId: "team-away", blockedReason: null }],
+  scopes: [
+    {
+      scope: { type: "entire_encounter" as const },
+      currentStartAt: "2099-01-10T23:00:00.000Z",
+      blockedReason: "active_request_exists" as const,
+    },
+  ],
 };
 
 const createBody = {
@@ -70,12 +84,16 @@ describe("createFutrobClient encounters schedule-change-requests", () => {
         expect(init?.method).toBe("GET");
         return Response.json({
           requests: [{ ...requestDto, status: "rejected", idempotencyKey: "secret" }],
+          creation: listedCreation,
         });
       }),
     });
 
     const listed = await client.encounters.listScheduleChangeRequests("encounter-1");
-    expect(listed.requests).toEqual([{ ...requestDto, status: "rejected" }]);
+    expect(listed).toEqual({
+      requests: [{ ...requestDto, status: "rejected" }],
+      creation: listedCreation,
+    });
     expect(listed.requests[0]).not.toHaveProperty("idempotencyKey");
   });
 
@@ -249,6 +267,71 @@ describe("createFutrobClient encounters view", () => {
     });
 
     await expect(client.encounters.getView("org-1", "encounter-1")).resolves.toEqual(view);
+  });
+
+  it("reads the competition's current fixture with its Team names", async () => {
+    const current = {
+      fixture: {
+        id: "fixture-1",
+        revision: 1,
+        status: "active",
+        generationKey: "competition-1:1",
+        organizationId: "org-1",
+        competitionId: "competition-1",
+        rulesVersion: 1,
+        generationVersion: 1,
+        format: "league",
+        timeZone: "America/Lima",
+        homeAndAway: false,
+        seed: ["team-home", "team-away"],
+        stages: [
+          {
+            id: "stage-1",
+            kind: "league",
+            order: 1,
+            rounds: [
+              {
+                id: "round-1",
+                stageId: "stage-1",
+                number: 1,
+                scheduledStartAt: "2026-09-14T20:00:00.000Z",
+                encounters: [
+                  {
+                    id: "encounter-1",
+                    stageId: "stage-1",
+                    roundId: "round-1",
+                    order: 1,
+                    home: { kind: "team", teamId: "team-home" },
+                    away: { kind: "team", teamId: "team-away" },
+                    scheduledStartAt: "2026-09-14T20:00:00.000Z",
+                    officialMatchCount: 1,
+                    series: null,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      teams: [
+        { teamId: "team-home", name: "Cuervos FC" },
+        { teamId: "team-away", name: "Maderas FC" },
+      ],
+    };
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        expect(requestUrl(input)).toBe(
+          "https://api.example.com/api/v1/organizations/org%201/competitions/competition-1/fixture",
+        );
+        expect(init?.method).toBe("GET");
+        return Response.json(current);
+      }),
+    });
+
+    await expect(client.encounters.getCurrentFixture("org 1", "competition-1")).resolves.toEqual(
+      current,
+    );
   });
 });
 it.each(["current", "proposed"] as const)(

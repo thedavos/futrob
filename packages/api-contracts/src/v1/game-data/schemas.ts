@@ -384,6 +384,20 @@ export const providerSyncJobResponseSchema = z.object({
 
 export type ProviderSyncJobResponse = z.infer<typeof providerSyncJobResponseSchema>;
 
+export const enqueueDueProviderSyncsResponseSchema = z.object({
+  enqueued: z.number().int().nonnegative(),
+  alreadyCovered: z.number().int().nonnegative(),
+  deferred: z.number().int().nonnegative(),
+  jobs: z.array(
+    z.object({
+      id: z.string().min(1),
+      requestId: z.string().min(1),
+    }),
+  ),
+});
+
+export type EnqueueDueProviderSyncsResponse = z.infer<typeof enqueueDueProviderSyncsResponseSchema>;
+
 export const providerHealthResponseSchema = z.object({
   providerKey: gameDataProviderKeyQuerySchema,
   status: z.enum(["healthy", "degraded", "unavailable", "unknown"]),

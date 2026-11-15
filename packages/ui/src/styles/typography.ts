@@ -21,6 +21,13 @@ export const typography = stylex.create({
     letterSpacing: "var(--typo-heading-tracking)",
     textWrap: "balance",
   },
+  title: {
+    fontSize: "var(--typo-title-size)",
+    fontWeight: "var(--typo-title-weight)",
+    lineHeight: "var(--typo-title-leading)",
+    letterSpacing: "var(--typo-title-tracking)",
+    textWrap: "balance",
+  },
   subtitle: {
     fontSize: "var(--typo-subtitle-size)",
     fontWeight: "var(--typo-subtitle-weight)",

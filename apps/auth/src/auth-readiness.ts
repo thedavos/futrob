@@ -6,6 +6,7 @@ export const REQUIRED_AUTH_TABLES = [
   "auth_rate_limits",
   "actors",
   "identity_subjects",
+  "actor_contact_profiles",
 ] as const;
 
 export function hasRequiredAuthTables(tableNames: readonly string[]): boolean {

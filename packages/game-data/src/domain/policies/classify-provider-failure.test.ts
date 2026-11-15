@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  ExternalClubNotFound,
   ProviderHttpFailed,
   ProviderRefreshInProgress,
   ProviderSchemaError,
@@ -7,6 +8,7 @@ import {
   ProviderUnavailable,
 } from "../errors/provider.errors.ts";
 import {
+  isProviderOutage,
   isRetryableProviderError,
   providerHealthOutcome,
   providerRetryDelayMs,
@@ -118,5 +120,46 @@ describe("classifyProviderFailure", () => {
         3,
       ),
     ).toBe(4_000);
+  });
+
+  it("treats unavailability and unreadable payloads as outages, not request failures", () => {
+    expect(
+      isProviderOutage(
+        new ProviderHttpFailed({
+          code: "game_data.ea_clubs_http_error",
+          message: "rate limited",
+          status: 429,
+          path: "/clubs/info",
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isProviderOutage(
+        new ProviderSchemaError({
+          code: "game_data.ea_clubs_schema_error",
+          message: "schema",
+          issues: [],
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isProviderOutage(
+        new ProviderHttpFailed({
+          code: "game_data.ea_clubs_http_error",
+          message: "bad request",
+          status: 400,
+          path: "/clubs/info",
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      isProviderOutage(
+        new ExternalClubNotFound({
+          code: "game_data.external_club_not_found",
+          message: "missing",
+          externalClubId: "missing-club",
+        }),
+      ),
+    ).toBe(false);
   });
 });

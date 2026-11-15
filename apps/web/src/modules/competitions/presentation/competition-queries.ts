@@ -8,14 +8,18 @@ import {
 } from "@tanstack/react-query";
 import type {
   ApplyToCompetitionRequest,
+  CompetitionDraftDto,
   CompetitionParticipantInput,
   CreateCompetitionDraftRequest,
   ExploreCompetitionsQueryInput,
+  ListCompetitionParticipantsResponse,
   UpdateCompetitionDraftRequest,
 } from "@futrob/api-contracts";
 import { exploreCompetitionsQuerySchema } from "@futrob/api-contracts";
 import type { CoverSelection } from "@/modules/competitions/presentation/competition-profile-fields-value.ts";
+import { patchQueryData } from "@/shared/presentation/query/patch-query-data.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
+import { readKeepingRefusal, refusalLabel } from "@/shared/presentation/query/stored-refusal.ts";
 import {
   createCompetitionDraft,
   exploreCompetitions,
@@ -34,6 +38,7 @@ import {
   updateCompetitionCover,
   getMyCompetitionApplication,
   applyToCompetition,
+  CompetitionsClientError,
 } from "./competitions-browser-client.ts";
 
 export function useExploreCompetitionsInfiniteQuery(query: ExploreCompetitionsQueryInput = {}) {
@@ -105,10 +110,15 @@ export function useOrganizationCompetitionsQuery(organizationId: string) {
   });
 }
 
-export function useCompetitionParticipantsQuery(organizationId: string, competitionId: string) {
+export function useCompetitionParticipantsQuery(
+  organizationId: string,
+  competitionId: string,
+  enabled = true,
+) {
   return useQuery({
     queryKey: queryKeys.competitions.participants(organizationId, competitionId),
     queryFn: () => listCompetitionParticipants(organizationId, competitionId),
+    enabled,
   });
 }
 
@@ -119,15 +129,22 @@ export function useOrganizationTeamsQuery(organizationId: string) {
   });
 }
 
+/**
+ * Commands that rewrite the stored draft share one scope, so they reach the server in the order
+ * the organizer sent them: a background save always lands before a later publish or cover change.
+ */
+function draftScope(organizationId: string, competitionId: string) {
+  return { id: `competition-draft:${organizationId}:${competitionId}` };
+}
+
 export function useUpdateCompetitionDraftMutation(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    scope: draftScope(organizationId, competitionId),
     mutationFn: (input: UpdateCompetitionDraftRequest) =>
       updateCompetitionDraft(organizationId, competitionId, input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.competitions.draft(organizationId, competitionId),
-      });
+    onSuccess: (draft) => {
+      queryClient.setQueryData(queryKeys.competitions.draft(organizationId, competitionId), draft);
     },
   });
 }
@@ -159,25 +176,55 @@ export function useRemoveCompetitionParticipantMutation(
   competitionId: string,
 ) {
   const queryClient = useQueryClient();
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.competitions.participants(organizationId, competitionId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
+      }),
+    ]);
   return useMutation({
     mutationFn: (entryId: string) =>
       removeCompetitionParticipant(organizationId, competitionId, entryId),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.competitions.participants(organizationId, competitionId),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.teams.competitionManagement(organizationId, competitionId),
-        }),
-      ]);
+    onMutate: async (entryId) => ({
+      rollback: await patchQueryData<ListCompetitionParticipantsResponse>(
+        queryClient,
+        queryKeys.competitions.participants(organizationId, competitionId),
+        {
+          apply: (list) => ({
+            ...list,
+            participants: list.participants.filter((entry) => entry.id !== entryId),
+          }),
+          revert: (list, previous) => {
+            const index = previous.participants.findIndex((entry) => entry.id === entryId);
+            const removed = previous.participants[index];
+            if (!removed || list.participants.some((entry) => entry.id === entryId)) return list;
+            return {
+              ...list,
+              participants: [
+                ...list.participants.slice(0, index),
+                removed,
+                ...list.participants.slice(index),
+              ],
+            };
+          },
+        },
+      ),
+    }),
+    onError: (_error, _entryId, context) => {
+      context?.rollback();
+      void refresh();
     },
+    onSuccess: refresh,
   });
 }
 
 export function usePublishCompetitionMutation(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    scope: draftScope(organizationId, competitionId),
     mutationFn: () => publishCompetition(organizationId, competitionId),
     onSuccess: async () => {
       await Promise.all([
@@ -195,6 +242,7 @@ export function usePublishCompetitionMutation(organizationId: string, competitio
 export function useCompetitionRegistrationMutation(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    scope: draftScope(organizationId, competitionId),
     mutationFn: (action: "open" | "close") =>
       setCompetitionRegistration(organizationId, competitionId, action),
     onSuccess: async () => {
@@ -213,6 +261,7 @@ export function useCompetitionRegistrationMutation(organizationId: string, compe
 export function useUpdateCompetitionCoverMutation(organizationId: string, competitionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    scope: draftScope(organizationId, competitionId),
     mutationFn: async (cover: CoverSelection) => {
       const resolved =
         cover.kind === "file"
@@ -238,10 +287,40 @@ export function useUpdateCompetitionCoverMutation(organizationId: string, compet
   });
 }
 
-export function useCompetitionDraftQuery(organizationId: string, competitionId: string) {
+export function useCompetitionDraftQuery(
+  organizationId: string,
+  competitionId: string,
+  enabled = true,
+) {
   return useQuery({
     queryKey: queryKeys.competitions.draft(organizationId, competitionId),
     queryFn: () => getCompetitionDraft(organizationId, competitionId),
+    enabled,
+  });
+}
+
+export type CompetitionRulesRead =
+  | { readonly kind: "rules"; readonly draft: CompetitionDraftDto }
+  | { readonly kind: "refused"; readonly refusal: "forbidden" | "not_found" };
+
+/**
+ * The rules page keeps refusals as query values, so the cache's last successful read is the
+ * refusal itself: a later transient error, or a remount, never brings back rules read before it.
+ * Its own key keeps this shape apart from the setup page's draft cache.
+ */
+export function useCompetitionRulesQuery(organizationId: string, competitionId: string) {
+  return useQuery({
+    queryKey: queryKeys.competitions.rules(organizationId, competitionId),
+    queryFn: async (): Promise<CompetitionRulesRead> => {
+      const readResult = await readKeepingRefusal(
+        () => getCompetitionDraft(organizationId, competitionId),
+        (error) => (error instanceof CompetitionsClientError ? error.status : undefined),
+      );
+      if (readResult.outcome === "refused") {
+        return { kind: "refused", refusal: refusalLabel(readResult.status) };
+      }
+      return { kind: "rules", draft: readResult.value };
+    },
   });
 }
 

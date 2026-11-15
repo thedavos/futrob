@@ -10,7 +10,8 @@ import {
 } from "../components/popover";
 
 const meta = {
-  title: "Primitives/Popover",
+  title: "Components/Overlays/Popover",
+  tags: ["autodocs"],
   component: Popover,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof Popover>;

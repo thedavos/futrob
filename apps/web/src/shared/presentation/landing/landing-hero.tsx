@@ -1,102 +1,29 @@
 "use client";
 
-import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Body, Button, Display, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
+import { Button } from "@futrob/ui";
 import { Link } from "@tanstack/react-router";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-
-const styles = stylex.create({
-  section: {
-    display: "flex",
-    minHeight: 0,
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: "0%",
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  inner: {
-    marginInline: "auto",
-    display: "flex",
-    width: "100%",
-    maxWidth: "80rem",
-    alignItems: "center",
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "2rem",
-    },
-    paddingBlock: "2rem",
-  },
-  copy: {
-    maxWidth: "36rem",
-  },
-  eyebrow: {
-    fontWeight: 600,
-    textTransform: "uppercase",
-    color: colors.primary,
-    letterSpacing: "0.025em",
-  },
-  stack: {
-    marginTop: "0.5rem",
-    display: "flex",
-    flexDirection: "column",
-    gap: "1.5rem",
-  },
-  titleHighlight: {
-    color: colors.primary,
-  },
-  subtitle: {
-    maxWidth: "58ch",
-    color: colors.mutedForeground,
-    fontSize: {
-      default: null,
-      [media.sm]: "var(--text-lg)",
-    },
-    lineHeight: {
-      default: null,
-      [media.sm]: "1.75rem",
-    },
-  },
-  actions: {
-    marginTop: "2rem",
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "0.75rem",
-  },
-});
+import { EncounterBoard } from "@/shared/presentation/landing/encounter-board.tsx";
+import { LandingActions, LandingSection } from "@/shared/presentation/landing/landing-section.tsx";
 
 export function LandingHero() {
   const { t } = useI18n();
   return (
-    <section {...applyStyles(styles.section)}>
-      <div {...applyStyles(styles.inner)}>
-        <div {...applyStyles(styles.copy)}>
-          <p {...applyStyles(typography.label, styles.eyebrow)}>{t("landing.hero.eyebrow")}</p>
-          <div {...applyStyles(styles.stack)}>
-            <Display>
-              {t("landing.hero.titleLead")}{" "}
-              <span {...applyStyles(styles.titleHighlight)}>
-                {t("landing.hero.titleHighlight")}
-              </span>
-              .
-            </Display>
-            <Body tone="muted" {...applyStyles(styles.subtitle)}>
-              {t("landing.hero.subtitleLead")}
-              <br />
-              {t("landing.hero.subtitleRest")}
-            </Body>
-          </div>
-          <div {...applyStyles(styles.actions)}>
-            <Button render={<Link to="/signup" />}>{t("landing.hero.cta.primary")}</Button>
-            <Button render={<a href="#mecanismo" />} variant="outline">
-              {t("landing.hero.cta.secondary")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
+    <LandingSection
+      as="h1"
+      copy={
+        <LandingActions>
+          <Button render={<Link to="/signup" />}>{t("landing.hero.cta.primary")}</Button>
+          <Button render={<a href="#mecanismo" />} variant="outline">
+            {t("landing.hero.cta.secondary")}
+          </Button>
+        </LandingActions>
+      }
+      subtitle={t("landing.hero.subtitle")}
+      title={t("landing.hero.title")}
+    >
+      <EncounterBoard />
+    </LandingSection>
   );
 }

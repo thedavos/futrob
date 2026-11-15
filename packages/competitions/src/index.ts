@@ -9,7 +9,10 @@ export type {
   CompetitionRegion,
   CompetitionStatus,
 } from "./domain/entities/competition.ts";
-export type { CompetitionRules } from "./domain/entities/competition-rules.ts";
+export type {
+  CompetitionRankingEligibility,
+  CompetitionRules,
+} from "./domain/entities/competition-rules.ts";
 export type {
   CompetitionMembership,
   CompetitionMembershipRole,
@@ -46,6 +49,8 @@ export {
   type MediaKey,
 } from "./domain/value-objects/competition-cover.ts";
 export {
+  ACTIVE_COMPETITION_STATUSES,
+  isActiveCompetitionStatus,
   PARTICIPANT_EDITABLE_STATUSES,
   PUBLISHABLE_STATUSES,
   canEditParticipants,
@@ -88,6 +93,8 @@ export {
   CompetitionPublishBlocked,
   CompetitionRegistrationClosed,
   CompetitionCapacityReached,
+  CompetitionFormatNotInPlan,
+  CompetitionPlanLimitReached,
   InvalidCompetitionTeamRange,
   InvalidCompetitionSchedule,
   InvalidCompetitionCover,
@@ -128,6 +135,10 @@ export type {
   CompetitionEntryStatus,
 } from "./domain/entities/competition-entry.ts";
 export type { CompetitionEntryRepository } from "./domain/ports/competition-entry.repository.ts";
+export type {
+  CompetitionPlanLimits,
+  CompetitionPlanLimitsPort,
+} from "./domain/ports/competition-plan-limits.port.ts";
 export {
   RegisterTeamEntryUseCase,
   type RegisterTeamEntryInput,
@@ -228,3 +239,47 @@ export {
   RegisterInvitedEntryUseCase,
   type RegisterInvitedEntryError,
 } from "./application/entry-invitations/register-invited-entry.use-case.ts";
+
+export {
+  SANCTION_LIMITS,
+  SANCTION_TARGET,
+  SANCTION_TYPE,
+  SANCTION_TYPES,
+  isActiveSanction,
+  type CompetitionSanction,
+  type SanctionRevocation,
+  type SanctionTargetType,
+  type SanctionType,
+} from "./domain/entities/competition-sanction.ts";
+export {
+  InvalidSanction,
+  SanctionAlreadyRevoked,
+  SanctionNotFound,
+  SanctionsClosed,
+  SanctionTargetNotFound,
+  type ImposeSanctionError,
+  type InvalidSanctionField,
+  type ListSanctionsError,
+  type RevokeSanctionError,
+} from "./domain/errors/sanction.errors.ts";
+export {
+  activePointDeductions,
+  type SanctionTargetInput,
+  type TeamPointDeduction,
+} from "./domain/policies/sanction-terms.ts";
+export { SANCTIONABLE_STATUSES, canSanction } from "./domain/policies/competition-lifecycle.ts";
+export type { CompetitionSanctionRepository } from "./domain/ports/competition-sanction.repository.ts";
+export type { SanctionTargetReaderPort } from "./domain/ports/sanction-target.reader.ts";
+export {
+  ImposeSanctionUseCase,
+  type ImposeSanctionInput,
+} from "./application/sanctions/impose-sanction.use-case.ts";
+export {
+  RevokeSanctionUseCase,
+  type RevokeSanctionInput,
+} from "./application/sanctions/revoke-sanction.use-case.ts";
+export {
+  ListCompetitionSanctionsUseCase,
+  ListTeamSanctionsUseCase,
+  type ListTeamSanctionsInput,
+} from "./application/sanctions/list-sanctions.use-cases.ts";

@@ -1,0 +1,364 @@
+- link "Saltar al contenido":
+    - /url: "#app-main"
+- complementary "Navegación principal":
+    - button "Sanciones demo"
+    - button "Colapsar barra lateral"
+    - list:
+        - listitem:
+            - link "Inicio":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1
+        - listitem:
+            - link "Competiciones":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions
+        - listitem:
+            - link "Equipos":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/teams
+        - listitem:
+            - link "Jugadores":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/players
+        - listitem:
+            - link "Invitaciones":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/invitations
+        - listitem:
+            - link "Miembros y roles":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings/members
+        - listitem:
+            - link "Plan y uso":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings/plan
+        - listitem:
+            - link "Auditoría":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings/audit
+        - listitem:
+            - link "Ajustes":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings
+    - button "Abrir menú de cuenta": SO Sanctions
+- banner:
+    - paragraph: Sanciones demo Organizador
+- main:
+    - heading "Auditoría" [level=1]
+    - paragraph: Quién hizo qué, cuándo y por qué en tu organización.
+    - form "Filtrar auditoría":
+        - text: Competición
+        - combobox "Competición"
+        - text: Actor
+        - combobox "Actor"
+        - text: Acción
+        - combobox "Acción"
+        - text: Desde (UTC)
+        - textbox "Desde (UTC)"
+        - text: Hasta (UTC)
+        - textbox "Hasta (UTC)"
+        - button "Aplicar filtros"
+        - button "Quitar filtros"
+    - table "Historial de auditoría":
+        - rowgroup:
+            - row "Fecha Actor Acción Motivo Objeto afectado":
+                - columnheader "Fecha"
+                - columnheader "Actor"
+                - columnheader "Acción"
+                - columnheader "Motivo"
+                - columnheader "Objeto afectado"
+        - rowgroup:
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 4f9ee0eb-1280-441e-ae51-499735606c42 Correlación 769128df-9af7-4588-bb83-53648737d868":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "4f9ee0eb-1280-441e-ae51-499735606c42 Correlación 769128df-9af7-4588-bb83-53648737d868":
+                    - link "4f9ee0eb-1280-441e-ae51-499735606c42":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 769128df-9af7-4588-bb83-53648737d868
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 14 4f9ee0eb-1280-441e-ae51-499735606c42 Correlación d6c33d38-4cf0-484d-9a1b-8d4c13e19b99":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 14"
+                - cell "4f9ee0eb-1280-441e-ae51-499735606c42 Correlación d6c33d38-4cf0-484d-9a1b-8d4c13e19b99":
+                    - link "4f9ee0eb-1280-441e-ae51-499735606c42":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación d6c33d38-4cf0-484d-9a1b-8d4c13e19b99
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 41e4c06e-487e-47f1-a6bd-a2a697b6bc14 Correlación e592ce41-d0db-4ae7-a44b-002fabe8af99":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "41e4c06e-487e-47f1-a6bd-a2a697b6bc14 Correlación e592ce41-d0db-4ae7-a44b-002fabe8af99":
+                    - link "41e4c06e-487e-47f1-a6bd-a2a697b6bc14":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación e592ce41-d0db-4ae7-a44b-002fabe8af99
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 13 41e4c06e-487e-47f1-a6bd-a2a697b6bc14 Correlación 536bdf79-4862-4ba6-bd6a-947b7852b234":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 13"
+                - cell "41e4c06e-487e-47f1-a6bd-a2a697b6bc14 Correlación 536bdf79-4862-4ba6-bd6a-947b7852b234":
+                    - link "41e4c06e-487e-47f1-a6bd-a2a697b6bc14":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 536bdf79-4862-4ba6-bd6a-947b7852b234
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 97ef057f-164f-49f3-aac6-69a604450711 Correlación b051415d-56fb-40fa-923e-d9d7fcd5e707":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "97ef057f-164f-49f3-aac6-69a604450711 Correlación b051415d-56fb-40fa-923e-d9d7fcd5e707":
+                    - link "97ef057f-164f-49f3-aac6-69a604450711":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación b051415d-56fb-40fa-923e-d9d7fcd5e707
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 12 97ef057f-164f-49f3-aac6-69a604450711 Correlación 3293f0df-c37d-48dc-a83c-93462ef6d289":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 12"
+                - cell "97ef057f-164f-49f3-aac6-69a604450711 Correlación 3293f0df-c37d-48dc-a83c-93462ef6d289":
+                    - link "97ef057f-164f-49f3-aac6-69a604450711":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 3293f0df-c37d-48dc-a83c-93462ef6d289
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 4cc2d00a-a768-4f98-b703-0c71af601787 Correlación 71ff63c4-077a-4669-91d3-803c8fb5fbed":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "4cc2d00a-a768-4f98-b703-0c71af601787 Correlación 71ff63c4-077a-4669-91d3-803c8fb5fbed":
+                    - link "4cc2d00a-a768-4f98-b703-0c71af601787":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 71ff63c4-077a-4669-91d3-803c8fb5fbed
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 11 4cc2d00a-a768-4f98-b703-0c71af601787 Correlación ecc2b41e-c0c0-464b-ada3-51223be0590d":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 11"
+                - cell "4cc2d00a-a768-4f98-b703-0c71af601787 Correlación ecc2b41e-c0c0-464b-ada3-51223be0590d":
+                    - link "4cc2d00a-a768-4f98-b703-0c71af601787":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación ecc2b41e-c0c0-464b-ada3-51223be0590d
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 40f8f596-2551-4e62-98cc-f4ee09ced624 Correlación d5120303-6c4a-4857-921d-33911dca11c7":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "40f8f596-2551-4e62-98cc-f4ee09ced624 Correlación d5120303-6c4a-4857-921d-33911dca11c7":
+                    - link "40f8f596-2551-4e62-98cc-f4ee09ced624":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación d5120303-6c4a-4857-921d-33911dca11c7
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 10 40f8f596-2551-4e62-98cc-f4ee09ced624 Correlación 32e484fc-d9fe-4bce-83b6-0321fbfcb195":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 10"
+                - cell "40f8f596-2551-4e62-98cc-f4ee09ced624 Correlación 32e484fc-d9fe-4bce-83b6-0321fbfcb195":
+                    - link "40f8f596-2551-4e62-98cc-f4ee09ced624":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 32e484fc-d9fe-4bce-83b6-0321fbfcb195
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 584a256b-800d-42df-a755-5faaf0074b8a Correlación 1a7c4ae4-02b2-4065-99a3-2a42782866d7":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "584a256b-800d-42df-a755-5faaf0074b8a Correlación 1a7c4ae4-02b2-4065-99a3-2a42782866d7":
+                    - link "584a256b-800d-42df-a755-5faaf0074b8a":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 1a7c4ae4-02b2-4065-99a3-2a42782866d7
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 9 584a256b-800d-42df-a755-5faaf0074b8a Correlación 9298dfb0-7914-467c-b915-103aaa71a31b":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 9"
+                - cell "584a256b-800d-42df-a755-5faaf0074b8a Correlación 9298dfb0-7914-467c-b915-103aaa71a31b":
+                    - link "584a256b-800d-42df-a755-5faaf0074b8a":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 9298dfb0-7914-467c-b915-103aaa71a31b
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 985e90f2-0e4c-4b34-8ad8-7b6c63985d9f Correlación efeb81dc-9665-450e-b144-ff4e6cb4002c":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "985e90f2-0e4c-4b34-8ad8-7b6c63985d9f Correlación efeb81dc-9665-450e-b144-ff4e6cb4002c":
+                    - link "985e90f2-0e4c-4b34-8ad8-7b6c63985d9f":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación efeb81dc-9665-450e-b144-ff4e6cb4002c
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 8 985e90f2-0e4c-4b34-8ad8-7b6c63985d9f Correlación bbfd6e9d-c1f8-4787-9256-c47c54aa7b0d":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 8"
+                - cell "985e90f2-0e4c-4b34-8ad8-7b6c63985d9f Correlación bbfd6e9d-c1f8-4787-9256-c47c54aa7b0d":
+                    - link "985e90f2-0e4c-4b34-8ad8-7b6c63985d9f":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación bbfd6e9d-c1f8-4787-9256-c47c54aa7b0d
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete c51ad345-6ca9-4c72-b5d3-8276966b43c9 Correlación c77a20a7-3633-4930-9d77-27726c824246":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "c51ad345-6ca9-4c72-b5d3-8276966b43c9 Correlación c77a20a7-3633-4930-9d77-27726c824246":
+                    - link "c51ad345-6ca9-4c72-b5d3-8276966b43c9":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación c77a20a7-3633-4930-9d77-27726c824246
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 7 c51ad345-6ca9-4c72-b5d3-8276966b43c9 Correlación ce1862a7-f3e7-4443-bcb0-ad5987fc9281":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 7"
+                - cell "c51ad345-6ca9-4c72-b5d3-8276966b43c9 Correlación ce1862a7-f3e7-4443-bcb0-ad5987fc9281":
+                    - link "c51ad345-6ca9-4c72-b5d3-8276966b43c9":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación ce1862a7-f3e7-4443-bcb0-ad5987fc9281
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 8a66305d-4d4a-427a-8584-bdc667e2a455 Correlación 558d7166-aeeb-46b5-bb3f-2b17bcbcc6e5":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "8a66305d-4d4a-427a-8584-bdc667e2a455 Correlación 558d7166-aeeb-46b5-bb3f-2b17bcbcc6e5":
+                    - link "8a66305d-4d4a-427a-8584-bdc667e2a455":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 558d7166-aeeb-46b5-bb3f-2b17bcbcc6e5
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 6 8a66305d-4d4a-427a-8584-bdc667e2a455 Correlación a55869d7-55dd-446f-80c1-f5cacf8f4ba7":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 6"
+                - cell "8a66305d-4d4a-427a-8584-bdc667e2a455 Correlación a55869d7-55dd-446f-80c1-f5cacf8f4ba7":
+                    - link "8a66305d-4d4a-427a-8584-bdc667e2a455":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación a55869d7-55dd-446f-80c1-f5cacf8f4ba7
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 0378f64f-543d-4731-82c0-3754756da532 Correlación ce924b0b-30b5-429f-94e0-d23751641b32":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "0378f64f-543d-4731-82c0-3754756da532 Correlación ce924b0b-30b5-429f-94e0-d23751641b32":
+                    - link "0378f64f-543d-4731-82c0-3754756da532":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación ce924b0b-30b5-429f-94e0-d23751641b32
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 5 0378f64f-543d-4731-82c0-3754756da532 Correlación 50e96aab-912b-46de-ae31-2c6b32857747":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 5"
+                - cell "0378f64f-543d-4731-82c0-3754756da532 Correlación 50e96aab-912b-46de-ae31-2c6b32857747":
+                    - link "0378f64f-543d-4731-82c0-3754756da532":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 50e96aab-912b-46de-ae31-2c6b32857747
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 5e076382-8cf1-41ae-951e-24bdb24aa938 Correlación 3229cb36-841c-461b-ad22-861061fa4541":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "5e076382-8cf1-41ae-951e-24bdb24aa938 Correlación 3229cb36-841c-461b-ad22-861061fa4541":
+                    - link "5e076382-8cf1-41ae-951e-24bdb24aa938":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 3229cb36-841c-461b-ad22-861061fa4541
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 4 5e076382-8cf1-41ae-951e-24bdb24aa938 Correlación eadbaab2-b80f-42ac-ac4c-cd46c4ef38c0":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 4"
+                - cell "5e076382-8cf1-41ae-951e-24bdb24aa938 Correlación eadbaab2-b80f-42ac-ac4c-cd46c4ef38c0":
+                    - link "5e076382-8cf1-41ae-951e-24bdb24aa938":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación eadbaab2-b80f-42ac-ac4c-cd46c4ef38c0
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 084e004b-37e8-40c3-9879-a1fa3708af64 Correlación cc1ef0ad-f9de-4137-b564-317bfd43170d":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "084e004b-37e8-40c3-9879-a1fa3708af64 Correlación cc1ef0ad-f9de-4137-b564-317bfd43170d":
+                    - link "084e004b-37e8-40c3-9879-a1fa3708af64":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación cc1ef0ad-f9de-4137-b564-317bfd43170d
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción impuesta AUDIT-01 pagination 3 084e004b-37e8-40c3-9879-a1fa3708af64 Correlación 65b9c917-5a98-40d2-8c9f-d0dc72f8f7ac":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción impuesta"
+                - cell "AUDIT-01 pagination 3"
+                - cell "084e004b-37e8-40c3-9879-a1fa3708af64 Correlación 65b9c917-5a98-40d2-8c9f-d0dc72f8f7ac":
+                    - link "084e004b-37e8-40c3-9879-a1fa3708af64":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 65b9c917-5a98-40d2-8c9f-d0dc72f8f7ac
+            - row "10 nov 2026, 22:12 Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7 Sanción revocada AUDIT-01 pagination verification complete 2f8917f7-4cd4-4bea-8579-10e45d0f3044 Correlación 3e8c125f-cd52-4486-a376-5c9e567577a2":
+                - cell "10 nov 2026, 22:12":
+                    - time: 10 nov 2026, 22:12
+                - cell "Sanctions Organizer 8e926ed1-2f64-41a2-a230-00817c84c0e7":
+                    - text: Sanctions Organizer
+                    - paragraph: 8e926ed1-2f64-41a2-a230-00817c84c0e7
+                - cell "Sanción revocada"
+                - cell "AUDIT-01 pagination verification complete"
+                - cell "2f8917f7-4cd4-4bea-8579-10e45d0f3044 Correlación 3e8c125f-cd52-4486-a376-5c9e567577a2":
+                    - link "2f8917f7-4cd4-4bea-8579-10e45d0f3044":
+                        - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+                    - paragraph: Correlación 3e8c125f-cd52-4486-a376-5c9e567577a2
+    - paragraph: Más recientes primero
+    - button "Anterior" [disabled]
+    - button "Siguiente"

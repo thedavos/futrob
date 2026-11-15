@@ -29,7 +29,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Input",
+  title: "Components/Forms/Input",
+  tags: ["autodocs"],
   component: Input,
   parameters: {
     layout: "centered",

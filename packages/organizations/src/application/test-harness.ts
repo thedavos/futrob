@@ -1,5 +1,7 @@
+import type { OrgMembershipRole } from "../domain/value-objects/organization-membership-role.ts";
 import {
   asActorId,
+  compareTime,
   Panic,
   type ActorId,
   type ClockPort,
@@ -198,6 +200,16 @@ export class FakeMembershipRepository implements MembershipRepository {
     );
   }
 
+  async listByOrganization(
+    organizationId: OrganizationId,
+    limit: number,
+  ): Promise<readonly OrganizationMembership[]> {
+    return this.rows
+      .filter((row) => row.organizationId === organizationId)
+      .sort((left, right) => compareMembershipOrder(left, right))
+      .slice(0, limit);
+  }
+
   async updateRole(membership: OrganizationMembership): Promise<OrganizationMembership> {
     const index = this.rows.findIndex(
       (row) =>
@@ -226,10 +238,21 @@ export class FakeMembershipRepository implements MembershipRepository {
     return this.updateRole(membership);
   }
 
-  async countByRole(organizationId: OrganizationId, role: "organizer"): Promise<number> {
+  async countByRole(organizationId: OrganizationId, role: OrgMembershipRole): Promise<number> {
     return this.rows.filter((row) => row.organizationId === organizationId && row.role === role)
       .length;
   }
+}
+
+function compareMembershipOrder(
+  left: OrganizationMembership,
+  right: OrganizationMembership,
+): number {
+  const byTime = compareTime(left.createdAt, right.createdAt);
+  if (byTime !== 0) return byTime;
+  if (left.actorId < right.actorId) return -1;
+  if (left.actorId > right.actorId) return 1;
+  return 0;
 }
 
 export class FakeInvitationRepository implements InvitationRepository {
@@ -343,6 +366,8 @@ export function createOrgTestHarness() {
     },
   };
 
+  let staffSeatLimit: number | null = null;
+
   return {
     clock,
     ids,
@@ -351,6 +376,10 @@ export function createOrgTestHarness() {
     memberships,
     invitations,
     authorization,
+    staffSeats: { staffSeatLimit: async () => staffSeatLimit },
+    setStaffSeatLimit(limit: number | null) {
+      staffSeatLimit = limit;
+    },
     actor: (value: string) => asActorId(value),
   };
 }

@@ -69,4 +69,4 @@ no puede usarlo.
   tests, verificado contra el R2 local de Wrangler (`getPlatformProxy`).
 - Migraciones `0001`–`0041` aplicadas en Postgres 16 local y flujo HTTP
   completo verificado contra esa base.
-- Stories de creación (`Product/Organizer/Competitions/Create`) y de Explorar.
+- Stories de creación (`Product/Organizer/Competition setup/Create`) y de Explorar.

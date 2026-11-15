@@ -53,6 +53,15 @@ const styles = stylex.create({
     gap: "1rem",
     paddingInline: "1rem",
     paddingBlock: "0.75rem",
+    color: "inherit",
+    textDecoration: "none",
+    backgroundColor: { default: null, ":hover": colors.muted },
+    outlineColor: colors.ring,
+    outlineStyle: { default: "none", ":focus-visible": "solid" },
+    outlineWidth: 2,
+    outlineOffset: -2,
+  },
+  row: {
     borderTopWidth: {
       default: 1,
       ":first-child": 0,
@@ -116,13 +125,24 @@ export function PlayerCompetitionsPage() {
         ) : (
           <ul {...applyStyles(styles.list)}>
             {competitions.map((competition) => (
-              <li key={competition.competitionId} {...applyStyles(styles.item)}>
-                <span {...applyStyles(styles.copy)}>
-                  <span {...applyStyles(styles.name)}>Competición {competition.competitionId}</span>
-                  <span {...applyStyles(typography.caption, styles.meta)}>
-                    Equipo {competition.teamName}
+              <li key={competition.competitionId} {...applyStyles(styles.row)}>
+                <Link
+                  params={{
+                    orgId: competition.organizationId,
+                    competitionId: competition.competitionId,
+                  }}
+                  to="/orgs/$orgId/competitions/$competitionId/matches"
+                  {...applyStyles(styles.item)}
+                >
+                  <span {...applyStyles(styles.copy)}>
+                    <span {...applyStyles(styles.name)}>
+                      Competición {competition.competitionId}
+                    </span>
+                    <span {...applyStyles(typography.caption, styles.meta)}>
+                      Equipo {competition.teamName}
+                    </span>
                   </span>
-                </span>
+                </Link>
               </li>
             ))}
           </ul>

@@ -2,7 +2,7 @@
 
 import * as stylex from "@stylexjs/stylex";
 import type { SentEntryInvitationDto } from "@futrob/api-contracts";
-import { applyStyles, Badge, Button, typography } from "@futrob/ui";
+import { Alert, AlertDescription, applyStyles, Badge, Button, typography } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -75,11 +75,13 @@ export function SentEntryInvitations({
   invitations,
   now,
   disabled,
+  revokeFailed,
   onRevoke,
 }: {
   readonly invitations: readonly SentEntryInvitationDto[];
   readonly now: Date;
   readonly disabled: boolean;
+  readonly revokeFailed: boolean;
   readonly onRevoke: (invitationId: string) => void;
 }) {
   if (invitations.length === 0) return null;
@@ -96,6 +98,11 @@ export function SentEntryInvitations({
           {pending === 1 ? "1 pendiente de respuesta" : `${pending} pendientes de respuesta`}
         </p>
       </div>
+      {revokeFailed ? (
+        <Alert variant="destructive">
+          <AlertDescription>No se pudo revocar la invitación. Inténtalo de nuevo.</AlertDescription>
+        </Alert>
+      ) : null}
       <ul {...applyStyles(styles.list)}>
         {invitations.map((invitation) => {
           const status = sentStatus(invitation, now);

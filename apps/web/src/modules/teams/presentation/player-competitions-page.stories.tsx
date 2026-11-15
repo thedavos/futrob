@@ -80,7 +80,7 @@ function CompetitionsStoryShell({
 }
 
 const meta = {
-  title: "Product/Player/Competitions",
+  title: "Product/Player/Competitions/Mine",
   parameters: { layout: "fullscreen" },
   args: {
     scenario: "ready",

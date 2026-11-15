@@ -1,0 +1,12 @@
+
+> futrob@0.1.0 test
+> vp test --project web apps/web/src/modules/notifications/presentation/activity-screens.test.tsx apps/web/src/modules/notifications/presentation/activity-sources.test.ts apps/web/src/modules/notifications/presentation/activity-view.test.ts
+
+
+ RUN  v4.1.11 /home/user/code/futrob
+
+
+ Test Files  3 passed (3)
+      Tests  18 passed (18)
+   Start at  00:37:19
+   Duration  3.24s (transform 2.00s, setup 668ms, import 3.68s, tests 424ms, environment 394ms)

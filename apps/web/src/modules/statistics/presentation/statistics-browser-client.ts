@@ -1,4 +1,5 @@
 import {
+  getCompetitionTeamStatisticsResponseSchema,
   getMyMatchesQuerySchema,
   getMyMatchesResponseSchema,
   getMyRecentMatchPathSchema,
@@ -10,6 +11,7 @@ import {
   getMyGameProfileResponseSchema,
   getMyStatisticsQuerySchema,
   getMyStatisticsResponseSchema,
+  type GetCompetitionTeamStatisticsResponse,
   type GetMyMatchesQuery,
   type GetMyMatchesResponse,
   type GetMyRecentMatchPath,
@@ -53,6 +55,16 @@ async function requestStatisticsJson<T>(path: string, schema: z.ZodType<T>): Pro
 }
 
 export const statisticsBrowserClient = {
+  getCompetitionTeamStatistics(
+    organizationId: string,
+    competitionId: string,
+  ): Promise<GetCompetitionTeamStatisticsResponse> {
+    return requestStatisticsJson(
+      `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/team-statistics`,
+      getCompetitionTeamStatisticsResponseSchema,
+    );
+  },
+
   getMyStatistics(filters: GetMyStatisticsQuery = {}): Promise<GetMyStatisticsResponse> {
     const query = getMyStatisticsQuerySchema.parse(filters);
     const search = new URLSearchParams();

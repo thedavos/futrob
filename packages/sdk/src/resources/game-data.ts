@@ -1,6 +1,7 @@
 import {
   getClubMatchesQuerySchema,
   getClubMatchesResponseSchema,
+  enqueueDueProviderSyncsResponseSchema,
   enqueueProviderSyncJobRequestSchema,
   providerSyncJobResponseSchema,
   getClubQuerySchema,
@@ -11,6 +12,7 @@ import {
   searchClubsResponseSchema,
   type GetClubMatchesQueryInput,
   type GetClubMatchesResponse,
+  type EnqueueDueProviderSyncsResponse,
   type EnqueueProviderSyncJobRequest,
   type ProviderSyncJobResponse,
   type GetClubQueryInput,
@@ -87,6 +89,16 @@ export function createGameDataResource(http: HttpClient) {
           body: enqueueProviderSyncJobRequestSchema.parse(input),
           options,
           parse: (data) => providerSyncJobResponseSchema.parse(data),
+        });
+      },
+
+      /** Persists due syncs for the candidate window. Returns only jobs created by this call. */
+      async enqueueDue(options: RequestOptions = {}): Promise<EnqueueDueProviderSyncsResponse> {
+        return http.request({
+          path: "/internal/game-data/sync-jobs/enqueue-due",
+          method: "POST",
+          options,
+          parse: (data) => enqueueDueProviderSyncsResponseSchema.parse(data),
         });
       },
 

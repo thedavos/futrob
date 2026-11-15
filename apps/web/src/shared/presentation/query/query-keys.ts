@@ -1,5 +1,6 @@
 import type {
   ExploreCompetitionsQuery,
+  ListOrganizationAuditQuery,
   GetMyGameProfileQuery,
   GetMyMatchesQuery,
   GetMyRecentMatchPath,
@@ -22,18 +23,42 @@ export const queryKeys = {
       [...queryKeys.activities.all, "organization", organizationId, query] as const,
     organizationFeed: (organizationId: string) =>
       [...queryKeys.activities.all, "organization", organizationId, "feed"] as const,
+    mineFeed: () => [...queryKeys.activities.all, "mine", "feed"] as const,
     mine: (query: ActivityQueryKey) => [...queryKeys.activities.all, "mine", query] as const,
   },
   encounters: {
     all: ["encounters"] as const,
     view: (organizationId: string, encounterId: string) =>
       [...queryKeys.encounters.all, "view", organizationId, encounterId] as const,
+    competition: (organizationId: string, competitionId: string) =>
+      [...queryKeys.encounters.all, "competition", organizationId, competitionId] as const,
     candidates: (encounterId: string) =>
       [...queryKeys.encounters.all, "candidates", encounterId] as const,
+    /** Operator dispute queue; under `encounters` so selection commands refresh it. */
+    disputes: (organizationId: string, competitionId: string) =>
+      [...queryKeys.encounters.all, "disputes", organizationId, competitionId] as const,
+    officialSelection: (organizationId: string, encounterId: string, actingTeamId: string) =>
+      [
+        ...queryKeys.encounters.all,
+        "official-selection",
+        organizationId,
+        encounterId,
+        actingTeamId,
+      ] as const,
+    /** The operator's dossier: never shares a cache entry with a Team read. */
+    operatorSelection: (organizationId: string, encounterId: string) =>
+      [...queryKeys.encounters.all, "operator-selection", organizationId, encounterId] as const,
+  },
+  notifications: {
+    all: ["notifications"] as const,
+    emailPreferences: () => [...queryKeys.notifications.all, "email-preferences"] as const,
   },
   identity: {
     all: ["identity"] as const,
     onboardingStatus: () => [...queryKeys.identity.all, "onboarding-status"] as const,
+    preferences: () => [...queryKeys.identity.all, "preferences"] as const,
+    accountDeletion: () => [...queryKeys.identity.all, "account-deletion"] as const,
+    sessions: () => [...queryKeys.identity.all, "sessions"] as const,
   },
   players: {
     all: ["players"] as const,
@@ -43,10 +68,24 @@ export const queryKeys = {
     meNextEncounter: () => [...queryKeys.players.all, "me", "next-encounter"] as const,
   },
   organizations: {
+    audit: (organizationId: string, query: ListOrganizationAuditQuery) =>
+      ["organizations", organizationId, "audit", query] as const,
     all: ["organizations"] as const,
     mine: () => [...queryKeys.organizations.all, "mine"] as const,
+    members: (organizationId: string) =>
+      [...queryKeys.organizations.all, "members", organizationId] as const,
+    memberGrants: (organizationId: string, actorId: string) =>
+      [...queryKeys.organizations.all, "member-grants", organizationId, actorId] as const,
     profile: (organizationId: string) =>
       [...queryKeys.organizations.all, "profile", organizationId] as const,
+  },
+  billing: {
+    all: ["billing"] as const,
+    plan: (organizationId: string) => [...queryKeys.billing.all, "plan", organizationId] as const,
+    /** Anonymous plan catalog (`/public/plans`); the same for every actor. */
+    publicPlans: () => [...queryKeys.billing.all, "public-plans"] as const,
+    /** Superuser queue of organizations waiting for a plan. */
+    planRequests: () => [...queryKeys.billing.all, "plan-requests"] as const,
   },
   authorization: {
     all: ["authorization"] as const,
@@ -73,6 +112,9 @@ export const queryKeys = {
       [...queryKeys.competitions.all, "by-organization", organizationId] as const,
     draft: (organizationId: string, competitionId: string) =>
       [...queryKeys.competitions.all, "draft", organizationId, competitionId] as const,
+    /** Read-only rules view; nested under the draft so draft invalidations refresh it too. */
+    rules: (organizationId: string, competitionId: string) =>
+      [...queryKeys.competitions.draft(organizationId, competitionId), "rules"] as const,
     participants: (organizationId: string, competitionId: string) =>
       [...queryKeys.competitions.all, "participants", organizationId, competitionId] as const,
     teams: (organizationId: string) =>
@@ -86,6 +128,11 @@ export const queryKeys = {
     publicEntryInvitationLink: (code: string) =>
       [...queryKeys.competitions.all, "public-entry-invitation-link", code] as const,
     myEntryInvitations: () => [...queryKeys.competitions.all, "my-entry-invitations"] as const,
+    /** Every sanctions list of the competition; the Team's own read nests under it. */
+    sanctions: (organizationId: string, competitionId: string) =>
+      [...queryKeys.competitions.all, "sanctions", organizationId, competitionId] as const,
+    teamSanctions: (organizationId: string, competitionId: string, teamId: string) =>
+      [...queryKeys.competitions.sanctions(organizationId, competitionId), "team", teamId] as const,
   },
   teams: {
     all: ["teams"] as const,
@@ -96,6 +143,11 @@ export const queryKeys = {
         ...queryKeys.teams.competitionManagement(organizationId, competitionId),
         "club-names",
       ] as const,
+    competitionManagementTeamNames: (organizationId: string, competitionId: string) =>
+      [
+        ...queryKeys.teams.competitionManagement(organizationId, competitionId),
+        "team-names",
+      ] as const,
     competitionManagementDetail: (organizationId: string, competitionId: string, teamId: string) =>
       [
         ...queryKeys.teams.competitionManagement(organizationId, competitionId),
@@ -103,12 +155,19 @@ export const queryKeys = {
         teamId,
       ] as const,
   },
+  scheduling: {
+    all: ["scheduling"] as const,
+    currentFixture: (organizationId: string, competitionId: string) =>
+      [...queryKeys.scheduling.all, "current-fixture", organizationId, competitionId] as const,
+  },
   statistics: {
     all: ["statistics"] as const,
     me: (query: GetMyStatisticsQuery = {}) =>
       [...queryKeys.statistics.all, "me", "summary", query] as const,
     meMatches: (query: GetMyMatchesQuery) =>
       [...queryKeys.statistics.all, "me", "matches", query] as const,
+    competitionTeams: (organizationId: string, competitionId: string) =>
+      [...queryKeys.statistics.all, "competition-teams", organizationId, competitionId] as const,
   },
   gameData: {
     all: ["game-data"] as const,
@@ -129,6 +188,8 @@ export const queryKeys = {
         readonly externalClubId?: string;
       },
     ) => [...queryKeys.gameData.meRecentMatches(), "detail", input] as const,
+    providerHealth: (providerKey: string) =>
+      [...queryKeys.gameData.all, "providers", providerKey, "health"] as const,
     club: (input: {
       readonly externalClubId: string;
       readonly platform: string;

@@ -26,7 +26,7 @@ export async function navigateAfterAuth(input: {
   }
 
   if (input.kind === "signup") {
-    await input.navigate({ to: "/onboarding" });
+    await input.navigate({ to: "/onboarding/intention" });
     return;
   }
 

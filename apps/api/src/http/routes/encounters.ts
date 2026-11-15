@@ -1,6 +1,7 @@
 import {
   encounterScheduleSnapshotSchema,
   encounterViewSchema,
+  listCompetitionEncountersResponseSchema,
   listEncounterCandidatesResponseSchema,
 } from "@futrob/api-contracts";
 import { OfficialSelectionForbidden } from "@futrob/results";
@@ -15,11 +16,12 @@ import { asCompetitionId, asEncounterId, asOrganizationId, asTeamId } from "@fut
 import type { Hono } from "hono";
 import type { AppDeps } from "@/app.ts";
 import { apiErrorResponse, failureToHttp } from "@/http/errors.ts";
-import { encounterViewDto } from "@/http/mappers/next-encounter.ts";
+import { competitionEncountersDto, encounterViewDto } from "@/http/mappers/next-encounter.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
   getEncounterScheduleSnapshotRoute,
   getEncounterViewRoute,
+  listCompetitionEncountersRoute,
   listEncounterCandidatesRoute,
   upsertEncounterScheduleSnapshotRoute,
 } from "@/http/openapi/routes/encounters.ts";
@@ -133,6 +135,24 @@ export function registerEncounterRoutes(app: Hono, deps: AppDeps): void {
     const view = await deps.modules.getEncounterView.execute(encounter);
     if (!view) return notFound();
     return jsonResponse(encounterViewSchema.parse(encounterViewDto(view)));
+  });
+
+  secured.openapi(listCompetitionEncountersRoute, async (c) => {
+    const params = c.req.valid("param");
+    const list = await deps.modules.listCompetitionEncounters.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+    });
+    if (!list) {
+      return apiErrorResponse(404, {
+        code: "competitions.not_found",
+        messageKey: "errors.competitions.not_found",
+      });
+    }
+    return jsonResponse(
+      listCompetitionEncountersResponseSchema.parse(competitionEncountersDto(list)),
+    );
   });
 
   secured.openapi(getEncounterScheduleSnapshotRoute, async (c) => {

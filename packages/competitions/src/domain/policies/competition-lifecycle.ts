@@ -13,3 +13,22 @@ export function canEditParticipants(status: CompetitionStatus): boolean {
 export function canPublish(status: CompetitionStatus): boolean {
   return PUBLISHABLE_STATUSES.some((value) => value === status);
 }
+
+/** Statuses that count against the plan's active competitions; finished ones stop counting. */
+export const ACTIVE_COMPETITION_STATUSES = [
+  "draft",
+  "registration",
+  "published",
+  "paused",
+] as const;
+
+export function isActiveCompetitionStatus(status: CompetitionStatus): boolean {
+  return ACTIVE_COMPETITION_STATUSES.some((value) => value === status);
+}
+
+/** Statuses where staff may impose or revoke sanctions (ADR-0028). */
+export const SANCTIONABLE_STATUSES = ["registration", "published", "paused", "finished"] as const;
+
+export function canSanction(status: CompetitionStatus): boolean {
+  return SANCTIONABLE_STATUSES.some((value) => value === status);
+}

@@ -49,7 +49,7 @@ function EditIdentifierStoryShell({
 }
 
 const meta = {
-  title: "Product/Player/Edit identifier",
+  title: "Product/Player/Game accounts/Edit identifier",
   component: EditIdentifierStoryShell,
   parameters: { layout: "padded" },
   args: {

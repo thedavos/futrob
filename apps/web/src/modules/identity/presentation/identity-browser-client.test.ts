@@ -52,14 +52,7 @@ describe("identityBrowserClient", () => {
     const caught = await identityBrowserClient
       .completeOrganizationOnboarding({
         name: "Liga repetida",
-        competition: {
-          name: "Copa",
-          gameEdition: "FC 26",
-          platform: "playstation",
-          region: "south-america",
-          timeZone: "America/Lima",
-          format: "league",
-        },
+        timeZone: "America/Lima",
         gameAccount: null,
       })
       .catch((error: Error) => error);

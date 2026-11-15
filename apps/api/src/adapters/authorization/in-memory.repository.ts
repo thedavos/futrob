@@ -73,6 +73,20 @@ export class InMemoryAccessGrantRepository implements AccessGrantRepository {
     );
   }
 
+  async listForOrganizationActors(
+    organizationId: OrganizationId,
+    actorIds: readonly ActorId[],
+  ): Promise<readonly AccessGrant[]> {
+    if (actorIds.length === 0) return [];
+    const wanted = new Set(actorIds);
+    return [...this.rows.values()].filter(
+      (row) =>
+        wanted.has(row.actorId) &&
+        (row.organizationId === organizationId ||
+          (row.organizationId === null && row.scopeType === "platform")),
+    );
+  }
+
   async upsert(grant: AccessGrant): Promise<AccessGrant> {
     const existing = await this.findByKey(grant);
     const saved = existing ? { ...grant, id: existing.id, createdAt: existing.createdAt } : grant;
@@ -127,6 +141,16 @@ export class InMemoryPlatformRoleRepository implements PlatformRoleRepository {
 
   async findSuperuser(actorId: ActorId): Promise<PlatformRoleAssignment | null> {
     return this.rows.get(actorId) ?? null;
+  }
+
+  async listSuperusersAmong(
+    actorIds: readonly ActorId[],
+  ): Promise<readonly PlatformRoleAssignment[]> {
+    if (actorIds.length === 0) return [];
+    return actorIds.flatMap((actorId) => {
+      const assignment = this.rows.get(actorId);
+      return assignment ? [assignment] : [];
+    });
   }
 
   async countSuperusers(): Promise<number> {

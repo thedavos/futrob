@@ -28,7 +28,8 @@ const frame = applyStyles(styles.frame);
 const icon = applyStyles(styles.icon);
 
 const meta = {
-  title: "Patterns/LeadCard",
+  title: "Components/Data display/LeadCard",
+  tags: ["autodocs"],
   component: LeadCard,
   parameters: { layout: "padded" },
   args: {

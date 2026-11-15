@@ -1,0 +1,80 @@
+- link "Saltar al contenido":
+    - /url: "#app-main"
+- complementary "Navegación principal":
+    - button "Liga Sanciones"
+    - button "Colapsar barra lateral"
+    - list:
+        - listitem:
+            - link "Resumen":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752
+        - listitem:
+            - link "Calendario":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/fixture
+        - listitem:
+            - link "Enfrentamientos":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/encounters
+        - listitem:
+            - link "Clasificación":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/standings
+        - listitem:
+            - link "Bracket":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/bracket
+        - listitem:
+            - link "Rankings":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/rankings
+        - listitem:
+            - link "Rendimiento de equipos":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/team-performance
+        - listitem:
+            - link "Equipos":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/teams
+        - listitem:
+            - link "Disputas":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/disputes
+        - listitem:
+            - link "Auditoría":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/audit
+        - listitem:
+            - link "Sanciones":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/sanctions
+        - listitem:
+            - link "Analíticas":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/analytics
+        - listitem:
+            - link "Reglamento":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/rules
+    - button "Abrir menú de cuenta": SO Sanctions
+- banner:
+    - paragraph: Liga Sanciones Organizador
+- main:
+    - heading "Liga Sanciones" [level=1]
+    - paragraph: Estado, equipos, próximos enfrentamientos y pendientes de la competición.
+    - navigation "Vistas de la competición":
+        - link "Resumen":
+            - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752
+        - link "Auditoría":
+            - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/audit
+    - region "Estado de la competición":
+        - text: Publicada
+        - paragraph: Competición oficial · fc27 · PlayStation · 2 equipos
+    - region "Indicadores de la competición":
+        - group: Equipos aprobados 2 Inscripciones por revisar 0 Próximos enfrentamientos 0 Sin resultado oficial 0
+    - region "Pendientes":
+        - heading "Pendientes" [level=2]
+        - text: Todo al día
+        - paragraph: No hay inscripciones, resultados ni disputas esperando tu revisión.
+    - region "Próximos enfrentamientos":
+        - heading "Próximos enfrentamientos" [level=2]
+        - text: Sin enfrentamientos programados
+        - paragraph: Cuando el calendario tenga cruces por jugar, los verás aquí.
+    - region "Equipos":
+        - heading "Equipos" [level=2]
+        - link "Ver todos":
+            - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/teams
+        - list "Equipos":
+            - listitem:
+                - link "Puma FC 0 de 11 jugadores Aprobado":
+                    - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/teams?teamId=bf4e1b76-a820-48a3-8fe0-36396a6566c1
+            - listitem:
+                - link "Cóndor FC 1 de 11 jugadores Aprobado":
+                    - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions/22714dad-73d5-47a2-9799-f676179c3752/teams?teamId=47a6eb97-8124-42be-9e9f-9e4002e87a44

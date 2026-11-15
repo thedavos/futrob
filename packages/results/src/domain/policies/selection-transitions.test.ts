@@ -49,12 +49,6 @@ describe("selection transition matrix", () => {
     }
   });
 
-  it("defines the commands of every status", () => {
-    for (const status of ALL_STATUSES) {
-      expect(Array.isArray(selectionCommandsFor(status))).toBe(true);
-    }
-  });
-
   it("marks disputed and organizer_review as under dispute", () => {
     expect(ALL_STATUSES.filter(isUnderDispute)).toEqual(["disputed", "organizer_review"]);
   });

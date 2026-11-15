@@ -46,7 +46,7 @@ export function CaptainPageFrame<Detail>({
   onRetryDetail,
   children,
 }: Readonly<{
-  page: CaptainPage;
+  page: CaptainPage | "competitionPlayer.team";
   access: CaptainTeamAccess;
   /** Explains who may use the page when the actor lacks the permission. */
   forbiddenKey: ParameterlessMessageKey;
@@ -103,11 +103,13 @@ export function CaptainPageFrame<Detail>({
               <EmptyStateTitle>{t("captain.forbidden.title")}</EmptyStateTitle>
               <EmptyStateDescription>{t(forbiddenKey)}</EmptyStateDescription>
             </EmptyStateCopy>
-            <EmptyStateActions>
-              <Button render={links.team} role="link" variant="outline">
-                {t("captain.forbidden.action")}
-              </Button>
-            </EmptyStateActions>
+            {page === "competitionPlayer.team" ? null : (
+              <EmptyStateActions>
+                <Button render={links.team} role="link" variant="outline">
+                  {t("captain.forbidden.action")}
+                </Button>
+              </EmptyStateActions>
+            )}
           </EmptyState>
         ) : null}
         {access.kind === "unavailable" ? (

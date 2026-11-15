@@ -4,14 +4,18 @@ import {
   type EffectiveAccessDto,
   type PermissionDto,
 } from "@futrob/api-contracts";
+import { BILLING_PERMISSION } from "@futrob/billing";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { RESULT_PERMISSION } from "@futrob/results";
+import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import { TEAM_PERMISSION } from "@futrob/teams";
 
 /** Shell bootstrap probes — BC permission constants, not string literals. */
 export const SHELL_PERMISSIONS = [
+  BILLING_PERMISSION.read,
   ORGANIZATION_PERMISSION.read,
+  ORGANIZATION_PERMISSION.auditTrailRead,
   ORGANIZATION_PERMISSION.update,
   ORGANIZATION_PERMISSION.membershipsRead,
   ORGANIZATION_PERMISSION.invitationsManage,
@@ -20,6 +24,7 @@ export const SHELL_PERMISSIONS = [
   COMPETITION_PERMISSION.update,
   COMPETITION_PERMISSION.publish,
   COMPETITION_PERMISSION.participantsRead,
+  COMPETITION_PERMISSION.sanctionsRead,
   TEAM_PERMISSION.read,
   TEAM_PERMISSION.create,
   TEAM_PERMISSION.rosterRead,
@@ -29,6 +34,7 @@ export const SHELL_PERMISSIONS = [
   TEAM_PERMISSION.externalClubRead,
   TEAM_PERMISSION.externalClubManage,
   RESULT_PERMISSION.resultApprove,
+  STATISTICS_PERMISSION.read,
 ] as const satisfies readonly PermissionDto[];
 
 export class EffectiveAccessHttpError extends Error {

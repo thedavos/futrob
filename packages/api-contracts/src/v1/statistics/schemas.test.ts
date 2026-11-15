@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { getMyMatchesQuerySchema, getMyStatisticsQuerySchema } from "./schemas.ts";
+import {
+  competitionStandingRowSchema,
+  getMyMatchesQuerySchema,
+  getMyStatisticsQuerySchema,
+} from "./schemas.ts";
 
 describe("personal statistics query schemas", () => {
   it("accepts the same scope-reducing filters for statistics and matches", () => {
@@ -31,5 +35,26 @@ describe("personal statistics query schemas", () => {
   it("rejects invalid match pagination", () => {
     expect(getMyMatchesQuerySchema.safeParse({ limit: "not-a-number" }).success).toBe(false);
     expect(getMyMatchesQuerySchema.safeParse({ limit: "101" }).success).toBe(false);
+  });
+});
+
+describe("Swiss standings", () => {
+  it("accepts negative opponent points in Buchholz after a sanction", () => {
+    expect(
+      competitionStandingRowSchema.parse({
+        position: 1,
+        teamId: "team-1",
+        played: 1,
+        wins: 1,
+        draws: 0,
+        losses: 0,
+        goalsFor: 1,
+        goalsAgainst: 0,
+        goalDifference: 1,
+        points: 3,
+        form: ["win"],
+        swiss: { buchholz: -3, byes: 0, withdrawn: false },
+      }).swiss?.buchholz,
+    ).toBe(-3);
   });
 });

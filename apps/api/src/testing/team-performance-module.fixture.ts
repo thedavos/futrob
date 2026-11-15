@@ -1,3 +1,4 @@
+import { assignOrganizationPlanForTest } from "@/testing/organization-plan.fixture.ts";
 import { asActorId } from "@futrob/shared-kernel";
 import { parseOrganizationSlug } from "@futrob/organizations";
 import { asFixtureStageId } from "@futrob/scheduling";
@@ -35,6 +36,11 @@ export async function seedPerformanceModule(modules: AppModules): Promise<void> 
     actorId: actor,
     role: "organizer",
     createdAt: date,
+  });
+  // The performance ranking is a Pro/Liga entitlement (ADR-0025).
+  await assignOrganizationPlanForTest(modules, {
+    organizationId: performanceScope.organizationId,
+    actorId: actor,
   });
   await modules.competitions.repository.saveDraft(performanceCompetition());
   for (const team of [performanceHome, performanceAway]) {

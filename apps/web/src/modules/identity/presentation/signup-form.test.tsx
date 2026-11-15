@@ -21,7 +21,7 @@ describe("SignupForm field composition", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Crear cuenta" }));
 
     const requiredMessages = await screen.findAllByText("Este campo es obligatorio.");
-    expect(requiredMessages).toHaveLength(3);
+    expect(requiredMessages).toHaveLength(4);
 
     for (const message of requiredMessages) {
       expect(message.closest('[data-slot="field-error"]')).not.toBeNull();
@@ -56,4 +56,44 @@ describe("SignupForm field composition", () => {
     expect(screen.getByText("Mínimo 8 caracteres, incluyendo letras y números.")).toBeTruthy();
     expect(password.hasAttribute("aria-invalid")).toBe(false);
   });
+});
+
+it("shows terms and privacy links before the submit button", async () => {
+  render(<AuthRouterDecorator initialPath="/signup" />);
+
+  const terms = await screen.findByRole("link", { name: "Términos de servicio" });
+  const privacy = screen.getByRole("link", { name: "Política de privacidad" });
+  const submit = screen.getByRole("button", { name: "Crear cuenta" });
+
+  expect(terms).toHaveAttribute("href", "/terms");
+  expect(privacy).toHaveAttribute("href", "/privacy");
+  expect(terms.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  expect(privacy.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+});
+
+it("revalidates confirmation when either password changes and blocks mismatched submission", async () => {
+  render(<AuthRouterDecorator initialPath="/signup" />);
+  const password = await screen.findByLabelText("Contraseña");
+  const confirmation = screen.getByLabelText("Repetir contraseña");
+  fireEvent.change(screen.getByLabelText("Nombre completo"), { target: { value: "Ana Pérez" } });
+  fireEvent.change(screen.getByLabelText("Correo electrónico"), {
+    target: { value: "ana@ejemplo.com" },
+  });
+  fireEvent.change(password, { target: { value: "clave1234" } });
+  fireEvent.change(confirmation, { target: { value: "otra1234" } });
+  fireEvent.click(screen.getByRole("button", { name: "Crear cuenta" }));
+  expect(await screen.findByText("Las contraseñas no coinciden.")).toBeTruthy();
+  expect(confirmation.getAttribute("aria-invalid")).toBe("true");
+  expect(screen.getByRole("button", { name: "Crear cuenta" }).hasAttribute("disabled")).toBe(false);
+  fireEvent.blur(confirmation);
+  fireEvent.change(confirmation, { target: { value: "clave1234" } });
+  await waitFor(() => expect(screen.queryByText("Las contraseñas no coinciden.")).toBeNull());
+  fireEvent.change(password, { target: { value: "nueva1234" } });
+  expect(await screen.findByText("Las contraseñas no coinciden.")).toBeTruthy();
+  fireEvent.change(password, { target: { value: "clave1234" } });
+  await waitFor(() => expect(screen.queryByText("Las contraseñas no coinciden.")).toBeNull());
 });

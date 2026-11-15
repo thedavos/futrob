@@ -4,8 +4,11 @@
   "compatibility_date": "2026-07-17",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  "upload_source_maps": true,
   "vars": {
     "APP_BASE_URL": "https://futrob.app",
+    // Local `apps/web/.dev.vars` overrides this to development so Sentry stays off.
+    "NODE_ENV": "production",
     // Local override: FUTROB_API_BASE_URL in apps/web/.dev.vars
     "FUTROB_API_BASE_URL": "https://api.futrob.app/api/v1",
   },

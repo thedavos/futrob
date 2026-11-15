@@ -47,7 +47,10 @@ function service(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       if (String(input) === PATH && init?.method === "GET")
-        return Response.json({ requests: [request] });
+        return Response.json({
+          requests: [request],
+          creation: { blockedReason: "permission", teams: [], scopes: [] },
+        });
       if (String(input) === RESOLVE && init?.method === "POST") {
         const body = JSON.parse(String(init.body)) as ResolveScheduleChangeRequestBody;
         received.push(body);

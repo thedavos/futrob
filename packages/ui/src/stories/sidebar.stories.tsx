@@ -344,7 +344,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Sidebar",
+  title: "Components/Navigation/Sidebar",
+  tags: ["autodocs"],
   component: Sidebar,
   parameters: {
     layout: "fullscreen",

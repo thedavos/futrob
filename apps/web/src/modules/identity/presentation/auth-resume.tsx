@@ -54,7 +54,7 @@ const storybookFallback: AuthResumeValue = {
   redirectTo: undefined,
   afterAuthenticated: async (kind) => {
     if (kind === "signup") {
-      window.location.assign("/onboarding");
+      window.location.assign("/onboarding/intention");
     }
   },
 };

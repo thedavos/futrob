@@ -1,0 +1,57 @@
+- link "Saltar al contenido":
+    - /url: "#app-main"
+- complementary "Navegación principal":
+    - button "Sanciones demo"
+    - button "Colapsar barra lateral"
+    - list:
+        - listitem:
+            - link "Inicio":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1
+        - listitem:
+            - link "Competiciones":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/competitions
+        - listitem:
+            - link "Equipos":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/teams
+        - listitem:
+            - link "Jugadores":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/players
+        - listitem:
+            - link "Invitaciones":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/invitations
+        - listitem:
+            - link "Miembros y roles":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings/members
+        - listitem:
+            - link "Plan y uso":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings/plan
+        - listitem:
+            - link "Auditoría":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings/audit
+        - listitem:
+            - link "Ajustes":
+                - /url: /orgs/769200c8-7e71-44ea-b3bb-3c7a749426b1/settings
+    - button "Abrir menú de cuenta": SO Sanctions
+- banner:
+    - paragraph: Sanciones demo Organizador
+- main:
+    - heading "Auditoría" [level=1]
+    - paragraph: Quién hizo qué, cuándo y por qué en tu organización.
+    - form "Filtrar auditoría":
+        - text: Competición
+        - combobox "Competición"
+        - text: Actor
+        - combobox "Actor": actor-with-no-audit-events
+        - text: Acción
+        - combobox "Acción"
+        - text: Desde (UTC)
+        - textbox "Desde (UTC)"
+        - text: Hasta (UTC)
+        - textbox "Hasta (UTC)"
+        - button "Aplicar filtros"
+        - button "Quitar filtros"
+    - heading "Sin resultados con estos filtros" [level=2]
+    - paragraph: Cambia los filtros o quítalos para consultar el historial.
+    - paragraph: Más recientes primero
+    - button "Anterior" [disabled]
+    - button "Siguiente" [disabled]

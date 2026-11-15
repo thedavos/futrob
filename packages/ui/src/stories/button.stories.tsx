@@ -50,7 +50,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Button",
+  title: "Components/Actions/Button",
+  tags: ["autodocs"],
   component: Button,
   args: {
     children: "Crear competición",

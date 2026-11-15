@@ -5,6 +5,7 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import type {
   ExternalClubDto,
+  ListMyMembershipsResponse,
   OnboardingPathDto,
   OnboardingStatusDto,
   OnboardingStepDto,
@@ -16,7 +17,7 @@ import {
   useSeededOnboardingStatus,
 } from "@/modules/identity/presentation/identity-queries.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
-import { RoutePendingState } from "@/shared/presentation/route-load-state.tsx";
+import { PendingScreen } from "@/shared/presentation/status-screen.tsx";
 import {
   buildOnboardingFlowErrorDisplay,
   buildSupportFields,
@@ -26,20 +27,24 @@ import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalog
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { finalizationError } from "./onboarding-finalization-errors.ts";
+import { useExternalSync } from "@futrob/ui";
+import { isOnboardingPathname, routeForOnboardingStep } from "./onboarding-routing.ts";
 import {
-  isOnboardingPathname,
-  resolveOnboardingStep,
-  resolvePersistedOnboardingStep,
-  routeForOnboardingStep,
-} from "./onboarding-routing.ts";
+  memoryOnboardingDraftStore,
+  type OnboardingDraftStore,
+} from "./onboarding-draft-storage.ts";
+import { initialOnboardingState } from "./onboarding-resume.ts";
+import { onboardingInvitationSearchSchema } from "./onboarding-invitation-handoff.ts";
 import { browserOnboardingGateway, type OnboardingGateway } from "./onboarding-flow-gateway.ts";
+import { createEmptyDraft, type OnboardingDraft } from "./onboarding-draft.ts";
+import { finishOnboardingPath, type OnboardingFinishResult } from "./onboarding-finish.ts";
 import {
-  competitionFromDraft,
-  createEmptyDraft,
-  externalClubLocatorFromDraft,
-  playerAccountFromDraft,
-  type OnboardingDraft,
-} from "./onboarding-draft.ts";
+  listOrganizationCompetitions,
+  listOrganizationTeams,
+} from "@/modules/competitions/presentation/competitions-browser-client.ts";
+import { workspaceAccessQueryOptions } from "@/shared/presentation/shell/workspace-access.ts";
+import { getEffectiveAccess } from "@/context/permissions.ts";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
 
 interface OnboardingFlowValue {
   readonly saving: boolean;
@@ -66,13 +71,13 @@ export function OnboardingFlowProvider({
   children,
   initialStatus,
   gateway = browserOnboardingGateway,
-  bootstrap = "cold",
+  draftStore: providedDraftStore,
 }: Readonly<{
   children: ReactNode;
   initialStatus: OnboardingStatusDto;
   gateway?: OnboardingGateway;
-  /** Production cold-loads at intention; Storybook/harness may honor persisted step. */
-  bootstrap?: "cold" | "persisted";
+  /** Production passes the signed-in user's browser store; stories and tests keep memory. */
+  draftStore?: OnboardingDraftStore;
 }>) {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -90,16 +95,34 @@ export function OnboardingFlowProvider({
     (Omit<SupportError, "message"> & { readonly messageKey: ParameterlessMessageKey }) | null
   >(null);
   const retry = useRetryAfterCountdown();
-  const [path, setPathState] = useState<OnboardingPathDto | null>(() => initialStatus.path);
-  const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(() =>
-    bootstrap === "persisted"
-      ? resolvePersistedOnboardingStep(initialStatus.path, initialStatus.currentStep)
-      : resolveOnboardingStep(initialStatus.path, initialStatus.currentStep),
-  );
-  const [draft, setDraft] = useState<OnboardingDraft>(createEmptyDraft);
+  const [draftStore] = useState(() => providedDraftStore ?? memoryOnboardingDraftStore());
+  const linkedInvitation = useRouterState({
+    select: (state) => onboardingInvitationSearchSchema.safeParse(state.location.search).data,
+  })?.invitation;
+  const [initial] = useState(() => {
+    const stored = draftStore.load();
+    if (linkedInvitation) {
+      const draft = stored?.path === "invitation" ? stored.draft : createEmptyDraft();
+      return {
+        path: "invitation" as const,
+        step: "invitation" as const,
+        draft: { ...draft, invitationToken: linkedInvitation },
+      };
+    }
+    return initialOnboardingState(initialStatus, stored);
+  });
+  const [path, setPathState] = useState<OnboardingPathDto | null>(initial.path);
+  const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(initial.step);
+  const [draft, setDraft] = useState<OnboardingDraft>(initial.draft);
+  const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
   const draftRef = useRef(draft);
   draftRef.current = draft;
-  useSeededOnboardingStatus(initialStatus);
+  const completed = useSeededOnboardingStatus(initialStatus).data?.completed === true;
+  // A provider can remount for a moment while a finished actor leaves onboarding; it must not
+  // write the draft that finishing just cleared.
+  useExternalSync(() => {
+    if (!leaving && !completed) draftStore.save({ path, step: currentStep, draft });
+  }, [completed, currentStep, draftStore, leaving, path, draft]);
 
   const value = useMemo<OnboardingFlowValue>(
     () => ({
@@ -200,27 +223,16 @@ export function OnboardingFlowProvider({
       },
       async goTo(step, requestedPath = path) {
         if (leaving || saving || finishingRef.current) return;
-        const previousPath = path;
-        const previousStep = currentStep;
         setError(null);
         setPathState(requestedPath);
         setCurrentStep(step);
+        // The stored step only picks where a returning actor resumes and feeds the funnel;
+        // the local draft covers a failed write, so it never blocks or rolls back the user.
+        // Writes queue so the server ends on the last step even when the user moves fast.
+        saveQueueRef.current = saveQueueRef.current
+          .then(() => saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step }))
+          .catch(() => undefined);
         await navigate({ to: routeForOnboardingStep(step) });
-        try {
-          await saveProgressMutation.mutateAsync({ path: requestedPath, currentStep: step });
-        } catch (caught) {
-          const clientError = caught instanceof IdentityOnboardingClientError ? caught : null;
-          setError({
-            messageKey: "errors.onboarding.saveProgress",
-            ...buildSupportFields({
-              requestId: clientError?.requestId,
-              retryAfterSeconds: clientError?.retryAfterSeconds,
-            }),
-          });
-          setPathState(previousPath);
-          setCurrentStep(previousStep);
-          await navigate({ to: routeForOnboardingStep(previousStep) });
-        }
       },
       async finish() {
         if (!path || saving || finishingRef.current || retry.blocked) return;
@@ -228,46 +240,9 @@ export function OnboardingFlowProvider({
         setSaving(true);
         setLeaving(true);
         setError(null);
+        let result: OnboardingFinishResult;
         try {
-          if (path === "organization") {
-            const competition = competitionFromDraft(draft);
-            if (!competition) throw new Error("Incomplete competition draft");
-            const created = await gateway.createOrganization({
-              name: draft.organizationName.trim(),
-              competition,
-              gameAccount: playerAccountFromDraft(draft),
-            });
-            markOnboardingCompletedInCache(queryClient, path);
-            await navigate({
-              to: "/orgs/$orgId/competitions/$competitionId/setup",
-              params: {
-                orgId: created.destination.organizationId,
-                competitionId: created.destination.competitionId,
-              },
-              replace: true,
-            });
-          } else if (path === "invitation") {
-            const accepted = await gateway.acceptInvitation({
-              token: draft.invitationToken.trim(),
-              gameAccount: playerAccountFromDraft(draft),
-            });
-            markOnboardingCompletedInCache(queryClient, path);
-            await navigate({
-              to: "/orgs/$orgId/competitions/$competitionId",
-              params: {
-                orgId: accepted.destination.organizationId,
-                competitionId: accepted.destination.competitionId,
-              },
-              replace: true,
-            });
-          } else {
-            await gateway.completePlayer({
-              gameAccount: playerAccountFromDraft(draft),
-              externalClub: externalClubLocatorFromDraft(draft),
-            });
-            markOnboardingCompletedInCache(queryClient, path);
-            await navigate({ to: "/player", replace: true });
-          }
+          result = await finishOnboardingPath[path](gateway, draft);
         } catch (caught) {
           finishingRef.current = false;
           const clientError = caught instanceof IdentityOnboardingClientError ? caught : null;
@@ -276,12 +251,62 @@ export function OnboardingFlowProvider({
           setError(nextError);
           setLeaving(false);
           setSaving(false);
+          return;
+        }
+
+        draftStore.clear();
+        markOnboardingCompletedInCache(queryClient, path);
+        if (result.path === "organization") {
+          const { organizationId, name, slug, timeZone, logo, role } = result.created;
+          queryClient.setQueryData(queryKeys.organizations.profile(organizationId), {
+            organizationId,
+            name,
+            slug,
+            timeZone,
+            logo,
+          });
+          queryClient.setQueryData<ListMyMembershipsResponse>(
+            queryKeys.organizations.mine(),
+            (previous) => ({
+              memberships: [
+                ...(previous?.memberships ?? []).filter(
+                  (item) => item.organizationId !== organizationId,
+                ),
+                {
+                  organizationId,
+                  organizationName: name,
+                  organizationSlug: slug,
+                  organizationLogo: logo,
+                  role,
+                },
+              ],
+            }),
+          );
+        }
+        for (const queryKey of [
+          queryKeys.organizations.mine(),
+          queryKeys.players.me(),
+          queryKeys.competitions.all,
+          queryKeys.authorization.all,
+        ]) {
+          void queryClient.invalidateQueries({ queryKey });
+        }
+        if (result.path === "organization") {
+          await prepareOrganizationDashboard(queryClient, result.created.organizationId);
+        }
+        try {
+          await navigate({ ...result.destination, replace: true, viewTransition: true });
+        } catch {
+          // Completion already succeeded. The onboarding loader resolves its destination
+          // after a full reload, without offering to create the same organization again.
+          window.location.reload();
         }
       },
     }),
     [
       currentStep,
       draft,
+      draftStore,
       error,
       gateway,
       leaving,
@@ -307,13 +332,46 @@ export function OnboardingFlowProvider({
       {shouldSyncRoute ? (
         <>
           <Navigate to={expectedRoute} replace />
-          <RoutePendingState message={t("onboarding.loading.progress")} />
+          <PendingScreen message={t("onboarding.loading.preparing")} />
         </>
       ) : (
         children
       )}
     </OnboardingFlowContext>
   );
+}
+
+async function prepareOrganizationDashboard(queryClient: QueryClient, organizationId: string) {
+  const scope = { organizationId };
+  const permissions = [COMPETITION_PERMISSION.update];
+  const ready = Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.competitions.byOrganization(organizationId),
+      queryFn: () => listOrganizationCompetitions(organizationId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.competitions.teams(organizationId),
+      queryFn: () => listOrganizationTeams(organizationId),
+    }),
+    queryClient.prefetchQuery(workspaceAccessQueryOptions(scope)),
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.authorization.effectiveAccess(scope, permissions),
+      queryFn: () => getEffectiveAccess(scope, permissions),
+    }),
+  ]);
+  // Keep the review stable through ordinary reads, but let the dashboard handle
+  // slow/offline queries after three seconds. Prefetch failures never reject completion.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      ready,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, 3000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function markOnboardingCompletedInCache(queryClient: QueryClient, path: OnboardingPathDto): void {

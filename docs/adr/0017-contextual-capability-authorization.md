@@ -23,6 +23,13 @@ organización; un Encounter exige organización y competición; un equipo y un E
 combinados deben corresponder a uno de sus participantes. Una relación inválida deniega
 el acceso, aunque el actor tenga permisos en otro recurso.
 
+Un listado que decide la misma capacidad sobre muchos scopes hermanos usa
+`AuthorizationBatchPort.decideEach`. Cada scope recibe la misma decisión que con `decide`,
+incluidos sus grants específicos, pero las lecturas compartidas (rol de plataforma,
+organización, competición, perfil, rosters, inscripciones, snapshots de Encounter y grants)
+se cargan una vez por petición. Un listado no sustituye la decisión de cada Encounter por
+la de su competición.
+
 ### Precedencia
 
 Las capas aplicables se recorren de general a específica:
@@ -77,7 +84,7 @@ semántica contextual elegida.
 El resolver y sus pruebas existen. La cobertura de cada caso de uso se comprueba por
 flujo; este ADR no afirma que todo endpoint haya sido auditado.
 
-- [AuthorizationPort](/packages/shared-kernel/src/authorization.port.ts).
+- [AuthorizationPort y AuthorizationBatchPort](/packages/shared-kernel/src/authorization.port.ts).
 - [Resolver y relaciones de scope](/apps/api/src/adapters/authorization/contextual-authorization.adapter.ts).
 - [Precedencia](/apps/api/src/adapters/authorization/contextual-resolution.ts).
 - [Pruebas de resolución](/apps/api/src/adapters/authorization/contextual-authorization.adapter.test.ts)

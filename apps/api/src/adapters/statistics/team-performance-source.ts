@@ -2,7 +2,9 @@ import { createHash } from "node:crypto";
 import type { CompetitionEntryRepository, CompetitionRepository } from "@futrob/competitions";
 import type { OfficialResult, OfficialResultReaderPort } from "@futrob/results";
 import {
+  officialSlotKey,
   TeamPerformanceScopeInvalid,
+  type TeamMatchContribution,
   type TeamMatchContributionRepository,
   type TeamPerformanceContribution,
   type TeamPerformanceScope,
@@ -48,6 +50,14 @@ export class OfficialTeamPerformanceSource implements TeamPerformanceSourcePort 
       scope.competitionId,
       scope.organizationId,
     );
+    const contributionsBySlot = new Map<string, TeamMatchContribution[]>();
+    for (const row of stored) {
+      if (Number.isNaN(row.revision)) continue;
+      const key = officialSlotKey(row);
+      const pair = contributionsBySlot.get(key);
+      if (pair) pair.push(row);
+      else contributionsBySlot.set(key, [row]);
+    }
     const latest = new Map<string, OfficialResult>();
     for (const result of results) {
       const previous = latest.get(result.encounterId);
@@ -59,13 +69,15 @@ export class OfficialTeamPerformanceSource implements TeamPerformanceSourcePort 
     for (const result of revisions) {
       if (result.status !== "approved") continue;
       for (const slot of result.slots) {
-        const pair = stored.filter(
-          (row) =>
-            row.officialResultId === result.id &&
-            row.revision === result.revision &&
-            row.officialSlot === slot.officialSlot &&
-            row.encounterId === result.encounterId,
-        );
+        const pair =
+          contributionsBySlot.get(
+            officialSlotKey({
+              officialResultId: result.id,
+              revision: result.revision,
+              officialSlot: slot.officialSlot,
+              encounterId: result.encounterId,
+            }),
+          ) ?? [];
         if (
           pair.length !== 2 ||
           !pair.some((row) => row.side === "home") ||

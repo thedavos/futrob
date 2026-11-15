@@ -22,6 +22,7 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import {
   FlagBannerIcon,
   ListBulletsIcon,
+  ShuffleIcon,
   TrophyIcon,
   TreeStructureIcon,
 } from "@phosphor-icons/react";
@@ -44,6 +45,12 @@ const FORMATS = [
     title: "Liga + playoffs",
     detail: "Liga y luego playoffs",
     icon: FlagBannerIcon,
+  },
+  {
+    id: "swiss" as const,
+    title: "Sistema suizo",
+    detail: "Rondas emparejadas por resultados",
+    icon: ShuffleIcon,
   },
 ];
 
@@ -78,7 +85,7 @@ const styles = stylex.create({
     gridTemplateColumns: {
       default: "minmax(0, 1fr)",
       [media.sm]: "repeat(2, minmax(0, 1fr))",
-      [media.lg]: "repeat(4, minmax(0, 1fr))",
+      [media.lg]: "repeat(3, minmax(0, 1fr))",
     },
   },
   formatCopy: {

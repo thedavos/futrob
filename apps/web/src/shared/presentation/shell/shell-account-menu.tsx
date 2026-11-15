@@ -3,23 +3,32 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
+import { useRef } from "react";
 import {
   applyStyles,
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  useSidebar,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { CaretDownIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { initialsFromName } from "@/shared/presentation/initials-from-name.ts";
+import { useIsSuperuser } from "@/shared/presentation/permissions/index.ts";
 import { announceIdentityChange } from "@/shared/presentation/query/identity-change.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { accountNavItems } from "@/shared/presentation/shell/nav-registry.ts";
+import {
+  useShellAccountDialogs,
+  type ShellAccountMenuSurface,
+} from "@/shared/presentation/shell/shell-account-dialogs.tsx";
 
 const styles = stylex.create({
   triggerCompact: {
@@ -34,6 +43,11 @@ const styles = stylex.create({
     justifyContent: "flex-start",
     paddingInlineStart: 0,
     paddingInlineEnd: "0.375rem",
+  },
+  triggerFooter: {
+    minWidth: 0,
+    width: "100%",
+    justifyContent: "flex-start",
   },
   row: {
     display: "flex",
@@ -81,18 +95,39 @@ const styles = stylex.create({
   },
 });
 
-export function AccountMenu({ compact = false }: { readonly compact?: boolean }) {
+export function AccountMenu({
+  compact = false,
+  placement = "header",
+  surface,
+}: {
+  readonly compact?: boolean;
+  readonly surface: ShellAccountMenuSurface;
+  /** `footer` fills the row and opens upward, since the menu has no room below it. */
+  readonly placement?: "header" | "footer";
+}) {
   const session = authClient.useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { setOpenMobile } = useSidebar();
+  const { t } = useI18n();
   const user = session.data?.user;
-  const name = user?.name?.trim() || user?.email || "Cuenta";
-  const shortName = abbreviatedDisplayName(name);
-  const items = accountNavItems();
-  const trigger = applyStyles(compact ? styles.triggerCompact : styles.triggerExpanded);
+  const fallbackName = t("shell.account.fallback");
+  const name = user?.name?.trim() || user?.email || fallbackName;
+  const shortName = abbreviatedDisplayName(name, fallbackName);
+  const items = accountNavItems(t);
+  const dialogs = useShellAccountDialogs();
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const superuser = useIsSuperuser();
+  const inFooter = placement === "footer";
+  const trigger = applyStyles(
+    compact ? styles.triggerCompact : inFooter ? styles.triggerFooter : styles.triggerExpanded,
+  );
   const triggerStyle = compact
     ? trigger.style
-    : { ...trigger.style, paddingInlineStart: 0, paddingInlineEnd: "0.375rem" };
+    : inFooter
+      ? { ...trigger.style, paddingInline: "0.375rem" }
+      : { ...trigger.style, paddingInlineStart: 0, paddingInlineEnd: "0.375rem" };
+  const CaretIcon = inFooter ? CaretUpIcon : CaretDownIcon;
   const avatar = applyStyles(styles.avatar);
   const avatarStyle = { ...avatar.style, width: "1.5rem", height: "1.5rem" };
   const fallback = applyStyles(styles.fallback);
@@ -102,9 +137,13 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="Abrir menú de cuenta"
+        aria-label={t("shell.account.open")}
         render={
           <Button
+            ref={(element) => {
+              triggerRef.current = element;
+              dialogs.claimTrigger(element, surface);
+            }}
             className={trigger.className}
             dense
             size={compact ? "icon" : "default"}
@@ -115,6 +154,7 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
       >
         <span {...applyStyles(styles.row, compact && styles.rowCompact)}>
           <Avatar className={avatar.className} style={avatarStyle}>
+            {user?.image ? <AvatarImage alt="" src={user.image} /> : null}
             <AvatarFallback className={fallback.className} style={fallback.style}>
               {initialsFromName(name)}
             </AvatarFallback>
@@ -124,7 +164,7 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
               <span title={name} {...applyStyles(styles.name)}>
                 {shortName}
               </span>
-              <CaretDownIcon
+              <CaretIcon
                 aria-hidden="true"
                 className={caret.className}
                 data-caret="expand"
@@ -138,20 +178,32 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
       <DropdownMenuContent
         align="start"
         className={menu.className}
-        side="bottom"
+        side={inFooter ? "top" : "bottom"}
         style={menu.style}
       >
         {items.map((item) => (
           <DropdownMenuItem
-            disabled={item.stub}
             key={item.id}
             onClick={() => {
-              if (!item.stub) void navigate({ to: item.href });
+              if (item.kind === "link") {
+                setOpenMobile(false);
+                void navigate({ to: item.href });
+              } else dialogs.open(item.id, triggerRef.current, surface);
             }}
           >
             {item.label}
           </DropdownMenuItem>
         ))}
+        {superuser.allowed ? (
+          <>
+            <DropdownMenuItem onClick={() => void navigate({ to: "/admin/provider-health" })}>
+              {t("shell.account.providerHealth")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void navigate({ to: "/admin/billing" })}>
+              {t("shell.account.planAdmin")}
+            </DropdownMenuItem>
+          </>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => {
@@ -161,15 +213,15 @@ export function AccountMenu({ compact = false }: { readonly compact?: boolean })
             });
           }}
         >
-          Cerrar sesión
+          {t("shell.account.signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-function abbreviatedDisplayName(name: string): string {
+function abbreviatedDisplayName(name: string, fallback: string): string {
   const trimmed = name.trim();
-  if (!trimmed) return "Cuenta";
+  if (!trimmed) return fallback;
   if (trimmed.includes("@")) {
     const local = trimmed.slice(0, trimmed.indexOf("@")) || trimmed;
     return local.length > 12 ? `${local.slice(0, 10)}…` : local;

@@ -1,0 +1,81 @@
+// Test-discipline lint, run by `npm run lint:tests` (chained into `npm run check`).
+// Kept apart from vite.config.ts because test files are outside the type-aware main lint.
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "off"
+  },
+  "plugins": ["vitest"],
+  "jsPlugins": [
+    {
+      "name": "futrob",
+      "specifier": "./futrob/index.ts"
+    }
+  ],
+  "ignorePatterns": ["**/node_modules/**", "**/dist/**"],
+  "overrides": [
+    {
+      "files": ["**/*.{test,spec}.{ts,tsx}"],
+      "rules": {
+        "vitest/no-focused-tests": "error",
+        "futrob/no-test-timeout": "error",
+        "futrob/no-test-retry": "error",
+        "futrob/require-skip-tracking-issue": "error"
+      }
+    },
+    // Legacy allowlist: per-test timeouts that predate futrob/no-test-timeout. Only the timeout rule is
+    // off here; futrob/no-test-retry still applies (pinned by futrob/rules/test-discipline.test.ts).
+    // Remove a file once its timeouts move to project testTimeout or the waits are fixed. Do not add files.
+    {
+      "files": [
+        "**/apps/api/scripts/seed-demo/demo-superuser.integration.test.ts",
+        "**/apps/api/src/adapters/billing/billing-adapters.postgres.integration.test.ts",
+        "**/apps/api/src/adapters/competitions/discovery.integration.test.ts",
+        "**/apps/api/src/adapters/competitions/entry-invitation.repository.contract.test.ts",
+        "**/apps/api/src/adapters/identity/actor-contact.reader.integration.test.ts",
+        "**/apps/api/src/adapters/identity/actor-onboarding.repositories.test.ts",
+        "**/apps/api/src/adapters/identity/onboarding-competition-step.migration.integration.test.ts",
+        "**/apps/api/src/adapters/identity/onboarding-game-step.migration.integration.test.ts",
+        "**/apps/api/src/adapters/notifications/activity-entries.migration.integration.test.ts",
+        "**/apps/api/src/adapters/notifications/activity-entry.repository.contract.test.ts",
+        "**/apps/api/src/adapters/persistence/migration-runner.integration.test.ts",
+        "**/apps/api/src/adapters/results/confirmation-deadline.migration.integration.test.ts",
+        "**/apps/api/src/adapters/results/encounter-candidate-association.repository.test.ts",
+        "**/apps/api/src/adapters/results/official-result.repository.test.ts",
+        "**/apps/api/src/adapters/results/official-selection.migration.integration.test.ts",
+        "**/apps/api/src/adapters/scheduling/fixture-advancement.postgres.integration.test.ts",
+        "**/apps/api/src/adapters/scheduling/fixture-plan.migration.integration.test.ts",
+        "**/apps/api/src/adapters/scheduling/schedule-change-application.postgres.integration.test.ts",
+        "**/apps/api/src/adapters/scheduling/schedule-change-expiry.postgres.integration.test.ts",
+        "**/apps/api/src/adapters/scheduling/schedule-change-negotiation.postgres.integration.test.ts",
+        "**/apps/api/src/adapters/scheduling/schedule-change-read-coherence.postgres.integration.test.ts",
+        "**/apps/api/src/adapters/statistics/team-performance-ranking.integration.test.ts",
+        "**/apps/api/src/application/competitions/competition-application.integration.test.ts",
+        "**/apps/api/src/di/billing-sync-transaction.postgres.integration.test.ts",
+        "**/apps/api/src/di/competition-encounters-authorization.integration.test.ts",
+        "**/apps/api/src/di/confirmation-expiry.integration.test.ts",
+        "**/apps/api/src/di/confirmation-expiry.process.integration.test.ts",
+        "**/apps/api/src/di/enqueue-due-provider-syncs.integration.test.ts",
+        "**/apps/api/src/di/fixture-advancement.composition.test.ts",
+        "**/apps/api/src/di/official-selection.composition.integration.test.ts",
+        "**/apps/api/src/di/onboarding-completion.postgres.integration.test.ts",
+        "**/apps/api/src/di/provider-sync-candidate-association.integration.test.ts",
+        "**/apps/api/src/di/reschedule-candidate-recalculation.integration.test.ts",
+        "**/apps/api/src/http/routes/official-selection-operator.integration.test.ts",
+        "**/apps/api/src/http/routes/official-selection.integration.test.ts",
+        "**/apps/api/src/http/routes/schedule-change-responses.test.ts",
+        "**/apps/auth/src/adapters/auth/auth-postgres.integration.test.ts",
+        "**/apps/web/src/modules/identity/presentation/private-content-gate.test.tsx",
+        "**/apps/web/src/modules/results/presentation/competition-disputes-page.test.tsx",
+        "**/apps/web/src/modules/results/presentation/competition-encounters-page.test.tsx",
+        "**/apps/web/src/modules/scheduling/presentation/schedule-change-recovery.test.tsx",
+        "**/apps/web/src/modules/statistics/presentation/competition-standings/competition-standings-page.test.tsx",
+        "**/apps/web/src/modules/statistics/presentation/team-performance/team-performance-page.test.tsx",
+        "**/packages/api-contracts/src/v1/openapi/document.validity.test.ts"
+      ],
+      "rules": {
+        "futrob/no-test-timeout": "off"
+      }
+    }
+  ]
+}

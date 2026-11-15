@@ -15,7 +15,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Label",
+  title: "Components/Forms/Label",
+  tags: ["autodocs"],
   component: Label,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof Label>;

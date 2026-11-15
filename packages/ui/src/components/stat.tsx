@@ -36,14 +36,14 @@ const styles = stylex.create({
     whiteSpace: "nowrap",
   },
   sizeCompact: {
-    fontSize: "1.25rem",
+    fontSize: "var(--text-xl)",
     lineHeight: 1,
-    fontWeight: 600,
-    letterSpacing: "-0.02em",
+    fontWeight: "var(--font-weight-semibold)",
+    letterSpacing: "var(--tracking-tight)",
     fontVariantNumeric: "tabular-nums",
   },
   sizeEmpty: {
-    fontSize: "1.25rem",
+    fontSize: "var(--text-xl)",
     fontWeight: "var(--typo-score-weight)",
     letterSpacing: "var(--typo-score-tracking)",
     fontVariantNumeric: "tabular-nums",
@@ -58,7 +58,7 @@ const styles = stylex.create({
   toneWarning: { color: colors.warning },
   toneError: { color: colors.danger },
   hint: {
-    color: colors.mutedForeground,
+    color: colors.textTertiary,
   },
   group: {
     display: "flex",

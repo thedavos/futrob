@@ -1,3 +1,5 @@
+import { registerAuditRoutes } from "@/http/routes/audit.ts";
+import { registerStatisticsRebuildRoutes } from "@/http/routes/statistics-rebuild.ts";
 import { registerScheduleChangeExpiryRoutes } from "@/http/routes/schedule-change-expiry.ts";
 import { cors } from "hono/cors";
 import { Hono } from "hono";
@@ -17,9 +19,17 @@ import {
   registerPublicEntryInvitationRoutes,
 } from "@/http/routes/entry-invitations.ts";
 import { registerMetaRoutes } from "@/http/routes/meta.ts";
+import { registerSanctionRoutes } from "@/http/routes/sanctions.ts";
+import { registerActorPreferencesRoutes } from "@/http/routes/actor-preferences.ts";
+import {
+  registerAccountDeletionJobRoutes,
+  registerAccountDeletionRoutes,
+} from "@/http/routes/account-deletion.ts";
 import { registerOnboardingRoutes } from "@/http/routes/onboarding.ts";
 import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
 import { registerOrganizationRoutes } from "@/http/routes/organizations.ts";
+import { registerBillingRoutes, registerPublicBillingRoutes } from "@/http/routes/billing.ts";
+import { registerPublicPortalRoutes } from "@/http/routes/public-portal.ts";
 import { registerPlayerRoutes } from "@/http/routes/players.ts";
 import { registerTeamRoutes } from "@/http/routes/teams.ts";
 import { registerAuthorizationRoutes } from "@/http/routes/authorization.ts";
@@ -32,6 +42,11 @@ import { registerCandidateRecalculationRoutes } from "@/http/routes/candidate-re
 import { registerConfirmationExpiryRoutes } from "@/http/routes/confirmation-expiry.ts";
 import { registerProviderHealthRoutes } from "@/http/routes/provider-health.ts";
 import { registerActivityRoutes } from "@/http/routes/activities.ts";
+import {
+  registerEmailDispatchRoutes,
+  registerEmailPreferenceRoutes,
+  registerPublicEmailRoutes,
+} from "@/http/routes/email.ts";
 
 export interface AppDeps {
   readonly modules: AppModules;
@@ -87,19 +102,31 @@ export function createApp(deps: AppDeps): Hono {
   const v1 = new Hono();
 
   registerMetaRoutes(v1, deps);
+  registerPublicPortalRoutes(v1, deps);
+  registerPublicBillingRoutes(v1, deps);
+  registerPublicEmailRoutes(v1, deps);
   registerOpenApiRoutes(v1);
   registerProviderSyncJobRoutes(v1, deps);
   registerConfirmationExpiryRoutes(v1, deps);
+  registerEmailDispatchRoutes(v1, deps);
+  registerAccountDeletionJobRoutes(v1, deps);
   registerScheduleChangeExpiryRoutes(v1, deps);
   registerCandidateRecalculationRoutes(v1, deps);
   registerPublicEntryInvitationRoutes(v1, deps);
   registerProviderHealthRoutes(v1, deps);
+  registerStatisticsRebuildRoutes(v1, deps);
   registerGameDataClubRoutes(v1, deps);
   registerCompetitionRoutes(v1, deps);
   registerCompetitionParticipantRoutes(v1, deps);
   registerEntryInvitationRoutes(v1, deps);
+  registerSanctionRoutes(v1, deps);
+  registerAuditRoutes(v1, deps);
   registerOnboardingRoutes(v1, deps);
+  registerActorPreferencesRoutes(v1, deps);
+  registerEmailPreferenceRoutes(v1, deps);
+  registerAccountDeletionRoutes(v1, deps);
   registerOrganizationRoutes(v1, deps);
+  registerBillingRoutes(v1, deps);
   registerPlayerRoutes(v1, deps);
   registerTeamRoutes(v1, deps);
   registerAuthorizationRoutes(v1, deps);

@@ -4,6 +4,7 @@ export function isKnockoutFixtureStageKind(kind: FixtureStage["kind"]): boolean 
   switch (kind) {
     case "league":
     case "groups":
+    case "swiss":
       return false;
     case "knockout":
     case "playoffs":

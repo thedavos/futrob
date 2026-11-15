@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { LOGIN_ROUTE, resolveSessionGate } from "./session-gate.ts";
+import {
+  ACCOUNT_DELETION_SCHEDULED_ROUTE,
+  LOGIN_ROUTE,
+  resolveSessionGate,
+} from "./session-gate.ts";
 import {
   resetSessionCredentialStore,
   saveSession,
@@ -79,6 +83,9 @@ describe("session gate", () => {
     });
     fetchMock.mockImplementation(async (input) => {
       const path = new URL(String(input)).pathname;
+      if (path.endsWith("/identity/account/deletion")) {
+        return Response.json({ deletion: { status: "active" }, blockers: [] });
+      }
       const body = path.endsWith("/identity/onboarding")
         ? {
             completed: true,
@@ -107,6 +114,7 @@ describe("session gate", () => {
     expect(await resolveSessionGate()).toMatchObject({ kind: "ready", route: "/orgs/org-1" });
     expect(fetchMock.mock.calls.map(([input]) => new URL(String(input)).pathname)).toEqual([
       "/api/v1/identity/onboarding",
+      "/api/v1/identity/account/deletion",
       "/api/v1/organizations/post-auth-destination",
     ]);
   });
@@ -126,7 +134,7 @@ describe("session gate", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("legacy and inconsistent steps fall back safely", async () => {
+  it("a step outside the persisted path falls back to welcome", async () => {
     await saveSession({
       token: "bearer-token-1",
       user: { id: "user-1", name: "Ana", email: "ana@club.mx" },
@@ -138,14 +146,48 @@ describe("session gate", () => {
           completedAt: null,
           version: null,
           path: "organization",
-          currentStep: "game",
+          currentStep: "club",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     );
     expect(await resolveSessionGate()).toMatchObject({
       kind: "onboarding",
-      route: "/(onboarding)/organization",
+      route: "/(onboarding)/welcome",
     });
+  });
+
+  it("a scheduled deletion shows only its date and the way to cancel", async () => {
+    await saveSession({
+      token: "bearer-token-1",
+      user: { id: "user-1", name: "Ana", email: "ana@club.mx" },
+    });
+    fetchMock.mockImplementation(async (input) => {
+      const path = new URL(String(input)).pathname;
+      return path.endsWith("/identity/onboarding")
+        ? Response.json({
+            completed: true,
+            completedAt: "2026-01-01T00:00:00.000Z",
+            version: 1,
+            path: "player",
+            currentStep: null,
+          })
+        : Response.json({
+            deletion: {
+              status: "scheduled",
+              requestedAt: "2026-11-10T09:00:00.000Z",
+              scheduledFor: "2026-12-10T09:00:00.000Z",
+            },
+            blockers: [],
+          });
+    });
+    expect(await resolveSessionGate()).toEqual({
+      kind: "deletion-scheduled",
+      route: ACCOUNT_DELETION_SCHEDULED_ROUTE,
+      scheduledFor: new Date("2026-12-10T09:00:00.000Z"),
+    });
+    expect(fetchMock.mock.calls.map(([input]) => new URL(String(input)).pathname)).not.toContain(
+      "/api/v1/organizations/post-auth-destination",
+    );
   });
 });

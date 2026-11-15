@@ -36,6 +36,7 @@ export {
 export type { IdGeneratorPort } from "./id-generator.port.ts";
 export type { TransactionPort } from "./transaction.port.ts";
 export type {
+  AuthorizationBatchPort,
   AuthorizationDecision,
   AuthorizationDecisionReason,
   AuthorizationPort,

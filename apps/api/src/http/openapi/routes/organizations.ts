@@ -1,4 +1,4 @@
-import { defineRoute } from "@/http/openapi/define-route.ts";
+import { defineRoute, PLAN_GATED_DESCRIPTION } from "@/http/openapi/define-route.ts";
 import { pathParams } from "@/http/openapi/path-params.ts";
 import {
   CreateInvitationResponse,
@@ -7,6 +7,8 @@ import {
   ResolvePostAuthDestinationResponse,
 } from "@/http/openapi/components.ts";
 import {
+  listOrganizationMembersQuerySchema,
+  listOrganizationMembersResponseSchema,
   acceptInvitationRequestSchema,
   acceptInvitationResponseSchema,
   createOrganizationRequestSchema,
@@ -32,7 +34,8 @@ export const acceptOrganizationInvitationRoute = defineRoute({
     description: "Organization invitation accepted",
     schema: acceptInvitationResponseSchema,
   },
-  errors: [400, 401, 404, 409, 429],
+  errors: [400, 401, 402, 404, 409, 429],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
 });
 
 export const checkOrganizationNameAvailabilityRoute = defineRoute({
@@ -159,6 +162,26 @@ export const createOrganizationInvitationRoute = defineRoute({
     status: 201,
     description: "Organization invitation created, including the one-time token",
     schema: CreateInvitationResponse,
+  },
+  errors: [400, 401, 402, 403, 404, 409],
+  errorDescriptions: { 402: PLAN_GATED_DESCRIPTION },
+});
+
+export const listOrganizationMembersRoute = defineRoute({
+  method: "get",
+  path: "/organizations/{organizationId}/members",
+  operationId: "listOrganizationMembers",
+  tags: ["organizations"],
+  summary:
+    "Read the complete organization member directory (requires organizations.memberships.read)",
+  description:
+    "Returns at most 500 members. Rejects directories above 500 members or 100 competitions. Query parameters are not supported.",
+  params: pathParams(["organizationId"]),
+  query: listOrganizationMembersQuerySchema,
+  success: {
+    status: 200,
+    description: "Complete member directory",
+    schema: listOrganizationMembersResponseSchema,
   },
   errors: [400, 401, 403, 404, 409],
 });

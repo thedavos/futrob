@@ -42,7 +42,6 @@ export function OrganizationAvatar({
   const source = previewUrl ?? (logo ? organizationLogoUrl(logo) : null);
   const [failedSource, setFailedSource] = useState<string | null>(null);
   const failed = source != null && failedSource === source;
-  const frame = applyStyles(sizeStyles[size]);
   const alt = t("organizations.profile.logo.alt", { name });
 
   if (bare && source && !failed) {
@@ -59,7 +58,7 @@ export function OrganizationAvatar({
   }
 
   return (
-    <Avatar className={frame.className} style={frame.style}>
+    <Avatar className={sizeStyles[size]}>
       {source && !failed ? <AvatarImage alt={alt} src={source} /> : null}
       <AvatarFallback aria-hidden="true">{organizationMonogram(name)}</AvatarFallback>
     </Avatar>

@@ -9,6 +9,7 @@ import {
   subscribeInvitationLinkAccept,
 } from "./invitation-link-accept.ts";
 import { clearPendingInvitation, peekPendingInvitation } from "./onboarding-draft.ts";
+import { clearSession, saveSession } from "./session-store.ts";
 import type { GateResult } from "./session-gate.ts";
 
 const accepted: AcceptCompetitionInvitationResponse = {
@@ -51,6 +52,7 @@ beforeEach(() => {
 afterEach(async () => {
   resetInvitationLinkAcceptForTests();
   await clearPendingInvitation();
+  await clearSession();
 });
 
 describe("acceptInvitationLink", () => {
@@ -113,6 +115,29 @@ describe("startInvitationLinkAccept", () => {
         status: "ready",
         route: "/orgs/org-1/competitions/comp-1",
       });
+    });
+    expect(mocks.accept).toHaveBeenCalledTimes(2);
+  });
+
+  it("accepts again for the next account after a session change", async () => {
+    await saveSession({
+      token: "token-ana",
+      user: { id: "actor-ana", name: "Ana", email: "ana@club.mx" },
+    });
+    startInvitationLinkAccept("link-token");
+    await vi.waitFor(() => {
+      expect(getInvitationLinkAccept("link-token").status).toBe("ready");
+    });
+
+    await saveSession({
+      token: "token-beto",
+      user: { id: "actor-beto", name: "Beto", email: "beto@club.mx" },
+    });
+    expect(getInvitationLinkAccept("link-token")).toEqual({ status: "idle" });
+    startInvitationLinkAccept("link-token");
+
+    await vi.waitFor(() => {
+      expect(getInvitationLinkAccept("link-token").status).toBe("ready");
     });
     expect(mocks.accept).toHaveBeenCalledTimes(2);
   });

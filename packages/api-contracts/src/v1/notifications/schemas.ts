@@ -8,8 +8,22 @@ export const activityKindSchema = z.enum([
   "roster_invitation",
   "competition_published",
   "entry_invitation",
+  "schedule_change",
+  "organizer_decision",
+  "competition_entry",
 ]);
 export type ActivityKindDto = z.infer<typeof activityKindSchema>;
+
+export const activityOutcomeSchema = z.enum([
+  "entry_approved",
+  "entry_rejected",
+  "schedule_set",
+  "schedule_kept",
+  "walkover_intended",
+  "sanction_imposed",
+  "sanction_revoked",
+]);
+export type ActivityOutcomeDto = z.infer<typeof activityOutcomeSchema>;
 
 export const activityStatusSchema = z.enum(["open", "closed"]);
 export type ActivityStatusDto = z.infer<typeof activityStatusSchema>;
@@ -29,6 +43,8 @@ export const activityEntrySchema = z.object({
     competitionName: z.string().nullable(),
     encounterLabel: z.string().nullable(),
     teamName: z.string().nullable(),
+    /** What an organizer decided; only `organizer_decision` rows carry it. */
+    outcome: activityOutcomeSchema.nullable(),
   }),
   openedAt: z.string().datetime(),
   closedAt: z.string().datetime().nullable(),

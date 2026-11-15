@@ -4,12 +4,7 @@ import {
   scheduleChangeRequestSchema,
   type acceptScheduleChangeProposalRequestSchema,
 } from "@futrob/api-contracts";
-import {
-  ENCOUNTER_PERMISSION,
-  type ScheduleChangeCommandOutput,
-  type ScheduleChangeResponder,
-  type ScheduleChangeRequest,
-} from "@futrob/scheduling";
+import type { ScheduleChangeCommandOutput, ScheduleChangeResponder } from "@futrob/scheduling";
 import { asEncounterId, asTeamId, type Result } from "@futrob/shared-kernel";
 import { type Context, type Hono } from "hono";
 import type { z } from "zod";
@@ -18,6 +13,7 @@ import { apiErrorResponse, failureToHttp, type HttpMappableFailure } from "@/htt
 import type { ServiceAuthVariables } from "@/http/middleware/service-auth.ts";
 import {
   toScheduleChangeCommandResponse,
+  toScheduleChangeListResponse,
   toScheduleChangeRequestDto,
 } from "@/http/mappers/schedule-change-request.ts";
 import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
@@ -54,6 +50,7 @@ function commandResponse(
 export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): void {
   const secured = createServiceOpenApiRouter(deps.internalJobSecret);
   const scheduling = deps.modules.scheduling;
+  const { activityCommands } = deps.modules;
 
   /**
    * Scope every response command shares: the actor comes from service auth and the
@@ -79,22 +76,6 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     };
   }
 
-  async function requestDto(c: SecuredContext, request: ScheduleChangeRequest) {
-    const access =
-      request.status === "escalated"
-        ? await deps.modules.authorization.port.decide({
-            actorId: c.get("actorId"),
-            permission: ENCOUNTER_PERMISSION.rescheduleResolve,
-            scope: {
-              organizationId: request.organizationId,
-              competitionId: request.competitionId,
-              encounterId: request.encounterId,
-            },
-          })
-        : null;
-    return toScheduleChangeRequestDto(request, access?.allowed ? ["resolve"] : []);
-  }
-
   secured.openapi(listScheduleChangeRequestsRoute, async (c) => {
     const result = await scheduling.listScheduleChangeRequests.execute({
       actorId: c.get("actorId"),
@@ -102,9 +83,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     });
     if (result.isErr()) return failureToHttp(result.error);
     return jsonResponse(
-      listScheduleChangeRequestsResponseSchema.parse({
-        requests: await Promise.all(result.value.map((request) => requestDto(c, request))),
-      }),
+      listScheduleChangeRequestsResponseSchema.parse(toScheduleChangeListResponse(result.value)),
     );
   });
 
@@ -114,7 +93,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     const encounter = await scheduling.encounters.findById(encounterId);
     if (!encounter) return encounterNotFound();
 
-    const result = await scheduling.createScheduleChangeRequest.execute({
+    const result = await activityCommands.createScheduleChangeRequest.execute({
       actorId: c.get("actorId"),
       organizationId: encounter.organizationId,
       competitionId: encounter.competitionId,
@@ -127,7 +106,9 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
       idempotencyKey: parsed.idempotencyKey,
     });
     if (result.isErr()) return failureToHttp(result.error);
-    return jsonResponse(scheduleChangeRequestSchema.parse(await requestDto(c, result.value)));
+    return jsonResponse(
+      scheduleChangeRequestSchema.parse(toScheduleChangeRequestDto(result.value)),
+    );
   });
 
   secured.openapi(getScheduleChangeRequestRoute, async (c) => {
@@ -138,7 +119,10 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
       requestId: params.requestId,
     });
     if (result.isErr()) return failureToHttp(result.error);
-    return jsonResponse(scheduleChangeRequestSchema.parse(await requestDto(c, result.value)));
+    const { request, capabilities } = result.value;
+    return jsonResponse(
+      scheduleChangeRequestSchema.parse(toScheduleChangeRequestDto(request, capabilities)),
+    );
   });
 
   secured.openapi(resolveScheduleChangeRequestRoute, async (c) => {
@@ -147,7 +131,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     if (!scope) return encounterNotFound();
     const resolution = body.resolution;
     return commandResponse(
-      await scheduling.resolveScheduleChangeRequest.execute({
+      await activityCommands.resolveScheduleChangeRequest.execute({
         ...scope,
         proposalId: body.proposalId,
         resolution:
@@ -165,7 +149,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
     return commandResponse(
-      await scheduling.acceptScheduleChangeProposal.execute({
+      await activityCommands.acceptScheduleChangeProposal.execute({
         ...scope,
         responder: toResponder(body.responder),
       }),
@@ -177,7 +161,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
     return commandResponse(
-      await scheduling.rejectScheduleChangeProposal.execute({
+      await activityCommands.rejectScheduleChangeProposal.execute({
         ...scope,
         responder: toResponder(body.responder),
         reason: body.reason,
@@ -190,7 +174,7 @@ export function registerScheduleChangeRequestRoutes(app: Hono, deps: AppDeps): v
     const scope = await commandScope(c, body);
     if (!scope) return encounterNotFound();
     return commandResponse(
-      await scheduling.counterScheduleChangeProposal.execute({
+      await activityCommands.counterScheduleChangeProposal.execute({
         ...scope,
         teamId: asTeamId(body.teamId),
         timeZone: body.timeZone,

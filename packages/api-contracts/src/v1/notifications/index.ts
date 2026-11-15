@@ -11,3 +11,21 @@ export {
   type ListActivitiesQuery,
   type ListActivitiesResponse,
 } from "./schemas.ts";
+export {
+  emailLocaleSchema,
+  emailPreferencesSchema,
+  getEmailPreferencesResponseSchema,
+  runEmailDispatchResponseSchema,
+  saveEmailPreferencesRequestSchema,
+  saveEmailPreferencesResponseSchema,
+  unsubscribeEmailRequestSchema,
+  unsubscribeEmailResponseSchema,
+  type EmailLocaleDto,
+  type EmailPreferencesDto,
+  type GetEmailPreferencesResponse,
+  type RunEmailDispatchResponse,
+  type SaveEmailPreferencesRequest,
+  type SaveEmailPreferencesResponse,
+  type UnsubscribeEmailRequest,
+  type UnsubscribeEmailResponse,
+} from "./email.ts";

@@ -46,7 +46,10 @@ export function rehydratePlan(
         })),
     } satisfies FixtureStage;
   });
-  return {
+  const withdrawnTeamIds = seedArraySchema
+    .parse(parseJsonColumn(z.unknown(), row.withdrawn_team_ids))
+    .map(asTeamId);
+  const plan: FixturePlan = {
     id: row.id,
     revision: row.revision,
     status: row.status,
@@ -62,6 +65,7 @@ export function rehydratePlan(
     seed: seedArraySchema.parse(parseJsonColumn(z.unknown(), row.seed)).map(asTeamId),
     stages,
   };
+  return withdrawnTeamIds.length > 0 ? { ...plan, withdrawnTeamIds } : plan;
 }
 
 export function rehydrateEncounter(row: EncounterRow): FixtureEncounter {
@@ -89,14 +93,28 @@ export function rehydrateEncounter(row: EncounterRow): FixtureEncounter {
           }
         : null,
   };
-  if (row.group_id) {
-    return { ...encounter, groupId: row.group_id };
-  }
-  return encounter;
+  const placed = row.group_id ? { ...encounter, groupId: row.group_id } : encounter;
+  return row.closed_without_result ? { ...placed, closedWithoutResult: true } : placed;
 }
 
+const advancedFromColumnSchema = z.object({
+  advancedFrom: fixtureParticipantSlotSchema.optional(),
+});
+
 function parseParticipantSlot(value: PgJsonInput): FixtureParticipantSlot {
-  const parsed = parseJsonColumn(fixtureParticipantSlotSchema, value);
+  const slot = toParticipantSlot(parseJsonColumn(fixtureParticipantSlotSchema, value));
+  const { advancedFrom } = parseJsonColumn(advancedFromColumnSchema, value);
+  if (slot.kind !== "team" || !advancedFrom) return slot;
+  const origin = toParticipantSlot(advancedFrom);
+  if (origin.kind === "team" || origin.kind === "bye") {
+    throw new Error("An advanced fixture slot must originate from a placeholder");
+  }
+  return { ...slot, advancedFrom: origin };
+}
+
+function toParticipantSlot(
+  parsed: z.infer<typeof fixtureParticipantSlotSchema>,
+): FixtureParticipantSlot {
   switch (parsed.kind) {
     case "team":
       return { kind: "team", teamId: asTeamId(parsed.teamId) };
@@ -125,7 +143,7 @@ function parseParticipantSlot(value: PgJsonInput): FixtureParticipantSlot {
 }
 
 const officialMatchCountSchema = z.union([z.literal(1), z.literal(2)]);
-const fixtureStageKindSchema = z.enum(["league", "groups", "knockout", "playoffs"]);
+const fixtureStageKindSchema = z.enum(["league", "groups", "knockout", "playoffs", "swiss"]);
 const resolutionModeSchema = z.enum(["independent_matches", "aggregate_score"]);
 const fixturePlanStatusSchema = z.enum(["active", "superseded"]);
 const fixturePlanFormatSchema = z.enum([
@@ -133,6 +151,7 @@ const fixturePlanFormatSchema = z.enum([
   "knockout",
   "groups-knockout",
   "league-playoffs",
+  "swiss",
 ]);
 const seedArraySchema = z.array(z.string());
 export const idRowSchema = z.object({ id: pgTextSchema });
@@ -151,6 +170,7 @@ export const planRowSchema = z.object({
   time_zone: z.string(),
   home_and_away: z.coerce.boolean(),
   seed: z.unknown(),
+  withdrawn_team_ids: z.unknown(),
 });
 
 const stageRowSchema = z.object({
@@ -178,6 +198,7 @@ export const encounterRowSchema = z.object({
   official_match_count: z.coerce.number(),
   series_id: z.string().nullable(),
   resolution_mode: resolutionModeSchema.nullable(),
+  closed_without_result: z.boolean(),
 });
 
 export type PlanRow = z.infer<typeof planRowSchema>;

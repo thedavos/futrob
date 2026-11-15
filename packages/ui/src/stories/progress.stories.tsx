@@ -47,7 +47,8 @@ const styles = stylex.create({
 const playground = applyStyles(styles.playground);
 
 const meta = {
-  title: "Primitives/Progress",
+  title: "Components/Feedback/Progress",
+  tags: ["autodocs"],
   component: Progress,
   parameters: { layout: "centered" },
   args: {

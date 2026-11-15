@@ -13,6 +13,7 @@ import {
   Form,
   InputWithIcon,
   readFormString,
+  TextLink,
   type FormErrors,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -41,9 +42,13 @@ import type {
 } from "@/modules/identity/presentation/auth-form-state.ts";
 import {
   validateSignupField,
+  validatePasswordConfirmation,
+  type SignupFormField,
   type SignupValues,
 } from "@/modules/identity/presentation/signup-form-validation.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LEGAL_HREFS } from "@/shared/presentation/legal/legal-hrefs.ts";
 
 const styles = stylex.create({
   form: {
@@ -111,6 +116,12 @@ const styles = stylex.create({
   submit: {
     width: "100%",
   },
+  consent: {
+    margin: 0,
+    fontSize: "0.75rem",
+    lineHeight: "1.25rem",
+    color: colors.mutedForeground,
+  },
   footer: {
     textAlign: "center",
     fontSize: "0.75rem",
@@ -160,10 +171,13 @@ function signupFailure(error: AuthClientError): SignupFailure {
 }
 
 export function SignupForm() {
+  const { t } = useI18n();
   const { redirectTo, afterAuthenticated } = useAuthResume();
   const [state, setState] = useState<AuthFormState>({ status: "idle" });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const validation = useFormValidation<AuthFormField>();
+  const validation = useFormValidation<SignupFormField>();
+  const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
+  const confirmationValidation = validation.getFieldValidationProps("confirmPassword");
 
   const isSubmitting = state.status === "submitting" || state.status === "success";
   const form = applyStyles(styles.form);
@@ -180,7 +194,7 @@ export function SignupForm() {
   const link = applyStyles(styles.link);
 
   async function handleSubmit(formValues: SignupValues) {
-    const values: SignupValues = {
+    const values = {
       name: formValues.name.trim(),
       email: formValues.email.trim(),
       password: formValues.password,
@@ -299,6 +313,9 @@ export function SignupForm() {
             }
             id="password"
             name="password"
+            onChange={() => {
+              setTimeout(() => confirmationValidation.actionsRef.current?.validate(), 0);
+            }}
             placeholder="Crea una contraseña"
             startIcon={LockIcon}
             type={isPasswordVisible ? "text" : "password"}
@@ -312,9 +329,61 @@ export function SignupForm() {
           </FieldValidity>
           <FieldError />
         </Field>
+
+        <Field
+          {...confirmationValidation}
+          disabled={isSubmitting}
+          name="confirmPassword"
+          validate={(value, values) =>
+            validatePasswordConfirmation(readFormString(value), readFormString(values.password))
+          }
+        >
+          <FieldLabel htmlFor="confirmPassword">Repetir contraseña</FieldLabel>
+          <InputWithIcon
+            autoComplete="new-password"
+            disabled={isSubmitting}
+            endAction={
+              <Button
+                aria-label={
+                  isConfirmationVisible
+                    ? "Ocultar contraseña repetida"
+                    : "Mostrar contraseña repetida"
+                }
+                aria-pressed={isConfirmationVisible}
+                className={toggle.className}
+                disabled={isSubmitting}
+                onClick={() => setIsConfirmationVisible((isVisible) => !isVisible)}
+                size="icon"
+                static
+                style={toggle.style}
+                type="button"
+                variant="ghost"
+              >
+                {isConfirmationVisible ? <EyeSlashIcon /> : <EyeIcon />}
+              </Button>
+            }
+            id="confirmPassword"
+            name="confirmPassword"
+            placeholder="Repite tu contraseña"
+            startIcon={LockIcon}
+            type={isConfirmationVisible ? "text" : "password"}
+          />
+          <FieldError />
+        </Field>
       </div>
 
       <div {...applyStyles(styles.actions)}>
+        <p {...applyStyles(styles.consent)}>
+          {t("legal.signup.lead")}{" "}
+          <TextLink render={<Link to={LEGAL_HREFS.terms} />} text="caption">
+            {t("legal.nav.terms")}
+          </TextLink>
+          {t("legal.signup.joiner")}
+          <TextLink render={<Link to={LEGAL_HREFS.privacy} />} text="caption">
+            {t("legal.nav.privacy")}
+          </TextLink>
+          {t("legal.signup.end")}
+        </p>
         <Button
           className={submit.className}
           disabled={isSubmitting}

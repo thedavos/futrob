@@ -26,7 +26,7 @@ function CaptainInvitationsStory({ locale, ...props }: StoryArgs) {
 }
 
 const meta = {
-  title: "Product/Competition/Captain invitations",
+  title: "Product/Competition/Captain/Invitations",
   component: CaptainInvitationsStory,
   parameters: { layout: "fullscreen" },
   args: {

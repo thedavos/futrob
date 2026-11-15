@@ -20,13 +20,14 @@ const MONTHS = [
 ] as const;
 
 const TIEBREAKS = "Puntos → Diferencia de goles → Goles a favor";
+const SWISS_TIEBREAKS = "Puntos → Buchholz → Diferencia de goles → Goles a favor";
 
 export function teamCountLabel(count: number): string {
   return count === 1 ? "1 equipo" : `${count} equipos`;
 }
 
-export function reviewTiebreaks(): string {
-  return TIEBREAKS;
+export function reviewTiebreaks(format: CompetitionFormatDto): string {
+  return format === "swiss" ? SWISS_TIEBREAKS : TIEBREAKS;
 }
 
 export function datesLabel(schedule: CompetitionDraftDto["competition"]["schedule"]): string {
@@ -59,7 +60,7 @@ export function rulesArePublishable(
   rules: CompetitionDraftDto["rules"],
 ): boolean {
   const needsRegular = format !== "knockout";
-  const needsKnockout = format !== "league";
+  const needsKnockout = format !== "league" && format !== "swiss";
   if (Boolean(rules.regularStage) !== needsRegular) return false;
   if (Boolean(rules.knockoutStage) !== needsKnockout) return false;
   if (
@@ -89,7 +90,9 @@ function stageText(
 function stageRules(format: CompetitionFormatDto, rules: CompetitionDraftDto["rules"]) {
   const knockoutLabel = format === "league-playoffs" ? "Playoffs" : "Eliminación";
   return [
-    rules.regularStage ? { label: "Etapa regular", rules: rules.regularStage } : null,
+    rules.regularStage
+      ? { label: format === "swiss" ? "Fase suiza" : "Etapa regular", rules: rules.regularStage }
+      : null,
     rules.knockoutStage ? { label: knockoutLabel, rules: rules.knockoutStage } : null,
   ].filter((stage) => stage != null);
 }

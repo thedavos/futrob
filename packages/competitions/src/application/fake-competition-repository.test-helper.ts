@@ -93,6 +93,15 @@ export class FakeCompetitionRepository implements CompetitionRepository {
       .sort(compareByTime((item) => item.updatedAt, TIME_SORT_DIRECTION.desc));
   }
 
+  async listNamesByOrganization(organizationId: OrganizationId, limit: number) {
+    return [...this.rows.values()]
+      .map((draft) => draft.competition)
+      .filter((competition) => competition.organizationId === organizationId)
+      .sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))
+      .slice(0, limit)
+      .map((competition) => ({ id: competition.id, name: competition.name }));
+  }
+
   all(): readonly CompetitionDraft[] {
     return [...this.rows.values()];
   }

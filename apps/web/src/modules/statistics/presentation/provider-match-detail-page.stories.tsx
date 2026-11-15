@@ -135,7 +135,7 @@ function DetailStory({ scenario }: StoryArgs) {
 }
 
 const meta = {
-  title: "Product/Player/Match detail",
+  title: "Product/Player/Matches/Detail",
   parameters: { layout: "fullscreen" },
   args: { scenario: "ready" },
   argTypes: {

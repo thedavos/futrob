@@ -1,7 +1,7 @@
 import { requestUrl } from "@futrob/sdk/testing";
 import { vi } from "vite-plus/test";
 
-export type FakeRoute = (url: URL) => Response | Promise<Response>;
+export type FakeRoute = (url: URL, init?: RequestInit) => Response | Promise<Response>;
 
 /**
  * Serves `/api/v1` paths from `routes` through the global `fetch` the app client uses.
@@ -20,7 +20,7 @@ export function installFakeApi(routes: Record<string, FakeRoute>) {
       const abort = () => reject(new DOMException("The operation was aborted.", "AbortError"));
       if (signal?.aborted) return abort();
       signal?.addEventListener("abort", abort, { once: true });
-      Promise.resolve(route(url)).then(resolve, reject);
+      Promise.resolve(route(url, init)).then(resolve, reject);
     });
   });
   return { routes, requests };

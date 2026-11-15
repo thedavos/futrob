@@ -44,6 +44,7 @@ export function performanceCompetition(): CompetitionDraft {
       knockoutStage: null,
       awayGoalsEnabled: false,
       maxRosterSize: null,
+      rankingEligibility: null,
       createdAt: date,
     },
   };

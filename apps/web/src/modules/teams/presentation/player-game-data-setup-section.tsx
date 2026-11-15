@@ -212,7 +212,7 @@ export function GameDataSetupSection({
       <section {...applyStyles(styles.setupIdle)}>
         <img alt="" data-outline="none" src={gamepadUrl} {...applyStyles(styles.setupGamepad)} />
         <div {...applyStyles(styles.setupCopy)}>
-          <Heading className={styles.setupTitle}>{t("player.gameData.setup.title")}</Heading>
+          <Heading className={typography.title}>{t("player.gameData.setup.title")}</Heading>
           <Subtitle className={styles.setupSubtitle}>
             {t("player.gameData.setup.subtitle")}
           </Subtitle>
@@ -236,7 +236,7 @@ export function GameDataSetupSection({
             src={gamepadUrl}
             {...applyStyles(styles.setupGamepadCompact)}
           />
-          <Heading className={styles.setupTitle}>{t("player.gameData.setup.title")}</Heading>
+          <Heading className={typography.title}>{t("player.gameData.setup.title")}</Heading>
         </div>
         {stepper}
         <div {...applyStyles(styles.setupBody)}>

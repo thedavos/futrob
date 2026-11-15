@@ -1,0 +1,13 @@
+ts	phase	decision	why	evidence	result
+2026-11-10T00:54:13.588227+00:00	baseline	Recorded origin/main db66feb67f2296e77a8f89347b51a097c09ead26	Start from fetched main as requested	NOTES.md	verified
+2026-11-10T00:54:13.588227+00:00	database	Used owned Postgres container at localhost:55432/futrob_feed01	Configured Neon database is shared	doctor.log	verified
+2026-11-10T00:54:13.588227+00:00	verification	Used CLI commands and a public SDK driver	CLI lacks activity, selection, invitation and reschedule operations	sdk-readback.log	verified
+2026-11-10T00:54:13.588227+00:00	fix	Persisted rejected registration and kept one decision	Live CLI and Postgres regression returned pending	rejection-red.log	red then green
+2026-11-10T00:54:13.588227+00:00	fix	Added personal home and paginated activity page with a shared typed source	Player activity views were absent	player-red.log	red then green
+2026-11-10T00:54:13.588227+00:00	fix	Opened competition detail from team registration decisions	Rejected applicants cannot read competition matches	rejection-link-before.png	red then green
+2026-11-10T00:54:13.588227+00:00	expiry	Used production HTTP routes with an injected ClockPort	The minimum response window is one hour	sdk-expiry.log	controlled-clock integration
+2026-11-10T00:54:13.588227+00:00	review	Recorded independent read-only review	Review confirmed product changes and requested driver completion markers	NOTES.md	no remaining product findings
+2026-11-10T04:50:41.057803+00:00	resume	Preserved and reviewed all prior work	Usage limit interrupted original run	NOTES.md	same origin/main baseline
+2026-11-10T04:50:41.057803+00:00	verification	Reran check, affected tests and typechecks	Previous check had no result	api-checks-final.log	1187 API and 19 web tests pass; check and typechecks pass
+2026-11-10T04:50:41.057803+00:00	docs	Corrected registration notification status and staff scope	Documentation contradicted verified behavior	NOTES.md	ADR-0019, index and plan aligned
+2026-11-10T04:50:41.057803+00:00	cleanup	Stopped owned services and isolated database container	Keep evidence and database data after verification	cleanup.log	ports free; container exited; evidence retained

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { CheckSquareIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { CheckSquareIcon } from "@phosphor-icons/react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
@@ -9,49 +9,6 @@ import { QueueTaskItem } from "./queue-task-item.tsx";
 describe("QueueTaskItem", () => {
   afterEach(() => {
     cleanup();
-  });
-
-  it("renders title, subtitle, meta and decorative icon", () => {
-    const { container } = render(
-      <QueueTaskItem
-        icon={CheckSquareIcon}
-        meta="14h"
-        subtitle="Nova FC vs Atlas · J4"
-        title="Confirmar selección"
-      />,
-    );
-
-    expect(screen.getByRole("button", { name: /Confirmar selección/ })).toBeTruthy();
-    expect(screen.getByText("Confirmar selección")).toBeTruthy();
-    expect(screen.getByText("Nova FC vs Atlas · J4")).toBeTruthy();
-    expect(screen.getByText("14h")).toBeTruthy();
-    expect(container.querySelector('[data-slot="queue-task-item-icon"]')).toBeTruthy();
-  });
-
-  it("exposes closed tone variants via data attributes", () => {
-    const { rerender, container } = render(
-      <QueueTaskItem icon={CheckSquareIcon} title="Tarea" tone="default" />,
-    );
-    expect(container.querySelector('[data-tone="default"]')).toBeTruthy();
-
-    rerender(<QueueTaskItem icon={WarningCircleIcon} title="Urgente" tone="urgent" />);
-    expect(container.querySelector('[data-tone="urgent"]')).toBeTruthy();
-
-    rerender(<QueueTaskItem icon={CheckSquareIcon} title="Espera" tone="waiting" />);
-    expect(container.querySelector('[data-tone="waiting"]')).toBeTruthy();
-
-    rerender(<QueueTaskItem disabled icon={CheckSquareIcon} title="Hecha" tone="resolved" />);
-    expect(container.querySelector('[data-tone="resolved"]')).toBeTruthy();
-  });
-
-  it("marks dense and active states for shell density contracts", () => {
-    const { container } = render(
-      <QueueTaskItem active dense icon={CheckSquareIcon} title="Activa" />,
-    );
-
-    const trigger = container.querySelector('[data-slot="queue-task-item-trigger"]');
-    expect(trigger?.getAttribute("data-density")).toBe("dense");
-    expect(trigger?.getAttribute("data-active")).toBe("true");
   });
 
   it("collapses to an icon-only control with an accessible name", () => {

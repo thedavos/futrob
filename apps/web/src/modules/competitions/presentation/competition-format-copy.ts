@@ -14,7 +14,9 @@ export function matchesPerEncounterSummary(
   regular: 1 | 2 | null,
   knockout: 1 | 2 | null,
 ): string {
-  if (format === "league") return regular === null ? "—" : matchesPerEncounterLabel(regular);
+  if (format === "league" || format === "swiss") {
+    return regular === null ? "—" : matchesPerEncounterLabel(regular);
+  }
   if (format === "knockout") return knockout === null ? "—" : matchesPerEncounterLabel(knockout);
   if (regular === null || knockout === null) return "—";
   if (regular === knockout) return matchesPerEncounterLabel(regular);
@@ -42,6 +44,14 @@ export function roundRobinNotice(legs: Legs, matches: 1 | 2): string {
     return "Cada equipo se enfrenta dos veces a cada rival, de local y de visitante. Cada enfrentamiento es un partido.";
   }
   return "Cada equipo se enfrenta dos veces a cada rival, de local y de visitante. Cada enfrentamiento se juega en 2 partidos.";
+}
+
+export function swissNotice(matches: 1 | 2): string {
+  const encounter =
+    matches === 1
+      ? "Cada enfrentamiento es un partido."
+      : "Cada enfrentamiento se juega en 2 partidos.";
+  return `Las rondas se emparejan por resultados: nadie repite rival y, con número impar, un equipo descansa. ${encounter}`;
 }
 
 export function seriesNotice(matches: 1 | 2): string {

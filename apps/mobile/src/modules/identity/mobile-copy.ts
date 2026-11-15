@@ -1,6 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { useState } from "react";
-import { useExternalSync } from "@futrob/ui/hooks/use-external-sync";
+import { useSyncExternalStore } from "react";
 
 const LANGUAGE_KEY = "futrob.mobile.language";
 export type MobileLanguage = "es" | "en";
@@ -22,6 +21,7 @@ const messages = {
     playerPath: "Continuar como jugador",
     organizationPath: "Crear una organización",
     invitationPath: "Aceptar invitación",
+    createGameAccount: "Crea tu cuenta",
     orgName: "Nombre de la organización",
     competitionName: "Nombre de la competición",
     edition: "Edición (p. ej. FC 27)",
@@ -64,6 +64,11 @@ const messages = {
     namePlaceholder: "Tu nombre",
     login: "Iniciar sesión",
     signup: "Crear cuenta",
+    signupConsentLead: "Al crear una cuenta aceptas los",
+    signupConsentJoiner: " y la ",
+    signupConsentEnd: ".",
+    terms: "Términos de servicio",
+    privacy: "Política de privacidad",
     noAccount: "¿Aún no tienes cuenta?",
     hasAccount: "¿Ya tienes cuenta?",
     gateErrorTitle: "No pudimos comprobar tu acceso",
@@ -89,6 +94,7 @@ const messages = {
     playerPath: "Continue as a player",
     organizationPath: "Create an organization",
     invitationPath: "Accept invitation",
+    createGameAccount: "Create your account",
     orgName: "Organization name",
     competitionName: "Competition name",
     edition: "Edition (e.g. FC 27)",
@@ -131,6 +137,11 @@ const messages = {
     namePlaceholder: "Your name",
     login: "Sign in",
     signup: "Create account",
+    signupConsentLead: "By creating an account you accept the",
+    signupConsentJoiner: " and the ",
+    signupConsentEnd: ".",
+    terms: "Terms of service",
+    privacy: "Privacy policy",
     noAccount: "Don't have an account?",
     hasAccount: "Already have an account?",
     gateErrorTitle: "We couldn't verify your access",
@@ -169,17 +180,48 @@ export function localizeAuthMessage(
     : message;
 }
 
-export function useMobileCopy() {
-  const [language, setLanguage] = useState<MobileLanguage>("es");
-  useExternalSync(() => {
+/**
+ * One language for the whole app: every screen, header and tab reads the same store, so a
+ * switch in «Más» also relabels the tabs that stay mounted. The saved choice is read again
+ * whenever the first reader mounts.
+ */
+let currentLanguage: MobileLanguage = "es";
+let languageVersion = 0;
+const languageListeners = new Set<() => void>();
+
+function emitLanguage() {
+  for (const listener of languageListeners) listener();
+}
+
+function subscribeLanguage(listener: () => void) {
+  if (languageListeners.size === 0) {
+    const version = languageVersion;
     void SecureStore.getItemAsync(LANGUAGE_KEY).then((saved) => {
-      if (saved === "es" || saved === "en") setLanguage(saved);
+      const next: MobileLanguage = saved === "en" ? "en" : "es";
+      if (version !== languageVersion || next === currentLanguage) return;
+      currentLanguage = next;
+      emitLanguage();
     });
-  }, []);
+  }
+  languageListeners.add(listener);
+  return () => {
+    languageListeners.delete(listener);
+  };
+}
+
+function setMobileLanguage(next: MobileLanguage) {
+  languageVersion += 1;
+  currentLanguage = next;
+  emitLanguage();
+  void SecureStore.setItemAsync(LANGUAGE_KEY, next);
+}
+
+const readLanguage = () => currentLanguage;
+
+export function useMobileCopy() {
+  const language = useSyncExternalStore(subscribeLanguage, readLanguage, readLanguage);
   function toggleLanguage() {
-    const next = language === "es" ? "en" : "es";
-    setLanguage(next);
-    void SecureStore.setItemAsync(LANGUAGE_KEY, next);
+    setMobileLanguage(language === "es" ? "en" : "es");
   }
   return { language, t: (key: MobileCopyKey) => messages[language][key], toggleLanguage };
 }

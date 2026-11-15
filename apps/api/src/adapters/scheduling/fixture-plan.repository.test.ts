@@ -1,7 +1,7 @@
 import { asCompetitionId, asOrganizationId, asTeamId } from "@futrob/shared-kernel";
 import { generateFixturePlan } from "@futrob/scheduling";
 import { describe, expect, it } from "vite-plus/test";
-import { InMemoryFixturePlanRepository } from "./fixture-plan.repository.ts";
+import { InMemoryFixturePlanRepository } from "./fixture-plan.in-memory.repository.ts";
 
 function plan(organization = "org-1") {
   return generateFixturePlan({

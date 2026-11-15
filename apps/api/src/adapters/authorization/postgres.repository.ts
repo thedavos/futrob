@@ -84,6 +84,25 @@ export class PostgresAccessGrantRepository implements AccessGrantRepository {
     return result.rows.map(rehydrateGrant);
   }
 
+  async listForOrganizationActors(
+    organizationId: OrganizationId,
+    actorIds: readonly ActorId[],
+  ): Promise<readonly AccessGrant[]> {
+    if (actorIds.length === 0) return [];
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT id, organization_id, actor_id, permission, effect, scope_type, scope_id,
+              granted_by_actor_id, reason, created_at, updated_at
+       FROM authorization_grants
+       WHERE actor_id = ANY($2::text[])
+         AND (
+           organization_id = $1
+           OR (organization_id IS NULL AND scope_type = 'platform')
+         )`,
+      [organizationId, [...actorIds]],
+    );
+    return result.rows.map(rehydrateGrant);
+  }
+
   async listForScope(
     organizationId: OrganizationId | null,
     scopeType: AuthorizationScopeType,
@@ -173,6 +192,19 @@ export class PostgresPlatformRoleRepository implements PlatformRoleRepository {
       [actorId],
     );
     return result.rows[0] ? rehydratePlatformRole(result.rows[0]) : null;
+  }
+
+  async listSuperusersAmong(
+    actorIds: readonly ActorId[],
+  ): Promise<readonly PlatformRoleAssignment[]> {
+    if (actorIds.length === 0) return [];
+    const result = await getPgExecutor(this.pool).query(
+      `SELECT actor_id, role, assigned_by_actor_id, created_at
+       FROM platform_role_assignments
+       WHERE role = 'superuser' AND actor_id = ANY($1::text[])`,
+      [[...actorIds]],
+    );
+    return result.rows.map(rehydratePlatformRole);
   }
 
   async countSuperusers(): Promise<number> {

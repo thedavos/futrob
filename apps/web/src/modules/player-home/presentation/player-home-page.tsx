@@ -12,6 +12,7 @@ import {
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { PlayerRecentActivity } from "@/modules/notifications/presentation/organization-recent-activity.tsx";
 import { HomeBlockError, homeSlotChrome } from "./home-block-error.tsx";
 import { HomeCompetitionsCard } from "./home-competitions-card.tsx";
 import { HomeEaCard } from "./home-ea-card.tsx";
@@ -34,6 +35,9 @@ const spin = stylex.keyframes({
 const styles = stylex.create({
   main: {
     width: "100%",
+  },
+  activity: {
+    marginTop: "1rem",
   },
   header: {
     marginBottom: "1rem",
@@ -113,15 +117,24 @@ const styles = stylex.create({
 export function PlayerHomePage({
   externalClubId,
   profileReady,
+  notice,
 }: {
   readonly externalClubId?: string;
   readonly profileReady: boolean;
+  /** One-off message above the grid, e.g. a club onboarding could not associate. */
+  readonly notice?: ReactNode;
 }) {
   const home = usePlayerHome(externalClubId, profileReady);
-  return <PlayerHomeViewPage home={home} />;
+  return <PlayerHomeViewPage home={home} notice={notice} />;
 }
 
-export function PlayerHomeViewPage({ home }: { readonly home: PlayerHomeView }) {
+export function PlayerHomeViewPage({
+  home,
+  notice,
+}: {
+  readonly home: PlayerHomeView;
+  readonly notice?: ReactNode;
+}) {
   const { t } = useI18n();
   const clubName =
     home.phase === "ready" && home.facts.club.kind === "selected" ? home.facts.club.name : null;
@@ -145,11 +158,15 @@ export function PlayerHomeViewPage({ home }: { readonly home: PlayerHomeView }) 
           />
         </PageHeaderActions>
       </PageHeader>
+      {notice}
       {home.phase === "loading" ? (
         <LoadingGrid variant={home.loadingGrid} />
       ) : (
         <ReadyGrid home={home} />
       )}
+      <div {...applyStyles(styles.activity)}>
+        <PlayerRecentActivity />
+      </div>
     </main>
   );
 }

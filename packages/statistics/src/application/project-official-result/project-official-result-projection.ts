@@ -1,20 +1,60 @@
-import type { EncounterReaderPort, OfficialResult } from "@futrob/results";
-import type { TeamId } from "@futrob/shared-kernel";
+import type {
+  EncounterReaderPort,
+  EncounterScheduleSnapshot,
+  OfficialResult,
+} from "@futrob/results";
+import { assertNever, type TeamId } from "@futrob/shared-kernel";
 import type { PlayerMatchContribution } from "../../domain/entities/player-match-contribution.ts";
 import type {
   StandingResolutionMode,
   TeamMatchContribution,
   TeamMatchSide,
 } from "../../domain/entities/team-match-contribution.ts";
+import type { CompetitionMatchRulesReaderPort } from "../../domain/ports/competition-match-rules-reader.port.ts";
 import type { PlayerIdentityResolverPort } from "../../domain/ports/player-identity-resolver.port.ts";
+import { DEFAULT_COMPETITION_MATCH_POINTS } from "../../domain/policies/build-competition-standings.ts";
 
-export interface PlayerProjectionDependencies {
+export interface OfficialResultProjectionDependencies {
   readonly encounterReader?: EncounterReaderPort;
   readonly identities: PlayerIdentityResolverPort;
+  readonly matchRules: CompetitionMatchRulesReaderPort;
 }
 
-export interface TeamProjectionDependencies {
-  readonly encounterReader?: EncounterReaderPort;
+export interface OfficialResultContributions {
+  readonly players: PlayerMatchContribution[];
+  readonly teams: TeamMatchContribution[];
+}
+
+/**
+ * Contributions implied by one official result. Writes nothing, so callers decide
+ * whether to refresh aggregates per result or once per competition.
+ */
+export async function projectOfficialResultContributions(
+  deps: OfficialResultProjectionDependencies,
+  officialResult: OfficialResult,
+  frozenResolutionMode: StandingResolutionMode | undefined,
+): Promise<OfficialResultContributions> {
+  switch (officialResult.status) {
+    case "approved": {
+      const encounter = (await deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
+      const resolutionMode =
+        frozenResolutionMode ??
+        (
+          (await deps.matchRules.getPointsRules({
+            competitionId: officialResult.competitionId,
+            stageId: encounter?.stageId,
+          })) ?? DEFAULT_COMPETITION_MATCH_POINTS
+        ).resolutionMode;
+      return {
+        players: await buildPlayerContributions(deps.identities, officialResult, encounter),
+        teams: buildTeamContributions(officialResult, encounter, resolutionMode),
+      };
+    }
+    case "voided":
+      return { players: [], teams: [] };
+    default:
+      return assertNever(officialResult.status, "Unsupported official result status");
+  }
 }
 
 export function mapExternalClubToTeam(input: {
@@ -141,17 +181,17 @@ function averageNullable(values: readonly (number | null)[]): number | null {
   return present.reduce((sum, value) => sum + value, 0) / present.length;
 }
 
-export async function buildPlayerContributions(
-  deps: PlayerProjectionDependencies,
+async function buildPlayerContributions(
+  identities: PlayerIdentityResolverPort,
   officialResult: OfficialResult,
+  encounter: EncounterScheduleSnapshot | null,
 ): Promise<PlayerMatchContribution[]> {
-  const encounter = (await deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
   const contributions: PlayerMatchContribution[] = [];
   for (const slot of officialResult.slots) {
     // Identity lookups are independent per player; resolve them concurrently.
     const resolutions = await Promise.all(
       slot.players.map((player) =>
-        deps.identities.resolve({
+        identities.resolve({
           externalPlayerId: player.externalPlayerId,
           platform: slot.platform,
           gameEdition: slot.gameEdition,
@@ -219,12 +259,11 @@ export async function buildPlayerContributions(
   return contributions;
 }
 
-export async function buildTeamContributions(
-  deps: TeamProjectionDependencies,
+function buildTeamContributions(
   officialResult: OfficialResult,
+  encounter: EncounterScheduleSnapshot | null,
   resolutionMode: StandingResolutionMode,
-): Promise<TeamMatchContribution[]> {
-  const encounter = (await deps.encounterReader?.getById(officialResult.encounterId)) ?? null;
+): TeamMatchContribution[] {
   const contributions: TeamMatchContribution[] = [];
   for (const slot of officialResult.slots) {
     for (const side of ["home", "away"] as const) {

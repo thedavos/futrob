@@ -122,7 +122,8 @@ const styles = stylex.create({
 });
 
 const meta = {
-  title: "Primitives/Stat",
+  title: "Components/Data display/Stat",
+  tags: ["autodocs"],
   component: Stat,
   parameters: { layout: "padded" },
   args: {

@@ -88,6 +88,8 @@ export const fixtureEncounterSchema = z.object({
   scheduledStartAt: z.string().datetime(),
   officialMatchCount: z.union([z.literal(1), z.literal(2)]),
   series: fixtureSeriesSchema.nullable(),
+  /** Team vs Team with `series: null`: the organizer closed it and it will never have a result. */
+  closedWithoutResult: z.literal(true).optional(),
 });
 
 export const fixtureRoundSchema = z.object({
@@ -100,7 +102,7 @@ export const fixtureRoundSchema = z.object({
 
 export const fixtureStageSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(["league", "groups", "knockout", "playoffs"]),
+  kind: z.enum(["league", "groups", "knockout", "playoffs", "swiss"]),
   order: z.number().int().positive(),
   rounds: z.array(fixtureRoundSchema),
 });
@@ -114,15 +116,32 @@ export const fixturePlanSchema = z.object({
   competitionId: z.string().min(1),
   rulesVersion: z.number().int().positive(),
   generationVersion: z.number().int().positive(),
-  format: z.enum(["league", "knockout", "groups-knockout", "league-playoffs"]),
+  format: z.enum(["league", "knockout", "groups-knockout", "league-playoffs", "swiss"]),
   timeZone: z.string().min(1),
   homeAndAway: z.boolean(),
   seed: z.array(z.string().min(1)).min(2),
+  /** Swiss only. Teams left out of later pairings; their earlier results still count. */
+  withdrawnTeamIds: z.array(z.string().min(1)).optional(),
   stages: z.array(fixtureStageSchema).min(1),
 });
 
 export type FixturePlanDto = z.infer<typeof fixturePlanSchema>;
 export type FixtureEncounterDto = z.infer<typeof fixtureEncounterSchema>;
+export type FixtureParticipantSlotDto = z.infer<typeof fixtureParticipantSlotSchema>;
+export type FixtureStageDto = z.infer<typeof fixtureStageSchema>;
+
+/**
+ * The competition's current fixture with the name of every Team it places. `fixture`
+ * is null until one is generated; a Team missing from `teams` no longer resolves.
+ */
+export const getCurrentCompetitionFixtureResponseSchema = z.object({
+  fixture: fixturePlanSchema.nullable(),
+  teams: z.array(z.object({ teamId: z.string().min(1), name: z.string().min(1) })),
+});
+
+export type GetCurrentCompetitionFixtureResponse = z.infer<
+  typeof getCurrentCompetitionFixtureResponseSchema
+>;
 
 export const generateCompetitionFixtureRequestSchema = z.object({
   generationVersion: z.number().int().positive(),
@@ -137,6 +156,7 @@ export const generateCompetitionFixtureRequestSchema = z.object({
     })
     .optional(),
   playoffs: z.object({ teamCount: z.number().int().min(2) }).optional(),
+  swiss: z.object({ rounds: z.number().int().positive() }).optional(),
 });
 
 export type GenerateCompetitionFixtureRequest = z.infer<
@@ -166,6 +186,31 @@ export const editFixtureEncounterRequestSchema = z
   });
 
 export type EditFixtureEncounterRequest = z.infer<typeof editFixtureEncounterRequestSchema>;
+
+export const withdrawSwissTeamRequestSchema = z.object({
+  teamId: z.string().min(1),
+  reason: z.string().trim().min(1).max(500),
+  requestId: requestIdSchema.optional(),
+});
+
+export type WithdrawSwissTeamRequest = z.infer<typeof withdrawSwissTeamRequestSchema>;
+
+export const closeSwissRoundRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(500),
+  requestId: requestIdSchema.optional(),
+});
+
+export type CloseSwissRoundRequest = z.infer<typeof closeSwissRoundRequestSchema>;
+
+/** Rounds a Swiss fixture of `teamCount` Teams gets unless the organizer chooses: ⌈log₂ n⌉. */
+export function defaultSwissRounds(teamCount: number): number {
+  return Math.ceil(Math.log2(teamCount));
+}
+
+/** Most rounds the API accepts for `teamCount` Teams: ⌊(n + 1) / 2⌋. */
+export function maxSwissRounds(teamCount: number): number {
+  return Math.floor((teamCount + 1) / 2);
+}
 
 export const nextEncounterSideSchema = z.object({
   teamId: z.string().min(1),
@@ -210,6 +255,47 @@ export const encounterViewSchema = nextEncounterSchema.extend({
 });
 
 export type EncounterViewDto = z.infer<typeof encounterViewSchema>;
+
+/**
+ * Where an Encounter stands from the competition list: `official` once an approved
+ * official result exists, `awaiting_result` after its start without one.
+ */
+export const competitionEncounterStatusSchema = z.enum([
+  "scheduled",
+  "awaiting_result",
+  "official",
+]);
+
+export type CompetitionEncounterStatusDto = z.infer<typeof competitionEncounterStatusSchema>;
+
+export const competitionEncounterSchema = z.object({
+  encounterId: z.string().min(1),
+  round: z.object({
+    number: z.number().int().positive(),
+    total: z.number().int().positive().nullable(),
+  }),
+  scheduledStartAt: z.string().datetime(),
+  officialMatchCount: z.union([z.literal(1), z.literal(2)]),
+  home: z.object({ teamId: z.string().min(1), name: z.string().min(1) }),
+  away: z.object({ teamId: z.string().min(1), name: z.string().min(1) }),
+  status: competitionEncounterStatusSchema,
+});
+
+export type CompetitionEncounterDto = z.infer<typeof competitionEncounterSchema>;
+
+/** Encounters of the competition's active fixture the actor may read, earliest first. */
+export const listCompetitionEncountersResponseSchema = z.object({
+  competition: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    timeZone: z.string().min(1),
+  }),
+  encounters: z.array(competitionEncounterSchema),
+});
+
+export type ListCompetitionEncountersResponse = z.infer<
+  typeof listCompetitionEncountersResponseSchema
+>;
 
 export const encounterCandidateTeamSchema = z.object({
   externalClubId: z.string().min(1),
@@ -263,206 +349,3 @@ export const listEncounterCandidatesResponseSchema = z.discriminatedUnion("statu
 
 export type EncounterCandidateDto = z.infer<typeof encounterCandidateSchema>;
 export type ListEncounterCandidatesResponse = z.infer<typeof listEncounterCandidatesResponseSchema>;
-
-export const competitionWallTimeSchema = z.object({
-  year: z.number().int(),
-  month: z.number().int().min(1).max(12),
-  day: z.number().int().min(1).max(31),
-  hour: z.number().int().min(0).max(23),
-  minute: z.number().int().min(0).max(59),
-  second: z.number().int().min(0).max(59),
-});
-
-export const rescheduleScopeSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("entire_encounter") }),
-  z.object({
-    type: z.literal("official_match"),
-    officialSlot: z.union([z.literal(1), z.literal(2)]),
-  }),
-]);
-
-export const scheduleChangeProposalSchema = z.object({
-  id: z.string().min(1),
-  proposedStartAt: z.string().datetime(),
-  proposedByActorId: z.string().min(1),
-  proposedByTeamId: z.string().min(1),
-  reason: z.string().min(1),
-  createdAt: z.string().datetime(),
-  responseDeadline: z.string().datetime(),
-});
-
-/** The capacity an actor claims; the server authorizes it, so claiming grants nothing. */
-export const scheduleChangeResponderSchema = z.discriminatedUnion("authority", [
-  z.object({ authority: z.literal("rival_team"), teamId: z.string().min(1) }),
-  z.object({ authority: z.literal("organizer") }),
-]);
-
-export const scheduleChangeDecisionSchema = z.object({
-  id: z.string().min(1),
-  proposalId: z.string().min(1),
-  /** Request version the responder answered. */
-  requestVersion: z.number().int().positive(),
-  kind: z.enum(["consent", "rejection"]),
-  responder: scheduleChangeResponderSchema,
-  actorId: z.string().min(1),
-  reason: z.string().min(1).nullable(),
-  createdAt: z.string().datetime(),
-});
-
-export const scheduleChangeApplicationSchema = z.object({
-  id: z.string().min(1),
-  proposalId: z.string().min(1),
-  requestVersion: z.number().int().positive(),
-  appliedByActorId: z.string().min(1),
-  previousEncounterStartAt: z.string().datetime(),
-  appliedEncounterStartAt: z.string().datetime(),
-  /** Only the slots whose start moved. */
-  slots: z
-    .array(
-      z.object({
-        officialSlot: z.union([z.literal(1), z.literal(2)]),
-        previousStartAt: z.string().datetime(),
-        appliedStartAt: z.string().datetime(),
-      }),
-    )
-    .min(1)
-    .max(2),
-  appliedAt: z.string().datetime(),
-});
-
-export const scheduleChangeResolutionSchema = z.discriminatedUnion("outcome", [
-  z.object({
-    outcome: z.literal("schedule_set"),
-    reason: z.string().trim().min(1).max(500),
-    proposedStartAt: z.string().datetime(),
-  }),
-  z.object({ outcome: z.literal("schedule_kept"), reason: z.string().trim().min(1).max(500) }),
-  z.object({
-    outcome: z.literal("walkover_intended"),
-    reason: z.string().trim().min(1).max(500),
-    winningTeamId: z.string().min(1),
-  }),
-]);
-
-export type ScheduleChangeResolutionDto = z.infer<typeof scheduleChangeResolutionSchema>;
-
-export const scheduleChangeActionSchema = z.object({
-  id: z.string().min(1),
-  kind: z.enum(["schedule_change_expired", "schedule_change_resolved"]),
-  actorId: z.string().min(1),
-  authority: z.enum(["system", "organizer"]),
-  proposalId: z.string().min(1),
-  fromVersion: z.number().int().positive(),
-  toVersion: z.number().int().positive(),
-  responseDeadline: z.string().datetime(),
-  processedAt: z.string().datetime(),
-  resolution: scheduleChangeResolutionSchema.nullable(),
-});
-
-export const scheduleChangeRequestSchema = z.object({
-  id: z.string().min(1),
-  organizationId: z.string().min(1),
-  competitionId: z.string().min(1),
-  encounterId: z.string().min(1),
-  requestingTeamId: z.string().min(1),
-  initiatedByActorId: z.string().min(1),
-  scope: rescheduleScopeSchema,
-  status: z.enum([
-    "open",
-    "accepted",
-    "rejected",
-    "cancelled",
-    "expired",
-    "escalated",
-    "resolved_by_organizer",
-  ]),
-  /** Commands send it back as `expectedVersion`. */
-  version: z.number().int().positive(),
-  /** The only proposal commands may answer: the last one in `proposals`. */
-  currentProposalId: z.string().min(1),
-  proposals: z.array(scheduleChangeProposalSchema).min(1),
-  decisions: z.array(scheduleChangeDecisionSchema),
-  actions: z.array(scheduleChangeActionSchema),
-  allowedActions: z.array(z.literal("resolve")),
-  /** The schedule applied by consent or organizer resolution; null for outcomes that keep it. */
-  application: scheduleChangeApplicationSchema.nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
-
-export type ScheduleChangeRequestDto = z.infer<typeof scheduleChangeRequestSchema>;
-
-export const createScheduleChangeRequestSchema = z.object({
-  requestingTeamId: z.string().min(1),
-  scope: rescheduleScopeSchema,
-  proposedWallTime: competitionWallTimeSchema,
-  reason: z.string().min(1),
-  idempotencyKey: z.string().trim().min(1),
-  timeZone: z.string().trim().min(1).optional(),
-});
-
-export type CreateScheduleChangeRequestBody = z.infer<typeof createScheduleChangeRequestSchema>;
-
-export const listScheduleChangeRequestsResponseSchema = z.object({
-  requests: z.array(scheduleChangeRequestSchema),
-});
-
-export type ListScheduleChangeRequestsResponse = z.infer<
-  typeof listScheduleChangeRequestsResponseSchema
->;
-
-export const scheduleChangeCommandResponseSchema = z.object({
-  /** The request as this command left it; a replay returns that state, not a later one. */
-  request: scheduleChangeRequestSchema,
-  /** True when the command key had already produced this outcome. */
-  replayed: z.boolean(),
-});
-
-export type ScheduleChangeCommandResponse = z.infer<typeof scheduleChangeCommandResponseSchema>;
-
-const scheduleChangeCommandSchema = z.object({
-  /** Request `version` the caller read. */
-  expectedVersion: z.number().int().positive(),
-  /** Client-chosen key; repeating it with the same payload returns the original outcome. */
-  commandKey: z.string().trim().min(1).max(200),
-});
-
-export const acceptScheduleChangeProposalRequestSchema = scheduleChangeCommandSchema.extend({
-  responder: scheduleChangeResponderSchema,
-});
-
-export const rejectScheduleChangeProposalRequestSchema = scheduleChangeCommandSchema.extend({
-  responder: scheduleChangeResponderSchema,
-  reason: z.string().optional(),
-});
-
-export const counterScheduleChangeProposalRequestSchema = scheduleChangeCommandSchema.extend({
-  /** The rival Team of the current proposal, answering with a new date. */
-  teamId: z.string().min(1),
-  proposedWallTime: competitionWallTimeSchema,
-  reason: z.string().min(1),
-  timeZone: z.string().trim().min(1).optional(),
-});
-
-export type AcceptScheduleChangeProposalRequest = z.infer<
-  typeof acceptScheduleChangeProposalRequestSchema
->;
-export type RejectScheduleChangeProposalRequest = z.infer<
-  typeof rejectScheduleChangeProposalRequestSchema
->;
-export type CounterScheduleChangeProposalRequest = z.infer<
-  typeof counterScheduleChangeProposalRequestSchema
->;
-
-export const resolveScheduleChangeRequestSchema = scheduleChangeCommandSchema.extend({
-  proposalId: z.string().min(1),
-  resolution: scheduleChangeResolutionSchema,
-});
-
-export type ResolveScheduleChangeRequestBody = z.infer<typeof resolveScheduleChangeRequestSchema>;
-
-export const runScheduleChangeExpiryResponseSchema = z.object({
-  escalated: z.number().int().nonnegative(),
-  skipped: z.number().int().nonnegative(),
-});
-export type RunScheduleChangeExpiryResponse = z.infer<typeof runScheduleChangeExpiryResponseSchema>;

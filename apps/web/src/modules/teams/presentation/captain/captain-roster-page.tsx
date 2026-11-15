@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { TeamSanctionsSection } from "@/modules/competitions/presentation/sanctions/team-sanctions-section.tsx";
 import { useSearchClubsMutation } from "@/modules/game-data/presentation/game-data-queries.ts";
 import {
   useChangeRosterRoleMutation,
@@ -16,12 +17,17 @@ import { useCaptainTeamDetail } from "./use-captain-team-detail.ts";
 export function CaptainRosterPage({
   competitionId,
   organizationId,
-}: Readonly<{ competitionId: string; organizationId: string | null }>) {
+  page = "captain.roster",
+}: Readonly<{
+  competitionId: string;
+  organizationId: string | null;
+  page?: "captain.roster" | "competitionPlayer.team";
+}>) {
   const { t } = useI18n();
   const { access, capabilities, retry } = useCaptainTeam({
     competitionId,
     organizationId,
-    required: "manageRoster",
+    required: page === "competitionPlayer.team" ? "readRoster" : "manageRoster",
   });
   const { scope, detail } = useCaptainTeamDetail(access);
   const changeRole = useChangeRosterRoleMutation(scope);
@@ -45,11 +51,13 @@ export function CaptainRosterPage({
 
   return (
     <CaptainRosterPageView
+      page={page}
       access={access}
       busy={changeRole.isPending || setRosterOpen.isPending || connectClub.isPending}
       capabilities={capabilities}
       detail={detail.data ?? null}
       error={error ? teamConsoleError(error, t) : null}
+      footer={access.kind === "ready" ? <TeamSanctionsSection {...access.scope} /> : null}
       links={captainLinks(organizationId, competitionId)}
       onChangeRole={async (membershipId, role) => {
         clearActionErrors();
