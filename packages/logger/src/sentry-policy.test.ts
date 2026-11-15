@@ -11,6 +11,7 @@ import {
   sentrySdkOptions,
   sentryServiceTags,
   withRequestIdTag,
+  type SentryEnvelopeLike,
   type SentryEventLike,
 } from "./sentry-policy.ts";
 
@@ -285,7 +286,7 @@ describe("event scrubbing", () => {
 
 describe("Sentry envelope header scrubbing", () => {
   it("replaces invite tokens on trace.transaction", () => {
-    const envelope = [
+    const envelope: SentryEnvelopeLike = [
       {
         event_id: "event-1",
         trace: {
