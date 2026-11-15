@@ -173,7 +173,7 @@ afterEach(async () => {
 });
 
 describe("switching accounts on one device", () => {
-  it("shows the next account only its own profile, home and organizations", async () => {
+  it("shows the next account only its own profile and home", async () => {
     const { ana, beto } = accounts();
     const api = installAccountsApi({ ana, beto });
     await saveSession(ana);
@@ -183,7 +183,6 @@ describe("switching accounts on one device", () => {
     expect(await screen.findByText("2 invitaciones por responder")).toBeInTheDocument();
     expect(cachedText(queryClient)).toMatch(/actor-ana/);
     expect(screen.getByRole("button", { name: "MADERAS FC" })).toBeInTheDocument();
-    expect(await selectorListsOrganization(user, "Liga de Ana")).toBe(true);
 
     await signOut(user);
     expect(api.signOuts).toEqual([`Bearer ${ana.token}`]);
@@ -194,8 +193,23 @@ describe("switching accounts on one device", () => {
     expect(currentLocation()).toEqual({ pathname: "/player", params: { club: "club-cuervos" } });
     expect(screen.queryByText("2 invitaciones por responder")).toBeNull();
     expect(screen.queryByRole("button", { name: "MADERAS FC" })).toBeNull();
-    expect(await selectorListsOrganization(user, "Liga de Ana")).toBe(false);
     await expect(getSession()).resolves.toMatchObject({ token: beto.token, user: beto.user });
+  });
+
+  it("shows the next account only its own organizations in the context selector", async () => {
+    const { ana, beto } = accounts();
+    installAccountsApi({ ana, beto });
+    await saveSession(ana);
+    const user = userEvent.setup();
+    renderSignedInApp();
+
+    expect(await selectorListsOrganization(user, "Liga de Ana")).toBe(true);
+
+    await signOut(user);
+    await signIn(user, beto);
+
+    expect(await screen.findByText("1 invitación por responder")).toBeInTheDocument();
+    expect(await selectorListsOrganization(user, "Liga de Ana")).toBe(false);
   });
 
   it("never lets a response the previous account left pending reach the next account", async () => {
