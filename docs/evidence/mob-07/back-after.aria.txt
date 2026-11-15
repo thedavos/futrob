@@ -1,0 +1,20 @@
+- img "Futrob"
+- text: Futrob
+- button "English"
+- heading "Inicio" [level=1]
+- text: Tu actividad con Cuervos FC1
+- button "Actualizar partidos"
+- text: Club
+- button "Cuervos FC1"
+- button "MADERAS FC"
+- text: Sin enfrentamientos programados Tu club ya está en competiciones. Todavía no hay fecha para el próximo enfrentamiento.
+- heading "Invitaciones" [level=1]
+- text: Sin invitaciones pendientes
+- heading "Identificador de juego" [level=1]
+- text: davos282 Registrado en EA Clubs.
+- heading "Rendimiento" [level=1]
+- text: Tus estadísticas aparecerán cuando tengas partidos registrados. Todavía no hay partidos registrados No hay apariciones tuyas en el club seleccionado.
+- heading "Mis competiciones" [level=1]
+- button "Liga Futrob, Liga · En curso": Liga Futrob Liga · En curso
+- button "Cuenta"
+- button "Cerrar sesión"
