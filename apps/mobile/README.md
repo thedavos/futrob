@@ -23,10 +23,21 @@ La implementación actual incluye auth, gate de `actor_onboarding`, los tres cam
   `src/modules/api/futrob-client.ts` (`getFutrobClient()`), que adjunta el token.
 - **UI:** primitivas RN propias en `src/ui/` que respetan
   [`design.md`](/design.md);
-  colores/tipo/geometría provienen de `@futrob/ui-tokens`.
+  colores/tipo/geometría provienen de `@futrob/ui-tokens`: `Text`, `Button`, `Input`, `Card`,
+  `List`/`ListItem`/`ListSection`, `Dialog`, `Tabs` (`line` | `pills`), `Skeleton`, `Icon` y
+  los estados `LoadingState`, `ErrorState` y `EmptyState` (cargando, error y vacío son
+  distintos). Targets de al menos 44 dp; el estado activo no depende solo del color.
 - **Rutas:** Expo Router (`app/`): gate de sesión y onboarding en `app/index.tsx`,
   login/signup en `(auth)`, pasos en `(onboarding)`, destinos personales en `player` y
   organización/competición en `orgs`. Las rutas protegidas revalidan el onboarding.
+- **Navegación:** cada contexto (espacio personal, organización, competición) es un grupo
+  `(tabs)` con su `_layout.tsx`, que monta `ContextTabsLayout`
+  (`src/modules/navigation/`): header con el selector de contexto único, la pestaña activa y la
+  barra inferior (headless tabs de `expo-router/ui`, 56 dp). Las pestañas de cada contexto
+  viven en `nav-registry.ts`, con el mismo permiso `EffectiveAccess` que web; **Más** agrupa
+  cuenta, idioma y cierre de sesión. El detalle y las operaciones son rutas fuera de `(tabs)`
+  que se apilan encima. El modelo del selector (opciones, rutas, club por defecto) vive en
+  `@futrob/sdk` (`buildWorkspaceOptions`, `workspaceContextPath`…).
 - **Onboarding:** `src/modules/identity/onboarding-flow.ts` orquesta el SDK. La API mantiene
   el paso y las consecuencias de negocio; SecureStore conserva el formulario local por usuario.
   Los enlaces `futrob://invitations/accept/<token>` guardan el token hasta completar auth.
@@ -64,13 +75,15 @@ apps/mobile/
 │   ├── index.tsx              # gate de sesión, onboarding y destino
 │   ├── (auth)/               # login/signup → gate u onboarding
 │   ├── (onboarding)/         # intención, formularios y revisión
-│   ├── player.tsx            # destino personal mínimo
-│   ├── orgs/                 # selector, organización y competición mínimos
+│   ├── player/(tabs)/        # espacio personal: Inicio + Más
+│   ├── orgs/                 # selector; orgs/[orgId]/(tabs) y …/competitions/[id]/(tabs)
 │   └── invitations/accept/   # enlace de invitación
 ├── assets/                    # generados por scripts/generate-assets.mjs
 └── src/
     ├── config/env.ts          # EXPO_PUBLIC_FUTROB_API_BASE_URL
     ├── theme/theme.ts         # ui-tokens → dp, hex, roles typo
-    ├── ui/                    # primitivas móviles (Button, Input, Text…)
-    └── modules/identity/      # auth-api, session-store, validación (+tests)
+    ├── ui/                    # primitivas móviles (Button, List, Dialog, Tabs…)
+    └── modules/
+        ├── identity/          # auth-api, session-store, validación (+tests)
+        └── navigation/        # shell por contexto, selector, pestañas y Más
 ```
