@@ -7,6 +7,7 @@ import {
   isExpectedFailure,
   requestIdFromSentryEvent,
   scrubSentryEvent,
+  scrubSentryEnvelope,
   sentrySdkOptions,
   sentryServiceTags,
   withRequestIdTag,
@@ -237,6 +238,7 @@ describe("event scrubbing", () => {
     expect(options?.dataCollection.userInfo).toBe(false);
     expect(options?.dataCollection.httpBodies).toEqual([]);
     expect(options?.dataCollection.queues).toBe(false);
+    expect(options?.traceLifecycle).toBe("static");
     const rejected = { extra: { token: "session-token" } };
     expect(
       applySentryEventPolicy(rejected, { originalException: { code: "auth.invalid_credentials" } }),
@@ -278,5 +280,22 @@ describe("event scrubbing", () => {
     expect(next?.user).toEqual({ id: "actor-1" });
     expect(next?.tags?.request_id).toBe(requestId);
     expect(JSON.stringify(next)).not.toMatch(/secret-pass|session-token|ana@club\.mx/);
+  });
+});
+
+describe("Sentry envelope header scrubbing", () => {
+  it("replaces invite tokens on trace.transaction", () => {
+    const envelope = [
+      {
+        event_id: "event-1",
+        trace: {
+          transaction: "GET /roster-invitations/accept/SYNTHETIC_INVITE_TOKEN",
+        },
+      },
+      { type: "transaction" },
+    ];
+    scrubSentryEnvelope(envelope);
+    expect(JSON.stringify(envelope)).not.toContain("SYNTHETIC_INVITE_TOKEN");
+    expect(JSON.stringify(envelope)).toContain("/roster-invitations/accept/[Filtered]");
   });
 });

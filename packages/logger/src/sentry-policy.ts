@@ -198,6 +198,9 @@ export function sentrySdkOptions(input: SentryInitInput) {
     environment: config.environment,
     tracesSampleRate: config.tracesSampleRate,
     dataCollection: sentryV10DataCollection,
+    // v11 streams spans by default and skips beforeSendTransaction; keep
+    // transaction mode so invite-token scrubbing still runs.
+    traceLifecycle: "static" as const,
     initialScope: { tags: sentryServiceTags(config) },
   };
 }
@@ -315,6 +318,37 @@ function scrubUrl(url: string | undefined): string | undefined {
       /([?&])([^&=]*(?:token|authorization|bearer|secret|password|cookie|email|credential)[^&=]*)=[^&]*/gi,
       "$1$2=[Filtered]",
     );
+}
+
+const envelopeTraceSchema = z
+  .object({
+    trace: z.object({ transaction: z.string().optional() }).passthrough().optional(),
+  })
+  .passthrough();
+
+export type SentryEnvelopeLike = [header: z.infer<typeof envelopeTraceSchema>, ...items: unknown[]];
+
+/**
+ * v11 copies the transaction name onto the envelope header (`trace.transaction`)
+ * outside `beforeSendTransaction`. Mutate that header in `beforeEnvelope`.
+ */
+export function scrubSentryEnvelope(envelope: SentryEnvelopeLike): void {
+  const items = z.array(z.unknown()).min(1).safeParse(envelope);
+  if (!items.success) return;
+  const header = envelopeTraceSchema.safeParse(items.data[0]);
+  const transaction = header.success ? header.data.trace?.transaction : undefined;
+  if (!transaction) return;
+  const scrubbed = scrubUrl(transaction);
+  if (scrubbed === transaction) return;
+  const original = items.data[0];
+  const originalHeader = envelopeTraceSchema.safeParse(original);
+  if (!originalHeader.success || !Array.isArray(envelope)) return;
+  envelope[0] = {
+    ...originalHeader.data,
+    trace: originalHeader.data.trace
+      ? { ...originalHeader.data.trace, transaction: scrubbed }
+      : originalHeader.data.trace,
+  };
 }
 
 function scrubUser(user: SentryUserLike | null | undefined): SentryUserLike | undefined {

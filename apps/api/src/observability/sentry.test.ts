@@ -47,6 +47,7 @@ describe("API Sentry", () => {
       dsn: string;
       environment: string;
       dataCollection: { userInfo: boolean; httpBodies: unknown[] };
+      traceLifecycle: "static" | "stream";
       initialScope: { tags: Record<string, string> };
       beforeSend: (event: object, hint: object) => object | null;
     };
@@ -54,6 +55,7 @@ describe("API Sentry", () => {
       dsn: "https://public@o0.ingest.sentry.io/1",
       environment: "staging",
       dataCollection: { userInfo: false, httpBodies: [] },
+      traceLifecycle: "static",
       initialScope: { tags: { service: "api", environment: "staging" } },
     });
     const requestId = "9b020aa7-9c5e-4cca-b8ea-daeb047c6dca";

@@ -7,6 +7,7 @@ export {
   isExpectedFailure,
   requestIdFromSentryEvent,
   scrubSentryEvent,
+  scrubSentryEnvelope,
   sentrySdkOptions,
   sentryServiceTags,
   sentryV10DataCollection,
@@ -17,6 +18,7 @@ export {
 export type {
   FutrobSentryService,
   SentryEventLike,
+  SentryEnvelopeLike,
   SentryHintLike,
   SentryInitConfig,
   SentryInitInput,

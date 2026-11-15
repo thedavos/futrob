@@ -3,6 +3,7 @@ import {
   applySentryEventPolicy,
   applySentryTransactionPolicy,
   isExpectedFailure,
+  scrubSentryEnvelope,
   sentrySdkOptions,
 } from "@futrob/logger";
 
@@ -38,7 +39,17 @@ function cloudflareSentryOptions<
     environment: options.environment,
     tracesSampleRate: options.tracesSampleRate,
     dataCollection: options.dataCollection,
+    traceLifecycle: options.traceLifecycle,
     initialScope: { tags: { ...options.initialScope.tags } },
+    integrations: (defaults) => [
+      ...defaults,
+      {
+        name: "FutrobEnvelopeScrubber",
+        setup(client) {
+          client.on("beforeEnvelope", scrubSentryEnvelope);
+        },
+      },
+    ],
     beforeSend(event, hint) {
       return applySentryEventPolicy(event, hint);
     },
