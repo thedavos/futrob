@@ -1,10 +1,13 @@
 import type { WorkspaceContext, WorkspaceRole } from "@futrob/sdk";
 import type { MobileLanguage } from "@/modules/identity/mobile-copy";
-import type { ContextTabId } from "./nav-registry";
+import type { ContextTabId, MoreDestinationId } from "./nav-registry";
 
 const es = {
   tabs: {
     home: "Inicio",
+    matches: "Partidos",
+    statistics: "Estadísticas",
+    competitions: "Competiciones",
     overview: "Resumen",
     more: "Más",
   },
@@ -46,11 +49,19 @@ const es = {
     languageDescription: "Idioma de la app",
     signOut: "Cerrar sesión",
   },
+  destinations: {
+    "ea-clubs": ["Clubes EA", "Elige o añade el club de tus partidos"],
+    "game-accounts": ["Cuentas de juego", "Tu identificador de EA"],
+    explore: ["Explorar competiciones", "Torneos con inscripciones o en curso"],
+  },
 } satisfies NavigationCopy;
 
 const en = {
   tabs: {
     home: "Home",
+    matches: "Matches",
+    statistics: "Statistics",
+    competitions: "Competitions",
     overview: "Overview",
     more: "More",
   },
@@ -92,6 +103,11 @@ const en = {
     languageDescription: "App language",
     signOut: "Sign out",
   },
+  destinations: {
+    "ea-clubs": ["EA Clubs", "Choose or add the club behind your matches"],
+    "game-accounts": ["Game accounts", "Your EA identifier"],
+    explore: ["Explore competitions", "Tournaments open for entries or in progress"],
+  },
 } satisfies NavigationCopy;
 
 type NavigationCopy = {
@@ -112,6 +128,8 @@ type NavigationCopy = {
     "title" | "account" | "accountDescription" | "languageDescription" | "signOut",
     string
   >;
+  /** Title and description of each «Más» destination. */
+  destinations: Record<MoreDestinationId, readonly [title: string, description: string]>;
 };
 
 export function navigationCopy(language: MobileLanguage): NavigationCopy {

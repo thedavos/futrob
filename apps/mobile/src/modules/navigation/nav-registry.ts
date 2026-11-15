@@ -11,7 +11,7 @@ import { MOBILE_PERMISSION } from "@/modules/authorization/permissions";
  * To add a destination: add its id and copy, add the route file under the context's `(tabs)`
  * folder (its path below the context root is `path`), and list it here before `more`.
  */
-export type ContextTabId = "home" | "overview" | "more";
+export type ContextTabId = "home" | "matches" | "statistics" | "competitions" | "overview" | "more";
 
 export type ContextTabDefinition = {
   readonly id: ContextTabId;
@@ -30,7 +30,13 @@ export type ContextTab = {
 const MORE: ContextTabDefinition = { id: "more", path: "/more" };
 
 export const CONTEXT_TABS = {
-  personal: [{ id: "home", path: "" }, MORE],
+  personal: [
+    { id: "home", path: "" },
+    { id: "matches", path: "/matches" },
+    { id: "statistics", path: "/statistics" },
+    { id: "competitions", path: "/competitions" },
+    MORE,
+  ],
   organization: [
     {
       id: "home",
@@ -65,3 +71,18 @@ export function contextTabs(
       allowedPermissions?.has(definition.requiredPermission) === true,
   }));
 }
+
+/** Secondary destinations listed in «Más», as full routes (they stack above the shell). */
+export type MoreDestinationId = "ea-clubs" | "game-accounts" | "explore";
+
+export type MoreDestination = { readonly id: MoreDestinationId; readonly href: string };
+
+export const MORE_DESTINATIONS = {
+  personal: [
+    { id: "ea-clubs", href: "/player/ea-clubs" },
+    { id: "game-accounts", href: "/player/game-accounts" },
+    { id: "explore", href: "/player/explore" },
+  ],
+  organization: [],
+  competition: [],
+} as const satisfies Record<WorkspaceContext["kind"], readonly MoreDestination[]>;
