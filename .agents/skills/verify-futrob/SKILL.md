@@ -164,6 +164,7 @@ All invocations are from the repo root. The script is executable.
 | `helpers/verify-futrob doctor` | Read-only: ports, pids, four health probes (including web `get-session` binding), API `db` ok/skipped |
 | `helpers/verify-futrob evidence-dir` | Print (and create) this run's evidence directory |
 | `helpers/verify-futrob cleanup` | Tear down what launch started; keep evidence |
+| `bash helpers/verify-futrob.test.sh` | Offline regression checks for the helper probes (no stack needed) |
 
 ## Out of scope until the map grows
 
