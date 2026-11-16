@@ -6,6 +6,9 @@ describe("contextTabs", () => {
   it("routes personal tabs under /player without carrying the selected club", () => {
     expect(contextTabs({ kind: "personal", externalClubId: "club-a" }, undefined)).toEqual([
       { id: "home", href: "/player", allowed: true },
+      { id: "matches", href: "/player/matches", allowed: true },
+      { id: "statistics", href: "/player/statistics", allowed: true },
+      { id: "competitions", href: "/player/competitions", allowed: true },
       { id: "more", href: "/player/more", allowed: true },
     ]);
   });
