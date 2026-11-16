@@ -35,3 +35,4 @@ Preconditions:
 - Resource pages that collapse missing and forbidden into "no disponible" are not this feature. Do not treat those EmptyStates as the global 404.
 - The error page retry is a button `Reintentar`. Do not drive it with a made-up loader in production. Storybook `Product/Shared/Route error` covers the control. A live loader throw is optional and must not use a committed debug route.
 - Locale defaults to Spanish. English copy is a locale switch, not a failure of the Spanish recipe.
+- While `authClient.useSession()` is pending, the 404 uses the visitor exit (`Volver al inicio`) even if a cookie exists. Wait until the signed-in link `Ir a tu espacio` appears before calling the member case proven. A leftover session on an otherwise anonymous drive shows `Ir a tu espacio`; isolate a cookie-free profile for the visitor case.

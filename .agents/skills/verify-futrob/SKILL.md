@@ -19,13 +19,16 @@ From the repo root. Env files must already exist (they are gitignored): `apps/we
 .agents/skills/verify-futrob/helpers/verify-futrob launch
 ```
 
-Ready when **all three** answer:
+Ready when **all four** answer:
 
 | Service | Probe |
 | --- | --- |
 | Web | `GET http://localhost:3000/` → HTTP 200 and body contains `Futrob` (Vite+ listens on `[::1]`; `127.0.0.1:3000` fails) |
 | API | `GET http://localhost:8787/api/v1/meta/ping` → `{"ok":true,"service":"futrob","apiVersion":"v1"}` |
 | Auth | `GET http://localhost:8788/meta/health` → `{"ok":true,"service":"futrob-auth"}` |
+| Auth binding | `GET http://localhost:3000/api/auth/get-session` → not 503, body must not contain `Worker "futrob-auth" not found`. Anonymous is typically 200 with a null session. Direct `:8788` health is not this probe. |
+
+`launch` exports `CLOUDFLARE_DEV_REGISTRY_PATH` and `WRANGLER_REGISTRY_PATH` to the same `.run/dev-registry` directory so Wrangler (auth) and Miniflare (web) share one worker registry. Without that, web answers 503 Worker not found while `:8788` still looks healthy. If `node` on PATH is below 24, launch prepends an nvm v24 bin when one exists.
 
 The helper writes a lock under `.agents/skills/verify-futrob/.run/` (pid, pgid, log). Teardown is `cleanup`, never `pkill` by process name.
 
@@ -43,7 +46,7 @@ Run first whenever anything looks off, before the first drive, after any failed 
 .agents/skills/verify-futrob/helpers/verify-futrob doctor
 ```
 
-Exit 0 only when: the three probes above succeed, and either (a) the lock file's pid/pgid still owns the listeners, or (b) attach mode is in effect and the operator owned the stack. Doctor also prints `GET /api/v1/meta/health` `db` (`ok` or `skipped`) and warns when skipped: sign-in and mutating org proofs need migrated Postgres. A 200 login with a later unauthenticated BFF usually means `BETTER_AUTH_SECRET` mismatch — doctor does not catch that; the auth feature map does.
+Exit 0 only when: the four probes above succeed, and either (a) the lock file's pid/pgid still owns the listeners, or (b) attach mode is in effect and the operator owned the stack. Doctor also prints `GET /api/v1/meta/health` `db` (`ok` or `skipped`) and warns when skipped: sign-in and mutating org proofs need migrated Postgres. A 503 `Worker "futrob-auth" not found` on the web get-session probe is a registry split, not a bad password. A 200 login with a later unauthenticated BFF usually means `BETTER_AUTH_SECRET` mismatch — doctor does not catch that; the auth feature map does.
 
 ## Drive
 
@@ -56,8 +59,9 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Control | Handle |
 | --- | --- |
 | Brand home | link `Futrob` on landing only (auth tunnel logo is not a link) |
-| Landing login | button `Iniciar sesión` (header `Acceso` and the below-fold final CTA) |
+| Landing login | button `Iniciar sesión` (header `Acceso` only — the final CTA no longer has login) |
 | Landing signup | button `Crear cuenta` (header, hero, and the below-fold final CTA) |
+| Landing pricing | header `Precios` and final-CTA `Ver precios` → `/pricing` |
 | Hero primary CTA | `Crear cuenta` → `/signup` |
 | Hero secondary CTA | button `Ver cómo funciona` → `#mecanismo` |
 | Landing nav landmark | `Acceso` |
@@ -69,6 +73,7 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Signup name | textbox `Nombre completo` (placeholder `Ingresa tu nombre completo`) |
 | Signup email | textbox `Correo electrónico` (placeholder `ejemplo@correo.com`) |
 | Signup password | textbox `Contraseña` (placeholder `Crea una contraseña`; hint requires letters and numbers) |
+| Signup confirm password | textbox `Repetir contraseña` (placeholder `Repite tu contraseña`) |
 | Signup submit | button `Crear cuenta` |
 | Onboarding intention | radiogroup `Intención del onboarding` |
 | Player path | radio `Empezar como jugador` |
@@ -77,11 +82,11 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Skip optional onboarding | button `Omitir por ahora` |
 | Player finish | button `Entrar a mi espacio` |
 | Player home title | `Inicio` |
-| Shell identity (no club/org) | `Sin organización` (`shell.identity.empty`; unused catalog `Tu espacio en Futrob` is not a control) |
+| Shell identity (no club/org) | `Sin organización` (`shell.identity.empty`) |
 | Open matches | sidebar link `Mis partidos` (header CTA, when present, is `Ver mis partidos`). Direct URL is `/player/matches`; default `view=all` may be omitted from the query |
 | Match view radios | `Todos`, `Liga`, `Playoff`, `Amistosos` (hidden until matches can load) |
 | Open match row | link `Ver {home} {homeGoals} – {awayGoals} {away}` — not the unused string `Ver partido` |
-| Landing final CTA | below-fold `Crear cuenta` / `Iniciar sesión` under `¿Listo para poner tu competición bajo control?` |
+| Landing final CTA | below-fold heading `Publica tu primera jornada oficial`; `Crear cuenta` → `/signup` and `Ver precios` → `/pricing` |
 | Open statistics | sidebar link `Mis estadísticas` |
 | Org name | textbox `Nombre de la organización` |
 | Create org | button `Crear organización` |
@@ -156,7 +161,7 @@ All invocations are from the repo root. The script is executable.
 | Command | Purpose |
 | --- | --- |
 | `helpers/verify-futrob launch` | Start `npm run dev` if ports are free; wait until doctor-ready |
-| `helpers/verify-futrob doctor` | Read-only: ports, pids, three health probes, API `db` ok/skipped |
+| `helpers/verify-futrob doctor` | Read-only: ports, pids, four health probes (including web `get-session` binding), API `db` ok/skipped |
 | `helpers/verify-futrob evidence-dir` | Print (and create) this run's evidence directory |
 | `helpers/verify-futrob cleanup` | Tear down what launch started; keep evidence |
 
@@ -164,7 +169,6 @@ All invocations are from the repo root. The script is executable.
 
 These are real product destinations. Do not claim them verified through a different path:
 
-- Public competition portal (no public routes yet)
 - Native iOS/Android (`AC-MOB-*` — Expo web is not that proof)
 - Superuser / provider-health admin
 - Player club / game-account / invitations (`/player/ea-clubs`, `/player/game-accounts`, invitation accept routes). The player competitions **index** (`/player/competitions`, Mis competiciones) is not this seed; `/player/competitions/explore` is mapped.

@@ -13,7 +13,7 @@ An organizer creates an organization, a competition draft, and continues in setu
 
 ## How to get to it (user POV)
 
-- Onboarding path `Organizar` (intention → organization → competition → account → confirm) then the returned setup URL.
+- Onboarding path `Organizar` (intention → organization → optional game-account → review) finishes on `/orgs/$orgId` (org home) **without** creating a competition draft. Setup still starts from `/orgs/new` or from that org home / competitions index.
 - After a completed onboarding, `/orgs/new` → `Crear organización` → `/orgs/$orgId/competitions`. Empty index CTA is `Nueva competición`. Org home `/orgs/$orgId` uses `Crear competición`.
 - Open an existing draft's setup URL with `?step=information` (or format/rules/participants/review).
 - From a terminal, after `npm run dev`: `npm run cli -- e2e-golden-path --actor <actorId>`.
@@ -44,7 +44,7 @@ Preconditions:
 
 ## Gotchas
 
-- Organizer onboarding creates a draft **and** an org in one finish action. `/orgs/new` is a later second org. Do not mix the two recipes without saying which entry you used.
+- Organizer onboarding creates an organization only and lands on `/orgs/$orgId`. It does not create a competition draft or return a setup URL. `/orgs/new` is the seed UI entry for a later org (or the first org after the player path). Do not mix the two recipes without saying which entry you used.
 - `Crear competición` is hidden when `canCreate` is false. That is a permission outcome, not a missing button bug.
 - `e2e-golden-path` stops at fixture. It does not sync EA, select official matches, or publish a portal.
 - Fixture-managed encounters reject manual `snapshot-set` with 409 `scheduling.fixture_managed_conflict`.

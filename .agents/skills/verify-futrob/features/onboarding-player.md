@@ -33,14 +33,14 @@ Preconditions:
 - **Pick player.** Choose `Empezar como jugador`, then `Continuar`. The URL becomes `/onboarding/game-account`. The heading is `Configura tus datos de juego`.
 - **Skip account.** `Guardar y continuar` is disabled while the form is empty. Choose `Omitir por ahora`. The URL becomes `/onboarding/club`. The heading is `Asocia tu club EA`.
 - **Skip club.** Choose `Omitir por ahora`. The URL becomes `/onboarding/review`. The heading is `Confirma tu configuración`. Visible copy includes `Perfil de jugador listo · Datos EA para después` or `Sin club asociado por ahora`.
-- **Finish.** Choose `Entrar a mi espacio`. The URL becomes `/player`. Wait past `Cargando tus datos…`. The heading is `Inicio`. The command-bar empty identity (no club/org) is `Sin organización`; the account-menu trigger still shows the given name. After a skip-skip finish the hero is `Empieza con tus datos de juego` with button `Registrar identificador`. Sidebar links include `Mis partidos` and `Mis estadísticas`. Unused catalog strings `Abrir Mis partidos`, `Abrir tu perfil`, `Espacio personal`, and `Tu espacio en Futrob` are not on this page.
+- **Finish.** Choose `Entrar a mi espacio`. The URL becomes `/player`. Wait past `Cargando tus datos…`. The heading is `Inicio`. The command-bar empty identity (no club/org) is `Sin organización`; the account-menu trigger still shows the given name. After a skip-skip finish the hero is `Empieza con tus datos de juego` with button `Registrar identificador`. Sidebar links include `Mis partidos` and `Mis estadísticas`. Unused strings `Abrir Mis partidos`, `Abrir tu perfil`, and `Espacio personal` are not on this page.
 - **Guard (separate incomplete actor).** Open `/player` before finishing review. The app must not show the completed home (`Inicio` with the player sidebar); it returns to `/onboarding`.
 - **Resume (optional).** On the club step, reload the page. The heading is still `Asocia tu club EA`; going back shows the EA identifier you typed.
 - **Proof.** Screenshot + ARIA of intention, of review before confirm, and of `/player` after finish. Record that the path was `player`, not `organization` or `invitation`.
 
 ## Gotchas
 
-- `/onboarding/team` only redirects. Do not treat it as a live step.
+- There is no `/onboarding/team` route. Do not open it as a step.
 - Club search hits EA through the API. Skipping club is the safe seed proof; a live search is optional and rate-limited.
 - If EA is unavailable after a club was chosen, the finish response carries `externalClubAssociation: "failed"` and `/player?clubAssociation=failed` shows the warning. A club EA does not know (404) still blocks the finish. Only claim the warning path from a real provider failure or the Storybook story `Product/Onboarding/Flow › Club Association Failed`.
 - Re-finishing must not create a second organization or competition. This recipe never creates those.
@@ -49,4 +49,4 @@ Preconditions:
 - The incomplete-actor guard lands on `/onboarding`, which reopens the stored step, or the first earlier step whose data this browser no longer has. A fresh actor lands on `/onboarding/intention`.
 - An invitation link (`/invitations/accept/<code>`) opened by an incomplete actor goes to `/onboarding/invitation?invitation=<code>` with the code filled in; it is not accepted until the review step.
 - The draft lives in `localStorage` under `futrob:onboarding-draft:<userId>`. Clear it to test a resume from another device.
-- Command-bar empty identity is `Sin organización` (`shell.identity.empty`). Do not look for `Tu espacio en Futrob`. The account-menu trigger still shows the given name.
+- Command-bar empty identity is `Sin organización` (`shell.identity.empty`). The account-menu trigger still shows the given name. After `Entrar a mi espacio`, wait until the review overlay is gone and heading `Inicio` is the only onboarding chrome left before asserting the home hero.
