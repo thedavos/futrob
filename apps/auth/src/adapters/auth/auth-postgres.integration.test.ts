@@ -437,6 +437,7 @@ suite("auth on product Postgres (migration 0043)", () => {
         ids: new CryptoIdGenerator(),
         mail: {
           sendEmailChangeVerification: async () => {},
+          sendEmailVerification: async () => {},
           sendPasswordReset: async ({ url }) => {
             if (!providerUp) throw new Error("provider down");
             sent.push(url);
