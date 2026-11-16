@@ -131,16 +131,14 @@ describe("player home on /player", () => {
     expect(currentLocation()?.pathname).toBe("/orgs/org-1/competitions/competition-liga");
   });
 
-  it("opens the next Encounter, where its rescheduling lives", async () => {
+  it("opens the next Encounter's Match Center from the fixture", async () => {
     playerApi();
     const user = userEvent.setup();
     renderApp("/player?club=club-cuervos");
 
     const fixture = await screen.findByRole("heading", { name: "Tu próximo enfrentamiento" });
     await user.click(
-      within(fixture.parentElement!).getByRole("button", {
-        name: "Ver enfrentamiento y reprogramaciones",
-      }),
+      within(fixture.parentElement!).getByRole("button", { name: "Ver enfrentamiento" }),
     );
     expect(currentLocation()?.pathname).toBe(
       "/orgs/org-1/competitions/competition-liga/encounters/encounter-1",

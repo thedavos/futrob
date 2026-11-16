@@ -134,7 +134,7 @@ export function useEncounterScheduleChanges({
       const reread = () =>
         Promise.all([
           client.invalidateQueries({ queryKey: mobileQueryKeys.encounters(generation) }),
-          client.invalidateQueries({ queryKey: mobileQueryKeys.playerHomes(generation) }),
+          client.invalidateQueries({ queryKey: mobileQueryKeys.playerHomeAll(generation) }),
         ]);
       const run = async <Result>(command: () => Promise<Result>): Promise<void> => {
         try {

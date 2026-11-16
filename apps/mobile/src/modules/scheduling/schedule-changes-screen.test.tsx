@@ -110,6 +110,25 @@ function encounterApi(list: ListScheduleChangeRequestsResponse, extra: Record<st
       memberships: [],
     }),
     "/organizations/org-1/encounters/encounter-1": json(view),
+    // The Match Center shares the route; this reader holds no selection or approval access.
+    "/encounters/encounter-1/candidates": json({
+      status: "ready",
+      window: { from: "2026-12-04T23:00:00.000Z", to: "2026-12-05T04:00:00.000Z" },
+      candidates: [],
+    }),
+    "/authorization/effective-access": (url) =>
+      Response.json({
+        actorId: "actor-tigres",
+        scope: { organizationId: "org-1" },
+        roles: [],
+        permissions: [
+          {
+            permission: url.searchParams.get("permissions") ?? "",
+            allowed: false,
+            decidedAt: "organization",
+          },
+        ],
+      }),
     [REQUESTS]: (url, init) =>
       init?.method === "POST" ? extra[REQUESTS]!(url, init) : Response.json(state.list),
     ...Object.fromEntries(Object.entries(extra).filter(([path]) => path !== REQUESTS)),
@@ -165,7 +184,7 @@ describe("rescheduling on the Encounter route", () => {
     renderApp(ROUTE);
 
     expect(
-      await screen.findByRole("heading", { name: "Cuervos FC1 vs Tigres FC" }),
+      await screen.findByRole("heading", { name: "Cuervos FC1 VS Tigres FC" }),
     ).toBeInTheDocument();
     expect(await screen.findByText("Respondes como Tigres FC")).toBeInTheDocument();
     // The active request blocks a second one, as on web.
@@ -347,7 +366,8 @@ describe("rescheduling on the Encounter route", () => {
     const user = userEvent.setup();
     renderApp(ROUTE);
 
-    expect(await screen.findByText("Horario actual: 4 dic 2026, 20:00")).toBeInTheDocument();
+    // The header and the official match both show the kickoff.
+    expect(await screen.findAllByText("4 dic 2026, 20:00")).not.toHaveLength(0);
 
     // Another captain's acceptance moved the Encounter while this screen was open.
     const moved = "2026-12-06T01:00:00.000Z";
@@ -359,7 +379,8 @@ describe("rescheduling on the Encounter route", () => {
     harness.state.list = { requests: [], creation: NO_CREATION };
     await user.click(await screen.findByRole("button", { name: "Actualizar reprogramaciones" }));
 
-    expect(await screen.findByText("Horario actual: 5 dic 2026, 20:00")).toBeInTheDocument();
+    expect(await screen.findAllByText("5 dic 2026, 20:00")).not.toHaveLength(0);
+    expect(screen.queryAllByText("4 dic 2026, 20:00")).toHaveLength(0);
   });
 
   it("does not show an Encounter from another competition", async () => {

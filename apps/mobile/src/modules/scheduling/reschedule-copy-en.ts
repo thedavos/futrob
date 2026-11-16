@@ -8,10 +8,6 @@ export const en: RescheduleCopy = {
   cancel: "Cancel",
   retry: "Try again",
   vs: "vs",
-  encounterLoading: "Loading the encounter…",
-  encounterError: "We could not load the encounter.",
-  encounterNotFound: "Encounter unavailable",
-  encounterNotFoundHelp: "It is not in this competition or you do not have access to it.",
   loading: "Loading reschedule requests…",
   empty: "No reschedule requests",
   emptyHelp: "Requests and their decisions will appear here.",
@@ -79,7 +75,6 @@ export const en: RescheduleCopy = {
   winnerRequired: "Choose a winning Team to record the intention.",
   save: "Save resolution",
   success: "Resolution saved. The history reflects the closed request.",
-  currentStart: "Current kickoff",
   preview: (date) => `Saved as ${date}`,
   create: {
     open: "Request reschedule",

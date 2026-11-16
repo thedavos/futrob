@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { View } from "react-native";
-import { useRouter } from "expo-router";
 import type {
   EncounterViewDto,
   ScheduleChangeCreationOptionsDto,
@@ -15,11 +14,9 @@ import {
   scheduleChangeSummary,
   type ScheduleChangeResponseAction,
 } from "@futrob/sdk";
-import { GateBoundary } from "@/modules/identity/gate-boundary";
 import { useMobileCopy, type MobileLanguage } from "@/modules/identity/mobile-copy";
-import { nativeRoute } from "@/modules/identity/native-route";
 import { theme } from "@/theme/theme";
-import { Button, Card, EmptyState, ErrorState, LoadingState, Screen, Text } from "@/ui";
+import { Button, Card, EmptyState, ErrorState, LoadingState, Text } from "@/ui";
 import { CreateRequestDialog, ResponseDialog, type OnClosed } from "./reschedule-dialogs";
 import { ResolveDialog } from "./resolve-dialog";
 import { ScheduleChangeHistory } from "./schedule-change-history";
@@ -36,97 +33,31 @@ type OpenDialog =
   | { readonly kind: "resolve"; readonly requestId: string };
 
 /**
- * `/orgs/:orgId/competitions/:competitionId/encounters/:encounterId`: the Encounter and its
- * schedule change requests, as web's Encounter page. Request, counter, accept, reject and resolve
- * are offered only where the server's `creation`, `allowedActions` and `respondAs` allow them.
+ * The Encounter's schedule change requests, a section of the Match Center on web's Encounter
+ * route. Request, counter, accept, reject and resolve are offered only where the server's
+ * `creation`, `allowedActions` and `respondAs` allow them. Shares the Encounter read (same query
+ * key) instead of fetching it twice.
  */
-export function ScheduleChangesScreen(params: {
-  readonly organizationId: string;
-  readonly competitionId: string;
-  readonly encounterId: string;
-}) {
-  return (
-    <GateBoundary mode="ready">
-      <ScheduleChangesContent {...params} />
-    </GateBoundary>
-  );
-}
-
-function ScheduleChangesContent(params: {
-  readonly organizationId: string;
-  readonly competitionId: string;
-  readonly encounterId: string;
-}) {
-  const router = useRouter();
-  const { language } = useMobileCopy();
-  const copy = rescheduleCopy(language);
-  const { encounter, changes } = useEncounterScheduleChanges(params);
-  const competitionRoute = `/orgs/${encodeURIComponent(params.organizationId)}/competitions/${encodeURIComponent(params.competitionId)}`;
-
-  return (
-    <Screen scroll centered={false}>
-      <View style={{ gap: theme.spacing[5], maxWidth: 560, width: "100%", alignSelf: "center" }}>
-        <View style={{ alignItems: "flex-start" }}>
-          <Button
-            variant="ghost"
-            label={copy.back}
-            onPress={() =>
-              router.canGoBack() ? router.back() : router.replace(nativeRoute(competitionRoute))
-            }
-          />
-        </View>
-        {encounter.kind === "loading" ? <LoadingState label={copy.encounterLoading} /> : null}
-        {encounter.kind === "not_found" ? (
-          <EmptyState title={copy.encounterNotFound} description={copy.encounterNotFoundHelp} />
-        ) : null}
-        {encounter.kind === "error" ? (
-          <ErrorState
-            title={copy.encounterError}
-            retryLabel={copy.retry}
-            onRetry={encounter.retry}
-            retrying={encounter.retrying}
-          />
-        ) : null}
-        {encounter.kind === "ready" ? (
-          <>
-            <EncounterHeader view={encounter.view} copy={copy} language={language} />
-            <ScheduleChangesSection
-              state={changes}
-              view={encounter.view}
-              copy={copy}
-              language={language}
-            />
-          </>
-        ) : null}
-      </View>
-    </Screen>
-  );
-}
-
-function EncounterHeader({
+export function EncounterScheduleChanges({
+  organizationId,
+  competitionId,
+  encounterId,
   view,
-  copy,
-  language,
 }: {
+  readonly organizationId: string;
+  readonly competitionId: string;
+  readonly encounterId: string;
   readonly view: EncounterViewDto;
-  readonly copy: RescheduleCopy;
-  readonly language: MobileLanguage;
 }) {
+  const { language } = useMobileCopy();
+  const { changes } = useEncounterScheduleChanges({ organizationId, competitionId, encounterId });
   return (
-    <View style={{ gap: theme.spacing[2] }}>
-      <Text role="caption" color="muted-foreground">
-        {view.competition.name}
-      </Text>
-      <Text role="heading" accessibilityRole="header">
-        {`${view.home.name} ${copy.vs} ${view.away.name}`}
-      </Text>
-      <Text>
-        {`${copy.currentStart}: ${formatCompetitionInstant(view.scheduledStartAt, view.competition.timeZone, language)}`}
-      </Text>
-      <Text role="caption" color="muted-foreground">
-        {copy.zone(view.competition.timeZone)}
-      </Text>
-    </View>
+    <ScheduleChangesSection
+      state={changes}
+      view={view}
+      copy={rescheduleCopy(language)}
+      language={language}
+    />
   );
 }
 

@@ -24,7 +24,7 @@ const es = {
   vs: "VS",
   pending: "Pendiente de jugar",
   viewCompetition: "Ver competición",
-  viewEncounter: "Ver enfrentamiento y reprogramaciones",
+  viewEncounter: "Ver enfrentamiento",
   noUpcomingTitle: "Sin enfrentamientos programados",
   noUpcomingDescription:
     "Tu club ya está en competiciones. Todavía no hay fecha para el próximo enfrentamiento.",
@@ -92,7 +92,7 @@ const en = {
   vs: "VS",
   pending: "Not played yet",
   viewCompetition: "View competition",
-  viewEncounter: "View fixture and rescheduling",
+  viewEncounter: "View fixture",
   noUpcomingTitle: "No fixtures scheduled",
   noUpcomingDescription: "Your club is in competitions. The next fixture has no date yet.",
   noCompetitionsTitle: "Step into competition",

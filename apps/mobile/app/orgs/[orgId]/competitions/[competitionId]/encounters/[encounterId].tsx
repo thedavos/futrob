@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
-import { ScheduleChangesScreen } from "@/modules/scheduling/schedule-changes-screen";
+import { MatchCenterScreen } from "@/modules/match-center/match-center-screen";
 
 /** Same path as web's Encounter page; deep links and the player's next Encounter land here. */
 export default function EncounterRoute() {
@@ -9,7 +9,7 @@ export default function EncounterRoute() {
     encounterId: string;
   }>();
   return (
-    <ScheduleChangesScreen
+    <MatchCenterScreen
       key={`${orgId}/${competitionId}/${encounterId}`}
       organizationId={orgId}
       competitionId={competitionId}

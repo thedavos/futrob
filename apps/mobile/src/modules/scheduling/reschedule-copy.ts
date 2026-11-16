@@ -17,10 +17,6 @@ export interface RescheduleCopy {
   cancel: string;
   retry: string;
   vs: string;
-  encounterLoading: string;
-  encounterError: string;
-  encounterNotFound: string;
-  encounterNotFoundHelp: string;
   loading: string;
   empty: string;
   emptyHelp: string;
@@ -68,7 +64,6 @@ export interface RescheduleCopy {
   winnerRequired: string;
   save: string;
   success: string;
-  currentStart: string;
   preview: (date: string) => string;
   create: {
     open: string;
@@ -118,10 +113,6 @@ const es: RescheduleCopy = {
   cancel: "Cancelar",
   retry: "Reintentar",
   vs: "vs",
-  encounterLoading: "Cargando el enfrentamiento…",
-  encounterError: "No pudimos cargar el enfrentamiento.",
-  encounterNotFound: "Enfrentamiento no disponible",
-  encounterNotFoundHelp: "No existe en esta competición o no tienes acceso a él.",
   loading: "Cargando reprogramaciones…",
   empty: "Sin solicitudes de reprogramación",
   emptyHelp: "Las solicitudes y sus decisiones aparecerán aquí.",
@@ -189,7 +180,6 @@ const es: RescheduleCopy = {
   winnerRequired: "Elige un equipo ganador para registrar la intención.",
   save: "Guardar resolución",
   success: "Resolución guardada. El historial refleja el cierre.",
-  currentStart: "Horario actual",
   preview: (date) => `Se guardará como ${date}`,
   create: {
     open: "Solicitar reprogramación",

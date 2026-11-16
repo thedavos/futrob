@@ -138,6 +138,24 @@ describe("context shell", () => {
     expect(screen.queryByRole("tab", { name: "Inicio" })).toBeNull();
   });
 
+  it("lists «Disputas» in a competition's «Más» only for actors who approve results", async () => {
+    shellApi({ allowed: [MOBILE_PERMISSION.encountersResultsApprove] });
+    const user = userEvent.setup();
+    renderApp("/orgs/org-1/competitions/competition-liga/more");
+
+    await user.click(await screen.findByRole("button", { name: "Disputas" }));
+    expect(currentLocation()?.pathname).toBe("/orgs/org-1/competitions/competition-liga/disputes");
+  });
+
+  it("hides «Disputas» from a competition's «Más» without approval", async () => {
+    shellApi({ allowed: [MOBILE_PERMISSION.competitionsRead] });
+    renderApp("/orgs/org-1/competitions/competition-liga/more");
+
+    expect(await screen.findByRole("button", { name: "Cuenta" })).toBeInTheDocument();
+    await screen.findByRole("button", { name: "Cambiar de contexto. Actual: Liga Futrob" });
+    expect(screen.queryByRole("button", { name: "Disputas" })).toBeNull();
+  });
+
   it("shows a recoverable error when the spaces fail to load, then the spaces on retry", async () => {
     const api = shellApi({ allowed: [MOBILE_PERMISSION.organizationsRead] });
     const served = api.routes["/organizations/mine"]!;
@@ -206,6 +224,27 @@ describe("context shell", () => {
     expect(
       await screen.findByRole("button", { name: "Cambiar de contexto. Actual: MADERAS FC" }),
     ).toBeInTheDocument();
+  });
+
+  it("keeps a club opened by link across personal tabs without using the selector", async () => {
+    shellApi();
+    const user = userEvent.setup();
+    renderApp("/player?club=club-maderas");
+
+    expect(
+      await screen.findByRole("button", { name: "Cambiar de contexto. Actual: MADERAS FC" }),
+    ).toBeInTheDocument();
+
+    await user.click(await screen.findByRole("tab", { name: "Más" }));
+    expect(currentLocation()?.pathname).toBe("/player/more");
+    expect(
+      await screen.findByRole("button", { name: "Cambiar de contexto. Actual: MADERAS FC" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Inicio" }));
+    await waitFor(() =>
+      expect(currentLocation()).toEqual({ pathname: "/player", params: { club: "club-maderas" } }),
+    );
   });
 
   it("relabels the header and tabs when the language changes in «Más»", async () => {
