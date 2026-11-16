@@ -23,6 +23,7 @@ export const MOBILE_PERMISSION = {
   encountersOfficialSelectionPropose: "encounters.official-selection.propose",
   /** Reviews and resolves selection disputes. */
   encountersResultsApprove: "encounters.results.approve",
+  statisticsRead: "statistics.read",
 } as const satisfies Record<string, PermissionDto>;
 
 export const SHELL_PERMISSIONS = [
@@ -44,6 +45,7 @@ export const SHELL_PERMISSIONS = [
   MOBILE_PERMISSION.teamsExternalClubRead,
   MOBILE_PERMISSION.teamsExternalClubManage,
   MOBILE_PERMISSION.encountersResultsApprove,
+  MOBILE_PERMISSION.statisticsRead,
 ] as const satisfies readonly PermissionDto[];
 
 export function scopeForDestination(

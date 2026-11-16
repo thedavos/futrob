@@ -263,7 +263,6 @@ export const es = {
   reviewAcknowledge: "Revisé los avisos de integridad y apruebo igualmente",
   reviewAcknowledgeRequired: "Confirma que revisaste los avisos de integridad para aprobar.",
   disputesTitle: "Disputas",
-  disputesDescription: "Selecciones que esperan una decisión de la organización",
   disputesLoading: "Cargando disputas",
   disputesError: "No pudimos cargar las disputas.",
   disputesEmptyTitle: "No hay disputas pendientes",

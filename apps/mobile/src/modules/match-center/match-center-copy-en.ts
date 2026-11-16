@@ -235,7 +235,6 @@ export const en: MatchCenterCopy = {
   reviewAcknowledge: "I reviewed the integrity warnings and approve anyway",
   reviewAcknowledgeRequired: "Confirm you reviewed the integrity warnings to approve.",
   disputesTitle: "Disputes",
-  disputesDescription: "Selections waiting on an organization decision",
   disputesLoading: "Loading disputes",
   disputesError: "We couldn't load the disputes.",
   disputesEmptyTitle: "No pending disputes",

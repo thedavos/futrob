@@ -143,7 +143,7 @@ export function useMatchCenter({
   const reread = async (): Promise<void> => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: mobileQueryKeys.encounters(generation) }),
-      queryClient.invalidateQueries({ queryKey: mobileQueryKeys.playerHomes(generation) }),
+      queryClient.invalidateQueries({ queryKey: mobileQueryKeys.playerHomeAll(generation) }),
     ]);
   };
   const results = () => getFutrobClient().results;

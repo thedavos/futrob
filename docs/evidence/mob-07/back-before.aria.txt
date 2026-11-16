@@ -1,0 +1,9 @@
+- button "Volver"
+- heading "Cuenta" [level=1]
+- heading "Preferencias" [level=1]
+- text: "Idioma: Español"
+- button "Cambiar a English"
+- text: Se aplica al elegirlo y se recuerda en este dispositivo.
+- button "Seguridad"
+- button "Sesiones"
+- button "Eliminar cuenta"

@@ -13,9 +13,12 @@ export const mobileQueryKeys = {
     [...sessionScope(generation), "onboarding-flow", step] as const,
   playerHome: (generation: SessionGeneration, externalClubId: string | undefined) =>
     [...sessionScope(generation), "player-home", externalClubId] as const,
-  /** Every club's home, for invalidation after a command changes the next Encounter. */
-  playerHomes: (generation: SessionGeneration) =>
+  /** Prefix of every player-home snapshot, for invalidation after game data changes. */
+  playerHomeAll: (generation: SessionGeneration) =>
     [...sessionScope(generation), "player-home"] as const,
+  /** Player-space reads (MOB-02): matches, statistics, competitions, explore, club search. */
+  playerSpace: (generation: SessionGeneration, ...parts: readonly (string | undefined)[]) =>
+    [...sessionScope(generation), "player-space", ...parts] as const,
   /** Every Encounter read of the session, refreshed together after a selection command. */
   encounters: (generation: SessionGeneration) =>
     [...sessionScope(generation), "encounters"] as const,
@@ -77,6 +80,14 @@ export const mobileQueryKeys = {
       scope.organizationId,
       scope.competitionId,
     ] as const,
+  /** One competition read (`fixture`, `standings`, `team:<id>`…) for the session. */
+  competitionRead: (
+    generation: SessionGeneration,
+    organizationId: string,
+    competitionId: string,
+    resource: string,
+  ) =>
+    [...sessionScope(generation), "competition", organizationId, competitionId, resource] as const,
   destination: (
     generation: SessionGeneration,
     destination: {

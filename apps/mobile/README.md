@@ -34,13 +34,27 @@ La implementación actual incluye auth, gate de `actor_onboarding`, los tres cam
   `(tabs)` con su `_layout.tsx`, que monta `ContextTabsLayout`
   (`src/modules/navigation/`): header con el selector de contexto único, la pestaña activa y la
   barra inferior (headless tabs de `expo-router/ui`, 56 dp). Las pestañas de cada contexto
-  viven en `nav-registry.ts`, con el mismo permiso `EffectiveAccess` que web; **Más** agrupa
+  viven en `nav-registry.ts`, con el mismo permiso `EffectiveAccess` que web; **Más** combina
+  destinos personales (`MORE_DESTINATIONS`) y destinos autorizados del contexto (`contextLinks`),
   cuenta, idioma y cierre de sesión. El detalle y las operaciones son rutas fuera de `(tabs)`
-  que se apilan encima. El modelo del selector (opciones, rutas, club por defecto) vive en
+  que se apilan encima (`StackFrame`: atrás, título y contenido). El modelo del selector (opciones, rutas, club por defecto) vive en
   `@futrob/sdk` (`buildWorkspaceOptions`, `workspaceContextPath`…).
 - **Onboarding:** `src/modules/identity/onboarding-flow.ts` orquesta el SDK. La API mantiene
   el paso y las consecuencias de negocio; SecureStore conserva el formulario local por usuario.
   Los enlaces `futrob://invitations/accept/<token>` guardan el token hasta completar auth.
+
+## Cuenta
+
+`/account` está disponible desde el espacio personal y los contextos de organización
+y competición. Reutiliza los flujos de AUTH-03 para preferencias ES/EN, correo,
+contraseña, sesiones y eliminación de cuenta con cancelación durante el plazo de gracia.
+Abrir Cuenta sin historial permite volver al destino autenticado resuelto por la API.
+Una sesión revocada vuelve al login; una respuesta de una sesión anterior no cierra
+la cuenta que haya iniciado sesión después. Al cancelar la eliminación, el estado
+local se actualiza con la respuesta de la API antes de regresar a la app.
+
+Los tests de pantallas usan React Native Web con auth y API simulados. No sustituyen
+la verificación nativa de iOS y Android exigida por `AC-MOB-*`.
 
 ## Desarrollo
 
@@ -75,8 +89,11 @@ apps/mobile/
 │   ├── index.tsx              # gate de sesión, onboarding y destino
 │   ├── (auth)/               # login/signup → gate u onboarding
 │   ├── (onboarding)/         # intención, formularios y revisión
-│   ├── player/(tabs)/        # espacio personal: Inicio + Más
+│   ├── player/(tabs)/        # espacio personal: Inicio, Partidos, Estadísticas, Competiciones, Más
+│   ├── player/…              # detalle de partido, Clubes EA, Cuentas de juego, Explorar
 │   ├── orgs/                 # selector; orgs/[orgId]/(tabs) y …/competitions/[id]/(tabs)
+│   │                         # competición: Calendario y Clasificación en (tabs); bracket,
+│   │                         # rankings, equipos y reglamento apilados desde Más
 │   └── invitations/accept/   # enlace de invitación
 ├── assets/                    # generados por scripts/generate-assets.mjs
 └── src/
@@ -85,5 +102,14 @@ apps/mobile/
     ├── ui/                    # primitivas móviles (Button, List, Dialog, Tabs…)
     └── modules/
         ├── identity/          # auth-api, session-store, validación (+tests)
-        └── navigation/        # shell por contexto, selector, pestañas y Más
+        ├── competition/       # lecturas de competición (modelos puros en @futrob/sdk)
+        ├── navigation/        # shell por contexto, selector, pestañas y Más
+        └── player-space/      # espacio del jugador (MOB-02); modelos puros en @futrob/sdk
 ```
+
+## Publicación
+
+[Preparar la publicación](release/README.md) documenta los perfiles EAS Build y Submit,
+los enlaces universales de invitación, los iconos y las fichas ES/EN de ambas tiendas.
+La configuración queda en el repositorio; los identificadores de firma, la asociación
+del dominio, las builds, la verificación nativa y la publicación requieren pasos del dueño.
