@@ -18,6 +18,7 @@ const es = {
     rankings: "Rankings",
     teams: "Equipos",
     rules: "Reglamento",
+    disputes: "Disputas",
   },
   tabBar: "Navegación",
   context: {
@@ -80,6 +81,7 @@ const en = {
     rankings: "Rankings",
     teams: "Teams",
     rules: "Rules",
+    disputes: "Disputes",
   },
   tabBar: "Navigation",
   context: {

@@ -58,6 +58,9 @@ describe("contextLinks", () => {
     expect(
       contextLinks(context, new Set([MOBILE_PERMISSION.teamsRead])).map((link) => link.id),
     ).toEqual(["teams"]);
+    expect(contextLinks(context, new Set([MOBILE_PERMISSION.encountersResultsApprove]))).toEqual([
+      { id: "disputes", href: "/orgs/org-1/competitions/cup-1/disputes" },
+    ]);
   });
 
   it("has no extra destinations in the personal and organization contexts yet", () => {

@@ -89,7 +89,7 @@ export function contextTabs(
  * Context destinations that do not earn a tab. «Más» lists them and each opens a stack screen
  * above the shell. Same permission as the web navigation item; hidden while access is unknown.
  */
-export type ContextLinkId = "bracket" | "rankings" | "teams" | "rules";
+export type ContextLinkId = "bracket" | "rankings" | "teams" | "rules" | "disputes";
 
 export type ContextLink = { readonly id: ContextLinkId; readonly href: string };
 
@@ -101,6 +101,11 @@ const CONTEXT_LINKS = {
     { id: "rankings", path: "/rankings", requiredPermission: MOBILE_PERMISSION.competitionsRead },
     { id: "teams", path: "/teams", requiredPermission: MOBILE_PERMISSION.teamsRead },
     { id: "rules", path: "/rules", requiredPermission: MOBILE_PERMISSION.competitionsRead },
+    {
+      id: "disputes",
+      path: "/disputes",
+      requiredPermission: MOBILE_PERMISSION.encountersResultsApprove,
+    },
   ],
 } as const satisfies Record<
   WorkspaceContext["kind"],

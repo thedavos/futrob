@@ -19,6 +19,10 @@ export const MOBILE_PERMISSION = {
   teamsInvitationsManage: "teams.roster.invitations.manage",
   teamsExternalClubRead: "teams.external-club.read",
   teamsExternalClubManage: "teams.external-club.manage",
+  /** Speaks for a Team in its Encounter's official selection. */
+  encountersOfficialSelectionPropose: "encounters.official-selection.propose",
+  /** Reviews and resolves selection disputes. */
+  encountersResultsApprove: "encounters.results.approve",
   statisticsRead: "statistics.read",
 } as const satisfies Record<string, PermissionDto>;
 
@@ -40,6 +44,7 @@ export const SHELL_PERMISSIONS = [
   MOBILE_PERMISSION.teamsInvitationsManage,
   MOBILE_PERMISSION.teamsExternalClubRead,
   MOBILE_PERMISSION.teamsExternalClubManage,
+  MOBILE_PERMISSION.encountersResultsApprove,
   MOBILE_PERMISSION.statisticsRead,
 ] as const satisfies readonly PermissionDto[];
 
