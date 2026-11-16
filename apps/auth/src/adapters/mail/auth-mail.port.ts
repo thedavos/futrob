@@ -12,6 +12,8 @@ export interface AuthLinkEmail {
 export interface AuthMailPort {
   /** Asks the owner of `to` to confirm it: the change applies only once they open `url`. */
   sendEmailChangeVerification(input: AuthLinkEmail): Promise<void>;
+  /** Asks the owner of a new account to confirm that `to` is theirs (AUTH-02). */
+  sendEmailVerification(input: AuthLinkEmail): Promise<void>;
   /** Sends a single-use link that lets the owner of `to` choose a new password. */
   sendPasswordReset(input: AuthLinkEmail): Promise<void>;
 }

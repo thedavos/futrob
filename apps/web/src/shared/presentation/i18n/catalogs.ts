@@ -276,6 +276,24 @@ const es = {
   "accountDeletion.cancelling": "Cancelando…",
   "accountDeletion.cancelError": "No pudimos cancelar la eliminación. Vuelve a intentarlo.",
   "accountDeletion.signOut": "Cerrar sesión",
+  "emailVerification.notice.title": "Confirma tu correo",
+  "emailVerification.notice.body":
+    "Te enviamos un enlace a {email}. Ábrelo para confirmar que este correo es tuyo.",
+  "emailVerification.resend.action": "Enviar otro enlace",
+  "emailVerification.resend.sending": "Enviando…",
+  "emailVerification.resend.sent": "Te enviamos otro enlace. Vence en 1 hora.",
+  "emailVerification.resend.rateLimited":
+    "Demasiados intentos. Espera un minuto e intenta de nuevo.",
+  "emailVerification.resend.failed": "No pudimos enviar el enlace. Intenta de nuevo.",
+  "emailVerification.landing.verifiedTitle": "Correo confirmado",
+  "emailVerification.landing.verifiedBody": "Gracias. Ya sabemos que este correo es tuyo.",
+  "emailVerification.landing.alreadyTitle": "Tu correo ya está confirmado",
+  "emailVerification.landing.alreadyBody": "Este enlace ya se usó. No tienes que hacer nada más.",
+  "emailVerification.landing.deadTitle": "Este enlace ya no sirve",
+  "emailVerification.landing.deadBody":
+    "Ya se usó o venció. Pide otro y usa el más reciente que te llegue.",
+  "emailVerification.landing.signIn": "Inicia sesión para pedir otro enlace",
+  "emailVerification.landing.continue": "Ir a Futrob",
   "profile.manageAccount": "Cambiar correo o contraseña",
   "feedback.title": "Enviar feedback",
   "feedback.description": "Cuéntanos qué mejorarías o qué problema encontraste.",
@@ -3477,6 +3495,7 @@ export interface MessageParamsByKey {
   readonly "settings.deleteScheduled": { readonly date: string };
   readonly "settings.deleteConfirmDescription": { readonly date: string };
   readonly "accountDeletion.title": { readonly date: string };
+  readonly "emailVerification.notice.body": { readonly email: string };
   readonly "portal.header.teams": { readonly count: number };
   readonly "portal.header.timeZone": { readonly zone: string };
   readonly "portal.meta.description": { readonly name: string };
@@ -3743,6 +3762,24 @@ const en: Catalog = {
   "accountDeletion.cancelling": "Cancelling\u2026",
   "accountDeletion.cancelError": "We could not cancel the deletion. Try again.",
   "accountDeletion.signOut": "Sign out",
+  "emailVerification.notice.title": "Confirm your email",
+  "emailVerification.notice.body":
+    "We sent a link to {email}. Open it to confirm this email is yours.",
+  "emailVerification.resend.action": "Send another link",
+  "emailVerification.resend.sending": "Sending…",
+  "emailVerification.resend.sent": "We sent another link. It expires in 1 hour.",
+  "emailVerification.resend.rateLimited": "Too many attempts. Wait a minute and try again.",
+  "emailVerification.resend.failed": "We couldn't send the link. Try again.",
+  "emailVerification.landing.verifiedTitle": "Email confirmed",
+  "emailVerification.landing.verifiedBody": "Thanks. We now know this email is yours.",
+  "emailVerification.landing.alreadyTitle": "Your email is already confirmed",
+  "emailVerification.landing.alreadyBody":
+    "This link was already used. There's nothing else to do.",
+  "emailVerification.landing.deadTitle": "This link no longer works",
+  "emailVerification.landing.deadBody":
+    "It was used or expired. Ask for another and use the most recent one you receive.",
+  "emailVerification.landing.signIn": "Sign in to ask for another link",
+  "emailVerification.landing.continue": "Go to Futrob",
   "profile.manageAccount": "Change email or password",
   "feedback.title": "Send feedback",
   "feedback.description": "Tell us what to improve or what went wrong.",

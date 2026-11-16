@@ -95,6 +95,12 @@ debe actualizar auth y web en la misma ventana.
   `?error=INVALID_TOKEN`.
 - `POST /api/auth/reset-password` `{ token, newPassword }` — enlace de un solo uso (1 hora);
   invalida los demás enlaces de la cuenta y cierra todas sus sesiones.
+- Verificación de correo (AUTH-02): el registro abre sesión al instante y envía un enlace
+  (1 hora). Todo enlace aterriza en la página web `/verify-email`, la pida web o la app.
+  `POST /api/auth/send-verification-email` `{ email, callbackURL }` reenvía a la cuenta con
+  sesión (3 por minuto por IP). `GET /api/auth/verify-email?token=…` verifica una vez; un
+  enlace ya usado vuelve con `?error=TOKEN_USED` y uno vencido con `?error=TOKEN_EXPIRED`.
+  `auth_users.email_verified` se proyecta en `actor_contact_profiles.email_verified`.
 - `GET /meta/health`
 
 ## Nota de diseño

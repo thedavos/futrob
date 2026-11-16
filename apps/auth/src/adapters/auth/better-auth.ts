@@ -23,6 +23,13 @@ import {
   PASSWORD_RESET_TTL_SECONDS,
   PASSWORD_RESETS_PER_ACCOUNT,
 } from "./password-reset.ts";
+import {
+  EMAIL_VERIFICATION_TTL_SECONDS,
+  isEmailChangeToken,
+  isResendRequest,
+  rejectUsedVerificationLink,
+  withVerificationCallback,
+} from "./email-verification.ts";
 
 export type { AuthEnv };
 
@@ -122,8 +129,10 @@ export function createAuth(input: {
     createPostgresActorProvisioner({ db: input.db, clock: input.clock, ids: input.ids });
 
   const mail = input.mail ?? createMail(input.env);
+  // Set once the instance exists; only a failed verification resend asks it.
+  let isSignedIn = async (_headers: Headers): Promise<boolean> => false;
 
-  return betterAuth({
+  const auth = betterAuth({
     appName: "Futrob",
     baseURL: input.env.BETTER_AUTH_URL,
     secret: input.env.BETTER_AUTH_SECRET,
@@ -168,19 +177,45 @@ export function createAuth(input: {
     // Changing email sends a link to the new address; the old one stays valid until it is
     // opened. Without a mail adapter the endpoint answers CHANGE_EMAIL_DISABLED.
     user: { changeEmail: { enabled: mail !== undefined } },
+    // AUTH-02: a new account gets a verification link, but signing in never waits for it.
+    // The same callback carries email change links; their token names the new address.
     emailVerification: mail
       ? {
-          sendVerificationEmail: async ({ user, url }) => {
-            await mail.sendEmailChangeVerification({ to: user.email, name: user.name, url });
+          sendOnSignUp: true,
+          expiresIn: EMAIL_VERIFICATION_TTL_SECONDS,
+          sendVerificationEmail: async ({ user, url, token }, request) => {
+            if (isEmailChangeToken(token)) {
+              await mail.sendEmailChangeVerification({ to: user.email, name: user.name, url });
+              return;
+            }
+            // A failed send must not fail sign-up; the account can ask for another link. A
+            // signed-in resend fails visibly so it can retry; an anonymous one answers as if it
+            // sent, so the reply never tells which accounts exist.
+            try {
+              await mail.sendEmailVerification({
+                to: user.email,
+                name: user.name,
+                url: withVerificationCallback(url),
+              });
+            } catch (cause) {
+              if (isResendRequest(request) && (await isSignedIn(request.headers))) {
+                throw cause;
+              }
+              input.reportDefect(cause instanceof Error ? cause : new Error("auth.mail.failed"));
+            }
           },
         }
       : undefined,
+    hooks: { before: rejectUsedVerificationLink },
     onAPIError: createAuthErrorHandler(input.reportDefect),
     rateLimit: {
       enabled: true,
       storage: "database",
-      // Per IP; the per-account cap lives in `sendResetPassword`.
-      customRules: { "/request-password-reset": { window: 60, max: 3 } },
+      // Per IP; the per-account reset cap lives in `sendResetPassword`.
+      customRules: {
+        "/request-password-reset": { window: 60, max: 3 },
+        "/send-verification-email": { window: 60, max: 3 },
+      },
     },
     advanced: {
       backgroundTasks: input.runInBackground ? { handler: input.runInBackground } : undefined,
@@ -204,6 +239,8 @@ export function createAuth(input: {
       })),
     ],
   });
+  isSignedIn = async (headers) => (await auth.api.getSession({ headers })) !== null;
+  return auth;
 }
 
 export type FutrobAuth = ReturnType<typeof createAuth>;

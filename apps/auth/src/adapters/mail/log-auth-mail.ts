@@ -12,6 +12,10 @@ export class LogAuthMail implements AuthMailPort {
     this.write("auth.mail.email_change", input);
   }
 
+  async sendEmailVerification(input: AuthLinkEmail): Promise<void> {
+    this.write("auth.mail.email_verification", input);
+  }
+
   async sendPasswordReset(input: AuthLinkEmail): Promise<void> {
     this.write("auth.mail.password_reset", input);
   }

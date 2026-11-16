@@ -19,6 +19,7 @@ import {
   ResetPasswordForm,
 } from "@/modules/identity/presentation/password-reset-forms.tsx";
 import { SignupForm } from "@/modules/identity/presentation/signup-form.tsx";
+import { VerifyEmailResult } from "@/modules/identity/presentation/email-verification.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 const styles = stylex.create({
@@ -59,7 +60,12 @@ const resetSearchSchema = z.object({
   error: z.string().optional().catch(undefined),
 });
 
-export type AuthStoryPath = "/login" | "/signup" | "/forgot-password" | `/reset-password${string}`;
+export type AuthStoryPath =
+  | "/login"
+  | "/signup"
+  | "/forgot-password"
+  | `/reset-password${string}`
+  | `/verify-email${string}`;
 
 function createAuthStoryRouter(initialPath: AuthStoryPath) {
   const rootRoute = createRootRoute({
@@ -131,6 +137,29 @@ function createAuthStoryRouter(initialPath: AuthStoryPath) {
     },
   });
 
+  const verifyEmailRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/verify-email",
+    validateSearch: (search) => resetSearchSchema.pick({ error: true }).parse(search),
+    component: function VerifyEmailStory() {
+      const { error } = verifyEmailRoute.useSearch();
+      return (
+        <AuthStoryShell>
+          <div {...applyProps(undefined, undefined, styles.stack)}>
+            <AuthFormHeader title="Confirma tu correo" />
+            <VerifyEmailResult error={error} />
+          </div>
+        </AuthStoryShell>
+      );
+    },
+  });
+
+  const playerRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/player",
+    component: () => <StubPage label="Mi espacio (stub de Storybook)" />,
+  });
+
   const onboardingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/onboarding",
@@ -166,6 +195,8 @@ function createAuthStoryRouter(initialPath: AuthStoryPath) {
     signupRoute,
     forgotPasswordRoute,
     resetPasswordRoute,
+    verifyEmailRoute,
+    playerRoute,
     onboardingRoute,
     orgsRoute,
     orgRoute,

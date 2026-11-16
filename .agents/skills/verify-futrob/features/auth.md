@@ -1,6 +1,6 @@
 # Auth
 
-Auth lets a visitor create a credentials account, sign in or reset a forgotten password, then lands inside the authenticated app (onboarding or a post-auth destination) with a Better Auth cookie. A wrong password stays on `/login` with a safe error.
+Auth lets a visitor create a credentials account, verify its email, sign in or reset a forgotten password, then lands inside the authenticated app (onboarding or a post-auth destination) with a Better Auth cookie. A wrong password stays on `/login` with a safe error.
 
 ## Sub-features
 
@@ -12,6 +12,7 @@ Auth lets a visitor create a credentials account, sign in or reset a forgotten p
 - `auth-gate` sends an anonymous visit to `/login` when opening an `_app` route such as `/player`.
 - `auth-cross-link` moves between `/login` and `/signup` via `Crear una cuenta` and `Iniciar sesión`.
 - `auth-forgot-password` asks for a reset link at `/forgot-password`; the confirmation is identical for known and unknown emails.
+- `auth-email-verification` sends a link on signup without delaying onboarding; `/verify-email` confirms it once, a used or expired link shows `Este enlace ya no sirve` with `Enviar otro enlace`, and the shell shows `Confirma tu correo` until the account is verified.
 - `auth-reset-password` sets a new password at `/reset-password?token=…`; a used or expired link shows `Este enlace ya no sirve` and `Pedir otro enlace`.
 
 ## How to get to it (user POV)
@@ -39,6 +40,7 @@ Preconditions:
 - **Forgot password.** Requires `AUTH_EMAIL_DELIVERY=log` in `apps/auth/.dev.vars`. On `/login`, choose `¿Olvidaste tu contraseña?`. The URL is `/forgot-password`, heading `Recupera tu contraseña`. Fill `Correo electrónico` with the disposable account and choose `Enviar enlace`: the alert `Revisa tu correo` appears. Repeat with `nobody-verify@example.test`: the same alert appears (no enumeration). The auth worker log has one `auth.mail.password_reset` line, for the existing account only.
 - **Reset password.** Open the `url` from that log line. It redirects to `/reset-password?token=…`, heading `Elige una contraseña nueva`. Fill `Contraseña nueva` and `Repetir contraseña`, choose `Guardar contraseña`: the alert `Contraseña actualizada` appears. Signing in with the old password is rejected; the new one works, and any session opened before the reset is gone.
 - **Dead link.** Open the same log `url` again. It lands on `/reset-password?error=INVALID_TOKEN` with `Este enlace ya no sirve` and the link `Pedir otro enlace` (`/forgot-password`).
+- **Email verification.** Requires `AUTH_EMAIL_DELIVERY=log`. After signup, the auth worker log has one `auth.mail.email_verification` line and the URL is still `/onboarding`. Once onboarding is done, the shell shows `Confirma tu correo` with the disposable address and `Enviar otro enlace`. Open the logged `url`: it lands on `/verify-email`, heading `Confirma tu correo`, alert `Correo confirmado`; the shell notice is gone on the next load. Open the same `url` again: `/verify-email?error=TOKEN_USED` shows `Tu correo ya está confirmado`. Demo accounts (`@demo.futrob.test`) are seeded verified and never show the notice.
 - **Proof.** Screenshot + ARIA of the login reject alert, and of the post-signup onboarding heading. Record the disposable email in `NOTES.md` (not the password).
 
 ## Gotchas
@@ -51,5 +53,6 @@ Preconditions:
 - Signup password policy is 8+ characters **and** at least one letter and one number. `12345678` fails client validation.
 - Do not put the password, session cookie, or Better Auth token in evidence files.
 - Never record the reset `url` or its token in evidence: it is a credential until used. Redact it in logs you keep.
+- Never record a verification `url` either; redact it like the reset link.
 - More than 3 reset requests per minute from one IP answer 429 (`Demasiados intentos…`); an account receives at most 3 live links.
 - Mobile `/login` is a different surface. This feature is web only.
