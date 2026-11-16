@@ -17,6 +17,9 @@ export default defineConfig({
     name: "mobile",
     // Screen tests render React Native primitives through react-native-web into jsdom.
     environment: "jsdom",
+    // Multi-step screen flows (e.g. the Match Center proposal) drive many user events through
+    // react-native-web; on shared CI runners they can pass the 5s default.
+    testTimeout: 20_000,
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     setupFiles: ["test/setup.ts"],
     alias: {

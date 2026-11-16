@@ -8,6 +8,15 @@ import { AUTH_BASE_URL, AUTH_ORIGIN } from "@/config/env";
 
 export const AUTH_ERROR_NETWORK = "No se pudo conectar. Revisa tu conexión e intenta de nuevo.";
 export const AUTH_ERROR_GENERIC = "No se pudo completar. Intenta de nuevo.";
+export const AUTH_ERROR_RATE_LIMIT = "Demasiados intentos. Espera un minuto e intenta de nuevo.";
+
+/**
+ * Where a reset link opens this app once apps/auth has checked its token:
+ * `futrob://reset-password?token=…`, or `?error=INVALID_TOKEN` for a used or expired link.
+ */
+export const PASSWORD_RESET_APP_CALLBACK = "futrob://reset-password";
+/** Better Auth's code for a reset token that was used, expired or never existed. */
+export const INVALID_RESET_TOKEN = "INVALID_TOKEN";
 
 const authSuccessSchema = z.object({
   token: z.string().min(1),
@@ -51,7 +60,10 @@ const WRONG_CREDENTIALS_CODES = new Set([
   "USER_NOT_FOUND",
 ]);
 
-function mapErrorMessage(code: string | undefined): string {
+function mapErrorMessage(code: string | undefined, status?: number): string {
+  if (status === 429) {
+    return AUTH_ERROR_RATE_LIMIT;
+  }
   if (code === undefined) {
     return AUTH_ERROR_GENERIC;
   }
@@ -72,10 +84,13 @@ export interface AuthSuccess {
   user: { id: string; name: string; email: string };
 }
 
-async function requestAuth(
-  path: string,
-  body: { email: string; password: string },
-): Promise<AuthSuccess> {
+/** JSON body of a Better Auth endpoint call. */
+type AuthRequestBody = Readonly<Record<string, string>>;
+
+/** Reset endpoints answer `{ status: true }`; nothing else in the body matters. */
+const authStatusSchema = z.object({ status: z.boolean() });
+
+async function postAuth<T>(path: string, body: AuthRequestBody, schema: z.ZodType<T>): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${AUTH_BASE_URL}${path}`, {
@@ -97,14 +112,20 @@ async function requestAuth(
   if (!response.ok) {
     const parsedError = authErrorSchema.safeParse(payload);
     const code = parsedError.success ? parsedError.data.code : undefined;
-    throw new AuthError(mapErrorMessage(code), { code, status: response.status });
+    throw new AuthError(mapErrorMessage(code, response.status), { code, status: response.status });
   }
-
-  const parsedSuccess = authSuccessSchema.safeParse(payload);
-  if (!parsedSuccess.success) {
+  const parsed = schema.safeParse(payload);
+  if (!parsed.success) {
     throw new AuthError(AUTH_ERROR_GENERIC, { status: response.status });
   }
-  return parsedSuccess.data;
+  return parsed.data;
+}
+
+async function requestAuth(
+  path: string,
+  body: { email: string; password: string },
+): Promise<AuthSuccess> {
+  return postAuth(path, body, authSuccessSchema);
 }
 
 export interface SignInInput {
@@ -122,6 +143,23 @@ export interface SignUpInput extends SignInInput {
 
 export async function signUpEmail(input: SignUpInput): Promise<AuthSuccess> {
   return requestAuth("/sign-up/email", input);
+}
+
+/**
+ * Asks apps/auth for a reset link that opens this app. The answer is the same whether or not
+ * the account exists.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await postAuth(
+    "/request-password-reset",
+    { email, redirectTo: PASSWORD_RESET_APP_CALLBACK },
+    authStatusSchema,
+  );
+}
+
+/** Sets a new password with a reset token; every session of the account ends. */
+export async function resetPassword(input: { token: string; newPassword: string }): Promise<void> {
+  await postAuth("/reset-password", input, authStatusSchema);
 }
 
 /**

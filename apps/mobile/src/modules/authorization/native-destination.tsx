@@ -7,6 +7,7 @@ import { useMobileCopy } from "@/modules/identity/mobile-copy";
 import { nativeRoute } from "@/modules/identity/native-route";
 import type { CompetitionDto } from "@futrob/api-contracts";
 import { playerHomeCopy } from "@/modules/player-home/player-home-copy";
+import { EmailVerificationNotice } from "@/modules/account/email-verification-notice";
 import { PlayerHomeScreen } from "@/modules/player-home/player-home-screen";
 import {
   Button,
@@ -79,6 +80,7 @@ function NativeDestinationBody({ destination }: { destination: Destination }) {
             />
           </>
         ) : null}
+        <EmailVerificationNotice />
         {query.isError ? (
           <ErrorState
             title={label("No pudimos cargar este espacio", "We couldn't load this space")}

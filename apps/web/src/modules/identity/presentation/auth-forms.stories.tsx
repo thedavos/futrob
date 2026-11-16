@@ -21,6 +21,32 @@ export const Signup: Story = {
   render: () => <AuthRouterDecorator initialPath="/signup" />,
 };
 
+export const ForgotPassword: Story = {
+  render: () => <AuthRouterDecorator initialPath="/forgot-password" />,
+};
+
+export const ResetPassword: Story = {
+  render: () => <AuthRouterDecorator initialPath="/reset-password?token=story-token" />,
+};
+
+/** Enlace usado o vencido: error claro y opción de pedir otro. */
+export const ResetPasswordInvalidLink: Story = {
+  name: "Reset password / Invalid link",
+  render: () => <AuthRouterDecorator initialPath="/reset-password?error=INVALID_TOKEN" />,
+};
+
+/** El enlace de verificación funcionó: correo confirmado y camino a la app. */
+export const VerifyEmailConfirmed: Story = {
+  name: "Verify email / Confirmed",
+  render: () => <AuthRouterDecorator initialPath="/verify-email" />,
+};
+
+/** Enlace de verificación usado o vencido, sin sesión: invita a entrar para pedir otro. */
+export const VerifyEmailDeadLink: Story = {
+  name: "Verify email / Dead link",
+  render: () => <AuthRouterDecorator initialPath="/verify-email?error=TOKEN_EXPIRED" />,
+};
+
 /** El usuario puede revelar y volver a ocultar la contraseña sin perder su valor. */
 export const LoginPasswordVisibility: Story = {
   name: "Login / Password visibility",

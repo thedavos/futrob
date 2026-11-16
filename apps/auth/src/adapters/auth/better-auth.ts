@@ -15,8 +15,42 @@ import {
 import { syncCredentialUserContact } from "./actor-contact-profile.ts";
 import type { AuthMailPort } from "../mail/auth-mail.port.ts";
 import { LogAuthMail } from "../mail/log-auth-mail.ts";
+import { ResendAuthMail } from "../mail/resend-auth-mail.ts";
+import {
+  countOpenPasswordResets,
+  deletePasswordReset,
+  deletePasswordResets,
+  PASSWORD_RESET_TTL_SECONDS,
+  PASSWORD_RESETS_PER_ACCOUNT,
+} from "./password-reset.ts";
+import {
+  EMAIL_VERIFICATION_TTL_SECONDS,
+  isEmailChangeToken,
+  isResendRequest,
+  rejectUsedVerificationLink,
+  withVerificationCallback,
+} from "./email-verification.ts";
 
 export type { AuthEnv };
+
+/**
+ * Where a reset link lands after the auth worker checks its token: the web page, or the
+ * native app through its `futrob://` scheme. Clients pass one of these as `redirectTo`.
+ */
+export const PASSWORD_RESET_WEB_CALLBACK = "/reset-password";
+export const PASSWORD_RESET_APP_CALLBACK = "futrob://reset-password";
+
+function createMail(env: AuthEnv): AuthMailPort | undefined {
+  switch (env.AUTH_EMAIL?.delivery) {
+    case "log":
+      return new LogAuthMail();
+    case "resend":
+      return new ResendAuthMail({ apiKey: env.AUTH_EMAIL.apiKey, from: env.AUTH_EMAIL.from });
+    case "disabled":
+    case undefined:
+      return undefined;
+  }
+}
 
 export interface ActorContactSync {
   syncCredentialUser(userId: string): Promise<void>;
@@ -79,6 +113,11 @@ export function createAuth(input: {
   readonly actorProvisioner?: ActorProvisionerPort;
   /** Overrides the adapter chosen by `AUTH_EMAIL_DELIVERY`; tests capture links with it. */
   readonly mail?: AuthMailPort;
+  /**
+   * Runs account email after the response (the Worker's `waitUntil`), so asking for a reset
+   * link takes as long whether or not the account exists. Omitted: email is awaited.
+   */
+  readonly runInBackground?: (task: Promise<unknown>) => void;
   readonly reportDefect: (cause: Error) => void;
 }) {
   if (input.env.BETTER_AUTH_SECRET.length < 32) {
@@ -89,37 +128,97 @@ export function createAuth(input: {
     input.actorProvisioner ??
     createPostgresActorProvisioner({ db: input.db, clock: input.clock, ids: input.ids });
 
-  const mail =
-    input.mail ?? (input.env.AUTH_EMAIL_DELIVERY === "log" ? new LogAuthMail() : undefined);
+  const mail = input.mail ?? createMail(input.env);
+  // Set once the instance exists; only a failed verification resend asks it.
+  let isSignedIn = async (_headers: Headers): Promise<boolean> => false;
 
-  return betterAuth({
+  const auth = betterAuth({
     appName: "Futrob",
     baseURL: input.env.BETTER_AUTH_URL,
     secret: input.env.BETTER_AUTH_SECRET,
-    trustedOrigins: [...input.env.BETTER_AUTH_TRUSTED_ORIGINS],
+    trustedOrigins: [...input.env.BETTER_AUTH_TRUSTED_ORIGINS, PASSWORD_RESET_APP_CALLBACK],
     database: drizzleAdapter(input.db, {
       provider: "pg",
       schema: authSchema,
     }),
     emailAndPassword: {
       enabled: true,
+      // The answer to a reset request is the same whether or not the account exists; the
+      // link is single use, expires, and the new password ends every session (AUTH-01).
+      // Without a mail adapter the endpoint answers RESET_PASSWORD_DISABLED for every email.
+      sendResetPassword: mail
+        ? async ({ user, url, token }) => {
+            // Better Auth stores the token before calling this. Only delivered links may count
+            // toward the cap, so a suppressed or failed send drops its own token again.
+            let sent = false;
+            try {
+              const open = await countOpenPasswordResets(input.db, user.id, input.clock.now());
+              if (open <= PASSWORD_RESETS_PER_ACCOUNT) {
+                await mail.sendPasswordReset({ to: user.email, name: user.name, url });
+                sent = true;
+              }
+            } catch (cause) {
+              input.reportDefect(cause instanceof Error ? cause : new Error("auth.mail.failed"));
+            }
+            if (sent) return;
+            try {
+              await deletePasswordReset(input.db, token);
+            } catch (cause) {
+              input.reportDefect(cause instanceof Error ? cause : new Error("auth.reset.cleanup"));
+            }
+          }
+        : undefined,
+      resetPasswordTokenExpiresIn: PASSWORD_RESET_TTL_SECONDS,
+      revokeSessionsOnPasswordReset: true,
+      onPasswordReset: async ({ user }) => {
+        await deletePasswordResets(input.db, user.id);
+      },
     },
     // Changing email sends a link to the new address; the old one stays valid until it is
     // opened. Without a mail adapter the endpoint answers CHANGE_EMAIL_DISABLED.
     user: { changeEmail: { enabled: mail !== undefined } },
+    // AUTH-02: a new account gets a verification link, but signing in never waits for it.
+    // The same callback carries email change links; their token names the new address.
     emailVerification: mail
       ? {
-          sendVerificationEmail: async ({ user, url }) => {
-            await mail.sendEmailChangeVerification({ to: user.email, name: user.name, url });
+          sendOnSignUp: true,
+          expiresIn: EMAIL_VERIFICATION_TTL_SECONDS,
+          sendVerificationEmail: async ({ user, url, token }, request) => {
+            if (isEmailChangeToken(token)) {
+              await mail.sendEmailChangeVerification({ to: user.email, name: user.name, url });
+              return;
+            }
+            // A failed send must not fail sign-up; the account can ask for another link. A
+            // signed-in resend fails visibly so it can retry; an anonymous one answers as if it
+            // sent, so the reply never tells which accounts exist.
+            try {
+              await mail.sendEmailVerification({
+                to: user.email,
+                name: user.name,
+                url: withVerificationCallback(url),
+              });
+            } catch (cause) {
+              if (isResendRequest(request) && (await isSignedIn(request.headers))) {
+                throw cause;
+              }
+              input.reportDefect(cause instanceof Error ? cause : new Error("auth.mail.failed"));
+            }
           },
         }
       : undefined,
+    hooks: { before: rejectUsedVerificationLink },
     onAPIError: createAuthErrorHandler(input.reportDefect),
     rateLimit: {
       enabled: true,
       storage: "database",
+      // Per IP; the per-account reset cap lives in `sendResetPassword`.
+      customRules: {
+        "/request-password-reset": { window: 60, max: 3 },
+        "/send-verification-email": { window: 60, max: 3 },
+      },
     },
     advanced: {
+      backgroundTasks: input.runInBackground ? { handler: input.runInBackground } : undefined,
       ipAddress: {
         ipAddressHeaders: ["cf-connecting-ip"],
       },
@@ -140,6 +239,8 @@ export function createAuth(input: {
       })),
     ],
   });
+  isSignedIn = async (headers) => (await auth.api.getSession({ headers })) !== null;
+  return auth;
 }
 
 export type FutrobAuth = ReturnType<typeof createAuth>;
