@@ -9,10 +9,15 @@ import {
 } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps, typography } from "@futrob/ui";
+import { z } from "zod";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { AuthFormHeader } from "@/modules/identity/presentation/auth-form-header.tsx";
 import { LoginForm } from "@/modules/identity/presentation/login-form.tsx";
+import {
+  ForgotPasswordForm,
+  ResetPasswordForm,
+} from "@/modules/identity/presentation/password-reset-forms.tsx";
 import { SignupForm } from "@/modules/identity/presentation/signup-form.tsx";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
@@ -49,7 +54,14 @@ function StubPage({ label }: { label: string }) {
   );
 }
 
-function createAuthStoryRouter(initialPath: "/login" | "/signup") {
+const resetSearchSchema = z.object({
+  token: z.string().optional().catch(undefined),
+  error: z.string().optional().catch(undefined),
+});
+
+export type AuthStoryPath = "/login" | "/signup" | "/forgot-password" | `/reset-password${string}`;
+
+function createAuthStoryRouter(initialPath: AuthStoryPath) {
   const rootRoute = createRootRoute({
     component: () => <Outlet />,
   });
@@ -86,6 +98,39 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
     ),
   });
 
+  const forgotPasswordRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/forgot-password",
+    component: () => (
+      <AuthStoryShell>
+        <div {...applyProps(undefined, undefined, styles.stack)}>
+          <AuthFormHeader
+            description="Te enviaremos un enlace para elegir una contraseña nueva."
+            title="Recupera tu contraseña"
+          />
+          <ForgotPasswordForm />
+        </div>
+      </AuthStoryShell>
+    ),
+  });
+
+  const resetPasswordRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/reset-password",
+    validateSearch: (search) => resetSearchSchema.parse(search),
+    component: function ResetPasswordStory() {
+      const { token, error } = resetPasswordRoute.useSearch();
+      return (
+        <AuthStoryShell>
+          <div {...applyProps(undefined, undefined, styles.stack)}>
+            <AuthFormHeader title="Elige una contraseña nueva" />
+            <ResetPasswordForm invalid={error !== undefined} token={token} />
+          </div>
+        </AuthStoryShell>
+      );
+    },
+  });
+
   const onboardingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/onboarding",
@@ -119,6 +164,8 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
   const routeTree = rootRoute.addChildren([
     loginRoute,
     signupRoute,
+    forgotPasswordRoute,
+    resetPasswordRoute,
     onboardingRoute,
     orgsRoute,
     orgRoute,
@@ -132,7 +179,7 @@ function createAuthStoryRouter(initialPath: "/login" | "/signup") {
   });
 }
 
-export function AuthRouterDecorator({ initialPath }: { initialPath: "/login" | "/signup" }) {
+export function AuthRouterDecorator({ initialPath }: { initialPath: AuthStoryPath }) {
   const router = useMemo(() => createAuthStoryRouter(initialPath), [initialPath]);
   return (
     <I18nProvider initialLocale="es">

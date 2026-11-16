@@ -6,6 +6,9 @@ BETTER_AUTH_SECRET=replace-with-a-local-secret
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000,http://localhost:8788
 APP_BASE_URL=http://localhost:3000
+# Account emails (email change, password reset): `log` writes the link to the worker log.
+# Production: AUTH_EMAIL_DELIVERY=resend plus EMAIL_FROM and the RESEND_API_KEY secret.
+AUTH_EMAIL_DELIVERY=log
 # Keep NODE_ENV=development so Sentry never sends from this machine.
 NODE_ENV=development
 # Production only: `wrangler secret put SENTRY_DSN --config apps/auth/wrangler.jsonc`

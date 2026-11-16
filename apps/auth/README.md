@@ -49,6 +49,15 @@ Necesita dos archivos locales (ambos ignorados por git):
   con el mismo valor que `DATABASE_URL` de `apps/api`. Wrangler no lee esta variable de
   `.dev.vars`. Sin ella `wrangler dev` falla al arrancar.
 
+### Correo de cuenta
+
+`AUTH_EMAIL_DELIVERY` elige cómo salen el cambio de correo y el restablecimiento de
+contraseña: `log` escribe el enlace en el log del Worker (desarrollo), `resend` lo envía por
+la API HTTP de Resend ([ADR-0031](../../docs/adr/0031-transactional-email-provider-and-outbox.md))
+y exige `RESEND_API_KEY` (secreto de Wrangler) y `EMAIL_FROM`. Sin valor, ambos flujos
+responden deshabilitados. Los enlaces son secretos de vida corta: se envían al momento y no
+pasan por el outbox de producto.
+
 El inspector de Wrangler va a `18788` para no chocar con `apps/web` (`13000`) ni con el
 rango por defecto `9229`.
 
@@ -64,6 +73,7 @@ npm run migrate -w @futrob/api      # con DATABASE_URL de producción
 cd apps/auth
 npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put SENTRY_DSN
+npx wrangler secret put RESEND_API_KEY   # con AUTH_EMAIL_DELIVERY=resend y EMAIL_FROM
 npx wrangler deploy
 curl --fail https://futrob-auth.futrob-workers.workers.dev/meta/health
 ```
@@ -77,6 +87,14 @@ debe actualizar auth y web en la misma ventana.
 - `POST /api/auth/sign-up/email` · `POST /api/auth/sign-in/email`
 - `GET /api/auth/get-session` (cookie **o** `Authorization: Bearer <token>`); devuelve
   `{ user, session, actorId }`. `actorId` es `null` si el usuario aún no tiene actor.
+- `POST /api/auth/request-password-reset` `{ email, redirectTo }` — misma respuesta exista o
+  no la cuenta; el correo sale después de responder (`waitUntil`). `redirectTo` es
+  `/reset-password` (web) o `futrob://reset-password` (app). Límite: 3 por minuto por IP y
+  3 enlaces vigentes por cuenta.
+- `GET /api/auth/reset-password/:token?callbackURL=…` — redirige al destino con `?token=` o
+  `?error=INVALID_TOKEN`.
+- `POST /api/auth/reset-password` `{ token, newPassword }` — enlace de un solo uso (1 hora);
+  invalida los demás enlaces de la cuenta y cierra todas sus sesiones.
 - `GET /meta/health`
 
 ## Nota de diseño
