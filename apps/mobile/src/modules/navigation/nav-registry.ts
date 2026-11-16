@@ -131,17 +131,65 @@ export function contextLinks(
     .map((definition) => ({ id: definition.id, href: `${root}${definition.path}` }));
 }
 
-/** Secondary destinations listed in «Más», as full routes (they stack above the shell). */
-export type MoreDestinationId = "ea-clubs" | "game-accounts" | "explore";
+/**
+ * Secondary destinations listed in «Más». Each is a full route below the context root that
+ * stacks above the shell; gated ones follow the web permission and stay hidden until allowed.
+ */
+export type MoreDestinationId =
+  | "teams"
+  | "activity"
+  | "team"
+  | "members"
+  | "settings"
+  | "ea-clubs"
+  | "game-accounts"
+  | "explore";
+
+export type MoreDestinationDefinition = {
+  readonly id: MoreDestinationId;
+  /** Path below the context root. */
+  readonly path: string;
+  readonly requiredPermission?: PermissionDto;
+};
 
 export type MoreDestination = { readonly id: MoreDestinationId; readonly href: string };
 
 export const MORE_DESTINATIONS = {
   personal: [
-    { id: "ea-clubs", href: "/player/ea-clubs" },
-    { id: "game-accounts", href: "/player/game-accounts" },
-    { id: "explore", href: "/player/explore" },
+    { id: "teams", path: "/teams" },
+    { id: "activity", path: "/activity" },
+    { id: "ea-clubs", path: "/ea-clubs" },
+    { id: "game-accounts", path: "/game-accounts" },
+    { id: "explore", path: "/explore" },
   ],
-  organization: [],
-  competition: [],
-} as const satisfies Record<WorkspaceContext["kind"], readonly MoreDestination[]>;
+  organization: [
+    {
+      id: "members",
+      path: "/members",
+      requiredPermission: MOBILE_PERMISSION.organizationsMembershipsRead,
+    },
+    {
+      id: "settings",
+      path: "/settings",
+      requiredPermission: MOBILE_PERMISSION.organizationsUpdate,
+    },
+    { id: "activity", path: "/activity" },
+  ],
+  competition: [{ id: "team", path: "/team" }],
+} as const satisfies Record<WorkspaceContext["kind"], readonly MoreDestinationDefinition[]>;
+
+/** «Más» destinations the context offers now; gated ones wait for `EffectiveAccess`. */
+export function moreDestinations(
+  context: WorkspaceContext,
+  allowedPermissions: ReadonlySet<string> | undefined,
+): readonly MoreDestination[] {
+  const definitions: readonly MoreDestinationDefinition[] = MORE_DESTINATIONS[context.kind];
+  const root = contextRoot(context);
+  return definitions
+    .filter(
+      (definition) =>
+        definition.requiredPermission === undefined ||
+        allowedPermissions?.has(definition.requiredPermission) === true,
+    )
+    .map((definition) => ({ id: definition.id, href: `${root}${definition.path}` }));
+}

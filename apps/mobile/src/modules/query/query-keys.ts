@@ -64,6 +64,9 @@ export const mobileQueryKeys = {
     competitionId: string,
   ) =>
     [...sessionScope(generation), "encounters", "disputes", organizationId, competitionId] as const,
+  /** Team and organization reads (MOB-06): my teams, roster, members, profile, activity. */
+  teamOrganization: (generation: SessionGeneration, ...parts: readonly (string | undefined)[]) =>
+    [...sessionScope(generation), "team-organization", ...parts] as const,
   accountSessions: (generation: SessionGeneration) =>
     [...sessionScope(generation), "account-sessions"] as const,
   accountDeletion: (generation: SessionGeneration) =>

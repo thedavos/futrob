@@ -59,6 +59,11 @@ const es = {
     signOut: "Cerrar sesión",
   },
   destinations: {
+    teams: ["Mis equipos", "Tus plantillas y tu equipo activo"],
+    activity: ["Actividad", "Invitaciones, selecciones y decisiones recientes"],
+    team: ["Mi equipo", "Plantilla e invitaciones de tu equipo"],
+    members: ["Miembros", "Quién opera la organización e invitaciones"],
+    settings: ["Ajustes", "Nombre y dirección de la organización"],
     "ea-clubs": ["Clubes EA", "Elige o añade el club de tus partidos"],
     "game-accounts": ["Cuentas de juego", "Tu identificador de EA"],
     explore: ["Explorar competiciones", "Torneos con inscripciones o en curso"],
@@ -122,6 +127,11 @@ const en = {
     signOut: "Sign out",
   },
   destinations: {
+    teams: ["My teams", "Your rosters and your active team"],
+    activity: ["Activity", "Recent invitations, selections and decisions"],
+    team: ["My team", "Your team's roster and invitations"],
+    members: ["Members", "Who runs the organization, and invitations"],
+    settings: ["Settings", "The organization's name and address"],
     "ea-clubs": ["EA Clubs", "Choose or add the club behind your matches"],
     "game-accounts": ["Game accounts", "Your EA identifier"],
     explore: ["Explore competitions", "Tournaments open for entries or in progress"],

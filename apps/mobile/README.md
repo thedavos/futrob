@@ -35,7 +35,7 @@ La implementación actual incluye auth, gate de `actor_onboarding`, los tres cam
   (`src/modules/navigation/`): header con el selector de contexto único, la pestaña activa y la
   barra inferior (headless tabs de `expo-router/ui`, 56 dp). Las pestañas de cada contexto
   viven en `nav-registry.ts`, con el mismo permiso `EffectiveAccess` que web; **Más** combina
-  destinos personales (`MORE_DESTINATIONS`) y destinos autorizados del contexto (`contextLinks`),
+  destinos secundarios de cada contexto (`MORE_DESTINATIONS`, también con permiso) y destinos autorizados del contexto (`contextLinks`),
   cuenta, idioma y cierre de sesión. El detalle y las operaciones son rutas fuera de `(tabs)`
   que se apilan encima (`StackFrame`: atrás, título y contenido). El modelo del selector (opciones, rutas, club por defecto) vive en
   `@futrob/sdk` (`buildWorkspaceOptions`, `workspaceContextPath`…).
@@ -104,7 +104,8 @@ apps/mobile/
         ├── identity/          # auth-api, session-store, validación (+tests)
         ├── competition/       # lecturas de competición (modelos puros en @futrob/sdk)
         ├── navigation/        # shell por contexto, selector, pestañas y Más
-        └── player-space/      # espacio del jugador (MOB-02); modelos puros en @futrob/sdk
+        ├── player-space/      # espacio del jugador (MOB-02); modelos puros en @futrob/sdk
+        └── team-organization/ # mis equipos, plantilla, miembros, ajustes y actividad (MOB-06)
 ```
 
 ## Publicación

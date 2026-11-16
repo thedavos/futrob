@@ -7,7 +7,7 @@ import { LOGIN_ROUTE } from "@/modules/identity/session-gate";
 import { theme } from "@/theme/theme";
 import type { WorkspaceContext } from "@futrob/sdk";
 import { Button, List, ListItem, ListSection, Screen, Text } from "@/ui";
-import { contextLinks, MORE_DESTINATIONS, type MoreDestination } from "./nav-registry";
+import { contextLinks, moreDestinations } from "./nav-registry";
 import { navigationCopy } from "./navigation-copy";
 import { useContextAccess } from "./use-context-access";
 
@@ -19,7 +19,9 @@ export function MoreScreen({ context }: { context: WorkspaceContext }) {
   const router = useRouter();
   const { language, t, toggleLanguage } = useMobileCopy();
   const copy = navigationCopy(language);
-  const links = contextLinks(context, useContextAccess(context));
+  const access = useContextAccess(context);
+  const destinations = moreDestinations(context, access);
+  const links = contextLinks(context, access);
 
   return (
     <Screen scroll edges={["left", "right"]} centered={false}>
@@ -27,9 +29,9 @@ export function MoreScreen({ context }: { context: WorkspaceContext }) {
         <Text role="heading" accessibilityRole="header">
           {copy.more.title}
         </Text>
-        {MORE_DESTINATIONS[context.kind].length > 0 ? (
+        {destinations.length > 0 ? (
           <List>
-            {MORE_DESTINATIONS[context.kind].map((destination: MoreDestination) => {
+            {destinations.map((destination) => {
               const [title, description] = copy.destinations[destination.id];
               return (
                 <ListItem

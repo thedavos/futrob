@@ -50,3 +50,5 @@ export * from "./match-center/index.ts";
 export * from "./competition/index.ts";
 export * from "./player/index.ts";
 export * from "./scheduling/index.ts";
+export * from "./team/index.ts";
+export * from "./activity/index.ts";
