@@ -11,6 +11,10 @@ WEB_URL="http://localhost:${WEB_PORT}"
 API_PING_URL="http://localhost:${API_PORT}/api/v1/meta/ping"
 API_HEALTH_URL="http://localhost:${API_PORT}/api/v1/meta/health"
 AUTH_HEALTH_URL="http://localhost:${AUTH_PORT}/meta/health"
+# Web proxies /api/auth/* to the AUTH_SERVICE binding. Direct :8788 health is
+# not enough: wrangler and miniflare can pick different registries and web
+# then answers 503 Worker "futrob-auth" not found.
+AUTH_SESSION_URL="${WEB_URL}/api/auth/get-session"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -34,7 +38,10 @@ port_pids() {
 }
 
 http_code() {
-  curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$1" 2>/dev/null || echo "000"
+  # curl already prints 000 when the connection fails; do not append a second one.
+  local code
+  code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$1" 2>/dev/null)" || true
+  echo "${code:-000}"
 }
 
 http_body() {
@@ -58,6 +65,36 @@ lock_owned() {
   local pid
   pid="$(cat "${PID_FILE}")"
   kill -0 "${pid}" 2>/dev/null
+}
+
+# Cloud / mixed PATH often puts Node 22 ahead of nvm 24. engines.node is >=24.
+prefer_node24() {
+  local major nvm_bin
+  major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+  if [[ "${major}" -ge 24 ]]; then
+    return 0
+  fi
+  nvm_bin="${NVM_DIR:-${HOME}/.nvm}/versions/node"
+  local found
+  found="$(ls -d "${nvm_bin}"/v24.*/bin 2>/dev/null | sort -V | tail -n 1 || true)"
+  if [[ -n "${found}" && -x "${found}/node" ]]; then
+    export PATH="${found}:${PATH}"
+    echo "launch: prepended ${found} (node was v${major}, engines require >=24)"
+  else
+    echo "launch: warning: node $(node --version 2>/dev/null || echo missing) is below 24 and no nvm v24 was found" >&2
+  fi
+}
+
+# Web reaches futrob-auth through AUTH_SERVICE. get-session answers 200 (`null` when
+# anonymous); a refused connection, any 4xx/5xx or the miniflare "Worker ... not found"
+# page means the binding is broken.
+auth_binding_ok() {
+  local code body
+  code="$(http_code "${AUTH_SESSION_URL}")"
+  [[ "${code}" == "200" ]] || return 1
+  body="$(http_body "${AUTH_SESSION_URL}")"
+  [[ "${body}" != *"Worker"*"not found"* ]] || return 1
+  return 0
 }
 
 cmd_launch() {
@@ -89,11 +126,22 @@ cmd_launch() {
   echo "${run_id}" >"${RUN_ID_FILE}"
   mkdir -p "${EVIDENCE_ROOT}/${run_id}"
 
+  prefer_node24
+  # Wrangler (auth) and Miniflare (web Vite plugin) otherwise pick different
+  # registry dirs; web then cannot resolve AUTH_SERVICE → futrob-auth.
+  local registry_dir="${RUN_DIR}/dev-registry"
+  mkdir -p "${registry_dir}"
+  export CLOUDFLARE_DEV_REGISTRY_PATH="${registry_dir}"
+  export WRANGLER_REGISTRY_PATH="${registry_dir}"
+
   echo "launch: starting npm run dev (run ${run_id})"
+  echo "launch: wrangler registry ${registry_dir}"
   # New session so cleanup can kill the group we started, never by process name.
   # setsid is Linux; macOS Python provides os.setsid.
   (
     cd "${REPO_ROOT}"
+    export CLOUDFLARE_DEV_REGISTRY_PATH="${registry_dir}"
+    export WRANGLER_REGISTRY_PATH="${registry_dir}"
     if command -v setsid >/dev/null 2>&1; then
       exec setsid npm run dev
     else
@@ -153,6 +201,7 @@ doctor_probes() {
   [[ "${web_body}" == *Futrob* ]] || return 1
   [[ "${api_body}" == *'"ok":true'* && "${api_body}" == *'"service":"futrob"'* ]] || return 1
   [[ "${auth_body}" == *'"ok":true'* && "${auth_body}" == *'"service":"futrob-auth"'* ]] || return 1
+  auth_binding_ok || return 1
   return 0
 }
 
@@ -202,6 +251,13 @@ cmd_doctor() {
     echo "doctor: warning: API db is skipped (no DATABASE_URL). Sign-in and mutating org proofs need migrated Postgres." >&2
   fi
   echo "doctor: GET ${AUTH_HEALTH_URL} → ${auth_code} $(http_body "${AUTH_HEALTH_URL}")"
+  local session_code session_body
+  session_code="$(http_code "${AUTH_SESSION_URL}")"
+  session_body="$(http_body "${AUTH_SESSION_URL}")"
+  echo "doctor: GET ${AUTH_SESSION_URL} → ${session_code} ${session_body}"
+  if ! auth_binding_ok; then
+    echo "doctor: warning: web AUTH_SERVICE cannot reach futrob-auth (expected 200 from get-session). Align CLOUDFLARE_DEV_REGISTRY_PATH and WRANGLER_REGISTRY_PATH; health on :8788 is not enough." >&2
+  fi
 
   if doctor_probes; then
     echo "doctor: ready"
@@ -272,4 +328,7 @@ main() {
   esac
 }
 
-main "$@"
+# Sourcing (helpers/verify-futrob.test.sh) loads the functions without running a command.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

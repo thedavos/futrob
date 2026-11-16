@@ -1,6 +1,6 @@
 # Swiss format
 
-An organizer on Pro or Liga runs a Swiss competition: rounds pair themselves after official results, and the organizer can withdraw a Team or close the current round without a result. The surfaces are the setup wizard, the competition calendar and the standings. There are no public portal routes, so public standings are API-only (ADR-0024).
+An organizer on Pro or Liga runs a Swiss competition: rounds pair themselves after official results, and the organizer can withdraw a Team or close the current round without a result. The surfaces are the setup wizard, the competition calendar and the standings. Published Swiss competitions still have the public portal (cover, calendar, standings, teams, rankings, rules); the **Bracket** tab is omitted. Spectator standings on the portal table do not render Buchholz columns — those fields live on the public API (ADR-0024).
 
 ## Sub-features
 
