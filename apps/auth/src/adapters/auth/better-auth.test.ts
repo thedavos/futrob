@@ -4,7 +4,7 @@ import { APIError } from "better-auth/api";
 import type { Client } from "pg";
 import type { ActorProvisionerPort } from "@futrob/identity";
 import { CREDENTIAL_IDENTITY_PROVIDER } from "@futrob/identity";
-import { applySentryEventPolicy } from "@futrob/logger";
+import { applySentryEventPolicy, sentryV10DataCollection } from "@futrob/logger";
 import { asActorId } from "@futrob/shared-kernel";
 import { createActorProvisioningHooks, createAuth, createAuthErrorHandler } from "./better-auth.ts";
 import { createAuthDb } from "./database.ts";
@@ -118,7 +118,7 @@ describe("sign-in query defects", () => {
     const client = new Sentry.CloudflareClient({
       dsn: "https://public@sentry.invalid/1",
       integrations: [Sentry.linkedErrorsIntegration()],
-      sendDefaultPii: false,
+      dataCollection: sentryV10DataCollection,
       beforeSend: (event, hint) => applySentryEventPolicy(event, hint),
       stackParser: (stack) =>
         stack

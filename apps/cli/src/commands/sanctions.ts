@@ -1,4 +1,4 @@
-import { Effect, Either } from "effect";
+import { Effect, Result } from "effect";
 import { SANCTION_LIMITS, type GetCompetitionStandingsResponse } from "@futrob/api-contracts";
 import { ApiError, UsageError, type CliError } from "../lib/errors.ts";
 import { apiCall, type ClientConfig } from "../lib/futrob-client.ts";
@@ -52,11 +52,11 @@ function teamPoints(response: GetCompetitionStandingsResponse, teamId: string) {
 
 /** The status of a call that must be refused; a success is a failed check. */
 function refusalStatus<A>(effect: Effect.Effect<A, CliError>): Effect.Effect<number | "allowed"> {
-  return Effect.either(effect).pipe(
+  return Effect.result(effect).pipe(
     Effect.map((outcome) =>
-      Either.isLeft(outcome)
-        ? outcome.left instanceof ApiError
-          ? outcome.left.status
+      Result.isFailure(outcome)
+        ? outcome.failure instanceof ApiError
+          ? outcome.failure.status
           : -1
         : ("allowed" as const),
     ),

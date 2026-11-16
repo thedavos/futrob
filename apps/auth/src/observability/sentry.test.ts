@@ -42,7 +42,8 @@ describe("auth Sentry worker wrapper", () => {
       SENTRY_ENVIRONMENT: "production",
     }) as {
       initialScope: { tags: Record<string, string> };
-      sendDefaultPii: boolean;
+      dataCollection: { userInfo: boolean; httpBodies: unknown[] };
+      traceLifecycle: "static" | "stream";
       beforeSend: (event: object, hint: object) => object | null;
       beforeSendTransaction: (event: object) => object | null;
     };
@@ -54,7 +55,9 @@ describe("auth Sentry worker wrapper", () => {
         }),
       ),
     ).not.toMatch(/SYNTHETIC_INVITE_TOKEN/);
-    expect(options.sendDefaultPii).toBe(false);
+    expect(options.dataCollection.userInfo).toBe(false);
+    expect(options.dataCollection.httpBodies).toEqual([]);
+    expect(options.traceLifecycle).toBe("static");
     const sent = options.beforeSend(
       {
         request: {

@@ -3,6 +3,7 @@ import {
   applySentryEventPolicy,
   applySentryTransactionPolicy,
   isExpectedFailure,
+  scrubSentryEnvelope,
   sentrySdkOptions,
   withRequestIdTag,
 } from "@futrob/logger";
@@ -32,8 +33,18 @@ export function initSentry(env: { nodeEnv?: string }): void {
     dsn: options.dsn,
     environment: options.environment,
     tracesSampleRate: options.tracesSampleRate,
-    sendDefaultPii: false,
+    dataCollection: options.dataCollection,
+    traceLifecycle: options.traceLifecycle,
     initialScope: { tags: { ...options.initialScope.tags } },
+    integrations: (defaults) => [
+      ...defaults,
+      {
+        name: "FutrobEnvelopeScrubber",
+        setup(client) {
+          client.on("beforeEnvelope", scrubSentryEnvelope);
+        },
+      },
+    ],
     beforeSend(event, hint) {
       const scrubbed = applySentryEventPolicy(event, hint);
       if (!scrubbed) return null;

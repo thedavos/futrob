@@ -53,7 +53,7 @@ async function renderIcon({ file, canvas, markSize, background }) {
     },
   ]);
   if (background !== undefined) {
-    pipeline = pipeline.flatten({ background });
+    pipeline = pipeline.flatten({ background }).removeAlpha();
   }
   await pipeline.png().toFile(path.join(assetsDir, file));
 }
@@ -61,6 +61,7 @@ async function renderIcon({ file, canvas, markSize, background }) {
 mkdirSync(assetsDir, { recursive: true });
 
 await renderIcon({ file: "icon.png", canvas: 1024, markSize: 640, background: BACKGROUND });
+await renderIcon({ file: "store-icon.png", canvas: 512, markSize: 320, background: BACKGROUND });
 await renderIcon({ file: "adaptive-icon.png", canvas: 1024, markSize: 480 });
 await renderIcon({ file: "splash-icon.png", canvas: 512, markSize: 420 });
 
