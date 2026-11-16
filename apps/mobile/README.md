@@ -34,10 +34,10 @@ La implementación actual incluye auth, gate de `actor_onboarding`, los tres cam
   `(tabs)` con su `_layout.tsx`, que monta `ContextTabsLayout`
   (`src/modules/navigation/`): header con el selector de contexto único, la pestaña activa y la
   barra inferior (headless tabs de `expo-router/ui`, 56 dp). Las pestañas de cada contexto
-  viven en `nav-registry.ts`, con el mismo permiso `EffectiveAccess` que web; **Más** agrupa
-  los destinos secundarios del contexto (`MORE_DESTINATIONS`), cuenta, idioma y cierre de
-  sesión. El detalle y las operaciones son rutas fuera de `(tabs)` que se apilan encima
-  (`StackFrame`: atrás, título y contenido). El modelo del selector (opciones, rutas, club por defecto) vive en
+  viven en `nav-registry.ts`, con el mismo permiso `EffectiveAccess` que web; **Más** combina
+  destinos personales (`MORE_DESTINATIONS`) y destinos autorizados del contexto (`contextLinks`),
+  cuenta, idioma y cierre de sesión. El detalle y las operaciones son rutas fuera de `(tabs)`
+  que se apilan encima (`StackFrame`: atrás, título y contenido). El modelo del selector (opciones, rutas, club por defecto) vive en
   `@futrob/sdk` (`buildWorkspaceOptions`, `workspaceContextPath`…).
 - **Onboarding:** `src/modules/identity/onboarding-flow.ts` orquesta el SDK. La API mantiene
   el paso y las consecuencias de negocio; SecureStore conserva el formulario local por usuario.
@@ -92,6 +92,8 @@ apps/mobile/
 │   ├── player/(tabs)/        # espacio personal: Inicio, Partidos, Estadísticas, Competiciones, Más
 │   ├── player/…              # detalle de partido, Clubes EA, Cuentas de juego, Explorar
 │   ├── orgs/                 # selector; orgs/[orgId]/(tabs) y …/competitions/[id]/(tabs)
+│   │                         # competición: Calendario y Clasificación en (tabs); bracket,
+│   │                         # rankings, equipos y reglamento apilados desde Más
 │   └── invitations/accept/   # enlace de invitación
 ├── assets/                    # generados por scripts/generate-assets.mjs
 └── src/
@@ -100,6 +102,7 @@ apps/mobile/
     ├── ui/                    # primitivas móviles (Button, List, Dialog, Tabs…)
     └── modules/
         ├── identity/          # auth-api, session-store, validación (+tests)
+        ├── competition/       # lecturas de competición (modelos puros en @futrob/sdk)
         ├── navigation/        # shell por contexto, selector, pestañas y Más
         └── player-space/      # espacio del jugador (MOB-02); modelos puros en @futrob/sdk
 ```

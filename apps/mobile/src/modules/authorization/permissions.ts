@@ -19,6 +19,7 @@ export const MOBILE_PERMISSION = {
   teamsInvitationsManage: "teams.roster.invitations.manage",
   teamsExternalClubRead: "teams.external-club.read",
   teamsExternalClubManage: "teams.external-club.manage",
+  statisticsRead: "statistics.read",
 } as const satisfies Record<string, PermissionDto>;
 
 export const SHELL_PERMISSIONS = [
@@ -39,6 +40,7 @@ export const SHELL_PERMISSIONS = [
   MOBILE_PERMISSION.teamsInvitationsManage,
   MOBILE_PERMISSION.teamsExternalClubRead,
   MOBILE_PERMISSION.teamsExternalClubManage,
+  MOBILE_PERMISSION.statisticsRead,
 ] as const satisfies readonly PermissionDto[];
 
 export function scopeForDestination(
