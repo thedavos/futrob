@@ -1,12 +1,24 @@
 import type { WorkspaceContext, WorkspaceRole } from "@futrob/sdk";
 import type { MobileLanguage } from "@/modules/identity/mobile-copy";
-import type { ContextTabId, MoreDestinationId } from "./nav-registry";
+import type { ContextLinkId, ContextTabId, MoreDestinationId } from "./nav-registry";
 
 const es = {
   tabs: {
     home: "Inicio",
+    matches: "Partidos",
+    statistics: "Estadísticas",
+    competitions: "Competiciones",
     overview: "Resumen",
+    fixture: "Calendario",
+    standings: "Clasificación",
     more: "Más",
+  },
+  links: {
+    bracket: "Bracket",
+    rankings: "Rankings",
+    teams: "Equipos",
+    rules: "Reglamento",
+    disputes: "Disputas",
   },
   tabBar: "Navegación",
   context: {
@@ -52,14 +64,29 @@ const es = {
     team: ["Mi equipo", "Plantilla e invitaciones de tu equipo"],
     members: ["Miembros", "Quién opera la organización e invitaciones"],
     settings: ["Ajustes", "Nombre y dirección de la organización"],
+    "ea-clubs": ["Clubes EA", "Elige o añade el club de tus partidos"],
+    "game-accounts": ["Cuentas de juego", "Tu identificador de EA"],
+    explore: ["Explorar competiciones", "Torneos con inscripciones o en curso"],
   },
 } satisfies NavigationCopy;
 
 const en = {
   tabs: {
     home: "Home",
+    matches: "Matches",
+    statistics: "Statistics",
+    competitions: "Competitions",
     overview: "Overview",
+    fixture: "Schedule",
+    standings: "Standings",
     more: "More",
+  },
+  links: {
+    bracket: "Bracket",
+    rankings: "Rankings",
+    teams: "Teams",
+    rules: "Rules",
+    disputes: "Disputes",
   },
   tabBar: "Navigation",
   context: {
@@ -105,11 +132,15 @@ const en = {
     team: ["My team", "Your team's roster and invitations"],
     members: ["Members", "Who runs the organization, and invitations"],
     settings: ["Settings", "The organization's name and address"],
+    "ea-clubs": ["EA Clubs", "Choose or add the club behind your matches"],
+    "game-accounts": ["Game accounts", "Your EA identifier"],
+    explore: ["Explore competitions", "Tournaments open for entries or in progress"],
   },
 } satisfies NavigationCopy;
 
 type NavigationCopy = {
   tabs: Record<ContextTabId, string>;
+  links: Record<ContextLinkId, string>;
   tabBar: string;
   context: Record<WorkspaceContext["kind"], string>;
   switchContext: (current: string) => string;

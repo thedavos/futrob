@@ -22,11 +22,11 @@ export function useContextAccess(context: WorkspaceContext): ReadonlySet<string>
   return useContextAccessQuery(context).data;
 }
 
-/** The query behind `useContextAccess`, for screens that tell loading from failure. */
+/** The access query itself, for screens that must tell «checking» from «could not check». */
 export function useContextAccessQuery(context: WorkspaceContext) {
   const generation = useSessionGeneration();
   const scope = scopeOf(context);
-  const query = useQuery({
+  return useQuery({
     queryKey: mobileQueryKeys.contextAccess(generation, scope),
     queryFn: async ({ signal }) => {
       try {
@@ -46,5 +46,4 @@ export function useContextAccessQuery(context: WorkspaceContext) {
     enabled: context.kind !== "personal",
     retry: false,
   });
-  return query;
 }

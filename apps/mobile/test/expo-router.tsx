@@ -104,6 +104,9 @@ function parseHref(href: string): Location {
 }
 
 const router = {
+  canGoBack() {
+    return stack.length > 1;
+  },
   push(href: string) {
     stack = [...stack, parseHref(href)];
     emit();
@@ -111,9 +114,6 @@ const router = {
   replace(href: string) {
     stack = [...stack.slice(0, -1), parseHref(href)];
     emit();
-  },
-  canGoBack() {
-    return stack.length > 1;
   },
   back() {
     stack = stack.slice(0, -1);
@@ -154,8 +154,26 @@ export function useGlobalSearchParams() {
   return useLocalSearchParams();
 }
 
+let screenFocused = true;
+const focusListeners = new Set<() => void>();
+
+/** Simulates native focus without unmounting a retained screen. */
+export function setTestScreenFocused(focused: boolean) {
+  screenFocused = focused;
+  for (const listener of [...focusListeners]) listener();
+}
+
 export function useFocusEffect(effect: () => void | (() => void)) {
-  useExternalSync(effect, [effect]);
+  const focused = useSyncExternalStore(
+    (listener) => {
+      focusListeners.add(listener);
+      return () => {
+        focusListeners.delete(listener);
+      };
+    },
+    () => screenFocused,
+  );
+  useExternalSync(() => (focused ? effect() : undefined), [effect, focused]);
 }
 
 export function Redirect({ href }: { href: string }) {
@@ -209,5 +227,6 @@ export function currentLocation(): Location | undefined {
 
 export function resetTestRouter() {
   stack = [];
+  setTestScreenFocused(true);
   emit();
 }

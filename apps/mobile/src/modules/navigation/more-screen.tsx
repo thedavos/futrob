@@ -5,21 +5,23 @@ import { nativeRoute } from "@/modules/identity/native-route";
 import { logout } from "@/modules/identity/session-lifecycle";
 import { LOGIN_ROUTE } from "@/modules/identity/session-gate";
 import { theme } from "@/theme/theme";
-import { Button, List, ListItem, Screen, Text } from "@/ui";
 import type { WorkspaceContext } from "@futrob/sdk";
-import { moreDestinations } from "./nav-registry";
+import { Button, List, ListItem, ListSection, Screen, Text } from "@/ui";
+import { contextLinks, moreDestinations } from "./nav-registry";
 import { navigationCopy } from "./navigation-copy";
 import { useContextAccess } from "./use-context-access";
 
 /**
- * «Más»: secondary destinations and account actions, the same in every context. Context
- * destinations that do not earn a tab are listed here as they are built.
+ * «Más»: the context's destinations that do not earn a tab (see `contextLinks`), then account
+ * actions, the same in every context.
  */
 export function MoreScreen({ context }: { context: WorkspaceContext }) {
   const router = useRouter();
   const { language, t, toggleLanguage } = useMobileCopy();
   const copy = navigationCopy(language);
-  const destinations = moreDestinations(context, useContextAccess(context));
+  const access = useContextAccess(context);
+  const destinations = moreDestinations(context, access);
+  const links = contextLinks(context, access);
 
   return (
     <Screen scroll edges={["left", "right"]} centered={false}>
@@ -41,6 +43,19 @@ export function MoreScreen({ context }: { context: WorkspaceContext }) {
               );
             })}
           </List>
+        ) : null}
+        {links.length > 0 ? (
+          <ListSection title={copy.context[context.kind]}>
+            <List>
+              {links.map((link) => (
+                <ListItem
+                  key={link.id}
+                  title={copy.links[link.id]}
+                  onPress={() => router.push(nativeRoute(link.href))}
+                />
+              ))}
+            </List>
+          </ListSection>
         ) : null}
         <List>
           <ListItem

@@ -11,7 +11,15 @@ import { MOBILE_PERMISSION } from "@/modules/authorization/permissions";
  * To add a destination: add its id and copy, add the route file under the context's `(tabs)`
  * folder (its path below the context root is `path`), and list it here before `more`.
  */
-export type ContextTabId = "home" | "overview" | "more";
+export type ContextTabId =
+  | "home"
+  | "matches"
+  | "statistics"
+  | "competitions"
+  | "overview"
+  | "fixture"
+  | "standings"
+  | "more";
 
 export type ContextTabDefinition = {
   readonly id: ContextTabId;
@@ -30,7 +38,13 @@ export type ContextTab = {
 const MORE: ContextTabDefinition = { id: "more", path: "/more" };
 
 export const CONTEXT_TABS = {
-  personal: [{ id: "home", path: "" }, MORE],
+  personal: [
+    { id: "home", path: "" },
+    { id: "matches", path: "/matches" },
+    { id: "statistics", path: "/statistics" },
+    { id: "competitions", path: "/competitions" },
+    MORE,
+  ],
   organization: [
     {
       id: "home",
@@ -39,7 +53,12 @@ export const CONTEXT_TABS = {
     },
     MORE,
   ],
-  competition: [{ id: "overview", path: "" }, MORE],
+  competition: [
+    { id: "overview", path: "" },
+    { id: "fixture", path: "/fixture", requiredPermission: MOBILE_PERMISSION.competitionsRead },
+    { id: "standings", path: "/standings", requiredPermission: MOBILE_PERMISSION.competitionsRead },
+    MORE,
+  ],
 } as const satisfies Record<WorkspaceContext["kind"], readonly ContextTabDefinition[]>;
 
 /** The context's root route without the personal club query, which tabs do not carry. */
@@ -67,10 +86,64 @@ export function contextTabs(
 }
 
 /**
+ * Context destinations that do not earn a tab. «Más» lists them and each opens a stack screen
+ * above the shell. Same permission as the web navigation item; hidden while access is unknown.
+ */
+export type ContextLinkId = "bracket" | "rankings" | "teams" | "rules" | "disputes";
+
+export type ContextLink = { readonly id: ContextLinkId; readonly href: string };
+
+const CONTEXT_LINKS = {
+  personal: [],
+  organization: [],
+  competition: [
+    { id: "bracket", path: "/bracket", requiredPermission: MOBILE_PERMISSION.competitionsRead },
+    { id: "rankings", path: "/rankings", requiredPermission: MOBILE_PERMISSION.competitionsRead },
+    { id: "teams", path: "/teams", requiredPermission: MOBILE_PERMISSION.teamsRead },
+    { id: "rules", path: "/rules", requiredPermission: MOBILE_PERMISSION.competitionsRead },
+    {
+      id: "disputes",
+      path: "/disputes",
+      requiredPermission: MOBILE_PERMISSION.encountersResultsApprove,
+    },
+  ],
+} as const satisfies Record<
+  WorkspaceContext["kind"],
+  readonly {
+    readonly id: ContextLinkId;
+    readonly path: string;
+    readonly requiredPermission: PermissionDto;
+  }[]
+>;
+
+export function contextLinks(
+  context: WorkspaceContext,
+  allowedPermissions: ReadonlySet<string> | undefined,
+): readonly ContextLink[] {
+  const root = contextRoot(context);
+  const definitions: readonly {
+    readonly id: ContextLinkId;
+    readonly path: string;
+    readonly requiredPermission: PermissionDto;
+  }[] = CONTEXT_LINKS[context.kind];
+  return definitions
+    .filter((definition) => allowedPermissions?.has(definition.requiredPermission) === true)
+    .map((definition) => ({ id: definition.id, href: `${root}${definition.path}` }));
+}
+
+/**
  * Secondary destinations listed in «Más». Each is a full route below the context root that
  * stacks above the shell; gated ones follow the web permission and stay hidden until allowed.
  */
-export type MoreDestinationId = "teams" | "activity" | "team" | "members" | "settings";
+export type MoreDestinationId =
+  | "teams"
+  | "activity"
+  | "team"
+  | "members"
+  | "settings"
+  | "ea-clubs"
+  | "game-accounts"
+  | "explore";
 
 export type MoreDestinationDefinition = {
   readonly id: MoreDestinationId;
@@ -85,6 +158,9 @@ export const MORE_DESTINATIONS = {
   personal: [
     { id: "teams", path: "/teams" },
     { id: "activity", path: "/activity" },
+    { id: "ea-clubs", path: "/ea-clubs" },
+    { id: "game-accounts", path: "/game-accounts" },
+    { id: "explore", path: "/explore" },
   ],
   organization: [
     {

@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import type { CliError } from "./errors.ts";
 import { printError } from "./print.ts";
 
@@ -27,8 +27,8 @@ export async function runProgram(program: Effect.Effect<number, CliError>): Prom
   if (Exit.isSuccess(exit)) {
     return exit.value;
   }
-  const failure = Cause.failureOption(exit.cause);
-  if (failure._tag === "Some") {
+  const failure = Cause.findErrorOption(exit.cause);
+  if (Option.isSome(failure)) {
     for (const line of describe(failure.value)) {
       printError(line);
     }
