@@ -11,6 +11,27 @@ export type FutrobSentryService = (typeof FUTROB_SENTRY_SERVICES)[number];
 
 export const SENTRY_TRACES_SAMPLE_RATE = 0.1;
 
+/**
+ * v10 `sendDefaultPii: false` baseline. v11 `dataCollection` collects more
+ * unless this is set (docs.sentry.io migration v10-to-v11).
+ */
+const SENTRY_IP_DENYLIST = ["forwarded", "-ip", "remote-", "via", "-user"] as const;
+
+export const sentryV10DataCollection = {
+  userInfo: false,
+  cookies: false,
+  httpHeaders: {
+    request: { deny: [...SENTRY_IP_DENYLIST] },
+    response: { deny: [...SENTRY_IP_DENYLIST] },
+  },
+  httpBodies: [],
+  urlQueryParams: { deny: [...SENTRY_IP_DENYLIST] },
+  genAI: { inputs: false, outputs: false },
+  databaseQueryData: false,
+  graphQL: { document: false, variables: false },
+  queues: false,
+};
+
 const REQUEST_ID_HEADER_NAMES = ["x-request-id", "X-Request-ID"] as const;
 const REQUEST_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -176,7 +197,10 @@ export function sentrySdkOptions(input: SentryInitInput) {
     dsn: config.dsn,
     environment: config.environment,
     tracesSampleRate: config.tracesSampleRate,
-    sendDefaultPii: false as const,
+    dataCollection: sentryV10DataCollection,
+    // v11 streams spans by default and skips beforeSendTransaction; keep
+    // transaction mode so invite-token scrubbing still runs.
+    traceLifecycle: "static" as const,
     initialScope: { tags: sentryServiceTags(config) },
   };
 }
@@ -294,6 +318,37 @@ function scrubUrl(url: string | undefined): string | undefined {
       /([?&])([^&=]*(?:token|authorization|bearer|secret|password|cookie|email|credential)[^&=]*)=[^&]*/gi,
       "$1$2=[Filtered]",
     );
+}
+
+const envelopeTraceSchema = z
+  .object({
+    trace: z.object({ transaction: z.string().optional() }).passthrough().optional(),
+  })
+  .passthrough();
+
+export type SentryEnvelopeLike = [header: z.infer<typeof envelopeTraceSchema>, ...items: unknown[]];
+
+/**
+ * v11 copies the transaction name onto the envelope header (`trace.transaction`)
+ * outside `beforeSendTransaction`. Mutate that header in `beforeEnvelope`.
+ */
+export function scrubSentryEnvelope(envelope: SentryEnvelopeLike): void {
+  const items = z.array(z.unknown()).min(1).safeParse(envelope);
+  if (!items.success) return;
+  const header = envelopeTraceSchema.safeParse(items.data[0]);
+  const transaction = header.success ? header.data.trace?.transaction : undefined;
+  if (!transaction) return;
+  const scrubbed = scrubUrl(transaction);
+  if (scrubbed === transaction) return;
+  const original = items.data[0];
+  const originalHeader = envelopeTraceSchema.safeParse(original);
+  if (!originalHeader.success || !Array.isArray(envelope)) return;
+  envelope[0] = {
+    ...originalHeader.data,
+    trace: originalHeader.data.trace
+      ? { ...originalHeader.data.trace, transaction: scrubbed }
+      : originalHeader.data.trace,
+  };
 }
 
 function scrubUser(user: SentryUserLike | null | undefined): SentryUserLike | undefined {

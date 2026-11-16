@@ -13,7 +13,7 @@ it.each(["1.9", "3trailing", "0", "101"])(
     const outcome = await Effect.runPromiseExit(
       sanctionsSmoke(["org", "competition", "team", "--outsider", "outsider", "--points", points]),
     );
-    expect(Exit.isFailure(outcome) && Cause.failureOption(outcome.cause)).toMatchObject({
+    expect(Exit.isFailure(outcome) && Cause.findErrorOption(outcome.cause)).toMatchObject({
       value: expect.any(UsageError),
     });
     expect(fetch).not.toHaveBeenCalled();

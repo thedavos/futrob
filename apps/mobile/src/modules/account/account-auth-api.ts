@@ -1,7 +1,12 @@
 import { authSessionListSchema, type AuthSession } from "@futrob/sdk";
 import { AUTH_BASE_URL, AUTH_ORIGIN } from "@/config/env";
 import { z } from "zod";
-import { getSession, replaceSessionTokenIfCurrent } from "@/modules/identity/session-store";
+import {
+  clearSessionIfCurrent,
+  getSession,
+  replaceSessionTokenIfCurrent,
+} from "@/modules/identity/session-store";
+import { clearOnboardingDraft } from "@/modules/identity/onboarding-draft";
 
 /**
  * Better Auth account endpoints (`/api/auth/*`) called with this device's bearer. Revoking a
@@ -38,6 +43,9 @@ async function callAuth(path: string, init: { method: "GET" | "POST"; body?: unk
     });
   } catch {
     throw new AccountAuthError("auth.network");
+  }
+  if (response.status === 401 && (await clearSessionIfCurrent(session.token))) {
+    await clearOnboardingDraft();
   }
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {

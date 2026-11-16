@@ -17,11 +17,16 @@ export default defineConfig({
     name: "mobile",
     // Screen tests render React Native primitives through react-native-web into jsdom.
     environment: "jsdom",
+    // Multi-step screen flows (e.g. the Match Center proposal) drive many user events through
+    // react-native-web; on shared CI runners they can pass the 5s default.
+    testTimeout: 20_000,
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     setupFiles: ["test/setup.ts"],
     alias: {
       "expo-secure-store": path.resolve(rootDir, "test/expo-secure-store.ts"),
       "expo-crypto": path.resolve(rootDir, "test/expo-crypto.ts"),
+      // Before "expo-router": aliases match by prefix and the first match wins.
+      "expo-router/ui": path.resolve(rootDir, "test/expo-router-ui.tsx"),
       "expo-router": path.resolve(rootDir, "test/expo-router.tsx"),
       "@sentry/react-native": path.resolve(rootDir, "test/sentry.ts"),
       "react-native": "react-native-web",
