@@ -33,6 +33,9 @@ jobs:
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
+    env:
+      # Zod 4.6 types push a single `tsc` over Node's default ~4 GiB heap.
+      NODE_OPTIONS: --max-old-space-size=6144
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
