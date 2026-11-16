@@ -13,6 +13,7 @@ import {
 import { GateBoundary } from "@/modules/identity/gate-boundary";
 import { useMobileCopy, type MobileLanguage } from "@/modules/identity/mobile-copy";
 import { nativeRoute } from "@/modules/identity/native-route";
+import { EncounterScheduleChanges } from "@/modules/scheduling/schedule-changes-section";
 import { theme } from "@/theme/theme";
 import { Button, Card, EmptyState, ErrorState, LoadingState, Screen, Text } from "@/ui";
 import {
@@ -34,7 +35,8 @@ type RouteParams = {
 
 /**
  * `/orgs/:orgId/competitions/:competitionId/encounters/:encounterId`, same path as web's
- * Encounter page: the Encounter, its EA candidates and the official selection. The Team panel
+ * Encounter page: the Encounter, its EA candidates, the official selection and its schedule
+ * change requests. The Team panel
  * (propose, confirm, reject, alternative, dispute) and the organization review appear only
  * where `EffectiveAccess` allows them; the API authorizes every command again.
  */
@@ -81,6 +83,7 @@ function MatchCenterContent(params: RouteParams) {
         ) : null}
         {encounter.kind === "ready" ? (
           <ReadyEncounter
+            route={params}
             view={encounter.view}
             candidates={state.candidates}
             copy={copy}
@@ -97,6 +100,7 @@ function MatchCenterContent(params: RouteParams) {
 }
 
 function ReadyEncounter({
+  route,
   view,
   candidates,
   copy,
@@ -106,6 +110,7 @@ function ReadyEncounter({
   team,
   review,
 }: {
+  readonly route: RouteParams;
   readonly view: EncounterViewDto;
   readonly candidates: CandidatesState;
   readonly copy: MatchCenterCopy;
@@ -148,6 +153,7 @@ function ReadyEncounter({
         preview={preview}
       />
       <ReviewSection {...shared} state={review} />
+      <EncounterScheduleChanges {...route} view={view} />
     </>
   );
 }

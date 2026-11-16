@@ -49,3 +49,4 @@ export * from "./workspace/index.ts";
 export * from "./match-center/index.ts";
 export * from "./competition/index.ts";
 export * from "./player/index.ts";
+export * from "./scheduling/index.ts";
