@@ -1,7 +1,7 @@
 import { clearPendingRosterInvitation } from "./roster-invitation-link.ts";
 import type { FutrobApiError } from "@futrob/sdk";
 import { signOutRemote, type RemoteSignOutResult } from "./auth-api.ts";
-import { clearSession, getSession } from "./session-store.ts";
+import { clearSession, clearSessionIfCurrent, getSession } from "./session-store.ts";
 import { clearOnboardingDraft, clearPendingInvitation } from "./onboarding-draft.ts";
 import { bindSentryActor } from "@/observability/sentry";
 
@@ -12,6 +12,23 @@ import { bindSentryActor } from "@/observability/sentry";
  */
 export async function onProductUnauthorized(showLogin: () => void): Promise<void> {
   await clearSession();
+  await clearOnboardingDraft();
+  await clearPendingInvitation();
+  await clearPendingRosterInvitation();
+  bindSentryActor(null);
+  showLogin();
+}
+
+/**
+ * Product 401 for a request sent with `rejectedToken`: ends that session only. A late 401 for an
+ * earlier session leaves whoever signed in since, and their drafts, untouched.
+ */
+export async function onProductUnauthorizedFor(
+  rejectedToken: string,
+  showLogin: () => void,
+): Promise<void> {
+  await clearSessionIfCurrent(rejectedToken);
+  if (await getSession()) return;
   await clearOnboardingDraft();
   await clearPendingInvitation();
   await clearPendingRosterInvitation();

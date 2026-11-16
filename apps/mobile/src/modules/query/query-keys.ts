@@ -24,6 +24,8 @@ export const mobileQueryKeys = {
     [...sessionScope(generation), "encounters"] as const,
   encounterView: (generation: SessionGeneration, organizationId: string, encounterId: string) =>
     [...sessionScope(generation), "encounters", "view", organizationId, encounterId] as const,
+  scheduleChanges: (generation: SessionGeneration, encounterId: string) =>
+    [...sessionScope(generation), "encounters", "schedule-changes", encounterId] as const,
   encounterCandidates: (generation: SessionGeneration, encounterId: string) =>
     [...sessionScope(generation), "encounters", "candidates", encounterId] as const,
   /** Representation and approval capabilities scoped to one Encounter (and Team). */
@@ -62,6 +64,9 @@ export const mobileQueryKeys = {
     competitionId: string,
   ) =>
     [...sessionScope(generation), "encounters", "disputes", organizationId, competitionId] as const,
+  /** Team and organization reads (MOB-06): my teams, roster, members, profile, activity. */
+  teamOrganization: (generation: SessionGeneration, ...parts: readonly (string | undefined)[]) =>
+    [...sessionScope(generation), "team-organization", ...parts] as const,
   accountSessions: (generation: SessionGeneration) =>
     [...sessionScope(generation), "account-sessions"] as const,
   accountDeletion: (generation: SessionGeneration) =>
