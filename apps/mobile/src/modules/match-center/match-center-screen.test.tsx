@@ -114,6 +114,11 @@ function matchCenterApi({
     }),
     "/organizations/org-1/encounters/encounter-1": json(view),
     "/encounters/encounter-1/candidates": json(candidates),
+    // The rescheduling section shares the route; nobody here may request a change.
+    "/encounters/encounter-1/schedule-change-requests": json({
+      requests: [],
+      creation: { blockedReason: null, teams: [], scopes: [] },
+    }),
     "/authorization/effective-access": (url) => {
       const permission = url.searchParams.get("permissions") ?? "";
       const teamId = url.searchParams.get("teamId");
