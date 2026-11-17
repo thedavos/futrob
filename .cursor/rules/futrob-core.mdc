@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Futrob core
 
-Multi-tenant EA SPORTS FC competitions (MVP: FC Clubs) with hexagonal bounded-context packages, web/auth Workers, a Node product API and an Expo native client.
+Multi-tenant EA SPORTS FC competitions (MVP: FC Clubs) with hexagonal bounded-context packages, a web Worker, Node product API and auth servers and an Expo native client.
 
 ## Stack
 

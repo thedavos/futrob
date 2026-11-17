@@ -5,6 +5,7 @@ import { bearer, customSession } from "better-auth/plugins";
 import type { ActorProvisionerPort } from "@futrob/identity";
 import type { ClockPort, IdGeneratorPort } from "@futrob/shared-kernel";
 import type { AuthEnv } from "../../auth-env.ts";
+import { CLIENT_IP_HEADER } from "../../client-ip.ts";
 import { authSchema } from "./drizzle-schema.ts";
 import type { AuthDb } from "./database.ts";
 import {
@@ -34,7 +35,7 @@ import {
 export type { AuthEnv };
 
 /**
- * Where a reset link lands after the auth worker checks its token: the web page, or the
+ * Where a reset link lands after the auth server checks its token: the web page, or the
  * native app through its `futrob://` scheme. Clients pass one of these as `redirectTo`.
  */
 export const PASSWORD_RESET_WEB_CALLBACK = "/reset-password";
@@ -81,7 +82,7 @@ export function createActorProvisioningHooks(
 
 /**
  * Better Auth turns endpoint exceptions into HTTP responses without rethrowing,
- * so the worker's outer catch never sees them. Report only defects: 4xx
+ * so the server's error handler never sees them. Report only defects: 4xx
  * `APIError`s (bad credentials, rate limits) are expected responses.
  */
 export function createAuthErrorHandler(
@@ -96,10 +97,10 @@ export function createAuthErrorHandler(
 }
 
 /**
- * Request-scoped Better Auth instance bound to the product Postgres (ADR-0021).
- * Instantiate per request (or per handler) — do not share a singleton across isolates.
+ * Better Auth instance bound to the product Postgres (ADR-0021). The server
+ * builds one per process over a shared pool.
  *
- * This worker serves plain fetch requests, so only `bearer()` is enabled.
+ * The server hands Better Auth plain fetch requests, so only `bearer()` is enabled.
  * Cookies are set/read by Better Auth core on the Request/Response.
  *
  * `get-session` also returns the resolved `actorId` so web/BFF never query
@@ -114,7 +115,7 @@ export function createAuth(input: {
   /** Overrides the adapter chosen by `AUTH_EMAIL_DELIVERY`; tests capture links with it. */
   readonly mail?: AuthMailPort;
   /**
-   * Runs account email after the response (the Worker's `waitUntil`), so asking for a reset
+   * Runs account email after the response (tracked background tasks), so asking for a reset
    * link takes as long whether or not the account exists. Omitted: email is awaited.
    */
   readonly runInBackground?: (task: Promise<unknown>) => void;
@@ -219,8 +220,10 @@ export function createAuth(input: {
     },
     advanced: {
       backgroundTasks: input.runInBackground ? { handler: input.runInBackground } : undefined,
+      // The server resolves the client IP and writes it here, replacing any
+      // caller-supplied value (see client-ip.ts).
       ipAddress: {
-        ipAddressHeaders: ["cf-connecting-ip"],
+        ipAddressHeaders: [CLIENT_IP_HEADER],
       },
     },
     // Provision before a session is issued. If the database fails, sign-in can be

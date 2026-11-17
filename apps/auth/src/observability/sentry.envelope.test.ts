@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vite-plus/test";
-import * as Sentry from "@sentry/cloudflare";
+import * as Sentry from "@sentry/node";
 import {
   applySentryEventPolicy,
   applySentryTransactionPolicy,
@@ -19,7 +19,7 @@ function memoryClient() {
   });
   expect(shared).toBeTruthy();
   if (!shared) return { client: undefined, envelopes };
-  const client = new Sentry.CloudflareClient({
+  const client = new Sentry.NodeClient({
     dsn: shared.dsn,
     environment: shared.environment,
     tracesSampleRate: 1,

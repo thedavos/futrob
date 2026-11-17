@@ -13,7 +13,7 @@ Spanish (`es`) is the default product locale. Use the Spanish accessible names i
 
 ## Launch
 
-From the repo root. Env files must already exist (they are gitignored): `apps/web/.dev.vars`, `apps/auth/.dev.vars`, `apps/api/.env`, plus `apps/auth/.env` and `apps/web/.env` (local Hyperdrive target, see the `.env.example` files). `INTERNAL_JOB_SECRET` must match web ↔ API. `BETTER_AUTH_SECRET` must match web ↔ auth. `FUTROB_API_BASE_URL` in web must be `http://localhost:8787/api/v1`.
+From the repo root. Env files must already exist (they are gitignored): `apps/web/.dev.vars`, `apps/api/.env`, `apps/auth/.env` (auth's `DATABASE_URL` and secrets) and `apps/web/.env` (local Hyperdrive target), see the `.env.example` files. `INTERNAL_JOB_SECRET` must match web ↔ API. `BETTER_AUTH_SECRET` and `AUTH_PROXY_SECRET` must match web ↔ auth. In web, `FUTROB_API_BASE_URL` must be `http://localhost:8787/api/v1` and `FUTROB_AUTH_BASE_URL` must be `http://localhost:8788`.
 
 ```bash
 .agents/skills/verify-futrob/helpers/verify-futrob launch
@@ -26,9 +26,9 @@ Ready when **all four** answer:
 | Web | `GET http://localhost:3000/` → HTTP 200 and body contains `Futrob` (Vite+ listens on `[::1]`; `127.0.0.1:3000` fails) |
 | API | `GET http://localhost:8787/api/v1/meta/ping` → `{"ok":true,"service":"futrob","apiVersion":"v1"}` |
 | Auth | `GET http://localhost:8788/meta/health` → `{"ok":true,"service":"futrob-auth"}` |
-| Auth binding | `GET http://localhost:3000/api/auth/get-session` → not 503, body must not contain `Worker "futrob-auth" not found`. Anonymous is typically 200 with a null session. Direct `:8788` health is not this probe. |
+| Auth proxy | `GET http://localhost:3000/api/auth/get-session` → 200. Anonymous is 200 with a null session. Direct `:8788` health is not this probe. |
 
-`launch` exports `CLOUDFLARE_DEV_REGISTRY_PATH` and `WRANGLER_REGISTRY_PATH` to the same `.run/dev-registry` directory so Wrangler (auth) and Miniflare (web) share one worker registry. Without that, web answers 503 Worker not found while `:8788` still looks healthy. If `node` on PATH is below 24, launch prepends an nvm v24 bin when one exists.
+Web reaches auth (Node, `tsx watch`) over HTTP at `FUTROB_AUTH_BASE_URL`. If `node` on PATH is below 24, launch prepends an nvm v24 bin when one exists.
 
 The helper writes a lock under `.agents/skills/verify-futrob/.run/` (pid, pgid, log). Teardown is `cleanup`, never `pkill` by process name.
 
@@ -46,7 +46,7 @@ Run first whenever anything looks off, before the first drive, after any failed 
 .agents/skills/verify-futrob/helpers/verify-futrob doctor
 ```
 
-Exit 0 only when: the four probes above succeed, and either (a) the lock file's pid/pgid still owns the listeners, or (b) attach mode is in effect and the operator owned the stack. Doctor also prints `GET /api/v1/meta/health` `db` (`ok` or `skipped`) and warns when skipped: sign-in and mutating org proofs need migrated Postgres. A 503 `Worker "futrob-auth" not found` on the web get-session probe is a registry split, not a bad password. A 200 login with a later unauthenticated BFF usually means `BETTER_AUTH_SECRET` mismatch — doctor does not catch that; the auth feature map does.
+Exit 0 only when: the four probes above succeed, and either (a) the lock file's pid/pgid still owns the listeners, or (b) attach mode is in effect and the operator owned the stack. Doctor also prints `GET /api/v1/meta/health` `db` (`ok` or `skipped`) and warns when skipped: sign-in and mutating org proofs need migrated Postgres. A 503 `auth.misconfigured` on the web get-session probe means `FUTROB_AUTH_BASE_URL` or `AUTH_PROXY_SECRET` is missing in `apps/web/.dev.vars`; a 502 `auth.unavailable` means web cannot reach `:8788`. A 200 login with a later unauthenticated BFF usually means `BETTER_AUTH_SECRET` mismatch — doctor does not catch that; the auth feature map does.
 
 ## Drive
 

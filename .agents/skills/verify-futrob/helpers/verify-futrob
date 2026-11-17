@@ -11,9 +11,8 @@ WEB_URL="http://localhost:${WEB_PORT}"
 API_PING_URL="http://localhost:${API_PORT}/api/v1/meta/ping"
 API_HEALTH_URL="http://localhost:${API_PORT}/api/v1/meta/health"
 AUTH_HEALTH_URL="http://localhost:${AUTH_PORT}/meta/health"
-# Web proxies /api/auth/* to the AUTH_SERVICE binding. Direct :8788 health is
-# not enough: wrangler and miniflare can pick different registries and web
-# then answers 503 Worker "futrob-auth" not found.
+# Web proxies /api/auth/* to apps/auth at FUTROB_AUTH_BASE_URL. Direct :8788 health is
+# not enough: a wrong base URL or AUTH_PROXY_SECRET in apps/web/.dev.vars breaks the proxy.
 AUTH_SESSION_URL="${WEB_URL}/api/auth/get-session"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -51,7 +50,7 @@ http_body() {
 
 require_env_files() {
   local missing=0
-  for rel in apps/web/.dev.vars apps/auth/.dev.vars apps/api/.env apps/auth/.env apps/web/.env; do
+  for rel in apps/web/.dev.vars apps/api/.env apps/auth/.env apps/web/.env; do
     if [[ ! -f "${REPO_ROOT}/${rel}" ]]; then
       echo "doctor: missing ${rel} (copy the matching .example and align secrets)" >&2
       missing=1
@@ -85,15 +84,12 @@ prefer_node24() {
   fi
 }
 
-# Web reaches futrob-auth through AUTH_SERVICE. get-session answers 200 (`null` when
-# anonymous); a refused connection, any 4xx/5xx or the miniflare "Worker ... not found"
-# page means the binding is broken.
+# Web reaches apps/auth over HTTP. get-session answers 200 (`null` when anonymous); a
+# refused connection or any 4xx/5xx means the proxy cannot reach auth.
 auth_binding_ok() {
-  local code body
+  local code
   code="$(http_code "${AUTH_SESSION_URL}")"
   [[ "${code}" == "200" ]] || return 1
-  body="$(http_body "${AUTH_SESSION_URL}")"
-  [[ "${body}" != *"Worker"*"not found"* ]] || return 1
   return 0
 }
 
@@ -127,21 +123,12 @@ cmd_launch() {
   mkdir -p "${EVIDENCE_ROOT}/${run_id}"
 
   prefer_node24
-  # Wrangler (auth) and Miniflare (web Vite plugin) otherwise pick different
-  # registry dirs; web then cannot resolve AUTH_SERVICE → futrob-auth.
-  local registry_dir="${RUN_DIR}/dev-registry"
-  mkdir -p "${registry_dir}"
-  export CLOUDFLARE_DEV_REGISTRY_PATH="${registry_dir}"
-  export WRANGLER_REGISTRY_PATH="${registry_dir}"
 
   echo "launch: starting npm run dev (run ${run_id})"
-  echo "launch: wrangler registry ${registry_dir}"
   # New session so cleanup can kill the group we started, never by process name.
   # setsid is Linux; macOS Python provides os.setsid.
   (
     cd "${REPO_ROOT}"
-    export CLOUDFLARE_DEV_REGISTRY_PATH="${registry_dir}"
-    export WRANGLER_REGISTRY_PATH="${registry_dir}"
     if command -v setsid >/dev/null 2>&1; then
       exec setsid npm run dev
     else
@@ -256,7 +243,7 @@ cmd_doctor() {
   session_body="$(http_body "${AUTH_SESSION_URL}")"
   echo "doctor: GET ${AUTH_SESSION_URL} → ${session_code} ${session_body}"
   if ! auth_binding_ok; then
-    echo "doctor: warning: web AUTH_SERVICE cannot reach futrob-auth (expected 200 from get-session). Align CLOUDFLARE_DEV_REGISTRY_PATH and WRANGLER_REGISTRY_PATH; health on :8788 is not enough." >&2
+    echo "doctor: warning: web cannot reach apps/auth (expected 200 from get-session). Check FUTROB_AUTH_BASE_URL and AUTH_PROXY_SECRET in apps/web/.dev.vars; health on :8788 is not enough." >&2
   fi
 
   if doctor_probes; then

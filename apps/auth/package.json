@@ -4,9 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --port 8788 --inspector-port 18788",
-    "deploy": "wrangler deploy",
-    "cf-typegen": "wrangler types",
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vp test"
   },
@@ -14,17 +13,19 @@
     "@futrob/identity": "0.1.0",
     "@futrob/logger": "0.1.0",
     "@futrob/shared-kernel": "0.1.0",
-    "@sentry/cloudflare": "^11.11.0",
+    "@hono/node-server": "^2.1.6",
+    "@sentry/node": "^11.11.0",
     "better-auth": "^1.7.20",
     "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.17",
     "pg": "^8.23.1",
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261110.1",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
+    "tsx": "^4.23.15",
     "typescript": "6.0.2",
-    "vite-plus": "1.6.0",
-    "wrangler": "^4.160.0"
+    "vite-plus": "1.6.0"
   }
 }

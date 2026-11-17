@@ -3,7 +3,11 @@ import { apiErrorResponse } from "@/shared/infrastructure/http/api-response.ts";
 import { AuthServiceUnavailableError } from "./auth-errors.ts";
 
 export const AUTH_PROXY_TIMEOUT_MS = 10_000;
+/** Placeholder origin; `createHttpAuthService` rewrites it to `FUTROB_AUTH_BASE_URL`. */
 const AUTH_SERVICE_ORIGIN = "https://futrob-auth.internal";
+/** apps/auth reads the client IP from this header, only next to a valid proxy secret. */
+export const AUTH_CLIENT_IP_HEADER = "x-futrob-client-ip";
+export const AUTH_PROXY_SECRET_HEADER = "x-futrob-proxy-secret";
 const AUTH_SESSION_PATH = "/api/auth/get-session";
 
 const HOP_BY_HOP_HEADERS = [
@@ -19,6 +23,8 @@ const HOP_BY_HOP_HEADERS = [
   "host",
   "x-forwarded-for",
   "x-real-ip",
+  AUTH_CLIENT_IP_HEADER,
+  AUTH_PROXY_SECRET_HEADER,
 ] as const;
 
 /** Entity headers from a BFF POST/PUT must not ride along on GET /get-session. */
@@ -30,8 +36,42 @@ const ENTITY_BODY_HEADERS = [
   "content-type",
 ] as const;
 
+/** How web reaches apps/auth; `createHttpAuthService` is the deployed implementation. */
 export interface AuthServiceBinding {
   fetch(request: Request): Promise<Response>;
+}
+
+/**
+ * Calls apps/auth over HTTP at `baseUrl`. Every request carries the proxy secret, so
+ * auth trusts the client IP that `buildAuthProxyHeaders` forwards.
+ */
+export function createHttpAuthService(input: {
+  readonly baseUrl: string;
+  readonly proxySecret: string;
+  readonly fetcher?: typeof fetch;
+}): AuthServiceBinding {
+  const base = new URL(input.baseUrl);
+  const fetcher = input.fetcher ?? fetch;
+  return {
+    fetch(request) {
+      const source = new URL(request.url);
+      const target = new URL(`${source.pathname}${source.search}`, base);
+      const forwarded = new Request(target, request);
+      forwarded.headers.set(AUTH_PROXY_SECRET_HEADER, input.proxySecret);
+      return fetcher(forwarded);
+    },
+  };
+}
+
+/** The auth service configured for this Worker, or undefined when either variable is missing. */
+export function authServiceFromBindings(bindings: {
+  readonly FUTROB_AUTH_BASE_URL?: string;
+  readonly AUTH_PROXY_SECRET?: string;
+}): AuthServiceBinding | undefined {
+  const baseUrl = bindings.FUTROB_AUTH_BASE_URL?.trim();
+  const proxySecret = bindings.AUTH_PROXY_SECRET?.trim();
+  if (!baseUrl || !proxySecret) return undefined;
+  return createHttpAuthService({ baseUrl, proxySecret });
 }
 
 export function isAuthApiPath(pathname: string): boolean {
@@ -59,14 +99,11 @@ export function stripHopByHopHeaders(headers: Headers): Headers {
 }
 
 export function buildAuthProxyHeaders(request: Request, incoming: URL): Headers {
+  // Cloudflare sets CF-Connecting-IP on the request that reached this Worker.
   const clientIp = request.headers.get("cf-connecting-ip");
   const headers = stripHopByHopHeaders(request.headers);
   if (clientIp) {
-    // Same-zone Worker subrequests derive CF-Connecting-IP from X-Real-IP,
-    // not from a caller-supplied cf-connecting-ip.
-    // https://developers.cloudflare.com/fundamentals/reference/http-headers/
-    headers.set("x-real-ip", clientIp);
-    headers.set("cf-connecting-ip", clientIp);
+    headers.set(AUTH_CLIENT_IP_HEADER, clientIp);
   }
   headers.set("x-forwarded-host", incoming.host);
   headers.set("x-forwarded-proto", incoming.protocol.replace(/:$/, ""));
@@ -177,7 +214,7 @@ export async function fetchAuthSessionUserName(
 }
 
 /**
- * Resolve the authenticated ActorId via AUTH_SERVICE. `get-session` carries the
+ * Resolve the authenticated ActorId through apps/auth. `get-session` carries the
  * actor provisioned by apps/auth (ADR-0021); web reads no session, user or
  * identity tables. `null` means no session or no provisioned actor.
  */

@@ -36,13 +36,13 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0012: TanStack Query para server state de UI sobre `/api/v1`](/docs/adr/0012-tanstack-query-client-server-state.md)            | Aceptada    | Query en web; validación por flujo                                                                 |
 | [ADR-0013: Egress a EA solo desde la API de producto](/docs/adr/0013-ea-egress-api-only.md)                                         | Aceptada    | Egress EA concentrado en API                                                                       |
 | [ADR-0014: Tokens de diseño compartidos y UI nativa en móvil](/docs/adr/0014-shared-ui-tokens-and-mobile-ui.md)                     | Aceptada    | Tokens compartidos y CSS generado; UI por plataforma                                               |
-| [ADR-0015: Autenticación, identidad y ownership de D1](/docs/adr/0015-auth-extraction.md)                                           | Aceptada    | Auth extraída; almacenamiento reemplazado por ADR-0021                                             |
+| [ADR-0015: Autenticación, identidad y ownership de D1](/docs/adr/0015-auth-extraction.md)                                           | Aceptada    | Auth extraída; almacenamiento → ADR-0021; runtime y proxy → ADR-0032                               |
 | [ADR-0016: Proyección transaccional de resultados oficiales](/docs/adr/0016-official-results-transactional-projection.md)           | Aceptada    | Resultado, estadísticas y avance de bracket transaccionales; outbox pendiente                      |
 | [ADR-0017: Autorización contextual por capacidades](/docs/adr/0017-contextual-capability-authorization.md)                          | Aceptada    | Resolver contextual y matriz de pruebas existentes                                                 |
 | [ADR-0018: Descubrimiento autenticado de competiciones publicadas](/docs/adr/0018-authenticated-competition-discovery.md)           | Aceptada    | Explore autenticado; lectura anónima en ADR-0024                                                   |
 | [ADR-0019: Inscripciones abiertas y postulación de equipos](/docs/adr/0019-competition-registration-and-applications.md)            | Aceptada    | Estado `registration`, postulación y actividad web; email pendiente                                |
 | [ADR-0020: Perfil de competición y portadas en R2](/docs/adr/0020-competition-profile-and-media.md)                                 | Aceptada    | Cupo, fechas y portada; limpieza de huérfanos en R2 pendiente                                      |
-| [ADR-0021: Auth, actores y rate limits en el Postgres de producto](/docs/adr/0021-auth-and-actors-in-product-postgres.md)           | Aceptada    | Implementado en el checkout; Hyperdrive→Railway sin desplegar                                      |
+| [ADR-0021: Auth, actores y rate limits en el Postgres de producto](/docs/adr/0021-auth-and-actors-in-product-postgres.md)           | Aceptada    | Implementado en el checkout; acceso de auth por Hyperdrive → ADR-0032                              |
 | [ADR-0022: Perfil de organización: slug, zona horaria y escudo](/docs/adr/0022-organization-profile-and-logo.md)                    | Aceptada    | Implementado en el checkout; slug sin consumidor hasta el portal público                           |
 | [ADR-0023: Invitaciones de inscripción de equipos](/docs/adr/0023-competition-entry-invitations.md)                                 | Aceptada    | Invitación dirigida y enlace; deep link nativo y email pendientes                                  |
 | [ADR-0024: Lecturas públicas anónimas del portal](/docs/adr/0024-anonymous-public-portal-reads.md)                                  | Aceptada    | Portada, tabla y calendario públicos; resto del portal y clave pendientes                          |
@@ -53,6 +53,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0029: Lectura unificada de auditoría de organización](/docs/adr/0029-unified-organization-audit.md)                            | Aceptada    | Lectura por fuentes existentes y hechos operativos nuevos; API y visor de organización/competición |
 | [ADR-0030: Eliminación de cuenta por anonimización](/docs/adr/0030-account-deletion-by-anonymization.md)                            | Aceptada    | Plazo de 30 días, limpieza por contexto en la transacción del job; correos pendientes de MAIL-01   |
 | [ADR-0031: Email transaccional con Resend detrás de un outbox](/docs/adr/0031-transactional-email-provider-and-outbox.md)           | Propuesta   | Outbox, plantillas ES/EN, preferencias y baja; sin envío real verificado                           |
+| [ADR-0032: Auth como servidor Node (Hono) fuera de Cloudflare](/docs/adr/0032-auth-node-runtime.md)                                 | Aceptada    | Implementado en el checkout; hosting sin decidir y sin desplegar                                   |
 
 ## Consolidación de septiembre de 2026
 
@@ -61,8 +62,9 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 - ADR-0015 absorbe ADR-0003: auth, actores y ownership de D1.
 - ADR-0016 y ADR-0017 formalizan consistencia transaccional y autorización contextual.
 - ADR-0021 reemplaza el almacenamiento D1 de ADR-0015: auth, actores y rate limits pasan al Postgres de producto.
+- ADR-0032 (noviembre) reemplaza el runtime Worker de auth: Hono sobre Node, web por HTTP con secreto de proxy.
 
-Quedan **26 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
+Quedan **27 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
 archivo antiguos se conservan para no romper referencias. Para implementación nueva,
 seguir el sucesor indicado, aunque un enlace histórico aún apunte al documento anterior.
 

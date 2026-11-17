@@ -19,7 +19,7 @@ Better Auth is Futrob's only authority for credentials and sessions. It is not t
 ## Application boundary
 
 - Application code never reads sessions: use cases receive a trusted `ActorId`.
-- Configure Better Auth in `apps/auth`. Web proxies `/api/auth/*` and resolves the actor from `get-session` via `AUTH_SERVICE`; that response carries `actorId`, so web reads no session, user or identity tables (ADR-0015, ADR-0021).
+- Configure Better Auth in `apps/auth`. Web proxies `/api/auth/*` over HTTP to `FUTROB_AUTH_BASE_URL` (with `AUTH_PROXY_SECRET`) and resolves the actor from `get-session`; that response carries `actorId`, so web reads no session, user or identity tables (ADR-0015, ADR-0021, ADR-0032).
 - Resolve and validate browser session cookies on the server. Native clients use the existing auth API/session storage and Bearer path; never put the API service secret in a native bundle. Client UI may display session state but never authorizes an operation.
 - Protected use cases receive a trusted `ActorId`, enforce the applicable organization/competition/roster capabilities, then execute with organization-scoped product access in apps/api (Postgres).
 
@@ -32,7 +32,7 @@ Better Auth is Futrob's only authority for credentials and sessions. It is not t
 
 ## Configuration
 
-Validate secrets via Wrangler/`env` at composition time. Expected names are documented in `apps/auth/.dev.vars.example` and `apps/web/.dev.vars.example`; never add real secrets to tracked files. Use separate values for local, preview, and production.
+Validate secrets via `env` at composition time (`apps/auth` fails at boot on invalid configuration). Expected names are documented in `apps/auth/.env.example` and `apps/web/.dev.vars.example`; never add real secrets to tracked files. Use separate values for local, preview, and production.
 
 When changing Better Auth schema, generate provider SQL with the installed CLI (`--help`), review it, add a SQL migration under `apps/api/migrations` (the single history; `auth_*` tables), mirror it in `apps/auth/src/adapters/auth/drizzle-schema.ts`, and verify with the `auth-postgres.integration.test.ts` suite (`TEST_DATABASE_URL`) from a clean schema.
 

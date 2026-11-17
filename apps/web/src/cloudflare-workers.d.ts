@@ -12,7 +12,10 @@ declare module "cloudflare:workers" {
     BETTER_AUTH_TRUSTED_ORIGINS?: string;
     APP_BASE_URL?: string;
     FUTROB_API_BASE_URL?: string;
-    AUTH_SERVICE?: import("./modules/identity/server/auth-proxy.ts").AuthServiceBinding;
+    /** apps/auth origin, such as `https://auth.futrob.app`. */
+    FUTROB_AUTH_BASE_URL?: string;
+    /** Shared with apps/auth; lets it trust the client IP web forwards. */
+    AUTH_PROXY_SECRET?: string;
     INTERNAL_JOB_SECRET?: string;
     ENVIRONMENT?: string;
     RATE_LIMIT_FINGERPRINT_SECRET?: string;

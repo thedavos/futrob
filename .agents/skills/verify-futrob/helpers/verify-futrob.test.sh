@@ -36,10 +36,8 @@ http_body() { echo "${STUB_BODY}"; }
 
 respond 500 "Internal Server Error"
 check "binding rejects HTTP 500" "fail" "$(binding)"
-respond 503 'Worker "futrob-auth" not found'
-check "binding rejects HTTP 503 Worker not found" "fail" "$(binding)"
-respond 200 'Worker "futrob-auth" not found'
-check "binding rejects a 200 Worker-not-found page" "fail" "$(binding)"
+respond 503 '{"code":"auth.misconfigured"}'
+check "binding rejects HTTP 503 misconfigured proxy" "fail" "$(binding)"
 respond 401 '{"code":"UNAUTHORIZED"}'
 check "binding rejects HTTP 401" "fail" "$(binding)"
 respond 200 "null"

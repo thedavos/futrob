@@ -13,7 +13,7 @@ Use [futrob-adr](../../.agents/skills/futrob-adr/SKILL.md) when evaluating or ch
 ## Shape
 
 - Deployable Must: `apps/web` on Cloudflare Workers.
-- API de producto: `apps/api` (Hono/Node, Railway, Postgres y egress EA). Auth: `apps/auth` (Better Auth Worker). Mobile: `apps/mobile` (Expo).
+- API de producto: `apps/api` (Hono/Node, Railway, Postgres y egress EA). Auth: `apps/auth` (Better Auth sobre Hono/Node, ADR-0032). Mobile: `apps/mobile` (Expo).
 - Business logic: `packages/<context>/` (`@futrob/<bc>`) = `domain` / `application` / ports.
 - App slice: `apps/web/src/modules/<context>/` = `adapters` / `server` / `presentation` + facade `index.ts`.
 - Product composition in `apps/api/src/di/`; web BFF/Workers infrastructure in `apps/web/src/{bootstrap,config,context}/`.

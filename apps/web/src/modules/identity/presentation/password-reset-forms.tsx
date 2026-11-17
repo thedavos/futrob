@@ -42,7 +42,7 @@ import {
 } from "@/modules/identity/presentation/signup-form-validation.ts";
 import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
 
-/** Where the auth worker sends a checked reset link (see apps/auth `PASSWORD_RESET_WEB_CALLBACK`). */
+/** Where the auth server sends a checked reset link (see apps/auth `PASSWORD_RESET_WEB_CALLBACK`). */
 export const PASSWORD_RESET_PATH = "/reset-password";
 
 const styles = stylex.create({
@@ -222,7 +222,7 @@ interface ResetValues {
 
 /**
  * Sets the new password with the token the reset link carried. A used or expired token, or
- * a link the auth worker already rejected (`invalid`), offers to ask for another.
+ * a link the auth server already rejected (`invalid`), offers to ask for another.
  */
 export function ResetPasswordForm({
   token,

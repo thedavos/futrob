@@ -8,7 +8,10 @@ import {
   productApiBffErrorResponse,
   productApiBffErrorResponseForError,
 } from "@/context/create-authenticated-product-api-client.ts";
-import { fetchAuthSessionUserName } from "@/modules/identity/server/auth-proxy.ts";
+import {
+  authServiceFromBindings,
+  fetchAuthSessionUserName,
+} from "@/modules/identity/server/auth-proxy.ts";
 import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
 import { apiErrorResponse, jsonResponse } from "@/shared/infrastructure/http/api-response.ts";
 
@@ -35,7 +38,7 @@ export const Route = createFileRoute(
           const bindings = await getWorkerBindings();
           const invitedByDisplayName = await fetchAuthSessionUserName(
             request,
-            bindings.AUTH_SERVICE,
+            authServiceFromBindings(bindings),
           );
           return jsonResponse(
             createRosterInvitationResponseSchema.parse(

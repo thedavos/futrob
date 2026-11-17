@@ -38,7 +38,7 @@ export function hashPasswordLikeBetterAuth(password: string): Promise<string> {
 
 /**
  * Creates the Better Auth user, its credential account and the provisioned actor the
- * auth worker would create on first sign-in (ADR-0021).
+ * auth server would create on first sign-in (ADR-0021).
  */
 export async function createDemoAccount(
   pool: Pool,

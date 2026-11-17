@@ -34,7 +34,7 @@ describe("resolveAuthenticatedRequestActor", () => {
     ).rejects.toBeInstanceOf(AuthUnauthenticatedError);
   });
 
-  it("fails when the AUTH_SERVICE binding is missing", async () => {
+  it("fails when the auth service is not configured", async () => {
     await expect(
       resolveAuthenticatedRequestActor({ request, authService: undefined }),
     ).rejects.toBeInstanceOf(AuthServiceMisconfiguredError);

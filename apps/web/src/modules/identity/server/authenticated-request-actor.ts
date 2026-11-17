@@ -14,7 +14,7 @@ export async function resolveAuthenticatedRequestActor(input: {
   if (!input.authService) {
     throw new AuthServiceMisconfiguredError({
       code: "auth.misconfigured",
-      message: "AUTH_SERVICE binding is required",
+      message: "FUTROB_AUTH_BASE_URL and AUTH_PROXY_SECRET are required",
     });
   }
 

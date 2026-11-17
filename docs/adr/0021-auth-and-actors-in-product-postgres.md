@@ -8,6 +8,9 @@
 - Reemplaza: [ADR-0015](/docs/adr/0015-auth-extraction.md), solo el almacenamiento en D1
   (puntos 3, 5, 6 y 7 en lo relativo a D1). Siguen vigentes el Worker `apps/auth`,
   el proxy por `AUTH_SERVICE`, `bearer()` para Expo y el ownership de Actor/IdentitySubject.
+- Reemplazada parcialmente por: [ADR-0032](/docs/adr/0032-auth-node-runtime.md) (auth deja
+  Hyperdrive y Workers: servidor Node con pool `pg` sobre `DATABASE_URL`; punto 4 solo rige
+  para web).
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
@@ -96,7 +99,7 @@ decisión la tomó el responsable del proyecto el 2026-09-29.
 
 Implementado en el checkout; no desplegado.
 
-- [Worker auth](/apps/auth/src/index.ts), [conexión](/apps/auth/src/adapters/auth/database.ts),
+- [Servidor auth](/apps/auth/src/main.ts), [conexión](/apps/auth/src/adapters/auth/database.ts),
   [provisionador](/apps/auth/src/adapters/auth/actor-provisioner.ts) y
   [schema Drizzle](/apps/auth/src/adapters/auth/drizzle-schema.ts).
 - [Migración de tablas](/apps/api/migrations/0043_auth_and_actors.sql) y

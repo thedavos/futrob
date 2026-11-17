@@ -1,6 +1,15 @@
-export interface AuthWorkerEnv {
-  /** Hyperdrive binding to the product Postgres (ADR-0021). */
-  readonly HYPERDRIVE?: Hyperdrive;
+import type { ClientIpPolicy } from "./client-ip.ts";
+
+/** Process environment read by the auth server (`process.env`, `.env` in development). */
+export interface AuthProcessEnv {
+  /** Product Postgres (ADR-0021); `apps/api/migrations` owns the schema. */
+  readonly DATABASE_URL?: string;
+  /** HTTP port; defaults to 8788. */
+  readonly PORT?: string;
+  /** Shared with web: marks requests the BFF forwards with the client IP. */
+  readonly AUTH_PROXY_SECRET?: string;
+  /** Header the platform load balancer sets with the client IP, such as `x-real-ip`. */
+  readonly AUTH_TRUSTED_IP_HEADER?: string;
   readonly APP_BASE_URL?: string;
   readonly BETTER_AUTH_SECRET?: string;
   readonly BETTER_AUTH_URL?: string;
@@ -13,7 +22,7 @@ export interface AuthWorkerEnv {
    * (development). Unset: email change and password reset are disabled.
    */
   readonly AUTH_EMAIL_DELIVERY?: string;
-  /** Resend API key; required with `AUTH_EMAIL_DELIVERY=resend`. A Wrangler secret. */
+  /** Resend API key; required with `AUTH_EMAIL_DELIVERY=resend`. A secret. */
   readonly RESEND_API_KEY?: string;
   /** Sender on the verified domain, such as `Futrob <cuenta@futrob.app>`. */
   readonly EMAIL_FROM?: string;
@@ -27,7 +36,7 @@ export interface AuthEnv {
   readonly BETTER_AUTH_SECRET: string;
   readonly BETTER_AUTH_URL: string;
   readonly BETTER_AUTH_TRUSTED_ORIGINS: readonly string[];
-  /** How account emails leave the worker; absent means disabled. */
+  /** How account emails leave the server; absent means disabled. */
   readonly AUTH_EMAIL?: AuthEmail;
 }
 
@@ -61,7 +70,7 @@ function parseHttpOrigin(raw: string | undefined, name: string): string {
   return url.origin;
 }
 
-export function buildAuthEnv(env: AuthWorkerEnv): AuthEnv {
+export function buildAuthEnv(env: AuthProcessEnv): AuthEnv {
   const secret = env.BETTER_AUTH_SECRET?.trim();
   if (!secret || secret.length < MINIMUM_SECRET_LENGTH) {
     throw new Error(`BETTER_AUTH_SECRET must contain at least ${MINIMUM_SECRET_LENGTH} characters`);
@@ -100,5 +109,52 @@ export function buildAuthEnv(env: AuthWorkerEnv): AuthEnv {
     BETTER_AUTH_URL: authOrigin,
     BETTER_AUTH_TRUSTED_ORIGINS: trustedOrigins,
     AUTH_EMAIL: email,
+  };
+}
+
+export interface AuthServerConfig {
+  readonly auth: AuthEnv;
+  readonly databaseUrl: string;
+  readonly port: number;
+  readonly clientIp: ClientIpPolicy;
+}
+
+const DEFAULT_PORT = 8788;
+const HEADER_NAME = /^[a-z0-9-]+$/;
+const INTERNAL_HEADERS = new Set(["x-futrob-client-ip", "x-futrob-proxy-secret"]);
+
+function parsePort(raw: string | undefined): number {
+  const value = raw?.trim();
+  if (!value) return DEFAULT_PORT;
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new Error("PORT must be an integer between 1 and 65535");
+  }
+  return port;
+}
+
+function parseClientIpPolicy(env: AuthProcessEnv): ClientIpPolicy {
+  const proxySecret = env.AUTH_PROXY_SECRET?.trim() || undefined;
+  if (proxySecret && proxySecret.length < MINIMUM_SECRET_LENGTH) {
+    throw new Error(`AUTH_PROXY_SECRET must contain at least ${MINIMUM_SECRET_LENGTH} characters`);
+  }
+  const trustedHeader = env.AUTH_TRUSTED_IP_HEADER?.trim().toLowerCase() || undefined;
+  if (trustedHeader && (!HEADER_NAME.test(trustedHeader) || INTERNAL_HEADERS.has(trustedHeader))) {
+    throw new Error("AUTH_TRUSTED_IP_HEADER must name the load balancer's client IP header");
+  }
+  return { proxySecret, trustedHeader };
+}
+
+/** Validates the whole server configuration once, at boot. */
+export function buildAuthServerConfig(env: AuthProcessEnv): AuthServerConfig {
+  const databaseUrl = env.DATABASE_URL?.trim();
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is required");
+  }
+  return {
+    auth: buildAuthEnv(env),
+    databaseUrl,
+    port: parsePort(env.PORT),
+    clientIp: parseClientIpPolicy(env),
   };
 }

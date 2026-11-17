@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import * as Sentry from "@sentry/cloudflare";
+import * as Sentry from "@sentry/node";
 import { APIError } from "better-auth/api";
 import type { Client } from "pg";
 import type { ActorProvisionerPort } from "@futrob/identity";
@@ -115,7 +115,7 @@ describe("sign-in query defects", () => {
   /** Real Sentry client with the production event policy and an in-memory transport. */
   function memorySentry() {
     const envelopes: string[] = [];
-    const client = new Sentry.CloudflareClient({
+    const client = new Sentry.NodeClient({
       dsn: "https://public@sentry.invalid/1",
       integrations: [Sentry.linkedErrorsIntegration()],
       dataCollection: sentryV10DataCollection,

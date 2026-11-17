@@ -24,6 +24,17 @@ jobs:
             exit 1
           fi
 
+      - name: Auth /meta/health
+        run: |
+          http_code=$(curl -sS -o /tmp/auth-health.json -w "%{http_code}" --max-time 15 \
+            "${{ secrets.PROD_AUTH_HEALTH_URL || 'https://auth.futrob.app/meta/health' }}")
+          echo "HTTP $http_code"
+          cat /tmp/auth-health.json
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Auth health check failed with HTTP $http_code"
+            exit 1
+          fi
+
       - name: Web portal
         run: |
           http_code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 15 \

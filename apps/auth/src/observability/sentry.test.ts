@@ -1,46 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
+const init = vi.fn();
 const captureException = vi.fn();
 const getClient = vi.fn();
-const withSentry = vi.fn((configFn: (env: object) => unknown, handler: unknown) => {
-  lastOptions = configFn;
-  return handler;
-});
-let lastOptions: ((env: object) => unknown) | undefined;
 
-vi.mock("@sentry/cloudflare", () => ({
-  withSentry,
+vi.mock("@sentry/node", () => ({
+  init,
   captureException,
   getClient,
 }));
 
-const { captureWorkerError, withWorkerSentry } = await import("./sentry.ts");
+const { captureAuthError, initSentry } = await import("./sentry.ts");
 
-describe("auth Sentry worker wrapper", () => {
+describe("auth Sentry", () => {
   beforeEach(() => {
+    init.mockReset();
     captureException.mockReset();
     getClient.mockReset();
-    lastOptions = undefined;
   });
 
-  it("does not send options in development even with a DSN", () => {
-    const worker = { fetch: () => new Response("ok") };
-    expect(withWorkerSentry(worker)).toBe(worker);
-    expect(
-      lastOptions?.({
-        SENTRY_DSN: "https://public@o0.ingest.sentry.io/1",
-        NODE_ENV: "development",
-      }),
-    ).toEqual({ enabled: false });
+  it("does not initialize in development even with a DSN", () => {
+    initSentry({ SENTRY_DSN: "https://public@o0.ingest.sentry.io/1", NODE_ENV: "development" });
+    expect(init).not.toHaveBeenCalled();
   });
 
   it("enables in production with the auth service tag", () => {
-    withWorkerSentry({ fetch: () => new Response("ok") });
-    const options = lastOptions?.({
+    initSentry({
       SENTRY_DSN: "https://public@o0.ingest.sentry.io/1",
       NODE_ENV: "production",
       SENTRY_ENVIRONMENT: "production",
-    }) as {
+    });
+    const options = init.mock.calls[0]?.[0] as {
       initialScope: { tags: Record<string, string> };
       dataCollection: { userInfo: boolean; httpBodies: unknown[] };
       traceLifecycle: "static" | "stream";
@@ -76,16 +66,16 @@ describe("auth Sentry worker wrapper", () => {
 
   it("drops expected failures and captures defects", () => {
     getClient.mockReturnValue({});
-    captureWorkerError({ code: "INVALID_EMAIL_OR_PASSWORD" });
+    captureAuthError({ code: "INVALID_EMAIL_OR_PASSWORD" });
     expect(captureException).not.toHaveBeenCalled();
     const defect = new Error("auth.request.failed");
-    captureWorkerError(defect);
+    captureAuthError(defect);
     expect(captureException).toHaveBeenCalledWith(defect);
   });
 
   it("sends nothing when the SDK is off", () => {
     getClient.mockReturnValue(undefined);
-    captureWorkerError(new Error("boom"));
+    captureAuthError(new Error("boom"));
     expect(captureException).not.toHaveBeenCalled();
   });
 });

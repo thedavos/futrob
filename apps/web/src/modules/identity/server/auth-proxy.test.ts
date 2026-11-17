@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { AuthServiceUnavailableError } from "./auth-errors.ts";
 import {
+  authServiceFromBindings,
   buildAuthProxyHeaders,
   buildAuthProxyTarget,
   buildAuthSessionHeaders,
+  createHttpAuthService,
   fetchAuthSessionActorId,
   forwardAuthRequest,
   isAuthApiPath,
@@ -28,7 +30,7 @@ describe("auth proxy", () => {
     ).toBeUndefined();
   });
 
-  it("strips spoofable proxy headers and preserves Cloudflare's client IP", () => {
+  it("strips spoofable proxy headers and forwards Cloudflare's client IP to auth", () => {
     const incoming = new URL("https://futrob.app/api/auth/sign-in/email");
     const request = new Request(incoming, {
       method: "POST",
@@ -40,6 +42,8 @@ describe("auth proxy", () => {
         "cf-connecting-ip": "1.2.3.4",
         "x-forwarded-for": "6.6.6.6",
         "x-real-ip": "6.6.6.6",
+        "x-futrob-client-ip": "6.6.6.6",
+        "x-futrob-proxy-secret": "guess",
       },
     });
 
@@ -48,25 +52,29 @@ describe("auth proxy", () => {
     expect(headers.get("authorization")).toBe("Bearer tok");
     expect(headers.get("host")).toBeNull();
     expect(headers.get("connection")).toBeNull();
-    expect(headers.get("cf-connecting-ip")).toBe("1.2.3.4");
+    expect(headers.get("cf-connecting-ip")).toBeNull();
     expect(headers.get("x-forwarded-for")).toBeNull();
-    expect(headers.get("x-real-ip")).toBe("1.2.3.4");
+    expect(headers.get("x-real-ip")).toBeNull();
+    expect(headers.get("x-futrob-client-ip")).toBe("1.2.3.4");
+    expect(headers.get("x-futrob-proxy-secret")).toBeNull();
     expect(headers.get("x-forwarded-host")).toBe("futrob.app");
     expect(headers.get("x-forwarded-proto")).toBe("https");
   });
 
-  it("does not forward a client-supplied x-real-ip when Cloudflare omitted the client IP", () => {
+  it("does not forward a client-supplied IP when Cloudflare omitted the client IP", () => {
     const incoming = new URL("https://futrob.app/api/auth/sign-in/email");
     const headers = buildAuthProxyHeaders(
       new Request(incoming, {
         headers: {
           "x-real-ip": "6.6.6.6",
           "x-forwarded-for": "6.6.6.6",
+          "x-futrob-client-ip": "6.6.6.6",
         },
       }),
       incoming,
     );
 
+    expect(headers.get("x-futrob-client-ip")).toBeNull();
     expect(headers.get("cf-connecting-ip")).toBeNull();
     expect(headers.get("x-real-ip")).toBeNull();
     expect(headers.get("x-forwarded-for")).toBeNull();
@@ -123,7 +131,7 @@ describe("auth proxy", () => {
     expect(response.headers.get("cf-ray")).toBeNull();
   });
 
-  it("forwards path, query, and a buffered body through the service binding", async () => {
+  it("forwards path, query, and a buffered body through the auth service", async () => {
     const fetchMock = vi.fn<AuthServiceBinding["fetch"]>(
       async () => new Response("ok", { status: 200 }),
     );
@@ -147,8 +155,46 @@ describe("auth proxy", () => {
     expect(proxiedRequest?.method).toBe("POST");
     expect(proxiedRequest?.redirect).toBe("manual");
     expect(proxiedRequest?.body).toBeDefined();
-    expect(proxiedRequest?.headers.get("cf-connecting-ip")).toBe("1.2.3.4");
-    expect(proxiedRequest?.headers.get("x-real-ip")).toBe("1.2.3.4");
+    expect(proxiedRequest?.headers.get("x-futrob-client-ip")).toBe("1.2.3.4");
+  });
+
+  it("sends auth requests to FUTROB_AUTH_BASE_URL with the proxy secret", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response("ok"));
+    const authService = createHttpAuthService({
+      baseUrl: "https://auth.futrob.test",
+      proxySecret: "proxy-secret",
+      fetcher,
+    });
+
+    await proxyAuthRequest(
+      new Request("https://futrob.app/api/auth/sign-in/email?next=1", {
+        method: "POST",
+        headers: { "content-type": "application/json", "cf-connecting-ip": "1.2.3.4" },
+        body: JSON.stringify({ email: "a@b.co" }),
+      }),
+      authService,
+    );
+
+    const sent = fetcher.mock.calls[0]?.[0] as Request;
+    expect(sent.url).toBe("https://auth.futrob.test/api/auth/sign-in/email?next=1");
+    expect(sent.method).toBe("POST");
+    expect(sent.redirect).toBe("manual");
+    expect(sent.headers.get("x-futrob-proxy-secret")).toBe("proxy-secret");
+    expect(sent.headers.get("x-futrob-client-ip")).toBe("1.2.3.4");
+    expect(await sent.json()).toEqual({ email: "a@b.co" });
+  });
+
+  it("has no auth service until both the base URL and the proxy secret are set", () => {
+    expect(authServiceFromBindings({})).toBeUndefined();
+    expect(authServiceFromBindings({ FUTROB_AUTH_BASE_URL: "https://auth.futrob.test" })).toBe(
+      undefined,
+    );
+    expect(
+      authServiceFromBindings({
+        FUTROB_AUTH_BASE_URL: "https://auth.futrob.test",
+        AUTH_PROXY_SECRET: "proxy-secret",
+      }),
+    ).toBeDefined();
   });
 
   it("returns 404 when the inbound path is outside /api/auth", async () => {
@@ -206,7 +252,7 @@ describe("auth proxy", () => {
 });
 
 describe("fetchAuthSessionActorId", () => {
-  it("returns the actor id from AUTH_SERVICE get-session", async () => {
+  it("returns the actor id from the auth service get-session", async () => {
     const fetchMock = vi.fn<AuthServiceBinding["fetch"]>(
       async () =>
         new Response(

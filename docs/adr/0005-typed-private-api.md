@@ -20,7 +20,7 @@ significados distintos, aunque ambos viajen como Bearer.
 Web (cookie de sesión) → web BFF /api/v1 ─┐
 Expo SDK (Bearer de sesión) → web BFF ────┤
                                         └→ SDK → API Node /api/v1 → casos de uso
-BFF → AUTH_SERVICE (`get-session` devuelve el ActorId) para validar sesión
+BFF → apps/auth por HTTP (`get-session` devuelve el ActorId) para validar sesión
 BFF → API con INTERNAL_JOB_SECRET + X-Futrob-Actor-Id
 ```
 
