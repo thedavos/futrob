@@ -14,6 +14,11 @@ export default defineConfig({
     extensions: [".web.tsx", ".web.ts", ".web.js", ".tsx", ".ts", ".mjs", ".js", ".json"],
   },
   test: {
+    // Vitest v4 compatibility: preserve mock call history.
+    // Remove after tests no longer rely on calls from setup or earlier tests.
+    // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+    // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
+    clearMocks: false,
     name: "mobile",
     // Screen tests render React Native primitives through react-native-web into jsdom.
     environment: "jsdom",

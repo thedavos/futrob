@@ -363,12 +363,37 @@ export default defineConfig({
     ],
   },
   test: {
+    // Vitest v4 compatibility: preserve mock call history.
+    // Remove after tests no longer rely on calls from setup or earlier tests.
+    // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+    // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
+    clearMocks: false,
+    // Vitest v4 compatibility: keep separate Vite servers for inline projects.
+    // Remove when plugins and config hooks can run once for shared projects.
+    // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+    // https://vitest.dev/guide/migration/#inline-projects-share-the-vite-server-by-default
+    sharedViteServer: false,
     // Per-workspace Vite configs own aliases (e.g. apps/web `@/` → src).
     projects: [
       "apps/web",
       "apps/api",
       {
-        test: { name: "cli", root: "apps/cli", environment: "node", include: ["src/**/*.test.ts"] },
+        // Vitest v4 compatibility: keep this inline project independent of the root config.
+        // Remove to inherit root options, including plugins and setup files.
+        // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+        // https://vitest.dev/guide/migration/#inline-projects-inherit-the-root-config-by-default
+        extends: false,
+        test: {
+          // Vitest v4 compatibility: preserve mock call history.
+          // Remove after tests no longer rely on calls from setup or earlier tests.
+          // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+          // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
+          clearMocks: false,
+          name: "cli",
+          root: "apps/cli",
+          environment: "node",
+          include: ["src/**/*.test.ts"],
+        },
       },
       "apps/auth",
       "packages/api-contracts",

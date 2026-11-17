@@ -61,7 +61,7 @@ orientativos y deben confirmarse al contratar; no se hicieron pruebas de entrega
    [migración 0067](/apps/api/migrations/0067_email_outbox_pinned_message.sql)) y cada
    reintento la reenvía tal cual: si cambian el idioma, el nombre o la dirección, Resend sigue
    viendo el mismo cuerpo bajo la misma clave y devuelve el id del primer envío. Un `409
-concurrent_idempotent_requests` se reintenta; un `409 invalid_idempotent_request` cierra
+   concurrent_idempotent_requests` se reintenta; un `409 invalid_idempotent_request` cierra
    la entrega como `failed`.
 5. **Plan.** El despacho omite (`plan_without_email`) las organizaciones cuyo plan no incluye
    `email` en `notificationChannels`.

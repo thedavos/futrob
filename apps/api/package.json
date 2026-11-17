@@ -49,6 +49,6 @@
     "ajv-formats": "^3.0.1",
     "tsx": "^4.23.15",
     "typescript": "6.0.2",
-    "vite-plus": "0.3.3"
+    "vite-plus": "1.6.0"
   }
 }

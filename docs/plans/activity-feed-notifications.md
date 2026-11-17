@@ -109,7 +109,7 @@ La ampliación está integrada mediante la migración `0059`, sin cambiar la for
 - Índice del feed: `(audience, audience_id, last_event_at DESC, id DESC)`. Sirve la paginación por
   cursor.
 - Índice de Pendientes: parcial `(audience, audience_id, opened_at DESC) WHERE status = 'open' AND
-requires_action`.
+  requires_action`.
 
 Estados legales: abierta y accionable, abierta en vigilancia, cerrada, nacida cerrada. Una fila
 abierta con `expires_at` vencido queda fuera de Pendientes en la lectura, sin job.

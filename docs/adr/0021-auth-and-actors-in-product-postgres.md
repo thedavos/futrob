@@ -45,7 +45,7 @@ decisión la tomó el responsable del proyecto el 2026-09-29.
    el binding apunta a `DATABASE_URL` mediante
    `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` en `.env` de cada Worker.
 5. `get-session` de `apps/auth` (plugin `customSession`) devuelve `{ user, session,
-actorId }`. Web toma el actor de esa respuesta y no consulta tablas de identidad ni
+   actorId }`. Web toma el actor de esa respuesta y no consulta tablas de identidad ni
    conserva schema de auth. `actorId: null` se trata como no autenticado.
 6. Tablas Better Auth con prefijo `auth_` y columnas snake_case, para evitar la palabra
    reservada `user` y seguir las convenciones del schema de producto.

@@ -108,7 +108,7 @@ En UI: `GameDataClientError.is(cause)` para mapear a copy segura.
 ```ts
 // Incorrecto: fetch ad-hoc en presentation
 useEffect(() => {
-  void (fetch("/api/v1/organizations/mine", { credentials: "include" }).then(/* setState */));
+  void fetch("/api/v1/organizations/mine", { credentials: "include" }).then(/* setState */);
 }, []);
 ```
 
