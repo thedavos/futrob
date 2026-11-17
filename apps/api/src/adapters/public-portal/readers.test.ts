@@ -8,7 +8,7 @@ import {
   asTeamId,
   type TeamId,
 } from "@futrob/shared-kernel";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { buildResult } from "@/adapters/results/official-selection.fixtures.ts";
 import { SchedulingPublicBracketReader, SchedulingPublicCalendarReader } from "./readers.ts";
 

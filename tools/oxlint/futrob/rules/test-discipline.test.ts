@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { RuleTester } from "oxlint/plugins-dev";
+import { RuleTester } from "vite-plus/lint/plugins-dev";
 import { afterAll, describe, expect, it } from "vite-plus/test";
 
 import { requireSkipTrackingIssueRule } from "./require-skip-tracking-issue.ts";

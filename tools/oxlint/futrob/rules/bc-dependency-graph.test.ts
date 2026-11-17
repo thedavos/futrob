@@ -1,4 +1,4 @@
-import { RuleTester } from "oxlint/plugins-dev";
+import { RuleTester } from "vite-plus/lint/plugins-dev";
 import { describe, it } from "vite-plus/test";
 
 import { bcDependencyGraphRule } from "./bc-dependency-graph.ts";
