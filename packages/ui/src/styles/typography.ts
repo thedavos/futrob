@@ -14,6 +14,15 @@ export const typography = stylex.create({
     letterSpacing: "var(--typo-display-tracking)",
     textWrap: "balance",
   },
+  /** Marketing headline in the condensed display face. Needs an inline-size container ancestor. */
+  headline: {
+    fontFamily: "var(--font-display)",
+    fontSize: "var(--typo-headline-size)",
+    fontWeight: "var(--typo-headline-weight)",
+    lineHeight: "var(--typo-headline-leading)",
+    letterSpacing: "var(--typo-headline-tracking)",
+    textTransform: "uppercase",
+  },
   heading: {
     fontSize: "var(--typo-heading-size)",
     fontWeight: "var(--typo-heading-weight)",

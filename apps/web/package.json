@@ -18,6 +18,7 @@
     "generate:routes": "node scripts/generate-route-tree.mjs"
   },
   "dependencies": {
+    "@fontsource/barlow-condensed": "^5.3.0",
     "@futrob/analytics": "0.1.0",
     "@futrob/api-contracts": "0.1.0",
     "@futrob/billing": "0.1.0",

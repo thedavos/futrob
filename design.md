@@ -1,6 +1,6 @@
 # Futrob — Design
 
-**Estado:** contrato único de diseño. **Actualizado:** 2026-09-08.
+**Estado:** contrato único de diseño. **Actualizado:** 2026-11-16.
 **Alcance:** marketing, producto web, portal público y aplicación nativa.
 
 Este documento reúne identidad, arquitectura de información, composición, componentes,
@@ -130,18 +130,25 @@ Iconos, splash, manifest y metadata deben usar la misma identidad.
 
 ### Tipografía
 
-Familia única autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 600 y 700.
+Familia de interfaz autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 600 y 700.
+**Barlow Condensed** 700 (`--font-display`, también autohospedada) existe solo para el titular
+de marketing `typography.headline`; ningún texto de producto, tabla, formulario ni dato la usa.
 
-| Rol      | StyleX                | Uso principal                                                  |
-| -------- | --------------------- | -------------------------------------------------------------- |
-| Display  | `typography.display`  | Headlines de marketing                                         |
-| Heading  | `typography.heading`  | Títulos de panel (20 px / 700); el `h1` de página sube a 24 px |
-| Title    | `typography.title`    | Títulos de card, sub-panel y estados vacíos (18 px / 600)      |
-| Subtitle | `typography.subtitle` | Frase de apoyo bajo un heading                                 |
-| Body     | `typography.body`     | Párrafos y contenido de lectura                                |
-| Label    | `typography.label`    | Labels de formulario, navegación, columnas y estados compactos |
-| Caption  | `typography.caption`  | Hints, metadata, timestamps y texto secundario sentence-case   |
-| Score    | `typography.score`    | Marcadores y valores deportivos con cifras tabular             |
+| Rol      | StyleX                | Uso principal                                                   |
+| -------- | --------------------- | --------------------------------------------------------------- |
+| Headline | `typography.headline` | Titular del hero de marketing, en Barlow Condensed y mayúsculas |
+| Display  | `typography.display`  | Headlines de marketing                                          |
+| Heading  | `typography.heading`  | Títulos de panel (20 px / 700); el `h1` de página sube a 24 px  |
+| Title    | `typography.title`    | Títulos de card, sub-panel y estados vacíos (18 px / 600)       |
+| Subtitle | `typography.subtitle` | Frase de apoyo bajo un heading                                  |
+| Body     | `typography.body`     | Párrafos y contenido de lectura                                 |
+| Label    | `typography.label`    | Labels de formulario, navegación, columnas y estados compactos  |
+| Caption  | `typography.caption`  | Hints, metadata, timestamps y texto secundario sentence-case    |
+| Score    | `typography.score`    | Marcadores y valores deportivos con cifras tabular              |
+
+`typography.headline` es solo web y no forma parte de `TYPO_ROLES` (la app nativa no lo carga).
+Su tamaño es `clamp(3rem, 18.5cqi, 7rem)`: se mide contra la columna, así que su contenedor declara
+`container-type: inline-size`. Interlineado 0.9, con las líneas partidas en el copy.
 
 Interlineado: `display` 1.1 y `score` 1.0 (tamaños grandes); `heading` 1.25
 (`--leading-heading`), porque los títulos de producto de 20 px envuelven a dos líneas;
@@ -301,7 +308,11 @@ Variantes cerradas: `default`, `secondary`, `outline`, `ghost`, `destructive`, `
 
 - Animar solo `opacity`, `translate`, `scale` y, cuando es imprescindible, tamaño del indicador.
 - Excepción para controles interactivos: sus cambios de estado pueden animar `background-color`, `border-color`, `color` y `box-shadow` (solo el halo de foco), con `--duration-normal` y `--ease-emphasized`; con `prefers-reduced-motion` la duración pasa a `0ms`.
-- Respetar `prefers-reduced-motion`; los tokens de duración pasan a `0ms`.
+- Excepción para el bracket del hero de la landing: el trazo de sus rutas anima `stroke-dashoffset`
+  y el cambio a estado oficial anima `color` (titular a lima, trofeo a oro). No extenderla a producto.
+- Respetar `prefers-reduced-motion`; los tokens de duración pasan a `0ms`. Una secuencia de entrada
+  expresa duraciones y retardos como múltiplos de esos tokens, de modo que con movimiento reducido
+  se pinta directamente el estado final.
 - Focus visible en todos los controles.
 - Objetivos táctiles de al menos 44 px.
 - Estados live/sync no roban foco ni reordenan silenciosamente.
@@ -645,10 +656,20 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 #### Hero
 
 - Marca Futrob como señal dominante.
-- Una promesa: operación completa de ligas/copas Clubs con datos EA.
-- Una frase de apoyo sobre selección auditable de partidos oficiales.
-- CTA primaria: crear competición; secundaria: ver competición pública.
-- Visual dominante del producto (Match Center / candidatos), no collage de cards.
+- Una promesa en `typography.headline`, tres líneas: «Ligas y copas / de clubs, / oficiales.».
+- Una frase de apoyo: del partido de EA al resultado oficial, con la aprobación de la organización.
+- CTA primaria: «Crear competición» (`/signup`); secundaria: «Ver competición pública» (`#portal`).
+- Visual dominante: `CupBracket`, el cuadro radial de una copa de 16 clubs ficticios con el trofeo en
+  el centro, y debajo la card de la final con el sello «Oficial». Los escudos son `ClubCrestAvatar`
+  con iniciales; nunca escudos reales.
+- Color: lima solo para el estado oficial (ruta del campeón, «Oficiales.», «Oficial» y sello) y la CTA
+  primaria; oro (`emphasis`) solo para el trofeo. El resto del cuadro queda en grafito.
+- Entrada, 1.5 s como máximo y en pasos de `--duration-fast`: líneas del titular, cuadro de fuera
+  hacia el centro, ruta lima del campeón al trofeo, trofeo a oro y «Oficiales.» a lima, card final.
+- Cada club es un botón con tooltip («Atlético Norte · Finalista · perdió 1–2») que resalta su ruta al
+  pasar el puntero, enfocar o tocar. El anillo es una sola parada de tabulación; las flechas recorren
+  los clubes. Esa lista de botones es la alternativa accesible del cuadro.
+- Por debajo de `sm` el cuadro se simplifica: solo cuartos, semifinales y final (8 escudos).
 
 #### Secciones siguientes (una job por sección)
 
@@ -668,6 +689,7 @@ no redefinir contenedor, padding, columnas ni jerarquía de copy en cada secció
 - Tonos alternos `base` (`background`) y `band` (`sidebar`). El cambio de tono es el separador: sin bordes.
 - Copy centrado respecto al visual; `align="start"` lo fija con sticky cuando el visual es más alto.
 - `Display` más `Body` `lg` en muted con medida de 44ch; los CTA van en `LandingActions`.
+- `header` sustituye ese par de título y subtítulo; solo lo usa el hero, para su titular.
 
 #### Precios
 
@@ -1069,7 +1091,7 @@ La marca y el lenguaje visual son los mismos que en web; cambia la plataforma de
   `fontFamily` y nunca se combina con `fontWeight`, porque Android buscaría una variante
   bold inexistente y caería a la fuente del sistema.
 - Mismos roles `typography.*`; tamaños convertidos rem→dp; `letterSpacing` derivado de
-  `em × tamaño` del rol.
+  `em × tamaño` del rol. `typography.headline` (Barlow Condensed) es solo de la landing web.
 - `typography.label` usa tracking ligero (`0.04em`). Mayúsculas son opt-in (p. ej. kicker de landing), no el default;
   cuando se usan, aplicar `--tracking-caps` (`0.06em`).
 - `typography.score` aplica `fontVariant: ["tabular-nums"]` también en nativo; las pantallas no lo repiten.

@@ -14,9 +14,14 @@ export const TYPO_ROLES = [
 
 export type TypoRole = (typeof TYPO_ROLES)[number];
 
-/** Typography — Manrope; canonical weights 400 / 500 / 600 / 700. */
+/**
+ * Typography — Manrope; canonical weights 400 / 500 / 600 / 700.
+ * Barlow Condensed is the marketing headline face only (`typo-headline-*`, web).
+ */
 export const TYPOGRAPHY_TOKENS: TokenMap = {
   "font-ui": raw('"Manrope Variable", "Manrope", system-ui, sans-serif'),
+  /** Condensed display face. Marketing headlines only; product UI stays on `font-ui`. */
+  "font-display": raw('"Barlow Condensed", "Arial Narrow", "Manrope Variable", sans-serif'),
   "font-weight-regular": raw("400"),
   "font-weight-medium": raw("500"),
   "font-weight-semibold": raw("600"),
@@ -49,6 +54,12 @@ export const TYPOGRAPHY_TOKENS: TokenMap = {
   "typo-display-weight": ref("font-weight-bold"),
   "typo-display-leading": ref("leading-tight"),
   "typo-display-tracking": ref("tracking-tight"),
+  // Marketing headline (web only, not in TYPO_ROLES): uppercase lines in `font-display`.
+  // The size follows the copy column, so the host needs a `container-type: inline-size` ancestor.
+  "typo-headline-size": raw("clamp(3rem, 18.5cqi, 7rem)"),
+  "typo-headline-weight": ref("font-weight-bold"),
+  "typo-headline-leading": raw("0.9"),
+  "typo-headline-tracking": ref("tracking-normal"),
   "typo-heading-size": ref("text-xl"),
   "typo-heading-weight": ref("font-weight-bold"),
   "typo-heading-leading": ref("leading-heading"),
