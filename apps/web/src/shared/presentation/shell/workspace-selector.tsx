@@ -46,8 +46,10 @@ import { workspaceRoleMessageKey } from "./workspace-role-icons.ts";
 
 const styles = stylex.create({
   trigger: {
-    width: "100%",
-    justifyContent: "space-between",
+    width: "fit-content",
+    maxWidth: "100%",
+    alignSelf: "flex-start",
+    justifyContent: "flex-start",
     fontWeight: 500,
   },
   triggerLabel: {
@@ -71,6 +73,7 @@ const styles = stylex.create({
   },
   menu: {
     minWidth: "14rem",
+    scrollbarWidth: "thin",
   },
   dialogBody: {
     marginTop: "1.25rem",

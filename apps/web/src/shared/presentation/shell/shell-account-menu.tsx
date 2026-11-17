@@ -46,7 +46,9 @@ const styles = stylex.create({
   },
   triggerFooter: {
     minWidth: 0,
-    width: "100%",
+    width: "fit-content",
+    maxWidth: "100%",
+    alignSelf: "flex-start",
     justifyContent: "flex-start",
   },
   row: {
@@ -102,7 +104,7 @@ export function AccountMenu({
 }: {
   readonly compact?: boolean;
   readonly surface: ShellAccountMenuSurface;
-  /** `footer` fills the row and opens upward, since the menu has no room below it. */
+  /** `footer` opens upward, since the menu has no room below it. */
   readonly placement?: "header" | "footer";
 }) {
   const session = authClient.useSession();
