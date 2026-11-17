@@ -11,6 +11,16 @@
     format("woff2-variations");
 }
 
+/* Marketing headlines only (`--font-display`). The file downloads where the family is used. */
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff2")
+    format("woff2");
+}
+
 /*
  * Keep document defaults in `reset` so they lose to StyleX `@layer priority*`.
  * Unlayered rules would beat every StyleX declaration (`useCSSLayers: true`).

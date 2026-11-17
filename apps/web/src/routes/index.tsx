@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { createFileRoute } from "@tanstack/react-router";
+import headlineFontUrl from "@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff2?url";
 
 import { DEFAULT_LOCALE } from "@/shared/presentation/i18n/locale.ts";
 import { getUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
@@ -36,6 +37,16 @@ export const Route = createFileRoute("/")({
       meta: [
         { title: t("landing.meta.title") },
         { name: "description", content: t("landing.meta.description") },
+      ],
+      // The hero headline is the first thing painted; without the preload it swaps faces mid-reveal.
+      links: [
+        {
+          rel: "preload",
+          as: "font",
+          type: "font/woff2",
+          href: headlineFontUrl,
+          crossOrigin: "anonymous",
+        },
       ],
     };
   },

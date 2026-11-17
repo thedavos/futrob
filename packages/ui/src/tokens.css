@@ -25,6 +25,7 @@
   --brand-700: oklch(0.9306628389 0.2176079018 124.1228204854);
   --neutral-950: oklch(0.1808615922 0.0052102948 248.1161683559);
   --font-ui: "Manrope Variable", "Manrope", system-ui, sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Manrope Variable", sans-serif;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -53,6 +54,10 @@
   --typo-display-weight: var(--font-weight-bold);
   --typo-display-leading: var(--leading-tight);
   --typo-display-tracking: var(--tracking-tight);
+  --typo-headline-size: clamp(3rem, 18.5cqi, 7rem);
+  --typo-headline-weight: var(--font-weight-bold);
+  --typo-headline-leading: 0.9;
+  --typo-headline-tracking: var(--tracking-normal);
   --typo-heading-size: var(--text-xl);
   --typo-heading-weight: var(--font-weight-bold);
   --typo-heading-leading: var(--leading-heading);

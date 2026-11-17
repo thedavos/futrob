@@ -10,7 +10,17 @@ export type LandingSectionTone = "base" | "band";
 export type LandingSectionAlign = "center" | "start";
 export type LandingSectionLayout = "split" | "stacked";
 
-export interface LandingSectionProps {
+/** A section states its copy as a title and subtitle, or brings its own header. */
+type LandingSectionCopy =
+  | { readonly header?: undefined; readonly subtitle: string; readonly title: string }
+  | {
+      /** Replaces the default `Display` and `Body` pair. The hero uses it for its headline. */
+      readonly header: ReactNode;
+      readonly subtitle?: undefined;
+      readonly title?: undefined;
+    };
+
+interface LandingSectionBaseProps {
   /** `h1` is the page hero: it fills the remaining first viewport and uses tighter padding. */
   readonly as?: "h1" | "h2";
   /** `start` keeps the copy in view while a taller visual column scrolls. */
@@ -22,11 +32,11 @@ export interface LandingSectionProps {
   readonly id?: string;
   /** `stacked` gives the visual the full container width below the copy, for card grids. */
   readonly layout?: LandingSectionLayout;
-  readonly subtitle: string;
-  readonly title: string;
   /** Sections alternate `base` and `band`; the tone change is the only separator. */
   readonly tone?: LandingSectionTone;
 }
+
+export type LandingSectionProps = LandingSectionBaseProps & LandingSectionCopy;
 
 const styles = stylex.create({
   band: {
@@ -120,6 +130,7 @@ export function LandingSection({
   align = "center",
   children,
   copy,
+  header,
   id,
   layout = "split",
   subtitle,
@@ -148,12 +159,16 @@ export function LandingSection({
             isSplit && align === "start" && styles.copySticky,
           )}
         >
-          <Display as={as} {...applyStyles(styles.title)}>
-            {title}
-          </Display>
-          <Body size="lg" tone="muted" {...applyStyles(styles.subtitle)}>
-            {subtitle}
-          </Body>
+          {header ?? (
+            <>
+              <Display as={as} {...applyStyles(styles.title)}>
+                {title}
+              </Display>
+              <Body size="lg" tone="muted" {...applyStyles(styles.subtitle)}>
+                {subtitle}
+              </Body>
+            </>
+          )}
           {copy}
         </div>
         {hasVisual ? <div {...applyStyles(styles.visual)}>{children}</div> : null}

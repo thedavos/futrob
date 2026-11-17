@@ -59,7 +59,7 @@ export function ClubCrestAvatar({
   readonly imageUrl: string | null;
   readonly className?: HostClassName;
   readonly style?: CSSProperties;
-  readonly fallbackClassName?: string;
+  readonly fallbackClassName?: HostClassName;
   readonly framed?: boolean;
 }) {
   const [failed, setFailed] = useState(false);

@@ -60,10 +60,10 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | --- | --- |
 | Brand home | link `Futrob` on landing only (auth tunnel logo is not a link) |
 | Landing login | button `Iniciar sesión` (header `Acceso` only — the final CTA no longer has login) |
-| Landing signup | button `Crear cuenta` (header, hero, and the below-fold final CTA) |
+| Landing signup | button `Crear cuenta` (header and the below-fold final CTA); the hero's is `Crear competición` |
 | Landing pricing | header `Precios` and final-CTA `Ver precios` → `/pricing` |
-| Hero primary CTA | `Crear cuenta` → `/signup` |
-| Hero secondary CTA | button `Ver cómo funciona` → `#mecanismo` |
+| Hero primary CTA | `Crear competición` → `/signup` |
+| Hero secondary CTA | button `Ver competición pública` → `#portal` |
 | Landing nav landmark | `Acceso` |
 | Login heading | `Inicia sesión` |
 | Login email | textbox `Correo electrónico` (placeholder `ejemplo@correo.com`) |
