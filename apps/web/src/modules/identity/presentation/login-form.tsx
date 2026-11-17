@@ -89,11 +89,8 @@ const styles = stylex.create({
     opacity: 1,
     filter: "blur(0)",
   },
-  passwordLabel: {
-    display: "flex",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-    gap: "1rem",
+  recoveryLink: {
+    alignSelf: "flex-end",
     fontSize: "0.875rem",
     lineHeight: "1.25rem",
   },
@@ -160,6 +157,7 @@ export function LoginForm() {
   );
   const submit = applyStyles(styles.submit);
   const link = applyStyles(styles.link);
+  const recoveryLink = applyStyles(styles.link, styles.recoveryLink);
 
   async function handleSubmit(formValues: LoginValues) {
     const values: LoginValues = {
@@ -229,12 +227,7 @@ export function LoginForm() {
           name="password"
           validate={(value) => validateLoginField("password", readFormString(value))}
         >
-          <div {...applyStyles(styles.passwordLabel)}>
-            <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-            <Link className={link.className} style={link.style} to="/forgot-password">
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
+          <FieldLabel htmlFor="password">Contraseña</FieldLabel>
           <InputWithIcon
             autoComplete="current-password"
             disabled={isSubmitting}
@@ -264,6 +257,9 @@ export function LoginForm() {
             type={isPasswordVisible ? "text" : "password"}
           />
           <FieldError />
+          <Link className={recoveryLink.className} style={recoveryLink.style} to="/forgot-password">
+            ¿Olvidaste tu contraseña?
+          </Link>
         </Field>
       </div>
 

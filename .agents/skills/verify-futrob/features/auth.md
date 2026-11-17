@@ -21,7 +21,7 @@ Auth lets a visitor create a credentials account, verify its email, sign in or r
 - Open `/signup` or choose `Crear cuenta` on the landing header or hero.
 - Open `/player` (or another `_app` route) with no session; the gate redirects to `/login`.
 - After signup, the product sends the actor to onboarding.
-- On `/login`, choose `¿Olvidaste tu contraseña?` next to the `Contraseña` label; the reset email link lands on `/reset-password`.
+- On `/login`, choose `¿Olvidaste tu contraseña?` below the password field, aligned to its right edge; the reset email link lands on `/reset-password`.
 
 ## Driving it with verify-futrob
 
