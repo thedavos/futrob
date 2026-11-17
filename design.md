@@ -709,12 +709,19 @@ Desktop admite colapso a **icon rail** (focus mode); el control de colapso vive 
 que la sidebar de escritorio. El selector de contexto encabeza el Sheet junto a cerrar; su título
 solo existe para lectores de pantalla. Seguir un enlace de navegación cierra el Sheet.
 
+Las listas de navegación del sidebar separan sus ítems con un gap de 8 px.
+
 La app nativa usa Expo Router con tabs para los destinos frecuentes y Stack/overlays nativos para detalle y operaciones. **Más** agrupa destinos secundarios. El selector de contexto permanece siempre accesible desde el header; cambiar de tab no cambia por sí solo el espacio, club, organización o competición activos.
 
 El command bar muestra la identidad del jugador (identificador de juego y club seleccionado) y acciones contextuales (solo controles operativos; una función pendiente se omite o se explica deshabilitada). La action bar inferior solo aparece cuando una página registra acciones. La web móvil no
 muestra por ahora las acciones contextuales del command bar; su ubicación está pendiente.
 
 #### Selector de contexto (único)
+
+El caret se coloca inmediatamente a la derecha del texto seleccionado, con el gap del control.
+El trigger ajusta su ancho al icono, texto y caret; el hover y el foco no cubren el espacio
+libre de la fila. Los nombres largos se truncan dentro del ancho disponible.
+El menú usa una barra de desplazamiento nativa angosta (`scrollbar-width: thin`).
 
 Un control en el header de la sidebar, en ambos diseños, agrupa:
 
@@ -871,6 +878,9 @@ Web responsive: Sheet con la misma sidebar. App nativa: tabs + Más/Stack con la
 #### Menú de cuenta
 
 En el footer de la sidebar (diseño Navegación) o en su cabecera (diseño Con pendientes): Perfil · Enviar feedback · Configuración · Cerrar sesión.
+
+El trigger de cuenta ajusta su ancho al avatar, nombre y caret; el hover y el foco cubren ese
+control, sin extenderse al espacio libre de la fila.
 
 - **Perfil** abre `/player/profile`. Permite consultar y guardar el nombre visible con
   Better Auth, ver la identidad de acceso y el avatar existente o iniciales derivadas.

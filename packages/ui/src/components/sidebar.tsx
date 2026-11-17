@@ -103,7 +103,7 @@ const styles = stylex.create({
   menu: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.125rem",
+    gap: "0.5rem",
   },
   menuItem: {
     minWidth: 0,
