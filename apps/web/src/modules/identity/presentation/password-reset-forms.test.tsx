@@ -77,7 +77,7 @@ describe("ResetPasswordForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Guardar contraseña" }));
   }
 
-  it("offers another link when the auth worker already rejected the link", async () => {
+  it("offers another link when the auth server already rejected the link", async () => {
     render(<AuthRouterDecorator initialPath="/reset-password?error=INVALID_TOKEN" />);
 
     expect(await screen.findByText("Este enlace ya no sirve")).toBeTruthy();

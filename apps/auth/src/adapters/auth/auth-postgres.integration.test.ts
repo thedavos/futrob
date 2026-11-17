@@ -8,6 +8,7 @@ import { SystemClock } from "../../clock.ts";
 import { CryptoIdGenerator } from "../../id-generator.ts";
 import { buildAuthEnv } from "../../auth-env.ts";
 import { isAuthSchemaReady } from "../../auth-readiness.ts";
+import { CLIENT_IP_HEADER } from "../../client-ip.ts";
 import { ensureActorForSubject, credentialSubject } from "./actor-provisioner.ts";
 import { upsertActorContactProfile } from "./actor-contact-profile.ts";
 import { createEmailVerificationToken } from "better-auth/api";
@@ -283,7 +284,7 @@ suite("auth on product Postgres (migration 0043)", () => {
         auth.handler(
           new Request(`http://localhost:3000/api/auth${path}`, {
             method: "POST",
-            headers: { ...json, "cf-connecting-ip": `203.0.113.${(ip += 1)}`, ...headers },
+            headers: { ...json, [CLIENT_IP_HEADER]: `203.0.113.${(ip += 1)}`, ...headers },
             body: JSON.stringify(body),
           }),
         );
@@ -393,7 +394,7 @@ suite("auth on product Postgres (migration 0043)", () => {
             headers: {
               "content-type": "application/json",
               origin: "http://localhost:3000",
-              "cf-connecting-ip": ip,
+              [CLIENT_IP_HEADER]: ip,
             },
             body: JSON.stringify(body),
           }),
@@ -455,7 +456,7 @@ suite("auth on product Postgres (migration 0043)", () => {
             headers: {
               "content-type": "application/json",
               origin: "http://localhost:3000",
-              "cf-connecting-ip": ip,
+              [CLIENT_IP_HEADER]: ip,
             },
             body: JSON.stringify(body),
           }),
@@ -522,7 +523,7 @@ suite("auth on product Postgres (migration 0043)", () => {
             headers: {
               "content-type": "application/json",
               origin: "http://localhost:3000",
-              "cf-connecting-ip": "192.0.2.10",
+              [CLIENT_IP_HEADER]: "192.0.2.10",
               ...headers,
             },
             body: JSON.stringify(body),
@@ -638,7 +639,7 @@ suite("auth on product Postgres (migration 0043)", () => {
             headers: {
               "content-type": "application/json",
               origin: "http://localhost:3000",
-              "cf-connecting-ip": "192.0.2.30",
+              [CLIENT_IP_HEADER]: "192.0.2.30",
               ...headers,
             },
             body: JSON.stringify(body),
@@ -710,7 +711,7 @@ suite("auth on product Postgres (migration 0043)", () => {
       const signUp = await request(
         "/sign-up/email",
         { email, password: "password-1", name: "C" },
-        { "cf-connecting-ip": "198.51.100.20" },
+        { [CLIENT_IP_HEADER]: "198.51.100.20" },
       );
       const cookie = signUp.headers
         .getSetCookie()
@@ -724,7 +725,7 @@ suite("auth on product Postgres (migration 0043)", () => {
             await request(
               "/send-verification-email",
               { email },
-              { cookie, "cf-connecting-ip": "198.51.100.21" },
+              { cookie, [CLIENT_IP_HEADER]: "198.51.100.21" },
             )
           ).status,
         );

@@ -4,7 +4,8 @@
 - Fecha: 2026-08-22
 - Actualizada: 2026-09-29
 - Reemplaza: [ADR-0003](/docs/adr/0003-better-auth-and-d1-ownership.md)
-- Reemplazada parcialmente por: [ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)
+- Reemplazada parcialmente por: [ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md),
+  [ADR-0032](/docs/adr/0032-auth-node-runtime.md)
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Vigencia tras ADR-0021
@@ -16,6 +17,15 @@ la historia de migraciones es `apps/api/migrations`, no hay schema Drizzle dupli
 rate limit de Better Auth persiste en Postgres). Siguen vigentes: `apps/auth` como
 autoridad de credenciales y sesiones, Actor/IdentitySubject, el proxy por `AUTH_SERVICE`,
 Bearer para Expo y `CF-Connecting-IP`. El resto del documento conserva la redacción original.
+
+## Vigencia tras ADR-0032
+
+[ADR-0032](/docs/adr/0032-auth-node-runtime.md) reemplaza el **runtime y el transporte**:
+`apps/auth` es un servidor Hono sobre Node; web lo alcanza por HTTP en
+`FUTROB_AUTH_BASE_URL` con `AUTH_PROXY_SECRET` en lugar de `AUTH_SERVICE`, y auth lee la IP
+de `x-futrob-client-ip`, no de `CF-Connecting-IP`. Siguen vigentes la autoridad de
+credenciales y sesiones, Actor/IdentitySubject, Bearer para Expo y la ausencia de fallback
+a auth embebida.
 
 ## Contexto
 
@@ -72,7 +82,7 @@ conserva el contexto inicial.
 
 La separación está implementada. La verificación de un despliegue concreto es independiente.
 
-- [Worker auth](/apps/auth/src/index.ts).
+- [Servidor auth](/apps/auth/src/main.ts).
 - [Proxy web](/apps/web/src/modules/identity/server/auth-proxy.ts).
 - [Actor autenticado](/apps/web/src/modules/identity/server/authenticated-request-actor.ts).
 - [Lifecycle nativo](/apps/mobile/src/modules/identity/session-lifecycle.ts).

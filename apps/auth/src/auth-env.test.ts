@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { buildAuthEnv, parseTrustedOrigins } from "./auth-env.ts";
+import { buildAuthEnv, buildAuthServerConfig, parseTrustedOrigins } from "./auth-env.ts";
 
 describe("buildAuthEnv", () => {
   const validEnv = {
@@ -85,5 +85,31 @@ describe("buildAuthEnv", () => {
     expect(() => buildAuthEnv({ ...validEnv, AUTH_EMAIL_DELIVERY: "smtp" })).toThrow(
       "AUTH_EMAIL_DELIVERY",
     );
+  });
+
+  describe("buildAuthServerConfig", () => {
+    const serverEnv = { ...validEnv, DATABASE_URL: "postgres://user:pass@localhost/futrob" };
+
+    it("requires DATABASE_URL and defaults the port", () => {
+      expect(() => buildAuthServerConfig(validEnv)).toThrow("DATABASE_URL");
+      const config = buildAuthServerConfig(serverEnv);
+      expect(config.port).toBe(8788);
+      expect(config.clientIp).toEqual({ proxySecret: undefined, trustedHeader: undefined });
+    });
+
+    it("validates the port, proxy secret and trusted IP header", () => {
+      expect(buildAuthServerConfig({ ...serverEnv, PORT: "3001" }).port).toBe(3001);
+      expect(() => buildAuthServerConfig({ ...serverEnv, PORT: "http" })).toThrow("PORT");
+      expect(() => buildAuthServerConfig({ ...serverEnv, AUTH_PROXY_SECRET: "short" })).toThrow(
+        "AUTH_PROXY_SECRET",
+      );
+      expect(
+        buildAuthServerConfig({ ...serverEnv, AUTH_TRUSTED_IP_HEADER: " X-Real-IP " }).clientIp
+          .trustedHeader,
+      ).toBe("x-real-ip");
+      expect(() =>
+        buildAuthServerConfig({ ...serverEnv, AUTH_TRUSTED_IP_HEADER: "x-futrob-client-ip" }),
+      ).toThrow("AUTH_TRUSTED_IP_HEADER");
+    });
   });
 });

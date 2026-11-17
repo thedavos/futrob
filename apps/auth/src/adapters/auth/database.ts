@@ -1,33 +1,26 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Client } from "pg";
+import pg from "pg";
+import type { Client, Pool, PoolClient } from "pg";
 import { authSchema } from "./drizzle-schema.ts";
 
 export type AuthDb = ReturnType<typeof createAuthDb>;
 
-export function createAuthDb(client: Client) {
+export function createAuthDb(client: Pool | Client | PoolClient) {
   return drizzle(client, { schema: authSchema });
 }
 
-export interface AuthDatabaseConnection {
-  readonly client: Client;
-  readonly db: AuthDb;
-  close(): Promise<void>;
-}
+const POOL_MAX = 5;
 
 /**
- * One connection per request. Hyperdrive owns pooling, so a Worker must not
- * keep a `pg` client across requests; close it once the response is built.
+ * One pool for the process. Drizzle checks a client out per query and per
+ * transaction, so the advisory lock in actor provisioning stays on one connection.
  */
-export async function connectAuthDatabase(
+export function createAuthPool(
   connectionString: string,
-): Promise<AuthDatabaseConnection> {
-  const client = new Client({ connectionString });
-  await client.connect();
-  return {
-    client,
-    db: createAuthDb(client),
-    close: async () => {
-      await client.end().catch(() => undefined);
-    },
-  };
+  onIdleError: (cause: Error) => void,
+): Pool {
+  const pool = new pg.Pool({ connectionString, max: POOL_MAX });
+  // An idle client that loses its connection emits here; without a listener Node exits.
+  pool.on("error", onIdleError);
+  return pool;
 }

@@ -4,6 +4,7 @@ import {
   createProductApiClient,
   createServiceProductApiClient,
 } from "@/context/product-api-client.ts";
+import { authServiceFromBindings } from "@/modules/identity/server/auth-proxy.ts";
 import { resolveAuthenticatedRequestActor } from "@/modules/identity/server/authenticated-request-actor.ts";
 import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
 import { createBffRequestCorrelation } from "@/shared/infrastructure/http/request-correlation.ts";
@@ -46,7 +47,7 @@ export async function createAuthenticatedProductApiClient(request: Request, requ
   const { bindings, internalJobSecret } = await resolveServiceConfig();
 
   const actorId = await resolveAuthenticatedRequestActor({
-    authService: bindings.AUTH_SERVICE,
+    authService: authServiceFromBindings(bindings),
     request,
   });
   const client = createProductApiClient({

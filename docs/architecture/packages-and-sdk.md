@@ -22,7 +22,7 @@ futrob/
 ├── apps/
 │   ├── web/                    # TanStack Start + Workers (UI, BFF, /api/v1 hoy, queues)
 │   ├── api/                    # API de producto (Node); consume @futrob/<bc>
-│   ├── auth/                   # Better Auth Worker; datos en el Postgres de producto
+│   ├── auth/                   # Better Auth sobre Hono/Node; datos en el Postgres de producto
 │   ├── mobile/                 # cliente nativo MVP; consume @futrob/sdk
 │   └── cli/                    # playground
 │

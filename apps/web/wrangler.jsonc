@@ -11,8 +11,9 @@
     "NODE_ENV": "production",
     // Local override: FUTROB_API_BASE_URL in apps/web/.dev.vars
     "FUTROB_API_BASE_URL": "https://api.futrob.app/api/v1",
+    // apps/auth (Node). Local override in apps/web/.dev.vars. AUTH_PROXY_SECRET is a secret.
+    "FUTROB_AUTH_BASE_URL": "https://auth.futrob.app",
   },
-  "services": [{ "binding": "AUTH_SERVICE", "service": "futrob-auth" }],
   "hyperdrive": [
     {
       // Product Postgres (ADR-0021): only for BFF rate limits. apps/api/migrations is

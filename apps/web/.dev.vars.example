@@ -11,6 +11,9 @@ NODE_ENV=development
 # SENTRY_ENVIRONMENT=production
 # Overrides wrangler.jsonc so the BFF talks to local apps/api, not production.
 FUTROB_API_BASE_URL=http://localhost:8787/api/v1
+# apps/auth (Node) on :8788. AUTH_PROXY_SECRET must match apps/auth/.env.
+FUTROB_AUTH_BASE_URL=http://localhost:8788
+AUTH_PROXY_SECRET=replace-with-a-shared-proxy-secret-of-32-characters
 INTERNAL_JOB_SECRET=replace-with-the-same-value-as-apps-api
 RATE_LIMIT_FINGERPRINT_SECRET=replace-with-an-independent-random-secret
 

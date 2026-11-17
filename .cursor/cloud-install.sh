@@ -54,9 +54,17 @@ fi
 if [[ ! -f apps/api/.env ]]; then
   cp apps/api/.env.example apps/api/.env
 fi
-if [[ ! -f apps/auth/.dev.vars ]]; then
-  cp apps/auth/.dev.vars.example apps/auth/.dev.vars
+if [[ ! -f apps/auth/.env ]]; then
+  cp apps/auth/.env.example apps/auth/.env
 fi
+
+# set_env_var FILE KEY VALUE: drop KEY's line and append the new value. No sed
+# replacement, so URLs with `&` or `|` survive intact.
+set_env_var() {
+  grep -v "^$2=" "$1" > "$1.tmp" || true
+  printf '%s=%s\n' "$2" "$3" >> "$1.tmp"
+  mv "$1.tmp" "$1"
+}
 
 web_job="$(sed -n 's/^INTERNAL_JOB_SECRET=//p' apps/web/.dev.vars | head -n 1)"
 api_job="$(sed -n 's/^INTERNAL_JOB_SECRET=//p' apps/api/.env | head -n 1)"
@@ -84,12 +92,19 @@ if grep -q '^BETTER_AUTH_SECRET=replace-with-a-local-secret$' apps/web/.dev.vars
 fi
 auth_secret="$(sed -n 's/^BETTER_AUTH_SECRET=//p' apps/web/.dev.vars | head -n 1)"
 if [[ -n "$auth_secret" ]]; then
-  if grep -q '^BETTER_AUTH_SECRET=' apps/auth/.dev.vars; then
-    sed -i.bak "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=${auth_secret}|" apps/auth/.dev.vars
-  else
-    printf '\nBETTER_AUTH_SECRET=%s\n' "$auth_secret" >> apps/auth/.dev.vars
-  fi
-  rm -f apps/auth/.dev.vars.bak
+  set_env_var apps/auth/.env BETTER_AUTH_SECRET "$auth_secret"
+fi
+# Web forwards the client IP to apps/auth with this shared secret.
+web_proxy="$(sed -n 's/^AUTH_PROXY_SECRET=//p' apps/web/.dev.vars | head -n 1)"
+auth_proxy="$(sed -n 's/^AUTH_PROXY_SECRET=//p' apps/auth/.env | head -n 1)"
+placeholder_proxy='replace-with-a-shared-proxy-secret-of-32-characters'
+if [[ -z "$web_proxy" || "$web_proxy" == "$placeholder_proxy" || "$web_proxy" != "$auth_proxy" ]]; then
+  proxy_secret="$(openssl rand -hex 32)"
+  set_env_var apps/web/.dev.vars AUTH_PROXY_SECRET "$proxy_secret"
+  set_env_var apps/auth/.env AUTH_PROXY_SECRET "$proxy_secret"
+fi
+if ! grep -q '^FUTROB_AUTH_BASE_URL=' apps/web/.dev.vars; then
+  printf '\nFUTROB_AUTH_BASE_URL=http://localhost:8788\n' >> apps/web/.dev.vars
 fi
 if grep -q '^RATE_LIMIT_FINGERPRINT_SECRET=replace-with-an-independent-random-secret$' apps/web/.dev.vars; then
   sed -i.bak "s|^RATE_LIMIT_FINGERPRINT_SECRET=.*|RATE_LIMIT_FINGERPRINT_SECRET=$(openssl rand -hex 32)|" apps/web/.dev.vars
@@ -106,18 +121,18 @@ if ! grep -q '^FUTROB_API_BASE_URL=' apps/web/.dev.vars; then
   printf '\nFUTROB_API_BASE_URL=http://localhost:8787/api/v1\n' >> apps/web/.dev.vars
 fi
 # Auth, actors and BFF rate limits live in the product Postgres (ADR-0021).
-# The Workers reach it through a local Hyperdrive target; apps/api/migrations is the
-# only schema history. Both need DATABASE_URL, which this script never invents.
+# apps/auth (Node) reads DATABASE_URL; the web Worker reaches it through a local
+# Hyperdrive target. apps/api/migrations is the only schema history. This script
+# never invents DATABASE_URL.
 database_url="$(sed -n 's/^DATABASE_URL=//p' apps/api/.env 2>/dev/null | head -n 1 || true)"
 if [[ -n "$database_url" ]]; then
-  for env_file in apps/auth/.env apps/web/.env; do
-    touch "$env_file"
-    if ! grep -q '^CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=' "$env_file"; then
-      printf 'CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=%s\n' "$database_url" >> "$env_file"
-    fi
-  done
+  set_env_var apps/auth/.env DATABASE_URL "$database_url"
+  touch apps/web/.env
+  if ! grep -q '^CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=' apps/web/.env; then
+    printf 'CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=%s\n' "$database_url" >> apps/web/.env
+  fi
   npm run migrate -w @futrob/api
 else
-  echo "DATABASE_URL is not set in apps/api/.env: skipping migrations and Hyperdrive env." >&2
+  echo "DATABASE_URL is not set in apps/api/.env: skipping migrations, auth DATABASE_URL and Hyperdrive env." >&2
   echo "Sign-in needs Postgres; set DATABASE_URL, then re-run this script." >&2
 fi

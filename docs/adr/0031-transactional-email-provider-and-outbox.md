@@ -106,7 +106,7 @@ Configuración humana antes de enviar en producción:
 3. Webhook de rebotes y quejas de Resend hacia la API, y supresión local: no implementado.
 4. Disparadores de «próximo partido», «candidatos EA» y «sanción»: las plantillas existen,
    pero esos hechos aún no producen una fila de actividad ni un intent.
-5. En el Worker de auth: `AUTH_EMAIL_DELIVERY=resend`, `EMAIL_FROM` y el secreto
+5. En el servidor de auth: `AUTH_EMAIL_DELIVERY=resend`, `EMAIL_FROM` y el secreto
    `RESEND_API_KEY` (cableado en AUTH-01; sin configurar en producción).
 
 ## Estado de implementación y evidencia

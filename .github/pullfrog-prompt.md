@@ -48,9 +48,9 @@ The PRD describes target scope, not completed functionality. Verify claims again
 
 ## Auth And Postgres
 
-- Better Auth form sign-in and sign-up endpoints validate the request `Origin`; a proxy that preserves browser headers must include every public web origin in the auth worker's `trustedOrigins`.
-- Auth, actors and BFF rate limits live in the product Postgres (ADR-0021) and have one migration history in `apps/api/migrations`. The Workers reach it through Hyperdrive; locally set `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` in `apps/auth/.env` and `apps/web/.env`. `get-session` returns `actorId`, so web reads no identity tables. Do not create a second migration history.
-- Preserve the auth proxy's tested client-IP handling: strip incoming spoofable forwarding headers and derive `x-real-ip` from the trusted Cloudflare client IP for the `AUTH_SERVICE` subrequest. Keep proxy and auth rate-limit tests aligned.
+- Better Auth form sign-in and sign-up endpoints validate the request `Origin`; a proxy that preserves browser headers must include every public web origin in the auth server's `trustedOrigins`.
+- Auth, actors and BFF rate limits live in the product Postgres (ADR-0021) and have one migration history in `apps/api/migrations`. `apps/auth` (Node) reads `DATABASE_URL`; the web Worker reaches it through Hyperdrive (locally `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` in `apps/web/.env`). `get-session` returns `actorId`, so web reads no identity tables. Do not create a second migration history.
+- Preserve the tested client-IP handling (ADR-0032): web strips incoming spoofable forwarding and `x-futrob-*` headers and forwards `CF-Connecting-IP` as `x-futrob-client-ip` with `AUTH_PROXY_SECRET`; auth trusts that IP only with a matching secret and otherwise uses `AUTH_TRUSTED_IP_HEADER` or the TCP peer. Keep proxy and auth rate-limit tests aligned.
 
 ## Web Testing
 
@@ -107,7 +107,7 @@ The PRD describes target scope, not completed functionality. Verify claims again
 - `.cursor/environment.json` supports an install command, startup terminals, and exposed ports; validate its shape against Cursor's environment schema when changing Cloud Agent setup.
 - `.cursor/cloud-install.sh` must bootstrap nvm when absent, establish Node 24, and verify the active major version before running any npm command.
 - The local web and API `INTERNAL_JOB_SECRET` values must match, as must web/auth `BETTER_AUTH_SECRET`. Keep rate-limit fingerprint secrets independent. The Cloud install script aligns the relevant gitignored env files.
-- `npm run dev` starts web on 3000, API on 8787 and auth on 8788. Set web `FUTROB_API_BASE_URL=http://localhost:8787/api/v1`; auth is reached through `AUTH_SERVICE`.
+- `npm run dev` starts web on 3000, API on 8787 and auth on 8788. Set web `FUTROB_API_BASE_URL=http://localhost:8787/api/v1`; web reaches auth at `FUTROB_AUTH_BASE_URL=http://localhost:8788`.
 - Use root npm scripts or `./node_modules/.bin/vp`; never `npx vp`. Node 24 or newer is required.
 
 ## Dependency Installation

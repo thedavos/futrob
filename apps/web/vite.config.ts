@@ -23,8 +23,8 @@ async function createAppPlugins() {
     !isVitest &&
       cloudflare({
         viteEnvironment: { name: "ssr" },
-        // Keep this off Node's 9229–9232 range so parallel `wrangler dev`
-        // (apps/auth) and other local inspectors do not race the same port.
+        // Keep this off Node's 9229–9232 range so other local inspectors
+        // do not race the same port.
         inspectorPort: 13000,
       }),
     tanstackStart(),

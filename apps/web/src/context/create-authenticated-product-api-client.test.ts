@@ -79,12 +79,12 @@ describe("productApiBffErrorResponse", () => {
     });
   });
 
-  it("returns a sanitized 503 when AUTH_SERVICE is missing", async () => {
+  it("returns a sanitized 503 when the auth service is not configured", async () => {
     const requestId = "2c9f1a44-0b7e-4d2a-9f11-8a6c3b1d0e22";
     const response = productApiBffErrorResponseForError(
       new AuthServiceMisconfiguredError({
         code: "auth.misconfigured",
-        message: "AUTH_SERVICE binding is required",
+        message: "FUTROB_AUTH_BASE_URL and AUTH_PROXY_SECRET are required",
       }),
       requestId,
     );
@@ -97,7 +97,7 @@ describe("productApiBffErrorResponse", () => {
     });
   });
 
-  it("returns a sanitized 503 when AUTH_SERVICE is unreachable", async () => {
+  it("returns a sanitized 503 when the auth service is unreachable", async () => {
     const requestId = "8e4c2b11-5a90-4f3d-b7c6-1d2e3f4a5b60";
     const response = productApiBffErrorResponseForError(
       new AuthServiceUnavailableError({

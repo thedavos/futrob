@@ -93,7 +93,6 @@ Si tienes Vite+ instalado globalmente, puedes usar `vp install`. Los scripts `np
 
 ```bash
 cp apps/web/.dev.vars.example apps/web/.dev.vars
-cp apps/auth/.dev.vars.example apps/auth/.dev.vars
 cp apps/api/.env.example apps/api/.env
 cp apps/auth/.env.example apps/auth/.env
 cp apps/web/.env.example apps/web/.env
@@ -101,20 +100,22 @@ cp apps/web/.env.example apps/web/.env
 
 Configura los archivos locales con estas relaciones:
 
-| Variable                                                   | Configuración                                                                         |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                             | En `apps/api/.env`, apunta a tu Postgres de desarrollo.                               |
-| `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` | En `apps/auth/.env` y `apps/web/.env`, usa la misma conexión que `DATABASE_URL`.      |
-| `BETTER_AUTH_SECRET`                                       | Mismo valor en los `.dev.vars` de web y auth.                                         |
-| `INTERNAL_JOB_SECRET`                                      | Mismo valor en web y API.                                                             |
-| `RATE_LIMIT_FINGERPRINT_SECRET`                            | En web, usa un secreto aleatorio independiente.                                       |
-| `FUTROB_API_BASE_URL`                                      | En web, `http://localhost:8787/api/v1`.                                               |
-| `SENTRY_DSN`                                               | Vacío en local. En producción, secreto de Wrangler (web/auth) o env de Railway (API). |
-| `EXPO_PUBLIC_SENTRY_DSN`                                   | Vacío en local. Expo Go no envía eventos.                                             |
+| Variable                                                   | Configuración                                                                        |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                                             | En `apps/api/.env` y `apps/auth/.env`, apunta a tu Postgres de desarrollo.           |
+| `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` | En `apps/web/.env`, usa la misma conexión que `DATABASE_URL`.                        |
+| `BETTER_AUTH_SECRET`                                       | Mismo valor en `apps/web/.dev.vars` y `apps/auth/.env`.                              |
+| `AUTH_PROXY_SECRET`                                        | Mismo valor en `apps/web/.dev.vars` y `apps/auth/.env`.                              |
+| `FUTROB_AUTH_BASE_URL`                                     | En web, `http://localhost:8788`.                                                     |
+| `INTERNAL_JOB_SECRET`                                      | Mismo valor en web y API.                                                            |
+| `RATE_LIMIT_FINGERPRINT_SECRET`                            | En web, usa un secreto aleatorio independiente.                                      |
+| `FUTROB_API_BASE_URL`                                      | En web, `http://localhost:8787/api/v1`.                                              |
+| `SENTRY_DSN`                                               | Vacío en local. En producción, secreto de Wrangler (web) o del entorno (API y auth). |
+| `EXPO_PUBLIC_SENTRY_DSN`                                   | Vacío en local. Expo Go no envía eventos.                                            |
 
 Mantén `ENVIRONMENT=development` en web para el desarrollo local. Los archivos de entorno están excluidos de Git; no publiques sus valores.
 
-**En un worktree, verifica las conexiones antes de migrar:** el setup puede copiar las de la base compartida. Apunta la API y ambos Hyperdrive a tu propia base. No ejecutes migraciones ni seeds contra una base compartida.
+**En un worktree, verifica las conexiones antes de migrar:** el setup puede copiar las de la base compartida. Apunta la API, auth y el Hyperdrive de web a tu propia base. No ejecutes migraciones ni seeds contra una base compartida.
 
 ### 3. Aplicar migraciones e iniciar
 
@@ -129,7 +130,7 @@ npm run dev
 | API de producto | http://localhost:8787/api/v1   |
 | Auth            | http://localhost:8788/api/auth |
 
-`npm run dev` inicia web, API y auth. Wrangler conecta web con el Worker de auth mediante `AUTH_SERVICE`.
+`npm run dev` inicia web, API y auth. Web llega a auth por HTTP en `FUTROB_AUTH_BASE_URL`.
 
 Para ejecutar el cliente nativo, sigue la [configuración móvil](apps/mobile/README.md#desarrollo).
 

@@ -22,7 +22,7 @@ Preconditions:
 
 - Run doctor and require all three services plus `db: ok`. Use a database owned by this run. Never migrate, seed, or reset the configured shared database.
 - Use the demo seed for accounts, rosters, rules, fixtures, and persisted EA observations. Its generated data is setup, not evidence of actions performed in this verification.
-- Local Hyperdrive requires a password in the connection URL, even when disposable Postgres uses trust authentication. `helpers/verify-futrob launch` now sets `CLOUDFLARE_DEV_REGISTRY_PATH` and `WRANGLER_REGISTRY_PATH` to the same `.run/dev-registry`. Doctor fails if web `GET /api/auth/get-session` is 503 Worker not found. Prove login through web, not only `:8788` health.
+- Local Hyperdrive requires a password in the connection URL, even when disposable Postgres uses trust authentication. Doctor fails unless web `GET /api/auth/get-session` answers 200. Prove login through web, not only `:8788` health.
 - The retained FEED-01 driver requires the isolated database `127.0.0.1:55432/futrob_feed01` and an owned API at localhost:8787 using that same database. It rejects other database targets. Use a fresh seed for its mutating modes.
 
 Run the existing CLI golden path and keep its command, output, and exit code. Read the resulting competition back with `comp-show`. CLI supports `comp-publish`, `comp-apply`, `entry-approve`, and `entry-reject`. It has no activity, selection, reschedule, or roster-invitation commands.

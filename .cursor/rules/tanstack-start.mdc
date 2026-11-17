@@ -23,7 +23,7 @@ alwaysApply: false
 ## Server entrypoints
 
 - Product server functions, `/api/v1/*` BFF routes, queue consumers and cron handlers reach `apps/api` through the existing SDK/service boundary. Product use cases and adapters are composed in `apps/api/src/di`, not in the web Worker.
-- Auth routes proxy to the separate auth Worker via `AUTH_SERVICE`; SSR/BFF session resolution uses that same binding (ADR-0015).
+- Auth routes proxy over HTTP to the separate auth server (`FUTROB_AUTH_BASE_URL` + `AUTH_PROXY_SECRET`); SSR/BFF session resolution uses that same client (ADR-0015, ADR-0032).
 - Server-only modules, secrets, Postgres/R2 clients, and provider SDKs must not enter client bundles.
 - Read Worker bindings from `env` / composition — do not assume Node `process.env` at module scope on Workers.
 - Durable EA sync work is persisted and queued before the request returns.

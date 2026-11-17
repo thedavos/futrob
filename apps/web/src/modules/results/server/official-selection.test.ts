@@ -78,6 +78,26 @@ describe("authenticated official-selection BFF over HTTP", () => {
     receipts = new Map();
     received = [];
     server = createServer(async (req, res) => {
+      if (req.url === "/api/auth/get-session") {
+        // Stands in for apps/auth: the session cookie names the actor.
+        const cookie = req.headers.cookie;
+        const session =
+          req.headers["x-futrob-proxy-secret"] === "auth-proxy-secret" && cookie
+            ? {
+                actorId:
+                  cookie === "session=foreign"
+                    ? "foreign-captain"
+                    : cookie === "session=operator"
+                      ? "actor-operator"
+                      : cookie === "session=home"
+                        ? "captain-home"
+                        : "captain-away",
+              }
+            : null;
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify(session));
+        return;
+      }
       const chunks = [];
       for await (const chunk of req) chunks.push(chunk);
       const text = Buffer.concat(chunks).toString();
@@ -174,25 +194,8 @@ describe("authenticated official-selection BFF over HTTP", () => {
       BETTER_AUTH_SECRET: "a-long-auth-secret-for-the-test-harness",
       INTERNAL_JOB_SECRET: "service-secret",
       FUTROB_API_BASE_URL: `http://127.0.0.1:${address.port}/api/v1`,
-      AUTH_SERVICE: {
-        fetch: async (request: Request) => {
-          const cookie = request.headers.get("cookie");
-          return Response.json(
-            cookie
-              ? {
-                  actorId:
-                    cookie === "session=foreign"
-                      ? "foreign-captain"
-                      : cookie === "session=operator"
-                        ? "actor-operator"
-                        : cookie === "session=home"
-                          ? "captain-home"
-                          : "captain-away",
-                }
-              : null,
-          );
-        },
-      },
+      FUTROB_AUTH_BASE_URL: `http://127.0.0.1:${address.port}`,
+      AUTH_PROXY_SECRET: "auth-proxy-secret",
     });
   });
   afterEach(async () => {

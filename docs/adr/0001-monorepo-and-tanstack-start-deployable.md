@@ -14,13 +14,13 @@ Esta revisión consolida ADR-0009 e incorpora la extracción de auth de ADR-0015
 
 ## Decisión
 
-| Unidad        | Runtime y responsabilidad                                                      | Persistencia / dependencia                                                                                 |
-| ------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `apps/web`    | TanStack Start en Cloudflare Workers; UI, BFF, proxy auth, Queues/Cron         | SDK hacia API, binding `AUTH_SERVICE`, Hyperdrive→Postgres solo para rate limits BFF; binding R2 de medios |
-| `apps/auth`   | Worker Better Auth; credenciales, sesiones y provisionamiento de actores       | Hyperdrive→Postgres de producto (ADR-0021); sin carpeta de migraciones propia                              |
-| `apps/api`    | Hono/Node en Railway; composición de casos de uso, API de producto y egress EA | Postgres mediante `DATABASE_URL`                                                                           |
-| `apps/mobile` | React Native + Expo; cliente autenticado                                       | SDK al BFF con token de sesión; auth al Worker; SecureStore                                                |
-| `apps/cli`    | Herramienta local de dominio/API                                               | Fakes o API según el comando; no es deployable de producto                                                 |
+| Unidad        | Runtime y responsabilidad                                                      | Persistencia / dependencia                                                                             |
+| ------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `apps/web`    | TanStack Start en Cloudflare Workers; UI, BFF, proxy auth, Queues/Cron         | SDK hacia API, HTTP a auth (`FUTROB_AUTH_BASE_URL`), Hyperdrive→Postgres solo para rate limits BFF; R2 |
+| `apps/auth`   | Hono/Node Better Auth (ADR-0032); credenciales, sesiones y actores             | Postgres de producto mediante `DATABASE_URL` (ADR-0021); sin carpeta de migraciones propia             |
+| `apps/api`    | Hono/Node en Railway; composición de casos de uso, API de producto y egress EA | Postgres mediante `DATABASE_URL`                                                                       |
+| `apps/mobile` | React Native + Expo; cliente autenticado                                       | SDK al BFF con token de sesión; auth directo o por web; SecureStore                                    |
+| `apps/cli`    | Herramienta local de dominio/API                                               | Fakes o API según el comando; no es deployable de producto                                             |
 
 El BFF autentica al cliente y llama a la API de producto; no instancia los adapters de
 producto ni duplica sus casos de uso. Ver [contrato HTTP](/docs/adr/0005-typed-private-api.md),
@@ -66,7 +66,7 @@ Vercel/Supabase como plataforma obligatoria; crear otro worker sin necesidad med
 La topología y el protocolo de jobs están cableados en el repositorio. La salud de
 servicios desplegados requiere comprobación independiente.
 
-- [Bindings web](/apps/web/wrangler.jsonc) y [auth](/apps/auth/wrangler.jsonc).
+- [Bindings web](/apps/web/wrangler.jsonc) y [arranque de auth](/apps/auth/src/main.ts).
 - [Productor de jobs](/apps/web/src/workers/provider-sync-job.producer.ts) y
   [consumer/recuperación](/apps/web/src/workers/game-data-sync.worker.ts).
 - [Ledger Postgres](/apps/api/src/adapters/game-data/jobs/postgres-provider-sync-job.repository.ts).
