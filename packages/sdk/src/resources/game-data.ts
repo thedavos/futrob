@@ -50,6 +50,20 @@ export function createGameDataResource(http: HttpClient) {
         });
       },
 
+      /** Service-only and actor-free: the signed-out landing search. */
+      async searchAnonymously(
+        input: SearchClubsQueryInput,
+        options: RequestOptions = {},
+      ): Promise<SearchClubsResponse> {
+        const query = searchClubsQuerySchema.parse(input);
+        return http.request({
+          path: `${apiPath("internal", "game-data", "clubs", "search")}${toQuery(query)}`,
+          method: "GET",
+          options,
+          parse: (data) => searchClubsResponseSchema.parse(data),
+        });
+      },
+
       async retrieve(
         externalClubId: string,
         input: GetClubQueryInput = {},
