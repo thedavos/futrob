@@ -7,14 +7,18 @@ import headlineFontUrl from "@fontsource/barlow-condensed/files/barlow-condensed
 import { DEFAULT_LOCALE } from "@/shared/presentation/i18n/locale.ts";
 import { getUiLocale } from "@/shared/presentation/i18n/locale.functions.ts";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
+import { getPublicPlans } from "@/modules/billing/server/get-public-plans.functions.ts";
 import { DemoSearchSection } from "@/shared/presentation/landing/demo-search-section.tsx";
+import { FaqSection } from "@/shared/presentation/landing/faq-section.tsx";
+import { FeaturesSection } from "@/shared/presentation/landing/features-section.tsx";
 import { FinalCtaSection } from "@/shared/presentation/landing/final-cta-section.tsx";
+import { LandingFooter } from "@/shared/presentation/landing/landing-footer.tsx";
 import { LandingHeader } from "@/shared/presentation/landing/landing-header.tsx";
 import { LandingHero } from "@/shared/presentation/landing/landing-hero.tsx";
 import { MechanismSection } from "@/shared/presentation/landing/mechanism-section.tsx";
-import { PlayersSection } from "@/shared/presentation/landing/players-section.tsx";
 import { PortalSection } from "@/shared/presentation/landing/portal-section.tsx";
-import { RescheduleSection } from "@/shared/presentation/landing/reschedule-section.tsx";
+import { PricingSection } from "@/shared/presentation/landing/pricing-section.tsx";
+import { RolesSection } from "@/shared/presentation/landing/roles-section.tsx";
 
 const styles = stylex.create({
   main: {
@@ -30,9 +34,12 @@ const styles = stylex.create({
 });
 
 export const Route = createFileRoute("/")({
-  loader: () => getUiLocale(),
+  loader: async () => {
+    const [locale, plans] = await Promise.all([getUiLocale(), getPublicPlans()]);
+    return { locale, plans };
+  },
   head: ({ loaderData }) => {
-    const t = createTranslator(loaderData ?? DEFAULT_LOCALE);
+    const t = createTranslator(loaderData?.locale ?? DEFAULT_LOCALE);
     return {
       meta: [
         { title: t("landing.meta.title") },
@@ -54,18 +61,22 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const { plans } = Route.useLoaderData();
   return (
     <main {...applyStyles(styles.main)}>
       <div {...applyStyles(styles.heroShell)}>
         <LandingHeader />
         <LandingHero />
       </div>
+      <FeaturesSection />
       <MechanismSection />
-      <RescheduleSection />
+      <RolesSection />
       <PortalSection />
-      <PlayersSection />
       <DemoSearchSection />
+      <PricingSection plans={plans} />
+      <FaqSection />
       <FinalCtaSection />
+      <LandingFooter />
     </main>
   );
 }

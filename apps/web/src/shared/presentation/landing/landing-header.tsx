@@ -19,6 +19,7 @@ import { space } from "@futrob/ui/styles/tokens.stylex";
 import { ListIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 
+import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 const styles = stylex.create({
@@ -107,30 +108,30 @@ const styles = stylex.create({
   },
 });
 
+/** In-page anchors of the landing; the header also renders on `/pricing` and legal pages. */
+const SECTION_LINKS = [
+  { hash: "funciones", label: "landing.nav.features" },
+  { hash: "mecanismo", label: "landing.nav.howItWorks" },
+  { hash: "precios", label: "landing.nav.pricing" },
+  { hash: "preguntas", label: "landing.nav.faq" },
+] as const satisfies readonly { readonly hash: string; readonly label: MessageKey }[];
+
 function NavLinks({ onNavigate }: { readonly onNavigate?: () => void }) {
   const { t } = useI18n();
   const linkStyles = onNavigate ? applyStyles(styles.sheetLink) : undefined;
   return (
     <>
-      <Button
-        onClick={onNavigate}
-        render={<Link hash="mecanismo" to="/" />}
-        variant="ghost"
-        {...linkStyles}
-      >
-        {t("landing.nav.howItWorks")}
-      </Button>
-      <Button
-        onClick={onNavigate}
-        render={<Link hash="portal" to="/" />}
-        variant="ghost"
-        {...linkStyles}
-      >
-        {t("landing.nav.portal")}
-      </Button>
-      <Button onClick={onNavigate} render={<Link to="/pricing" />} variant="ghost" {...linkStyles}>
-        {t("landing.nav.pricing")}
-      </Button>
+      {SECTION_LINKS.map((link) => (
+        <Button
+          key={link.hash}
+          onClick={onNavigate}
+          render={<Link hash={link.hash} to="/" />}
+          variant="ghost"
+          {...linkStyles}
+        >
+          {t(link.label)}
+        </Button>
+      ))}
     </>
   );
 }

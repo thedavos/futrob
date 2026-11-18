@@ -1,9 +1,9 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Body, Button, typography } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { ArrowRightIcon } from "@phosphor-icons/react";
+import { applyStyles, Body, Button, Caption, Eyebrow, typography } from "@futrob/ui";
+import { colors, space } from "@futrob/ui/styles/tokens.stylex";
+import { ArrowRightIcon, CheckIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -45,7 +45,30 @@ const styles = stylex.create({
   subtitle: {
     maxWidth: "44ch",
   },
+  kicker: {
+    textTransform: "uppercase",
+  },
+  facts: {
+    listStyle: "none",
+    margin: 0,
+    padding: 0,
+    display: "flex",
+    flexWrap: "wrap",
+    columnGap: space.s5,
+    rowGap: space.s2,
+  },
+  fact: {
+    display: "flex",
+    alignItems: "center",
+    gap: space.s1,
+  },
+  factIcon: {
+    flexShrink: 0,
+    color: colors.success,
+  },
 });
+
+const FACT_KEYS = ["landing.hero.facts.free", "landing.hero.facts.noCard"] as const;
 
 /** Position on the hero timeline, in `--duration-fast` steps. See `cup-bracket.tsx`. */
 const delay = stylex.create({
@@ -53,6 +76,7 @@ const delay = stylex.create({
   line3: { animationDelay: "calc(var(--duration-fast) * 2)" },
   subtitle: { animationDelay: "calc(var(--duration-fast) * 3)" },
   actions: { animationDelay: "calc(var(--duration-fast) * 4)" },
+  facts: { animationDelay: "calc(var(--duration-fast) * 5)" },
   official: { animationDelay: "calc(var(--duration-fast) * 9)" },
 });
 
@@ -63,6 +87,9 @@ export function LandingHero() {
       as="h1"
       header={
         <>
+          <Eyebrow {...applyStyles(styles.kicker, styles.reveal)}>
+            {t("landing.hero.kicker")}
+          </Eyebrow>
           <div {...applyStyles(styles.headlineBox)}>
             <h1 {...applyStyles(typography.host, typography.headline)}>
               <span {...applyStyles(styles.line, styles.reveal)}>
@@ -96,6 +123,17 @@ export function LandingHero() {
               </Button>
             </LandingActions>
           </div>
+          <ul
+            aria-label={t("landing.hero.facts.label")}
+            {...applyStyles(styles.facts, styles.reveal, delay.facts)}
+          >
+            {FACT_KEYS.map((key) => (
+              <li key={key} {...applyStyles(styles.fact)}>
+                <CheckIcon aria-hidden="true" weight="bold" {...applyStyles(styles.factIcon)} />
+                <Caption as="span">{t(key)}</Caption>
+              </li>
+            ))}
+          </ul>
         </>
       }
     >

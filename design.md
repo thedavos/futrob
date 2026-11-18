@@ -131,20 +131,21 @@ Iconos, splash, manifest y metadata deben usar la misma identidad.
 ### Tipografía
 
 Familia de interfaz autohospedada: **Manrope Variable**. Pesos canónicos: 400, 500, 600 y 700.
-**Barlow Condensed** 700 (`--font-display`, también autohospedada) existe solo para el titular
-de marketing `typography.headline`; ningún texto de producto, tabla, formulario ni dato la usa.
+**Barlow Condensed** 700 (`--font-display`, también autohospedada) existe solo para los titulares
+de marketing `typography.headline` (hero y CTA final de la landing); ningún texto de producto, tabla,
+formulario ni dato la usa.
 
-| Rol      | StyleX                | Uso principal                                                   |
-| -------- | --------------------- | --------------------------------------------------------------- |
-| Headline | `typography.headline` | Titular del hero de marketing, en Barlow Condensed y mayúsculas |
-| Display  | `typography.display`  | Headlines de marketing                                          |
-| Heading  | `typography.heading`  | Títulos de panel (20 px / 700); el `h1` de página sube a 24 px  |
-| Title    | `typography.title`    | Títulos de card, sub-panel y estados vacíos (18 px / 600)       |
-| Subtitle | `typography.subtitle` | Frase de apoyo bajo un heading                                  |
-| Body     | `typography.body`     | Párrafos y contenido de lectura                                 |
-| Label    | `typography.label`    | Labels de formulario, navegación, columnas y estados compactos  |
-| Caption  | `typography.caption`  | Hints, metadata, timestamps y texto secundario sentence-case    |
-| Score    | `typography.score`    | Marcadores y valores deportivos con cifras tabular              |
+| Rol      | StyleX                | Uso principal                                                             |
+| -------- | --------------------- | ------------------------------------------------------------------------- |
+| Headline | `typography.headline` | Titulares de hero y CTA final de marketing, Barlow Condensed y mayúsculas |
+| Display  | `typography.display`  | Headlines de marketing                                                    |
+| Heading  | `typography.heading`  | Títulos de panel (20 px / 700); el `h1` de página sube a 24 px            |
+| Title    | `typography.title`    | Títulos de card, sub-panel y estados vacíos (18 px / 600)                 |
+| Subtitle | `typography.subtitle` | Frase de apoyo bajo un heading                                            |
+| Body     | `typography.body`     | Párrafos y contenido de lectura                                           |
+| Label    | `typography.label`    | Labels de formulario, navegación, columnas y estados compactos            |
+| Caption  | `typography.caption`  | Hints, metadata, timestamps y texto secundario sentence-case              |
+| Score    | `typography.score`    | Marcadores y valores deportivos con cifras tabular                        |
 
 `typography.headline` es solo web y no forma parte de `TYPO_ROLES` (la app nativa no lo carga).
 Su tamaño es `clamp(3rem, 18.5cqi, 7rem)`: se mide contra la columna, así que su contenedor declara
@@ -603,10 +604,12 @@ se identifican por separado; brackets incluyen lista accesible y byes sin score 
 Futrob
 ├── Landing pública
 │   ├── Precios (/pricing)
-│   ├── Producto
+│   ├── Funciones (bento)
 │   ├── Cómo funciona (EA → candidatos → selección → oficial)
-│   ├── Para organizadores / capitanes
-│   └── CTA de acceso
+│   ├── Roles: organizadores / capitanes / jugadores
+│   ├── Portal público, demo de búsqueda y precios
+│   ├── Preguntas frecuentes
+│   └── CTA de acceso y footer
 ├── Autenticación
 ├── Aplicación autenticada
 │   ├── Espacio personal del jugador
@@ -647,8 +650,9 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 #### Header
 
 - Logo Futrob.
-- Anclas: Producto, Cómo funciona, Ejemplo público.
-- Acciones: Iniciar sesión, Crear competición.
+- Anclas: Funciones, Cómo funciona, Precios, Preguntas (todas en `/`, también desde `/pricing`).
+- Acciones: Iniciar sesión, Crear competición. Todo CTA hacia `/signup` se llama «Crear competición»
+  (header, hero y CTA final); las cards de `/pricing` conservan su copy de plan.
 - Dos grupos: marca y enlaces de contenido a la izquierda; acceso a la derecha. Sin grupo central.
 - Por debajo de `lg`, los enlaces de contenido pasan a un `Sheet`; por debajo de `sm`, «Iniciar sesión»
   también. La acción de crear permanece siempre en la barra.
@@ -656,9 +660,14 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 #### Hero
 
 - Marca Futrob como señal dominante.
+- Kicker `Eyebrow` en mayúsculas y muted: «Para EA SPORTS FC Clubs». Ancla el contexto sin tocar el titular.
 - Una promesa en `typography.headline`, tres líneas: «Ligas y copas / de clubs, / oficiales.».
-- Una frase de apoyo: del partido de EA al resultado oficial, con la aprobación de la organización.
-- CTA primaria: «Crear competición» (`/signup`); secundaria: «Ver competición pública» (`#portal`).
+- Una frase de apoyo con sujeto y mecanismo: Futrob trae los partidos de EA, los capitanes eligen
+  cuáles cuentan y la organización los aprueba antes de que lleguen a la tabla.
+- CTA primaria: «Crear competición» (`/signup`); secundaria: «Ver ejemplo de portal» (`#portal`).
+  Cuando exista una competición pública de demostración, la secundaria apunta a su ruta real.
+- Bajo los CTA, condiciones verificables en `Caption` con check `success`: «Gratis para tu primera
+  competición» y «No necesitas tarjeta». Nunca métricas ni promesas que el producto no cumpla.
 - Visual dominante: `CupBracket`, el cuadro radial de una copa de 16 clubs ficticios con el trofeo en
   el centro, y debajo la card de la final con el sello «Oficial». Los escudos son `ClubCrestAvatar`
   con iniciales; nunca escudos reales.
@@ -673,10 +682,24 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 
 #### Secciones siguientes (una job por sección)
 
-1. Flujo EA → candidatos → selección → confirmación.
-2. Reprogramación controlada.
-3. Rankings y portal para espectadores.
-4. CTA final.
+Orden en `routes/index.tsx`, alternando `band` y `base` desde el hero:
+
+1. Funciones (`#funciones`, `band`): bento de seis columnas desde `lg` con tabla oficial, capitán en
+   el móvil, sync EA, copas con cuadro, sanciones con historial, portal público y «entre jornadas».
+   Cada tile es una `Card` con icono en `accent`, `title` y una muestra decorativa (`aria-hidden`).
+2. Cómo funciona (`#mecanismo`, `base`): flujo EA → candidatos → selección → aprobación → publicación.
+3. Roles (`#roles`, `band`): `Tabs` `pills` Organizadores / Capitanes / Jugadores; cada panel, lista de
+   puntos más un ejemplo. Los paneles ocultos usan `keepMounted` para que el copy sea rastreable.
+   La reprogramación vive en el ejemplo de Capitanes.
+4. Portal público (`#portal`, `base`): destino del CTA secundario del hero.
+5. Demo de búsqueda EA (`#demo`, `band`).
+6. Precios (`#precios`, `base`): `PricingPlanGrid`, la misma cuadrícula de `/pricing`, con el catálogo
+   público cargado en el loader de `/`. Si falla, la sección muestra el aviso de planes no disponibles.
+7. Preguntas frecuentes (`#preguntas`, `band`): `<details>` nativos; solo respuestas verificadas
+   en `product/` (no prometer revisión manual sin datos de EA mientras no exista).
+8. CTA final (`base`): «Tu competición, / oficial.» en `typography.headline`, reducido para que la
+   primera línea quepa, con «Crear competición» y «Ver precios».
+9. Footer: anclas de producto, enlace a `/pricing`, documentos legales y aviso de no afiliación con EA.
 
 #### Esqueleto de sección
 
@@ -689,7 +712,7 @@ no redefinir contenedor, padding, columnas ni jerarquía de copy en cada secció
 - Tonos alternos `base` (`background`) y `band` (`sidebar`). El cambio de tono es el separador: sin bordes.
 - Copy centrado respecto al visual; `align="start"` lo fija con sticky cuando el visual es más alto.
 - `Display` más `Body` `lg` en muted con medida de 44ch; los CTA van en `LandingActions`.
-- `header` sustituye ese par de título y subtítulo; solo lo usa el hero, para su titular.
+- `header` sustituye ese par de título y subtítulo; lo usan el hero y el CTA final, para sus titulares.
 
 #### Precios
 

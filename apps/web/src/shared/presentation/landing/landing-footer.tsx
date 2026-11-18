@@ -2,10 +2,11 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Caption, Logo, TextLink } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { Link } from "@tanstack/react-router";
 
+import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { legalNavItems } from "@/shared/presentation/legal/legal-hrefs.ts";
 
@@ -59,6 +60,19 @@ const styles = stylex.create({
     flexDirection: "column",
     rowGap: "0.25rem",
   },
+  navColumn: {
+    display: "flex",
+    flexDirection: "column",
+    rowGap: "0.75rem",
+  },
+  navList: {
+    listStyle: "none",
+    margin: 0,
+    padding: 0,
+    display: "flex",
+    flexDirection: "column",
+    rowGap: "0.5rem",
+  },
   legal: {
     flexShrink: 0,
     display: "flex",
@@ -68,6 +82,13 @@ const styles = stylex.create({
       [media.sm]: "flex-end",
     },
     rowGap: "0.75rem",
+  },
+  disclaimer: {
+    maxWidth: "44ch",
+    textAlign: {
+      default: "start",
+      [media.sm]: "end",
+    },
   },
   legalNav: {
     display: "flex",
@@ -80,6 +101,17 @@ const styles = stylex.create({
     rowGap: "0.5rem",
   },
 });
+
+/** Landing anchors plus the full pricing page; the footer also renders outside the landing. */
+const PRODUCT_LINKS = [
+  { id: "features", label: "landing.nav.features", hash: "funciones" },
+  { id: "howItWorks", label: "landing.nav.howItWorks", hash: "mecanismo" },
+  { id: "faq", label: "landing.footer.faq", hash: "preguntas" },
+] as const satisfies readonly {
+  readonly id: string;
+  readonly label: MessageKey;
+  readonly hash: string;
+}[];
 
 export function LandingFooter() {
   const { t } = useI18n();
@@ -94,6 +126,23 @@ export function LandingFooter() {
             <Caption as="span">{t("landing.footer.madeBy")}</Caption>
           </div>
         </div>
+        <nav aria-label={t("landing.footer.productNav")} {...applyStyles(styles.navColumn)}>
+          <Caption as="span">{t("landing.footer.productNav")}</Caption>
+          <ul {...applyStyles(styles.navList)}>
+            {PRODUCT_LINKS.map((item) => (
+              <li key={item.id}>
+                <TextLink render={<Link hash={item.hash} to="/" />} text="caption">
+                  {t(item.label)}
+                </TextLink>
+              </li>
+            ))}
+            <li>
+              <TextLink render={<Link to="/pricing" />} text="caption">
+                {t("landing.nav.pricing")}
+              </TextLink>
+            </li>
+          </ul>
+        </nav>
         <div {...applyStyles(styles.legal)}>
           <nav aria-label={t("legal.nav.aria")} {...applyStyles(styles.legalNav)}>
             {legalNavItems(t).map((item) => (
@@ -103,6 +152,9 @@ export function LandingFooter() {
             ))}
           </nav>
           <Caption as="span">{t("landing.footer.legal")}</Caption>
+          <Caption as="p" {...applyStyles(styles.disclaimer)}>
+            {t("landing.footer.disclaimer")}
+          </Caption>
         </div>
       </div>
     </footer>

@@ -65,7 +65,6 @@ export function MechanismSection() {
       id="mecanismo"
       subtitle={t("landing.mechanism.subtitle")}
       title={t("landing.mechanism.title")}
-      tone="band"
     >
       <ol {...applyStyles(styles.list)}>
         {STEPS.map((step) => (
