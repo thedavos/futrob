@@ -11,7 +11,10 @@ import type { AppModules } from "@/di/create-modules.ts";
 import { apiErrorResponse, openApiHttpExceptionResponse } from "@/http/errors.ts";
 import { createRequestCorrelationMiddleware } from "@/http/middleware/request-correlation.ts";
 import { captureUnexpectedError } from "@/observability/sentry.ts";
-import { registerGameDataClubRoutes } from "@/http/routes/game-data-clubs.ts";
+import {
+  registerGameDataClubRoutes,
+  registerPublicGameDataClubRoutes,
+} from "@/http/routes/game-data-clubs.ts";
 import { registerCompetitionRoutes } from "@/http/routes/competitions.ts";
 import { registerCompetitionParticipantRoutes } from "@/http/routes/competitions-participants.ts";
 import {
@@ -113,6 +116,7 @@ export function createApp(deps: AppDeps): Hono {
   registerScheduleChangeExpiryRoutes(v1, deps);
   registerCandidateRecalculationRoutes(v1, deps);
   registerPublicEntryInvitationRoutes(v1, deps);
+  registerPublicGameDataClubRoutes(v1, deps);
   registerProviderHealthRoutes(v1, deps);
   registerStatisticsRebuildRoutes(v1, deps);
   registerGameDataClubRoutes(v1, deps);

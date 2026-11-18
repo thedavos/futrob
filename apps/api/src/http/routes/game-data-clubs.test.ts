@@ -102,6 +102,29 @@ describe("apps/api http game-data clubs", () => {
     );
   });
 
+  it("GET /api/v1/internal/game-data/clubs/search serves a signed-out visitor through the service secret", async () => {
+    let providerCalls = 0;
+    const app = buildApp(
+      createFetch((url) => {
+        providerCalls += 1;
+        expect(url).toContain("clubName=Fera");
+        return Response.json(searchClubsFixture);
+      }),
+    );
+    const path = "/api/v1/internal/game-data/clubs/search?query=Fera";
+
+    const anonymous = await app.request(path);
+    expect(anonymous.status).toBe(401);
+    expect(providerCalls).toBe(0);
+
+    const res = await app.request(path, {
+      headers: { Authorization: `Bearer ${INTERNAL_JOB_SECRET}` },
+    });
+    expect(res.status).toBe(200);
+    const body = await parseResponse(searchClubsResponseSchema, res);
+    expect(body.clubs[0]).toMatchObject({ externalClubId: "10754", name: "Fera Enjaulada" });
+  });
+
   it("GET /api/v1/game-data/clubs/search rejects a missing query with 400", async () => {
     const app = buildApp(stubFetch);
 

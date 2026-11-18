@@ -26,6 +26,19 @@ export const searchExternalClubsRoute = defineRoute({
   errors: [400, 401, 429, 502],
 });
 
+export const searchExternalClubsAnonymouslyRoute = defineRoute({
+  method: "get",
+  path: "/internal/game-data/clubs/search",
+  operationId: "searchExternalClubsAnonymously",
+  tags: ["game-data"],
+  summary: "Search external clubs before signing in",
+  description:
+    "Service-only endpoint authenticated with the internal bearer secret; takes no actor. Lets the web BFF serve the signed-out landing search, which rate-limits callers by IP.",
+  query: searchClubsQuerySchema,
+  success: { status: 200, description: "Matching clubs", schema: SearchClubsResponse },
+  errors: [400, 401, 502],
+});
+
 export const getExternalClubRoute = defineRoute({
   method: "get",
   path: "/game-data/clubs/{externalClubId}",
