@@ -233,7 +233,8 @@ describe("OnboardingFlowProvider initialization", () => {
     render(
       <OnboardingStoryRouter
         gateway={createFakeOnboardingGateway({ path: "player", currentStep: "game-account" })}
-        initialPath="/onboarding/invitation?invitation=invite-token"
+        handoff={{ kind: "invitation", code: "invite-token" }}
+        initialPath="/onboarding/invitation"
       />,
     );
 
@@ -512,6 +513,48 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(screen.getByText(/Fera Enjaulada/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Editar club ea" }));
     expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
+  });
+
+  it("opens the review with the club a landing link handed off, and associates it", async () => {
+    const gateway = createFakeOnboardingGateway();
+    const completePlayer = gateway.completePlayer.bind(gateway);
+    const requests: Array<Parameters<typeof gateway.completePlayer>[0]> = [];
+    gateway.completePlayer = async (request) => {
+      requests.push(request);
+      return completePlayer(request);
+    };
+    render(
+      <OnboardingStoryRouter
+        gateway={gateway}
+        handoff={{ kind: "club", club: STORY_EXTERNAL_CLUBS[0] }}
+        initialPath="/onboarding/club"
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "Confirma tu configuración" });
+    expect(screen.getByText(/Fera Enjaulada/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a mi espacio" }));
+
+    expect(await screen.findByRole("heading", { name: "Espacio personal" })).toBeTruthy();
+    expect(requests.at(-1)?.externalClub).toEqual({
+      providerKey: "ea-clubs",
+      externalClubId: "10754",
+      platform: STORY_EXTERNAL_CLUBS[0].platform,
+      gameEdition: "fc26",
+    });
+  });
+
+  it("opens the club search when the handed-off club could not be found", async () => {
+    render(
+      <OnboardingStoryRouter
+        gateway={createFakeOnboardingGateway()}
+        handoff={{ kind: "club", club: null }}
+        initialPath="/onboarding/club"
+      />,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Asocia tu club EA" })).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Nombre del club" })).toHaveProperty("value", "");
   });
 
   it("enters the personal space with a notice when EA could not associate the club", async () => {

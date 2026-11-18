@@ -8,20 +8,39 @@ import type { PostAuthDestinationDto } from "@futrob/api-contracts";
 import { authClient } from "@/modules/identity/auth-client.ts";
 import { browserOnboardingDraftStore } from "@/modules/identity/presentation/onboarding/onboarding-draft-storage.ts";
 import { OnboardingFlowProvider } from "@/modules/identity/presentation/onboarding/onboarding-flow.tsx";
-import { getOnboardingBootstrap } from "@/modules/identity/server/get-onboarding-bootstrap.functions.ts";
+import {
+  onboardingHandoffFromSearch,
+  onboardingHandoffSearchSchema,
+  resolveOnboardingHandoff,
+} from "@/modules/identity/presentation/onboarding/onboarding-handoff.ts";
+import {
+  getOnboardingBootstrap,
+  getOnboardingHandoffClub,
+} from "@/modules/identity/server/get-onboarding-bootstrap.functions.ts";
 import { RouteLoadError } from "@/shared/presentation/route-load-state.tsx";
 import { PendingScreen } from "@/shared/presentation/status-screen.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 export const Route = createFileRoute("/_app/onboarding")({
-  loader: async () => {
+  validateSearch: onboardingHandoffSearchSchema,
+  // Read on enter only: the flow drops the handoff params once it moves to another step.
+  loader: async ({ location }) => {
+    const handoff = onboardingHandoffFromSearch(location.search);
     const bootstrap = await getOnboardingBootstrap();
 
     if (bootstrap.destination) {
+      if (handoff?.kind === "club") throw redirect({ to: "/player/ea-clubs", replace: true });
       redirectToPostAuthDestination(bootstrap.destination);
     }
 
-    return { initialStatus: bootstrap.status };
+    return {
+      initialStatus: bootstrap.status,
+      handoff: handoff
+        ? await resolveOnboardingHandoff(handoff, (locator) =>
+            getOnboardingHandoffClub({ data: locator }),
+          )
+        : null,
+    };
   },
   shouldReload: ({ cause }) => cause === "enter",
   pendingComponent: OnboardingPending,
@@ -46,12 +65,13 @@ function OnboardingLoadError(props: ErrorComponentProps) {
 }
 
 function OnboardingLayout() {
-  const { initialStatus } = Route.useLoaderData();
+  const { initialStatus, handoff } = Route.useLoaderData();
   const userId = authClient.useSession().data?.user.id;
 
   return (
     <OnboardingFlowProvider
       draftStore={userId ? browserOnboardingDraftStore(userId) : undefined}
+      handoff={handoff}
       initialStatus={initialStatus}
       key={userId}
     >

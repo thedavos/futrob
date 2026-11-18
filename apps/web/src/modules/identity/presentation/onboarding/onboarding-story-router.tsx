@@ -33,6 +33,7 @@ import { OrganizationStep } from "./steps/organization-step.tsx";
 import { OnboardingReview } from "./steps/review-step.tsx";
 import { ClubStep } from "./steps/club-step.tsx";
 import type { OnboardingDraftStore } from "./onboarding-draft-storage.ts";
+import type { ResolvedOnboardingHandoff } from "./onboarding-handoff.ts";
 import { STORY_INVITATION_PREVIEW, storyResumeDraftStore } from "./onboarding-story-draft.ts";
 
 const styles = stylex.create({
@@ -47,8 +48,7 @@ type OnboardingStoryPath =
   | "/onboarding/invitation"
   | "/onboarding/game-account"
   | "/onboarding/club"
-  | "/onboarding/review"
-  | `/onboarding/invitation?invitation=${string}`;
+  | "/onboarding/review";
 
 export interface StoryOnboardingGateway extends OnboardingGateway {
   readonly initialStatus: OnboardingStatusDto;
@@ -224,6 +224,7 @@ function createOnboardingStoryRouter(
   gateway: StoryOnboardingGateway,
   draftStore: OnboardingDraftStore | undefined,
   locale: Locale = "es",
+  handoff: ResolvedOnboardingHandoff | null = null,
 ) {
   const rootRoute = createRootRoute({
     component: () => (
@@ -232,6 +233,7 @@ function createOnboardingStoryRouter(
           <OnboardingFlowProvider
             draftStore={draftStore ?? storyResumeDraftStore(gateway.initialStatus)}
             gateway={gateway}
+            handoff={handoff}
             initialStatus={gateway.initialStatus}
           >
             <Outlet />
@@ -325,16 +327,19 @@ export function OnboardingStoryRouter({
   initialPath,
   draftStore,
   locale = "es",
+  handoff = null,
 }: {
   gateway: StoryOnboardingGateway;
   initialPath: OnboardingStoryPath;
   /** Share one store across two renders to simulate a reload. */
   draftStore?: OnboardingDraftStore;
   locale?: Locale;
+  /** What the onboarding loader resolved from a handoff link. */
+  handoff?: ResolvedOnboardingHandoff | null;
 }) {
   const router = useMemo(
-    () => createOnboardingStoryRouter(initialPath, gateway, draftStore, locale),
-    [draftStore, gateway, initialPath, locale],
+    () => createOnboardingStoryRouter(initialPath, gateway, draftStore, locale, handoff),
+    [draftStore, gateway, handoff, initialPath, locale],
   );
   return <RouterProvider router={router} />;
 }

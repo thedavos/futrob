@@ -34,7 +34,7 @@ import {
   type OnboardingDraftStore,
 } from "./onboarding-draft-storage.ts";
 import { initialOnboardingState } from "./onboarding-resume.ts";
-import { onboardingInvitationSearchSchema } from "./onboarding-invitation-handoff.ts";
+import { onboardingStateForHandoff, type ResolvedOnboardingHandoff } from "./onboarding-handoff.ts";
 import { browserOnboardingGateway, type OnboardingGateway } from "./onboarding-flow-gateway.ts";
 import { createEmptyDraft, type OnboardingDraft } from "./onboarding-draft.ts";
 import { finishOnboardingPath, type OnboardingFinishResult } from "./onboarding-finish.ts";
@@ -72,9 +72,12 @@ export function OnboardingFlowProvider({
   initialStatus,
   gateway = browserOnboardingGateway,
   draftStore: providedDraftStore,
+  handoff = null,
 }: Readonly<{
   children: ReactNode;
   initialStatus: OnboardingStatusDto;
+  /** A link that opens onboarding with an invitation code or an EA club already chosen. */
+  handoff?: ResolvedOnboardingHandoff | null;
   gateway?: OnboardingGateway;
   /** Production passes the signed-in user's browser store; stories and tests keep memory. */
   draftStore?: OnboardingDraftStore;
@@ -96,20 +99,11 @@ export function OnboardingFlowProvider({
   >(null);
   const retry = useRetryAfterCountdown();
   const [draftStore] = useState(() => providedDraftStore ?? memoryOnboardingDraftStore());
-  const linkedInvitation = useRouterState({
-    select: (state) => onboardingInvitationSearchSchema.safeParse(state.location.search).data,
-  })?.invitation;
   const [initial] = useState(() => {
     const stored = draftStore.load();
-    if (linkedInvitation) {
-      const draft = stored?.path === "invitation" ? stored.draft : createEmptyDraft();
-      return {
-        path: "invitation" as const,
-        step: "invitation" as const,
-        draft: { ...draft, invitationToken: linkedInvitation },
-      };
-    }
-    return initialOnboardingState(initialStatus, stored);
+    return handoff
+      ? onboardingStateForHandoff(handoff, stored)
+      : initialOnboardingState(initialStatus, stored);
   });
   const [path, setPathState] = useState<OnboardingPathDto | null>(initial.path);
   const [currentStep, setCurrentStep] = useState<OnboardingStepDto>(initial.step);
