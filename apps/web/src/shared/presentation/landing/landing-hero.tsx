@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Body, Button, Caption, Eyebrow, typography } from "@futrob/ui";
+import { applyStyles, Body, Button, Caption, Text, typography } from "@futrob/ui";
 import { colors, space } from "@futrob/ui/styles/tokens.stylex";
 import { ArrowRightIcon, CheckIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
@@ -45,6 +45,12 @@ const styles = stylex.create({
   subtitle: {
     maxWidth: "44ch",
   },
+  // Kicker and headline read as one heading: tighter than the copy column's rhythm.
+  heading: {
+    display: "flex",
+    flexDirection: "column",
+    gap: space.s3,
+  },
   kicker: {
     textTransform: "uppercase",
   },
@@ -87,24 +93,26 @@ export function LandingHero() {
       as="h1"
       header={
         <>
-          <Eyebrow {...applyStyles(styles.kicker, styles.reveal)}>
-            {t("landing.hero.kicker")}
-          </Eyebrow>
-          <div {...applyStyles(styles.headlineBox)}>
-            <h1 {...applyStyles(typography.host, typography.headline)}>
-              <span {...applyStyles(styles.line, styles.reveal)}>
-                {t("landing.hero.title.line1")}
-              </span>{" "}
-              <span {...applyStyles(styles.line, styles.reveal, delay.line2)}>
-                {t("landing.hero.title.line2")}
-              </span>{" "}
-              <span {...applyStyles(styles.line, styles.reveal, delay.line3)}>
-                <span {...applyStyles(styles.official, delay.official)}>
-                  {t("landing.hero.title.official")}
+          <hgroup {...applyStyles(styles.heading)}>
+            <Text as="p" look="label" {...applyStyles(styles.kicker, styles.reveal)}>
+              {t("landing.hero.kicker")}
+            </Text>
+            <div {...applyStyles(styles.headlineBox)}>
+              <h1 {...applyStyles(typography.host, typography.headline)}>
+                <span {...applyStyles(styles.line, styles.reveal)}>
+                  {t("landing.hero.title.line1")}
+                </span>{" "}
+                <span {...applyStyles(styles.line, styles.reveal, delay.line2)}>
+                  {t("landing.hero.title.line2")}
+                </span>{" "}
+                <span {...applyStyles(styles.line, styles.reveal, delay.line3)}>
+                  <span {...applyStyles(styles.official, delay.official)}>
+                    {t("landing.hero.title.official")}
+                  </span>
                 </span>
-              </span>
-            </h1>
-          </div>
+              </h1>
+            </div>
+          </hgroup>
           <Body
             size="lg"
             tone="muted"

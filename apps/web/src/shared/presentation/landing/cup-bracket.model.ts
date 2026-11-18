@@ -4,6 +4,29 @@
  * and semifinal junctions, and the trophy sits in the center.
  */
 
+/** Shield archetypes of real football crests; the fictional clubs combine them with a pattern. */
+export type CrestShield = "heater" | "iberian" | "french" | "crown" | "roundel" | "badge";
+
+export type CrestPattern =
+  | "plain"
+  | "stripes"
+  | "hoops"
+  | "halves"
+  | "band"
+  | "sash"
+  | "chevron"
+  | "quarters"
+  | "ring";
+
+export interface CrestDesign {
+  readonly shield: CrestShield;
+  readonly pattern: CrestPattern;
+  /** Field colour, then the pattern colour. Club colours, like real crests: never recoloured. */
+  readonly colors: readonly [field: string, ink: string];
+  /** One letter on the central plate. */
+  readonly letter: string;
+}
+
 export type CupStage = "roundOf16" | "quarterfinal" | "semifinal" | "final" | "champion";
 
 export interface CupClub {
@@ -15,6 +38,7 @@ export interface CupClub {
   /** Score of its last match, own goals first. */
   readonly lastScore: string;
   readonly stage: CupStage;
+  readonly crest: CrestDesign;
 }
 
 export interface BracketLayout {
@@ -58,31 +82,47 @@ const LAST_DEPTH = 3;
 const SLOT_DEGREES = 360 / CLUB_COUNT;
 const STAGES: readonly CupStage[] = ["roundOf16", "quarterfinal", "semifinal", "final", "champion"];
 
-const DRAW: readonly (readonly [name: string, wins: number, lastScore: string])[] = [
-  ["Unión Barrio", 0, "1–3"],
-  ["Real Cuervos", 4, "2–1"],
-  ["Rayo Austral", 0, "0–1"],
-  ["FC Titanes", 1, "1–2"],
-  ["Deportivo Sur", 2, "0–2"],
-  ["Sporting Lomas", 0, "1–2"],
-  ["CD Estrella", 1, "0–1"],
-  ["Inter Costa", 0, "0–2"],
-  ["Halcones Rojos", 1, "1–3"],
-  ["Academia Mirador", 0, "2–3"],
-  ["Atlético Norte", 3, "1–2"],
-  ["Juventud Central", 0, "0–2"],
-  ["Olímpico Sur", 0, "1–2"],
-  ["Real Bahía", 2, "1–2"],
-  ["Los Cóndores", 1, "2–3"],
-  ["Atlético Puerto", 0, "0–3"],
+function crest(
+  shield: CrestShield,
+  pattern: CrestPattern,
+  field: string,
+  ink: string,
+  letter: string,
+): CrestDesign {
+  return { shield, pattern, colors: [field, ink], letter };
+}
+
+const DRAW: readonly (readonly [
+  name: string,
+  wins: number,
+  lastScore: string,
+  crest: CrestDesign,
+])[] = [
+  ["Unión Barrio", 0, "1–3", crest("heater", "stripes", "#1f4e8c", "#e8edf3", "U")],
+  ["Real Cuervos", 4, "2–1", crest("crown", "halves", "#1b1b1f", "#c9a227", "C")],
+  ["Rayo Austral", 0, "0–1", crest("iberian", "band", "#c8102e", "#f2f2f2", "R")],
+  ["FC Titanes", 1, "1–2", crest("roundel", "ring", "#0f6b3a", "#f4f1e6", "T")],
+  ["Deportivo Sur", 2, "0–2", crest("french", "chevron", "#5b2a86", "#f0e9f7", "S")],
+  ["Sporting Lomas", 0, "1–2", crest("heater", "hoops", "#0a7c66", "#f5f5f0", "L")],
+  ["CD Estrella", 1, "0–1", crest("badge", "plain", "#e0a100", "#1a1a1a", "E")],
+  ["Inter Costa", 0, "0–2", crest("iberian", "quarters", "#1565c0", "#111111", "I")],
+  ["Halcones Rojos", 1, "1–3", crest("french", "sash", "#b3121f", "#1a1a1a", "H")],
+  ["Academia Mirador", 0, "2–3", crest("roundel", "plain", "#2e7d32", "#fdd835", "M")],
+  ["Atlético Norte", 3, "1–2", crest("heater", "stripes", "#c62828", "#f5f5f5", "N")],
+  ["Juventud Central", 0, "0–2", crest("badge", "halves", "#263238", "#eceff1", "J")],
+  ["Olímpico Sur", 0, "1–2", crest("crown", "band", "#0d47a1", "#ffffff", "O")],
+  ["Real Bahía", 2, "1–2", crest("iberian", "hoops", "#00838f", "#fafafa", "B")],
+  ["Los Cóndores", 1, "2–3", crest("french", "quarters", "#4e342e", "#f9a825", "C")],
+  ["Atlético Puerto", 0, "0–3", crest("heater", "chevron", "#283593", "#ef6c00", "P")],
 ];
 
-export const CUP_CLUBS: readonly CupClub[] = DRAW.map(([name, wins, lastScore], index) => ({
+export const CUP_CLUBS: readonly CupClub[] = DRAW.map(([name, wins, lastScore, crest], index) => ({
   index,
   name,
   wins,
   lastScore,
   stage: STAGES[wins] ?? "roundOf16",
+  crest,
 }));
 
 /** All 16 clubs on the outer ring. */

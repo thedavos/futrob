@@ -2326,7 +2326,7 @@ const es = {
   "landing.footer.madeBy": "Futrob es creado por Davion Software.",
   "landing.nav.features": "Funciones",
   "landing.nav.faq": "Preguntas",
-  "landing.hero.kicker": "Para EA SPORTS FC Clubs",
+  "landing.hero.kicker": "Para Clubs de EA SPORTS FC",
   "landing.hero.facts.label": "Condiciones para empezar",
   "landing.hero.facts.free": "Gratis para tu primera competición",
   "landing.hero.facts.noCard": "No necesitas tarjeta",

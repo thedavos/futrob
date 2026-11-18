@@ -85,12 +85,16 @@ export const styles = stylex.create({
       [media.maxSm]: "block",
     },
   },
+  // viewBox units: the board renders at ~78% on desktop and ~45% at 360 px, so these widths land
+  // near 1.5 px on screen. Round ends keep the radial-to-arc elbows from showing a notch.
   link: {
     stroke: colors.border,
     strokeWidth: {
-      default: 1.5,
-      [media.maxSm]: 2.5,
+      default: 2,
+      [media.maxSm]: 3.25,
     },
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
     strokeDasharray: 1,
     animationName: draw,
     animationDuration: "var(--duration-slow)",
@@ -223,8 +227,8 @@ export const styles = stylex.create({
   }),
   crestButton: {
     display: "flex",
-    width: "2.75rem",
-    height: "2.75rem",
+    width: "3rem",
+    height: "3rem",
     alignItems: "center",
     justifyContent: "center",
     padding: 0,
@@ -249,9 +253,15 @@ export const styles = stylex.create({
       ":focus-visible": colors.ring,
     },
   },
+  // Round slot the links reach; the crest sits centred inside with room around it.
   crest: {
-    width: "2.5rem",
-    height: "2.5rem",
+    display: "flex",
+    width: "3rem",
+    height: "3rem",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "var(--corner-full)",
     borderWidth: 1,
     borderStyle: "solid",
     borderColor: colors.border,
@@ -259,7 +269,8 @@ export const styles = stylex.create({
     color: colors.textTertiary,
     outlineWidth: 2,
     outlineStyle: "solid",
-    outlineOffset: "3px",
+    // The ring sits on the border: with a gap, the route crossing it looks detached from the crest.
+    outlineOffset: 0,
     outlineColor: "transparent",
     transitionProperty: "background-color, border-color, color, outline-color",
     transitionDuration: "var(--duration-normal)",
@@ -275,10 +286,11 @@ export const styles = stylex.create({
     color: colors.foreground,
     outlineColor: colors.primary,
   },
-  initials: {
-    fontSize: "var(--text-xs)",
-    fontWeight: "var(--font-weight-semibold)",
-    letterSpacing: "var(--tracking-label)",
+  // 30 px tall in a 48 px slot: about 9 px of air above and below, 11 px at the sides.
+  crestMark: {
+    display: "block",
+    width: "auto",
+    height: "1.875rem",
   },
   tooltipName: {
     fontWeight: "var(--font-weight-bold)",
@@ -304,8 +316,22 @@ export const styles = stylex.create({
     animationFillMode: "both",
   },
   cardCrest: {
-    width: "2rem",
-    height: "2rem",
+    display: "flex",
+    width: "2.5rem",
+    height: "2.5rem",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "var(--corner-full)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceRaised,
+  },
+  cardCrestMark: {
+    display: "block",
+    width: "auto",
+    height: "1.5rem",
   },
   cardText: {
     display: "flex",

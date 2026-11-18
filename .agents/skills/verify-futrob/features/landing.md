@@ -38,7 +38,7 @@ Preconditions:
 - The browser has no Futrob session (or a private profile).
 - Evidence directory is `$(helpers/verify-futrob evidence-dir)/landing`.
 
-- **Load landing.** Open `/`. The document title contains `Futrob`. A link named `Futrob` is present. The hero eyebrow reads `Para EA SPORTS FC Clubs` (uppercase by style only). The hero heading reads `Ligas y copas de clubs, oficiales.` (three lines, uppercase by style only). The subtitle contains `Tus capitanes eligen cuáles cuentan`. A list named `Condiciones para empezar` shows `Gratis para tu primera competición` and `No necesitas tarjeta`.
+- **Load landing.** Open `/`. The document title contains `Futrob`. A link named `Futrob` is present. The hero eyebrow reads `Para Clubs de EA SPORTS FC` (uppercase by style only). The hero heading reads `Ligas y copas de clubs, oficiales.` (three lines, uppercase by style only). The subtitle contains `Tus capitanes eligen cuáles cuentan`. A list named `Condiciones para empezar` shows `Gratis para tu primera competición` and `No necesitas tarjeta`.
 - **Header signup.** Choose `Crear competición` in the nav `Acceso`. The URL becomes `/signup`. A heading `Crea tu cuenta` is visible.
 - **Return home.** Auth pages have no `Futrob` link (logo is an image). Use the browser back control or open `/` in the address bar. The URL is `/` again.
 - **Hero signup.** Choose the hero button `Crear competición`. The URL becomes `/signup` again. Return home the same way (back or `/`).

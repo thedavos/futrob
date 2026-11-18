@@ -660,7 +660,9 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 #### Hero
 
 - Marca Futrob como señal dominante.
-- Kicker `Eyebrow` en mayúsculas y muted: «Para EA SPORTS FC Clubs». Ancla el contexto sin tocar el titular.
+- Kicker `Text look="label"` en mayúsculas y tono `default` (un `Eyebrow` es siempre muted): «Para Clubs de EA SPORTS FC» (EN «For EA SPORTS FC
+  Clubs»). Ancla el contexto sin tocar el titular. Es texto, no `Badge`: los badges son estados y un
+  chip con la marca de EA se leería como sello de alianza. Va con el `h1` en un `<hgroup>` con `space.s3`.
 - Una promesa en `typography.headline`, tres líneas: «Ligas y copas / de clubs, / oficiales.».
 - Una frase de apoyo con sujeto y mecanismo: Futrob trae los partidos de EA, los capitanes eligen
   cuáles cuentan y la organización los aprueba antes de que lleguen a la tabla.
@@ -669,10 +671,13 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 - Bajo los CTA, condiciones verificables en `Caption` con check `success`: «Gratis para tu primera
   competición» y «No necesitas tarjeta». Nunca métricas ni promesas que el producto no cumpla.
 - Visual dominante: `CupBracket`, el cuadro radial de una copa de 16 clubs ficticios con el trofeo en
-  el centro, y debajo la card de la final con el sello «Oficial». Los escudos son `ClubCrestAvatar`
-  con iniciales; nunca escudos reales.
+  el centro, y debajo la card de la final con el sello «Oficial». Los escudos son `FictionalCrest`:
+  SVG generados con arquetipos de escudos de fútbol (clásico, español, francés, roundel, corona,
+  insignia), un patrón, dos colores de club y una letra. Nunca escudos reales. Cada escudo va centrado
+  en un círculo de 48 px (30 px de alto, con aire alrededor) al que llegan las líneas del cuadro.
 - Color: lima solo para el estado oficial (ruta del campeón, «Oficiales.», «Oficial» y sello) y la CTA
-  primaria; oro (`emphasis`) solo para el trofeo. El resto del cuadro queda en grafito.
+  primaria; oro (`emphasis`) solo para el trofeo. Los escudos llevan sus colores de club, como
+  cualquier escudo; líneas, nodos y círculos quedan en grafito.
 - Entrada, 1.5 s como máximo y en pasos de `--duration-fast`: líneas del titular, cuadro de fuera
   hacia el centro, ruta lima del campeón al trofeo, trofeo a oro y «Oficiales.» a lima, card final.
 - Cada club es un botón con tooltip («Atlético Norte · Finalista · perdió 1–2») que resalta su ruta al
