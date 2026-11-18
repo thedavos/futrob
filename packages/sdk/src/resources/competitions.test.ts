@@ -130,6 +130,61 @@ describe("context discovery SDK resources", () => {
     expect(requestedUrl).toBe("https://app.example.com/api/v1/competitions/explore/competition-1");
   });
 
+  it("lists or unlists a competition in Explore", async () => {
+    let call: { url: string; method: string; body: unknown } | null = null;
+    const competition = {
+      id: "competition-1",
+      organizationId: "org-1",
+      name: "Liga Norte",
+      status: "registration",
+      modality: "fc-clubs",
+      exploreListing: "unlisted",
+      gameEdition: "FC 26",
+      platform: "pc",
+      region: "south-america",
+      timeZone: "America/Lima",
+      format: "league",
+      teams: { min: 2, max: null },
+      schedule: { startsOn: null, endsOn: null },
+      cover: { kind: "preset", preset: "cup" },
+      createdAt: "2026-08-07T12:00:00.000Z",
+      updatedAt: "2026-08-07T12:00:00.000Z",
+    };
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input, init) => {
+        call = {
+          url: requestUrl(input),
+          method: init?.method ?? "GET",
+          body: parseMockJsonBody(init),
+        };
+        return Response.json({
+          competition,
+          rules: {
+            version: 1,
+            regularStage: null,
+            knockoutStage: null,
+            awayGoalsEnabled: false,
+            maxRosterSize: null,
+            rankingEligibility: null,
+            createdAt: "2026-08-07T12:00:00.000Z",
+          },
+        });
+      }),
+    });
+
+    const result = await client.competitions.updateExploreListing("org-1", "competition-1", {
+      exploreListing: "unlisted",
+    });
+
+    expect(result.competition.exploreListing).toBe("unlisted");
+    expect(call).toEqual({
+      url: "https://app.example.com/api/v1/organizations/org-1/competitions/competition-1/explore-listing",
+      method: "PUT",
+      body: { exploreListing: "unlisted" },
+    });
+  });
+
   it("applies to a competition and reads the actor's application", async () => {
     const calls: { url: string; method: string; body: unknown }[] = [];
     const application = {

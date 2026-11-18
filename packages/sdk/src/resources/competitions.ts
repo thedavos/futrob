@@ -34,6 +34,10 @@ import {
   updateCompetitionCoverResponseSchema,
   type UpdateCompetitionCoverRequest,
   type UpdateCompetitionCoverResponse,
+  updateCompetitionExploreListingRequestSchema,
+  updateCompetitionExploreListingResponseSchema,
+  type UpdateCompetitionExploreListingRequest,
+  type UpdateCompetitionExploreListingResponse,
   applyToCompetitionRequestSchema,
   applyToCompetitionResponseSchema,
   getMyCompetitionApplicationResponseSchema,
@@ -242,6 +246,28 @@ export function createCompetitionsResource(http: HttpClient) {
         body,
         options,
         parse: (data) => updateCompetitionCoverResponseSchema.parse(data),
+      });
+    },
+
+    async updateExploreListing(
+      organizationId: string,
+      competitionId: string,
+      input: UpdateCompetitionExploreListingRequest,
+      options: RequestOptions = {},
+    ): Promise<UpdateCompetitionExploreListingResponse> {
+      const body = updateCompetitionExploreListingRequestSchema.parse(input);
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "explore-listing",
+        ),
+        method: "PUT",
+        body,
+        options,
+        parse: (data) => updateCompetitionExploreListingResponseSchema.parse(data),
       });
     },
 
