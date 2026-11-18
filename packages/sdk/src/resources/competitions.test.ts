@@ -130,6 +130,24 @@ describe("context discovery SDK resources", () => {
     expect(requestedUrl).toBe("https://app.example.com/api/v1/competitions/explore/competition-1");
   });
 
+  it("lists open competitions through the actor-free internal route", async () => {
+    let requestedUrl = "";
+    const client = createFutrobClient({
+      baseUrl: "https://app.example.com/api/v1",
+      fetchImpl: mockFetch(async (input) => {
+        requestedUrl = requestUrl(input);
+        return Response.json({ items: [] });
+      }),
+    });
+
+    const result = await client.competitions.listOpenAnonymously({ platform: "pc", limit: 3 });
+
+    expect(result.items).toEqual([]);
+    expect(requestedUrl).toBe(
+      "https://app.example.com/api/v1/internal/competitions/explore/open?platform=pc&limit=3",
+    );
+  });
+
   it("lists or unlists a competition in Explore", async () => {
     let call: { url: string; method: string; body: unknown } | null = null;
     const competition = {
