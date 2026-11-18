@@ -16,6 +16,7 @@ The public landing at `/` tells a visitor that Futrob operates EA SPORTS FC Club
 - `landing-pricing` shows the plan cards from the public catalog in `#precios`, or the plans-unavailable alert.
 - `landing-faq` jumps to `#preguntas` and expands each of the five questions.
 - `landing-mechanism` jumps to `#mecanismo` and shows the EA → selection → approval → publication steps.
+- `landing-club-search` searches an EA club signed out in `#demo` (`Busca tu club en EA`), selects a result and offers `Crear cuenta con este club` (signup, then the player onboarding review with that club) and `¿Organizas un torneo? Crea tu competición` (`/signup`).
 - `landing-legal` opens Terms, Privacy, and Refunds from the footer without a session; the footer also shows the `Producto` nav and the EA non-affiliation notice.
 
 ## How to get to it (user POV)
@@ -28,6 +29,7 @@ The public landing at `/` tells a visitor that Futrob operates EA SPORTS FC Club
 - Choose `Funciones` or `Preguntas` in the header, or open `/#funciones` / `/#preguntas`.
 - Choose `Cómo funciona` in the header, or open `/#mecanismo`.
 - Point at, focus or tap a club crest in the hero bracket.
+- In `#demo`, type a club name and choose `Buscar` (or an example such as `Fera`), then `Crear cuenta con este club`.
 - Choose `Términos de servicio`, `Política de privacidad`, or `Reembolsos` in the footer, or open `/terms`, `/privacy`, `/refunds`.
 
 ## Driving it with verify-futrob
@@ -50,6 +52,7 @@ Preconditions:
 - **Roles.** In `#roles`, the tab `Organizadores` is selected. Choose `Capitanes`: its panel shows `Propón otro horario` and the reschedule example `En negociación`. Choose `Jugadores`: its panel shows `Mis estadísticas`.
 - **Pricing.** Choose header `Precios` or open `/#precios`. Heading `Empieza gratis, crece cuando lo necesites` with the plan cards; with the API down, the alert `No pudimos cargar los planes` instead.
 - **FAQ.** Choose `Preguntas` or open `/#preguntas`. Five questions; opening `¿Futrob es un producto de EA?` reveals its answer.
+- **Club search.** Open `/#demo` signed out. Heading `Busca tu club en EA`. Type a known club name in the searchbox `Nombre del club` and choose `Buscar`; the request goes to `/api/v1/public/game-data/clubs/search` and returns 200 without a session. The list `Clubes encontrados` shows up to three clubs and the first is pressed; the card shows its name and `Crear cuenta con este club`. That control opens `/signup?redirectTo=%2Fonboarding%2Fclub%3Fclub%3D…`. Sign up a disposable actor: onboarding opens `Confirma tu configuración` with the club; `Entrar a mi espacio` lands on `/player` with the club associated. Choosing another platform pill repeats the search. Repeated searches past the per-IP limit show `Alcanzaste el límite temporal de búsquedas.` and `Reintentar en N s`.
 - **Final CTA.** Scroll past `#preguntas` to the heading `Tu competición, oficial.`. Choose that block’s `Crear competición` → `/signup`. Return home. Its `Ver precios` → `/pricing` (heading `Planes para cada competición`). There is no final-CTA `Iniciar sesión`.
 - **Footer legal.** Scroll to the footer. Links named `Términos de servicio`, `Política de privacidad`, and `Reembolsos` go to `/terms`, `/privacy`, and `/refunds`. Open `/terms`. A heading `Términos de servicio` is visible. An alert reads `Borrador pendiente de revisión legal`. `curl -sS http://localhost:3000/terms` body contains that heading (SSR HTML, not only client paint). Repeat for `/privacy` (heading `Política de privacidad`, a heading `Eliminación de la cuenta` whose section id is `account-deletion`) and `/refunds` (heading `Reembolsos`).
 - **Proof.** Capture an ARIA snapshot and a screenshot of `/` showing the brand, hero, and header CTAs, plus a second pair after scrolling or jumping to `#mecanismo` (include the final CTA if it is in frame). Capture `/pricing` from the final CTA and one legal page (privacy, including the deletion heading). Write `landing` and the entry point into `NOTES.md`.
@@ -66,5 +69,6 @@ Preconditions:
 - Client navigation from a landing CTA can update the URL to `/signup` before the signup accessibility tree paints. If the snapshot still shows the hero, navigate to `/signup` once more and wait for heading `Crea tu cuenta`.
 - Browser screenshots may land in a temp path. Copy them into `evidence/<run-id>/landing/` before cleanup.
 - The landing loader reads `/public/plans` from the product API; without it, `#precios` shows the plans-unavailable alert and the rest of the page still renders.
-- The demo search section may call the API. A search failure is not a landing-identity failure unless the hero/CTAs are missing.
+- The club search calls EA through the public BFF route and the API. A search failure is not a landing-identity failure unless the hero/CTAs are missing. `Crear cuenta con este club` and the organizer link are **buttons** in the accessibility tree, like the other `Button render={<Link />}` CTAs.
+- Rate limits are bypassed when `ENVIRONMENT` (or `NODE_ENV`) is `development`, so the 429 state is only reachable on a non-development Worker.
 - Legal pages are public drafts. The warning alert is expected; do not treat “borrador” as a failure. Account deletion is `/privacy#account-deletion` until AUTH-03 ships an in-app flow. Vite+ web listens on `[::1]`; use `localhost`, not `127.0.0.1`.

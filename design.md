@@ -1,6 +1,6 @@
 # Futrob — Design
 
-**Estado:** contrato único de diseño. **Actualizado:** 2026-11-16.
+**Estado:** contrato único de diseño. **Actualizado:** 2026-11-18.
 **Alcance:** marketing, producto web, portal público y aplicación nativa.
 
 Este documento reúne identidad, arquitectura de información, composición, componentes,
@@ -652,7 +652,8 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 - Logo Futrob.
 - Anclas: Funciones, Cómo funciona, Precios, Preguntas (todas en `/`, también desde `/pricing`).
 - Acciones: Iniciar sesión, Crear competición. Todo CTA hacia `/signup` se llama «Crear competición»
-  (header, hero y CTA final); las cards de `/pricing` conservan su copy de plan.
+  (header, hero y CTA final); las cards de `/pricing` conservan su copy de plan. La excepción es
+  «Crear cuenta con este club» de la búsqueda EA, que lleva el club elegido al onboarding.
 - Dos grupos: marca y enlaces de contenido a la izquierda; acceso a la derecha. Sin grupo central.
 - Por debajo de `lg`, los enlaces de contenido pasan a un `Sheet`; por debajo de `sm`, «Iniciar sesión»
   también. La acción de crear permanece siempre en la barra.
@@ -697,7 +698,15 @@ Orden en `routes/index.tsx`, alternando `band` y `base` desde el hero:
    puntos más un ejemplo. Los paneles ocultos usan `keepMounted` para que el copy sea rastreable.
    La reprogramación vive en el ejemplo de Capitanes.
 4. Portal público (`#portal`, `base`): destino del CTA secundario del hero.
-5. Demo de búsqueda EA (`#demo`, `band`).
+5. Busca tu club en EA (`#demo`, `band`, `align="start"`). La columna de copy lleva el buscador:
+   campo de nombre, plataformas como `ChoiceGroup` `pill` (cambiar de plataforma repite la última
+   búsqueda), consultas de ejemplo y hasta tres resultados. Busca sin sesión por la ruta pública
+   `/api/v1/public/game-data/clubs/search`, limitada por IP; el estado 429 bloquea el botón con la
+   cuenta atrás. Cada búsqueda selecciona el primer resultado. La columna visual es una `Card`: sin
+   selección, una ayuda; con selección, escudo, nombre y plataforma · edición, la CTA primaria
+   «Crear cuenta con este club» (única lima de la sección) y la secundaria `ghost` «¿Organizas un
+   torneo? Crea tu competición» (`/signup`). La primaria abre `/signup?redirectTo=` con el handoff
+   de club del onboarding; con sesión va directa a ese handoff.
 6. Precios (`#precios`, `base`): `PricingPlanGrid`, la misma cuadrícula de `/pricing`, con el catálogo
    público cargado en el loader de `/`. Si falla, la sección muestra el aviso de planes no disponibles.
 7. Preguntas frecuentes (`#preguntas`, `band`): `<details>` nativos; solo respuestas verificadas
@@ -807,7 +816,11 @@ configura en el paso **Cuenta** o posteriormente desde Datos de juego. Los recor
 - Jugador: Intención → Cuenta → Club → Confirmar.
 
 El paso **Club** permite asociar un `ExternalClub` al `PlayerProfile`. Más asociaciones se
-añaden después desde el selector de contexto. Es opcional y no crea un
+añaden después desde el selector de contexto. Un enlace puede abrir el onboarding con algo ya
+elegido (`OnboardingHandoff`): `/onboarding/invitation?invitation=<código>` abre Invitación con el
+código, y `/onboarding/club?club=<id>&platform=<p>&edition=<e>` (desde la búsqueda de la landing)
+consulta el club para la sesión y abre Confirmar en el camino Jugador con él seleccionado. Si la
+consulta falla, abre Club sin selección. Un actor que ya terminó el onboarding va a Clubes EA. Es opcional y no crea un
 Team de competición, una inscripción ni una membresía de plantilla. `/onboarding/club` es la ruta
 canónica. `/onboarding/team` solo redirige para recuperar sesiones o marcadores anteriores.
 
