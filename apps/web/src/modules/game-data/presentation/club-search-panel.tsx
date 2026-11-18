@@ -74,7 +74,7 @@ const styles = stylex.create({
 
 export type ClubSearchPanelProps = {
   readonly selectedExternalClubId: string | null;
-  /** Called with the first result after each search, and with the club the visitor picks. */
+  /** `null` while a search runs, then its first result, and later the club the visitor picks. */
   readonly onSelect: (club: ExternalClubDto | null) => void;
 };
 
@@ -100,6 +100,8 @@ export function ClubSearchPanel({ selectedExternalClubId, onSelect }: ClubSearch
       return;
     }
     if (loading || retry.blocked) return;
+    // The chosen club belongs to the previous search; its CTA must not outlive it.
+    onSelect(null);
     try {
       const { clubs } = await searchClubs.mutateAsync({ query: trimmed, platform: nextPlatform });
       onSelect(clubs[0] ?? null);

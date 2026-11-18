@@ -151,6 +151,33 @@ describe("DemoSearchSection", () => {
     expect(handoffFromHref(cta.getAttribute("href")).pathname).toBe("/onboarding/club");
   });
 
+  it("drops the chosen club while another platform is searched", async () => {
+    let answerPs5: (response: Response) => void = () => undefined;
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes("platform=ps5")
+        ? new Promise<Response>((resolve) => {
+            answerPs5 = resolve;
+          })
+        : Response.json({ clubs: [FERA] }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    renderSection();
+    await searchFor("Fera");
+    await findAnchor("Crear cuenta con este club");
+
+    fireEvent.click(screen.getByRole("radio", { name: "PlayStation 5" }));
+
+    expect(await screen.findByRole("button", { name: "Buscando…" })).toBeDisabled();
+    expect(screen.queryByText("Crear cuenta con este club")).toBeNull();
+
+    answerPs5(Response.json({ clubs: [{ ...FERA, platform: "ps5" }] }));
+    const cta = await findAnchor("Crear cuenta con este club");
+    const redirectTo = new URL(cta.getAttribute("href") ?? "", "https://futrob.test").searchParams;
+    expect(handoffFromHref(redirectTo.get("redirectTo")).handoff).toMatchObject({
+      locator: { platform: "ps5" },
+    });
+  });
+
   it("says so when the platform has no club with that name", async () => {
     stubSearch(() => Response.json({ clubs: [] }));
     renderSection();
