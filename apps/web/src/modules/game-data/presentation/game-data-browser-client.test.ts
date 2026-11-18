@@ -6,6 +6,22 @@ afterEach(() => {
 });
 
 describe("gameDataBrowserClient", () => {
+  it("searches signed out through the public route", async () => {
+    const fetchMock = vi.fn(async (_url: string) => Response.json({ clubs: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await gameDataBrowserClient.searchClubsAnonymously({
+      query: "Fera",
+      platform: "ps5",
+    });
+
+    expect(result.isOk()).toBe(true);
+    const url = new URL(fetchMock.mock.calls[0]?.[0] ?? "", "https://futrob.test");
+    expect(url.pathname).toBe("/api/v1/public/game-data/clubs/search");
+    expect(url.searchParams.get("query")).toBe("Fera");
+    expect(url.searchParams.get("platform")).toBe("ps5");
+  });
+
   it("preserves the request ID from a club search error", async () => {
     const requestId = "8f3ac8de-da1a-415a-b29f-46c40c87367f";
     vi.stubGlobal(

@@ -15,6 +15,19 @@ export function useSearchClubsMutation() {
   });
 }
 
+/** Signed-out landing search; a mutation because each submit is an explicit, rate-limited request. */
+export function usePublicSearchClubsMutation() {
+  return useMutation({
+    mutationFn: async (input: SearchClubsQueryInput) => {
+      const result = await gameDataBrowserClient.searchClubsAnonymously(input);
+      if (!result.isOk()) {
+        throw result.error;
+      }
+      return result.value;
+    },
+  });
+}
+
 export function useClubQuery(
   externalClubId: string | null | undefined,
   input: GetClubQueryInput,
