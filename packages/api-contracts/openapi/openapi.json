@@ -2314,7 +2314,8 @@
           {
             "schema": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "maxLength": 60
             },
             "required": true,
             "name": "query",
@@ -3272,7 +3273,8 @@
           {
             "schema": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "maxLength": 60
             },
             "required": true,
             "name": "query",

@@ -1,4 +1,5 @@
 export {
+  CLUB_SEARCH_QUERY_MAX_LENGTH,
   externalClubSchema,
   providerMatchSchema,
   providerMatchListSchema,

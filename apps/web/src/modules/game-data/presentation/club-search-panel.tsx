@@ -3,6 +3,7 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 import {
   asEaSearchPlatform,
+  CLUB_SEARCH_QUERY_MAX_LENGTH,
   EA_SEARCH_PLATFORM,
   type EaSearchPlatform,
   type ExternalClubDto,
@@ -137,6 +138,7 @@ export function ClubSearchPanel({ selectedExternalClubId, onSelect }: ClubSearch
               autoComplete="off"
               enterKeyHint="search"
               id={queryId}
+              maxLength={CLUB_SEARCH_QUERY_MAX_LENGTH}
               onChange={(event) => {
                 setQuery(event.target.value);
                 setQueryMissing(false);

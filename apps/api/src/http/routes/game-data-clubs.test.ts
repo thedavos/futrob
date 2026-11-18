@@ -142,6 +142,28 @@ describe("apps/api http game-data clubs", () => {
     expect(body.requestId).not.toBe("not-a-safe-request-id");
   });
 
+  it("GET /api/v1/game-data/clubs/search rejects an over-long query with 400 before EA", async () => {
+    let providerCalls = 0;
+    const app = buildApp(
+      createFetch(() => {
+        providerCalls += 1;
+        return Response.json(searchClubsFixture);
+      }),
+    );
+
+    for (const path of [
+      `/api/v1/game-data/clubs/search?query=${"z".repeat(260)}`,
+      `/api/v1/internal/game-data/clubs/search?query=${"z".repeat(260)}`,
+    ]) {
+      const res = await app.request(path, { headers: serviceHeaders() });
+      expect(res.status).toBe(400);
+      expect(await parseResponse(apiErrorSchema, res)).toMatchObject({
+        code: "api.validation_error",
+      });
+    }
+    expect(providerCalls).toBe(0);
+  });
+
   it("GET /api/v1/game-data/clubs/search surfaces EA HTTP failures as 502", async () => {
     const requestId = "2f0bb3a7-a7fb-446a-a6c7-81747db676b6";
     const app = buildApp(createFetch(() => new Response("nope", { status: 503 })));

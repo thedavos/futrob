@@ -23,6 +23,7 @@ import {
   type ExternalClubDto,
   type RequestId,
   asEaSearchPlatform,
+  CLUB_SEARCH_QUERY_MAX_LENGTH,
   eaSearchPlatformFromGamePlatform,
   gamePlatformForEaSearchLogo,
   type GamePlatformDto,
@@ -186,7 +187,7 @@ export function EaClubLinkForm({
           <Input
             autoComplete="off"
             id={clubNameId}
-            maxLength={80}
+            maxLength={CLUB_SEARCH_QUERY_MAX_LENGTH}
             onChange={(event) => {
               setQuery(event.target.value);
               if (search.status !== "idle") invalidateClubSearch();

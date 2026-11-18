@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import {
+  CLUB_SEARCH_QUERY_MAX_LENGTH,
   gamePlatformSchema,
   type ExternalClubDto,
   type GamePlatformDto,
@@ -193,7 +194,12 @@ export function OnboardingFields({
     case "club":
       return (
         <View style={{ gap: theme.spacing[3] }}>
-          <Input label={t("clubSearch")} value={clubQuery} onChangeText={setClubQuery} />
+          <Input
+            label={t("clubSearch")}
+            value={clubQuery}
+            maxLength={CLUB_SEARCH_QUERY_MAX_LENGTH}
+            onChangeText={setClubQuery}
+          />
           <Button
             variant="outline"
             label={t("search")}
