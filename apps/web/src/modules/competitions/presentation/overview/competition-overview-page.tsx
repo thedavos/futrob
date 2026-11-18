@@ -47,7 +47,12 @@ import {
 import {
   useCompetitionDraftQuery,
   useCompetitionParticipantsQuery,
+  useUpdateCompetitionExploreListingMutation,
 } from "../competition-queries.ts";
+import {
+  CompetitionExploreListingCard,
+  type ExploreListingControl,
+} from "./competition-explore-listing-card.tsx";
 import { CompetitionOverviewKpis, type OverviewMetric } from "./competition-overview-kpis.tsx";
 import {
   awaitingResultEncounters,
@@ -103,6 +108,8 @@ export interface CompetitionOverviewViewProps {
   readonly now?: Date;
   /** The organization's public slug, once read; the portal link needs it. */
   readonly organizationSlug?: string | null;
+  /** Explore listing switch; absent while the competition loads or once it is archived. */
+  readonly exploreListing?: ExploreListingControl | null;
 }
 
 function mapSlice<Data, Shown>(
@@ -126,6 +133,7 @@ export function CompetitionOverviewView({
   competitionId,
   encounters,
   entries,
+  exploreListing = null,
   now = new Date(),
   organizationId,
   organizationSlug = null,
@@ -224,6 +232,7 @@ export function CompetitionOverviewView({
         />
       </div>
       <TeamsSection competitionId={competitionId} organizationId={organizationId} teams={teams} />
+      {exploreListing ? <CompetitionExploreListingCard control={exploreListing} /> : null}
     </main>
   );
 }
@@ -281,6 +290,8 @@ function OperatorOverview({
   const participants = useCompetitionParticipantsQuery(organizationId, competitionId);
   const teams = useCompetitionTeamManagementQuery(organizationId, competitionId);
   const profile = useOrganizationProfileQuery(organizationId);
+  const listing = useUpdateCompetitionExploreListingMutation(organizationId, competitionId);
+  const competition = draft.data?.competition;
   // The sidebar queue reads the same key, so the overview adds no request of its own.
   const activities = usePendingActivitiesQuery(
     canReviewResults
@@ -295,6 +306,16 @@ function OperatorOverview({
       competitionId={competitionId}
       encounters={sliceOf(encounters, (data) => data)}
       entries={sliceOf(participants, (data) => data.participants)}
+      exploreListing={
+        competition && competition.status !== "archived"
+          ? {
+              value: listing.isPending ? listing.variables : competition.exploreListing,
+              saving: listing.isPending,
+              failed: listing.isError,
+              onChange: (next) => listing.mutate(next),
+            }
+          : null
+      }
       organizationId={organizationId}
       organizationSlug={profile.data?.slug ?? null}
       teams={sliceOf(teams, (data) => data.pages[0]?.items ?? [])}

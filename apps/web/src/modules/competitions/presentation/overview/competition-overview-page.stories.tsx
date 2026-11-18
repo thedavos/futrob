@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { CompetitionExploreListingDto } from "@futrob/api-contracts";
 import {
   Outlet,
   RouterProvider,
@@ -132,6 +133,7 @@ function OverviewStory({
 
 function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
   const [recovered, setRecovered] = useState(false);
+  const [listing, setListing] = useState<CompetitionExploreListingDto>("listed");
   if (scenario === "member") return <CompetitionOverviewMember />;
   if (scenario === "accessError") {
     return (
@@ -199,6 +201,11 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
       competitionId={OVERVIEW_COMPETITION_ID}
       encounters={encounters}
       entries={entries}
+      exploreListing={
+        competition.status === "ready"
+          ? { value: listing, saving: false, failed: false, onChange: setListing }
+          : null
+      }
       now={OVERVIEW_NOW}
       organizationId={OVERVIEW_ORG_ID}
       organizationSlug="liga-nocturna"
@@ -277,6 +284,22 @@ export const Ready: Story = {
     await expect(canvas.queryByText("Inscrito")).toBeNull();
     const portal = await canvas.findByRole("link", { name: "Ver portal público" });
     await expect(portal.getAttribute("href")).toBe(`/liga-nocturna/${OVERVIEW_COMPETITION_ID}`);
+  },
+};
+
+export const HideFromExplore: Story = {
+  name: "Ocultar de Explorar",
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const toggle = await canvas.findByRole("switch", { name: "Mostrar en Explorar" });
+    await expect(toggle).toBeChecked();
+    await userEvent.click(toggle);
+    await expect(toggle).not.toBeChecked();
+    await expect(
+      canvas.findByText("Oculta de Explorar: solo quien tenga el enlace podrá verla."),
+    ).resolves.toBeVisible();
+    await userEvent.click(toggle);
+    await expect(toggle).toBeChecked();
   },
 };
 

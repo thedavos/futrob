@@ -9,6 +9,7 @@ import {
 import type {
   ApplyToCompetitionRequest,
   CompetitionDraftDto,
+  CompetitionExploreListingDto,
   CompetitionParticipantInput,
   CreateCompetitionDraftRequest,
   ExploreCompetitionsQueryInput,
@@ -36,6 +37,7 @@ import {
   setCompetitionRegistration,
   uploadCompetitionCover,
   updateCompetitionCover,
+  updateCompetitionExploreListing,
   getMyCompetitionApplication,
   applyToCompetition,
   CompetitionsClientError,
@@ -283,6 +285,29 @@ export function useUpdateCompetitionCoverMutation(organizationId: string, compet
       await queryClient.invalidateQueries({
         queryKey: queryKeys.competitions.byOrganization(organizationId),
       });
+    },
+  });
+}
+
+export function useUpdateCompetitionExploreListingMutation(
+  organizationId: string,
+  competitionId: string,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    scope: draftScope(organizationId, competitionId),
+    mutationFn: (exploreListing: CompetitionExploreListingDto) =>
+      updateCompetitionExploreListing(organizationId, competitionId, exploreListing),
+    onSuccess: async (draft) => {
+      queryClient.setQueryData(queryKeys.competitions.draft(organizationId, competitionId), draft);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.competitions.byOrganization(organizationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...queryKeys.competitions.all, "explore"],
+        }),
+      ]);
     },
   });
 }

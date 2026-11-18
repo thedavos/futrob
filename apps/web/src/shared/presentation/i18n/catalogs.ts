@@ -2966,6 +2966,15 @@ const es = {
     "Tu acceso está listo. Usa el menú para ver tus partidos, estadísticas y equipo.",
   "competition.overview.status": "Estado de la competición",
   "competition.overview.continueSetup": "Continuar configuración",
+  "competition.overview.exploreListing.title": "Visibilidad en Explorar",
+  "competition.overview.exploreListing.label": "Mostrar en Explorar",
+  "competition.overview.exploreListing.listed":
+    "Cualquiera puede encontrarla en Explorar y, con inscripciones abiertas, en la portada de Futrob.",
+  "competition.overview.exploreListing.unlisted":
+    "Oculta de Explorar: solo quien tenga el enlace podrá verla.",
+  "competition.overview.exploreListing.saving": "Guardando…",
+  "competition.overview.exploreListing.error":
+    "No pudimos cambiar la visibilidad. Inténtalo de nuevo.",
   "competition.overview.kpi.label": "Indicadores de la competición",
   "competition.overview.kpi.teams": "Equipos aprobados",
   "competition.overview.kpi.applications": "Inscripciones por revisar",
@@ -6530,6 +6539,14 @@ const en: Catalog = {
     "Your access is ready. Use the menu to see your matches, statistics and team.",
   "competition.overview.status": "Competition status",
   "competition.overview.continueSetup": "Continue setup",
+  "competition.overview.exploreListing.title": "Explore visibility",
+  "competition.overview.exploreListing.label": "Show in Explore",
+  "competition.overview.exploreListing.listed":
+    "Anyone can find it in Explore and, while registration is open, on the Futrob home page.",
+  "competition.overview.exploreListing.unlisted":
+    "Hidden from Explore: only people with the link can see it.",
+  "competition.overview.exploreListing.saving": "Saving…",
+  "competition.overview.exploreListing.error": "We couldn't change the visibility. Try again.",
   "competition.overview.kpi.label": "Competition indicators",
   "competition.overview.kpi.teams": "Approved teams",
   "competition.overview.kpi.applications": "Entries to review",

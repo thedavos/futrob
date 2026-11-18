@@ -26,6 +26,10 @@ import {
   updateCompetitionCoverResponseSchema,
   type UpdateCompetitionCoverRequest,
   type UpdateCompetitionCoverResponse,
+  updateCompetitionExploreListingRequestSchema,
+  updateCompetitionExploreListingResponseSchema,
+  type CompetitionExploreListingDto,
+  type UpdateCompetitionExploreListingResponse,
   applyToCompetitionResponseSchema,
   getMyCompetitionApplicationResponseSchema,
   type ApplyToCompetitionRequest,
@@ -226,6 +230,18 @@ export function updateCompetitionCover(
     `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/cover`,
     { method: "PUT", body: updateCompetitionCoverRequestSchema.parse(input) },
     updateCompetitionCoverResponseSchema,
+  );
+}
+
+export function updateCompetitionExploreListing(
+  organizationId: string,
+  competitionId: string,
+  exploreListing: CompetitionExploreListingDto,
+): Promise<UpdateCompetitionExploreListingResponse> {
+  return competitionRequest(
+    `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/explore-listing`,
+    { method: "PUT", body: updateCompetitionExploreListingRequestSchema.parse({ exploreListing }) },
+    updateCompetitionExploreListingResponseSchema,
   );
 }
 
