@@ -71,6 +71,12 @@ const styles = stylex.create({
   muted: {
     color: colors.mutedForeground,
   },
+  // Its label is wider than the card at 360 px; it wraps instead of pushing the page sideways.
+  organizer: {
+    maxWidth: "100%",
+    paddingBlock: space.s2,
+    whiteSpace: "normal",
+  },
 });
 
 /** Landing search of an EA club that ends in signing up with that club already chosen. */
@@ -166,7 +172,7 @@ function SelectedClubCard({ club }: { readonly club: ExternalClubDto }) {
 function OrganizerLink() {
   const { t } = useI18n();
   return (
-    <Button render={<Link to="/signup" />} variant="ghost">
+    <Button className={styles.organizer} render={<Link to="/signup" />} variant="ghost">
       {t("landing.demo.organizer")}
     </Button>
   );
