@@ -125,7 +125,9 @@ export function OnboardingReview() {
       ? t("onboarding.review.finish.organization")
       : path === "invitation"
         ? t("onboarding.review.finish.invitation")
-        : t("onboarding.review.finish.player");
+        : flow.draft.joiningCompetitionId
+          ? t("onboarding.review.finish.competition")
+          : t("onboarding.review.finish.player");
 
   return (
     <OnboardingShell

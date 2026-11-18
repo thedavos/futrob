@@ -9,6 +9,7 @@ import { authClient } from "@/modules/identity/auth-client.ts";
 import { browserOnboardingDraftStore } from "@/modules/identity/presentation/onboarding/onboarding-draft-storage.ts";
 import { OnboardingFlowProvider } from "@/modules/identity/presentation/onboarding/onboarding-flow.tsx";
 import {
+  competitionHandoffDestination,
   onboardingHandoffFromSearch,
   onboardingHandoffSearchSchema,
   resolveOnboardingHandoff,
@@ -30,20 +31,23 @@ export const Route = createFileRoute("/_app/onboarding")({
     handler: async ({ location }) => {
       const handoff = onboardingHandoffFromSearch(location.search);
       const bootstrap = await getOnboardingBootstrap();
+      const resolve = () =>
+        handoff
+          ? resolveOnboardingHandoff(handoff, (locator) =>
+              getOnboardingHandoffClub({ data: locator }),
+            )
+          : Promise.resolve(null);
 
       if (bootstrap.destination) {
         if (handoff?.kind === "club") throw redirect({ to: "/player/ea-clubs", replace: true });
+        const resolved = await resolve();
+        if (resolved?.kind === "competition") {
+          throw redirect({ ...competitionHandoffDestination(resolved), replace: true });
+        }
         redirectToPostAuthDestination(bootstrap.destination);
       }
 
-      return {
-        initialStatus: bootstrap.status,
-        handoff: handoff
-          ? await resolveOnboardingHandoff(handoff, (locator) =>
-              getOnboardingHandoffClub({ data: locator }),
-            )
-          : null,
-      };
+      return { initialStatus: bootstrap.status, handoff: await resolve() };
     },
   },
   shouldReload: ({ cause }) => cause === "enter",

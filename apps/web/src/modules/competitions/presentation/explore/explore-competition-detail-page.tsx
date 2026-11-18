@@ -49,8 +49,11 @@ import { exploreCompetitionShareUrl } from "./explore-search.ts";
 import { EXPLORE_ACTIONS, exploreViewerRelation } from "./explore-viewer-relation.ts";
 
 export function ExploreCompetitionDetailPage({
+  application = null,
   competitionId,
 }: {
+  /** Set by the landing «Unirme» handoff: focus the application with this team name. */
+  readonly application?: { readonly teamName: string } | null;
   readonly competitionId: string;
 }) {
   const { locale, t } = useI18n();
@@ -192,6 +195,7 @@ export function ExploreCompetitionDetailPage({
           {actions.manage ? null : (
             <ExploreCompetitionApplication
               competitionId={item.competition.id}
+              prefill={application}
               status={item.competition.status}
             />
           )}

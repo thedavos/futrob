@@ -23,6 +23,8 @@ export interface OnboardingDraft {
   readonly gameEdition: string;
   readonly customGameEdition: boolean;
   readonly selectedExternalClub: SelectedExternalClubDraft | null;
+  /** A competition the landing asked to join; finishing the player path opens its application. */
+  readonly joiningCompetitionId: string | null;
 }
 
 export function createEmptyDraft(): OnboardingDraft {
@@ -37,6 +39,7 @@ export function createEmptyDraft(): OnboardingDraft {
     gameEdition: "",
     customGameEdition: false,
     selectedExternalClub: null,
+    joiningCompetitionId: null,
   };
 }
 

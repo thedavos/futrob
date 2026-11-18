@@ -20,6 +20,7 @@ function draft(patch: Partial<OnboardingDraft> = {}): OnboardingDraft {
     gameEdition: "",
     customGameEdition: false,
     selectedExternalClub: null,
+    joiningCompetitionId: null,
     ...patch,
   };
 }

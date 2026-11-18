@@ -1,22 +1,34 @@
 import { defaultStringifySearch, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import type { ExternalClubDto, PlayerExternalClubSelectionInputDto } from "@futrob/api-contracts";
+import { competitionApplySearch } from "@/modules/competitions/presentation/explore/competition-apply-search.ts";
 import { identityBrowserClient } from "@/modules/identity/presentation/identity-browser-client.ts";
 import type { StoredOnboarding } from "./onboarding-draft-storage.ts";
 import { createEmptyDraft, type SelectedExternalClubDraft } from "./onboarding-draft.ts";
 
 /**
- * A link that starts onboarding with something already chosen: an invitation code, or an EA
- * club picked on the landing before signing up.
+ * A link that starts onboarding with something already chosen: an invitation code, an EA club
+ * picked on the landing before signing up, or an open competition to join (with that club, if
+ * one was picked).
  */
 export type OnboardingHandoff =
   | Readonly<{ kind: "invitation"; code: string }>
-  | Readonly<{ kind: "club"; locator: PlayerExternalClubSelectionInputDto }>;
+  | Readonly<{ kind: "club"; locator: PlayerExternalClubSelectionInputDto }>
+  | Readonly<{
+      kind: "competition";
+      competitionId: string;
+      club: PlayerExternalClubSelectionInputDto | null;
+    }>;
 
 /** The handoff after its club was looked up for the signed-in actor; `null` when it failed. */
 export type ResolvedOnboardingHandoff =
   | Extract<OnboardingHandoff, { kind: "invitation" }>
-  | Readonly<{ kind: "club"; club: SelectedExternalClubDraft | null }>;
+  | Readonly<{ kind: "club"; club: SelectedExternalClubDraft | null }>
+  | Readonly<{
+      kind: "competition";
+      competitionId: string;
+      club: SelectedExternalClubDraft | null;
+    }>;
 
 // The router parses a bare numeric value such as an EA club id into a number.
 const searchText = (max = Number.MAX_SAFE_INTEGER) =>
@@ -30,6 +42,7 @@ const searchText = (max = Number.MAX_SAFE_INTEGER) =>
 /** Search params of every onboarding route. A malformed value is dropped, never an error. */
 export const onboardingHandoffSearchSchema = z.object({
   invitation: searchText(),
+  competition: searchText(80),
   club: searchText(80),
   platform: searchText(40),
   edition: searchText(40),
@@ -40,15 +53,27 @@ export type OnboardingHandoffSearch = z.output<typeof onboardingHandoffSearchSch
 export function onboardingHandoffFromSearch(
   search: OnboardingHandoffSearch,
 ): OnboardingHandoff | null {
-  const { invitation, club, platform, edition } = search;
+  const { invitation, competition, club, platform, edition } = search;
   if (invitation) return { kind: "invitation", code: invitation };
-  if (club && platform && edition) {
-    return {
-      kind: "club",
-      locator: { providerKey: "ea-clubs", externalClubId: club, platform, gameEdition: edition },
-    };
-  }
-  return null;
+  const locator =
+    club && platform && edition
+      ? ({
+          providerKey: "ea-clubs",
+          externalClubId: club,
+          platform,
+          gameEdition: edition,
+        } as const)
+      : null;
+  if (competition) return { kind: "competition", competitionId: competition, club: locator };
+  return locator ? { kind: "club", locator } : null;
+}
+
+function clubSearch(locator: PlayerExternalClubSelectionInputDto) {
+  return {
+    club: locator.externalClubId,
+    platform: locator.platform,
+    edition: locator.gameEdition,
+  };
 }
 
 export function onboardingHandoffLocation(handoff: OnboardingHandoff) {
@@ -56,14 +81,12 @@ export function onboardingHandoffLocation(handoff: OnboardingHandoff) {
     case "invitation":
       return { to: "/onboarding/invitation", search: { invitation: handoff.code } } as const;
     case "club":
-      return {
-        to: "/onboarding/club",
-        search: {
-          club: handoff.locator.externalClubId,
-          platform: handoff.locator.platform,
-          edition: handoff.locator.gameEdition,
-        },
-      } as const;
+      return { to: "/onboarding/club", search: clubSearch(handoff.locator) } as const;
+    case "competition": {
+      const competition = handoff.competitionId;
+      const search = handoff.club ? { competition, ...clubSearch(handoff.club) } : { competition };
+      return { to: "/onboarding/review", search } as const;
+    }
   }
 }
 
@@ -78,23 +101,51 @@ export async function resolveOnboardingHandoff(
   handoff: OnboardingHandoff,
   lookupClub: (locator: PlayerExternalClubSelectionInputDto) => Promise<ExternalClubDto>,
 ): Promise<ResolvedOnboardingHandoff> {
-  if (handoff.kind === "invitation") return handoff;
+  switch (handoff.kind) {
+    case "invitation":
+      return handoff;
+    case "club":
+      return { kind: "club", club: await lookupSelectedClub(handoff.locator, lookupClub) };
+    case "competition":
+      return {
+        kind: "competition",
+        competitionId: handoff.competitionId,
+        club: handoff.club ? await lookupSelectedClub(handoff.club, lookupClub) : null,
+      };
+  }
+}
+
+async function lookupSelectedClub(
+  locator: PlayerExternalClubSelectionInputDto,
+  lookupClub: (locator: PlayerExternalClubSelectionInputDto) => Promise<ExternalClubDto>,
+): Promise<SelectedExternalClubDraft | null> {
   try {
-    const { providerKey, externalClubId, platform, gameEdition, name, imageUrl } = await lookupClub(
-      handoff.locator,
-    );
-    return {
-      kind: "club",
-      club: { providerKey, externalClubId, platform, gameEdition, name, imageUrl },
-    };
+    const { providerKey, externalClubId, platform, gameEdition, name, imageUrl } =
+      await lookupClub(locator);
+    return { providerKey, externalClubId, platform, gameEdition, name, imageUrl };
   } catch {
-    return { kind: "club", club: null };
+    return null;
   }
 }
 
 /**
- * Where a handoff opens: the invitation step with the code filled in, or the player review with
- * the club selected (the club step when the lookup failed). A draft of the same path is kept.
+ * Where an actor who already finished onboarding lands from a competition link: its detail with
+ * the application open, the looked-up club name as the team name.
+ */
+export function competitionHandoffDestination(
+  handoff: Extract<ResolvedOnboardingHandoff, { kind: "competition" }>,
+) {
+  return {
+    to: "/player/competitions/$competitionId",
+    params: { competitionId: handoff.competitionId },
+    search: competitionApplySearch(handoff.club?.name ?? null),
+  } as const;
+}
+
+/**
+ * Where a handoff opens: the invitation step with the code filled in, the player review with the
+ * club selected (the club step when the lookup failed), or the player review set to join a
+ * competition, with or without a club. A draft of the same path is kept.
  */
 export function onboardingStateForHandoff(
   handoff: ResolvedOnboardingHandoff,
@@ -114,7 +165,19 @@ export function onboardingStateForHandoff(
       return {
         path: "player",
         step: handoff.club ? "review" : "club",
-        draft: { ...draft, selectedExternalClub: handoff.club },
+        draft: { ...draft, selectedExternalClub: handoff.club, joiningCompetitionId: null },
+      };
+    }
+    case "competition": {
+      const draft = stored?.path === "player" ? stored.draft : createEmptyDraft();
+      return {
+        path: "player",
+        step: "review",
+        draft: {
+          ...draft,
+          selectedExternalClub: handoff.club ?? draft.selectedExternalClub,
+          joiningCompetitionId: handoff.competitionId,
+        },
       };
     }
   }

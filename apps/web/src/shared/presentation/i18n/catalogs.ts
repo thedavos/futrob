@@ -1173,6 +1173,7 @@ const es = {
   "onboarding.review.finish.organization": "Crear organización",
   "onboarding.review.finish.invitation": "Aceptar invitación",
   "onboarding.review.finish.player": "Entrar a mi espacio",
+  "onboarding.review.finish.competition": "Continuar a la inscripción",
   "errors.fallback": "No pudimos completar la operación. Inténtalo nuevamente.",
   "errors.onboarding.organizationCheck": "No pudimos verificar el nombre. Inténtalo nuevamente.",
   "errors.api.rate_limited":
@@ -4780,6 +4781,7 @@ const en: Catalog = {
   "onboarding.review.finish.organization": "Create organization",
   "onboarding.review.finish.invitation": "Accept invitation",
   "onboarding.review.finish.player": "Enter my personal space",
+  "onboarding.review.finish.competition": "Continue to the application",
   "errors.fallback": "We couldn't complete the operation. Try again.",
   "errors.onboarding.organizationCheck": "We couldn't check the name. Try again.",
   "errors.api.rate_limited": "You reached the temporary limit. Wait before trying again.",

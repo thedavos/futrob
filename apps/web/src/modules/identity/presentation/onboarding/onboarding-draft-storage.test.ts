@@ -47,6 +47,16 @@ describe("browserOnboardingDraftStore", () => {
     });
   });
 
+  it("keeps the competition a landing link asked to join", () => {
+    browserOnboardingDraftStore("user-a").save({
+      path: "player",
+      step: "review",
+      draft: { ...createEmptyDraft(), joiningCompetitionId: "c-open" },
+    });
+
+    expect(browserOnboardingDraftStore("user-a").load()?.draft.joiningCompetitionId).toBe("c-open");
+  });
+
   it("returns nothing for another user or unreadable data", () => {
     browserOnboardingDraftStore("user-a").save({
       path: "organization",
