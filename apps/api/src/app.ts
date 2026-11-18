@@ -15,7 +15,10 @@ import {
   registerGameDataClubRoutes,
   registerPublicGameDataClubRoutes,
 } from "@/http/routes/game-data-clubs.ts";
-import { registerCompetitionRoutes } from "@/http/routes/competitions.ts";
+import {
+  registerCompetitionRoutes,
+  registerPublicCompetitionRoutes,
+} from "@/http/routes/competitions.ts";
 import { registerCompetitionParticipantRoutes } from "@/http/routes/competitions-participants.ts";
 import {
   registerEntryInvitationRoutes,
@@ -117,6 +120,7 @@ export function createApp(deps: AppDeps): Hono {
   registerCandidateRecalculationRoutes(v1, deps);
   registerPublicEntryInvitationRoutes(v1, deps);
   registerPublicGameDataClubRoutes(v1, deps);
+  registerPublicCompetitionRoutes(v1, deps);
   registerProviderHealthRoutes(v1, deps);
   registerStatisticsRebuildRoutes(v1, deps);
   registerGameDataClubRoutes(v1, deps);

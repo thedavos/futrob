@@ -10,6 +10,7 @@ import {
   ExploreCompetition,
   ExploreCompetitionsResponse,
   ListAccessibleCompetitionsResponse,
+  OpenCompetitionsResponse,
   RegisterTeamEntryRequest,
   UpdateCompetitionDraftInput,
 } from "@/http/openapi/components.ts";
@@ -20,6 +21,7 @@ import {
   createCompetitionInvitationRequestSchema,
   exploreCompetitionsQuerySchema,
   getMyCompetitionApplicationResponseSchema,
+  openCompetitionsQuerySchema,
   listCompetitionParticipantsResponseSchema,
   listOrganizationCompetitionsResponseSchema,
   updateCompetitionCoverRequestSchema,
@@ -94,6 +96,23 @@ export const exploreCompetitionsRoute = defineRoute({
     status: 200,
     description: "Discoverable competitions matching the filters",
     schema: ExploreCompetitionsResponse,
+  },
+  errors: [400, 401],
+});
+
+export const listOpenCompetitionsAnonymouslyRoute = defineRoute({
+  method: "get",
+  path: "/internal/competitions/explore/open",
+  operationId: "listOpenCompetitionsAnonymously",
+  tags: ["competitions"],
+  summary: "List listed competitions with open registration before signing in",
+  description:
+    "Service-only endpoint authenticated with the internal bearer secret; takes no actor. Always returns competitions in registration that are listed in Explore, newest first; the caller cannot change status or listing. Lets the web BFF serve the signed-out landing, which rate-limits callers by IP.",
+  query: openCompetitionsQuerySchema,
+  success: {
+    status: 200,
+    description: "Open, listed competitions",
+    schema: OpenCompetitionsResponse,
   },
   errors: [400, 401],
 });

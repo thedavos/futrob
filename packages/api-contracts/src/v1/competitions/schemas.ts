@@ -237,6 +237,27 @@ export const exploreCompetitionsResponseSchema = z.object({
 });
 export type ExploreCompetitionsResponse = z.infer<typeof exploreCompetitionsResponseSchema>;
 
+/** The signed-out landing shows at most this many competitions with open registration. */
+export const OPEN_COMPETITIONS_MAX_LIMIT = 6;
+
+/** Signed-out list of competitions in registration. Status and listing are fixed server-side. */
+export const openCompetitionsQuerySchema = z.object({
+  platform: optionalQuery(competitionPlatformSchema),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(OPEN_COMPETITIONS_MAX_LIMIT)
+    .default(OPEN_COMPETITIONS_MAX_LIMIT),
+});
+export type OpenCompetitionsQuery = z.infer<typeof openCompetitionsQuerySchema>;
+export type OpenCompetitionsQueryInput = z.input<typeof openCompetitionsQuerySchema>;
+
+export const openCompetitionsResponseSchema = z.object({
+  items: z.array(exploreCompetitionSchema),
+});
+export type OpenCompetitionsResponse = z.infer<typeof openCompetitionsResponseSchema>;
+
 export const getExploreCompetitionResponseSchema = exploreCompetitionSchema;
 export type GetExploreCompetitionResponse = z.infer<typeof getExploreCompetitionResponseSchema>;
 
