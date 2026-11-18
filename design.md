@@ -707,6 +707,13 @@ Orden en `routes/index.tsx`, alternando `band` y `base` desde el hero:
    «Crear cuenta con este club» (única lima de la sección) y la secundaria `ghost` «¿Organizas un
    torneo? Crea tu competición» (`/signup`). La primaria abre `/signup?redirectTo=` con el handoff
    de club del onboarding; con sesión va directa a ese handoff.
+   Debajo, una `Card` «Inscripciones abiertas» lista hasta seis competiciones en filas (portada,
+   nombre, organización, formato · plataforma, «N de M equipos» · fechas) desde
+   `/api/v1/public/competitions/explore`. Cada fila tiene «Unirme» `secondary`, «Unirme con
+   <club>» si hay club elegido, que abre `/signup?redirectTo=` con el handoff `competition`. Un club
+   de PS5 o Xbox filtra por PlayStation o Xbox; cross-gen y Nintendo no filtran. Estados: carga,
+   error con «Reintentar», vacío «No hay inscripciones abiertas ahora» y vacío por plataforma con
+   «Ver todas las plataformas».
 6. Precios (`#precios`, `base`): `PricingPlanGrid`, la misma cuadrícula de `/pricing`, con el catálogo
    público cargado en el loader de `/`. Si falla, la sección muestra el aviso de planes no disponibles.
 7. Preguntas frecuentes (`#preguntas`, `band`): `<details>` nativos; solo respuestas verificadas

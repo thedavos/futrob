@@ -12,6 +12,7 @@ After signup, a new actor picks `Empezar como jugador`, may skip EA details, con
 - `onb-player-finish` submits `Entrar a mi espacio` and lands on `/player` with heading `Inicio`.
 - `onb-player-guard` sending an incomplete actor to `/player`, `/orgs` or any other authenticated page returns them to `/onboarding`.
 - `onb-club-handoff` the landing `Crear cuenta con este club` link (`/onboarding/club?club=<id>&platform=<p>&edition=<e>`) opens the player review with that club selected; if the club lookup fails it opens `Asocia tu club EA` with nothing selected. A completed actor goes to `/player/ea-clubs`.
+- `onb-competition-handoff` the landing `Unirme` link (`/onboarding/review?competition=<id>`, plus the club params when a club was picked) opens the player review, keeps the competition in the local draft, and finishes with `Continuar a la inscripción` on `/player/competitions/<id>?apply=true&teamName=<club>`. A completed actor goes straight there.
 - `onb-resume` reloading mid-flow keeps the draft and reopens the step the actor reached.
 
 ## How to get to it (user POV)
