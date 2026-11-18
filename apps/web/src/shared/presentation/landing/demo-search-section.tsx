@@ -21,8 +21,13 @@ import {
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { LandingSection } from "@/shared/presentation/landing/landing-section.tsx";
+import { OpenCompetitionsPanel } from "@/shared/presentation/landing/open-competitions-panel.tsx";
 
 const styles = stylex.create({
+  visual: {
+    display: "grid",
+    gap: space.s6,
+  },
   card: {
     display: "grid",
     gap: space.s6,
@@ -79,7 +84,10 @@ const styles = stylex.create({
   },
 });
 
-/** Landing search of an EA club that ends in signing up with that club already chosen. */
+/**
+ * Landing search of an EA club that ends in signing up with that club already chosen, next to
+ * the competitions with open registration it can join.
+ */
 export function DemoSearchSection() {
   const { t } = useI18n();
   const [selected, setSelected] = useState<ExternalClubDto | null>(null);
@@ -97,7 +105,10 @@ export function DemoSearchSection() {
       title={t("landing.demo.title")}
       tone="band"
     >
-      {selected ? <SelectedClubCard club={selected} /> : <IdleClubCard />}
+      <div {...applyStyles(styles.visual)}>
+        {selected ? <SelectedClubCard club={selected} /> : <IdleClubCard />}
+        <OpenCompetitionsPanel club={selected} key={selected?.externalClubId ?? "none"} />
+      </div>
     </LandingSection>
   );
 }

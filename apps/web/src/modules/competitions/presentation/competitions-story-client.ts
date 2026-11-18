@@ -200,6 +200,10 @@ export async function updateCompetitionCover() {
   throw new CompetitionsClientError(503, "competitions.unavailable");
 }
 
+export async function listOpenCompetitions() {
+  return { items: [] };
+}
+
 export async function updateCompetitionExploreListing() {
   throw new CompetitionsClientError(503, "competitions.unavailable");
 }

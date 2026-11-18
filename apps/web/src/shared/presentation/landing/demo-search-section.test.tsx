@@ -18,6 +18,7 @@ import {
   onboardingHandoffSearchSchema,
 } from "@/modules/identity/presentation/onboarding/onboarding-handoff.ts";
 import { DemoSearchSection } from "./demo-search-section.tsx";
+import { competitionPlatformForClub } from "./open-competitions-model.ts";
 
 const session = vi.hoisted(() => ({
   isPending: false,
@@ -51,10 +52,51 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function stubSearch(response: () => Response) {
-  const fetchMock = vi.fn(async (_url: string) => response());
+const OPEN_PATH = "/api/v1/public/competitions/explore";
+
+function openCompetition(id: string, name: string, platform = "playstation") {
+  return {
+    competition: {
+      id,
+      organizationId: "org-1",
+      name,
+      status: "registration",
+      modality: "fc-clubs",
+      exploreListing: "listed",
+      gameEdition: "FC 26",
+      platform,
+      region: "south-america",
+      timeZone: "America/Lima",
+      format: "league",
+      teams: { min: 2, max: 8 },
+      schedule: { startsOn: null, endsOn: null },
+      cover: { kind: "preset", preset: "cup" },
+      createdAt: "2026-11-01T00:00:00.000Z",
+      updatedAt: "2026-11-01T00:00:00.000Z",
+    },
+    organization: { id: "org-1", name: "Liga Andina" },
+    approvedTeamCount: 3,
+  };
+}
+
+/** Club searches answer `response`; the open competitions list answers `open`. */
+function stubSearch(
+  response: () => Response | Promise<Response>,
+  open: (url: string) => Response = () => Response.json({ items: [] }),
+) {
+  const fetchMock = vi.fn(async (url: string) =>
+    url.startsWith(OPEN_PATH) ? open(url) : response(),
+  );
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
+}
+
+function clubSearchCalls(fetchMock: ReturnType<typeof stubSearch>) {
+  return fetchMock.mock.calls.map(([url]) => url).filter((url) => !url.startsWith(OPEN_PATH));
+}
+
+function openCalls(fetchMock: ReturnType<typeof stubSearch>) {
+  return fetchMock.mock.calls.map(([url]) => url).filter((url) => url.startsWith(OPEN_PATH));
 }
 
 function renderSection() {
@@ -114,7 +156,7 @@ describe("DemoSearchSection", () => {
     await searchFor("Fera");
 
     const cta = await findAnchor("Crear cuenta con este club");
-    expect(fetchMock.mock.calls[0]?.[0]).toContain("/api/v1/public/game-data/clubs/search?");
+    expect(clubSearchCalls(fetchMock)[0]).toContain("/api/v1/public/game-data/clubs/search?");
     expect(screen.getByRole("button", { name: /Fera Enjaulada/ })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -152,7 +194,7 @@ describe("DemoSearchSection", () => {
 
     await findAnchor("Crear cuenta con este club");
     expect(
-      new URL(fetchMock.mock.calls[0]?.[0] ?? "", "https://futrob.test").searchParams.get("query"),
+      new URL(clubSearchCalls(fetchMock)[0] ?? "", "https://futrob.test").searchParams.get("query"),
     ).toBe("Fera");
     expect(input).toHaveValue("Fera");
     expect(input).not.toHaveAttribute("aria-invalid", "true");
@@ -171,14 +213,16 @@ describe("DemoSearchSection", () => {
 
   it("drops the chosen club while another platform is searched", async () => {
     let answerPs5: (response: Response) => void = () => undefined;
-    const fetchMock = vi.fn(async (url: string) =>
-      url.includes("platform=ps5")
-        ? new Promise<Response>((resolve) => {
-            answerPs5 = resolve;
-          })
-        : Response.json({ clubs: [FERA] }),
+    const clubSearch = vi.fn(async (url: string) =>
+      url.startsWith(OPEN_PATH)
+        ? Response.json({ items: [] })
+        : url.includes("platform=ps5")
+          ? new Promise<Response>((resolve) => {
+              answerPs5 = resolve;
+            })
+          : Response.json({ clubs: [FERA] }),
     );
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", clubSearch);
     renderSection();
     await searchFor("Fera");
     await findAnchor("Crear cuenta con este club");
@@ -228,5 +272,103 @@ describe("DemoSearchSection", () => {
     const alert = await screen.findByRole("alert");
     expect(within(alert).getByText("Alcanzaste el límite temporal de búsquedas.")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Reintentar en \d+ s/ })).toBeDisabled();
+  });
+
+  it("lists open competitions signed out and joins one through signup", async () => {
+    stubSearch(
+      () => Response.json({ clubs: [FERA] }),
+      () => Response.json({ items: [openCompetition("c-open", "Copa Andina")] }),
+    );
+    renderSection();
+
+    const join = await findAnchor("Unirme");
+    expect(join).toHaveAccessibleName("Unirme a Copa Andina");
+    expect(screen.getByText("Organiza Liga Andina")).toBeTruthy();
+    expect(screen.getByText(/3 de 8 equipos/)).toBeTruthy();
+    const signup = new URL(join.getAttribute("href") ?? "", "https://futrob.test");
+    expect(signup.pathname).toBe("/signup");
+    expect(handoffFromHref(signup.searchParams.get("redirectTo"))).toEqual({
+      pathname: "/onboarding/review",
+      handoff: { kind: "competition", competitionId: "c-open", club: null },
+    });
+  });
+
+  it("joins with the picked club and narrows to its platform when it maps to one", async () => {
+    const fetchMock = stubSearch(
+      () => Response.json({ clubs: [{ ...FERA, platform: "ps5" }] }),
+      () => Response.json({ items: [openCompetition("c-open", "Copa Andina")] }),
+    );
+    renderSection();
+    await findAnchor("Unirme");
+
+    await searchFor("Fera");
+
+    const join = await findAnchor("Unirme con Fera Enjaulada");
+    expect(openCalls(fetchMock).at(-1)).toBe(`${OPEN_PATH}?platform=playstation`);
+    expect(
+      screen.getByText("Competiciones de PlayStation que aceptan equipos ahora."),
+    ).toBeTruthy();
+    const redirectTo = new URL(join.getAttribute("href") ?? "", "https://futrob.test").searchParams;
+    expect(handoffFromHref(redirectTo.get("redirectTo")).handoff).toEqual({
+      kind: "competition",
+      competitionId: "c-open",
+      club: {
+        providerKey: "ea-clubs",
+        externalClubId: "10754",
+        platform: "ps5",
+        gameEdition: "fc27",
+      },
+    });
+  });
+
+  it("offers every platform when the club's platform has nothing open", async () => {
+    const fetchMock = stubSearch(
+      () => Response.json({ clubs: [{ ...FERA, platform: "xbox" }] }),
+      (url) =>
+        Response.json({
+          items: url.includes("platform=") ? [] : [openCompetition("c-pc", "Liga PC", "pc")],
+        }),
+    );
+    renderSection();
+    await searchFor("Fera");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Ver todas las plataformas" }));
+
+    expect(await findAnchor("Unirme con Fera Enjaulada")).toBeTruthy();
+    expect(openCalls(fetchMock)).toContain(`${OPEN_PATH}?platform=xbox`);
+    expect(openCalls(fetchMock).at(-1)).toBe(OPEN_PATH);
+  });
+
+  it("keeps the section with an empty state and recovers from a failed list", async () => {
+    let fail = true;
+    stubSearch(
+      () => Response.json({ clubs: [] }),
+      () =>
+        fail
+          ? Response.json(
+              { code: "api.unavailable", messageKey: "errors.api.unavailable" },
+              { status: 503 },
+            )
+          : Response.json({ items: [] }),
+    );
+    renderSection();
+
+    expect(await screen.findByText("No pudimos cargar las inscripciones abiertas.")).toBeTruthy();
+    fail = false;
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+
+    expect(await screen.findByText("No hay inscripciones abiertas ahora.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Inscripciones abiertas" })).toBeTruthy();
+  });
+});
+
+describe("competitionPlatformForClub", () => {
+  it("filters only the EA platforms that map to a single competition platform", () => {
+    expect(competitionPlatformForClub({ platform: "ps5" })).toBe("playstation");
+    expect(competitionPlatformForClub({ platform: "xbox" })).toBe("xbox");
+    expect(competitionPlatformForClub({ platform: "common-gen5" })).toBeNull();
+    expect(competitionPlatformForClub({ platform: "nx" })).toBeNull();
+    expect(competitionPlatformForClub({ platform: "unknown" })).toBeNull();
+    expect(competitionPlatformForClub(null)).toBeNull();
   });
 });

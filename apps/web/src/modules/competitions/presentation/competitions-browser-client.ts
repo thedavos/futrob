@@ -3,6 +3,9 @@ import {
   createCompetitionDraftResponseSchema,
   exploreCompetitionsQuerySchema,
   exploreCompetitionsResponseSchema,
+  openCompetitionsResponseSchema,
+  type CompetitionPlatformDto,
+  type OpenCompetitionsResponse,
   getCompetitionDraftResponseSchema,
   getExploreCompetitionResponseSchema,
   listOrganizationCompetitionsResponseSchema,
@@ -231,6 +234,19 @@ export function updateCompetitionCover(
     { method: "PUT", body: updateCompetitionCoverRequestSchema.parse(input) },
     updateCompetitionCoverResponseSchema,
   );
+}
+
+/** Signed-out landing list of open, listed competitions, limited per IP. */
+export function listOpenCompetitions(
+  platform: CompetitionPlatformDto | null,
+): Promise<OpenCompetitionsResponse> {
+  const search = platform ? `?${new URLSearchParams({ platform }).toString()}` : "";
+  return requestCompetitionsJson({
+    path: `/api/v1/public/competitions/explore${search}`,
+    method: "GET",
+    schema: openCompetitionsResponseSchema,
+    fallbackCode: "competitions.open_list_failed",
+  });
 }
 
 export function updateCompetitionExploreListing(

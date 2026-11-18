@@ -104,6 +104,9 @@ export const queryKeys = {
     mine: () => [...queryKeys.competitions.all, "mine"] as const,
     explore: (query: ExploreCompetitionsQuery) =>
       [...queryKeys.competitions.all, "explore", query] as const,
+    /** Signed-out landing list; under `explore` so listing changes refresh it too. */
+    exploreOpen: (platform: string | null) =>
+      [...queryKeys.competitions.all, "explore", "open", platform] as const,
     exploreDetail: (competitionId: string) =>
       [...queryKeys.competitions.all, "explore", "detail", competitionId] as const,
     exploreApplication: (competitionId: string) =>

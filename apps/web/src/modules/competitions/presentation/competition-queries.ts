@@ -11,6 +11,7 @@ import type {
   CompetitionDraftDto,
   CompetitionExploreListingDto,
   CompetitionParticipantInput,
+  CompetitionPlatformDto,
   CreateCompetitionDraftRequest,
   ExploreCompetitionsQueryInput,
   ListCompetitionParticipantsResponse,
@@ -38,6 +39,7 @@ import {
   uploadCompetitionCover,
   updateCompetitionCover,
   updateCompetitionExploreListing,
+  listOpenCompetitions,
   getMyCompetitionApplication,
   applyToCompetition,
   CompetitionsClientError,
@@ -286,6 +288,14 @@ export function useUpdateCompetitionCoverMutation(organizationId: string, compet
         queryKey: queryKeys.competitions.byOrganization(organizationId),
       });
     },
+  });
+}
+
+/** Open, listed competitions for the signed-out landing, optionally on one platform. */
+export function useOpenCompetitionsQuery(platform: CompetitionPlatformDto | null) {
+  return useQuery({
+    queryKey: queryKeys.competitions.exploreOpen(platform),
+    queryFn: () => listOpenCompetitions(platform),
   });
 }
 

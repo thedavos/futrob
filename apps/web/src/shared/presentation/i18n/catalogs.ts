@@ -2295,6 +2295,23 @@ const es = {
   "landing.demo.idle": "Elige un club de los resultados para crear tu cuenta con él.",
   "landing.demo.cta": "Crear cuenta con este club",
   "landing.demo.organizer": "¿Organizas un torneo? Crea tu competición",
+  "landing.openCompetitions.title": "Inscripciones abiertas",
+  "landing.openCompetitions.subtitle": "Competiciones que aceptan equipos ahora.",
+  "landing.openCompetitions.subtitlePlatform": ({ platform }) =>
+    `Competiciones de ${platform} que aceptan equipos ahora.`,
+  "landing.openCompetitions.join": "Unirme",
+  "landing.openCompetitions.joinWith": ({ club }) => `Unirme con ${club}`,
+  "landing.openCompetitions.joinLabel": ({ competition }) => `Unirme a ${competition}`,
+  "landing.openCompetitions.joinWithLabel": ({ competition, club }) =>
+    `Unirme a ${competition} con ${club}`,
+  "landing.openCompetitions.empty": "No hay inscripciones abiertas ahora.",
+  "landing.openCompetitions.emptyHint": "Vuelve pronto o crea tu propia competición.",
+  "landing.openCompetitions.emptyPlatform": ({ platform }) =>
+    `No hay inscripciones abiertas en ${platform} ahora.`,
+  "landing.openCompetitions.showAll": "Ver todas las plataformas",
+  "landing.openCompetitions.loading": "Cargando inscripciones abiertas",
+  "landing.openCompetitions.error": "No pudimos cargar las inscripciones abiertas.",
+  "landing.openCompetitions.retry": "Reintentar",
   "gameData.clubSearch.source": "Datos en vivo de EA SPORTS FC Clubs. Buscar no requiere cuenta.",
   "gameData.clubSearch.queryLabel": "Nombre del club",
   "gameData.clubSearch.queryPlaceholder": "Ej. Fera Enjaulada",
@@ -3257,6 +3274,14 @@ export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "landing.openCompetitions.subtitlePlatform": { readonly platform: string };
+  readonly "landing.openCompetitions.joinWith": { readonly club: string };
+  readonly "landing.openCompetitions.joinLabel": { readonly competition: string };
+  readonly "landing.openCompetitions.joinWithLabel": {
+    readonly competition: string;
+    readonly club: string;
+  };
+  readonly "landing.openCompetitions.emptyPlatform": { readonly platform: string };
   readonly "audit.correlation": { readonly id: string };
   readonly "bracket.rounds.other": { readonly count: number };
   readonly "bracket.encounters.other": { readonly count: number };
@@ -5879,6 +5904,23 @@ const en: Catalog = {
   "landing.demo.idle": "Pick a club from the results to create your account with it.",
   "landing.demo.cta": "Create account with this club",
   "landing.demo.organizer": "Running a tournament? Create your competition",
+  "landing.openCompetitions.title": "Open registration",
+  "landing.openCompetitions.subtitle": "Competitions taking teams now.",
+  "landing.openCompetitions.subtitlePlatform": ({ platform }) =>
+    `${platform} competitions taking teams now.`,
+  "landing.openCompetitions.join": "Join",
+  "landing.openCompetitions.joinWith": ({ club }) => `Join with ${club}`,
+  "landing.openCompetitions.joinLabel": ({ competition }) => `Join ${competition}`,
+  "landing.openCompetitions.joinWithLabel": ({ competition, club }) =>
+    `Join ${competition} with ${club}`,
+  "landing.openCompetitions.empty": "No competition has open registration right now.",
+  "landing.openCompetitions.emptyHint": "Check back soon or create your own competition.",
+  "landing.openCompetitions.emptyPlatform": ({ platform }) =>
+    `No ${platform} competition has open registration right now.`,
+  "landing.openCompetitions.showAll": "Show every platform",
+  "landing.openCompetitions.loading": "Loading open registrations",
+  "landing.openCompetitions.error": "We couldn't load the open registrations.",
+  "landing.openCompetitions.retry": "Try again",
   "gameData.clubSearch.source": "Live data from EA SPORTS FC Clubs. Searching needs no account.",
   "gameData.clubSearch.queryLabel": "Club name",
   "gameData.clubSearch.queryPlaceholder": "E.g. Fera Enjaulada",
