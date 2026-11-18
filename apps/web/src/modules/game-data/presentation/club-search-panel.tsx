@@ -146,7 +146,7 @@ export function ClubSearchPanel({ selectedExternalClubId, onSelect }: ClubSearch
               type="search"
               value={query}
             />
-            <Button disabled={loading || retry.blocked} type="submit">
+            <Button disabled={loading || retry.blocked} type="submit" variant="secondary">
               {loading
                 ? t("gameData.clubSearch.searching")
                 : retry.blocked

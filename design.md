@@ -699,8 +699,8 @@ Orden en `routes/index.tsx`, alternando `band` y `base` desde el hero:
    La reprogramación vive en el ejemplo de Capitanes.
 4. Portal público (`#portal`, `base`): destino del CTA secundario del hero.
 5. Busca tu club en EA (`#demo`, `band`, `align="start"`). La columna de copy lleva el buscador:
-   campo de nombre, plataformas como `ChoiceGroup` `pill` (cambiar de plataforma repite la última
-   búsqueda), consultas de ejemplo y hasta tres resultados. Busca sin sesión por la ruta pública
+   campo de nombre con el botón `secondary` «Buscar», plataformas como `ChoiceGroup` `pill`
+   (cambiar de plataforma repite la última búsqueda), consultas de ejemplo y hasta tres resultados. Busca sin sesión por la ruta pública
    `/api/v1/public/game-data/clubs/search`, limitada por IP; el estado 429 bloquea el botón con la
    cuenta atrás. Cada búsqueda selecciona el primer resultado. La columna visual es una `Card`: sin
    selección, una ayuda; con selección, escudo, nombre y plataforma · edición, la CTA primaria
