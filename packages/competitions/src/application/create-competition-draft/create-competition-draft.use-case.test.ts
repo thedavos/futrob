@@ -45,6 +45,7 @@ describe("CreateCompetitionDraftUseCase", () => {
       name: "Liga Futrob",
       status: "draft",
       modality: "fc-clubs",
+      exploreListing: "listed",
       format: "league",
       teams: { min: 2, max: null },
       schedule: { startsOn: null, endsOn: null },

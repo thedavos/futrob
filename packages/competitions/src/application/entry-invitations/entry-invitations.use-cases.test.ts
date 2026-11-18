@@ -43,6 +43,7 @@ function draft(status: CompetitionStatus = "draft"): CompetitionDraft {
       name: "Liga Interclubes",
       status,
       modality: "fc-clubs",
+      exploreListing: "listed",
       gameEdition: "FC 26",
       platform: "playstation",
       region: "south-america",

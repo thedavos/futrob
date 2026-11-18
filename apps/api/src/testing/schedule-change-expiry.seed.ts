@@ -32,6 +32,7 @@ export function competitionDraft(hours: number, organizerRequired: boolean): Com
       name: "Expiry cup",
       status: "published",
       modality: "fc-clubs",
+      exploreListing: "listed",
       gameEdition: "FC26",
       platform: "pc",
       region: "south-america",

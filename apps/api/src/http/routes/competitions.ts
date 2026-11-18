@@ -15,6 +15,7 @@ import {
   listOrganizationTeamsResponseSchema,
   updateCompetitionCoverResponseSchema,
   updateCompetitionDraftResponseSchema,
+  updateCompetitionExploreListingResponseSchema,
 } from "@futrob/api-contracts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { TEAM_PERMISSION } from "@futrob/teams";
@@ -33,6 +34,7 @@ import {
   listOrganizationCompetitionsRoute,
   updateCompetitionCoverRoute,
   updateCompetitionDraftRoute,
+  updateCompetitionExploreListingRoute,
 } from "@/http/openapi/routes/competitions.ts";
 import {
   getCompetitionRankingsRoute,
@@ -160,6 +162,20 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
       updateCompetitionCoverResponseSchema.parse(competitionDraftDto(result.value)),
+    );
+  });
+
+  secured.openapi(updateCompetitionExploreListingRoute, async (c) => {
+    const params = c.req.valid("param");
+    const result = await deps.modules.competitions.updateExploreListing.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+      exploreListing: c.req.valid("json").exploreListing,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      updateCompetitionExploreListingResponseSchema.parse(competitionDraftDto(result.value)),
     );
   });
 

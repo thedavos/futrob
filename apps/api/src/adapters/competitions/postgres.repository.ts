@@ -14,6 +14,7 @@ import {
   rehydrateCover,
 } from "@/adapters/competitions/competition-profile-columns.ts";
 import {
+  competitionExploreListingSchema,
   competitionFormatSchema,
   competitionPlatformSchema,
   competitionRegionSchema,
@@ -169,6 +170,23 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     return { ...draft, competition: rehydrateCompetition(result.rows[0]) };
   }
 
+  async saveExploreListing(draft: CompetitionDraft): Promise<CompetitionDraft> {
+    const result = await getPgExecutor(this.pool).query(
+      `UPDATE competitions
+       SET explore_listing = $3, updated_at = $4
+       WHERE id = $1 AND organization_id = $2
+       RETURNING *`,
+      [
+        draft.competition.id,
+        draft.competition.organizationId,
+        draft.competition.exploreListing,
+        draft.competition.updatedAt.toISOString(),
+      ],
+    );
+    if (!result.rows[0]) return draft;
+    return { ...draft, competition: rehydrateCompetition(result.rows[0]) };
+  }
+
   async changeStatus(
     draft: CompetitionDraft,
     expected: CompetitionStatus,
@@ -220,7 +238,7 @@ export class PostgresCompetitionRepository implements CompetitionRepository {
     const result = await getPgExecutor(this.pool).query(
       `SELECT id, organization_id, name, status, modality, game_edition, platform, region,
               time_zone, format, created_by_actor_id, creation_key, created_at, updated_at,
-              min_teams, max_teams, starts_on, ends_on, cover_kind, cover_value
+              min_teams, max_teams, starts_on, ends_on, cover_kind, cover_value, explore_listing
        FROM competitions
        WHERE organization_id = $1
        ORDER BY updated_at DESC`,
@@ -303,6 +321,7 @@ export interface CompetitionRow {
   ends_on?: Date | string | null;
   cover_kind?: string;
   cover_value?: string;
+  explore_listing: string;
 }
 
 export interface CompetitionRulesRow {
@@ -324,6 +343,7 @@ export function rehydrateCompetition(row: CompetitionRow): Competition {
     name: row.name,
     status: competitionStatusSchema.parse(row.status),
     modality: "fc-clubs",
+    exploreListing: competitionExploreListingSchema.parse(row.explore_listing),
     gameEdition: row.game_edition,
     platform: competitionPlatformSchema.parse(row.platform),
     region: competitionRegionSchema.parse(row.region),

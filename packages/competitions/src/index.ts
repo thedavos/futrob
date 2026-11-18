@@ -2,6 +2,10 @@ export type {
   CompetitionMatchRules,
   ResolutionMode,
 } from "./domain/value-objects/resolution-mode.ts";
+export {
+  COMPETITION_EXPLORE_LISTINGS,
+  type CompetitionExploreListing,
+} from "./domain/entities/competition.ts";
 export type {
   Competition,
   CompetitionFormat,
@@ -100,6 +104,7 @@ export {
   InvalidCompetitionCover,
   type CompetitionProfileError,
   type UpdateCompetitionCoverError,
+  type UpdateCompetitionExploreListingError,
   type ApplyToCompetitionError,
   CompetitionMembershipNotFound,
   CompetitionAuthorizationForbidden,
@@ -161,6 +166,10 @@ export {
   UpdateCompetitionCoverUseCase,
   type UpdateCompetitionCoverInput,
 } from "./application/update-competition-cover/update-competition-cover.use-case.ts";
+export {
+  UpdateCompetitionExploreListingUseCase,
+  type UpdateCompetitionExploreListingInput,
+} from "./application/update-competition-explore-listing/update-competition-explore-listing.use-case.ts";
 export {
   ApplyToCompetitionUseCase,
   type ApplyToCompetitionInput,

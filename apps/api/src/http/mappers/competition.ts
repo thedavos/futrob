@@ -21,6 +21,7 @@ export function competitionDto(competition: Competition): CompetitionDto {
     teams: competition.teams,
     schedule: competition.schedule,
     cover: competition.cover,
+    exploreListing: competition.exploreListing,
     createdAt: competition.createdAt.toISOString(),
     updatedAt: competition.updatedAt.toISOString(),
   };

@@ -104,6 +104,7 @@ const competition: AccessibleCompetitionDto = {
     name: "Liga Futrob",
     status: "published",
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "fc26",
     platform: "playstation",
     region: "south-america",

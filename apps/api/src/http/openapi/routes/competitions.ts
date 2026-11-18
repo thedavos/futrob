@@ -23,6 +23,7 @@ import {
   listCompetitionParticipantsResponseSchema,
   listOrganizationCompetitionsResponseSchema,
   updateCompetitionCoverRequestSchema,
+  updateCompetitionExploreListingRequestSchema,
 } from "@futrob/api-contracts";
 
 export const acceptCompetitionInvitationRoute = defineRoute({
@@ -281,6 +282,24 @@ export const updateCompetitionCoverRoute = defineRoute({
   params: pathParams(["organizationId", "competitionId"]),
   body: updateCompetitionCoverRequestSchema,
   success: { status: 200, description: "Competition with its new cover", schema: CompetitionDraft },
+  errors: [400, 403, 404, 409],
+});
+
+export const updateCompetitionExploreListingRoute = defineRoute({
+  method: "put",
+  path: "/organizations/{organizationId}/competitions/{competitionId}/explore-listing",
+  operationId: "updateCompetitionExploreListing",
+  tags: ["competitions"],
+  summary: "List or unlist the competition in Explore",
+  description:
+    "An unlisted competition leaves every Explore list but its detail stays reachable by direct link. Idempotent; archived competitions are read-only.",
+  params: pathParams(["organizationId", "competitionId"]),
+  body: updateCompetitionExploreListingRequestSchema,
+  success: {
+    status: 200,
+    description: "Competition with its Explore listing",
+    schema: CompetitionDraft,
+  },
   errors: [400, 403, 404, 409],
 });
 

@@ -30,6 +30,13 @@ export type CompetitionRegion =
 
 export type CompetitionPlatform = GamePlatform;
 
+/**
+ * Whether Explore lists the competition. An unlisted one stays reachable by direct link, so
+ * participants and applicants keep their way in.
+ */
+export const COMPETITION_EXPLORE_LISTINGS = ["listed", "unlisted"] as const;
+export type CompetitionExploreListing = (typeof COMPETITION_EXPLORE_LISTINGS)[number];
+
 export interface Competition {
   readonly id: CompetitionId;
   readonly organizationId: OrganizationId;
@@ -44,6 +51,7 @@ export interface Competition {
   readonly teams: TeamRange;
   readonly schedule: CompetitionSchedule;
   readonly cover: CompetitionCover;
+  readonly exploreListing: CompetitionExploreListing;
   readonly createdByActorId: ActorId;
   readonly creationKey?: string;
   readonly createdAt: Date;

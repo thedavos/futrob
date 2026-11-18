@@ -35,6 +35,7 @@ const discoveryRowSchema = z.object({
   ends_on: z.union([z.date(), z.string()]).nullish(),
   cover_kind: z.string().optional(),
   cover_value: z.string().optional(),
+  explore_listing: z.string().min(1),
   cursor_updated_at: z.string(),
 });
 
@@ -45,7 +46,8 @@ export class PostgresCompetitionDiscoveryReader implements CompetitionDiscoveryR
     const statuses = filter.status ? [filter.status] : [...DISCOVERABLE_COMPETITION_STATUSES];
     const cursor = decodeDiscoveryCursor(filter.cursor, filter.sort);
     const values: unknown[] = [statuses];
-    const clauses = ["c.status = ANY($1)"];
+    // Only lists honor the listing; `findById` keeps an unlisted competition reachable by link.
+    const clauses = ["c.status = ANY($1)", "c.explore_listing = 'listed'"];
 
     if (filter.q) {
       values.push(`%${escapeLike(filter.q)}%`);
@@ -146,7 +148,7 @@ export class PostgresCompetitionDiscoveryReader implements CompetitionDiscoveryR
       `SELECT c.id, c.organization_id, c.name, c.status, c.modality, c.game_edition, c.platform,
               c.region, c.time_zone, c.format, c.created_by_actor_id, c.creation_key,
               c.created_at, c.updated_at, c.min_teams, c.max_teams,
-              c.starts_on, c.ends_on, c.cover_kind, c.cover_value,
+              c.starts_on, c.ends_on, c.cover_kind, c.cover_value, c.explore_listing,
               to_char(c.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
                 AS cursor_updated_at,
               (SELECT COUNT(*)::int FROM competition_entries e

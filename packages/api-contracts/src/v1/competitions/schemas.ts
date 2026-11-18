@@ -70,6 +70,10 @@ export const competitionCoverSchema = z.discriminatedUnion("kind", [
 ]);
 export type CompetitionCoverDto = z.infer<typeof competitionCoverSchema>;
 
+/** Whether Explore lists the competition; an unlisted one stays reachable by direct link. */
+export const competitionExploreListingSchema = z.enum(["listed", "unlisted"]);
+export type CompetitionExploreListingDto = z.infer<typeof competitionExploreListingSchema>;
+
 export const competitionDraftInputSchema = z.object({
   name: z.string().trim().min(1).max(120),
   gameEdition: z.string().trim().min(1).max(40),
@@ -136,6 +140,7 @@ export const competitionSchema = z.object({
   teams: competitionTeamRangeSchema,
   schedule: competitionScheduleSchema,
   cover: competitionCoverSchema,
+  exploreListing: competitionExploreListingSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -329,3 +334,14 @@ export const updateCompetitionCoverRequestSchema = z.object({ cover: competition
 export type UpdateCompetitionCoverRequest = z.infer<typeof updateCompetitionCoverRequestSchema>;
 export const updateCompetitionCoverResponseSchema = competitionDraftSchema;
 export type UpdateCompetitionCoverResponse = z.infer<typeof updateCompetitionCoverResponseSchema>;
+
+export const updateCompetitionExploreListingRequestSchema = z.object({
+  exploreListing: competitionExploreListingSchema,
+});
+export type UpdateCompetitionExploreListingRequest = z.infer<
+  typeof updateCompetitionExploreListingRequestSchema
+>;
+export const updateCompetitionExploreListingResponseSchema = competitionDraftSchema;
+export type UpdateCompetitionExploreListingResponse = z.infer<
+  typeof updateCompetitionExploreListingResponseSchema
+>;

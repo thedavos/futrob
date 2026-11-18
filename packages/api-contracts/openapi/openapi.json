@@ -5379,6 +5379,13 @@
                               }
                             ]
                           },
+                          "exploreListing": {
+                            "type": "string",
+                            "enum": [
+                              "listed",
+                              "unlisted"
+                            ]
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -5402,6 +5409,7 @@
                           "teams",
                           "schedule",
                           "cover",
+                          "exploreListing",
                           "createdAt",
                           "updatedAt"
                         ]
@@ -6407,6 +6415,88 @@
           "competitions"
         ],
         "summary": "Revoke the active link and issue a new one"
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/explore-listing": {
+      "put": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Competition with its Explore listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionDraft"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "updateCompetitionExploreListing",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "List or unlist the competition in Explore",
+        "description": "An unlisted competition leaves every Explore list but its detail stays reachable by direct link. Idempotent; archived competitions are read-only.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "exploreListing": {
+                    "type": "string",
+                    "enum": [
+                      "listed",
+                      "unlisted"
+                    ]
+                  }
+                },
+                "required": [
+                  "exploreListing"
+                ]
+              }
+            }
+          }
+        }
       }
     },
     "/organizations/{organizationId}/competitions/{competitionId}/fixture": {
@@ -13832,6 +13922,13 @@
               }
             ]
           },
+          "exploreListing": {
+            "type": "string",
+            "enum": [
+              "listed",
+              "unlisted"
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -13855,6 +13952,7 @@
           "teams",
           "schedule",
           "cover",
+          "exploreListing",
           "createdAt",
           "updatedAt"
         ]
@@ -14118,6 +14216,13 @@
                   }
                 ]
               },
+              "exploreListing": {
+                "type": "string",
+                "enum": [
+                  "listed",
+                  "unlisted"
+                ]
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -14141,6 +14246,7 @@
               "teams",
               "schedule",
               "cover",
+              "exploreListing",
               "createdAt",
               "updatedAt"
             ]
@@ -18022,6 +18128,13 @@
                   }
                 ]
               },
+              "exploreListing": {
+                "type": "string",
+                "enum": [
+                  "listed",
+                  "unlisted"
+                ]
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -18045,6 +18158,7 @@
               "teams",
               "schedule",
               "cover",
+              "exploreListing",
               "createdAt",
               "updatedAt"
             ]
@@ -18256,6 +18370,13 @@
                         }
                       ]
                     },
+                    "exploreListing": {
+                      "type": "string",
+                      "enum": [
+                        "listed",
+                        "unlisted"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -18279,6 +18400,7 @@
                     "teams",
                     "schedule",
                     "cover",
+                    "exploreListing",
                     "createdAt",
                     "updatedAt"
                   ]
@@ -27309,6 +27431,13 @@
                         }
                       ]
                     },
+                    "exploreListing": {
+                      "type": "string",
+                      "enum": [
+                        "listed",
+                        "unlisted"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -27332,6 +27461,7 @@
                     "teams",
                     "schedule",
                     "cover",
+                    "exploreListing",
                     "createdAt",
                     "updatedAt"
                   ]

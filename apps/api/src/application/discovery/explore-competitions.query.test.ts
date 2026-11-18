@@ -18,6 +18,7 @@ function record(id: string, organizationId: string): DiscoverableCompetitionReco
       name: id,
       status: "published",
       modality: "fc-clubs",
+      exploreListing: "listed",
       gameEdition: "fc26",
       platform: "pc",
       region: "america",

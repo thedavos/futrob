@@ -264,6 +264,69 @@ describe("apps/api http competitions", () => {
     expect(lateApply.status).toBe(404);
   });
 
+  it("competitions: unlists a competition from explore and keeps its direct link", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-listing-organizer";
+    const outsider = "actor-listing-outsider";
+    const created = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Listing Org",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const competitionId = created.competition.competition.id;
+    const base = `/api/v1/organizations/${created.organizationId}/competitions/${competitionId}`;
+    expect(created.competition.competition.exploreListing).toBe("listed");
+    await app.request(base, {
+      method: "PATCH",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ ...onboardingCompetition, rules: LEAGUE_RULES }),
+    });
+    await app.request(`${base}/registration/open`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+    });
+    const listing = (exploreListing: unknown, actor = organizer) =>
+      app.request(`${base}/explore-listing`, {
+        method: "PUT",
+        headers: serviceHeaders(actor),
+        body: JSON.stringify({ exploreListing }),
+      });
+    const openTotal = async () => {
+      const page = await app.request("/api/v1/competitions/explore?status=registration", {
+        headers: serviceHeaders(outsider),
+      });
+      return ((await page.json()) as { total: number }).total;
+    };
+
+    const forbidden = await listing("unlisted", outsider);
+    expect(forbidden.status).toBe(403);
+    expect(await forbidden.json()).toMatchObject({ code: "authorization.forbidden" });
+    expect(await openTotal()).toBe(1);
+
+    expect((await listing("hidden")).status).toBe(400);
+
+    const unlisted = await listing("unlisted");
+    expect(unlisted.status).toBe(200);
+    expect(await unlisted.json()).toMatchObject({
+      competition: { status: "registration", exploreListing: "unlisted" },
+    });
+    expect((await listing("unlisted")).status).toBe(200);
+    expect(await openTotal()).toBe(0);
+
+    const direct = await app.request(`/api/v1/competitions/explore/${competitionId}`, {
+      headers: serviceHeaders(outsider),
+    });
+    expect(direct.status).toBe(200);
+    expect(await direct.json()).toMatchObject({ competition: { exploreListing: "unlisted" } });
+
+    expect((await listing("listed")).status).toBe(200);
+    expect(await openTotal()).toBe(1);
+  });
+
   it("competitions: resumes draft, manages approved participants, publishes and locks structure", async () => {
     const app = buildApp(stubFetch);
     const organizer = "actor-setup-organizer";

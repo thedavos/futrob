@@ -70,6 +70,7 @@ function competition(id: string, name: string, status: CompetitionDto["status"])
     name,
     status,
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "FC 26",
     platform: "playstation",
     region: "south-america",

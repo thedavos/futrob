@@ -12,6 +12,8 @@ export interface CompetitionRepository {
   publish?(draft: CompetitionDraft): Promise<CompetitionDraft>;
   /** Persists only the cover, preserving the current structure and status. */
   saveCover(draft: CompetitionDraft): Promise<CompetitionDraft>;
+  /** Persists only the Explore listing, preserving the current structure and status. */
+  saveExploreListing(draft: CompetitionDraft): Promise<CompetitionDraft>;
   /**
    * Compare-and-set status transition. Persists `draft.competition.status` only while the
    * stored status still equals `expected`; returns `null` when another writer won.
