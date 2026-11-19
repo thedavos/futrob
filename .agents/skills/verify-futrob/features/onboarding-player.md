@@ -45,7 +45,7 @@ Preconditions:
 
 - There is no `/onboarding/team` route. Do not open it as a step.
 - Club search hits EA through the API. Skipping club is the safe seed proof; a live search is optional and rate-limited.
-- If EA is unavailable after a club was chosen, the finish response carries `externalClubAssociation: "failed"` and `/player?clubAssociation=failed` shows the warning. A club EA does not know (404) still blocks the finish. Only claim the warning path from a real provider failure or the Storybook story `Product/Onboarding/Flow › Club Association Failed`.
+- If EA is unavailable after a club was chosen, the finish response carries `externalClubAssociation: "failed"` and `/player?clubAssociation=failed` shows the warning. From a landing «Unirme» handoff the finish lands on the competition instead, and `/player/competitions/<id>?apply=true&teamName=…&clubAssociation=failed` shows the same warning above the application; closing it keeps the application open. A club EA does not know (404) still blocks the finish. Only claim the warning path from a real provider failure or the Storybook story `Product/Onboarding/Flow › Club Association Failed`.
 - Re-finishing must not create a second organization or competition. This recipe never creates those.
 - Organizer (`Organizar`) and invitation (`Unirme`) are other entry points. Completing the player path does not verify them.
 - `/player` shows `Cargando tus datos…` while the status request runs. Wait for the heading, not the pending copy.

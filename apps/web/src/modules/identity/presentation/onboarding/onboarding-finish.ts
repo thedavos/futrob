@@ -93,7 +93,10 @@ export const finishOnboardingPath = {
         destination: {
           to: "/player/competitions/$competitionId",
           params: { competitionId: draft.joiningCompetitionId },
-          search: competitionApplySearch(draft.selectedExternalClub?.name ?? null),
+          search: competitionApplySearch(
+            draft.selectedExternalClub?.name ?? null,
+            completed.externalClubAssociation === "failed" ? "failed" : undefined,
+          ),
         },
       };
     }

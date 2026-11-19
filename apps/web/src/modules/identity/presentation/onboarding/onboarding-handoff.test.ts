@@ -244,4 +244,24 @@ describe("finishing the player path from a competition handoff", () => {
       destination: { search: { apply: true, teamName: undefined } },
     });
   });
+
+  it("carries a failed club association to the competition so it can warn", async () => {
+    const gateway = createFakeOnboardingGateway({
+      path: "player",
+      currentStep: "review",
+      clubAssociation: "failed",
+    });
+    const joining = {
+      ...createEmptyDraft(),
+      joiningCompetitionId: "c-open",
+      selectedExternalClub: fera,
+    };
+
+    await expect(finishOnboardingPath.player(gateway, joining)).resolves.toMatchObject({
+      destination: {
+        to: "/player/competitions/$competitionId",
+        search: { apply: true, teamName: "Fera Enjaulada", clubAssociation: "failed" },
+      },
+    });
+  });
 });

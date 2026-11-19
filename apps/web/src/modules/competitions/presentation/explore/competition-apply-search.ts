@@ -13,10 +13,15 @@ export const competitionApplySearchSchema = z.object({
     .pipe(z.string().trim().min(1).max(120))
     .optional()
     .catch(undefined),
+  // Onboarding finished without the EA club because the provider did not answer.
+  clubAssociation: z.literal("failed").optional().catch(undefined),
 });
 
 export type CompetitionApplySearch = z.output<typeof competitionApplySearchSchema>;
 
-export function competitionApplySearch(teamName: string | null): CompetitionApplySearch {
-  return { apply: true, teamName: teamName ?? undefined };
+export function competitionApplySearch(
+  teamName: string | null,
+  clubAssociation?: "failed",
+): CompetitionApplySearch {
+  return { apply: true, teamName: teamName ?? undefined, clubAssociation };
 }

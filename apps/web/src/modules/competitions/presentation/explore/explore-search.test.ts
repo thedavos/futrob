@@ -71,6 +71,17 @@ describe("competition apply search", () => {
     expect(roundTrip(null)).toEqual({ apply: true, teamName: undefined });
   });
 
+  it("round-trips a club association that failed during onboarding", () => {
+    expect(
+      competitionApplySearchSchema.parse(
+        defaultParseSearch(defaultStringifySearch(competitionApplySearch("Fera", "failed"))),
+      ),
+    ).toEqual({ apply: true, teamName: "Fera", clubAssociation: "failed" });
+    expect(competitionApplySearchSchema.parse({ clubAssociation: "ok" }).clubAssociation).toBe(
+      undefined,
+    );
+  });
+
   it("drops malformed values instead of failing the route", () => {
     expect(competitionApplySearchSchema.parse({ apply: "yes", teamName: "" })).toEqual({
       apply: undefined,
