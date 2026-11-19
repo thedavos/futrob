@@ -23,24 +23,28 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 
 export const Route = createFileRoute("/_app/onboarding")({
   validateSearch: onboardingHandoffSearchSchema,
-  // Read on enter only: the flow drops the handoff params once it moves to another step.
-  loader: async ({ location }) => {
-    const handoff = onboardingHandoffFromSearch(location.search);
-    const bootstrap = await getOnboardingBootstrap();
+  loader: {
+    // Read on enter only: the flow drops the handoff params once it moves to another step.
+    // Blocking, so coming back never mounts the flow with a handoff an earlier entry consumed.
+    staleReloadMode: "blocking",
+    handler: async ({ location }) => {
+      const handoff = onboardingHandoffFromSearch(location.search);
+      const bootstrap = await getOnboardingBootstrap();
 
-    if (bootstrap.destination) {
-      if (handoff?.kind === "club") throw redirect({ to: "/player/ea-clubs", replace: true });
-      redirectToPostAuthDestination(bootstrap.destination);
-    }
+      if (bootstrap.destination) {
+        if (handoff?.kind === "club") throw redirect({ to: "/player/ea-clubs", replace: true });
+        redirectToPostAuthDestination(bootstrap.destination);
+      }
 
-    return {
-      initialStatus: bootstrap.status,
-      handoff: handoff
-        ? await resolveOnboardingHandoff(handoff, (locator) =>
-            getOnboardingHandoffClub({ data: locator }),
-          )
-        : null,
-    };
+      return {
+        initialStatus: bootstrap.status,
+        handoff: handoff
+          ? await resolveOnboardingHandoff(handoff, (locator) =>
+              getOnboardingHandoffClub({ data: locator }),
+            )
+          : null,
+      };
+    },
   },
   shouldReload: ({ cause }) => cause === "enter",
   pendingComponent: OnboardingPending,
