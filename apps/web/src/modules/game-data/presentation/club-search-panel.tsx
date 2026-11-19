@@ -114,7 +114,10 @@ export function ClubSearchPanel({ selectedExternalClubId, onSelect }: ClubSearch
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void search(query, platform);
+    // Text typed before hydration is in the field but never reached `query`.
+    const typed = queryRef.current?.value ?? query;
+    if (typed !== query) setQuery(typed);
+    void search(typed, platform);
   }
 
   const error = searchClubs.error;

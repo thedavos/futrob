@@ -140,6 +140,24 @@ describe("DemoSearchSection", () => {
     );
   });
 
+  it("searches what was typed before the page hydrated", async () => {
+    const fetchMock = stubSearch(() => Response.json({ clubs: [FERA] }));
+    renderSection();
+
+    // Text typed before hydration sits in the DOM without ever reaching React state.
+    const input = await screen.findByRole("searchbox", { name: "Nombre del club" });
+    if (!(input instanceof HTMLInputElement)) throw new Error("searchbox is not an input");
+    input.value = "Fera";
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+
+    await findAnchor("Crear cuenta con este club");
+    expect(
+      new URL(fetchMock.mock.calls[0]?.[0] ?? "", "https://futrob.test").searchParams.get("query"),
+    ).toBe("Fera");
+    expect(input).toHaveValue("Fera");
+    expect(input).not.toHaveAttribute("aria-invalid", "true");
+  });
+
   it("sends a signed-in visitor straight to onboarding with the club", async () => {
     session.data = { user: { id: "user-1" } };
     stubSearch(() => Response.json({ clubs: [FERA] }));
