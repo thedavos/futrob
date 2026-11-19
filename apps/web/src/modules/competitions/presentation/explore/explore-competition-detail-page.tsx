@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Alert,
@@ -49,9 +50,15 @@ import { exploreCompetitionShareUrl } from "./explore-search.ts";
 import { EXPLORE_ACTIONS, exploreViewerRelation } from "./explore-viewer-relation.ts";
 
 export function ExploreCompetitionDetailPage({
+  application = null,
   competitionId,
+  notice = null,
 }: {
+  /** Set by the landing «Unirme» handoff: focus the application with this team name. */
+  readonly application?: { readonly teamName: string } | null;
   readonly competitionId: string;
+  /** Shown above the competition, such as the club association that failed in onboarding. */
+  readonly notice?: ReactNode;
 }) {
   const { locale, t } = useI18n();
   const { copyToClipboard, isCopied } = useCopyToClipboard();
@@ -101,6 +108,7 @@ export function ExploreCompetitionDetailPage({
         </Breadcrumb>
       </div>
 
+      {notice}
       {query.isPending ? <DetailSkeleton /> : null}
       {notFound ? <DetailNotFound /> : null}
       {query.isError && !notFound ? (
@@ -192,6 +200,7 @@ export function ExploreCompetitionDetailPage({
           {actions.manage ? null : (
             <ExploreCompetitionApplication
               competitionId={item.competition.id}
+              prefill={application}
               status={item.competition.status}
             />
           )}

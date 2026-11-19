@@ -45,6 +45,9 @@ las rutas de gestión vuelven a autorizar.
 - Un visitante autenticado ve metadatos sanitizados (sin `createdByActorId` ni
   `creationKey`) y el recuento de equipos aprobados.
 - El portal público anónimo no queda habilitado por esta decisión.
+- [ADR-0033](/docs/adr/0033-public-open-registrations-and-unlisted-competitions.md) lista sin
+  sesión, en la landing, las competiciones en `registration`, y permite al organizador sacar una
+  competición de toda lista de Explorar sin cerrar su detalle.
 - La inscripción por cuenta propia sigue fuera de alcance: hoy solo el staff
   inscribe equipos, y solo en `draft`. Reemplazado por
   [ADR-0019](/docs/adr/0019-competition-registration-and-applications.md):

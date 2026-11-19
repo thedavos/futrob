@@ -8,6 +8,7 @@ import {
 import {
   buildApp,
   buildAppWithModules,
+  INTERNAL_JOB_SECRET,
   onboardingCompetition,
   serviceHeaders,
   stubFetch,
@@ -262,6 +263,148 @@ describe("apps/api http competitions", () => {
       body: JSON.stringify({ teamName: "Tarde", creationKey: "apply-key-late" }),
     });
     expect(lateApply.status).toBe(404);
+  });
+
+  it("competitions: unlists a competition from explore and keeps its direct link", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-listing-organizer";
+    const outsider = "actor-listing-outsider";
+    const created = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Listing Org",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const competitionId = created.competition.competition.id;
+    const base = `/api/v1/organizations/${created.organizationId}/competitions/${competitionId}`;
+    expect(created.competition.competition.exploreListing).toBe("listed");
+    await app.request(base, {
+      method: "PATCH",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ ...onboardingCompetition, rules: LEAGUE_RULES }),
+    });
+    await app.request(`${base}/registration/open`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+    });
+    const listing = (exploreListing: unknown, actor = organizer) =>
+      app.request(`${base}/explore-listing`, {
+        method: "PUT",
+        headers: serviceHeaders(actor),
+        body: JSON.stringify({ exploreListing }),
+      });
+    const openTotal = async () => {
+      const page = await app.request("/api/v1/competitions/explore?status=registration", {
+        headers: serviceHeaders(outsider),
+      });
+      return ((await page.json()) as { total: number }).total;
+    };
+
+    const forbidden = await listing("unlisted", outsider);
+    expect(forbidden.status).toBe(403);
+    expect(await forbidden.json()).toMatchObject({ code: "authorization.forbidden" });
+    expect(await openTotal()).toBe(1);
+
+    expect((await listing("hidden")).status).toBe(400);
+
+    const unlisted = await listing("unlisted");
+    expect(unlisted.status).toBe(200);
+    expect(await unlisted.json()).toMatchObject({
+      competition: { status: "registration", exploreListing: "unlisted" },
+    });
+    expect((await listing("unlisted")).status).toBe(200);
+    expect(await openTotal()).toBe(0);
+
+    const direct = await app.request(`/api/v1/competitions/explore/${competitionId}`, {
+      headers: serviceHeaders(outsider),
+    });
+    expect(direct.status).toBe(200);
+    expect(await direct.json()).toMatchObject({ competition: { exploreListing: "unlisted" } });
+
+    expect((await listing("listed")).status).toBe(200);
+    expect(await openTotal()).toBe(1);
+  });
+
+  it("competitions: lists open listed competitions to a signed-out visitor through the service secret", async () => {
+    const { app, modules } = buildAppWithModules(stubFetch);
+    const organizer = "actor-open-organizer";
+    const created = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Open Org",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const { organizationId } = created;
+    await assignOrganizationPlanForTest(modules, {
+      organizationId: asOrganizationId(organizationId),
+      actorId: asActorId(organizer),
+    });
+    const createOpen = async (name: string) => {
+      const id =
+        name === onboardingCompetition.name
+          ? created.competition.competition.id
+          : (
+              (await (
+                await app.request(`/api/v1/organizations/${organizationId}/competitions`, {
+                  method: "POST",
+                  headers: serviceHeaders(organizer),
+                  body: JSON.stringify({ ...onboardingCompetition, name }),
+                })
+              ).json()) as { competition: { id: string } }
+            ).competition.id;
+      const base = `/api/v1/organizations/${organizationId}/competitions/${id}`;
+      await app.request(base, {
+        method: "PATCH",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ ...onboardingCompetition, name, rules: LEAGUE_RULES }),
+      });
+      await app.request(`${base}/registration/open`, {
+        method: "POST",
+        headers: serviceHeaders(organizer),
+      });
+      return base;
+    };
+    await createOpen(onboardingCompetition.name);
+    const hidden = await createOpen("Copa Oculta");
+    await app.request(`${hidden}/explore-listing`, {
+      method: "PUT",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ exploreListing: "unlisted" }),
+    });
+    const draft = await app.request(`/api/v1/organizations/${organizationId}/competitions`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({ ...onboardingCompetition, name: "Borrador" }),
+    });
+    expect(draft.status).toBe(201);
+    const path = "/api/v1/internal/competitions/explore/open";
+    const service = { Authorization: `Bearer ${INTERNAL_JOB_SECRET}` };
+
+    expect((await app.request(path)).status).toBe(401);
+
+    const open = await app.request(`${path}?status=draft`, { headers: service });
+    expect(open.status).toBe(200);
+    const body = (await open.json()) as {
+      items: { competition: { name: string; status: string; exploreListing: string } }[];
+    };
+    expect(body.items.map((item) => item.competition)).toEqual([
+      expect.objectContaining({
+        name: onboardingCompetition.name,
+        status: "registration",
+        exploreListing: "listed",
+      }),
+    ]);
+
+    const otherPlatform = onboardingCompetition.platform === "pc" ? "xbox" : "pc";
+    const filtered = await app.request(`${path}?platform=${otherPlatform}`, { headers: service });
+    expect(await filtered.json()).toEqual({ items: [] });
+    expect((await app.request(`${path}?limit=7`, { headers: service })).status).toBe(400);
   });
 
   it("competitions: resumes draft, manages approved participants, publishes and locks structure", async () => {

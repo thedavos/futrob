@@ -102,6 +102,11 @@ export type UpdateCompetitionCoverError =
   | InvalidCompetitionCover
   | CompetitionAuthorizationForbidden;
 
+export type UpdateCompetitionExploreListingError =
+  | CompetitionNotFound
+  | CompetitionNotEditable
+  | CompetitionAuthorizationForbidden;
+
 export type ApplyToCompetitionError =
   | CompetitionNotFound
   | CompetitionRegistrationClosed

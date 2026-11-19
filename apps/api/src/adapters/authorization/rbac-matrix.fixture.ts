@@ -161,6 +161,7 @@ export async function createRbacMatrixFixture(): Promise<RbacMatrixFixture> {
         name,
         status: "draft",
         modality: "fc-clubs",
+        exploreListing: "listed",
         gameEdition: "fc26",
         platform: "playstation",
         region: "south-america",

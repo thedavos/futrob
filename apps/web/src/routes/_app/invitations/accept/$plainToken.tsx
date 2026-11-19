@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { handOffInvitationToOnboarding } from "@/modules/identity/presentation/onboarding/onboarding-invitation-handoff.ts";
+import { handOffInvitationToOnboarding } from "@/modules/identity/presentation/onboarding/onboarding-handoff.ts";
 import { AcceptInvitationDeepLink } from "@/modules/organizations/presentation/accept-invitation-deep-link.tsx";
 import {
   forgetInvitationAccept,

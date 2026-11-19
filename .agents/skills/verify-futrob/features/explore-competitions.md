@@ -9,6 +9,7 @@ Authenticated players browse published competitions across organizations, filter
 - `explore-empty-filtered` shows `No encontramos competiciones` and `Limpiar búsqueda y filtros` when filters hide every row.
 - `explore-empty-none` shows `Aún no hay competiciones publicadas` when the catalog is empty without filters.
 - `explore-detail` opens `/player/competitions/$competitionId` from `Ver competición`.
+- `explore-unlisted` hides a competition from every list: on the organizer overview `/orgs/$orgId/competitions/$competitionId`, card `Visibilidad en Explorar`, switch `Mostrar en Explorar`. Off reads `Oculta de Explorar: solo quien tenga el enlace podrá verla.`; the detail URL still opens.
 - `explore-share` copies that detail URL and shows `Enlace copiado` on the card.
 
 ## How to get to it (user POV)
@@ -29,12 +30,13 @@ Preconditions:
 - **Ready or empty.** If items exist, the status region names the count (`1 competición` / `N competiciones`). Each card has `Ver competición` and a share control whose accessible name is `Compartir competición` (icon button, not a text label). A published competition shows badge `En curso` (not the wire status `published`). Organizer/staff of the owning org also see `Gestionar`. If none exist and the URL has no filters, the empty title is `Aún no hay competiciones publicadas`.
 - **Filtered empty (only if you can force no matches).** Set `?q=zzzzzzzz`. The empty title is `No encontramos competiciones`. Choose `Limpiar búsqueda y filtros`. The search box is empty and `q` leaves the URL.
 - **Detail.** From a card, choose `Ver competición`. The URL is `/player/competitions/<id>`. The heading is the competition name. An unknown or draft id shows `Competición no disponible`.
+- **Unlisted.** As the organizer, turn `Mostrar en Explorar` off on the overview. The competition leaves `/player/competitions/explore` for another actor and the landing list; `/player/competitions/<id>` still shows it. A member without `competitions.update` gets 403 from `PUT /api/v1/organizations/<org>/competitions/<id>/explore-listing`. Turn it back on and it returns.
 - **API twin.** `npm run cli -- e2e-golden-path --actor <id>` then `npm run cli -- comp-explore --actor <id> --json`. The published id appears. `comp-explore-show <id>` returns the same name.
 - **Proof.** Screenshot + ARIA of the explore list or the applicable empty state, plus the detail heading or not-found state.
 
 ## Gotchas
 
-- This catalog is authenticated. It is not the public portal.
+- This catalog is authenticated. It is not the public portal. The only signed-out read is the landing list of open, listed competitions.
 - Unknown or draft ids must be opened as `/player/competitions/<id>`. A bare `/competitions/<id>` is a different generic `Not Found`, not `Competición no disponible`.
 - `draft` and `archived` never appear, even with a guessed id.
 - `Gestionar` appears only for organizer/staff of the owning organization. `Tu equipo participa` is presentational; the manage route still authorizes.

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View } from "react-native";
 import {
+  CLUB_SEARCH_QUERY_MAX_LENGTH,
   EA_SEARCH_PLATFORM_OPTIONS,
   eaSearchPlatformFromGamePlatform,
   type EaSearchPlatform,
@@ -216,6 +217,7 @@ function AddClubDialog({
         <Input
           label={copy.clubs.searchLabel}
           value={name}
+          maxLength={CLUB_SEARCH_QUERY_MAX_LENGTH}
           onChangeText={setName}
           autoCorrect={false}
           returnKeyType="search"

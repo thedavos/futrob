@@ -119,6 +119,7 @@ function competitionRepository(found: boolean): CompetitionRepository {
     name: "Test competition",
     status: "draft",
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "fc26",
     platform: "playstation",
     region: "europe",

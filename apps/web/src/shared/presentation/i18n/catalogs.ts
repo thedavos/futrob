@@ -1173,6 +1173,7 @@ const es = {
   "onboarding.review.finish.organization": "Crear organización",
   "onboarding.review.finish.invitation": "Aceptar invitación",
   "onboarding.review.finish.player": "Entrar a mi espacio",
+  "onboarding.review.finish.competition": "Continuar a la inscripción",
   "errors.fallback": "No pudimos completar la operación. Inténtalo nuevamente.",
   "errors.onboarding.organizationCheck": "No pudimos verificar el nombre. Inténtalo nuevamente.",
   "errors.api.rate_limited":
@@ -2241,16 +2242,15 @@ const es = {
   "landing.nav.aria": "Acceso",
   "landing.nav.sectionsAria": "Secciones",
   "landing.nav.howItWorks": "Cómo funciona",
-  "landing.nav.portal": "Portal público",
   "landing.nav.login": "Iniciar sesión",
-  "landing.nav.signup": "Crear cuenta",
+  "landing.nav.signup": "Crear competición",
   "landing.hero.title.line1": "Ligas y copas",
   "landing.hero.title.line2": "de clubs,",
   "landing.hero.title.official": "oficiales.",
   "landing.hero.subtitle":
-    "Del partido de EA al resultado oficial, con la aprobación de tu organización.",
+    "Futrob trae los partidos de EA. Tus capitanes eligen cuáles cuentan y la organización los aprueba antes de que lleguen a la tabla.",
   "landing.hero.cta.primary": "Crear competición",
-  "landing.hero.cta.secondary": "Ver competición pública",
+  "landing.hero.cta.secondary": "Ver ejemplo de portal",
   "landing.status.approved": "Aprobado",
   "landing.status.candidate": "Candidato EA",
   "landing.status.selecting": "En selección",
@@ -2283,33 +2283,49 @@ const es = {
   "landing.mechanism.publication.title": "Publicación",
   "landing.mechanism.publication.description":
     "Solo lo aprobado actualiza tabla, bracket, rankings y el portal público.",
-  "landing.reschedule.title": "Reprogramar sin perder el hilo",
-  "landing.reschedule.subtitle":
-    "Un capitán propone otro horario y el rival responde. Al aceptarlo, el calendario y la búsqueda de partidos en EA se ajustan.",
-  "landing.reschedule.guarantee": "Un partido aprobado o finalizado ya no se reprograma.",
   "landing.reschedule.panel.label": "Ejemplo de solicitud de reprogramación",
   "landing.reschedule.panel.status": "En negociación",
   "landing.reschedule.panel.sentence":
     "Sporting Lomas propone mover todo el enfrentamiento del 18 de octubre, 21:00 al 19 de octubre, 22:00.",
   "landing.reschedule.panel.respondBy": "Responde antes del 16 de octubre, 23:59.",
   "landing.reschedule.panel.options": "CD Estrella puede aceptar, contraproponer o rechazar.",
-  "landing.demo.title": "Pruébalo contra la API real",
+  "landing.demo.title": "Busca tu club en EA",
   "landing.demo.subtitle":
-    "Busca tu club de EA Clubs. Es la misma capa de datos que alimenta tus competiciones.",
-  "gameData.clubSearch.source": "Resultados de /api/v1/game-data/clubs/search.",
+    "Encuéntralo tal como aparece en EA SPORTS FC Clubs y crea tu cuenta con él ya asociado.",
+  "landing.demo.idle": "Elige un club de los resultados para crear tu cuenta con él.",
+  "landing.demo.cta": "Crear cuenta con este club",
+  "landing.demo.organizer": "¿Organizas un torneo? Crea tu competición",
+  "landing.openCompetitions.title": "Inscripciones abiertas",
+  "landing.openCompetitions.subtitle": "Competiciones que aceptan equipos ahora.",
+  "landing.openCompetitions.subtitlePlatform": ({ platform }) =>
+    `Competiciones de ${platform} que aceptan equipos ahora.`,
+  "landing.openCompetitions.join": "Unirme",
+  "landing.openCompetitions.joinWith": ({ club }) => `Unirme con ${club}`,
+  "landing.openCompetitions.joinLabel": ({ competition }) => `Unirme a ${competition}`,
+  "landing.openCompetitions.joinWithLabel": ({ competition, club }) =>
+    `Unirme a ${competition} con ${club}`,
+  "landing.openCompetitions.empty": "No hay inscripciones abiertas ahora.",
+  "landing.openCompetitions.emptyHint": "Vuelve pronto o crea tu propia competición.",
+  "landing.openCompetitions.emptyPlatform": ({ platform }) =>
+    `No hay inscripciones abiertas en ${platform} ahora.`,
+  "landing.openCompetitions.showAll": "Ver todas las plataformas",
+  "landing.openCompetitions.loading": "Cargando inscripciones abiertas",
+  "landing.openCompetitions.error": "No pudimos cargar las inscripciones abiertas.",
+  "landing.openCompetitions.retry": "Reintentar",
+  "gameData.clubSearch.source": "Datos en vivo de EA SPORTS FC Clubs. Buscar no requiere cuenta.",
   "gameData.clubSearch.queryLabel": "Nombre del club",
-  "gameData.clubSearch.queryPlaceholder": "Ej. Cuervos",
+  "gameData.clubSearch.queryPlaceholder": "Ej. Fera Enjaulada",
+  "gameData.clubSearch.examples": "Prueba con",
+  "gameData.clubSearch.results": "Clubes encontrados",
   "gameData.clubSearch.queryRequired": "Escribe el nombre del club.",
   "gameData.clubSearch.platformLabel": "Plataforma",
   "gameData.clubSearch.submit": "Buscar",
   "gameData.clubSearch.searching": "Buscando…",
   "gameData.clubSearch.retryIn": ({ seconds }) => `Reintentar en ${seconds} s`,
-  "gameData.clubSearch.empty": "Sin resultados para esa búsqueda.",
+  "gameData.clubSearch.empty":
+    "Sin resultados en esa plataforma. Prueba con otra o revisa el nombre.",
   "gameData.clubSearch.error": "No pudimos buscar clubs. Inténtalo nuevamente.",
   "gameData.clubSearch.rateLimited": "Alcanzaste el límite temporal de búsquedas.",
-  "landing.players.title": "Para jugadores: tus partidos, tus números",
-  "landing.players.subtitle":
-    "El perfil personal existe sin organización: vincula tu club EA y sigue tu rendimiento.",
   "landing.players.matches.title": "Mis partidos",
   "landing.players.matches.description":
     "Recientes y todos, con liga, playoff o amistoso marcados en cada tarjeta.",
@@ -2326,13 +2342,120 @@ const es = {
   "landing.portal.point.rankings": "Rankings de jugadores y equipos",
   "landing.portal.podium.caption": "Ejemplo de tabla oficial de la Liga Metropolitana",
   "landing.portal.podium.points": "puntos",
-  "landing.cta.title": "Publica tu primera jornada oficial",
   "landing.cta.subtitle":
-    "Crea tu organización, invita a los capitanes y arma tu primera competición.",
-  "landing.cta.primary": "Crear cuenta",
+    "Crea tu organización, invita a los capitanes y publica tu primera jornada.",
+  "landing.cta.primary": "Crear competición",
   "landing.cta.secondary": "Ver precios",
   "landing.footer.tagline": "Preciso para operar. Claro para competir.",
   "landing.footer.madeBy": "Futrob es creado por Davion Software.",
+  "landing.nav.features": "Funciones",
+  "landing.nav.faq": "Preguntas",
+  "landing.hero.kicker": "Para Clubs de EA SPORTS FC",
+  "landing.hero.facts.label": "Condiciones para empezar",
+  "landing.hero.facts.free": "Gratis para tu primera competición",
+  "landing.hero.facts.noCard": "No necesitas tarjeta",
+  "landing.features.title": "Toda tu competición, de la jornada 1 a la final",
+  "landing.features.subtitle":
+    "Partidos, tabla, cuadro, sanciones y portal en un mismo lugar. Lo que no está aprobado no cuenta.",
+  "landing.features.table.title": "Una tabla que solo suma lo aprobado",
+  "landing.features.table.description":
+    "Cada punto viene de un resultado oficial. Un partido sin aprobar no mueve la tabla.",
+  "landing.features.table.club": "Club",
+  "landing.features.table.played": "PJ",
+  "landing.features.table.goalDifference": "DG",
+  "landing.features.table.points": "PTS",
+  "landing.features.captain.title": "El capitán confirma desde el móvil",
+  "landing.features.captain.description":
+    "Elige qué partidos de EA cuentan para el enfrentamiento y confirma el resultado con el rival.",
+  "landing.features.captain.fixture": "Jornada 6 · vs Atlético Norte",
+  "landing.features.captain.confirm": "Confirmar resultado",
+  "landing.features.sync.title": "Partidos desde EA, sin tecleo",
+  "landing.features.sync.description":
+    "Futrob trae los partidos de tus clubs desde EA. Llegan como candidatos, nunca como oficiales.",
+  "landing.features.sync.lastRun": "Sync EA · hace 4 min",
+  "landing.features.cup.title": "Copas con cuadro",
+  "landing.features.cup.description":
+    "El cuadro avanza solo cuando el resultado de la serie está aprobado.",
+  "landing.features.audit.title": "Sanciones con historial",
+  "landing.features.audit.description":
+    "Cada sanción, aprobación y cambio queda registrado con autor y fecha.",
+  "landing.features.audit.sanction": "−3 pts · Sporting Lomas",
+  "landing.features.audit.sanctionDate": "12 oct",
+  "landing.features.audit.approval": "Resultado aprobado · J6",
+  "landing.features.audit.approvalDate": "11 oct",
+  "landing.features.portal.title": "Un portal público para tu comunidad",
+  "landing.features.portal.description":
+    "Calendario, resultados, tabla, cuadro y rankings en una página que compartes con un enlace. Tú decides cuándo se publica.",
+  "landing.features.more.title": "Y lo que pasa entre jornadas",
+  "landing.features.more.description": "Lo que una competición necesita además de jugar.",
+  "landing.features.more.reschedule": "Reprogramación entre capitanes",
+  "landing.features.more.disputes": "Disputas",
+  "landing.features.more.rankings": "Rankings de jugadores",
+  "landing.features.more.notifications": "Notificaciones",
+  "landing.features.more.staff": "Roles de staff",
+  "landing.roles.title": "Cada uno ve lo que le toca",
+  "landing.roles.subtitle":
+    "El organizador aprueba, el capitán confirma y el jugador sigue sus números.",
+  "landing.roles.tab.organizers": "Organizadores",
+  "landing.roles.tab.captains": "Capitanes",
+  "landing.roles.tab.players": "Jugadores",
+  "landing.roles.organizers.queue.title": "Aprueba resultados en una sola cola",
+  "landing.roles.organizers.queue.description":
+    "Todo lo pendiente de tu competición, en un mismo lugar.",
+  "landing.roles.organizers.disputes.title": "Resuelve disputas con los datos de EA",
+  "landing.roles.organizers.disputes.description":
+    "Ves los partidos candidatos de ambos clubs antes de decidir.",
+  "landing.roles.organizers.staff.title": "Reparte el trabajo con tu staff",
+  "landing.roles.organizers.staff.description":
+    "Permisos por tarea: calendario, resultados, disputas, sanciones o anuncios.",
+  "landing.roles.organizers.publish.title": "Publica cuando esté listo",
+  "landing.roles.organizers.publish.description": "El portal solo muestra resultados aprobados.",
+  "landing.roles.organizers.example.label": "Ejemplo de resultados pendientes de aprobación",
+  "landing.roles.organizers.example.title": "Pendientes de aprobación",
+  "landing.roles.organizers.example.confirmed": "Confirmado por ambos",
+  "landing.roles.organizers.example.disputed": "En disputa",
+  "landing.roles.captains.select.title": "Elige los partidos que cuentan",
+  "landing.roles.captains.select.description":
+    "Futrob te muestra tus partidos de EA contra el rival y tú marcas cuáles valen.",
+  "landing.roles.captains.confirm.title": "Confirma el resultado con el rival",
+  "landing.roles.captains.confirm.description":
+    "Si no coinciden, se abre una disputa y decide el organizador.",
+  "landing.roles.captains.reschedule.title": "Propón otro horario",
+  "landing.roles.captains.reschedule.description":
+    "El rival acepta, contrapropone o rechaza. Al aceptarlo, el calendario se ajusta.",
+  "landing.roles.players.profile.title": "Tu perfil, aunque no juegues una liga",
+  "landing.roles.players.profile.description":
+    "Vincula tu club de EA y sigue tu rendimiento sin depender de una organización.",
+  "landing.roles.players.example.label": "Ejemplo de partidos recientes de un jugador",
+  "landing.roles.players.example.title": "Mis partidos",
+  "landing.roles.players.example.hatTrick": "Hat-trick",
+  "landing.roles.players.example.first": "3 goles · 8,9 de rating",
+  "landing.roles.players.example.second": "1 asistencia · 7,4 de rating",
+  "landing.pricing.title": "Empieza gratis, crece cuando lo necesites",
+  "landing.pricing.subtitle":
+    "Todos los planes incluyen selección oficial, confirmación entre capitanes, disputas y reprogramación.",
+  "landing.faq.title": "Antes de crear tu competición",
+  "landing.faq.subtitle": "Lo que suelen preguntar organizadores y capitanes.",
+  "landing.faq.ea.question": "¿Futrob es un producto de EA?",
+  "landing.faq.ea.answer":
+    "No. Futrob es independiente y usa los datos de partidos de FC Clubs que publica EA.",
+  "landing.faq.disagree.question": "¿Qué pasa si los capitanes no se ponen de acuerdo?",
+  "landing.faq.disagree.answer":
+    "Se abre una disputa y el organizador decide. Mientras tanto, ese resultado no cuenta en la tabla.",
+  "landing.faq.install.question": "¿Los capitanes tienen que instalar algo?",
+  "landing.faq.install.answer": "No. Todo funciona desde el navegador, también en el móvil.",
+  "landing.faq.reschedule.question": "¿Se puede mover un partido ya programado?",
+  "landing.faq.reschedule.answer":
+    "Sí, mientras no esté aprobado ni finalizado. Un capitán propone otro horario y el rival acepta, contrapropone o rechaza.",
+  "landing.faq.downgrade.question": "¿Qué pasa si bajo de plan?",
+  "landing.faq.downgrade.answer":
+    "Las competiciones en curso terminan igual. Solo se bloquean acciones nuevas, como crear competiciones o sumar equipos.",
+  "landing.cta.title.line1": "Tu competición,",
+  "landing.cta.title.official": "oficial.",
+  "landing.footer.productNav": "Producto",
+  "landing.footer.faq": "Preguntas frecuentes",
+  "landing.footer.disclaimer":
+    "Futrob no está afiliado a Electronic Arts. EA SPORTS FC es una marca de Electronic Arts Inc.",
   "encounter.breadcrumb": "Ruta del enfrentamiento",
   "encounter.title": ({ home, away }) => `${home} vs ${away}`,
   "encounter.vs": "VS",
@@ -2861,6 +2984,15 @@ const es = {
     "Tu acceso está listo. Usa el menú para ver tus partidos, estadísticas y equipo.",
   "competition.overview.status": "Estado de la competición",
   "competition.overview.continueSetup": "Continuar configuración",
+  "competition.overview.exploreListing.title": "Visibilidad en Explorar",
+  "competition.overview.exploreListing.label": "Mostrar en Explorar",
+  "competition.overview.exploreListing.listed":
+    "Cualquiera puede encontrarla en Explorar y, con inscripciones abiertas, en la portada de Futrob.",
+  "competition.overview.exploreListing.unlisted":
+    "Oculta de Explorar: solo quien tenga el enlace podrá verla.",
+  "competition.overview.exploreListing.saving": "Guardando…",
+  "competition.overview.exploreListing.error":
+    "No pudimos cambiar la visibilidad. Inténtalo de nuevo.",
   "competition.overview.kpi.label": "Indicadores de la competición",
   "competition.overview.kpi.teams": "Equipos aprobados",
   "competition.overview.kpi.applications": "Inscripciones por revisar",
@@ -3142,6 +3274,14 @@ export type MessageKey = keyof typeof es;
 export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
+  readonly "landing.openCompetitions.subtitlePlatform": { readonly platform: string };
+  readonly "landing.openCompetitions.joinWith": { readonly club: string };
+  readonly "landing.openCompetitions.joinLabel": { readonly competition: string };
+  readonly "landing.openCompetitions.joinWithLabel": {
+    readonly competition: string;
+    readonly club: string;
+  };
+  readonly "landing.openCompetitions.emptyPlatform": { readonly platform: string };
   readonly "audit.correlation": { readonly id: string };
   readonly "bracket.rounds.other": { readonly count: number };
   readonly "bracket.encounters.other": { readonly count: number };
@@ -4666,6 +4806,7 @@ const en: Catalog = {
   "onboarding.review.finish.organization": "Create organization",
   "onboarding.review.finish.invitation": "Accept invitation",
   "onboarding.review.finish.player": "Enter my personal space",
+  "onboarding.review.finish.competition": "Continue to the application",
   "errors.fallback": "We couldn't complete the operation. Try again.",
   "errors.onboarding.organizationCheck": "We couldn't check the name. Try again.",
   "errors.api.rate_limited": "You reached the temporary limit. Wait before trying again.",
@@ -5710,16 +5851,15 @@ const en: Catalog = {
   "landing.nav.aria": "Access",
   "landing.nav.sectionsAria": "Sections",
   "landing.nav.howItWorks": "How it works",
-  "landing.nav.portal": "Public portal",
   "landing.nav.login": "Log in",
-  "landing.nav.signup": "Create account",
+  "landing.nav.signup": "Create competition",
   "landing.hero.title.line1": "Club leagues",
   "landing.hero.title.line2": "and cups,",
   "landing.hero.title.official": "official.",
   "landing.hero.subtitle":
-    "From the EA match to the official result, with your organization's approval.",
+    "Futrob brings in your matches from EA. Captains pick which ones count, and the organization approves them before they reach the table.",
   "landing.hero.cta.primary": "Create competition",
-  "landing.hero.cta.secondary": "See a public competition",
+  "landing.hero.cta.secondary": "See a portal example",
   "landing.status.approved": "Approved",
   "landing.status.candidate": "EA candidate",
   "landing.status.selecting": "In selection",
@@ -5752,33 +5892,48 @@ const en: Catalog = {
   "landing.mechanism.publication.title": "Publication",
   "landing.mechanism.publication.description":
     "Only approved results update the table, bracket, rankings, and public portal.",
-  "landing.reschedule.title": "Reschedule without losing track",
-  "landing.reschedule.subtitle":
-    "A captain proposes a new time and the opponent responds. Once accepted, the schedule and the EA match search window adjust.",
-  "landing.reschedule.guarantee": "An approved or finished match can no longer be rescheduled.",
   "landing.reschedule.panel.label": "Example reschedule request",
   "landing.reschedule.panel.status": "In negotiation",
   "landing.reschedule.panel.sentence":
     "Sporting Lomas proposes moving the whole encounter from October 18, 21:00 to October 19, 22:00.",
   "landing.reschedule.panel.respondBy": "Respond by October 16, 23:59.",
   "landing.reschedule.panel.options": "CD Estrella can accept, counter or reject.",
-  "landing.demo.title": "Try it against the real API",
+  "landing.demo.title": "Find your club on EA",
   "landing.demo.subtitle":
-    "Search for your EA Clubs team. It is the same data layer that powers your competitions.",
-  "gameData.clubSearch.source": "Results from /api/v1/game-data/clubs/search.",
+    "Find it as it appears in EA SPORTS FC Clubs and create your account with it already linked.",
+  "landing.demo.idle": "Pick a club from the results to create your account with it.",
+  "landing.demo.cta": "Create account with this club",
+  "landing.demo.organizer": "Running a tournament? Create your competition",
+  "landing.openCompetitions.title": "Open registration",
+  "landing.openCompetitions.subtitle": "Competitions taking teams now.",
+  "landing.openCompetitions.subtitlePlatform": ({ platform }) =>
+    `${platform} competitions taking teams now.`,
+  "landing.openCompetitions.join": "Join",
+  "landing.openCompetitions.joinWith": ({ club }) => `Join with ${club}`,
+  "landing.openCompetitions.joinLabel": ({ competition }) => `Join ${competition}`,
+  "landing.openCompetitions.joinWithLabel": ({ competition, club }) =>
+    `Join ${competition} with ${club}`,
+  "landing.openCompetitions.empty": "No competition has open registration right now.",
+  "landing.openCompetitions.emptyHint": "Check back soon or create your own competition.",
+  "landing.openCompetitions.emptyPlatform": ({ platform }) =>
+    `No ${platform} competition has open registration right now.`,
+  "landing.openCompetitions.showAll": "Show every platform",
+  "landing.openCompetitions.loading": "Loading open registrations",
+  "landing.openCompetitions.error": "We couldn't load the open registrations.",
+  "landing.openCompetitions.retry": "Try again",
+  "gameData.clubSearch.source": "Live data from EA SPORTS FC Clubs. Searching needs no account.",
   "gameData.clubSearch.queryLabel": "Club name",
-  "gameData.clubSearch.queryPlaceholder": "E.g. Cuervos",
+  "gameData.clubSearch.queryPlaceholder": "E.g. Fera Enjaulada",
+  "gameData.clubSearch.examples": "Try",
+  "gameData.clubSearch.results": "Clubs found",
   "gameData.clubSearch.queryRequired": "Enter the club name.",
   "gameData.clubSearch.platformLabel": "Platform",
   "gameData.clubSearch.submit": "Search",
   "gameData.clubSearch.searching": "Searching…",
   "gameData.clubSearch.retryIn": ({ seconds }) => `Retry in ${seconds} s`,
-  "gameData.clubSearch.empty": "No results for that search.",
+  "gameData.clubSearch.empty": "No results on that platform. Try another one or check the name.",
   "gameData.clubSearch.error": "We couldn't search clubs. Please try again.",
   "gameData.clubSearch.rateLimited": "You reached the temporary search limit.",
-  "landing.players.title": "For players: your matches, your numbers",
-  "landing.players.subtitle":
-    "The personal profile exists without an organization: link your EA club and track your performance.",
   "landing.players.matches.title": "My matches",
   "landing.players.matches.description":
     "Recent and all, with league, playoff, or friendly marked on each card.",
@@ -5796,13 +5951,120 @@ const en: Catalog = {
   "landing.portal.point.rankings": "Player and team rankings",
   "landing.portal.podium.caption": "Example official table for the Metropolitan League",
   "landing.portal.podium.points": "points",
-  "landing.cta.title": "Publish your first official matchday",
   "landing.cta.subtitle":
-    "Create your organization, invite the captains, and set up your first competition.",
-  "landing.cta.primary": "Create account",
+    "Create your organization, invite the captains, and publish your first matchday.",
+  "landing.cta.primary": "Create competition",
   "landing.cta.secondary": "See pricing",
   "landing.footer.tagline": "Precise to operate. Clear to compete.",
   "landing.footer.madeBy": "Futrob is made by Davion Software.",
+  "landing.nav.features": "Features",
+  "landing.nav.faq": "FAQ",
+  "landing.hero.kicker": "For EA SPORTS FC Clubs",
+  "landing.hero.facts.label": "Getting started",
+  "landing.hero.facts.free": "Free for your first competition",
+  "landing.hero.facts.noCard": "No card needed",
+  "landing.features.title": "Your whole competition, from matchday 1 to the final",
+  "landing.features.subtitle":
+    "Matches, table, bracket, sanctions and portal in one place. Nothing counts until it's approved.",
+  "landing.features.table.title": "A table that only counts approved results",
+  "landing.features.table.description":
+    "Every point comes from an official result. An unapproved match never moves the table.",
+  "landing.features.table.club": "Club",
+  "landing.features.table.played": "P",
+  "landing.features.table.goalDifference": "GD",
+  "landing.features.table.points": "PTS",
+  "landing.features.captain.title": "Captains confirm from their phone",
+  "landing.features.captain.description":
+    "Pick which EA matches count for the fixture and confirm the result with the opponent.",
+  "landing.features.captain.fixture": "Matchday 6 · vs Atlético Norte",
+  "landing.features.captain.confirm": "Confirm result",
+  "landing.features.sync.title": "Matches from EA, no typing",
+  "landing.features.sync.description":
+    "Futrob brings in your clubs' matches from EA. They arrive as candidates, never as official results.",
+  "landing.features.sync.lastRun": "EA sync · 4 min ago",
+  "landing.features.cup.title": "Cups with a bracket",
+  "landing.features.cup.description":
+    "The bracket only moves forward once the series result is approved.",
+  "landing.features.audit.title": "Sanctions with a full history",
+  "landing.features.audit.description":
+    "Every sanction, approval and change is recorded with who made it and when.",
+  "landing.features.audit.sanction": "−3 pts · Sporting Lomas",
+  "landing.features.audit.sanctionDate": "Oct 12",
+  "landing.features.audit.approval": "Result approved · MD6",
+  "landing.features.audit.approvalDate": "Oct 11",
+  "landing.features.portal.title": "A public portal for your community",
+  "landing.features.portal.description":
+    "Schedule, results, table, bracket and rankings on one page you share with a link. You decide when it goes live.",
+  "landing.features.more.title": "And everything between matchdays",
+  "landing.features.more.description": "What a competition needs besides the matches.",
+  "landing.features.more.reschedule": "Rescheduling between captains",
+  "landing.features.more.disputes": "Disputes",
+  "landing.features.more.rankings": "Player rankings",
+  "landing.features.more.notifications": "Notifications",
+  "landing.features.more.staff": "Staff roles",
+  "landing.roles.title": "Everyone sees their part",
+  "landing.roles.subtitle":
+    "Organizers approve, captains confirm and players follow their numbers.",
+  "landing.roles.tab.organizers": "Organizers",
+  "landing.roles.tab.captains": "Captains",
+  "landing.roles.tab.players": "Players",
+  "landing.roles.organizers.queue.title": "Approve results from one queue",
+  "landing.roles.organizers.queue.description":
+    "Everything pending in your competition, in one place.",
+  "landing.roles.organizers.disputes.title": "Settle disputes with EA data",
+  "landing.roles.organizers.disputes.description":
+    "See both clubs' candidate matches before you decide.",
+  "landing.roles.organizers.staff.title": "Share the work with your staff",
+  "landing.roles.organizers.staff.description":
+    "Permissions per task: fixtures, results, disputes, sanctions or announcements.",
+  "landing.roles.organizers.publish.title": "Publish when it's ready",
+  "landing.roles.organizers.publish.description": "The portal only shows approved results.",
+  "landing.roles.organizers.example.label": "Example of results awaiting approval",
+  "landing.roles.organizers.example.title": "Awaiting approval",
+  "landing.roles.organizers.example.confirmed": "Confirmed by both",
+  "landing.roles.organizers.example.disputed": "Disputed",
+  "landing.roles.captains.select.title": "Pick the matches that count",
+  "landing.roles.captains.select.description":
+    "Futrob shows your EA matches against the opponent, and you mark which ones count.",
+  "landing.roles.captains.confirm.title": "Confirm the result with the opponent",
+  "landing.roles.captains.confirm.description":
+    "If you disagree, a dispute opens and the organizer decides.",
+  "landing.roles.captains.reschedule.title": "Propose another time",
+  "landing.roles.captains.reschedule.description":
+    "The opponent accepts, counters or declines. Once accepted, the schedule updates.",
+  "landing.roles.players.profile.title": "Your profile, even outside a league",
+  "landing.roles.players.profile.description":
+    "Link your EA club and follow your performance without joining an organization.",
+  "landing.roles.players.example.label": "Example of a player's recent matches",
+  "landing.roles.players.example.title": "My matches",
+  "landing.roles.players.example.hatTrick": "Hat-trick",
+  "landing.roles.players.example.first": "3 goals · 8.9 rating",
+  "landing.roles.players.example.second": "1 assist · 7.4 rating",
+  "landing.pricing.title": "Start free, grow when you need to",
+  "landing.pricing.subtitle":
+    "Every plan includes official match selection, captain confirmation, disputes and rescheduling.",
+  "landing.faq.title": "Before you create your competition",
+  "landing.faq.subtitle": "What organizers and captains usually ask.",
+  "landing.faq.ea.question": "Is Futrob made by EA?",
+  "landing.faq.ea.answer":
+    "No. Futrob is independent and uses the FC Clubs match data that EA publishes.",
+  "landing.faq.disagree.question": "What if the captains disagree?",
+  "landing.faq.disagree.answer":
+    "A dispute opens and the organizer decides. Until then, that result doesn't count in the table.",
+  "landing.faq.install.question": "Do captains need to install anything?",
+  "landing.faq.install.answer": "No. Everything works in the browser, on phones too.",
+  "landing.faq.reschedule.question": "Can a scheduled match be moved?",
+  "landing.faq.reschedule.answer":
+    "Yes, as long as it isn't approved or finished. A captain proposes another time and the opponent accepts, counters or declines.",
+  "landing.faq.downgrade.question": "What happens if I move to a lower plan?",
+  "landing.faq.downgrade.answer":
+    "Competitions in progress finish as usual. Only new actions are blocked, such as creating competitions or adding teams.",
+  "landing.cta.title.line1": "Your competition,",
+  "landing.cta.title.official": "official.",
+  "landing.footer.productNav": "Product",
+  "landing.footer.faq": "FAQ",
+  "landing.footer.disclaimer":
+    "Futrob is not affiliated with Electronic Arts. EA SPORTS FC is a trademark of Electronic Arts Inc.",
   "encounter.breadcrumb": "Encounter path",
   "encounter.title": ({ home, away }) => `${home} vs ${away}`,
   "encounter.vs": "VS",
@@ -6321,6 +6583,14 @@ const en: Catalog = {
     "Your access is ready. Use the menu to see your matches, statistics and team.",
   "competition.overview.status": "Competition status",
   "competition.overview.continueSetup": "Continue setup",
+  "competition.overview.exploreListing.title": "Explore visibility",
+  "competition.overview.exploreListing.label": "Show in Explore",
+  "competition.overview.exploreListing.listed":
+    "Anyone can find it in Explore and, while registration is open, on the Futrob home page.",
+  "competition.overview.exploreListing.unlisted":
+    "Hidden from Explore: only people with the link can see it.",
+  "competition.overview.exploreListing.saving": "Saving…",
+  "competition.overview.exploreListing.error": "We couldn't change the visibility. Try again.",
   "competition.overview.kpi.label": "Competition indicators",
   "competition.overview.kpi.teams": "Approved teams",
   "competition.overview.kpi.applications": "Entries to review",

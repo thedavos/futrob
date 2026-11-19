@@ -3,6 +3,9 @@ import {
   createCompetitionDraftResponseSchema,
   exploreCompetitionsQuerySchema,
   exploreCompetitionsResponseSchema,
+  openCompetitionsResponseSchema,
+  type CompetitionPlatformDto,
+  type OpenCompetitionsResponse,
   getCompetitionDraftResponseSchema,
   getExploreCompetitionResponseSchema,
   listOrganizationCompetitionsResponseSchema,
@@ -26,6 +29,10 @@ import {
   updateCompetitionCoverResponseSchema,
   type UpdateCompetitionCoverRequest,
   type UpdateCompetitionCoverResponse,
+  updateCompetitionExploreListingRequestSchema,
+  updateCompetitionExploreListingResponseSchema,
+  type CompetitionExploreListingDto,
+  type UpdateCompetitionExploreListingResponse,
   applyToCompetitionResponseSchema,
   getMyCompetitionApplicationResponseSchema,
   type ApplyToCompetitionRequest,
@@ -226,6 +233,31 @@ export function updateCompetitionCover(
     `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/cover`,
     { method: "PUT", body: updateCompetitionCoverRequestSchema.parse(input) },
     updateCompetitionCoverResponseSchema,
+  );
+}
+
+/** Signed-out landing list of open, listed competitions, limited per IP. */
+export function listOpenCompetitions(
+  platform: CompetitionPlatformDto | null,
+): Promise<OpenCompetitionsResponse> {
+  const search = platform ? `?${new URLSearchParams({ platform }).toString()}` : "";
+  return requestCompetitionsJson({
+    path: `/api/v1/public/competitions/explore${search}`,
+    method: "GET",
+    schema: openCompetitionsResponseSchema,
+    fallbackCode: "competitions.open_list_failed",
+  });
+}
+
+export function updateCompetitionExploreListing(
+  organizationId: string,
+  competitionId: string,
+  exploreListing: CompetitionExploreListingDto,
+): Promise<UpdateCompetitionExploreListingResponse> {
+  return competitionRequest(
+    `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/explore-listing`,
+    { method: "PUT", body: updateCompetitionExploreListingRequestSchema.parse({ exploreListing }) },
+    updateCompetitionExploreListingResponseSchema,
   );
 }
 

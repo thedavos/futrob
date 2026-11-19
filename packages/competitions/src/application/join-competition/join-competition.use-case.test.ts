@@ -58,6 +58,7 @@ const competitionDraft: CompetitionDraft = {
     name: "Copa Inicial",
     status: "draft",
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "FC 26",
     platform: "playstation",
     region: "south-america",

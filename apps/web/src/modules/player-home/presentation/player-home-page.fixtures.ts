@@ -108,6 +108,7 @@ export function accessibleCompetitionFixture(
       name: overrides.name ?? "Liga Futrob",
       status: overrides.status ?? "published",
       modality: "fc-clubs",
+      exploreListing: "listed",
       gameEdition: overrides.gameEdition ?? "fc26",
       platform: overrides.platform ?? "playstation",
       region: overrides.region ?? "south-america",

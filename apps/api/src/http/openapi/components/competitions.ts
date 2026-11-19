@@ -11,6 +11,7 @@ import {
   listAccessibleCompetitionsResponseSchema,
   exploreCompetitionSchema,
   exploreCompetitionsResponseSchema,
+  openCompetitionsResponseSchema,
   acceptCompetitionInvitationResponseSchema,
   competitionEntrySchema,
   competitionParticipantInputSchema,
@@ -45,6 +46,10 @@ export const ExploreCompetition = namedSchema("ExploreCompetition", exploreCompe
 export const ExploreCompetitionsResponse = namedSchema(
   "ExploreCompetitionsResponse",
   exploreCompetitionsResponseSchema,
+);
+export const OpenCompetitionsResponse = namedSchema(
+  "OpenCompetitionsResponse",
+  openCompetitionsResponseSchema,
 );
 export const AcceptCompetitionInvitationResponse = namedSchema(
   "AcceptCompetitionInvitationResponse",

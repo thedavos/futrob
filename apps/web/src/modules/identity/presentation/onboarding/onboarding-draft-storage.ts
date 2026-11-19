@@ -38,6 +38,7 @@ const storedDraftSchema = z.object({
     selectedExternalClub: playerExternalClubSelectionInputSchema
       .extend({ name: z.string(), imageUrl: z.string().nullable() })
       .nullable(),
+    joiningCompetitionId: z.string().min(1).nullable().default(null),
   }),
 });
 

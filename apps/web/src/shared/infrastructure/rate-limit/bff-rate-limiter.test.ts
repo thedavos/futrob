@@ -68,6 +68,16 @@ describe("BffRateLimiter contract", () => {
         actorMaxAttempts: 30,
         ipMaxAttempts: 60,
       },
+      [BFF_RATE_LIMIT_POLICY.publicClubSearch]: {
+        windowSeconds: 60,
+        actorMaxAttempts: 20,
+        ipMaxAttempts: 20,
+      },
+      [BFF_RATE_LIMIT_POLICY.publicCompetitionExplore]: {
+        windowSeconds: 60,
+        actorMaxAttempts: 30,
+        ipMaxAttempts: 30,
+      },
     });
   });
 
@@ -82,6 +92,12 @@ describe("BffRateLimiter contract", () => {
       RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS: "300",
       RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX: "3",
       RATE_LIMIT_INVITATION_PREVIEW_IP_MAX: "9",
+      RATE_LIMIT_PUBLIC_CLUB_SEARCH_WINDOW_SECONDS: "120",
+      RATE_LIMIT_PUBLIC_CLUB_SEARCH_ACTOR_MAX: "8",
+      RATE_LIMIT_PUBLIC_CLUB_SEARCH_IP_MAX: "12",
+      RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_WINDOW_SECONDS: "90",
+      RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_ACTOR_MAX: "10",
+      RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_IP_MAX: "15",
     });
 
     expect(policies[BFF_RATE_LIMIT_POLICY.eaClubSearch]).toEqual({
@@ -98,6 +114,16 @@ describe("BffRateLimiter contract", () => {
       windowSeconds: 300,
       actorMaxAttempts: 3,
       ipMaxAttempts: 9,
+    });
+    expect(policies[BFF_RATE_LIMIT_POLICY.publicClubSearch]).toEqual({
+      windowSeconds: 120,
+      actorMaxAttempts: 8,
+      ipMaxAttempts: 12,
+    });
+    expect(policies[BFF_RATE_LIMIT_POLICY.publicCompetitionExplore]).toEqual({
+      windowSeconds: 90,
+      actorMaxAttempts: 10,
+      ipMaxAttempts: 15,
     });
   });
 

@@ -129,7 +129,8 @@ export const FromInvitationLink: Story = {
   render: () => (
     <OnboardingStoryRouter
       gateway={createFakeOnboardingGateway()}
-      initialPath="/onboarding/invitation?invitation=invite-token"
+      handoff={{ kind: "invitation", code: "invite-token" }}
+      initialPath="/onboarding/invitation"
     />
   ),
   play: async ({ canvasElement }) => {

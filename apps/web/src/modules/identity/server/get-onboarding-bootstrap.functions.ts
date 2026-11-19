@@ -1,5 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
-import type { OnboardingStatusDto, PostAuthDestinationDto } from "@futrob/api-contracts";
+import {
+  getClubResponseSchema,
+  playerExternalClubSelectionInputSchema,
+  type ExternalClubDto,
+  type OnboardingStatusDto,
+  type PostAuthDestinationDto,
+} from "@futrob/api-contracts";
 import { recordOnboardingEntry } from "./record-onboarding-entry.ts";
 import { withAuthenticatedProductApi } from "@/context/with-authenticated-product-api.server.ts";
 
@@ -29,3 +35,18 @@ export const getOnboardingBootstrap = createServerFn({ method: "GET" }).handler(
       return { status, destination };
     }),
 );
+
+/** The club a landing link hands to onboarding, read for the signed-in actor. */
+export const getOnboardingHandoffClub = createServerFn({ method: "GET" })
+  .validator(playerExternalClubSelectionInputSchema)
+  .handler(async ({ data }): Promise<ExternalClubDto> =>
+    withAuthenticatedProductApi(async ({ client }) =>
+      getClubResponseSchema.parse(
+        await client.gameData.clubs.retrieve(data.externalClubId, {
+          providerKey: data.providerKey,
+          platform: data.platform,
+          gameEdition: data.gameEdition,
+        }),
+      ),
+    ),
+  );

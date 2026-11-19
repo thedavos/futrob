@@ -43,6 +43,7 @@ function draft(
       name: "Liga Interclubes",
       status: "draft",
       modality: "fc-clubs",
+      exploreListing: "listed",
       gameEdition: "FC 26",
       platform: "nintendo-switch-2",
       region: "south-america",

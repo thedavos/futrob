@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
+import { authClient } from "@/modules/identity/auth-client.ts";
 import { announceIdentityChange } from "@/shared/presentation/query/identity-change.ts";
 import {
   navigateAfterAuth,
@@ -34,8 +35,9 @@ export function AuthResumeProvider({ children, redirectTo }: AuthResumeProviderP
   const value = useMemo<AuthResumeValue>(
     () => ({
       redirectTo,
-      afterAuthenticated: (kind) => {
+      afterAuthenticated: async (kind) => {
         announceIdentityChange(queryClient);
+        await refreshSessionStore();
         return navigateAfterAuth({
           kind,
           redirectTo,
@@ -48,6 +50,18 @@ export function AuthResumeProvider({ children, redirectTo }: AuthResumeProviderP
   );
 
   return <AuthResumeContext.Provider value={value}>{children}</AuthResumeContext.Provider>;
+}
+
+type SessionStoreValue = { readonly refetch: () => Promise<void> };
+
+/**
+ * Reads the new session into the client store before entering the app. A public page that
+ * read the session while signed out leaves that answer in the store, nothing refreshes it
+ * while no component watches it, and the `/_app` gate would send the new user to log in.
+ */
+async function refreshSessionStore(): Promise<void> {
+  const value: SessionStoreValue | undefined = authClient.$store.atoms.session?.get();
+  await value?.refetch();
 }
 
 const storybookFallback: AuthResumeValue = {

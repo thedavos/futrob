@@ -51,8 +51,13 @@ function renderFooter() {
     path: "/refunds",
     component: () => <p>refunds</p>,
   });
+  const pricing = createRoute({
+    getParentRoute: () => root,
+    path: "/pricing",
+    component: () => <p>pricing</p>,
+  });
   const router = createRouter({
-    routeTree: root.addChildren([home, terms, privacy, refunds]),
+    routeTree: root.addChildren([home, terms, privacy, refunds, pricing]),
     history: createMemoryHistory({ initialEntries: ["/"] }),
   });
   return render(
@@ -75,5 +80,25 @@ describe("LandingFooter", () => {
       "/privacy",
     );
     expect(screen.getByRole("link", { name: "Reembolsos" })).toHaveAttribute("href", "/refunds");
+  });
+
+  it("links to the landing sections and the pricing page", async () => {
+    renderFooter();
+    expect(await screen.findByRole("navigation", { name: "Producto" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Funciones" })).toHaveAttribute("href", "/#funciones");
+    expect(screen.getByRole("link", { name: "Cómo funciona" })).toHaveAttribute(
+      "href",
+      "/#mecanismo",
+    );
+    expect(screen.getByRole("link", { name: "Preguntas frecuentes" })).toHaveAttribute(
+      "href",
+      "/#preguntas",
+    );
+    expect(screen.getByRole("link", { name: "Precios" })).toHaveAttribute("href", "/pricing");
+  });
+
+  it("states that Futrob is not affiliated with EA", async () => {
+    renderFooter();
+    expect(await screen.findByText(/no está afiliado a Electronic Arts/)).toBeTruthy();
   });
 });

@@ -70,6 +70,10 @@ export const competitionCoverSchema = z.discriminatedUnion("kind", [
 ]);
 export type CompetitionCoverDto = z.infer<typeof competitionCoverSchema>;
 
+/** Whether Explore lists the competition; an unlisted one stays reachable by direct link. */
+export const competitionExploreListingSchema = z.enum(["listed", "unlisted"]);
+export type CompetitionExploreListingDto = z.infer<typeof competitionExploreListingSchema>;
+
 export const competitionDraftInputSchema = z.object({
   name: z.string().trim().min(1).max(120),
   gameEdition: z.string().trim().min(1).max(40),
@@ -136,6 +140,7 @@ export const competitionSchema = z.object({
   teams: competitionTeamRangeSchema,
   schedule: competitionScheduleSchema,
   cover: competitionCoverSchema,
+  exploreListing: competitionExploreListingSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -231,6 +236,27 @@ export const exploreCompetitionsResponseSchema = z.object({
   nextCursor: z.string().min(1).nullable(),
 });
 export type ExploreCompetitionsResponse = z.infer<typeof exploreCompetitionsResponseSchema>;
+
+/** The signed-out landing shows at most this many competitions with open registration. */
+export const OPEN_COMPETITIONS_MAX_LIMIT = 6;
+
+/** Signed-out list of competitions in registration. Status and listing are fixed server-side. */
+export const openCompetitionsQuerySchema = z.object({
+  platform: optionalQuery(competitionPlatformSchema),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(OPEN_COMPETITIONS_MAX_LIMIT)
+    .default(OPEN_COMPETITIONS_MAX_LIMIT),
+});
+export type OpenCompetitionsQuery = z.infer<typeof openCompetitionsQuerySchema>;
+export type OpenCompetitionsQueryInput = z.input<typeof openCompetitionsQuerySchema>;
+
+export const openCompetitionsResponseSchema = z.object({
+  items: z.array(exploreCompetitionSchema),
+});
+export type OpenCompetitionsResponse = z.infer<typeof openCompetitionsResponseSchema>;
 
 export const getExploreCompetitionResponseSchema = exploreCompetitionSchema;
 export type GetExploreCompetitionResponse = z.infer<typeof getExploreCompetitionResponseSchema>;
@@ -329,3 +355,14 @@ export const updateCompetitionCoverRequestSchema = z.object({ cover: competition
 export type UpdateCompetitionCoverRequest = z.infer<typeof updateCompetitionCoverRequestSchema>;
 export const updateCompetitionCoverResponseSchema = competitionDraftSchema;
 export type UpdateCompetitionCoverResponse = z.infer<typeof updateCompetitionCoverResponseSchema>;
+
+export const updateCompetitionExploreListingRequestSchema = z.object({
+  exploreListing: competitionExploreListingSchema,
+});
+export type UpdateCompetitionExploreListingRequest = z.infer<
+  typeof updateCompetitionExploreListingRequestSchema
+>;
+export const updateCompetitionExploreListingResponseSchema = competitionDraftSchema;
+export type UpdateCompetitionExploreListingResponse = z.infer<
+  typeof updateCompetitionExploreListingResponseSchema
+>;

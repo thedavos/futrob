@@ -11,12 +11,15 @@ After signup, a new actor picks `Empezar como jugador`, may skip EA details, con
 - `onb-player-review` shows `Confirma tu configuración` with `Perfil de jugador listo · Datos EA para después` when skipped.
 - `onb-player-finish` submits `Entrar a mi espacio` and lands on `/player` with heading `Inicio`.
 - `onb-player-guard` sending an incomplete actor to `/player`, `/orgs` or any other authenticated page returns them to `/onboarding`.
+- `onb-club-handoff` the landing `Crear cuenta con este club` link (`/onboarding/club?club=<id>&platform=<p>&edition=<e>`) opens the player review with that club selected; if the club lookup fails it opens `Asocia tu club EA` with nothing selected. A completed actor goes to `/player/ea-clubs`.
+- `onb-competition-handoff` the landing `Unirme` link (`/onboarding/review?competition=<id>`, plus the club params when a club was picked) opens the player review, keeps the competition in the local draft, and finishes with `Continuar a la inscripción` on `/player/competitions/<id>?apply=true&teamName=<club>`. A completed actor goes straight there.
 - `onb-resume` reloading mid-flow keeps the draft and reopens the step the actor reached.
 
 ## How to get to it (user POV)
 
 - Finish `/signup` (new account always enters onboarding).
 - Open `/onboarding` or `/onboarding/intention` while signed in and incomplete.
+- From the landing club search (`/#demo`), choose `Crear cuenta con este club` and sign up.
 - Choose `Empezar como jugador`, then `Continuar`.
 - Optional: fill `Identificador de EA` and choose `Guardar y continuar`, or choose `Omitir por ahora` on account and club steps.
 - Confirm with `Entrar a mi espacio`.
@@ -42,11 +45,12 @@ Preconditions:
 
 - There is no `/onboarding/team` route. Do not open it as a step.
 - Club search hits EA through the API. Skipping club is the safe seed proof; a live search is optional and rate-limited.
-- If EA is unavailable after a club was chosen, the finish response carries `externalClubAssociation: "failed"` and `/player?clubAssociation=failed` shows the warning. A club EA does not know (404) still blocks the finish. Only claim the warning path from a real provider failure or the Storybook story `Product/Onboarding/Flow › Club Association Failed`.
+- If EA is unavailable after a club was chosen, the finish response carries `externalClubAssociation: "failed"` and `/player?clubAssociation=failed` shows the warning. From a landing «Unirme» handoff the finish lands on the competition instead, and `/player/competitions/<id>?apply=true&teamName=…&clubAssociation=failed` shows the same warning above the application; closing it keeps the application open. A club EA does not know (404) still blocks the finish. Only claim the warning path from a real provider failure or the Storybook story `Product/Onboarding/Flow › Club Association Failed`.
 - Re-finishing must not create a second organization or competition. This recipe never creates those.
 - Organizer (`Organizar`) and invitation (`Unirme`) are other entry points. Completing the player path does not verify them.
 - `/player` shows `Cargando tus datos…` while the status request runs. Wait for the heading, not the pending copy.
 - The incomplete-actor guard lands on `/onboarding`, which reopens the stored step, or the first earlier step whose data this browser no longer has. A fresh actor lands on `/onboarding/intention`.
 - An invitation link (`/invitations/accept/<code>`) opened by an incomplete actor goes to `/onboarding/invitation?invitation=<code>` with the code filled in; it is not accepted until the review step.
+- A club handoff URL is read only when onboarding is entered. The flow then moves to `/onboarding/review` and drops the search params; reloading there resumes from the local draft, not the URL.
 - The draft lives in `localStorage` under `futrob:onboarding-draft:<userId>`. Clear it to test a resume from another device.
 - Command-bar empty identity is `Sin organización` (`shell.identity.empty`). The account-menu trigger still shows the given name. After `Entrar a mi espacio`, wait until the review overlay is gone and heading `Inicio` is the only onboarding chrome left before asserting the home hero.

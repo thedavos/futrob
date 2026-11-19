@@ -83,6 +83,7 @@ export async function seedComposition(backend: {
       name: "Copa",
       status: "draft",
       modality: "fc-clubs",
+      exploreListing: "listed",
       gameEdition: "fc26",
       platform: "playstation",
       region: "south-america",

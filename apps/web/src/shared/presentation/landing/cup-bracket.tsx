@@ -12,7 +12,6 @@ import {
 } from "@futrob/ui";
 import { TrophyIcon } from "@phosphor-icons/react";
 
-import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   BRACKET_SIZE,
@@ -36,6 +35,7 @@ import {
   RING_DELAY,
   styles,
 } from "@/shared/presentation/landing/cup-bracket.styles.ts";
+import { FictionalCrest } from "@/shared/presentation/landing/fictional-crest.tsx";
 
 interface ActiveCrest {
   readonly layoutId: BracketLayout["id"];
@@ -240,16 +240,18 @@ export function CupBracket() {
                           />
                         }
                       >
-                        <ClubCrestAvatar
-                          className={[
+                        <span
+                          {...applyStyles(
                             styles.crest,
                             isActive && styles.crestActive,
                             isChampion && styles.crestChampion,
-                          ]}
-                          fallbackClassName={styles.initials}
-                          imageUrl={null}
-                          name={club.name}
-                        />
+                          )}
+                        >
+                          <FictionalCrest
+                            className={applyStyles(styles.crestMark).className}
+                            crest={club.crest}
+                          />
+                        </span>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">
                         <span {...applyStyles(styles.tooltipName)}>{club.name}</span>
@@ -264,7 +266,12 @@ export function CupBracket() {
         </TooltipProvider>
       </div>
       <figcaption {...applyStyles(styles.card, elevation.md, delay.card)}>
-        <ClubCrestAvatar className={styles.cardCrest} imageUrl={null} name={CUP_CHAMPION.name} />
+        <span {...applyStyles(styles.cardCrest)}>
+          <FictionalCrest
+            className={applyStyles(styles.cardCrestMark).className}
+            crest={CUP_CHAMPION.crest}
+          />
+        </span>
         <span {...applyStyles(styles.cardText)}>
           <span {...applyStyles(typography.body, styles.cardResult)}>
             {`${CUP_CHAMPION.name} ${finalScore} ${CUP_RUNNER_UP.name}`}

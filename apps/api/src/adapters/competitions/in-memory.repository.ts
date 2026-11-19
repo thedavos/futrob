@@ -44,6 +44,23 @@ export class InMemoryCompetitionRepository implements CompetitionRepository {
     return saved;
   }
 
+  async saveExploreListing(draft: CompetitionDraft): Promise<CompetitionDraft> {
+    const current = this.byId.get(draft.competition.id);
+    if (!current || current.competition.organizationId !== draft.competition.organizationId) {
+      throw new Panic("Cannot update the Explore listing of a missing competition");
+    }
+    const saved = {
+      ...current,
+      competition: {
+        ...current.competition,
+        exploreListing: draft.competition.exploreListing,
+        updatedAt: draft.competition.updatedAt,
+      },
+    };
+    this.byId.set(saved.competition.id, saved);
+    return saved;
+  }
+
   async changeStatus(
     draft: CompetitionDraft,
     expected: CompetitionStatus,

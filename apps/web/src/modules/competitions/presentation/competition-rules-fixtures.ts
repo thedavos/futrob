@@ -21,6 +21,7 @@ export const leaguePlayoffsDraft: CompetitionDraftDto = {
     name: "Copa Interclubes",
     status: "draft",
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "FC 26",
     platform: "pc",
     region: "south-america",

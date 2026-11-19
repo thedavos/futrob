@@ -6,6 +6,8 @@ export const BFF_RATE_LIMIT_POLICY = {
   invitationPreview: "invitation-preview",
   invitationPublicPreview: "invitation-public-preview",
   playerSearch: "player-search",
+  publicClubSearch: "public-club-search",
+  publicCompetitionExplore: "public-competition-explore",
 } as const;
 
 export type BffRateLimitPolicy = (typeof BFF_RATE_LIMIT_POLICY)[keyof typeof BFF_RATE_LIMIT_POLICY];
@@ -44,6 +46,16 @@ export const DEFAULT_BFF_RATE_LIMIT_POLICIES = {
     windowSeconds: 60,
     actorMaxAttempts: 30,
     ipMaxAttempts: 60,
+  },
+  [BFF_RATE_LIMIT_POLICY.publicClubSearch]: {
+    windowSeconds: 60,
+    actorMaxAttempts: 20,
+    ipMaxAttempts: 20,
+  },
+  [BFF_RATE_LIMIT_POLICY.publicCompetitionExplore]: {
+    windowSeconds: 60,
+    actorMaxAttempts: 30,
+    ipMaxAttempts: 30,
   },
 } satisfies BffRateLimitPolicies;
 
@@ -93,6 +105,16 @@ const POLICY_ENV_KEYS = {
     actorMaxAttempts: "RATE_LIMIT_PLAYER_SEARCH_ACTOR_MAX",
     ipMaxAttempts: "RATE_LIMIT_PLAYER_SEARCH_IP_MAX",
   },
+  [BFF_RATE_LIMIT_POLICY.publicClubSearch]: {
+    windowSeconds: "RATE_LIMIT_PUBLIC_CLUB_SEARCH_WINDOW_SECONDS",
+    actorMaxAttempts: "RATE_LIMIT_PUBLIC_CLUB_SEARCH_ACTOR_MAX",
+    ipMaxAttempts: "RATE_LIMIT_PUBLIC_CLUB_SEARCH_IP_MAX",
+  },
+  [BFF_RATE_LIMIT_POLICY.publicCompetitionExplore]: {
+    windowSeconds: "RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_WINDOW_SECONDS",
+    actorMaxAttempts: "RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_ACTOR_MAX",
+    ipMaxAttempts: "RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_IP_MAX",
+  },
 } as const satisfies Record<
   BffRateLimitPolicy,
   Readonly<{ windowSeconds: string; actorMaxAttempts: string; ipMaxAttempts: string }>
@@ -114,6 +136,14 @@ export function parseBffRateLimitPolicies(source: Readonly<Record<string, string
       BFF_RATE_LIMIT_POLICY.invitationPublicPreview,
     ),
     [BFF_RATE_LIMIT_POLICY.playerSearch]: policyFromEnv(source, BFF_RATE_LIMIT_POLICY.playerSearch),
+    [BFF_RATE_LIMIT_POLICY.publicClubSearch]: policyFromEnv(
+      source,
+      BFF_RATE_LIMIT_POLICY.publicClubSearch,
+    ),
+    [BFF_RATE_LIMIT_POLICY.publicCompetitionExplore]: policyFromEnv(
+      source,
+      BFF_RATE_LIMIT_POLICY.publicCompetitionExplore,
+    ),
   } satisfies BffRateLimitPolicies;
 }
 

@@ -29,6 +29,25 @@ describe("createFutrobClient gameData", () => {
     expect(result.clubs[0]?.externalClubId).toBe("10754");
   });
 
+  it("searchAnonymously calls the actor-free internal search", async () => {
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: mockFetch(async (input) => {
+        const url = new URL(requestUrl(input));
+        expect(url.pathname).toBe("/api/v1/internal/game-data/clubs/search");
+        expect(url.searchParams.get("query")).toBe("Fera");
+        expect(url.searchParams.get("platform")).toBe("common-gen4");
+        return Response.json({ clubs: [] });
+      }),
+    });
+
+    const result = await client.gameData.clubs.searchAnonymously({
+      query: "Fera",
+      platform: "common-gen4",
+    });
+    expect(result.clubs).toEqual([]);
+  });
+
   it("retrieve and matches call nested paths", async () => {
     const urls: string[] = [];
     const client = createFutrobClient({

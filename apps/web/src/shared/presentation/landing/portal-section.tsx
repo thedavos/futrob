@@ -177,7 +177,6 @@ export function PortalSection() {
       id="portal"
       subtitle={t("landing.portal.subtitle")}
       title={t("landing.portal.title")}
-      tone="band"
     >
       <figure {...applyStyles(styles.podium)}>
         <div {...applyStyles(styles.leader)}>

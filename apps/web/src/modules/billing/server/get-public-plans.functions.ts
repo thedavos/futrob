@@ -1,19 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { OrganizationPlan } from "@futrob/api-contracts";
-import { createFutrobClient } from "@futrob/sdk";
 import { resolveProductApiBaseUrl } from "@/context/product-api-client.ts";
+import { loadPublicPlans } from "@/modules/billing/server/load-public-plans.ts";
 
-/**
- * Anonymous read of the plan catalog for the pricing page. It sends no service secret or
- * actor: `/public/plans` is public. A failure renders the page without numbers.
- */
+/** Plan catalog for the landing and `/pricing`; `null` when the API fails or stalls. */
 export const getPublicPlans = createServerFn({ method: "GET" }).handler(
-  async (): Promise<readonly OrganizationPlan[] | null> => {
-    try {
-      const client = createFutrobClient({ baseUrl: resolveProductApiBaseUrl() });
-      return (await client.billing.listPublicPlans()).plans;
-    } catch {
-      return null;
-    }
-  },
+  async (): Promise<readonly OrganizationPlan[] | null> =>
+    loadPublicPlans({ baseUrl: resolveProductApiBaseUrl() }),
 );

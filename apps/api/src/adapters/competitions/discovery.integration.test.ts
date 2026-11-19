@@ -39,6 +39,11 @@ describe.skipIf(!databaseUrl)("competition discovery Postgres", () => {
          'America/Lima', 'knockout', 'actor', NOW(), '2026-09-01T12:00:00.000001Z'),
         ('private', 'org-1', 'Hidden', 'draft', 'fc-clubs', 'fc26', 'pc', 'america',
          'America/Lima', 'league', 'actor', NOW(), NOW());
+      INSERT INTO competitions (id, organization_id, name, status, modality, game_edition,
+        platform, region, time_zone, format, created_by_actor_id, created_at, updated_at,
+        explore_listing)
+      VALUES ('unlisted', 'org-1', 'Oculta', 'registration', 'fc-clubs', 'fc26', 'pc', 'america',
+         'America/Lima', 'league', 'actor', NOW(), '2026-09-02T12:00:00Z', 'unlisted');
       INSERT INTO teams (id, organization_id, name, created_at, created_by_actor_id)
       VALUES ('t-1', 'org-1', 'One', NOW(), 'actor'), ('t-2', 'org-1', 'Two', NOW(), 'actor'),
              ('foreign', 'org-2', 'Foreign', NOW(), 'actor');
@@ -89,6 +94,19 @@ describe.skipIf(!databaseUrl)("competition discovery Postgres", () => {
     expect(page.items[0]?.approvedTeamCount).toBe(1);
     expect((await reader.findById(asCompetitionId("c-3")))?.approvedTeamCount).toBe(1);
     expect(await reader.findById(asCompetitionId("private"))).toBeNull();
+  });
+
+  it("lists only listed competitions and keeps an unlisted one reachable by id", async () => {
+    const open = await reader.list({ sort: "updated-desc", limit: 10, status: "registration" });
+    expect(open.items.map((item) => item.competition.id)).toEqual(["c-3"]);
+    expect(open.total).toBe(1);
+    expect((await reader.findById(asCompetitionId("unlisted")))?.competition).toMatchObject({
+      status: "registration",
+      exploreListing: "unlisted",
+    });
+    expect((await reader.findById(asCompetitionId("c-3")))?.competition.exploreListing).toBe(
+      "listed",
+    );
   });
 
   it("applies literal search, all filters and rejects invalid timestamp cursors safely", async () => {

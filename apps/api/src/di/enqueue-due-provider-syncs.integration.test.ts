@@ -251,6 +251,7 @@ async function seedOrganization(modules: AppModules): Promise<void> {
       name: "org-due-sync",
       status: "draft",
       modality: "fc-clubs",
+      exploreListing: "listed",
       gameEdition: "fc26",
       platform: "playstation",
       region: "south-america",

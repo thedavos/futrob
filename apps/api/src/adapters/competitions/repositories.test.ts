@@ -19,6 +19,7 @@ const draft: CompetitionDraft = {
     name: "Liga Futrob",
     status: "draft",
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "FC 26",
     platform: "playstation",
     region: "south-america",
@@ -145,6 +146,24 @@ describe("in-memory partial competition updates", () => {
   });
 });
 
+describe("in-memory Explore listing", () => {
+  it("changes the listing without overwriting the latest name or status", async () => {
+    const repository = new InMemoryCompetitionRepository();
+    await repository.saveDraft({
+      ...draft,
+      competition: { ...draft.competition, name: "Updated name", status: "registration" },
+    });
+    await expect(
+      repository.saveExploreListing({
+        ...draft,
+        competition: { ...draft.competition, exploreListing: "unlisted" },
+      }),
+    ).resolves.toMatchObject({
+      competition: { status: "registration", name: "Updated name", exploreListing: "unlisted" },
+    });
+  });
+});
+
 describe("PostgresCompetitionRepository nested in TransactionPort", () => {
   it("joins the outer transaction instead of opening a second BEGIN", async () => {
     const fakePool = new FakeCompetitionPool();
@@ -193,6 +212,7 @@ class FakeCompetitionPool {
         creation_key: values[11] == null ? null : z.string().parse(values[11]),
         created_at: pgTimestampSchema.parse(values[12]),
         updated_at: pgTimestampSchema.parse(values[13]),
+        explore_listing: "listed",
       };
       return { rows: [this.competition] };
     }

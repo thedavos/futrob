@@ -11,6 +11,7 @@ function draft(
   const competition: Competition = {
     organizationId: asOrganizationId("org-1"),
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "FC 26",
     platform: "playstation",
     region: "america",
@@ -82,6 +83,15 @@ async function seedReader() {
       name: "Liga Vieja",
       status: "finished",
       updatedAt: new Date("2026-08-01T00:00:00.000Z"),
+    }),
+  );
+  await competitions.saveDraft(
+    draft({
+      id: asCompetitionId("c-unlisted"),
+      name: "Liga Oculta",
+      status: "registration",
+      exploreListing: "unlisted",
+      updatedAt: new Date("2026-08-12T00:00:00.000Z"),
     }),
   );
   await entries.save({
@@ -165,5 +175,19 @@ describe("InMemoryCompetitionDiscoveryReader", () => {
     expect((await reader.findById(asCompetitionId("c-league")))?.competition.name).toBe(
       "Liga Norte",
     );
+  });
+
+  it("leaves an unlisted competition out of every list but keeps its direct link", async () => {
+    const reader = await seedReader();
+
+    const open = await reader.list({ status: "registration", sort: "updated-desc", limit: 24 });
+    expect(open).toEqual({ items: [], total: 0, nextCursor: null });
+    const byName = await reader.list({ q: "oculta", sort: "name-asc", limit: 24 });
+    expect(byName.total).toBe(0);
+
+    expect((await reader.findById(asCompetitionId("c-unlisted")))?.competition).toMatchObject({
+      name: "Liga Oculta",
+      exploreListing: "unlisted",
+    });
   });
 });

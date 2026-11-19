@@ -102,6 +102,29 @@ describe("apps/api http game-data clubs", () => {
     );
   });
 
+  it("GET /api/v1/internal/game-data/clubs/search serves a signed-out visitor through the service secret", async () => {
+    let providerCalls = 0;
+    const app = buildApp(
+      createFetch((url) => {
+        providerCalls += 1;
+        expect(url).toContain("clubName=Fera");
+        return Response.json(searchClubsFixture);
+      }),
+    );
+    const path = "/api/v1/internal/game-data/clubs/search?query=Fera";
+
+    const anonymous = await app.request(path);
+    expect(anonymous.status).toBe(401);
+    expect(providerCalls).toBe(0);
+
+    const res = await app.request(path, {
+      headers: { Authorization: `Bearer ${INTERNAL_JOB_SECRET}` },
+    });
+    expect(res.status).toBe(200);
+    const body = await parseResponse(searchClubsResponseSchema, res);
+    expect(body.clubs[0]).toMatchObject({ externalClubId: "10754", name: "Fera Enjaulada" });
+  });
+
   it("GET /api/v1/game-data/clubs/search rejects a missing query with 400", async () => {
     const app = buildApp(stubFetch);
 
@@ -117,6 +140,28 @@ describe("apps/api http game-data clubs", () => {
     );
     expect(res.headers.get("x-request-id")).toBe(body.requestId);
     expect(body.requestId).not.toBe("not-a-safe-request-id");
+  });
+
+  it("GET /api/v1/game-data/clubs/search rejects an over-long query with 400 before EA", async () => {
+    let providerCalls = 0;
+    const app = buildApp(
+      createFetch(() => {
+        providerCalls += 1;
+        return Response.json(searchClubsFixture);
+      }),
+    );
+
+    for (const path of [
+      `/api/v1/game-data/clubs/search?query=${"z".repeat(260)}`,
+      `/api/v1/internal/game-data/clubs/search?query=${"z".repeat(260)}`,
+    ]) {
+      const res = await app.request(path, { headers: serviceHeaders() });
+      expect(res.status).toBe(400);
+      expect(await parseResponse(apiErrorSchema, res)).toMatchObject({
+        code: "api.validation_error",
+      });
+    }
+    expect(providerCalls).toBe(0);
   });
 
   it("GET /api/v1/game-data/clubs/search surfaces EA HTTP failures as 502", async () => {

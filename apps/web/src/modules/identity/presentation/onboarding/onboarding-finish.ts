@@ -2,6 +2,10 @@ import type {
   CompleteOrganizationOnboardingResponse,
   OnboardingPathDto,
 } from "@futrob/api-contracts";
+import {
+  competitionApplySearch,
+  type CompetitionApplySearch,
+} from "@/modules/competitions/presentation/explore/competition-apply-search.ts";
 import type { OnboardingGateway } from "./onboarding-flow-gateway.ts";
 import {
   externalClubLocatorFromDraft,
@@ -22,6 +26,11 @@ export type OnboardingFinishDestination =
   | {
       readonly to: "/player";
       readonly search: { readonly clubAssociation?: "failed" };
+    }
+  | {
+      readonly to: "/player/competitions/$competitionId";
+      readonly params: { readonly competitionId: string };
+      readonly search: CompetitionApplySearch;
     };
 
 export type OnboardingFinishResult =
@@ -78,6 +87,19 @@ export const finishOnboardingPath = {
       gameAccount: playerAccountFromDraft(draft),
       externalClub: externalClubLocatorFromDraft(draft),
     });
+    if (draft.joiningCompetitionId) {
+      return {
+        path: "player",
+        destination: {
+          to: "/player/competitions/$competitionId",
+          params: { competitionId: draft.joiningCompetitionId },
+          search: competitionApplySearch(
+            draft.selectedExternalClub?.name ?? null,
+            completed.externalClubAssociation === "failed" ? "failed" : undefined,
+          ),
+        },
+      };
+    }
     return {
       path: "player",
       destination: {

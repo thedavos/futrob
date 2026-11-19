@@ -14,6 +14,7 @@ function competition(
     organizationId: "org-1",
     name: overrides.id,
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "FC 26",
     platform: "playstation",
     region: "south-america",

@@ -152,6 +152,7 @@ suite("Team official-selection routes over HTTP on Postgres", () => {
         name: "Foreign Cup",
         status: "draft",
         modality: "fc-clubs",
+        exploreListing: "listed",
         gameEdition: "fc26",
         platform: "playstation",
         region: "south-america",

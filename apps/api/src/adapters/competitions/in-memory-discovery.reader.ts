@@ -74,6 +74,7 @@ function matchesDiscoveryFilter(
   filter: CompetitionDiscoveryFilter,
 ): boolean {
   if (!isDiscoverableCompetitionStatus(competition.status)) return false;
+  if (competition.exploreListing !== "listed") return false;
   if (filter.status && competition.status !== filter.status) return false;
   if (filter.format && competition.format !== filter.format) return false;
   if (filter.region && competition.region !== filter.region) return false;

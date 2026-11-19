@@ -3,10 +3,7 @@ import {
   acceptInvitationRequestSchema,
   createCompetitionDraftRequestSchema,
   createCompetitionDraftResponseSchema,
-  exploreCompetitionsQuerySchema,
-  exploreCompetitionsResponseSchema,
   getCompetitionDraftResponseSchema,
-  getExploreCompetitionResponseSchema,
   listOrganizationCompetitionsResponseSchema,
   listAccessibleCompetitionsResponseSchema,
   registerTeamEntryRequestSchema,
@@ -15,10 +12,7 @@ import {
   type AcceptInvitationRequest,
   type CreateCompetitionDraftRequest,
   type CreateCompetitionDraftResponse,
-  type ExploreCompetitionsQueryInput,
-  type ExploreCompetitionsResponse,
   type GetCompetitionDraftResponse,
-  type GetExploreCompetitionResponse,
   type ListOrganizationCompetitionsResponse,
   type ListAccessibleCompetitionsResponse,
   type RegisterTeamEntryRequest,
@@ -34,6 +28,10 @@ import {
   updateCompetitionCoverResponseSchema,
   type UpdateCompetitionCoverRequest,
   type UpdateCompetitionCoverResponse,
+  updateCompetitionExploreListingRequestSchema,
+  updateCompetitionExploreListingResponseSchema,
+  type UpdateCompetitionExploreListingRequest,
+  type UpdateCompetitionExploreListingResponse,
   applyToCompetitionRequestSchema,
   applyToCompetitionResponseSchema,
   getMyCompetitionApplicationResponseSchema,
@@ -52,42 +50,11 @@ import {
 } from "@futrob/api-contracts";
 import type { HttpClient, RequestOptions } from "../http.ts";
 import { apiPath } from "../internal/path.ts";
+import { createCompetitionExploreMethods } from "./competitions-explore.ts";
 
 export function createCompetitionsResource(http: HttpClient) {
   return {
-    async explore(
-      query: ExploreCompetitionsQueryInput = {},
-      options: RequestOptions = {},
-    ): Promise<ExploreCompetitionsResponse> {
-      const parsed = exploreCompetitionsQuerySchema.parse(query);
-      const search = new URLSearchParams();
-      if (parsed.q) search.set("q", parsed.q);
-      if (parsed.format) search.set("format", parsed.format);
-      if (parsed.status) search.set("status", parsed.status);
-      if (parsed.region) search.set("region", parsed.region);
-      if (parsed.platform) search.set("platform", parsed.platform);
-      search.set("sort", parsed.sort);
-      search.set("limit", String(parsed.limit));
-      if (parsed.cursor) search.set("cursor", parsed.cursor);
-      return http.request({
-        path: `/competitions/explore?${search.toString()}`,
-        method: "GET",
-        options,
-        parse: (data) => exploreCompetitionsResponseSchema.parse(data),
-      });
-    },
-
-    async getExplore(
-      competitionId: string,
-      options: RequestOptions = {},
-    ): Promise<GetExploreCompetitionResponse> {
-      return http.request({
-        path: apiPath("competitions", "explore", competitionId),
-        method: "GET",
-        options,
-        parse: (data) => getExploreCompetitionResponseSchema.parse(data),
-      });
-    },
+    ...createCompetitionExploreMethods(http),
 
     async listMine(options: RequestOptions = {}): Promise<ListAccessibleCompetitionsResponse> {
       return http.request({
@@ -242,6 +209,28 @@ export function createCompetitionsResource(http: HttpClient) {
         body,
         options,
         parse: (data) => updateCompetitionCoverResponseSchema.parse(data),
+      });
+    },
+
+    async updateExploreListing(
+      organizationId: string,
+      competitionId: string,
+      input: UpdateCompetitionExploreListingRequest,
+      options: RequestOptions = {},
+    ): Promise<UpdateCompetitionExploreListingResponse> {
+      const body = updateCompetitionExploreListingRequestSchema.parse(input);
+      return http.request({
+        path: apiPath(
+          "organizations",
+          organizationId,
+          "competitions",
+          competitionId,
+          "explore-listing",
+        ),
+        method: "PUT",
+        body,
+        options,
+        parse: (data) => updateCompetitionExploreListingResponseSchema.parse(data),
       });
     },
 

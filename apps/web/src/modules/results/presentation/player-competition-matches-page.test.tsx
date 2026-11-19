@@ -45,6 +45,7 @@ const accessible = (competitionId: string): ListAccessibleCompetitionsResponse =
         name: "Liga Verify",
         status: "published",
         modality: "fc-clubs",
+        exploreListing: "listed",
         gameEdition: "FC 26",
         platform: "playstation",
         region: "south-america",

@@ -73,8 +73,11 @@ export const gameDataProviderKeyQuerySchema = z.enum(["ea-clubs", "manual", "scr
 
 export type GameDataProviderKeyQuery = z.infer<typeof gameDataProviderKeyQuerySchema>;
 
+/** Longer than any EA club name; a longer query only costs an EA round trip that fails. */
+export const CLUB_SEARCH_QUERY_MAX_LENGTH = 60;
+
 export const searchClubsQuerySchema = z.object({
-  query: z.string().min(1),
+  query: z.string().min(1).max(CLUB_SEARCH_QUERY_MAX_LENGTH),
   providerKey: gameDataProviderKeyQuerySchema.default("ea-clubs"),
   platform: z.string().min(1).default(EA_SEARCH_PLATFORM.CROSS_GEN),
   gameEdition: z.string().min(1).default("fc27"),

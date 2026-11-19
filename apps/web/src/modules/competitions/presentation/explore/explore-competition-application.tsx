@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import type { CompetitionApplicationDto, CompetitionStatusDto } from "@futrob/api-contracts";
 import {
@@ -17,6 +17,7 @@ import {
   Field,
   FieldLabel,
   Input,
+  useExternalSync,
 } from "@futrob/ui";
 import { CompetitionsClientError } from "@/modules/competitions/presentation/competitions-browser-client.ts";
 import {
@@ -30,9 +31,12 @@ import { styles } from "./explore-competitions-page.styles.ts";
 /** Viewer's own entry, or the self-service application form while registration is open. */
 export function ExploreCompetitionApplication({
   competitionId,
+  prefill = null,
   status,
 }: {
   readonly competitionId: string;
+  /** From the landing handoff: the form takes focus with this team name filled in. */
+  readonly prefill?: { readonly teamName: string } | null;
   readonly status: CompetitionStatusDto;
 }) {
   const query = useMyCompetitionApplicationQuery(competitionId);
@@ -47,15 +51,27 @@ export function ExploreCompetitionApplication({
   if (status !== "registration" || !query.isSuccess) return null;
   return (
     <section {...applyStyles(styles.applySection)}>
-      <ApplicationForm competitionId={competitionId} />
+      <ApplicationForm competitionId={competitionId} prefill={prefill} />
     </section>
   );
 }
 
-function ApplicationForm({ competitionId }: { readonly competitionId: string }) {
+function ApplicationForm({
+  competitionId,
+  prefill,
+}: {
+  readonly competitionId: string;
+  readonly prefill: { readonly teamName: string } | null;
+}) {
   const { t } = useI18n();
   const apply = useApplyToCompetitionMutation(competitionId);
-  const [teamName, setTeamName] = useState("");
+  const [teamName, setTeamName] = useState(prefill?.teamName ?? "");
+  const teamNameRef = useRef<HTMLInputElement>(null);
+  const handedOff = prefill !== null;
+  // The landing «Unirme» lands here to apply; take the visitor straight to the team name.
+  useExternalSync(() => {
+    if (handedOff) teamNameRef.current?.focus();
+  }, [handedOff]);
   const [creationKey] = useState(() => crypto.randomUUID());
   const trimmed = teamName.trim();
 
@@ -82,6 +98,7 @@ function ApplicationForm({ competitionId }: { readonly competitionId: string }) 
               id="competition-apply-team-name"
               maxLength={120}
               onChange={(event) => setTeamName(event.target.value)}
+              ref={teamNameRef}
               required
               value={teamName}
             />

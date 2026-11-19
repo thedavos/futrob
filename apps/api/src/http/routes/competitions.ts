@@ -13,15 +13,17 @@ import {
   listAccessibleCompetitionsResponseSchema,
   listOrganizationCompetitionsResponseSchema,
   listOrganizationTeamsResponseSchema,
+  openCompetitionsResponseSchema,
   updateCompetitionCoverResponseSchema,
   updateCompetitionDraftResponseSchema,
+  updateCompetitionExploreListingResponseSchema,
 } from "@futrob/api-contracts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import { TaggedError, asCompetitionId, asOrganizationId } from "@futrob/shared-kernel";
 import type { AppDeps } from "@/app.ts";
 import { apiErrorResponse, failureToHttp, isHttpMappableFailure } from "@/http/errors.ts";
-import { createServiceOpenApiRouter } from "@/http/openapi/router.ts";
+import { createInternalOpenApiRouter, createServiceOpenApiRouter } from "@/http/openapi/router.ts";
 import {
   applyToCompetitionRoute,
   createCompetitionDraftRoute,
@@ -30,9 +32,11 @@ import {
   getExploreCompetitionRoute,
   getMyCompetitionApplicationRoute,
   listAccessibleCompetitionsRoute,
+  listOpenCompetitionsAnonymouslyRoute,
   listOrganizationCompetitionsRoute,
   updateCompetitionCoverRoute,
   updateCompetitionDraftRoute,
+  updateCompetitionExploreListingRoute,
 } from "@/http/openapi/routes/competitions.ts";
 import {
   getCompetitionRankingsRoute,
@@ -50,6 +54,28 @@ import { teamDto } from "@/http/mappers/team.ts";
 import { competitionApplicationDto } from "@/http/mappers/competition-entry.ts";
 import { jsonResponse } from "@/utils/http-response.ts";
 import { requireApiPermission } from "@/http/require-api-permission.ts";
+
+/**
+ * Actor-free list of open competitions for the signed-out landing, called by the web BFF with the
+ * service secret. Mount before any `createServiceOpenApiRouter`, whose `*` middleware would
+ * demand an actor.
+ */
+export function registerPublicCompetitionRoutes(app: Hono, deps: AppDeps): void {
+  const internal = createInternalOpenApiRouter(deps.internalJobSecret);
+  internal.openapi(listOpenCompetitionsAnonymouslyRoute, async (c) => {
+    const { platform, limit } = c.req.valid("query");
+    const page = await deps.modules.competitions.explore.list({
+      status: "registration",
+      platform,
+      sort: "updated-desc",
+      limit,
+    });
+    return jsonResponse(
+      openCompetitionsResponseSchema.parse({ items: page.items.map(exploreCompetitionDto) }),
+    );
+  });
+  app.route("/", internal);
+}
 
 export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
   const secured = createServiceOpenApiRouter(deps.internalJobSecret);
@@ -160,6 +186,20 @@ export function registerCompetitionRoutes(app: Hono, deps: AppDeps): void {
     if (!result.isOk()) return failureToHttp(result.error);
     return jsonResponse(
       updateCompetitionCoverResponseSchema.parse(competitionDraftDto(result.value)),
+    );
+  });
+
+  secured.openapi(updateCompetitionExploreListingRoute, async (c) => {
+    const params = c.req.valid("param");
+    const result = await deps.modules.competitions.updateExploreListing.execute({
+      actorId: c.get("actorId"),
+      organizationId: asOrganizationId(params.organizationId),
+      competitionId: asCompetitionId(params.competitionId),
+      exploreListing: c.req.valid("json").exploreListing,
+    });
+    if (!result.isOk()) return failureToHttp(result.error);
+    return jsonResponse(
+      updateCompetitionExploreListingResponseSchema.parse(competitionDraftDto(result.value)),
     );
   });
 

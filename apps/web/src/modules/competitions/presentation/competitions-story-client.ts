@@ -49,6 +49,7 @@ let exploreDetail: CompetitionsStoryQueryState<GetExploreCompetitionResponse> | 
     name: "Liga Story",
     status: "published",
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "FC 26",
     platform: "playstation",
     region: "america",
@@ -199,6 +200,14 @@ export async function updateCompetitionCover() {
   throw new CompetitionsClientError(503, "competitions.unavailable");
 }
 
+export async function listOpenCompetitions() {
+  return { items: [] };
+}
+
+export async function updateCompetitionExploreListing() {
+  throw new CompetitionsClientError(503, "competitions.unavailable");
+}
+
 export async function createCompetitionDraft(
   organizationId: string,
   input: CreateCompetitionDraftRequest,
@@ -211,6 +220,7 @@ export async function createCompetitionDraft(
       name: input.name,
       status: "draft",
       modality: "fc-clubs",
+      exploreListing: "listed",
       gameEdition: input.gameEdition,
       platform: input.platform,
       region: input.region,

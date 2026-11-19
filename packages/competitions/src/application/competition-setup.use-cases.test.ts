@@ -43,6 +43,10 @@ class Competitions implements CompetitionRepository {
     };
     return this.draft;
   }
+  async saveExploreListing(draft: CompetitionDraft) {
+    this.draft = draft;
+    return draft;
+  }
   async changeStatus(draft: CompetitionDraft, expected: CompetitionDraft["competition"]["status"]) {
     if (this.draft?.competition.status !== expected) return null;
     this.draft = {

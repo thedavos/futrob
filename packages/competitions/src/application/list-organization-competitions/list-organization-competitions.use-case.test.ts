@@ -12,6 +12,7 @@ function competition(
     organizationId: asOrganizationId("org-1"),
     status: "draft",
     modality: "fc-clubs",
+    exploreListing: "listed",
     gameEdition: "FC 26",
     platform: "playstation",
     region: "america",

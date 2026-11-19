@@ -17,6 +17,7 @@ import {
   OpenCompetitionRegistrationUseCase,
   ApplyToCompetitionUseCase,
   UpdateCompetitionCoverUseCase,
+  UpdateCompetitionExploreListingUseCase,
   CloseCompetitionRegistrationUseCase,
   ListCompetitionParticipantsUseCase,
   ListAccessibleCompetitionsUseCase,
@@ -136,6 +137,11 @@ export function createCompetitionsModule(input: {
       ...shared,
     }),
     updateCover: new UpdateCompetitionCoverUseCase({
+      competitions,
+      authorization: input.authorization,
+      clock: shared.clock,
+    }),
+    updateExploreListing: new UpdateCompetitionExploreListingUseCase({
       competitions,
       authorization: input.authorization,
       clock: shared.clock,

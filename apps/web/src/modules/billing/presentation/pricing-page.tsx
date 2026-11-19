@@ -4,25 +4,12 @@ import * as stylex from "@stylexjs/stylex";
 import { Link } from "@tanstack/react-router";
 import { CheckCircleIcon } from "@phosphor-icons/react";
 import type { OrganizationPlan } from "@futrob/api-contracts";
-import {
-  Alert,
-  AlertDescription,
-  applyStyles,
-  Body,
-  Button,
-  Caption,
-  Card,
-  Separator,
-} from "@futrob/ui";
+import { applyStyles, Body, Button, Caption, Card, Separator } from "@futrob/ui";
 import { colors, space } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
 import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { LandingActions, LandingSection } from "@/shared/presentation/landing/landing-section.tsx";
-import { PricingPlanCard } from "./pricing-plan-card.tsx";
-
-/** Product's suggested plan. A merchandising choice, not catalog data. */
-const RECOMMENDED_PLAN: OrganizationPlan["key"] = "pro";
+import { PricingPlanGrid } from "./pricing-plan-grid.tsx";
 
 const INTEGRITY_ITEMS = [
   "pricing.integrity.selection",
@@ -33,36 +20,6 @@ const INTEGRITY_ITEMS = [
 ] as const satisfies readonly MessageKey[];
 
 const styles = stylex.create({
-  grid: {
-    listStyle: "none",
-    margin: 0,
-    padding: 0,
-    display: "grid",
-    columnGap: space.s4,
-    rowGap: {
-      default: space.s4,
-      [media.lg]: 0,
-    },
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.lg]: "repeat(3, minmax(0, 1fr))",
-    },
-  },
-  // Passes the grid's tracks down to the card; see `pricing-plan-card.tsx`.
-  gridItem: {
-    display: {
-      default: "block",
-      [media.lg]: "grid",
-    },
-    gridRow: {
-      default: null,
-      [media.lg]: "span 18",
-    },
-    gridTemplateRows: {
-      default: null,
-      [media.lg]: "subgrid",
-    },
-  },
   integrity: {
     display: "flex",
     flexDirection: "column",
@@ -101,19 +58,7 @@ export function PricingPage({ plans }: { readonly plans: readonly OrganizationPl
         subtitle={t("pricing.subtitle")}
         title={t("pricing.title")}
       >
-        {plans === null ? (
-          <Alert variant="warning">
-            <AlertDescription>{t("pricing.unavailable")}</AlertDescription>
-          </Alert>
-        ) : (
-          <ul aria-label={t("pricing.title")} {...applyStyles(styles.grid)}>
-            {plans.map((plan) => (
-              <li key={plan.key} {...applyStyles(styles.gridItem)}>
-                <PricingPlanCard featured={plan.key === RECOMMENDED_PLAN} plan={plan} />
-              </li>
-            ))}
-          </ul>
-        )}
+        <PricingPlanGrid label={t("pricing.title")} plans={plans} />
       </LandingSection>
       <LandingSection
         copy={

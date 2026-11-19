@@ -9,7 +9,9 @@ import {
 import type {
   ApplyToCompetitionRequest,
   CompetitionDraftDto,
+  CompetitionExploreListingDto,
   CompetitionParticipantInput,
+  CompetitionPlatformDto,
   CreateCompetitionDraftRequest,
   ExploreCompetitionsQueryInput,
   ListCompetitionParticipantsResponse,
@@ -36,6 +38,8 @@ import {
   setCompetitionRegistration,
   uploadCompetitionCover,
   updateCompetitionCover,
+  updateCompetitionExploreListing,
+  listOpenCompetitions,
   getMyCompetitionApplication,
   applyToCompetition,
   CompetitionsClientError,
@@ -283,6 +287,37 @@ export function useUpdateCompetitionCoverMutation(organizationId: string, compet
       await queryClient.invalidateQueries({
         queryKey: queryKeys.competitions.byOrganization(organizationId),
       });
+    },
+  });
+}
+
+/** Open, listed competitions for the signed-out landing, optionally on one platform. */
+export function useOpenCompetitionsQuery(platform: CompetitionPlatformDto | null) {
+  return useQuery({
+    queryKey: queryKeys.competitions.exploreOpen(platform),
+    queryFn: () => listOpenCompetitions(platform),
+  });
+}
+
+export function useUpdateCompetitionExploreListingMutation(
+  organizationId: string,
+  competitionId: string,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    scope: draftScope(organizationId, competitionId),
+    mutationFn: (exploreListing: CompetitionExploreListingDto) =>
+      updateCompetitionExploreListing(organizationId, competitionId, exploreListing),
+    onSuccess: async (draft) => {
+      queryClient.setQueryData(queryKeys.competitions.draft(organizationId, competitionId), draft);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.competitions.byOrganization(organizationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...queryKeys.competitions.all, "explore"],
+        }),
+      ]);
     },
   });
 }

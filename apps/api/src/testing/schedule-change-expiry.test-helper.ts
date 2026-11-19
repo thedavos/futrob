@@ -90,11 +90,13 @@ export async function freshExpiryDatabase(
       const directory = await mkdtemp(join(tmpdir(), "expiry-legacy-"));
       try {
         for (const name of await readdir(MIGRATIONS_DIRECTORY)) {
-          // 0057 only adds nullable ranking columns the current competition adapter writes.
-          // Expiry rows under test stay on the pre-0055 schema.
+          // 0057 and 0070 only add competition columns the current competition adapter reads
+          // and writes. Expiry rows under test stay on the pre-0055 schema.
           if (
             name.endsWith(".sql") &&
-            (name < "0055" || name === "0057_competition_ranking_eligibility.sql")
+            (name < "0055" ||
+              name === "0057_competition_ranking_eligibility.sql" ||
+              name === "0070_competition_explore_listing.sql")
           )
             await cp(join(MIGRATIONS_DIRECTORY, name), join(directory, name));
         }

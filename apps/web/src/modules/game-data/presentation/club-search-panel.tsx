@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import {
   asEaSearchPlatform,
+  CLUB_SEARCH_QUERY_MAX_LENGTH,
   EA_SEARCH_PLATFORM,
   type EaSearchPlatform,
   type ExternalClubDto,
@@ -11,207 +12,234 @@ import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Button,
+  Caption,
+  ChoiceGroup,
+  ChoiceGroupItem,
   Field,
   FieldError,
   FieldLabel,
-  Form,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   typography,
-  readFormString,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
-import { useFormValidation } from "@/shared/presentation/forms/use-form-validation.ts";
+import { colors, space } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { useRetryAfterCountdown } from "@/shared/presentation/use-retry-after-countdown.ts";
-import {
-  SupportErrorAlert,
-  type SupportError,
-} from "@/shared/presentation/support-error-alert.tsx";
+import { SupportErrorAlert } from "@/shared/presentation/support-error-alert.tsx";
 import { GameDataClientError } from "./game-data-browser-client.ts";
-import { eaPlatformLabel, eaSearchPlatforms } from "./ea-club-search-meta.ts";
+import { eaSearchPlatforms, MAX_EXTERNAL_CLUB_SEARCH_RESULTS } from "./ea-club-search-meta.ts";
 import { ClubSearchResultList } from "./club-search-result-item.tsx";
-import { useSearchClubsMutation } from "./game-data-queries.ts";
+import { usePublicSearchClubsMutation } from "./game-data-queries.ts";
 
-type ClubSearchValues = {
-  query: string;
-  platform: string;
-};
-
-type ClubSearchField = keyof ClubSearchValues;
+/** Club names that return results on EA, offered so a visitor can try the search in one tap. */
+const EXAMPLE_QUERIES = ["Fera", "Real", "United"] as const;
 
 const styles = stylex.create({
   panel: {
     display: "grid",
     minWidth: 0,
-    gap: "1rem",
+    gap: space.s5,
   },
   form: {
     display: "grid",
-    alignItems: "end",
-    gap: "0.75rem",
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr) auto",
-      [media.sm]: "minmax(0, 1fr) auto auto",
-    },
+    gap: space.s4,
   },
-  query: {
-    gridColumnStart: 1,
-    gridColumnEnd: {
-      default: -1,
-      [media.sm]: "auto",
-    },
+  queryRow: {
+    display: "grid",
+    alignItems: "start",
+    gap: space.s3,
+    gridTemplateColumns: "minmax(0, 1fr) auto",
   },
-  platform: {
-    minWidth: "9.5rem",
+  fieldset: {
+    display: "grid",
+    gap: space.s3,
+    margin: 0,
+    borderWidth: 0,
+    padding: 0,
+    minWidth: 0,
   },
-  empty: {
-    color: colors.mutedForeground,
+  pills: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: space.s2,
   },
-  source: {
+  examples: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: space.s2,
+  },
+  muted: {
     color: colors.mutedForeground,
   },
 });
 
-export function ClubSearchPanel() {
+export type ClubSearchPanelProps = {
+  readonly selectedExternalClubId: string | null;
+  /** `null` while a search runs, then its first result, and later the club the visitor picks. */
+  readonly onSelect: (club: ExternalClubDto | null) => void;
+};
+
+/** Signed-out EA club search of the landing: query, platform pills, examples and results. */
+export function ClubSearchPanel({ selectedExternalClubId, onSelect }: ClubSearchPanelProps) {
   const { t } = useI18n();
-  const [clubs, setClubs] = useState<ExternalClubDto[]>([]);
-  const [error, setError] = useState<SupportError | null>(null);
-  const [searched, setSearched] = useState(false);
-  const [platform, setPlatform] = useState<EaSearchPlatform>(EA_SEARCH_PLATFORM.NINTENDO);
-  const validation = useFormValidation<ClubSearchField>();
-  const searchClubs = useSearchClubsMutation();
+  const queryId = useId();
+  const platformLegendId = useId();
+  const queryRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [queryMissing, setQueryMissing] = useState(false);
+  const [platform, setPlatform] = useState<EaSearchPlatform>(EA_SEARCH_PLATFORM.CROSS_GEN);
+  const searchClubs = usePublicSearchClubsMutation();
   const retry = useRetryAfterCountdown();
   const loading = searchClubs.isPending;
-  const form = applyStyles(styles.form);
-  const query = applyStyles(styles.query);
-  const platformTrigger = applyStyles(styles.platform);
+  const searchedQuery = searchClubs.variables?.query;
 
-  async function handleSubmit(formValues: ClubSearchValues) {
-    if (loading || retry.blocked) {
+  async function search(nextQuery: string, nextPlatform: EaSearchPlatform) {
+    const trimmed = nextQuery.trim();
+    if (!trimmed) {
+      setQueryMissing(true);
+      queryRef.current?.focus();
       return;
     }
-
-    setError(null);
-    validation.clearServerErrors();
-
+    if (loading || retry.blocked) return;
+    // The chosen club belongs to the previous search; its CTA must not outlive it.
+    onSelect(null);
     try {
-      const result = await searchClubs.mutateAsync({
-        query: formValues.query.trim(),
-        platform: formValues.platform || platform,
-      });
-      setClubs(result.clubs);
-      setSearched(true);
+      const { clubs } = await searchClubs.mutateAsync({ query: trimmed, platform: nextPlatform });
+      onSelect(clubs[0] ?? null);
     } catch (cause) {
-      setClubs([]);
-      setSearched(true);
-      if (GameDataClientError.is(cause)) {
-        retry.start(cause.retryAfterSeconds);
-        setError({
-          message: cause.retryAfterSeconds
-            ? t("gameData.clubSearch.rateLimited")
-            : t("gameData.clubSearch.error"),
-          requestId: cause.requestId,
-          retryAfterSeconds: cause.retryAfterSeconds,
-        });
-      } else {
-        setError({ message: t("gameData.clubSearch.error") });
-      }
+      onSelect(null);
+      if (GameDataClientError.is(cause)) retry.start(cause.retryAfterSeconds);
     }
   }
 
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    // Text typed before hydration is in the field but never reached `query`.
+    const typed = queryRef.current?.value ?? query;
+    if (typed !== query) setQuery(typed);
+    void search(typed, platform);
+  }
+
+  const error = searchClubs.error;
+  const rateLimited = GameDataClientError.is(error) && Boolean(error.retryAfterSeconds);
+  const clubs = searchClubs.data?.clubs.slice(0, MAX_EXTERNAL_CLUB_SEARCH_RESULTS) ?? [];
+
   return (
     <div {...applyStyles(styles.panel)}>
-      <Form<ClubSearchValues>
+      <form
         aria-busy={loading}
-        className={form.className}
-        errors={validation.formErrors}
-        onFormSubmit={handleSubmit}
-        style={form.style}
+        noValidate
+        onSubmit={submit}
+        role="search"
+        {...applyStyles(styles.form)}
       >
-        <Field
-          {...validation.getFieldValidationProps("query")}
-          className={query.className}
-          disabled={loading}
-          name="query"
-          style={query.style}
-          validate={(value) =>
-            readFormString(value).trim().length === 0
-              ? t("gameData.clubSearch.queryRequired")
-              : null
-          }
-        >
-          <FieldLabel>{t("gameData.clubSearch.queryLabel")}</FieldLabel>
-          <Input
-            autoComplete="off"
-            disabled={loading}
-            name="query"
-            placeholder={t("gameData.clubSearch.queryPlaceholder")}
-          />
-          <FieldError />
+        <Field invalid={queryMissing}>
+          <FieldLabel htmlFor={queryId}>{t("gameData.clubSearch.queryLabel")}</FieldLabel>
+          <div {...applyStyles(styles.queryRow)}>
+            <Input
+              aria-invalid={queryMissing}
+              autoComplete="off"
+              enterKeyHint="search"
+              id={queryId}
+              maxLength={CLUB_SEARCH_QUERY_MAX_LENGTH}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setQueryMissing(false);
+              }}
+              placeholder={t("gameData.clubSearch.queryPlaceholder")}
+              ref={queryRef}
+              type="search"
+              value={query}
+            />
+            <Button disabled={loading || retry.blocked} type="submit" variant="secondary">
+              {loading
+                ? t("gameData.clubSearch.searching")
+                : retry.blocked
+                  ? t("gameData.clubSearch.retryIn", { seconds: retry.remainingSeconds })
+                  : t("gameData.clubSearch.submit")}
+            </Button>
+          </div>
+          {queryMissing ? (
+            <FieldError match>{t("gameData.clubSearch.queryRequired")}</FieldError>
+          ) : null}
         </Field>
 
-        <Select
-          disabled={loading}
-          itemToStringLabel={(value: string | null) =>
-            value === null ? "" : eaPlatformLabel(value)
-          }
-          items={eaSearchPlatforms.map((option) => ({ label: option.label, value: option.value }))}
-          onValueChange={(value: string | null) => {
-            const next = value === null ? null : asEaSearchPlatform(value);
-            if (next) setPlatform(next);
-          }}
-          value={platform}
-        >
-          <SelectTrigger
-            aria-label={t("gameData.clubSearch.platformLabel")}
-            className={platformTrigger.className}
-            style={platformTrigger.style}
+        <fieldset {...applyStyles(styles.fieldset)}>
+          <legend id={platformLegendId} {...applyStyles(typography.label, styles.muted)}>
+            {t("gameData.clubSearch.platformLabel")}
+          </legend>
+          <ChoiceGroup
+            aria-labelledby={platformLegendId}
+            onValueChange={(value: string) => {
+              const next = asEaSearchPlatform(value);
+              if (!next) return;
+              setPlatform(next);
+              if (searchedQuery) void search(searchedQuery, next);
+            }}
+            value={platform}
+            {...applyStyles(styles.pills)}
           >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
             {eaSearchPlatforms.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
+              <ChoiceGroupItem
+                appearance="pill"
+                disabled={loading}
+                key={option.value}
+                value={option.value}
+              >
                 {option.label}
-              </SelectItem>
+              </ChoiceGroupItem>
             ))}
-          </SelectContent>
-        </Select>
-        <input name="platform" type="hidden" value={platform} />
+          </ChoiceGroup>
+        </fieldset>
 
-        <Button disabled={loading || retry.blocked} type="submit">
-          {loading
-            ? t("gameData.clubSearch.searching")
-            : retry.blocked
-              ? t("gameData.clubSearch.retryIn", { seconds: retry.remainingSeconds })
-              : t("gameData.clubSearch.submit")}
-        </Button>
-      </Form>
+        <div {...applyStyles(styles.examples)}>
+          <Caption>{t("gameData.clubSearch.examples")}</Caption>
+          {EXAMPLE_QUERIES.map((example) => (
+            <Button
+              disabled={loading || retry.blocked}
+              key={example}
+              onClick={() => {
+                setQuery(example);
+                setQueryMissing(false);
+                void search(example, platform);
+              }}
+              type="button"
+              variant="outline"
+            >
+              {example}
+            </Button>
+          ))}
+        </div>
+      </form>
 
-      {error ? (
-        <SupportErrorAlert
-          error={{
-            ...error,
-            retryAfterSeconds: retry.remainingSeconds || undefined,
-          }}
-        />
-      ) : null}
-
-      {!error && searched && clubs.length === 0 ? (
-        <p {...applyStyles(typography.body, styles.empty)}>{t("gameData.clubSearch.empty")}</p>
-      ) : null}
-
-      {!error && clubs.length > 0 ? <ClubSearchResultList clubs={clubs} /> : null}
-
-      {!searched && !error ? (
-        <p {...applyStyles(typography.caption, styles.source)}>{t("gameData.clubSearch.source")}</p>
-      ) : null}
+      <div aria-live="polite">
+        {error ? (
+          <SupportErrorAlert
+            error={{
+              message: rateLimited
+                ? t("gameData.clubSearch.rateLimited")
+                : t("gameData.clubSearch.error"),
+              requestId: GameDataClientError.is(error) ? error.requestId : undefined,
+              retryAfterSeconds: retry.remainingSeconds || undefined,
+            }}
+          />
+        ) : searchClubs.isSuccess && clubs.length === 0 ? (
+          <p {...applyStyles(typography.body, styles.muted)}>{t("gameData.clubSearch.empty")}</p>
+        ) : clubs.length > 0 ? (
+          <ClubSearchResultList
+            aria-label={t("gameData.clubSearch.results")}
+            clubs={clubs}
+            disabled={loading}
+            onSelect={(club) => {
+              const picked = clubs.find((item) => item.externalClubId === club.externalClubId);
+              if (picked) onSelect(picked);
+            }}
+            selectedExternalClubId={selectedExternalClubId}
+          />
+        ) : (
+          <Caption>{t("gameData.clubSearch.source")}</Caption>
+        )}
+      </div>
     </div>
   );
 }

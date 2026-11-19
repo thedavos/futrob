@@ -14,7 +14,7 @@ export type LandingSectionLayout = "split" | "stacked";
 type LandingSectionCopy =
   | { readonly header?: undefined; readonly subtitle: string; readonly title: string }
   | {
-      /** Replaces the default `Display` and `Body` pair. The hero uses it for its headline. */
+      /** Replaces the default `Display` and `Body` pair, for the hero and closing headlines. */
       readonly header: ReactNode;
       readonly subtitle?: undefined;
       readonly title?: undefined;

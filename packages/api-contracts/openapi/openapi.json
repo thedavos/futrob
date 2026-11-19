@@ -2314,7 +2314,8 @@
           {
             "schema": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "maxLength": 60
             },
             "required": true,
             "name": "query",
@@ -3217,6 +3218,80 @@
         ]
       }
     },
+    "/internal/competitions/explore/open": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "playstation",
+                    "xbox",
+                    "pc",
+                    "nintendo-switch-1",
+                    "nintendo-switch-2"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    ""
+                  ]
+                }
+              ]
+            },
+            "required": false,
+            "name": "platform",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 6,
+              "default": 6
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Open, listed competitions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenCompetitionsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "listOpenCompetitionsAnonymously",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "List listed competitions with open registration before signing in",
+        "description": "Service-only endpoint authenticated with the internal bearer secret; takes no actor. Always returns competitions in registration that are listed in Explore, newest first; the caller cannot change status or listing. Lets the web BFF serve the signed-out landing, which rate-limits callers by IP."
+      }
+    },
     "/internal/entry-invitations/links/{code}/public": {
       "get": {
         "parameters": [
@@ -3261,6 +3336,91 @@
         ],
         "summary": "Preview an invitation link before signing in",
         "description": "Service-only endpoint authenticated with the internal bearer secret; takes no actor. Returns presentation data only, and the same `invalid` reason for an unknown and a revoked code."
+      }
+    },
+    "/internal/game-data/clubs/search": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "required": true,
+            "name": "query",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ea-clubs",
+                "manual",
+                "screenshot-ocr"
+              ],
+              "default": "ea-clubs"
+            },
+            "required": false,
+            "name": "providerKey",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "common-gen5"
+            },
+            "required": false,
+            "name": "platform",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "fc27"
+            },
+            "required": false,
+            "name": "gameEdition",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching clubs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchClubsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "searchExternalClubsAnonymously",
+        "tags": [
+          "game-data"
+        ],
+        "summary": "Search external clubs before signing in",
+        "description": "Service-only endpoint authenticated with the internal bearer secret; takes no actor. Lets the web BFF serve the signed-out landing search, which rate-limits callers by IP."
       }
     },
     "/internal/game-data/providers/{providerKey}/health": {
@@ -5293,6 +5453,13 @@
                               }
                             ]
                           },
+                          "exploreListing": {
+                            "type": "string",
+                            "enum": [
+                              "listed",
+                              "unlisted"
+                            ]
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -5316,6 +5483,7 @@
                           "teams",
                           "schedule",
                           "cover",
+                          "exploreListing",
                           "createdAt",
                           "updatedAt"
                         ]
@@ -6321,6 +6489,88 @@
           "competitions"
         ],
         "summary": "Revoke the active link and issue a new one"
+      }
+    },
+    "/organizations/{organizationId}/competitions/{competitionId}/explore-listing": {
+      "put": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "competitionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Competition with its Explore listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionDraft"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "operationId": "updateCompetitionExploreListing",
+        "tags": [
+          "competitions"
+        ],
+        "summary": "List or unlist the competition in Explore",
+        "description": "An unlisted competition leaves every Explore list but its detail stays reachable by direct link. Idempotent; archived competitions are read-only.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "exploreListing": {
+                    "type": "string",
+                    "enum": [
+                      "listed",
+                      "unlisted"
+                    ]
+                  }
+                },
+                "required": [
+                  "exploreListing"
+                ]
+              }
+            }
+          }
+        }
       }
     },
     "/organizations/{organizationId}/competitions/{competitionId}/fixture": {
@@ -13746,6 +13996,13 @@
               }
             ]
           },
+          "exploreListing": {
+            "type": "string",
+            "enum": [
+              "listed",
+              "unlisted"
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -13769,6 +14026,7 @@
           "teams",
           "schedule",
           "cover",
+          "exploreListing",
           "createdAt",
           "updatedAt"
         ]
@@ -14032,6 +14290,13 @@
                   }
                 ]
               },
+              "exploreListing": {
+                "type": "string",
+                "enum": [
+                  "listed",
+                  "unlisted"
+                ]
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -14055,6 +14320,7 @@
               "teams",
               "schedule",
               "cover",
+              "exploreListing",
               "createdAt",
               "updatedAt"
             ]
@@ -17936,6 +18202,13 @@
                   }
                 ]
               },
+              "exploreListing": {
+                "type": "string",
+                "enum": [
+                  "listed",
+                  "unlisted"
+                ]
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -17959,6 +18232,7 @@
               "teams",
               "schedule",
               "cover",
+              "exploreListing",
               "createdAt",
               "updatedAt"
             ]
@@ -18170,6 +18444,13 @@
                         }
                       ]
                     },
+                    "exploreListing": {
+                      "type": "string",
+                      "enum": [
+                        "listed",
+                        "unlisted"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -18193,6 +18474,7 @@
                     "teams",
                     "schedule",
                     "cover",
+                    "exploreListing",
                     "createdAt",
                     "updatedAt"
                   ]
@@ -27223,6 +27505,13 @@
                         }
                       ]
                     },
+                    "exploreListing": {
+                      "type": "string",
+                      "enum": [
+                        "listed",
+                        "unlisted"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -27246,6 +27535,7 @@
                     "teams",
                     "schedule",
                     "cover",
+                    "exploreListing",
                     "createdAt",
                     "updatedAt"
                   ]
@@ -31070,6 +31360,254 @@
           "version",
           "path",
           "currentStep"
+        ]
+      },
+      "OpenCompetitionsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "competition": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "organizationId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "registration",
+                        "published",
+                        "paused",
+                        "finished",
+                        "archived"
+                      ]
+                    },
+                    "modality": {
+                      "type": "string",
+                      "enum": [
+                        "fc-clubs"
+                      ]
+                    },
+                    "gameEdition": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "platform": {
+                      "type": "string",
+                      "enum": [
+                        "playstation",
+                        "xbox",
+                        "pc",
+                        "nintendo-switch-1",
+                        "nintendo-switch-2"
+                      ]
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "america",
+                        "south-america",
+                        "north-central-america",
+                        "europe",
+                        "africa",
+                        "asia",
+                        "middle-east",
+                        "oceania"
+                      ]
+                    },
+                    "timeZone": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "format": {
+                      "type": "string",
+                      "enum": [
+                        "league",
+                        "knockout",
+                        "groups-knockout",
+                        "league-playoffs",
+                        "swiss"
+                      ]
+                    },
+                    "teams": {
+                      "type": "object",
+                      "properties": {
+                        "min": {
+                          "type": "integer",
+                          "minimum": 2,
+                          "maximum": 256
+                        },
+                        "max": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 2,
+                          "maximum": 256
+                        }
+                      },
+                      "required": [
+                        "min",
+                        "max"
+                      ]
+                    },
+                    "schedule": {
+                      "type": "object",
+                      "properties": {
+                        "startsOn": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "endsOn": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        }
+                      },
+                      "required": [
+                        "startsOn",
+                        "endsOn"
+                      ]
+                    },
+                    "cover": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "preset"
+                              ]
+                            },
+                            "preset": {
+                              "type": "string",
+                              "enum": [
+                                "cup",
+                                "classic",
+                                "friendlies",
+                                "groups",
+                                "league",
+                                "lightning",
+                                "playoffs",
+                                "pre-season",
+                                "supercup"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "preset"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "upload"
+                              ]
+                            },
+                            "key": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "key"
+                          ]
+                        }
+                      ]
+                    },
+                    "exploreListing": {
+                      "type": "string",
+                      "enum": [
+                        "listed",
+                        "unlisted"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "organizationId",
+                    "name",
+                    "status",
+                    "modality",
+                    "gameEdition",
+                    "platform",
+                    "region",
+                    "timeZone",
+                    "format",
+                    "teams",
+                    "schedule",
+                    "cover",
+                    "exploreListing",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                },
+                "organization": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "approvedTeamCount": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "competition",
+                "organization",
+                "approvedTeamCount"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "OpenMatchDisputeRequest": {

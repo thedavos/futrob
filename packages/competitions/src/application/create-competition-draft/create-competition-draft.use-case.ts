@@ -143,6 +143,7 @@ export class CreateCompetitionDraftUseCase {
       name,
       status: "draft",
       modality: "fc-clubs",
+      exploreListing: existing?.competition.exploreListing ?? "listed",
       gameEdition,
       platform: input.platform,
       region: input.region,
