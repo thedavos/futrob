@@ -24,9 +24,7 @@ function recordEvents(integrations: Sentry.BrowserOptions["integrations"] = []):
 
 afterEach(async () => {
   await Sentry.close();
-  Sentry.getCurrentScope().clear();
-  Sentry.getGlobalScope().clear();
-  Sentry.getIsolationScope().clear();
+  Sentry.getIsolationScope().clearBreadcrumbs();
   Sentry.getCurrentScope().setClient(undefined);
 });
 
@@ -37,19 +35,27 @@ describe("browser Sentry", () => {
     expect(Sentry.getClient()).toBeUndefined();
   });
 
-  it("sends a client-only route failure", async () => {
+  it("sends a client-only route failure with context scoped to that event", async () => {
     const events = recordEvents();
     captureBrowserError(new Error("render crashed in the browser"), { handler: "route-error" });
+    captureBrowserError(new Error("another browser error"));
     await Sentry.flush();
-    expect(events).toHaveLength(1);
-    expect(events[0]?.exception?.values?.[0]?.value).toBe("render crashed in the browser");
-    expect(events[0]?.extra).toEqual({ handler: "route-error" });
+    expect(events).toHaveLength(2);
+    const routeError = events.find(
+      (event) => event.exception?.values?.[0]?.value === "render crashed in the browser",
+    );
+    const otherError = events.find(
+      (event) => event.exception?.values?.[0]?.value === "another browser error",
+    );
+    expect(routeError?.extra).toEqual({ handler: "route-error" });
+    expect(otherError).toBeDefined();
+    expect(otherError?.extra?.handler).toBeUndefined();
   });
 
   it("strips invite tokens from the request URL, breadcrumbs and message before transport", async () => {
     const token = "review-secret-invite";
     const events = recordEvents([
-      Sentry.breadcrumbsIntegration({ history: true, console: false, dom: false }),
+      Sentry.breadcrumbsIntegration({ history: true, dom: false }),
       Sentry.httpContextIntegration(),
     ]);
     window.history.pushState({}, "", "/");
@@ -59,6 +65,11 @@ describe("browser Sentry", () => {
     window.history.pushState({}, "", "/");
 
     expect(events).toHaveLength(1);
+    expect(Sentry.getClient()?.getOptions().dataCollection).toMatchObject({
+      userInfo: false,
+      cookies: false,
+      httpBodies: [],
+    });
     const event = events[0];
     expect(event?.request?.url).toContain("/invitations/accept/[Filtered]");
     expect(event?.breadcrumbs?.some((crumb) => crumb.category === "navigation")).toBe(true);
