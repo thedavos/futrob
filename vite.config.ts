@@ -18,9 +18,6 @@ function storybookVitestProject() {
     ],
     test: {
       name: "storybook",
-      // Give Chromium its own phase so Node and Postgres suites do not compete with it.
-      sequence: { groupOrder: 2 },
-      maxWorkers: 2,
       // Lazy chart chunks and Base UI enter frames need more than the 5s default.
       testTimeout: 20_000,
       browser: {
