@@ -106,12 +106,10 @@ fi
 if ! grep -q '^FUTROB_AUTH_BASE_URL=' apps/web/.dev.vars; then
   printf '\nFUTROB_AUTH_BASE_URL=http://localhost:8788\n' >> apps/web/.dev.vars
 fi
-if grep -q '^RATE_LIMIT_FINGERPRINT_SECRET=replace-with-an-independent-random-secret$' apps/web/.dev.vars; then
-  sed -i.bak "s|^RATE_LIMIT_FINGERPRINT_SECRET=.*|RATE_LIMIT_FINGERPRINT_SECRET=$(openssl rand -hex 32)|" apps/web/.dev.vars
-  rm -f apps/web/.dev.vars.bak
-fi
-if ! grep -q '^RATE_LIMIT_FINGERPRINT_SECRET=' apps/web/.dev.vars; then
-  printf '\nRATE_LIMIT_FINGERPRINT_SECRET=%s\n' "$(openssl rand -hex 32)" >> apps/web/.dev.vars
+# Web BFF rate limits are counted by apps/api (ADR-0034); the fingerprint secret lives there.
+rate_limit_secret="$(sed -n 's/^RATE_LIMIT_FINGERPRINT_SECRET=//p' apps/api/.env | head -n 1)"
+if [[ -z "$rate_limit_secret" || "$rate_limit_secret" == "replace-with-an-independent-random-secret" ]]; then
+  set_env_var apps/api/.env RATE_LIMIT_FINGERPRINT_SECRET "$(openssl rand -hex 32)"
 fi
 if ! grep -q '^ENVIRONMENT=' apps/web/.dev.vars; then
   printf '\nENVIRONMENT=development\n' >> apps/web/.dev.vars
@@ -120,19 +118,14 @@ fi
 if ! grep -q '^FUTROB_API_BASE_URL=' apps/web/.dev.vars; then
   printf '\nFUTROB_API_BASE_URL=http://localhost:8787/api/v1\n' >> apps/web/.dev.vars
 fi
-# Auth, actors and BFF rate limits live in the product Postgres (ADR-0021).
-# apps/auth (Node) reads DATABASE_URL; the web Worker reaches it through a local
-# Hyperdrive target. apps/api/migrations is the only schema history. This script
-# never invents DATABASE_URL.
+# Auth, actors and BFF rate limits live in the product Postgres (ADR-0021, ADR-0034).
+# apps/auth (Node) reads DATABASE_URL; the web Worker never connects to it.
+# apps/api/migrations is the only schema history. This script never invents DATABASE_URL.
 database_url="$(sed -n 's/^DATABASE_URL=//p' apps/api/.env 2>/dev/null | head -n 1 || true)"
 if [[ -n "$database_url" ]]; then
   set_env_var apps/auth/.env DATABASE_URL "$database_url"
-  touch apps/web/.env
-  if ! grep -q '^CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=' apps/web/.env; then
-    printf 'CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=%s\n' "$database_url" >> apps/web/.env
-  fi
   npm run migrate -w @futrob/api
 else
-  echo "DATABASE_URL is not set in apps/api/.env: skipping migrations, auth DATABASE_URL and Hyperdrive env." >&2
+  echo "DATABASE_URL is not set in apps/api/.env: skipping migrations and auth DATABASE_URL." >&2
   echo "Sign-in needs Postgres; set DATABASE_URL, then re-run this script." >&2
 fi

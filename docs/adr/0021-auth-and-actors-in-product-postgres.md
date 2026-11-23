@@ -9,8 +9,9 @@
   (puntos 3, 5, 6 y 7 en lo relativo a D1). Siguen vigentes el Worker `apps/auth`,
   el proxy por `AUTH_SERVICE`, `bearer()` para Expo y el ownership de Actor/IdentitySubject.
 - Reemplazada parcialmente por: [ADR-0032](/docs/adr/0032-auth-node-runtime.md) (auth deja
-  Hyperdrive y Workers: servidor Node con pool `pg` sobre `DATABASE_URL`; punto 4 solo rige
-  para web).
+  Hyperdrive y Workers: servidor Node con pool `pg` sobre `DATABASE_URL`) y
+  [ADR-0034](/docs/adr/0034-bff-rate-limits-in-api.md) (los rate limits del BFF se cuentan
+  en el API; web deja Hyperdrive). El punto 4 ya no rige para ningún servicio.
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
 ## Contexto
@@ -106,7 +107,7 @@ Implementado en el checkout; no desplegado.
   [FKs a actores](/apps/api/migrations/0044_actor_foreign_keys.sql);
   [runner](/apps/api/src/migrate.ts).
 - [Resolución del actor en web](/apps/web/src/modules/identity/server/authenticated-request-actor.ts)
-  y [rate limiter Postgres](/apps/web/src/shared/infrastructure/rate-limit/postgres-bff-rate-limiter.ts).
+  y [rate limiter Postgres](/apps/api/src/adapters/rate-limit/postgres-rate-limiter.ts) (en `apps/api` desde ADR-0034).
 
 Comprobado durante el trabajo, contra un Postgres Neon real:
 

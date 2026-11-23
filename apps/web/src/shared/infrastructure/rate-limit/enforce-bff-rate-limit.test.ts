@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
-import { BFF_RATE_LIMIT_POLICY } from "./bff-rate-limiter.ts";
+import { BFF_RATE_LIMIT_POLICY, type BffRateLimiter } from "./bff-rate-limiter.ts";
 import {
   BffRateLimitUnavailableError,
   enforceBffRateLimit,
@@ -29,13 +29,7 @@ describe("enforceBffRateLimit", () => {
         requestId,
         policy: BFF_RATE_LIMIT_POLICY.eaClubSearch,
       },
-      {
-        limiter,
-        fingerprintSecret: "dedicated-secret",
-        environment: "test",
-        now: () => 1_710_000_000_000,
-        logger,
-      },
+      { limiter, environment: "test", logger },
     );
 
     expect(response?.status).toBe(429);
@@ -46,12 +40,13 @@ describe("enforceBffRateLimit", () => {
       requestId,
       retryAfterSeconds: 37,
     });
-    expect(limiter.attempts[0]).toMatchObject({
-      actorId: asActorId("sensitive-actor"),
-      nowMs: 1_710_000_000_000,
-      policy: BFF_RATE_LIMIT_POLICY.eaClubSearch,
-    });
-    expect(limiter.attempts[0]?.ipFingerprint).toMatch(/^[a-f0-9]{64}$/);
+    expect(limiter.attempts).toEqual([
+      {
+        actorId: asActorId("sensitive-actor"),
+        clientIp: "203.0.113.10",
+        policy: BFF_RATE_LIMIT_POLICY.eaClubSearch,
+      },
+    ]);
     expect(JSON.stringify(logger.info.mock.calls)).toBe(
       JSON.stringify([
         [
@@ -87,13 +82,7 @@ describe("enforceBffRateLimit", () => {
           requestId,
           policy: BFF_RATE_LIMIT_POLICY.invitationAccept,
         },
-        {
-          limiter,
-          fingerprintSecret: "dedicated-secret",
-          environment: "test",
-          now: () => 1000,
-          logger,
-        },
+        { limiter, environment: "test", logger },
       ),
     ).resolves.toBeUndefined();
     expect(logger.info).toHaveBeenCalledWith({
@@ -105,7 +94,7 @@ describe("enforceBffRateLimit", () => {
     });
   });
 
-  it("bypasses enforcement in development without requiring Cloudflare IP or secret", async () => {
+  it("bypasses enforcement in development without requiring the Cloudflare IP", async () => {
     const limiter = new FakeBffRateLimiter();
 
     await expect(
@@ -116,7 +105,7 @@ describe("enforceBffRateLimit", () => {
           requestId,
           policy: BFF_RATE_LIMIT_POLICY.eaClubSearch,
         },
-        { limiter, fingerprintSecret: "", environment: "development" },
+        { limiter, environment: "development" },
       ),
     ).resolves.toBeUndefined();
     expect(limiter.attempts).toHaveLength(0);
@@ -124,29 +113,99 @@ describe("enforceBffRateLimit", () => {
     expect(shouldBypassBffRateLimit("production")).toBe(false);
   });
 
-  it("fails closed before the limiter when the fingerprint secret is missing", async () => {
+  it("fails closed before the limiter without the Cloudflare client IP", async () => {
     const limiter = new FakeBffRateLimiter();
 
     await expect(
       enforceBffRateLimit(
         {
-          request: new Request("https://futrob.test/api/v1/game-data/clubs/search", {
-            headers: { "CF-Connecting-IP": "203.0.113.11" },
-          }),
+          request: new Request("https://futrob.test/api/v1/game-data/clubs/search"),
           actorId: asActorId("actor-2"),
           requestId,
           policy: BFF_RATE_LIMIT_POLICY.eaClubSearch,
         },
-        {
-          limiter,
-          fingerprintSecret: "",
-          environment: "test",
-          bindings: {
-            HYPERDRIVE: { connectionString: "postgres://unavailable.invalid/futrob" },
-          },
-        },
+        { limiter, environment: "test" },
       ),
     ).rejects.toBeInstanceOf(BffRateLimitUnavailableError);
     expect(limiter.attempts).toHaveLength(0);
   });
+
+  it("fails closed without the service secret the API check needs", async () => {
+    await expect(
+      enforceBffRateLimit(
+        {
+          request: searchRequest(),
+          actorId: null,
+          requestId,
+          policy: BFF_RATE_LIMIT_POLICY.publicClubSearch,
+        },
+        { environment: "test", bindings: { INTERNAL_JOB_SECRET: "" } },
+      ),
+    ).rejects.toBeInstanceOf(BffRateLimitUnavailableError);
+  });
+
+  it("asks the product API with the service secret and the client IP", async () => {
+    const calls: Request[] = [];
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      calls.push(new Request(input, init));
+      return Response.json({ outcome: "limited", limitedBy: "ip", retryAfterSeconds: 12 });
+    });
+
+    try {
+      const response = await enforceBffRateLimit(
+        {
+          request: searchRequest(),
+          actorId: null,
+          requestId,
+          policy: BFF_RATE_LIMIT_POLICY.publicClubSearch,
+        },
+        {
+          environment: "test",
+          logger: { info: () => undefined },
+          bindings: {
+            INTERNAL_JOB_SECRET: "service-secret",
+            FUTROB_API_BASE_URL: "https://api.futrob.test/api/v1",
+          },
+        },
+      );
+
+      expect(response?.status).toBe(429);
+      expect(calls).toHaveLength(1);
+      const [call] = calls;
+      expect(call?.method).toBe("POST");
+      expect(call?.url).toBe("https://api.futrob.test/api/v1/internal/rate-limits/check");
+      expect(call?.headers.get("Authorization")).toBe("Bearer service-secret");
+      expect(await call?.json()).toEqual({
+        policy: "public-club-search",
+        actorId: null,
+        clientIp: "203.0.113.12",
+      });
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("fails closed when the product API cannot answer", async () => {
+    const limiter: BffRateLimiter = {
+      check: () => Promise.reject(new Error("503 from the product API")),
+    };
+
+    await expect(
+      enforceBffRateLimit(
+        {
+          request: searchRequest(),
+          actorId: asActorId("actor-3"),
+          requestId,
+          policy: BFF_RATE_LIMIT_POLICY.eaClubSearch,
+        },
+        { limiter, environment: "test" },
+      ),
+    ).rejects.toBeInstanceOf(BffRateLimitUnavailableError);
+  });
 });
+
+function searchRequest() {
+  return new Request("https://futrob.test/api/v1/public/game-data/clubs/search", {
+    headers: { "CF-Connecting-IP": "203.0.113.12" },
+  });
+}

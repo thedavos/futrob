@@ -11,6 +11,7 @@ import {
   styledConsoleCorrelationLogger,
 } from "@/context/styled-console-logger.ts";
 import { createModules } from "@/di/create-modules.ts";
+import { rateLimitSettingsFromEnv } from "@/di/rate-limits.composition.ts";
 import { initSentry, registerGlobalSentryHandlers } from "@/observability/sentry.ts";
 import { loadDotEnvFile } from "@/utils/load-dotenv.ts";
 import { asActorId } from "@futrob/shared-kernel";
@@ -40,6 +41,7 @@ const modules = createModules({
   resultsSystemActorId: env.resultsSystemActorId,
   schedulingSystemActorId: env.schedulingSystemActorId,
   email,
+  rateLimit: rateLimitSettingsFromEnv(env.rateLimitFingerprintSecret, process.env),
 });
 if (env.initialSuperuserActorId) {
   try {

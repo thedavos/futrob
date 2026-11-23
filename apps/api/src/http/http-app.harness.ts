@@ -1,6 +1,6 @@
 import { createApp } from "@/app.ts";
 import type { CorrelationLogEntry } from "@/context/request-correlation.ts";
-import { createModules } from "@/di/create-modules.ts";
+import { createModules, type CreateModulesInput } from "@/di/create-modules.ts";
 
 export const INTERNAL_JOB_SECRET = "test-internal-secret";
 
@@ -26,11 +26,13 @@ export function buildApp(fetcher: typeof fetch, correlationLogEntries: Correlati
 export function buildAppWithModules(
   fetcher: typeof fetch,
   correlationLogEntries: CorrelationLogEntry[] = [],
+  moduleOverrides: Partial<CreateModulesInput> = {},
 ) {
   const modules = createModules({
     fetcher,
     eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
     pool: undefined,
+    ...moduleOverrides,
   });
   const app = createApp({
     modules,

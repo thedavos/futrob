@@ -1,4 +1,5 @@
 import { createOrganizationAudit } from "./organization-audit.composition.ts";
+import { createRateLimitCheck } from "./rate-limits.composition.ts";
 import type { AppModules, CreateModulesInput } from "./app-modules.ts";
 export type { AppModules, CreateModulesInput } from "./app-modules.ts";
 import { RunScheduleChangeExpiry } from "@/application/scheduling/run-schedule-change-expiry.ts";
@@ -361,6 +362,7 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
 
   const modules = {
+    rateLimits: createRateLimitCheck({ pool: input.pool, clock, settings: input.rateLimit }),
     accountDeletion: createAccountDeletion({ pool: input.pool, clock, transaction }),
     activityCommands: activityFeed.commands,
     authorization,

@@ -1,6 +1,7 @@
 import type { ProviderMatchRepository } from "@futrob/game-data";
 import type { ClockPort, TransactionPort } from "@futrob/shared-kernel";
 import type { Pool } from "pg";
+import type { RateLimitCheck, RateLimitSettings } from "./rate-limits.composition.ts";
 import type { EncounterOpenSelectionPort } from "@futrob/scheduling";
 import type { RunConfirmationExpiry } from "@/application/results/run-confirmation-expiry.ts";
 import type { RunScheduleChangeExpiry } from "@/application/scheduling/run-schedule-change-expiry.ts";
@@ -91,6 +92,8 @@ export interface AppModules {
     readonly get: GetTeamRosterManagementUseCase;
   };
   readonly transaction: TransactionPort;
+  /** Web BFF rate limits (ADR-0034); `null` without a fingerprint secret. */
+  readonly rateLimits: RateLimitCheck | null;
 }
 
 export interface CreateModulesInput {
@@ -104,4 +107,6 @@ export interface CreateModulesInput {
   readonly schedulingSystemActorId?: string;
   /** Email provider and link origin; local defaults keep every email in memory. */
   readonly email?: EmailSettings;
+  /** Web BFF rate limits; without a fingerprint secret the check answers 503. */
+  readonly rateLimit?: RateLimitSettings;
 }

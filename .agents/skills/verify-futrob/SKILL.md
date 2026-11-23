@@ -13,7 +13,7 @@ Spanish (`es`) is the default product locale. Use the Spanish accessible names i
 
 ## Launch
 
-From the repo root. Env files must already exist (they are gitignored): `apps/web/.dev.vars`, `apps/api/.env`, `apps/auth/.env` (auth's `DATABASE_URL` and secrets) and `apps/web/.env` (local Hyperdrive target), see the `.env.example` files. `INTERNAL_JOB_SECRET` must match web ↔ API. `BETTER_AUTH_SECRET` and `AUTH_PROXY_SECRET` must match web ↔ auth. In web, `FUTROB_API_BASE_URL` must be `http://localhost:8787/api/v1` and `FUTROB_AUTH_BASE_URL` must be `http://localhost:8788`.
+From the repo root. Env files must already exist (they are gitignored): `apps/web/.dev.vars`, `apps/api/.env`, and `apps/auth/.env` (auth's `DATABASE_URL` and secrets), see the `.env.example` files. `INTERNAL_JOB_SECRET` must match web ↔ API. `BETTER_AUTH_SECRET` and `AUTH_PROXY_SECRET` must match web ↔ auth. In web, `FUTROB_API_BASE_URL` must be `http://localhost:8787/api/v1` and `FUTROB_AUTH_BASE_URL` must be `http://localhost:8788`.
 
 ```bash
 .agents/skills/verify-futrob/helpers/verify-futrob launch

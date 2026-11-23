@@ -12,6 +12,7 @@ import * as notifications from "@/http/openapi/routes/notifications.ts";
 import * as organizations from "@/http/openapi/routes/organizations.ts";
 import * as players from "@/http/openapi/routes/players.ts";
 import * as publicPortal from "@/http/openapi/routes/public-portal.ts";
+import * as rateLimits from "@/http/openapi/routes/rate-limits.ts";
 import * as results from "@/http/openapi/routes/results.ts";
 import * as sanctions from "@/http/openapi/routes/sanctions.ts";
 import * as statistics from "@/http/openapi/routes/statistics.ts";
@@ -31,6 +32,7 @@ export * from "@/http/openapi/routes/notifications.ts";
 export * from "@/http/openapi/routes/organizations.ts";
 export * from "@/http/openapi/routes/players.ts";
 export * from "@/http/openapi/routes/public-portal.ts";
+export * from "@/http/openapi/routes/rate-limits.ts";
 export * from "@/http/openapi/routes/results.ts";
 export * from "@/http/openapi/routes/sanctions.ts";
 export * from "@/http/openapi/routes/statistics.ts";
@@ -55,4 +57,5 @@ export const openApiRoutes = [
   ...Object.values(encounters),
   ...Object.values(authorization),
   ...Object.values(billing),
+  ...Object.values(rateLimits),
 ] as const;

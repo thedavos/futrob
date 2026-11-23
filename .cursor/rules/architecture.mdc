@@ -47,7 +47,7 @@ analytics  → premium interpretation
 
 ## Persistence and runtime
 
-- Product persistence: Postgres in apps/api. Auth/actors and BFF rate limits: the same Postgres via Hyperdrive; single migration history in apps/api (ADR-0021). Blobs: R2. Provider jobs: Queues + Cron in web calling the API.
+- Product persistence: Postgres in apps/api. Auth/actors (apps/auth, ADR-0021, ADR-0032) and web BFF rate limits (counted by apps/api, ADR-0034): the same Postgres; web never connects to it; single migration history in apps/api. Blobs: R2. Provider jobs: Queues + Cron in web calling the API.
 - Tenancy: application-scoped `organizationId` in adapters (no Postgres RLS).
 - Better Auth owns sessions; the API resolves Futrob capabilities from the relevant organization, competition and roster context. Presentation uses `EffectiveAccess` and the existing `can` / `useCan` / `useCapabilities` helpers, with BC permission constants. Backend use cases enforce access.
 - The API currently uses a no-op domain event publisher and transactionally composes official-result/statistics updates. Inspect wiring before relying on outbox delivery; provider sync Queues/Cron have a separate implemented path.

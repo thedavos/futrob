@@ -1,16 +1,14 @@
 import type { RequestId } from "@futrob/api-contracts";
 import type { ActorId } from "@futrob/shared-kernel";
+import { createServiceProductApiClient } from "@/context/product-api-client.ts";
 import { getWorkerBindings } from "@/modules/identity/server/worker-bindings.ts";
 import { apiErrorResponse } from "../http/api-response.ts";
 import {
-  parseBffRateLimitPolicies,
+  productApiRateLimiter,
   type BffRateLimiter,
   type BffRateLimitPolicy,
   type RateLimitDecision,
 } from "./bff-rate-limiter.ts";
-import { createHyperdriveConnector, type HyperdriveBinding } from "../postgres.ts";
-import { PostgresBffRateLimiter } from "./postgres-bff-rate-limiter.ts";
-import { fingerprintRateLimitSubject } from "./rate-limit-fingerprint.ts";
 
 export type RateLimitLogEntry = Readonly<{
   event: "bff.rate_limit.checked";
@@ -27,37 +25,14 @@ interface RateLimitLogger {
 }
 
 type RateLimitBindings = Readonly<{
-  HYPERDRIVE: HyperdriveBinding;
-  RATE_LIMIT_FINGERPRINT_SECRET?: string;
-  RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS?: string;
-  RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX?: string;
-  RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX?: string;
-  RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS?: string;
-  RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX?: string;
-  RATE_LIMIT_INVITATION_ACCEPT_IP_MAX?: string;
-  RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS?: string;
-  RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX?: string;
-  RATE_LIMIT_INVITATION_PREVIEW_IP_MAX?: string;
-  RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS?: string;
-  RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX?: string;
-  RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX?: string;
-  RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS?: string;
-  RATE_LIMIT_PLAYER_SEARCH_ACTOR_MAX?: string;
-  RATE_LIMIT_PLAYER_SEARCH_IP_MAX?: string;
-  RATE_LIMIT_PUBLIC_CLUB_SEARCH_WINDOW_SECONDS?: string;
-  RATE_LIMIT_PUBLIC_CLUB_SEARCH_ACTOR_MAX?: string;
-  RATE_LIMIT_PUBLIC_CLUB_SEARCH_IP_MAX?: string;
-  RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_WINDOW_SECONDS?: string;
-  RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_ACTOR_MAX?: string;
-  RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_IP_MAX?: string;
   ENVIRONMENT?: string;
+  INTERNAL_JOB_SECRET?: string;
+  FUTROB_API_BASE_URL?: string;
 }>;
 
 type EnforceDependencies = Readonly<{
   limiter?: BffRateLimiter;
-  fingerprintSecret?: string;
   environment?: string;
-  now?: () => number;
   logger?: RateLimitLogger;
   bindings?: RateLimitBindings;
 }>;
@@ -81,6 +56,11 @@ export function shouldBypassBffRateLimit(environment: string): boolean {
   return environment === "development";
 }
 
+/**
+ * Counts the attempt in the product API (ADR-0034) and returns the 429 response when it
+ * is over the limit. Fails closed: without the client IP or an answer from the API the
+ * request is refused with `BffRateLimitUnavailableError`.
+ */
 export async function enforceBffRateLimit(
   input: Readonly<{
     request: Request;
@@ -95,105 +75,18 @@ export async function enforceBffRateLimit(
   if (earlyEnvironment && shouldBypassBffRateLimit(earlyEnvironment)) return undefined;
 
   let bindings = dependencies.bindings;
-  if (!bindings && (!dependencies.limiter || !dependencies.fingerprintSecret)) {
-    bindings = await loadWorkerBindings();
-  }
+  if (!bindings && !dependencies.limiter) bindings = await getWorkerBindings();
   const environment =
     dependencies.environment ?? bindings?.ENVIRONMENT ?? process.env.NODE_ENV ?? "unknown";
   if (shouldBypassBffRateLimit(environment)) return undefined;
 
-  const connectingIp = input.request.headers.get("CF-Connecting-IP");
-  const fingerprintSecret =
-    dependencies.fingerprintSecret ??
-    bindings?.RATE_LIMIT_FINGERPRINT_SECRET ??
-    process.env.RATE_LIMIT_FINGERPRINT_SECRET;
-  if (!connectingIp || !fingerprintSecret) throw new BffRateLimitUnavailableError();
-
-  let limiter = dependencies.limiter;
-  if (!limiter) {
-    if (!bindings) throw new BffRateLimitUnavailableError();
-    try {
-      limiter = new PostgresBffRateLimiter({
-        withPostgres: createHyperdriveConnector(bindings.HYPERDRIVE),
-        fingerprintSecret,
-        policies: parseBffRateLimitPolicies({
-          RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS:
-            bindings.RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS ??
-            process.env.RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS,
-          RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX:
-            bindings.RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX ??
-            process.env.RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX,
-          RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX:
-            bindings.RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX ??
-            process.env.RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX,
-          RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS:
-            bindings.RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS ??
-            process.env.RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS,
-          RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX:
-            bindings.RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX ??
-            process.env.RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX,
-          RATE_LIMIT_INVITATION_ACCEPT_IP_MAX:
-            bindings.RATE_LIMIT_INVITATION_ACCEPT_IP_MAX ??
-            process.env.RATE_LIMIT_INVITATION_ACCEPT_IP_MAX,
-          RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS:
-            bindings.RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS ??
-            process.env.RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS,
-          RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX:
-            bindings.RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX ??
-            process.env.RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX,
-          RATE_LIMIT_INVITATION_PREVIEW_IP_MAX:
-            bindings.RATE_LIMIT_INVITATION_PREVIEW_IP_MAX ??
-            process.env.RATE_LIMIT_INVITATION_PREVIEW_IP_MAX,
-          RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS:
-            bindings.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS ??
-            process.env.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS,
-          RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX:
-            bindings.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX ??
-            process.env.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX,
-          RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX:
-            bindings.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX ??
-            process.env.RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX,
-          RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS:
-            bindings.RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS ??
-            process.env.RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS,
-          RATE_LIMIT_PLAYER_SEARCH_ACTOR_MAX:
-            bindings.RATE_LIMIT_PLAYER_SEARCH_ACTOR_MAX ??
-            process.env.RATE_LIMIT_PLAYER_SEARCH_ACTOR_MAX,
-          RATE_LIMIT_PLAYER_SEARCH_IP_MAX:
-            bindings.RATE_LIMIT_PLAYER_SEARCH_IP_MAX ?? process.env.RATE_LIMIT_PLAYER_SEARCH_IP_MAX,
-          RATE_LIMIT_PUBLIC_CLUB_SEARCH_WINDOW_SECONDS:
-            bindings.RATE_LIMIT_PUBLIC_CLUB_SEARCH_WINDOW_SECONDS ??
-            process.env.RATE_LIMIT_PUBLIC_CLUB_SEARCH_WINDOW_SECONDS,
-          RATE_LIMIT_PUBLIC_CLUB_SEARCH_ACTOR_MAX:
-            bindings.RATE_LIMIT_PUBLIC_CLUB_SEARCH_ACTOR_MAX ??
-            process.env.RATE_LIMIT_PUBLIC_CLUB_SEARCH_ACTOR_MAX,
-          RATE_LIMIT_PUBLIC_CLUB_SEARCH_IP_MAX:
-            bindings.RATE_LIMIT_PUBLIC_CLUB_SEARCH_IP_MAX ??
-            process.env.RATE_LIMIT_PUBLIC_CLUB_SEARCH_IP_MAX,
-          RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_WINDOW_SECONDS:
-            bindings.RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_WINDOW_SECONDS ??
-            process.env.RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_WINDOW_SECONDS,
-          RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_ACTOR_MAX:
-            bindings.RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_ACTOR_MAX ??
-            process.env.RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_ACTOR_MAX,
-          RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_IP_MAX:
-            bindings.RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_IP_MAX ??
-            process.env.RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_IP_MAX,
-        }),
-      });
-    } catch {
-      throw new BffRateLimitUnavailableError();
-    }
-  }
+  const clientIp = input.request.headers.get("CF-Connecting-IP");
+  if (!clientIp) throw new BffRateLimitUnavailableError();
+  const limiter = dependencies.limiter ?? defaultLimiter(bindings, input.requestId);
 
   let decision: RateLimitDecision;
   try {
-    decision = await limiter.check({
-      policy: input.policy,
-      actorId: input.actorId,
-      ipFingerprint: await fingerprintRateLimitSubject(fingerprintSecret, "ip", connectingIp),
-      nowMs: (dependencies.now ?? Date.now)(),
-    });
+    decision = await limiter.check({ policy: input.policy, actorId: input.actorId, clientIp });
   } catch {
     throw new BffRateLimitUnavailableError();
   }
@@ -232,6 +125,17 @@ export async function enforceBffRateLimit(
   return response;
 }
 
-async function loadWorkerBindings(): Promise<RateLimitBindings> {
-  return getWorkerBindings();
+function defaultLimiter(
+  bindings: RateLimitBindings | undefined,
+  requestId: RequestId,
+): BffRateLimiter {
+  const internalJobSecret = bindings?.INTERNAL_JOB_SECRET ?? process.env.INTERNAL_JOB_SECRET;
+  if (!internalJobSecret) throw new BffRateLimitUnavailableError();
+  return productApiRateLimiter(
+    createServiceProductApiClient({
+      internalJobSecret,
+      requestId,
+      baseUrl: bindings?.FUTROB_API_BASE_URL,
+    }),
+  );
 }

@@ -1,12 +1,38 @@
 import { z } from "zod";
-import type { PostgresQueryable, PostgresQueryResult, WithPostgres } from "../postgres.ts";
-import type {
-  BffRateLimiter,
-  BffRateLimitPolicies,
-  RateLimitAttempt,
-  RateLimitDecision,
-} from "./bff-rate-limiter.ts";
+import type { Pool } from "pg";
+import {
+  decideRateLimit,
+  longestRateLimitWindowMs,
+  rateLimitWindow,
+  type RateLimitAttempt,
+  type RateLimitDecision,
+  type RateLimiter,
+  type RateLimitPolicies,
+} from "./rate-limit-policies.ts";
 import { fingerprintRateLimitSubject } from "./rate-limit-fingerprint.ts";
+
+export interface PostgresQueryResult {
+  readonly rows: readonly unknown[];
+}
+
+export interface PostgresQueryable {
+  query(text: string, values?: readonly unknown[]): Promise<PostgresQueryResult>;
+}
+
+/** Runs `run` on one connection and always releases it. */
+export type WithPostgres = <T>(run: (client: PostgresQueryable) => Promise<T>) => Promise<T>;
+
+/** Checks out one pooled connection per check: the counters need their own transaction. */
+export function withPoolConnection(pool: Pool): WithPostgres {
+  return async (run) => {
+    const client = await pool.connect();
+    try {
+      return await run({ query: (text, values) => client.query(text, values ? [...values] : []) });
+    } finally {
+      client.release();
+    }
+  };
+}
 
 const INCREMENT_WINDOW_SQL = `
 INSERT INTO app_rate_limit_windows (
@@ -29,24 +55,23 @@ WHERE window_started_at < $1
 
 const requestCountSchema = z.object({ request_count: z.number().int().min(1) });
 
-export class PostgresBffRateLimiter implements BffRateLimiter {
+export class PostgresRateLimiter implements RateLimiter {
   private readonly withPostgres: WithPostgres;
   private readonly fingerprintSecret: string;
-  private readonly policies: BffRateLimitPolicies;
+  private readonly policies: RateLimitPolicies;
   private readonly maxPolicyWindowMs: number;
 
   constructor(
     input: Readonly<{
       withPostgres: WithPostgres;
       fingerprintSecret: string;
-      policies: BffRateLimitPolicies;
+      policies: RateLimitPolicies;
     }>,
   ) {
     this.withPostgres = input.withPostgres;
     this.fingerprintSecret = input.fingerprintSecret;
     this.policies = input.policies;
-    this.maxPolicyWindowMs =
-      Math.max(...Object.values(input.policies).map((policy) => policy.windowSeconds)) * 1000;
+    this.maxPolicyWindowMs = longestRateLimitWindowMs(input.policies);
   }
 
   async check(attempt: RateLimitAttempt): Promise<RateLimitDecision> {
@@ -54,8 +79,7 @@ export class PostgresBffRateLimiter implements BffRateLimiter {
       throw new Error("Rate-limit IP fingerprint must be a SHA-256 hex digest");
     }
     const config = this.policies[attempt.policy];
-    const windowMs = config.windowSeconds * 1000;
-    const windowStartedAt = Math.floor(attempt.nowMs / windowMs) * windowMs;
+    const window = rateLimitWindow(config, attempt.nowMs);
     const actorId = attempt.actorId;
     const actorFingerprint =
       actorId === null
@@ -75,30 +99,19 @@ export class PostgresBffRateLimiter implements BffRateLimiter {
                 attempt.policy,
                 "actor",
                 actorFingerprint,
-                windowStartedAt,
+                window.windowStartedAt,
               ]);
         const ip = await client.query(INCREMENT_WINDOW_SQL, [
           attempt.policy,
           "ip",
           attempt.ipFingerprint,
-          windowStartedAt,
+          window.windowStartedAt,
         ]);
         return { actorCount: actor === null ? 0 : readCount(actor), ipCount: readCount(ip) };
       }),
     );
 
-    if (actorCount <= config.actorMaxAttempts && ipCount <= config.ipMaxAttempts) {
-      return { outcome: "allowed" };
-    }
-
-    return {
-      outcome: "limited",
-      limitedBy: actorCount > config.actorMaxAttempts ? "actor" : "ip",
-      retryAfterSeconds: Math.max(
-        1,
-        Math.ceil((windowStartedAt + windowMs - attempt.nowMs) / 1000),
-      ),
-    };
+    return decideRateLimit({ config, window, nowMs: attempt.nowMs, actorCount, ipCount });
   }
 }
 

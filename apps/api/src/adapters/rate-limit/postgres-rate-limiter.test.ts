@@ -3,46 +3,46 @@ import { readFile } from "node:fs/promises";
 import { Client } from "pg";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
-import type { PostgresQueryable, WithPostgres } from "../postgres.ts";
+import { RATE_LIMIT_POLICY } from "@futrob/api-contracts";
 import {
-  BFF_RATE_LIMIT_POLICY,
-  type BffRateLimitPolicies,
-  type RateLimitAttempt,
-} from "./bff-rate-limiter.ts";
-import { PostgresBffRateLimiter } from "./postgres-bff-rate-limiter.ts";
+  PostgresRateLimiter,
+  type PostgresQueryable,
+  type WithPostgres,
+} from "./postgres-rate-limiter.ts";
+import type { RateLimitAttempt, RateLimitPolicies } from "./rate-limit-policies.ts";
 
-const TEST_POLICIES: BffRateLimitPolicies = {
-  [BFF_RATE_LIMIT_POLICY.eaClubSearch]: {
+const TEST_POLICIES: RateLimitPolicies = {
+  [RATE_LIMIT_POLICY.eaClubSearch]: {
     windowSeconds: 60,
     actorMaxAttempts: 2,
     ipMaxAttempts: 3,
   },
-  [BFF_RATE_LIMIT_POLICY.invitationAccept]: {
+  [RATE_LIMIT_POLICY.invitationAccept]: {
     windowSeconds: 900,
     actorMaxAttempts: 1,
     ipMaxAttempts: 1,
   },
-  [BFF_RATE_LIMIT_POLICY.invitationPreview]: {
+  [RATE_LIMIT_POLICY.invitationPreview]: {
     windowSeconds: 900,
     actorMaxAttempts: 1,
     ipMaxAttempts: 1,
   },
-  [BFF_RATE_LIMIT_POLICY.invitationPublicPreview]: {
+  [RATE_LIMIT_POLICY.invitationPublicPreview]: {
     windowSeconds: 900,
     actorMaxAttempts: 1,
     ipMaxAttempts: 2,
   },
-  [BFF_RATE_LIMIT_POLICY.playerSearch]: {
+  [RATE_LIMIT_POLICY.playerSearch]: {
     windowSeconds: 60,
     actorMaxAttempts: 1,
     ipMaxAttempts: 1,
   },
-  [BFF_RATE_LIMIT_POLICY.publicClubSearch]: {
+  [RATE_LIMIT_POLICY.publicClubSearch]: {
     windowSeconds: 60,
     actorMaxAttempts: 1,
     ipMaxAttempts: 1,
   },
-  [BFF_RATE_LIMIT_POLICY.publicCompetitionExplore]: {
+  [RATE_LIMIT_POLICY.publicCompetitionExplore]: {
     windowSeconds: 60,
     actorMaxAttempts: 1,
     ipMaxAttempts: 1,
@@ -51,14 +51,14 @@ const TEST_POLICIES: BffRateLimitPolicies = {
 
 function attempt(input: Partial<RateLimitAttempt> = {}): RateLimitAttempt {
   return {
-    policy: input.policy ?? BFF_RATE_LIMIT_POLICY.eaClubSearch,
+    policy: input.policy ?? RATE_LIMIT_POLICY.eaClubSearch,
     actorId: input.actorId === undefined ? asActorId("actor-1") : input.actorId,
     ipFingerprint: input.ipFingerprint ?? "1".repeat(64),
     nowMs: input.nowMs ?? 12_345,
   };
 }
 
-describe("PostgresBffRateLimiter transaction", () => {
+describe("PostgresRateLimiter transaction", () => {
   function scriptedClient(failOn?: RegExp) {
     const statements: string[] = [];
     const client: PostgresQueryable = {
@@ -75,7 +75,7 @@ describe("PostgresBffRateLimiter transaction", () => {
 
   it("purges and counts the actor and IP windows in one transaction", async () => {
     const { statements, withPostgres } = scriptedClient();
-    const limiter = new PostgresBffRateLimiter({
+    const limiter = new PostgresRateLimiter({
       withPostgres,
       fingerprintSecret: "dedicated-test-secret",
       policies: TEST_POLICIES,
@@ -87,7 +87,7 @@ describe("PostgresBffRateLimiter transaction", () => {
 
   it("counts only the IP window for a signed-out attempt", async () => {
     const { statements, withPostgres } = scriptedClient();
-    const limiter = new PostgresBffRateLimiter({
+    const limiter = new PostgresRateLimiter({
       withPostgres,
       fingerprintSecret: "dedicated-test-secret",
       policies: TEST_POLICIES,
@@ -101,7 +101,7 @@ describe("PostgresBffRateLimiter transaction", () => {
 
   it("rolls back and rethrows when a statement fails", async () => {
     const { statements, withPostgres } = scriptedClient(/INSERT/);
-    const limiter = new PostgresBffRateLimiter({
+    const limiter = new PostgresRateLimiter({
       withPostgres,
       fingerprintSecret: "dedicated-test-secret",
       policies: TEST_POLICIES,
@@ -113,7 +113,7 @@ describe("PostgresBffRateLimiter transaction", () => {
 
   it("rejects an IP fingerprint that is not a SHA-256 digest", async () => {
     const { statements, withPostgres } = scriptedClient();
-    const limiter = new PostgresBffRateLimiter({
+    const limiter = new PostgresRateLimiter({
       withPostgres,
       fingerprintSecret: "dedicated-test-secret",
       policies: TEST_POLICIES,
@@ -130,7 +130,7 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = describe.skipIf(!databaseUrl);
 const schemas: string[] = [];
 
-suite("PostgresBffRateLimiter on Postgres (migration 0043)", () => {
+suite("PostgresRateLimiter on Postgres (migration 0043)", () => {
   afterEach(async () => {
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
@@ -164,7 +164,7 @@ suite("PostgresBffRateLimiter on Postgres (migration 0043)", () => {
     const { limiter } = await createLimiter();
     const anonymous = attempt({
       actorId: null,
-      policy: BFF_RATE_LIMIT_POLICY.invitationPublicPreview,
+      policy: RATE_LIMIT_POLICY.invitationPublicPreview,
     });
     await limiter.check(anonymous);
     await limiter.check(anonymous);
@@ -182,7 +182,7 @@ suite("PostgresBffRateLimiter on Postgres (migration 0043)", () => {
       `INSERT INTO app_rate_limit_windows
         (policy, subject_kind, subject_fingerprint, window_started_at, request_count)
        VALUES ($1, 'actor', $2, 0, 1)`,
-      [BFF_RATE_LIMIT_POLICY.eaClubSearch, "a".repeat(64)],
+      [RATE_LIMIT_POLICY.eaClubSearch, "a".repeat(64)],
     );
 
     await limiter.check(attempt({ nowMs: 1_800_000 }));
@@ -196,7 +196,7 @@ suite("PostgresBffRateLimiter on Postgres (migration 0043)", () => {
   it("retains active short-policy windows when policy lengths do not divide evenly", async () => {
     const { limiter, query } = await createLimiter({
       ...TEST_POLICIES,
-      [BFF_RATE_LIMIT_POLICY.invitationAccept]: {
+      [RATE_LIMIT_POLICY.invitationAccept]: {
         windowSeconds: 901,
         actorMaxAttempts: 1,
         ipMaxAttempts: 1,
@@ -206,7 +206,7 @@ suite("PostgresBffRateLimiter on Postgres (migration 0043)", () => {
       `INSERT INTO app_rate_limit_windows
         (policy, subject_kind, subject_fingerprint, window_started_at, request_count)
        VALUES ($1, 'ip', $2, 1800000, 2)`,
-      [BFF_RATE_LIMIT_POLICY.eaClubSearch, "1".repeat(64)],
+      [RATE_LIMIT_POLICY.eaClubSearch, "1".repeat(64)],
     );
 
     await limiter.check(attempt({ nowMs: 1_805_000 }));
@@ -215,7 +215,7 @@ suite("PostgresBffRateLimiter on Postgres (migration 0043)", () => {
       `SELECT request_count FROM app_rate_limit_windows
        WHERE policy = $1 AND subject_kind = 'ip' AND subject_fingerprint = $2
          AND window_started_at = 1800000`,
-      [BFF_RATE_LIMIT_POLICY.eaClubSearch, "1".repeat(64)],
+      [RATE_LIMIT_POLICY.eaClubSearch, "1".repeat(64)],
     );
     expect(row.rows).toEqual([{ request_count: 3 }]);
   });
@@ -223,7 +223,7 @@ suite("PostgresBffRateLimiter on Postgres (migration 0043)", () => {
   it("atomically counts concurrent attempts without storing actor or IP subjects", async () => {
     const { limiter, query } = await createLimiter({
       ...TEST_POLICIES,
-      [BFF_RATE_LIMIT_POLICY.eaClubSearch]: {
+      [RATE_LIMIT_POLICY.eaClubSearch]: {
         windowSeconds: 60,
         actorMaxAttempts: 10,
         ipMaxAttempts: 100,
@@ -249,9 +249,9 @@ suite("PostgresBffRateLimiter on Postgres (migration 0043)", () => {
   });
 });
 
-/** Fresh schema per test; each check gets its own connection, like a Worker request. */
-async function createLimiter(policies: BffRateLimitPolicies = TEST_POLICIES) {
-  const schema = `bff_rate_limit_${randomUUID().replaceAll("-", "")}`;
+/** Fresh schema per test; each check gets its own connection, like a pooled checkout. */
+async function createLimiter(policies: RateLimitPolicies = TEST_POLICIES) {
+  const schema = `rate_limit_${randomUUID().replaceAll("-", "")}`;
   schemas.push(schema);
 
   const connect = async () => {
@@ -276,14 +276,14 @@ async function createLimiter(policies: BffRateLimitPolicies = TEST_POLICIES) {
   const setup = await connect();
   await setup.query(
     await readFile(
-      new URL("../../../../../api/migrations/0043_auth_and_actors.sql", import.meta.url),
+      new URL("../../../migrations/0043_auth_and_actors.sql", import.meta.url),
       "utf8",
     ),
   );
   await setup.end();
 
   return {
-    limiter: new PostgresBffRateLimiter({
+    limiter: new PostgresRateLimiter({
       withPostgres,
       fingerprintSecret: "dedicated-test-secret",
       policies,

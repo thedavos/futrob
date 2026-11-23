@@ -49,7 +49,7 @@ The PRD describes target scope, not completed functionality. Verify claims again
 ## Auth And Postgres
 
 - Better Auth form sign-in and sign-up endpoints validate the request `Origin`; a proxy that preserves browser headers must include every public web origin in the auth server's `trustedOrigins`.
-- Auth, actors and BFF rate limits live in the product Postgres (ADR-0021) and have one migration history in `apps/api/migrations`. `apps/auth` (Node) reads `DATABASE_URL`; the web Worker reaches it through Hyperdrive (locally `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` in `apps/web/.env`). `get-session` returns `actorId`, so web reads no identity tables. Do not create a second migration history.
+- Auth, actors and BFF rate limits live in the product Postgres (ADR-0021) and have one migration history in `apps/api/migrations`. `apps/auth` (Node) reads `DATABASE_URL`; the web Worker never connects to it: `apps/api` counts BFF rate limits (ADR-0034). `get-session` returns `actorId`, so web reads no identity tables. Do not create a second migration history.
 - Preserve the tested client-IP handling (ADR-0032): web strips incoming spoofable forwarding and `x-futrob-*` headers and forwards `CF-Connecting-IP` as `x-futrob-client-ip` with `AUTH_PROXY_SECRET`; auth trusts that IP only with a matching secret and otherwise uses `AUTH_TRUSTED_IP_HEADER` or the TCP peer. Keep proxy and auth rate-limit tests aligned.
 
 ## Web Testing

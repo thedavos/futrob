@@ -14,13 +14,13 @@ Esta revisión consolida ADR-0009 e incorpora la extracción de auth de ADR-0015
 
 ## Decisión
 
-| Unidad        | Runtime y responsabilidad                                                      | Persistencia / dependencia                                                                             |
-| ------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `apps/web`    | TanStack Start en Cloudflare Workers; UI, BFF, proxy auth, Queues/Cron         | SDK hacia API, HTTP a auth (`FUTROB_AUTH_BASE_URL`), Hyperdrive→Postgres solo para rate limits BFF; R2 |
-| `apps/auth`   | Hono/Node Better Auth (ADR-0032); credenciales, sesiones y actores             | Postgres de producto mediante `DATABASE_URL` (ADR-0021); sin carpeta de migraciones propia             |
-| `apps/api`    | Hono/Node en Railway; composición de casos de uso, API de producto y egress EA | Postgres mediante `DATABASE_URL`                                                                       |
-| `apps/mobile` | React Native + Expo; cliente autenticado                                       | SDK al BFF con token de sesión; auth directo o por web; SecureStore                                    |
-| `apps/cli`    | Herramienta local de dominio/API                                               | Fakes o API según el comando; no es deployable de producto                                             |
+| Unidad        | Runtime y responsabilidad                                                      | Persistencia / dependencia                                                                                   |
+| ------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `apps/web`    | TanStack Start en Cloudflare Workers; UI, BFF, proxy auth, Queues/Cron         | SDK hacia API, HTTP a auth (`FUTROB_AUTH_BASE_URL`), sin Postgres (rate limits BFF por el API, ADR-0034); R2 |
+| `apps/auth`   | Hono/Node Better Auth (ADR-0032); credenciales, sesiones y actores             | Postgres de producto mediante `DATABASE_URL` (ADR-0021); sin carpeta de migraciones propia                   |
+| `apps/api`    | Hono/Node en Railway; composición de casos de uso, API de producto y egress EA | Postgres mediante `DATABASE_URL`                                                                             |
+| `apps/mobile` | React Native + Expo; cliente autenticado                                       | SDK al BFF con token de sesión; auth directo o por web; SecureStore                                          |
+| `apps/cli`    | Herramienta local de dominio/API                                               | Fakes o API según el comando; no es deployable de producto                                                   |
 
 El BFF autentica al cliente y llama a la API de producto; no instancia los adapters de
 producto ni duplica sus casos de uso. Ver [contrato HTTP](/docs/adr/0005-typed-private-api.md),

@@ -189,7 +189,6 @@ describe("authenticated official-selection BFF over HTTP", () => {
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("HTTP harness did not bind");
     vi.mocked(getWorkerBindings).mockResolvedValue({
-      HYPERDRIVE: { connectionString: "postgres://unused-in-http-test" },
       APP_BASE_URL: "https://web.example",
       BETTER_AUTH_SECRET: "a-long-auth-secret-for-the-test-harness",
       INTERNAL_JOB_SECRET: "service-secret",

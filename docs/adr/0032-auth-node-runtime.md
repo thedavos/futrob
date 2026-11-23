@@ -48,8 +48,9 @@ Drizzle y el dominio vive en `@futrob/identity`.
 
 ## Consecuencias
 
-- Auth deja de necesitar Hyperdrive y Wrangler. Web sigue usando Hyperdrive para el
-  limitador BFF, así que Postgres necesita acceso para web mientras web siga en Workers.
+- Auth deja de necesitar Hyperdrive y Wrangler. Web siguió usando Hyperdrive para el
+  limitador BFF hasta [ADR-0034](/docs/adr/0034-bff-rate-limits-in-api.md), que lo mueve
+  al API.
 - Cada SSR/BFF autenticado hace `get-session` por HTTPS desde el edge hasta la región de
   auth. Antes cruzaba Worker → Hyperdrive → Postgres; ahora auth habla con Postgres en su
   red. No se midió la latencia; la caché de sesión en cookie de Better Auth sigue como

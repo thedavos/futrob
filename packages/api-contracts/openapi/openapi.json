@@ -68,6 +68,10 @@
     {
       "name": "billing",
       "description": "Plans, entitlements and quotas (Phase 0, no payments)"
+    },
+    {
+      "name": "rate-limits",
+      "description": "Service-only rate-limit checks for the web BFF"
     }
   ],
   "paths": {
@@ -3824,6 +3828,69 @@
           "statistics"
         ],
         "summary": "Rebuild official statistics, standings and rankings (superuser only)"
+      }
+    },
+    "/internal/rate-limits/check": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Decision for this attempt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckRateLimitResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "503": {
+            "description": "Rate limiting is not configured or its store is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "operationId": "checkRateLimit",
+        "tags": [
+          "rate-limits"
+        ],
+        "summary": "Count one web BFF attempt against its rate-limit policy",
+        "description": "Service-only, authenticated with the internal bearer secret (ADR-0034). Counts the attempt for the actor (when present) and the client IP in the policy's fixed window and answers whether it may proceed. Actor and IP are stored only as HMAC fingerprints. 503 means the limiter is not configured or its store failed; the BFF fails closed.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckRateLimitRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ]
       }
     },
     "/internal/results/candidate-recalculation/run": {
@@ -13806,6 +13873,85 @@
         },
         "required": [
           "role"
+        ]
+      },
+      "CheckRateLimitRequest": {
+        "type": "object",
+        "properties": {
+          "policy": {
+            "type": "string",
+            "enum": [
+              "ea-club-search",
+              "invitation-accept",
+              "invitation-preview",
+              "invitation-public-preview",
+              "player-search",
+              "public-club-search",
+              "public-competition-explore"
+            ]
+          },
+          "actorId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "clientIp": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "policy",
+          "actorId",
+          "clientIp"
+        ]
+      },
+      "CheckRateLimitResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "allowed"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "limited"
+                ]
+              },
+              "retryAfterSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "limitedBy": {
+                "type": "string",
+                "enum": [
+                  "actor",
+                  "ip"
+                ]
+              }
+            },
+            "required": [
+              "outcome",
+              "retryAfterSeconds",
+              "limitedBy"
+            ]
+          }
         ]
       },
       "CloseSwissRoundRequest": {
