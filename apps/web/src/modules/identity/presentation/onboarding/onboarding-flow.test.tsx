@@ -16,14 +16,12 @@ import { GameDataClientError } from "@/modules/game-data/presentation/game-data-
 import { memoryOnboardingDraftStore } from "./onboarding-draft-storage.ts";
 
 beforeEach(() => {
-  vi.stubGlobal("PointerEvent", MouseEvent);
   vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
 });
 
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
-  vi.unstubAllGlobals();
 });
 
 describe("OnboardingFlowProvider initialization", () => {
@@ -648,8 +646,10 @@ describe("OnboardingFlowProvider initialization", () => {
     expect(searches.at(-1)?.gameEdition).toBe("fc25");
     expect(screen.getByRole("button", { name: "Revisar club" })).not.toBeDisabled();
 
-    await user.click(screen.getByRole("combobox", { name: "Plataforma EA para la búsqueda" }));
-    await user.click(await screen.findByRole("option", { name: /Xbox/ }));
+    const platform = screen.getByRole("combobox", { name: "Plataforma EA para la búsqueda" });
+    act(() => platform.focus());
+    await user.keyboard("{ArrowDown}");
+    await user.click(await screen.findByRole("option", { name: "Xbox" }));
 
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: /Fera Enjaulada/ })).toBeNull();
@@ -670,7 +670,9 @@ describe("OnboardingFlowProvider initialization", () => {
     await user.type(await screen.findByRole("textbox", { name: "Nombre del club" }), "Fera");
     await user.click(screen.getByRole("button", { name: "Buscar club" }));
     await screen.findByText("Buscando clubs para «Fera»…");
-    await user.click(screen.getByRole("combobox", { name: "Plataforma EA para la búsqueda" }));
+    const platform = screen.getByRole("combobox", { name: "Plataforma EA para la búsqueda" });
+    act(() => platform.focus());
+    await user.keyboard("{ArrowDown}");
     await user.click(await screen.findByRole("option", { name: "Xbox" }));
 
     await act(async () => {
