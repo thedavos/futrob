@@ -6,7 +6,7 @@ This directory is the maintained source for verifying user-facing Futrob behavio
 
 - Repo root is the Futrob monorepo. Node 24. `vp` is available via `node_modules/.bin`.
 - Env files exist: `apps/web/.dev.vars`, `apps/api/.env`, `apps/auth/.env`. Secrets aligned as in the skill Launch section.
-- Run `.agents/skills/verify-futrob/helpers/verify-futrob doctor` and require web `:3000`, API ping, auth health, and web `GET /api/auth/get-session` (not 503 Worker not found).
+- Run `.agents/skills/verify-futrob/helpers/verify-futrob doctor` and require web `:3000`, API ping, auth health, and web `GET /api/auth/get-session` 200 (anonymous is `null`). A 503 `auth.misconfigured` or 502 `auth.unavailable` is not ready; `:8788` health is not this probe.
 - Never start a second stack on `:3000` / `:8787` / `:8788`. Never drive an instance this run did not health-check.
 - Default locale is Spanish. Assert Spanish copy unless the run switched language.
 - Evidence lives in `.agents/skills/verify-futrob/evidence/<run-id>/` and survives cleanup.

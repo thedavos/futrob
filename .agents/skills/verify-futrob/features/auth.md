@@ -18,7 +18,7 @@ Auth lets a visitor create a credentials account, verify its email, sign in or r
 ## How to get to it (user POV)
 
 - Open `/login` or choose `Iniciar sesión` on the landing header.
-- Open `/signup` or choose `Crear cuenta` on the landing header or hero.
+- Open `/signup` or choose `Crear competición` on the landing header, hero, or below-fold final CTA. The signup form submit is still `Crear cuenta`.
 - Open `/player` (or another `_app` route) with no session; the gate redirects to `/login`.
 - After signup, the product sends the actor to onboarding.
 - On `/login`, choose `¿Olvidaste tu contraseña?` below the password field, aligned to its right edge; the reset email link lands on `/reset-password`.
@@ -46,6 +46,7 @@ Preconditions:
 ## Gotchas
 
 - After onboarding, sign-out lives in the authenticated shell: menu trigger `Abrir menú de cuenta`, item `Cerrar sesión`. Bare `/onboarding` has no account menu — reload `/login` in a fresh profile if you still need a clean session mid-onboarding.
+- Client navigation from `/signup` → `/login` (footer `Iniciar sesión`) can update the URL before the login accessibility tree paints. If the heading is still `Crea tu cuenta`, open `/login` once more and wait for `Inicia sesión`. Filling the reject-login form on that stale tree submits nothing useful; retry on a freshly loaded `/login`.
 - A 200 login followed by `Verificando tu acceso…` forever or a bounce back to `/login` is usually `BETTER_AUTH_SECRET` mismatch between web and auth, not a bad password.
 - The first anonymous `/player` visit can stall on `Verificando tu acceso…` or the renderer can Aw Snap (Chrome error 5) before the client `Navigate` to `/login`. That is **not** a passing gate and is **not** the secret-mismatch case above (mismatch is after a 200 login). Isolate that attempt in its own browser/profile so a wedged `/_app` renderer does not take down the rest of the drive. Retry `/player` once, or open `/login` directly and still prove the login form. A pass remains: URL `/login` and heading `Inicia sesión`. Mark the `/player` gate `verified-unreachable` when both attempts stall.
 - Signup validation is client-side first. An empty submit is not an auth-backend proof.

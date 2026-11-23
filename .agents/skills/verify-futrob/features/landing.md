@@ -62,11 +62,12 @@ Preconditions:
 ## Gotchas
 
 - Locale defaults to Spanish. English copy (`Log in`, `Create account`, `Club leagues and cups, official.`) is a different locale, not a failure of the Spanish recipe.
-- There are three signup controls, all named `Crear competición`: header, hero and the below-fold final CTA. Drive all three; proving only header + hero is an incomplete entry-point pass. Login lives only in the header (and the mobile sheet). The final block’s second control is `Ver precios`, not `Iniciar sesión`.
+- Verify the three generic `Crear competición` entry points in the header, hero and final CTA. Run the club-search recipe for `Crear cuenta con este club`, which opens signup with the selected club in the onboarding redirect. The Pro and Liga plan cards in `#precios` use `Crear cuenta`, and Gratis uses `Empezar gratis`. The final block also offers `Ver precios`. Login is in the header or the mobile sheet.
 - The landing header `Futrob` link is the only brand home control. `/login` and `/signup` render `AuthTunnelShell` with a non-interactive logo (`role=img`). Do not look for a `Futrob` link there.
 - `Ver ejemplo de portal` is an in-page `#portal` jump, not a new route. In the accessibility tree it is a **button** (the control is an anchor rendered through Base UI `Button`). Assert the heading, not only the hash. Header `Iniciar sesión`, header/hero/final `Crear competición`, and final `Ver precios` are all **buttons** (`Button` with `render={<Link />}`). Do not `getByRole("link")` for those CTAs.
 - The header has two nav landmarks: `Secciones` (content links, in a `Sheet` opened by `Abrir navegación` below 1024 px) and `Acceso`. Below 640 px, `Iniciar sesión` moves into that `Sheet`. The sheet trigger needs hydration: on a slow dev server wait for it before clicking.
-- The hero entrance lasts 1.5 s. Wait for it (or emulate reduced motion) before a screenshot, or the capture shows a half-drawn bracket. The bracket's club buttons are a single tab stop; they are demo data, not navigation.
+- The hero entrance lasts 1.5 s. Wait for it (or emulate reduced motion) before a screenshot, or the capture shows a half-drawn bracket. The bracket's club buttons are a single tab stop; they are demo data, not navigation. Hover/focus paints a tooltip on screen; it is not exposed as `role=tooltip` in the accessibility tree.
+- FAQ questions live in `<details>` with a heading in the summary, not `role=button`. Open `¿Futrob es un producto de EA?` by expanding that details row.
 - Landing is public. A leftover session must not reveal org admin chrome on `/`.
 - Client navigation from a landing CTA can update the URL to `/signup` before the signup accessibility tree paints. If the snapshot still shows the hero, navigate to `/signup` once more and wait for heading `Crea tu cuenta`.
 - Browser screenshots may land in a temp path. Copy them into `evidence/<run-id>/landing/` before cleanup.

@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import type { RankingKindDto } from "@futrob/api-contracts";
 import { applyProps } from "@futrob/ui";
@@ -183,8 +183,10 @@ export const Ready: Story = {
     await expect(canvas.getByText("Más goles en partidos oficiales aprobados.")).toBeVisible();
 
     await userEvent.click(canvas.getByRole("tab", { name: "Porteros" }));
-    const keepers = await canvas.findByRole("table", { name: "Ranking de porteros" });
-    await expect(within(keepers).getByRole("columnheader", { name: "Paradas" })).toBeVisible();
+    await waitFor(async () => {
+      const keepers = canvas.getByRole("table", { name: "Ranking de porteros" });
+      await expect(within(keepers).getByRole("columnheader", { name: "Paradas" })).toBeVisible();
+    });
   },
 };
 
