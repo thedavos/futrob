@@ -74,6 +74,8 @@ export default defineConfig({
             },
             { name: "zod", test: /[/\\]node_modules[/\\]zod(?:[/\\]|$)/ },
             { name: "base-ui", test: /[/\\]node_modules[/\\]@base-ui[/\\]/ },
+            // Recharts imports D3 for the lazy player statistics charts.
+            { name: "d3", test: /[/\\]node_modules[/\\]d3-[^/\\]+[/\\]/ },
           ],
         },
       },

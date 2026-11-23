@@ -60,7 +60,7 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | --- | --- |
 | Brand home | link `Futrob` on landing only (auth tunnel logo is not a link) |
 | Landing login | button `Iniciar sesión` (header `Acceso` only — the final CTA no longer has login) |
-| Landing signup | button `Crear competición` (header `Acceso`, hero, and the below-fold final CTA). Plan cards in `#precios` still say `Crear cuenta` / `Empezar gratis`; that is not the header/hero/final control |
+| Landing signup | button `Crear competición` in the header `Acceso`, the hero and the final CTA. `Crear cuenta con este club` in `#demo` opens signup with the selected club |
 | Landing pricing | header `Precios` jumps to `/#precios`; final-CTA `Ver precios` and footer `Precios` → `/pricing` |
 | Hero primary CTA | `Crear competición` → `/signup` |
 | Hero secondary CTA | button `Ver ejemplo de portal` → `#portal` |

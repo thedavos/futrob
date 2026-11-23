@@ -21,11 +21,11 @@
     "@futrob/sdk": "0.1.0",
     "@futrob/shared-kernel": "0.1.0",
     "@futrob/test-support": "0.1.0",
-    "effect": "^4.0.4"
+    "effect": "^4.1.4"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "tsx": "^4.23.15",
+    "tsx": "^4.23.13",
     "typescript": "6.0.2"
   }
 }
