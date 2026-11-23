@@ -48,9 +48,16 @@ DO UPDATE SET request_count = app_rate_limit_windows.request_count + 1
 RETURNING request_count
 `;
 
+// Skips rows another check is already purging, so concurrent purges never wait on or
+// deadlock with each other; whatever is skipped goes on the next check.
 const PURGE_EXPIRED_WINDOWS_SQL = `
 DELETE FROM app_rate_limit_windows
-WHERE window_started_at < $1
+WHERE (policy, subject_kind, subject_fingerprint, window_started_at) IN (
+  SELECT policy, subject_kind, subject_fingerprint, window_started_at
+  FROM app_rate_limit_windows
+  WHERE window_started_at < $1
+  FOR UPDATE SKIP LOCKED
+)
 `;
 
 const requestCountSchema = z.object({ request_count: z.number().int().min(1) });
@@ -87,8 +94,8 @@ export class PostgresRateLimiter implements RateLimiter {
         : await fingerprintRateLimitSubject(this.fingerprintSecret, "actor", actorId);
     const retentionCutoff = attempt.nowMs - this.maxPolicyWindowMs;
 
-    // Purge and both counters commit together, in a fixed order so concurrent
-    // checks serialize on the same rows instead of deadlocking.
+    // Purge and both counters commit together. The purge skips locked rows and the
+    // counters run in a fixed order, so concurrent checks never deadlock.
     const { actorCount, ipCount } = await this.withPostgres((client) =>
       inTransaction(client, async () => {
         await client.query(PURGE_EXPIRED_WINDOWS_SQL, [retentionCutoff]);

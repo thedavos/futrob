@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { RATE_LIMIT_POLICY } from "@futrob/api-contracts";
 import type { ClockPort } from "@futrob/shared-kernel";
 import { DEFAULT_RATE_LIMIT_POLICIES } from "@/adapters/rate-limit/rate-limit-policies.ts";
+import { rateLimitSettingsFromEnv } from "@/di/rate-limits.composition.ts";
 import type { CorrelationLogEntry } from "@/context/request-correlation.ts";
 import {
   buildApp,
@@ -66,6 +67,21 @@ describe("POST /internal/rate-limits/check", () => {
 
     expect(response.status).toBe(503);
     expect(await response.json()).toMatchObject({ code: "api.rate_limit_unavailable" });
+  });
+
+  it("answers 503 and reports the variable when a policy override is invalid", async () => {
+    const reasons: string[] = [];
+    const rateLimit = rateLimitSettingsFromEnv(
+      "dedicated-test-secret",
+      { RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX: "0" },
+      (reason) => reasons.push(reason),
+    );
+    const { app } = buildAppWithModules(stubFetch, [], { clock: fixedClock, rateLimit });
+
+    const response = await check(app, searchAttempt);
+
+    expect(response.status).toBe(503);
+    expect(reasons).toEqual(["RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX must be a positive integer"]);
   });
 
   it("rejects an unknown policy", async () => {

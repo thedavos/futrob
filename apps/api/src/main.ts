@@ -41,7 +41,9 @@ const modules = createModules({
   resultsSystemActorId: env.resultsSystemActorId,
   schedulingSystemActorId: env.schedulingSystemActorId,
   email,
-  rateLimit: rateLimitSettingsFromEnv(env.rateLimitFingerprintSecret, process.env),
+  rateLimit: rateLimitSettingsFromEnv(env.rateLimitFingerprintSecret, process.env, (reason) =>
+    apiConsoleLogger.error("rate_limit.config_invalid", { reason }),
+  ),
 });
 if (env.initialSuperuserActorId) {
   try {

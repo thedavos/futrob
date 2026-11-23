@@ -19,12 +19,22 @@ export type RateLimitSettings = Readonly<{
   policies?: RateLimitPolicies;
 }>;
 
-/** Secret plus `RATE_LIMIT_<POLICY>_{WINDOW_SECONDS,ACTOR_MAX,IP_MAX}` over the defaults. */
+/**
+ * Secret plus `RATE_LIMIT_<POLICY>_{WINDOW_SECONDS,ACTOR_MAX,IP_MAX}` over the defaults.
+ * An invalid override disables the check (503, the BFF fails closed) instead of stopping
+ * the whole API at boot; `onInvalid` receives the reason, which names the variable.
+ */
 export function rateLimitSettingsFromEnv(
   fingerprintSecret: string | undefined,
   source: Readonly<Record<string, string | undefined>>,
+  onInvalid: (reason: string) => void,
 ): RateLimitSettings {
-  return { fingerprintSecret, policies: parseRateLimitPolicies(source) };
+  try {
+    return { fingerprintSecret, policies: parseRateLimitPolicies(source) };
+  } catch (error) {
+    onInvalid(error instanceof Error ? error.message : String(error));
+    return { fingerprintSecret: undefined };
+  }
 }
 
 /** Counts one attempt for the web BFF and answers whether it may proceed (ADR-0034). */

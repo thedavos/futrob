@@ -220,6 +220,38 @@ suite("PostgresRateLimiter on Postgres (migration 0043)", () => {
     expect(row.rows).toEqual([{ request_count: 3 }]);
   });
 
+  it("skips an expired window another check is purging instead of waiting on it", async () => {
+    const { limiter, query, connect } = await createLimiter();
+    const expired = [RATE_LIMIT_POLICY.eaClubSearch, "ip", "9".repeat(64)];
+    await query(
+      `INSERT INTO app_rate_limit_windows
+        (policy, subject_kind, subject_fingerprint, window_started_at, request_count)
+       VALUES ($1, $2, $3, 0, 1)`,
+      expired,
+    );
+    const concurrentPurge = await connect();
+    try {
+      await concurrentPurge.query("BEGIN");
+      await concurrentPurge.query(
+        `SELECT 1 FROM app_rate_limit_windows
+         WHERE policy = $1 AND subject_kind = $2 AND subject_fingerprint = $3
+         FOR UPDATE`,
+        expired,
+      );
+
+      const decision = await limiter.check(attempt({ nowMs: 10_000_000 }));
+      await concurrentPurge.query("ROLLBACK");
+
+      expect(decision).toEqual({ outcome: "allowed" });
+      const remaining = await query(
+        "SELECT subject_fingerprint FROM app_rate_limit_windows WHERE window_started_at = 0",
+      );
+      expect(remaining.rows).toEqual([{ subject_fingerprint: "9".repeat(64) }]);
+    } finally {
+      await concurrentPurge.end();
+    }
+  });
+
   it("atomically counts concurrent attempts without storing actor or IP subjects", async () => {
     const { limiter, query } = await createLimiter({
       ...TEST_POLICIES,
@@ -290,5 +322,6 @@ async function createLimiter(policies: RateLimitPolicies = TEST_POLICIES) {
     }),
     query: (text: string, values?: readonly unknown[]) =>
       withPostgres((c) => c.query(text, values)),
+    connect,
   };
 }
