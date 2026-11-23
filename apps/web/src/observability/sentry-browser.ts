@@ -1,5 +1,9 @@
 import * as Sentry from "@sentry/browser";
-import { applySentryEventPolicy, applySentryTransactionPolicy } from "@futrob/logger";
+import {
+  applySentryEventPolicy,
+  applySentryTransactionPolicy,
+  sentryV10DataCollection,
+} from "@futrob/logger";
 import { isExpectedFailure } from "./expected-failure.ts";
 
 /**
@@ -36,7 +40,7 @@ export function initBrowserSentry(
     dsn: config.dsn,
     environment: config.environment ?? "production",
     ...options,
-    sendDefaultPii: false,
+    dataCollection: sentryV10DataCollection,
     beforeSend(event, hint) {
       const scrubbed = applySentryEventPolicy(event, hint);
       if (!scrubbed) return null;
@@ -53,8 +57,5 @@ export function initBrowserSentry(
 export function captureBrowserError(cause: unknown, context?: Record<string, string>): void {
   if (!Sentry.getClient()) return;
   if (isExpectedFailure(cause)) return;
-  if (context) {
-    Sentry.getCurrentScope().setExtras(context);
-  }
-  Sentry.captureException(cause);
+  Sentry.captureException(cause, { extra: context });
 }

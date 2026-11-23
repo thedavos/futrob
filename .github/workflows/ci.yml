@@ -101,7 +101,6 @@ jobs:
         run: npm run bundle:budget
         env:
           BUNDLE_ENTRY_GZIP_KIB: "250"
-          # Per-file gzip cap for non-entry JS. Recharts stays on the
-          # statistics charts chunk; React, Zod, and Base UI are split
-          # out of the shared src-* chunk in apps/web/vite.config.ts.
+          # Per-file gzip cap for non-entry JS. Vendor chunk groups are
+          # defined in apps/web/vite.config.ts.
           BUNDLE_LAZY_GZIP_KIB: "120"
