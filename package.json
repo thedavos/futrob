@@ -45,8 +45,8 @@
   },
   "dependencies": {
     "@sentry/browser": "^10.73.0",
-    "@sentry/cloudflare": "^11.11.0",
-    "@sentry/node": "^11.11.0",
+    "@sentry/cloudflare": "^11.14.0",
+    "@sentry/node": "^11.14.0",
     "drizzle-orm": "^0.45.4"
   },
   "devDependencies": {
@@ -56,7 +56,7 @@
     "@storybook/addon-docs": "10.6.7",
     "@storybook/addon-vitest": "10.6.7",
     "@storybook/react-vite": "10.6.7",
-    "@stylexjs/unplugin": "^0.19.1",
+    "@stylexjs/unplugin": "^0.19.2",
     "@tanstack/devtools-vite": "^0.8.6",
     "@testing-library/jest-dom": "^7.0.1",
     "@types/node": "^26.6.6",
@@ -68,8 +68,9 @@
     "eslint-plugin-react-you-might-not-need-an-effect": "^1.2.0",
     "expo": "~57.0.15",
     "expo-router": "~57.0.15",
+    "jsdom": "^31.0.1",
     "lefthook": "^2.2.2",
-    "playwright": "^1.65.0",
+    "playwright": "^1.65.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-native": "0.86.2",

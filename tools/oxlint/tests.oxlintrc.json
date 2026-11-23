@@ -70,8 +70,7 @@
         "**/apps/web/src/modules/results/presentation/competition-encounters-page.test.tsx",
         "**/apps/web/src/modules/scheduling/presentation/schedule-change-recovery.test.tsx",
         "**/apps/web/src/modules/statistics/presentation/competition-standings/competition-standings-page.test.tsx",
-        "**/apps/web/src/modules/statistics/presentation/team-performance/team-performance-page.test.tsx",
-        "**/packages/api-contracts/src/v1/openapi/document.validity.test.ts"
+        "**/apps/web/src/modules/statistics/presentation/team-performance/team-performance-page.test.tsx"
       ],
       "rules": {
         "futrob/no-test-timeout": "off"
