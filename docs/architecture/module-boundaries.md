@@ -126,7 +126,7 @@ autorización definitiva a `apps/api`.
 results → game-data/adapters/providers/ea-clubs/*
 statistics → results/adapters/persistence/schemas
 teams → identity DB tables
-routes → getDb() / conexiones Postgres crudas (env.HYPERDRIVE)
+routes → getDb() / conexiones Postgres crudas
 routes → role string comparisons
 presentation → repository concrete
 presentation → role string comparisons / permission string literals
@@ -166,7 +166,7 @@ analytics.snapshot-generated
 
 ## Persistencia
 
-Los adapters de persistencia de producto viven en `apps/api` y usan Postgres o stores in-memory de desarrollo. `apps/auth` es el único escritor de las tablas de identidad (`auth_*`, `actors`, `identity_subjects`, `actor_contact_profiles`), que viven en el mismo Postgres y su historia de migraciones en `apps/api/migrations` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); `apps/web` conserva infraestructura BFF/Workers (solo escribe `app_rate_limit_windows`) y `apps/mobile` no accede directamente a ninguna persistencia. Cambiar de plataforma no mueve el dominio fuera de packages.
+Los adapters de persistencia de producto viven en `apps/api` y usan Postgres o stores in-memory de desarrollo. `apps/auth` es el único escritor de las tablas de identidad (`auth_*`, `actors`, `identity_subjects`, `actor_contact_profiles`), que viven en el mismo Postgres y su historia de migraciones en `apps/api/migrations` ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)); `apps/web` conserva infraestructura BFF/Workers y no accede a Postgres (`app_rate_limit_windows` lo escribe `apps/api`, [ADR-0034](/docs/adr/0034-bff-rate-limits-in-api.md)) y `apps/mobile` no accede directamente a ninguna persistencia. Cambiar de plataforma no mueve el dominio fuera de packages.
 
 ### Directorio de miembros de organización
 

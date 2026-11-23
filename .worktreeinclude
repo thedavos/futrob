@@ -3,6 +3,5 @@
 .env
 apps/api/.env
 apps/auth/.env
-apps/web/.env
 apps/web/.dev.vars
 apps/mobile/.env

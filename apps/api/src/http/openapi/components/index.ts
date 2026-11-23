@@ -17,3 +17,4 @@ export * from "./statistics.ts";
 export * from "./notifications.ts";
 export * from "./public-portal.ts";
 export * from "./billing.ts";
+export * from "./rate-limits.ts";

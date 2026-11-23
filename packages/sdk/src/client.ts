@@ -17,6 +17,7 @@ import { createEntryInvitationsResource } from "./resources/entry-invitations.ts
 import { createEmailResource } from "./resources/email.ts";
 import { createSanctionsResource } from "./resources/sanctions.ts";
 import { createAuditResource } from "./resources/audit.ts";
+import { createRateLimitsResource } from "./resources/rate-limits.ts";
 
 export type CreateFutrobClientOptions = HttpClientOptions;
 
@@ -42,6 +43,7 @@ export function createFutrobClient(options: CreateFutrobClientOptions) {
     email: createEmailResource(http),
     sanctions: createSanctionsResource(http),
     audit: createAuditResource(http),
+    rateLimits: createRateLimitsResource(http),
   };
 }
 

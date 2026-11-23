@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Better Auth
 
-Better Auth is Futrob's only authority for credentials and sessions. It is not the business authorization model. Persistence is the product **Postgres**, reached from the Workers through Hyperdrive ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)).
+Better Auth is Futrob's only authority for credentials and sessions. It is not the business authorization model. Persistence is the product **Postgres** ([ADR-0021](/docs/adr/0021-auth-and-actors-in-product-postgres.md)), reached by the Node auth server over `DATABASE_URL` ([ADR-0032](/docs/adr/0032-auth-node-runtime.md)).
 
 ## Ownership
 
@@ -36,4 +36,4 @@ Validate secrets via `env` at composition time (`apps/auth` fails at boot on inv
 
 When changing Better Auth schema, generate provider SQL with the installed CLI (`--help`), review it, add a SQL migration under `apps/api/migrations` (the single history; `auth_*` tables), mirror it in `apps/auth/src/adapters/auth/drizzle-schema.ts`, and verify with the `auth-postgres.integration.test.ts` suite (`TEST_DATABASE_URL`) from a clean schema.
 
-Local web/API `INTERNAL_JOB_SECRET` values must match, as must web/auth `BETTER_AUTH_SECRET`. Follow AGENTS.md for local env setup and the Hyperdrive `.env` target; preserve secrets without printing them.
+Local web/API `INTERNAL_JOB_SECRET` values must match, as must web/auth `BETTER_AUTH_SECRET`. Follow AGENTS.md for local env setup; preserve secrets without printing them.

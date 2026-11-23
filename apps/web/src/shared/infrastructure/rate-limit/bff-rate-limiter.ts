@@ -1,182 +1,39 @@
-import type { ActorId } from "@futrob/shared-kernel";
+import {
+  RATE_LIMIT_POLICY,
+  type CheckRateLimitRequest,
+  type CheckRateLimitResponse,
+  type RateLimitPolicy,
+} from "@futrob/api-contracts";
+import type { FutrobClient } from "@futrob/sdk";
 
-export const BFF_RATE_LIMIT_POLICY = {
-  eaClubSearch: "ea-club-search",
-  invitationAccept: "invitation-accept",
-  invitationPreview: "invitation-preview",
-  invitationPublicPreview: "invitation-public-preview",
-  playerSearch: "player-search",
-  publicClubSearch: "public-club-search",
-  publicCompetitionExplore: "public-competition-explore",
-} as const;
+/** Policies live in the product API, which owns the counters (ADR-0034). */
+export const BFF_RATE_LIMIT_POLICY = RATE_LIMIT_POLICY;
 
-export type BffRateLimitPolicy = (typeof BFF_RATE_LIMIT_POLICY)[keyof typeof BFF_RATE_LIMIT_POLICY];
+export type BffRateLimitPolicy = RateLimitPolicy;
 
-export type BffRateLimitPolicyConfig = Readonly<{
-  windowSeconds: number;
-  actorMaxAttempts: number;
-  ipMaxAttempts: number;
-}>;
+/** One attempt: the raw client IP goes to the API, which stores only its HMAC. */
+export type RateLimitAttempt = CheckRateLimitRequest;
 
-export type BffRateLimitPolicies = Readonly<Record<BffRateLimitPolicy, BffRateLimitPolicyConfig>>;
-
-export const DEFAULT_BFF_RATE_LIMIT_POLICIES = {
-  [BFF_RATE_LIMIT_POLICY.eaClubSearch]: {
-    windowSeconds: 60,
-    actorMaxAttempts: 10,
-    ipMaxAttempts: 30,
-  },
-  [BFF_RATE_LIMIT_POLICY.invitationAccept]: {
-    windowSeconds: 900,
-    actorMaxAttempts: 5,
-    ipMaxAttempts: 5,
-  },
-  [BFF_RATE_LIMIT_POLICY.invitationPreview]: {
-    windowSeconds: 900,
-    actorMaxAttempts: 5,
-    ipMaxAttempts: 5,
-  },
-  // Signed-out landing: counted per IP only, and roomier because visitors reload it.
-  [BFF_RATE_LIMIT_POLICY.invitationPublicPreview]: {
-    windowSeconds: 900,
-    actorMaxAttempts: 30,
-    ipMaxAttempts: 30,
-  },
-  [BFF_RATE_LIMIT_POLICY.playerSearch]: {
-    windowSeconds: 60,
-    actorMaxAttempts: 30,
-    ipMaxAttempts: 60,
-  },
-  [BFF_RATE_LIMIT_POLICY.publicClubSearch]: {
-    windowSeconds: 60,
-    actorMaxAttempts: 20,
-    ipMaxAttempts: 20,
-  },
-  [BFF_RATE_LIMIT_POLICY.publicCompetitionExplore]: {
-    windowSeconds: 60,
-    actorMaxAttempts: 30,
-    ipMaxAttempts: 30,
-  },
-} satisfies BffRateLimitPolicies;
-
-export type RateLimitAttempt = Readonly<{
-  policy: BffRateLimitPolicy;
-  /** `null` for a signed-out request, which is counted by IP alone. */
-  actorId: ActorId | null;
-  ipFingerprint: string;
-  nowMs: number;
-}>;
-
-export type RateLimitDecision =
-  | Readonly<{ outcome: "allowed" }>
-  | Readonly<{
-      outcome: "limited";
-      retryAfterSeconds: number;
-      limitedBy: "actor" | "ip";
-    }>;
+export type RateLimitDecision = CheckRateLimitResponse;
 
 export interface BffRateLimiter {
   check(attempt: RateLimitAttempt): Promise<RateLimitDecision>;
 }
 
-const POLICY_ENV_KEYS = {
-  [BFF_RATE_LIMIT_POLICY.eaClubSearch]: {
-    windowSeconds: "RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS",
-    actorMaxAttempts: "RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX",
-    ipMaxAttempts: "RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX",
-  },
-  [BFF_RATE_LIMIT_POLICY.invitationAccept]: {
-    windowSeconds: "RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS",
-    actorMaxAttempts: "RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX",
-    ipMaxAttempts: "RATE_LIMIT_INVITATION_ACCEPT_IP_MAX",
-  },
-  [BFF_RATE_LIMIT_POLICY.invitationPreview]: {
-    windowSeconds: "RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS",
-    actorMaxAttempts: "RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX",
-    ipMaxAttempts: "RATE_LIMIT_INVITATION_PREVIEW_IP_MAX",
-  },
-  [BFF_RATE_LIMIT_POLICY.invitationPublicPreview]: {
-    windowSeconds: "RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_WINDOW_SECONDS",
-    actorMaxAttempts: "RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_ACTOR_MAX",
-    ipMaxAttempts: "RATE_LIMIT_INVITATION_PUBLIC_PREVIEW_IP_MAX",
-  },
-  [BFF_RATE_LIMIT_POLICY.playerSearch]: {
-    windowSeconds: "RATE_LIMIT_PLAYER_SEARCH_WINDOW_SECONDS",
-    actorMaxAttempts: "RATE_LIMIT_PLAYER_SEARCH_ACTOR_MAX",
-    ipMaxAttempts: "RATE_LIMIT_PLAYER_SEARCH_IP_MAX",
-  },
-  [BFF_RATE_LIMIT_POLICY.publicClubSearch]: {
-    windowSeconds: "RATE_LIMIT_PUBLIC_CLUB_SEARCH_WINDOW_SECONDS",
-    actorMaxAttempts: "RATE_LIMIT_PUBLIC_CLUB_SEARCH_ACTOR_MAX",
-    ipMaxAttempts: "RATE_LIMIT_PUBLIC_CLUB_SEARCH_IP_MAX",
-  },
-  [BFF_RATE_LIMIT_POLICY.publicCompetitionExplore]: {
-    windowSeconds: "RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_WINDOW_SECONDS",
-    actorMaxAttempts: "RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_ACTOR_MAX",
-    ipMaxAttempts: "RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_IP_MAX",
-  },
-} as const satisfies Record<
-  BffRateLimitPolicy,
-  Readonly<{ windowSeconds: string; actorMaxAttempts: string; ipMaxAttempts: string }>
->;
+/**
+ * Gives up on a stalled API quickly: the check runs before every limited route. Longer
+ * than the API's own budget (about 2.5 s) plus the hop to it, so the API gives up first and
+ * a request refused here is not counted afterwards.
+ */
+export const RATE_LIMIT_CHECK_TIMEOUT_MS = 4_000;
 
-export function parseBffRateLimitPolicies(source: Readonly<Record<string, string | undefined>>) {
-  return {
-    [BFF_RATE_LIMIT_POLICY.eaClubSearch]: policyFromEnv(source, BFF_RATE_LIMIT_POLICY.eaClubSearch),
-    [BFF_RATE_LIMIT_POLICY.invitationAccept]: policyFromEnv(
-      source,
-      BFF_RATE_LIMIT_POLICY.invitationAccept,
-    ),
-    [BFF_RATE_LIMIT_POLICY.invitationPreview]: policyFromEnv(
-      source,
-      BFF_RATE_LIMIT_POLICY.invitationPreview,
-    ),
-    [BFF_RATE_LIMIT_POLICY.invitationPublicPreview]: policyFromEnv(
-      source,
-      BFF_RATE_LIMIT_POLICY.invitationPublicPreview,
-    ),
-    [BFF_RATE_LIMIT_POLICY.playerSearch]: policyFromEnv(source, BFF_RATE_LIMIT_POLICY.playerSearch),
-    [BFF_RATE_LIMIT_POLICY.publicClubSearch]: policyFromEnv(
-      source,
-      BFF_RATE_LIMIT_POLICY.publicClubSearch,
-    ),
-    [BFF_RATE_LIMIT_POLICY.publicCompetitionExplore]: policyFromEnv(
-      source,
-      BFF_RATE_LIMIT_POLICY.publicCompetitionExplore,
-    ),
-  } satisfies BffRateLimitPolicies;
-}
-
-function policyFromEnv(
-  source: Readonly<Record<string, string | undefined>>,
-  policy: BffRateLimitPolicy,
-): BffRateLimitPolicyConfig {
-  const keys = POLICY_ENV_KEYS[policy];
-  const defaults = DEFAULT_BFF_RATE_LIMIT_POLICIES[policy];
-  return {
-    windowSeconds: positiveInteger(
-      source[keys.windowSeconds],
-      defaults.windowSeconds,
-      keys.windowSeconds,
-    ),
-    actorMaxAttempts: positiveInteger(
-      source[keys.actorMaxAttempts],
-      defaults.actorMaxAttempts,
-      keys.actorMaxAttempts,
-    ),
-    ipMaxAttempts: positiveInteger(
-      source[keys.ipMaxAttempts],
-      defaults.ipMaxAttempts,
-      keys.ipMaxAttempts,
-    ),
-  };
-}
-
-function positiveInteger(raw: string | undefined, fallback: number, name: string): number {
-  if (raw === undefined || raw === "") return fallback;
-  const value = Number(raw);
-  if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new Error(`${name} must be a positive integer`);
-  }
-  return value;
+/**
+ * Asks the product API (`POST /internal/rate-limits/check`) with the service secret. A
+ * timeout rejects like any other failure, so the BFF fails closed with a 503.
+ */
+export function productApiRateLimiter(
+  client: Pick<FutrobClient, "rateLimits">,
+  timeoutMs: number = RATE_LIMIT_CHECK_TIMEOUT_MS,
+): BffRateLimiter {
+  return { check: (attempt) => client.rateLimits.check(attempt, { timeoutMs }) };
 }

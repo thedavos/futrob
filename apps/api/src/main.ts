@@ -1,6 +1,10 @@
 import "@/http/openapi/zod-openapi-setup.ts";
 import { serve } from "@hono/node-server";
-import { createPostgresHealth, createPostgresPool } from "@/adapters/persistence/postgres.ts";
+import {
+  createPostgresHealth,
+  createPostgresPool,
+  createRateLimitPostgresPool,
+} from "@/adapters/persistence/postgres.ts";
 import { createApp } from "@/app.ts";
 import { emailSettingsFrom } from "@/di/email-settings.composition.ts";
 import { loadEnv } from "@/config/env.ts";
@@ -11,6 +15,7 @@ import {
   styledConsoleCorrelationLogger,
 } from "@/context/styled-console-logger.ts";
 import { createModules } from "@/di/create-modules.ts";
+import { rateLimitSettingsFromEnv } from "@/di/rate-limits.composition.ts";
 import { initSentry, registerGlobalSentryHandlers } from "@/observability/sentry.ts";
 import { loadDotEnvFile } from "@/utils/load-dotenv.ts";
 import { asActorId } from "@futrob/shared-kernel";
@@ -24,7 +29,17 @@ loadDotEnvFile();
 const env = loadEnv();
 initSentry(env);
 registerGlobalSentryHandlers();
-const pool = createPostgresPool(env.databaseUrl);
+const pool = createPostgresPool(env.databaseUrl, (error) =>
+  apiConsoleLogger.error("postgres.pool.idle_error", { pool: "product", errorName: error.name }),
+);
+const rateLimitPool = createRateLimitPostgresPool({
+  databaseUrl: env.databaseUrl,
+  onIdleError: (error) =>
+    apiConsoleLogger.error("postgres.pool.idle_error", {
+      pool: "rate_limit",
+      errorName: error.name,
+    }),
+});
 const dbHealth = createPostgresHealth(pool);
 
 const email = emailSettingsFrom(env, fetch);
@@ -40,6 +55,10 @@ const modules = createModules({
   resultsSystemActorId: env.resultsSystemActorId,
   schedulingSystemActorId: env.schedulingSystemActorId,
   email,
+  rateLimitPool,
+  rateLimit: rateLimitSettingsFromEnv(env.rateLimitFingerprintSecret, process.env, (error) =>
+    apiConsoleLogger.error(error.code, { variable: error.variable, reason: error.message }),
+  ),
 });
 if (env.initialSuperuserActorId) {
   try {
@@ -73,6 +92,7 @@ const server = serve({ fetch: app.fetch, port: env.port }, (info) => {
 const shutdown = (): void => {
   server.close();
   void dbHealth.close();
+  void rateLimitPool?.end();
 };
 
 process.on("SIGINT", shutdown);

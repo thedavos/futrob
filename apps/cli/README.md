@@ -14,7 +14,7 @@ CLI local para **probar dominio, use cases y la API** mientras construyes Futrob
 
 - No sustituye Vitest (los tests siguen en el módulo / `packages/test-support`).
 - No es API pública ni herramienta de ops en producción.
-- No importa adapters de Cloudflare (Hyperdrive, Queues, EA HTTP real) salvo comandos explícitos de integración vía `@futrob/sdk`.
+- No importa adapters de Cloudflare (Queues, R2, EA HTTP real) salvo comandos explícitos de integración vía `@futrob/sdk`.
 - No mueve el dominio: ya vive en `@futrob/<bc>`; el CLI solo lo consume.
 
 ## Effect TS

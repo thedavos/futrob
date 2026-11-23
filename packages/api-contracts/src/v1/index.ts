@@ -36,3 +36,12 @@ export const apiV1 = {
 
 export { runConfirmationExpiryResponseSchema } from "./results-confirmation-expiry.ts";
 export { runCandidateRecalculationResponseSchema } from "./results-candidate-recalculation.ts";
+export {
+  RATE_LIMIT_POLICY,
+  checkRateLimitRequestSchema,
+  checkRateLimitResponseSchema,
+  rateLimitPolicySchema,
+  type CheckRateLimitRequest,
+  type CheckRateLimitResponse,
+  type RateLimitPolicy,
+} from "./rate-limits.ts";

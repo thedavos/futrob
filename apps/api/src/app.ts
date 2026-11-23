@@ -36,6 +36,7 @@ import { registerOpenApiRoutes } from "@/http/routes/openapi.ts";
 import { registerOrganizationRoutes } from "@/http/routes/organizations.ts";
 import { registerBillingRoutes, registerPublicBillingRoutes } from "@/http/routes/billing.ts";
 import { registerPublicPortalRoutes } from "@/http/routes/public-portal.ts";
+import { registerRateLimitRoutes } from "@/http/routes/rate-limits.ts";
 import { registerPlayerRoutes } from "@/http/routes/players.ts";
 import { registerTeamRoutes } from "@/http/routes/teams.ts";
 import { registerAuthorizationRoutes } from "@/http/routes/authorization.ts";
@@ -118,6 +119,7 @@ export function createApp(deps: AppDeps): Hono {
   registerAccountDeletionJobRoutes(v1, deps);
   registerScheduleChangeExpiryRoutes(v1, deps);
   registerCandidateRecalculationRoutes(v1, deps);
+  registerRateLimitRoutes(v1, deps);
   registerPublicEntryInvitationRoutes(v1, deps);
   registerPublicGameDataClubRoutes(v1, deps);
   registerPublicCompetitionRoutes(v1, deps);

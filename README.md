@@ -51,13 +51,13 @@ El [PRD](product/prd.md) define el producto objetivo. Los [requisitos](product/m
 
 Monorepo TypeScript con contextos de negocio hexagonales: dominio, casos de uso y puertos en `packages/<bc>`; adaptadores e infraestructura en las aplicaciones.
 
-| Aplicación                     | Responsabilidad                                | Tecnología                                  |
-| ------------------------------ | ---------------------------------------------- | ------------------------------------------- |
-| [Web](apps/web)                | Interfaz, BFF `/api/v1` y proxy de auth        | React, TanStack Start, Cloudflare Workers   |
-| [Auth](apps/auth)              | Credenciales, sesiones y actores               | Better Auth, Cloudflare Workers, Hyperdrive |
-| [API](apps/api/README.md)      | Casos de uso, persistencia y acceso a EA Clubs | Hono, Node.js, Railway, Postgres            |
-| [Móvil](apps/mobile/README.md) | Cliente nativo autenticado                     | React Native, Expo, Expo Router             |
-| [CLI](apps/cli/README.md)      | Playground de dominio y smokes de API          | Node.js, tsx                                |
+| Aplicación                     | Responsabilidad                                | Tecnología                                |
+| ------------------------------ | ---------------------------------------------- | ----------------------------------------- |
+| [Web](apps/web)                | Interfaz, BFF `/api/v1` y proxy de auth        | React, TanStack Start, Cloudflare Workers |
+| [Auth](apps/auth)              | Credenciales, sesiones y actores               | Better Auth, Hono, Node.js                |
+| [API](apps/api/README.md)      | Casos de uso, persistencia y acceso a EA Clubs | Hono, Node.js, Railway, Postgres          |
+| [Móvil](apps/mobile/README.md) | Cliente nativo autenticado                     | React Native, Expo, Expo Router           |
+| [CLI](apps/cli/README.md)      | Playground de dominio y smokes de API          | Node.js, tsx                              |
 
 Web y móvil consumen los contratos HTTP mediante `@futrob/sdk`. La autenticación vive en `apps/auth`; el BFF resuelve el actor y llama a la API con autenticación de servicio. Auth y producto comparten Postgres, con una sola historia de migraciones en `apps/api/migrations`.
 
@@ -95,27 +95,25 @@ Si tienes Vite+ instalado globalmente, puedes usar `vp install`. Los scripts `np
 cp apps/web/.dev.vars.example apps/web/.dev.vars
 cp apps/api/.env.example apps/api/.env
 cp apps/auth/.env.example apps/auth/.env
-cp apps/web/.env.example apps/web/.env
 ```
 
 Configura los archivos locales con estas relaciones:
 
-| Variable                                                   | Configuración                                                                        |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `DATABASE_URL`                                             | En `apps/api/.env` y `apps/auth/.env`, apunta a tu Postgres de desarrollo.           |
-| `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` | En `apps/web/.env`, usa la misma conexión que `DATABASE_URL`.                        |
-| `BETTER_AUTH_SECRET`                                       | Mismo valor en `apps/web/.dev.vars` y `apps/auth/.env`.                              |
-| `AUTH_PROXY_SECRET`                                        | Mismo valor en `apps/web/.dev.vars` y `apps/auth/.env`.                              |
-| `FUTROB_AUTH_BASE_URL`                                     | En web, `http://localhost:8788`.                                                     |
-| `INTERNAL_JOB_SECRET`                                      | Mismo valor en web y API.                                                            |
-| `RATE_LIMIT_FINGERPRINT_SECRET`                            | En web, usa un secreto aleatorio independiente.                                      |
-| `FUTROB_API_BASE_URL`                                      | En web, `http://localhost:8787/api/v1`.                                              |
-| `SENTRY_DSN`                                               | Vacío en local. En producción, secreto de Wrangler (web) o del entorno (API y auth). |
-| `EXPO_PUBLIC_SENTRY_DSN`                                   | Vacío en local. Expo Go no envía eventos.                                            |
+| Variable                        | Configuración                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                  | En `apps/api/.env` y `apps/auth/.env`, apunta a tu Postgres de desarrollo.           |
+| `BETTER_AUTH_SECRET`            | Mismo valor en `apps/web/.dev.vars` y `apps/auth/.env`.                              |
+| `AUTH_PROXY_SECRET`             | Mismo valor en `apps/web/.dev.vars` y `apps/auth/.env`.                              |
+| `FUTROB_AUTH_BASE_URL`          | En web, `http://localhost:8788`.                                                     |
+| `INTERNAL_JOB_SECRET`           | Mismo valor en web y API.                                                            |
+| `RATE_LIMIT_FINGERPRINT_SECRET` | En `apps/api/.env`, un secreto aleatorio independiente (ADR-0034).                   |
+| `FUTROB_API_BASE_URL`           | En web, `http://localhost:8787/api/v1`.                                              |
+| `SENTRY_DSN`                    | Vacío en local. En producción, secreto de Wrangler (web) o del entorno (API y auth). |
+| `EXPO_PUBLIC_SENTRY_DSN`        | Vacío en local. Expo Go no envía eventos.                                            |
 
 Mantén `ENVIRONMENT=development` en web para el desarrollo local. Los archivos de entorno están excluidos de Git; no publiques sus valores.
 
-**En un worktree, verifica las conexiones antes de migrar:** el setup puede copiar las de la base compartida. Apunta la API, auth y el Hyperdrive de web a tu propia base. No ejecutes migraciones ni seeds contra una base compartida.
+**En un worktree, verifica las conexiones antes de migrar:** el setup puede copiar las de la base compartida. Apunta la API y auth a tu propia base. No ejecutes migraciones ni seeds contra una base compartida.
 
 ### 3. Aplicar migraciones e iniciar
 
@@ -138,14 +136,10 @@ Para ejecutar el cliente nativo, sigue la [configuración móvil](apps/mobile/RE
 
 - **Login correcto, pero la web sigue sin sesión:** comprueba que `BETTER_AUTH_SECRET` coincide entre web y auth.
 - **Llamadas BFF de organizaciones con 401:** comprueba que `INTERNAL_JOB_SECRET` coincide entre web y API.
-- **No puedes iniciar sesión:** comprueba Postgres, las conexiones Hyperdrive y las migraciones aplicadas.
-- **Rutas protegidas del BFF con 503 fuera de desarrollo:** comprueba `RATE_LIMIT_FINGERPRINT_SECRET`. Provisiona el secreto antes de desplegar el Worker:
+- **No puedes iniciar sesión:** comprueba Postgres, `DATABASE_URL` en API y auth, y las migraciones aplicadas.
+- **Rutas protegidas del BFF con 503 fuera de desarrollo:** comprueba `RATE_LIMIT_FINGERPRINT_SECRET` en el API y que web alcance `FUTROB_API_BASE_URL` con el mismo `INTERNAL_JOB_SECRET`. El API cuenta los intentos ([ADR-0034](docs/adr/0034-bff-rate-limits-in-api.md)); configura el secreto en su entorno de Railway antes de desplegar.
 
-```bash
-npx wrangler secret put RATE_LIMIT_FINGERPRINT_SECRET --config apps/web/wrangler.jsonc
-```
-
-Los valores y ajustes opcionales de rate limits están documentados en `apps/web/.dev.vars.example`.
+Los valores y ajustes opcionales de rate limits están documentados en `apps/api/.env.example`.
 
 ## Comandos habituales
 

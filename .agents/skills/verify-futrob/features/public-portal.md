@@ -44,4 +44,4 @@ Steps:
 - The tabs and the cover are one TanStack layout route; a 404 from any section read turns the whole portal into the not-found page.
 - Times are shown in the competition time zone (`Horarios en <zone>`), not the visitor's.
 - Writing an official result straight into the database skips the in-process projections. If you do it to unblock a proof, say so and run `statistics-rebuild`; the table stays empty otherwise.
-- Never point the run at the shared Neon database. Check `DATABASE_URL` and both Hyperdrive local connection strings first.
+- Never point the run at the shared Neon database. Check `DATABASE_URL` in `apps/api/.env` and `apps/auth/.env` first.

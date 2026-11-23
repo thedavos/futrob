@@ -13,6 +13,8 @@ export interface ApiEnv {
   readonly emailFrom: string | undefined;
   /** Web origin of email links. */
   readonly webBaseUrl: string;
+  /** HMAC key for web BFF rate-limit fingerprints (ADR-0034); without it the check answers 503. */
+  readonly rateLimitFingerprintSecret: string | undefined;
 }
 
 const DEFAULT_WEB_BASE_URL = "http://localhost:3000";
@@ -35,5 +37,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): ApiEnv {
     resendApiKey: source.RESEND_API_KEY || undefined,
     emailFrom: source.EMAIL_FROM || undefined,
     webBaseUrl: source.WEB_BASE_URL || DEFAULT_WEB_BASE_URL,
+    rateLimitFingerprintSecret: source.RATE_LIMIT_FINGERPRINT_SECRET || undefined,
   };
 }
