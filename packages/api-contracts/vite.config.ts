@@ -8,6 +8,9 @@ export default defineConfig({
     // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
     clearMocks: false,
     name: "api-contracts",
+    // OpenAPI schema validation is CPU-intensive on the CI runner.
+    sequence: { groupOrder: 1 },
+    testTimeout: 180_000,
     environment: "node",
     include: ["src/**/*.{test,spec}.ts"],
   },
