@@ -362,7 +362,11 @@ export function createModules(input: CreateModulesInput): AppModules {
   });
 
   const modules = {
-    rateLimits: createRateLimitCheck({ pool: input.pool, clock, settings: input.rateLimit }),
+    rateLimits: createRateLimitCheck({
+      pool: input.rateLimitPool ?? input.pool,
+      clock,
+      settings: input.rateLimit,
+    }),
     accountDeletion: createAccountDeletion({ pool: input.pool, clock, transaction }),
     activityCommands: activityFeed.commands,
     authorization,

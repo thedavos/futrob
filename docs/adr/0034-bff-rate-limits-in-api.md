@@ -31,8 +31,10 @@ tenía que quedar accesible desde Hyperdrive solo por esa tabla. `apps/api` ya e
    incremento de actor e IP en orden fijo). Sin `DATABASE_URL`, el API cuenta en memoria.
    Sin el secreto, con un override `RATE_LIMIT_*` inválido (se registra al arrancar y el
    resto del API sigue en pie) o si el almacén falla, responde 503
-   `api.rate_limit_unavailable`. Cada check espera como máximo 1 s por el lock de una
-   fila (`lock_timeout`), para que una ráfaga no acapare el pool de Postgres del API.
+   `api.rate_limit_unavailable`. Los checks usan un pool propio de 2 conexiones, separado
+   del pool del producto, y fallan rápido: 1 s para obtener conexión, 1 s por el lock de
+   una fila (`lock_timeout`) y 2 s por sentencia. Una ráfaga sobre un contador solo
+   agota ese pool; el resto del API sigue respondiendo.
 3. El BFF decide qué ruta limitar y con qué política, como antes. Envía al API la IP de
    `CF-Connecting-IP` y devuelve el 429 con `Retry-After`. Falla cerrado: sin IP, sin
    secreto interno o sin respuesta del API en 2 s, la ruta responde 503. Con
@@ -65,6 +67,8 @@ tenía que quedar accesible desde Hyperdrive solo por esa tabla. `apps/api` ya e
 - Tests de la ruta del API (secreto, 503 sin configurar, política desconocida, límite por
   actor y por IP), de las políticas y de la huella. Los tests de Postgres del limitador
   se movieron con él y siguen requiriendo `TEST_DATABASE_URL`.
+- Test con Postgres que retiene el lock de un contador: una ráfaga de checks falla y una
+  consulta del pool de producto termina antes que cualquiera de ellos.
 - Tests del BFF: 429, falla cerrada sin IP, sin secreto y con error del API, y la llamada
   HTTP al API con el secreto y la IP.
 

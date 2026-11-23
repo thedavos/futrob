@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { Client } from "pg";
+import pg, { Client } from "pg";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
 import { RATE_LIMIT_POLICY } from "@futrob/api-contracts";
@@ -11,6 +11,7 @@ import {
   type PostgresQueryable,
   type WithPostgres,
 } from "./postgres-rate-limiter.ts";
+import { createRateLimitPostgresPool } from "../persistence/postgres.ts";
 import type { RateLimitAttempt, RateLimitPolicies } from "./rate-limit-policies.ts";
 
 const TEST_POLICIES: RateLimitPolicies = {
@@ -307,6 +308,56 @@ suite("PostgresRateLimiter on Postgres (migration 0043)", () => {
     }
   });
 
+  it("fails a burst of checks on a held counter without taking the product pool", async () => {
+    const { schema, connect } = await createLimiter();
+    const rateLimitPool = createRateLimitPostgresPool(
+      databaseUrl,
+      { max: 1, connectionTimeoutMillis: 200, statementTimeoutMillis: 2_000 },
+      `-c search_path=${schema}`,
+    );
+    const productPool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
+    if (!rateLimitPool) throw new Error("TEST_DATABASE_URL is required");
+    const limiter = new PostgresRateLimiter({
+      withPostgres: withPoolConnection(rateLimitPool),
+      fingerprintSecret: "dedicated-test-secret",
+      policies: TEST_POLICIES,
+      lockTimeoutMs: 200,
+    });
+    await limiter.check(attempt({ actorId: null }));
+    const holder = await connect();
+    try {
+      await holder.query("BEGIN");
+      await holder.query(
+        "SELECT 1 FROM app_rate_limit_windows WHERE subject_kind = 'ip' FOR UPDATE",
+      );
+
+      const finished: string[] = [];
+      const burst = Promise.allSettled(
+        Array.from({ length: 3 }, () =>
+          limiter.check(attempt({ actorId: null })).finally(() => finished.push("check")),
+        ),
+      );
+      const product = await productPool
+        .query("SELECT 1 AS ok")
+        .finally(() => finished.push("product"));
+      const outcomes = await burst;
+
+      // The product query does not wait for any check to give up.
+      expect(product.rows).toEqual([{ ok: 1 }]);
+      expect(finished[0]).toBe("product");
+      expect(outcomes.map((outcome) => outcome.status)).toEqual([
+        "rejected",
+        "rejected",
+        "rejected",
+      ]);
+    } finally {
+      await holder.query("ROLLBACK");
+      await holder.end();
+      await rateLimitPool.end();
+      await productPool.end();
+    }
+  });
+
   it("atomically counts concurrent attempts without storing actor or IP subjects", async () => {
     const { limiter, query } = await createLimiter({
       ...TEST_POLICIES,
@@ -379,6 +430,7 @@ async function createLimiter(
       policies,
       lockTimeoutMs: options.lockTimeoutMs,
     }),
+    schema,
     query: (text: string, values?: readonly unknown[]) =>
       withPostgres((c) => c.query(text, values)),
     connect,

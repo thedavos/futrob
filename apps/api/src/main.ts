@@ -1,6 +1,10 @@
 import "@/http/openapi/zod-openapi-setup.ts";
 import { serve } from "@hono/node-server";
-import { createPostgresHealth, createPostgresPool } from "@/adapters/persistence/postgres.ts";
+import {
+  createPostgresHealth,
+  createPostgresPool,
+  createRateLimitPostgresPool,
+} from "@/adapters/persistence/postgres.ts";
 import { createApp } from "@/app.ts";
 import { emailSettingsFrom } from "@/di/email-settings.composition.ts";
 import { loadEnv } from "@/config/env.ts";
@@ -26,6 +30,7 @@ const env = loadEnv();
 initSentry(env);
 registerGlobalSentryHandlers();
 const pool = createPostgresPool(env.databaseUrl);
+const rateLimitPool = createRateLimitPostgresPool(env.databaseUrl);
 const dbHealth = createPostgresHealth(pool);
 
 const email = emailSettingsFrom(env, fetch);
@@ -41,6 +46,7 @@ const modules = createModules({
   resultsSystemActorId: env.resultsSystemActorId,
   schedulingSystemActorId: env.schedulingSystemActorId,
   email,
+  rateLimitPool,
   rateLimit: rateLimitSettingsFromEnv(env.rateLimitFingerprintSecret, process.env, (error) =>
     apiConsoleLogger.error(error.code, { variable: error.variable, reason: error.message }),
   ),
@@ -77,6 +83,7 @@ const server = serve({ fetch: app.fetch, port: env.port }, (info) => {
 const shutdown = (): void => {
   server.close();
   void dbHealth.close();
+  void rateLimitPool?.end();
 };
 
 process.on("SIGINT", shutdown);

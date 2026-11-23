@@ -109,4 +109,9 @@ export interface CreateModulesInput {
   readonly email?: EmailSettings;
   /** Web BFF rate limits; without a fingerprint secret the check answers 503. */
   readonly rateLimit?: RateLimitSettings;
+  /**
+   * Dedicated pool for the rate-limit counters, so a burst of checks cannot take the
+   * product `pool`. Without it the checks share `pool`.
+   */
+  readonly rateLimitPool?: Pool;
 }
