@@ -74,20 +74,41 @@ describe("POST /internal/rate-limits/check", () => {
     const rateLimit = rateLimitSettingsFromEnv(
       "dedicated-test-secret",
       { RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX: "0" },
-      (reason) => reasons.push(reason),
+      (error) => reasons.push(`${error.code}: ${error.variable}`),
     );
     const { app } = buildAppWithModules(stubFetch, [], { clock: fixedClock, rateLimit });
 
     const response = await check(app, searchAttempt);
 
     expect(response.status).toBe(503);
-    expect(reasons).toEqual(["RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX must be a positive integer"]);
+    expect(reasons).toEqual(["rate_limit.config_invalid: RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX"]);
   });
 
   it("rejects an unknown policy", async () => {
     const response = await check(configuredApp(), { ...searchAttempt, policy: "unknown" });
 
     expect(response.status).toBe(400);
+  });
+
+  it("answers 503 and logs the Postgres error code when the store fails", async () => {
+    const logEntries: CorrelationLogEntry[] = [];
+    const { app } = buildAppWithModules(
+      stubFetch,
+      logEntries,
+      {},
+      {
+        rateLimits: {
+          check: () => Promise.reject(Object.assign(new Error("lock timeout"), { code: "55P03" })),
+        },
+      },
+    );
+
+    const response = await check(app, searchAttempt);
+
+    expect(response.status).toBe(503);
+    expect(logEntries).toContainEqual(
+      expect.objectContaining({ event: "rate_limit.check_failed", errorCode: "55P03" }),
+    );
   });
 
   it("allows the attempt within the window, then limits the actor until the window ends", async () => {
@@ -104,14 +125,14 @@ describe("POST /internal/rate-limits/check", () => {
       limitedBy: "actor",
       retryAfterSeconds: 30,
     });
-    expect(logEntries).toContainEqual(
+    // The BFF already logs allowed checks; the API logs only the limited one.
+    expect(logEntries.filter((entry) => entry.event.startsWith("rate_limit."))).toEqual([
       expect.objectContaining({
-        event: "rate_limit.checked",
+        event: "rate_limit.limited",
         policy: RATE_LIMIT_POLICY.eaClubSearch,
-        outcome: "limited",
         limitedBy: "actor",
       }),
-    );
+    ]);
     expect(JSON.stringify(logEntries)).not.toContain("203.0.113.9");
   });
 

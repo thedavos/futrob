@@ -20,7 +20,16 @@ export interface BffRateLimiter {
   check(attempt: RateLimitAttempt): Promise<RateLimitDecision>;
 }
 
-/** Asks the product API (`POST /internal/rate-limits/check`) with the service secret. */
-export function productApiRateLimiter(client: Pick<FutrobClient, "rateLimits">): BffRateLimiter {
-  return { check: (attempt) => client.rateLimits.check(attempt) };
+/** Gives up on a stalled API quickly: the check runs before every limited route. */
+export const RATE_LIMIT_CHECK_TIMEOUT_MS = 2_000;
+
+/**
+ * Asks the product API (`POST /internal/rate-limits/check`) with the service secret. A
+ * timeout rejects like any other failure, so the BFF fails closed with a 503.
+ */
+export function productApiRateLimiter(
+  client: Pick<FutrobClient, "rateLimits">,
+  timeoutMs: number = RATE_LIMIT_CHECK_TIMEOUT_MS,
+): BffRateLimiter {
+  return { check: (attempt) => client.rateLimits.check(attempt, { timeoutMs }) };
 }

@@ -29,10 +29,13 @@ tenía que quedar accesible desde Hyperdrive solo por esa tabla. `apps/api` ya e
    `RATE_LIMIT_FINGERPRINT_SECRET` pasan a `apps/api`. Actor e IP se guardan solo como HMAC
    SHA-256, igual que antes, en la misma tabla y con la misma transacción (purga e
    incremento de actor e IP en orden fijo). Sin `DATABASE_URL`, el API cuenta en memoria.
-   Sin el secreto, o si el almacén falla, responde 503 `api.rate_limit_unavailable`.
+   Sin el secreto, con un override `RATE_LIMIT_*` inválido (se registra al arrancar y el
+   resto del API sigue en pie) o si el almacén falla, responde 503
+   `api.rate_limit_unavailable`. Cada check espera como máximo 1 s por el lock de una
+   fila (`lock_timeout`), para que una ráfaga no acapare el pool de Postgres del API.
 3. El BFF decide qué ruta limitar y con qué política, como antes. Envía al API la IP de
    `CF-Connecting-IP` y devuelve el 429 con `Retry-After`. Falla cerrado: sin IP, sin
-   secreto interno o sin respuesta del API, la ruta responde 503. Con
+   secreto interno o sin respuesta del API en 2 s, la ruta responde 503. Con
    `ENVIRONMENT=development` no llama al API.
 4. `apps/web` deja de declarar el binding `HYPERDRIVE` y deja de depender de `pg`.
 

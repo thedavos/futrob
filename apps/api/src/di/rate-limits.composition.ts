@@ -10,6 +10,7 @@ import { fingerprintRateLimitSubject } from "@/adapters/rate-limit/rate-limit-fi
 import {
   DEFAULT_RATE_LIMIT_POLICIES,
   parseRateLimitPolicies,
+  RateLimitConfigInvalidError,
   type RateLimitPolicies,
 } from "@/adapters/rate-limit/rate-limit-policies.ts";
 
@@ -22,17 +23,18 @@ export type RateLimitSettings = Readonly<{
 /**
  * Secret plus `RATE_LIMIT_<POLICY>_{WINDOW_SECONDS,ACTOR_MAX,IP_MAX}` over the defaults.
  * An invalid override disables the check (503, the BFF fails closed) instead of stopping
- * the whole API at boot; `onInvalid` receives the reason, which names the variable.
+ * the whole API at boot; `onInvalid` receives the error, which names the variable.
  */
 export function rateLimitSettingsFromEnv(
   fingerprintSecret: string | undefined,
   source: Readonly<Record<string, string | undefined>>,
-  onInvalid: (reason: string) => void,
+  onInvalid: (error: RateLimitConfigInvalidError) => void,
 ): RateLimitSettings {
   try {
     return { fingerprintSecret, policies: parseRateLimitPolicies(source) };
   } catch (error) {
-    onInvalid(error instanceof Error ? error.message : String(error));
+    if (!(error instanceof RateLimitConfigInvalidError)) throw error;
+    onInvalid(error);
     return { fingerprintSecret: undefined };
   }
 }

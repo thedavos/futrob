@@ -1,5 +1,6 @@
 import { createApp } from "@/app.ts";
 import type { CorrelationLogEntry } from "@/context/request-correlation.ts";
+import type { AppModules } from "@/di/app-modules.ts";
 import { createModules, type CreateModulesInput } from "@/di/create-modules.ts";
 
 export const INTERNAL_JOB_SECRET = "test-internal-secret";
@@ -27,13 +28,18 @@ export function buildAppWithModules(
   fetcher: typeof fetch,
   correlationLogEntries: CorrelationLogEntry[] = [],
   moduleOverrides: Partial<CreateModulesInput> = {},
+  /** Replaces wired modules, for failures the composition cannot produce (a store error). */
+  wiredModuleOverrides: Partial<AppModules> = {},
 ) {
-  const modules = createModules({
-    fetcher,
-    eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
-    pool: undefined,
-    ...moduleOverrides,
-  });
+  const modules: AppModules = {
+    ...createModules({
+      fetcher,
+      eaClubsBaseUrl: "https://proclubs.ea.com/api/fc",
+      pool: undefined,
+      ...moduleOverrides,
+    }),
+    ...wiredModuleOverrides,
+  };
   const app = createApp({
     modules,
     checkDbHealth: () => Promise.resolve("skipped"),

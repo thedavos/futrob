@@ -22,17 +22,33 @@ export interface PostgresQueryable {
 /** Runs `run` on one connection and always releases it. */
 export type WithPostgres = <T>(run: (client: PostgresQueryable) => Promise<T>) => Promise<T>;
 
-/** Checks out one pooled connection per check: the counters need their own transaction. */
+/**
+ * Checks out one pooled connection per check: the counters need their own transaction.
+ * A connection whose check failed is destroyed, not returned, in case its transaction is
+ * still open.
+ */
 export function withPoolConnection(pool: Pool): WithPostgres {
   return async (run) => {
     const client = await pool.connect();
     try {
-      return await run({ query: (text, values) => client.query(text, values ? [...values] : []) });
-    } finally {
+      const result = await run({
+        query: (text, values) => client.query(text, values ? [...values] : []),
+      });
       client.release();
+      return result;
+    } catch (error) {
+      client.release(error instanceof Error ? error : true);
+      throw error;
     }
   };
 }
+
+/**
+ * Longest a check waits for another check's row lock. A burst from one IP or actor queues
+ * on the same counter row while holding pooled connections; past this the check fails
+ * (503, the BFF fails closed) instead of starving the rest of the API.
+ */
+export const RATE_LIMIT_LOCK_TIMEOUT_MS = 1_000;
 
 const INCREMENT_WINDOW_SQL = `
 INSERT INTO app_rate_limit_windows (
@@ -67,18 +83,25 @@ export class PostgresRateLimiter implements RateLimiter {
   private readonly fingerprintSecret: string;
   private readonly policies: RateLimitPolicies;
   private readonly maxPolicyWindowMs: number;
+  private readonly lockTimeoutMs: number;
 
   constructor(
     input: Readonly<{
       withPostgres: WithPostgres;
       fingerprintSecret: string;
       policies: RateLimitPolicies;
+      lockTimeoutMs?: number;
     }>,
   ) {
     this.withPostgres = input.withPostgres;
     this.fingerprintSecret = input.fingerprintSecret;
     this.policies = input.policies;
     this.maxPolicyWindowMs = longestRateLimitWindowMs(input.policies);
+    const lockTimeoutMs = input.lockTimeoutMs ?? RATE_LIMIT_LOCK_TIMEOUT_MS;
+    if (!Number.isSafeInteger(lockTimeoutMs) || lockTimeoutMs <= 0) {
+      throw new Error("Rate-limit lock timeout must be a positive integer");
+    }
+    this.lockTimeoutMs = lockTimeoutMs;
   }
 
   async check(attempt: RateLimitAttempt): Promise<RateLimitDecision> {
@@ -98,6 +121,7 @@ export class PostgresRateLimiter implements RateLimiter {
     // counters run in a fixed order, so concurrent checks never deadlock.
     const { actorCount, ipCount } = await this.withPostgres((client) =>
       inTransaction(client, async () => {
+        await client.query(`SET LOCAL lock_timeout = '${this.lockTimeoutMs}ms'`);
         await client.query(PURGE_EXPIRED_WINDOWS_SQL, [retentionCutoff]);
         const actor =
           actorFingerprint === null

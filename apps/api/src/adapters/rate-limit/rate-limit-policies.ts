@@ -1,5 +1,12 @@
 import { RATE_LIMIT_POLICY, type RateLimitPolicy } from "@futrob/api-contracts";
-import type { ActorId } from "@futrob/shared-kernel";
+import { TaggedError, type ActorId } from "@futrob/shared-kernel";
+
+/** A `RATE_LIMIT_<POLICY>_*` override is not a positive integer. */
+export class RateLimitConfigInvalidError extends TaggedError("RateLimitConfigInvalidError")<{
+  code: "rate_limit.config_invalid";
+  message: string;
+  variable: string;
+}> {}
 
 export type RateLimitPolicyConfig = Readonly<{
   windowSeconds: number;
@@ -112,7 +119,11 @@ function positiveInteger(raw: string | undefined, fallback: number, name: string
   if (raw === undefined || raw === "") return fallback;
   const value = Number(raw);
   if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new Error(`${name} must be a positive integer`);
+    throw new RateLimitConfigInvalidError({
+      code: "rate_limit.config_invalid",
+      message: `${name} must be a positive integer`,
+      variable: name,
+    });
   }
   return value;
 }

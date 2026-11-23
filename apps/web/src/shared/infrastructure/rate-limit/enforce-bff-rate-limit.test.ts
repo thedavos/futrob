@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
-import { BFF_RATE_LIMIT_POLICY, type BffRateLimiter } from "./bff-rate-limiter.ts";
+import {
+  BFF_RATE_LIMIT_POLICY,
+  RATE_LIMIT_CHECK_TIMEOUT_MS,
+  type BffRateLimiter,
+} from "./bff-rate-limiter.ts";
 import {
   BffRateLimitUnavailableError,
   enforceBffRateLimit,
@@ -182,6 +186,41 @@ describe("enforceBffRateLimit", () => {
       });
     } finally {
       fetchSpy.mockRestore();
+    }
+  });
+
+  it("fails closed when the product API does not answer in time", async () => {
+    vi.useFakeTimers();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      (_input, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+        }),
+    );
+
+    try {
+      const outcome = enforceBffRateLimit(
+        {
+          request: searchRequest(),
+          actorId: null,
+          requestId,
+          policy: BFF_RATE_LIMIT_POLICY.publicClubSearch,
+        },
+        {
+          environment: "test",
+          bindings: {
+            INTERNAL_JOB_SECRET: "service-secret",
+            FUTROB_API_BASE_URL: "https://api.futrob.test/api/v1",
+          },
+        },
+      );
+      const rejected = expect(outcome).rejects.toBeInstanceOf(BffRateLimitUnavailableError);
+      await vi.advanceTimersByTimeAsync(RATE_LIMIT_CHECK_TIMEOUT_MS);
+
+      await rejected;
+    } finally {
+      fetchSpy.mockRestore();
+      vi.useRealTimers();
     }
   });
 

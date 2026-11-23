@@ -4,8 +4,10 @@ import { Client } from "pg";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { asActorId } from "@futrob/shared-kernel";
 import { RATE_LIMIT_POLICY } from "@futrob/api-contracts";
+import type { Pool, PoolClient } from "pg";
 import {
   PostgresRateLimiter,
+  withPoolConnection,
   type PostgresQueryable,
   type WithPostgres,
 } from "./postgres-rate-limiter.ts";
@@ -82,7 +84,7 @@ describe("PostgresRateLimiter transaction", () => {
     });
 
     await expect(limiter.check(attempt())).resolves.toEqual({ outcome: "allowed" });
-    expect(statements).toEqual(["BEGIN", "DELETE", "INSERT", "INSERT", "COMMIT"]);
+    expect(statements).toEqual(["BEGIN", "SET", "DELETE", "INSERT", "INSERT", "COMMIT"]);
   });
 
   it("counts only the IP window for a signed-out attempt", async () => {
@@ -96,7 +98,7 @@ describe("PostgresRateLimiter transaction", () => {
     await expect(limiter.check(attempt({ actorId: null }))).resolves.toEqual({
       outcome: "allowed",
     });
-    expect(statements).toEqual(["BEGIN", "DELETE", "INSERT", "COMMIT"]);
+    expect(statements).toEqual(["BEGIN", "SET", "DELETE", "INSERT", "COMMIT"]);
   });
 
   it("rolls back and rethrows when a statement fails", async () => {
@@ -108,7 +110,7 @@ describe("PostgresRateLimiter transaction", () => {
     });
 
     await expect(limiter.check(attempt())).rejects.toThrow("boom");
-    expect(statements).toEqual(["BEGIN", "DELETE", "INSERT", "ROLLBACK"]);
+    expect(statements).toEqual(["BEGIN", "SET", "DELETE", "INSERT", "ROLLBACK"]);
   });
 
   it("rejects an IP fingerprint that is not a SHA-256 digest", async () => {
@@ -123,6 +125,40 @@ describe("PostgresRateLimiter transaction", () => {
       "SHA-256",
     );
     expect(statements).toEqual([]);
+  });
+});
+
+describe("withPoolConnection", () => {
+  function fakePool() {
+    const releases: unknown[] = [];
+    const client = {
+      query: async () => ({ rows: [] }),
+      release: (error?: unknown) => {
+        releases.push(error);
+      },
+    };
+    // Only `connect` and the client's `query`/`release` are used.
+    const pool = { connect: async () => client as unknown as PoolClient } as unknown as Pool;
+    return { pool, releases };
+  }
+
+  it("returns the connection to the pool after a successful check", async () => {
+    const { pool, releases } = fakePool();
+
+    await expect(withPoolConnection(pool)(async () => "done")).resolves.toBe("done");
+    expect(releases).toEqual([undefined]);
+  });
+
+  it("destroys the connection when the check fails, in case its transaction is open", async () => {
+    const { pool, releases } = fakePool();
+    const failure = new Error("commit lost");
+
+    await expect(
+      withPoolConnection(pool)(async () => {
+        throw failure;
+      }),
+    ).rejects.toBe(failure);
+    expect(releases).toEqual([failure]);
   });
 });
 
@@ -252,6 +288,25 @@ suite("PostgresRateLimiter on Postgres (migration 0043)", () => {
     }
   });
 
+  it("gives up with a lock timeout instead of queueing behind a held counter row", async () => {
+    const { limiter, connect } = await createLimiter(TEST_POLICIES, { lockTimeoutMs: 50 });
+    await limiter.check(attempt({ actorId: null }));
+    const holder = await connect();
+    try {
+      await holder.query("BEGIN");
+      await holder.query(
+        "SELECT 1 FROM app_rate_limit_windows WHERE subject_kind = 'ip' FOR UPDATE",
+      );
+
+      await expect(limiter.check(attempt({ actorId: null }))).rejects.toMatchObject({
+        code: "55P03",
+      });
+    } finally {
+      await holder.query("ROLLBACK");
+      await holder.end();
+    }
+  });
+
   it("atomically counts concurrent attempts without storing actor or IP subjects", async () => {
     const { limiter, query } = await createLimiter({
       ...TEST_POLICIES,
@@ -282,7 +337,10 @@ suite("PostgresRateLimiter on Postgres (migration 0043)", () => {
 });
 
 /** Fresh schema per test; each check gets its own connection, like a pooled checkout. */
-async function createLimiter(policies: RateLimitPolicies = TEST_POLICIES) {
+async function createLimiter(
+  policies: RateLimitPolicies = TEST_POLICIES,
+  options: Readonly<{ lockTimeoutMs?: number }> = {},
+) {
   const schema = `rate_limit_${randomUUID().replaceAll("-", "")}`;
   schemas.push(schema);
 
@@ -319,6 +377,7 @@ async function createLimiter(policies: RateLimitPolicies = TEST_POLICIES) {
       withPostgres,
       fingerprintSecret: "dedicated-test-secret",
       policies,
+      lockTimeoutMs: options.lockTimeoutMs,
     }),
     query: (text: string, values?: readonly unknown[]) =>
       withPostgres((c) => c.query(text, values)),
