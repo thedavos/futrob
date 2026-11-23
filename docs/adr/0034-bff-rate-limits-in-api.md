@@ -32,16 +32,20 @@ tenía que quedar accesible desde Hyperdrive solo por esa tabla. `apps/api` ya e
    Sin el secreto, o si el almacén falla, responde 503 `api.rate_limit_unavailable`. Un
    override `RATE_LIMIT_*` inválido conserva el valor por defecto de esa variable y se
    registra al arrancar; las demás políticas siguen igual. Los checks usan un pool propio
-   de 5 conexiones, separado del pool del producto, que mantiene las conexiones abiertas
-   60 s. Abandonan en unos 2,5 s como máximo: 1 s para obtener conexión, 0,3 s por el lock
-   de cada fila (`lock_timeout`), 0,5 s por sentencia en el servidor y 0,7 s por respuesta
-   en el cliente (`query_timeout`, que también cubre un corte de red). Una ráfaga sobre
-   un contador solo agota ese pool; el resto del API sigue respondiendo. Los dos pools
-   registran los errores de conexiones inactivas en vez de tumbar el proceso.
+   de 5 conexiones, separado del pool del producto, que mantiene las conexiones abiertas 60
+   s. Cada check tiene un plazo total de 2,5 s, desde pedir la conexión hasta la respuesta
+   del `COMMIT`: cada sentencia espera solo lo que queda, así que un `COMMIT` lento
+   aprovecha el tiempo que no usaron las anteriores. Dentro de ese plazo, 1 s para obtener
+   conexión, 0,3 s por el lock de cada fila (`lock_timeout`) y 1 s por sentencia en el
+   servidor; si falla, el `ROLLBACK` tiene 0,5 s más. Si la respuesta del `COMMIT` no llega
+   a tiempo, su resultado es desconocido: el intento puede haber quedado contado y aun así
+   el check responde 503. Una ráfaga sobre un contador solo agota ese pool; el resto del
+   API sigue respondiendo. Los dos pools registran los errores de conexiones inactivas en
+   vez de tumbar el proceso.
 3. El BFF decide qué ruta limitar y con qué política, como antes. Envía al API la IP de
    `CF-Connecting-IP` y devuelve el 429 con `Retry-After`. Falla cerrado: sin IP, sin
    secreto interno o sin respuesta del API en 4 s, la ruta responde 503. El plazo es
-   mayor que el del API, para que no se cuente después un intento ya rechazado. Con
+   mayor que el del API (2,5 s más el `ROLLBACK`), para que el API abandone primero. Con
    `ENVIRONMENT=development` no llama al API.
 4. `apps/web` deja de declarar el binding `HYPERDRIVE` y deja de depender de `pg`.
 

@@ -37,23 +37,19 @@ export type RateLimitPoolLimits = Readonly<{
   connectionTimeoutMillis: number;
   /** Server side: longest one statement of a check may run. */
   statementTimeoutMillis: number;
-  /** Client side: longest the API waits for one reply, which also bounds a network stall. */
-  queryTimeoutMillis: number;
   /** How long an unused connection stays open, so a quiet spell does not force a reconnect. */
   idleTimeoutMillis: number;
 }>;
 
 /**
- * Worst case of one check stays near 2.5 s: 1 s for a connection, then one stalled reply
- * and its ROLLBACK at 0.7 s each (lock waits end sooner, at 0.3 s). That is under the web
- * BFF's 4 s timeout, so the API gives up first and a request the BFF refuses is not
- * counted afterwards. Not measured against Railway or Neon.
+ * The client-side bound of a whole check, network stalls included, is the limiter's
+ * `RATE_LIMIT_CHECK_BUDGET_MS`; these limits only bound its parts. Not measured against
+ * Railway or Neon.
  */
 export const RATE_LIMIT_POOL_LIMITS = {
   max: 5,
   connectionTimeoutMillis: 1_000,
-  statementTimeoutMillis: 500,
-  queryTimeoutMillis: 700,
+  statementTimeoutMillis: 1_000,
   idleTimeoutMillis: 60_000,
 } as const satisfies RateLimitPoolLimits;
 
@@ -80,7 +76,6 @@ export function createRateLimitPostgresPool(
     max: limits.max,
     connectionTimeoutMillis: limits.connectionTimeoutMillis,
     statement_timeout: limits.statementTimeoutMillis,
-    query_timeout: limits.queryTimeoutMillis,
     idleTimeoutMillis: limits.idleTimeoutMillis,
     keepAlive: true,
     options: input.options,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Pool } from "pg";
+import type { ClientBase, Pool, QueryConfig } from "pg";
 import {
   decideRateLimit,
   longestRateLimitWindowMs,
@@ -15,8 +15,35 @@ export interface PostgresQueryResult {
   readonly rows: readonly unknown[];
 }
 
+export type PostgresQueryOptions = Readonly<{
+  /** Client-side wait for the reply; on expiry the query rejects without a SQLSTATE. */
+  timeoutMs?: number;
+}>;
+
 export interface PostgresQueryable {
-  query(text: string, values?: readonly unknown[]): Promise<PostgresQueryResult>;
+  query(
+    text: string,
+    values?: readonly unknown[],
+    options?: PostgresQueryOptions,
+  ): Promise<PostgresQueryResult>;
+}
+
+/**
+ * Adapts a pg client, passing the per-query timeout as pg's `query_timeout`. pg reads it
+ * from the query config at runtime (`Client.query`); `@types/pg` only types it on the
+ * client config.
+ */
+export function postgresQueryable(client: Pick<ClientBase, "query">): PostgresQueryable {
+  return {
+    query: (text, values, options) => {
+      const config: QueryConfig & { query_timeout?: number } = {
+        text,
+        values: values ? [...values] : [],
+        query_timeout: options?.timeoutMs,
+      };
+      return client.query(config);
+    },
+  };
 }
 
 /** Runs `run` on one connection and always releases it. */
@@ -32,9 +59,7 @@ export function withPoolConnection(pool: Pool): WithPostgres {
   return async (run) => {
     const client = await pool.connect();
     try {
-      const result = await run({
-        query: (text, values) => client.query(text, values ? [...values] : []),
-      });
+      const result = await run(postgresQueryable(client));
       client.release();
       return result;
     } catch (error) {
@@ -54,6 +79,16 @@ const postgresErrorSchema = z.object({ code: z.string().regex(/^[0-9A-Z]{5}$/) }
  * (503, the BFF fails closed) instead of starving the rest of the API.
  */
 export const RATE_LIMIT_LOCK_TIMEOUT_MS = 300;
+
+/**
+ * Whole budget of one check, from asking for a connection to the COMMIT reply. Each
+ * statement waits only for what is left, so a slow COMMIT can use the time the earlier
+ * statements did not need. A failed check adds at most `ROLLBACK_TIMEOUT_MS`; both stay
+ * under the web BFF's 4 s timeout.
+ */
+export const RATE_LIMIT_CHECK_BUDGET_MS = 2_500;
+
+const ROLLBACK_TIMEOUT_MS = 500;
 
 const INCREMENT_WINDOW_SQL = `
 INSERT INTO app_rate_limit_windows (
@@ -89,6 +124,8 @@ export class PostgresRateLimiter implements RateLimiter {
   private readonly policies: RateLimitPolicies;
   private readonly maxPolicyWindowMs: number;
   private readonly lockTimeoutMs: number;
+  private readonly budgetMs: number;
+  private readonly elapsedMs: () => number;
 
   constructor(
     input: Readonly<{
@@ -96,6 +133,9 @@ export class PostgresRateLimiter implements RateLimiter {
       fingerprintSecret: string;
       policies: RateLimitPolicies;
       lockTimeoutMs?: number;
+      budgetMs?: number;
+      /** Monotonic milliseconds; only differences are used. */
+      monotonicNow?: () => number;
     }>,
   ) {
     this.withPostgres = input.withPostgres;
@@ -107,6 +147,8 @@ export class PostgresRateLimiter implements RateLimiter {
       throw new Error("Rate-limit lock timeout must be a positive integer");
     }
     this.lockTimeoutMs = lockTimeoutMs;
+    this.budgetMs = input.budgetMs ?? RATE_LIMIT_CHECK_BUDGET_MS;
+    this.elapsedMs = input.monotonicNow ?? (() => performance.now());
   }
 
   async check(attempt: RateLimitAttempt): Promise<RateLimitDecision> {
@@ -122,27 +164,32 @@ export class PostgresRateLimiter implements RateLimiter {
         : await fingerprintRateLimitSubject(this.fingerprintSecret, "actor", actorId);
     const retentionCutoff = attempt.nowMs - this.maxPolicyWindowMs;
 
+    const deadline = this.elapsedMs() + this.budgetMs;
+    const remaining = (): PostgresQueryOptions => {
+      const timeoutMs = Math.ceil(deadline - this.elapsedMs());
+      if (timeoutMs <= 0) throw new Error("Rate-limit check ran out of time");
+      return { timeoutMs };
+    };
+
     // Purge and both counters commit together. The purge skips locked rows and the
     // counters run in a fixed order, so concurrent checks never deadlock.
     const { actorCount, ipCount } = await this.withPostgres((client) =>
-      inTransaction(client, async () => {
-        await client.query(`SET LOCAL lock_timeout = '${this.lockTimeoutMs}ms'`);
-        await client.query(PURGE_EXPIRED_WINDOWS_SQL, [retentionCutoff]);
+      inTransaction(client, remaining, async () => {
+        await client.query(`SET LOCAL lock_timeout = '${this.lockTimeoutMs}ms'`, [], remaining());
+        await client.query(PURGE_EXPIRED_WINDOWS_SQL, [retentionCutoff], remaining());
         const actor =
           actorFingerprint === null
             ? null
-            : await client.query(INCREMENT_WINDOW_SQL, [
-                attempt.policy,
-                "actor",
-                actorFingerprint,
-                window.windowStartedAt,
-              ]);
-        const ip = await client.query(INCREMENT_WINDOW_SQL, [
-          attempt.policy,
-          "ip",
-          attempt.ipFingerprint,
-          window.windowStartedAt,
-        ]);
+            : await client.query(
+                INCREMENT_WINDOW_SQL,
+                [attempt.policy, "actor", actorFingerprint, window.windowStartedAt],
+                remaining(),
+              );
+        const ip = await client.query(
+          INCREMENT_WINDOW_SQL,
+          [attempt.policy, "ip", attempt.ipFingerprint, window.windowStartedAt],
+          remaining(),
+        );
         return { actorCount: actor === null ? 0 : readCount(actor), ipCount: readCount(ip) };
       }),
     );
@@ -151,15 +198,23 @@ export class PostgresRateLimiter implements RateLimiter {
   }
 }
 
-async function inTransaction<T>(client: PostgresQueryable, run: () => Promise<T>): Promise<T> {
-  await client.query("BEGIN");
+/**
+ * If the COMMIT reply does not arrive in time its outcome is unknown: the counters may
+ * have been incremented. The check still fails closed (503).
+ */
+async function inTransaction<T>(
+  client: PostgresQueryable,
+  remaining: () => PostgresQueryOptions,
+  run: () => Promise<T>,
+): Promise<T> {
   try {
+    await client.query("BEGIN", [], remaining());
     const result = await run();
-    await client.query("COMMIT");
+    await client.query("COMMIT", [], remaining());
     return result;
   } catch (error) {
     try {
-      await client.query("ROLLBACK");
+      await client.query("ROLLBACK", [], { timeoutMs: ROLLBACK_TIMEOUT_MS });
     } catch {
       // No SQLSTATE: the pool destroys this connection instead of reusing it mid-transaction.
       throw new Error("Rate-limit transaction could not roll back", { cause: error });

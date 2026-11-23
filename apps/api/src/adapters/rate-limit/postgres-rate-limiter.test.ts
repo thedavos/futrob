@@ -7,6 +7,7 @@ import { RATE_LIMIT_POLICY } from "@futrob/api-contracts";
 import type { Pool, PoolClient } from "pg";
 import {
   PostgresRateLimiter,
+  postgresQueryable,
   withPoolConnection,
   type PostgresQueryable,
   type WithPostgres,
@@ -125,6 +126,59 @@ describe("PostgresRateLimiter transaction", () => {
     expect(failure).toBeInstanceOf(Error);
     expect(failure).not.toHaveProperty("code");
     expect(statements.at(-1)).toBe("ROLLBACK");
+  });
+
+  it("gives each statement what is left of the budget, so a slow COMMIT can use it", async () => {
+    let now = 0;
+    const timeouts: string[] = [];
+    const client: PostgresQueryable = {
+      async query(text, _values, options) {
+        const statement = text.trim().split(/\s+/)[0] ?? "";
+        timeouts.push(`${statement} ${options?.timeoutMs}`);
+        now += 100;
+        return { rows: statement === "INSERT" ? [{ request_count: 1 }] : [] };
+      },
+    };
+    const limiter = new PostgresRateLimiter({
+      withPostgres: (run) => run(client),
+      fingerprintSecret: "dedicated-test-secret",
+      policies: TEST_POLICIES,
+      budgetMs: 2_500,
+      monotonicNow: () => now,
+    });
+
+    await expect(limiter.check(attempt())).resolves.toEqual({ outcome: "allowed" });
+    expect(timeouts).toEqual([
+      "BEGIN 2500",
+      "SET 2400",
+      "DELETE 2300",
+      "INSERT 2200",
+      "INSERT 2100",
+      "COMMIT 2000",
+    ]);
+  });
+
+  it("fails closed without sending COMMIT once the budget is spent", async () => {
+    let now = 0;
+    const statements: string[] = [];
+    const client: PostgresQueryable = {
+      async query(text) {
+        const statement = text.trim().split(/\s+/)[0] ?? "";
+        statements.push(statement);
+        now += statement === "INSERT" ? 1_300 : 0;
+        return { rows: statement === "INSERT" ? [{ request_count: 1 }] : [] };
+      },
+    };
+    const limiter = new PostgresRateLimiter({
+      withPostgres: (run) => run(client),
+      fingerprintSecret: "dedicated-test-secret",
+      policies: TEST_POLICIES,
+      budgetMs: 2_500,
+      monotonicNow: () => now,
+    });
+
+    await expect(limiter.check(attempt())).rejects.toThrow("ran out of time");
+    expect(statements).toEqual(["BEGIN", "SET", "DELETE", "INSERT", "INSERT", "ROLLBACK"]);
   });
 
   it("rolls back and rethrows when a statement fails", async () => {
@@ -354,7 +408,6 @@ suite("PostgresRateLimiter on Postgres (migration 0043)", () => {
         max: 1,
         connectionTimeoutMillis: 200,
         statementTimeoutMillis: 2_000,
-        queryTimeoutMillis: 2_000,
         idleTimeoutMillis: 10_000,
       },
       options: `-c search_path=${schema}`,
@@ -400,6 +453,24 @@ suite("PostgresRateLimiter on Postgres (migration 0043)", () => {
       await rateLimitPool.end();
       await productPool.end();
     }
+  });
+
+  it("waits for a COMMIT slower than one statement and counts the attempt once", async () => {
+    const { limiter, query } = await createLimiter();
+    // Delays only the COMMIT reply: a deferred trigger runs while the transaction commits.
+    await query(`
+      CREATE FUNCTION slow_commit() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN PERFORM pg_sleep(0.9); RETURN NULL; END $$;
+      CREATE CONSTRAINT TRIGGER slow_commit AFTER INSERT OR UPDATE ON app_rate_limit_windows
+        DEFERRABLE INITIALLY DEFERRED FOR EACH ROW
+        WHEN (NEW.subject_kind = 'ip') EXECUTE FUNCTION slow_commit();
+    `);
+
+    const decision = await limiter.check(attempt({ actorId: null }));
+
+    expect(decision).toEqual({ outcome: "allowed" });
+    const rows = await query("SELECT request_count FROM app_rate_limit_windows");
+    expect(rows.rows).toEqual([{ request_count: 1 }]);
   });
 
   it("atomically counts concurrent attempts without storing actor or IP subjects", async () => {
@@ -448,7 +519,7 @@ async function createLimiter(
   const withPostgres: WithPostgres = async (run) => {
     const client = await connect();
     try {
-      return await run(client);
+      return await run(postgresQueryable(client));
     } finally {
       await client.end();
     }
