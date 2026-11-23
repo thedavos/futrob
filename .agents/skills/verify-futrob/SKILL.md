@@ -60,10 +60,10 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | --- | --- |
 | Brand home | link `Futrob` on landing only (auth tunnel logo is not a link) |
 | Landing login | button `Iniciar sesión` (header `Acceso` only — the final CTA no longer has login) |
-| Landing signup | button `Crear cuenta` (header and the below-fold final CTA); the hero's is `Crear competición` |
-| Landing pricing | header `Precios` and final-CTA `Ver precios` → `/pricing` |
+| Landing signup | button `Crear competición` (header `Acceso`, hero, and the below-fold final CTA). Plan cards in `#precios` still say `Crear cuenta` / `Empezar gratis`; that is not the header/hero/final control |
+| Landing pricing | header `Precios` jumps to `/#precios`; final-CTA `Ver precios` and footer `Precios` → `/pricing` |
 | Hero primary CTA | `Crear competición` → `/signup` |
-| Hero secondary CTA | button `Ver competición pública` → `#portal` |
+| Hero secondary CTA | button `Ver ejemplo de portal` → `#portal` |
 | Landing nav landmark | `Acceso` |
 | Login heading | `Inicia sesión` |
 | Login email | textbox `Correo electrónico` (placeholder `ejemplo@correo.com`) |
@@ -86,7 +86,7 @@ Use the session browser (navigate, snapshot, click, fill, screenshot). Stable ha
 | Open matches | sidebar link `Mis partidos` (header CTA, when present, is `Ver mis partidos`). Direct URL is `/player/matches`; default `view=all` may be omitted from the query |
 | Match view radios | `Todos`, `Liga`, `Playoff`, `Amistosos` (hidden until matches can load) |
 | Open match row | link `Ver {home} {homeGoals} – {awayGoals} {away}` — not the unused string `Ver partido` |
-| Landing final CTA | below-fold heading `Publica tu primera jornada oficial`; `Crear cuenta` → `/signup` and `Ver precios` → `/pricing` |
+| Landing final CTA | below-fold heading `Tu competición, oficial.`; `Crear competición` → `/signup` and `Ver precios` → `/pricing` |
 | Open statistics | sidebar link `Mis estadísticas` |
 | Org name | textbox `Nombre de la organización` |
 | Create org | button `Crear organización` |
