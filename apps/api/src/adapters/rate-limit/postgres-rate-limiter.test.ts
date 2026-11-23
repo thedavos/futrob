@@ -102,6 +102,31 @@ describe("PostgresRateLimiter transaction", () => {
     expect(statements).toEqual(["BEGIN", "SET", "DELETE", "INSERT", "COMMIT"]);
   });
 
+  it("reports a failed rollback without a SQLSTATE, so the pool destroys the connection", async () => {
+    const statements: string[] = [];
+    const client: PostgresQueryable = {
+      async query(text) {
+        const statement = text.trim().split(/\s+/)[0] ?? "";
+        statements.push(statement);
+        if (statement === "INSERT" || statement === "ROLLBACK") {
+          throw Object.assign(new Error("server gone"), { code: "57P01" });
+        }
+        return { rows: [] };
+      },
+    };
+    const limiter = new PostgresRateLimiter({
+      withPostgres: (run) => run(client),
+      fingerprintSecret: "dedicated-test-secret",
+      policies: TEST_POLICIES,
+    });
+
+    const failure = await limiter.check(attempt()).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure).not.toHaveProperty("code");
+    expect(statements.at(-1)).toBe("ROLLBACK");
+  });
+
   it("rolls back and rethrows when a statement fails", async () => {
     const { statements, withPostgres } = scriptedClient(/INSERT/);
     const limiter = new PostgresRateLimiter({
@@ -150,9 +175,21 @@ describe("withPoolConnection", () => {
     expect(releases).toEqual([undefined]);
   });
 
-  it("destroys the connection when the check fails, in case its transaction is open", async () => {
+  it("returns the connection after a Postgres error, which was rolled back", async () => {
     const { pool, releases } = fakePool();
-    const failure = new Error("commit lost");
+    const lockTimeout = Object.assign(new Error("lock timeout"), { code: "55P03" });
+
+    await expect(
+      withPoolConnection(pool)(async () => {
+        throw lockTimeout;
+      }),
+    ).rejects.toBe(lockTimeout);
+    expect(releases).toEqual([undefined]);
+  });
+
+  it("destroys the connection after any other failure, in case its transaction is open", async () => {
+    const { pool, releases } = fakePool();
+    const failure = new Error("connection terminated");
 
     await expect(
       withPoolConnection(pool)(async () => {
@@ -310,11 +347,12 @@ suite("PostgresRateLimiter on Postgres (migration 0043)", () => {
 
   it("fails a burst of checks on a held counter without taking the product pool", async () => {
     const { schema, connect } = await createLimiter();
-    const rateLimitPool = createRateLimitPostgresPool(
+    const rateLimitPool = createRateLimitPostgresPool({
       databaseUrl,
-      { max: 1, connectionTimeoutMillis: 200, statementTimeoutMillis: 2_000 },
-      `-c search_path=${schema}`,
-    );
+      onIdleError: () => undefined,
+      limits: { max: 1, connectionTimeoutMillis: 200, statementTimeoutMillis: 2_000 },
+      options: `-c search_path=${schema}`,
+    });
     const productPool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
     if (!rateLimitPool) throw new Error("TEST_DATABASE_URL is required");
     const limiter = new PostgresRateLimiter({

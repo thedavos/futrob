@@ -24,8 +24,9 @@ export type WithPostgres = <T>(run: (client: PostgresQueryable) => Promise<T>) =
 
 /**
  * Checks out one pooled connection per check: the counters need their own transaction.
- * A connection whose check failed is destroyed, not returned, in case its transaction is
- * still open.
+ * After a Postgres error (lock or statement timeout) the transaction was rolled back and
+ * the connection goes back to the pool; any other failure (a lost connection, a failed
+ * ROLLBACK) destroys it, in case its transaction is still open.
  */
 export function withPoolConnection(pool: Pool): WithPostgres {
   return async (run) => {
@@ -37,18 +38,22 @@ export function withPoolConnection(pool: Pool): WithPostgres {
       client.release();
       return result;
     } catch (error) {
-      client.release(error instanceof Error ? error : true);
+      if (postgresErrorSchema.safeParse(error).success) client.release();
+      else client.release(error instanceof Error ? error : true);
       throw error;
     }
   };
 }
+
+/** An error the server answered with a SQLSTATE: the connection itself still works. */
+const postgresErrorSchema = z.object({ code: z.string().regex(/^[0-9A-Z]{5}$/) });
 
 /**
  * Longest a check waits for another check's row lock. A burst from one IP or actor queues
  * on the same counter row while holding pooled connections; past this the check fails
  * (503, the BFF fails closed) instead of starving the rest of the API.
  */
-export const RATE_LIMIT_LOCK_TIMEOUT_MS = 1_000;
+export const RATE_LIMIT_LOCK_TIMEOUT_MS = 500;
 
 const INCREMENT_WINDOW_SQL = `
 INSERT INTO app_rate_limit_windows (
@@ -153,7 +158,12 @@ async function inTransaction<T>(client: PostgresQueryable, run: () => Promise<T>
     await client.query("COMMIT");
     return result;
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      // No SQLSTATE: the pool destroys this connection instead of reusing it mid-transaction.
+      throw new Error("Rate-limit transaction could not roll back", { cause: error });
+    }
     throw error;
   }
 }

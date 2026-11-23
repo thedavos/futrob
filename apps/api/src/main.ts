@@ -29,8 +29,17 @@ loadDotEnvFile();
 const env = loadEnv();
 initSentry(env);
 registerGlobalSentryHandlers();
-const pool = createPostgresPool(env.databaseUrl);
-const rateLimitPool = createRateLimitPostgresPool(env.databaseUrl);
+const pool = createPostgresPool(env.databaseUrl, (error) =>
+  apiConsoleLogger.error("postgres.pool.idle_error", { pool: "product", errorName: error.name }),
+);
+const rateLimitPool = createRateLimitPostgresPool({
+  databaseUrl: env.databaseUrl,
+  onIdleError: (error) =>
+    apiConsoleLogger.error("postgres.pool.idle_error", {
+      pool: "rate_limit",
+      errorName: error.name,
+    }),
+});
 const dbHealth = createPostgresHealth(pool);
 
 const email = emailSettingsFrom(env, fetch);

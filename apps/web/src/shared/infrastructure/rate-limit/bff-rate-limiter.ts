@@ -20,8 +20,12 @@ export interface BffRateLimiter {
   check(attempt: RateLimitAttempt): Promise<RateLimitDecision>;
 }
 
-/** Gives up on a stalled API quickly: the check runs before every limited route. */
-export const RATE_LIMIT_CHECK_TIMEOUT_MS = 2_000;
+/**
+ * Gives up on a stalled API quickly: the check runs before every limited route. Longer
+ * than the API's own budget (about 2 s), so the API gives up first and a request refused
+ * here is not counted afterwards.
+ */
+export const RATE_LIMIT_CHECK_TIMEOUT_MS = 3_000;
 
 /**
  * Asks the product API (`POST /internal/rate-limits/check`) with the service secret. A

@@ -29,15 +29,18 @@ tenía que quedar accesible desde Hyperdrive solo por esa tabla. `apps/api` ya e
    `RATE_LIMIT_FINGERPRINT_SECRET` pasan a `apps/api`. Actor e IP se guardan solo como HMAC
    SHA-256, igual que antes, en la misma tabla y con la misma transacción (purga e
    incremento de actor e IP en orden fijo). Sin `DATABASE_URL`, el API cuenta en memoria.
-   Sin el secreto, con un override `RATE_LIMIT_*` inválido (se registra al arrancar y el
-   resto del API sigue en pie) o si el almacén falla, responde 503
-   `api.rate_limit_unavailable`. Los checks usan un pool propio de 2 conexiones, separado
-   del pool del producto, y fallan rápido: 1 s para obtener conexión, 1 s por el lock de
-   una fila (`lock_timeout`) y 2 s por sentencia. Una ráfaga sobre un contador solo
-   agota ese pool; el resto del API sigue respondiendo.
+   Sin el secreto, o si el almacén falla, responde 503 `api.rate_limit_unavailable`. Un
+   override `RATE_LIMIT_*` inválido conserva el valor por defecto de esa variable y se
+   registra al arrancar; las demás políticas siguen igual. Los checks usan un pool propio
+   de 5 conexiones, separado del pool del producto, y abandonan en unos 2 s como máximo:
+   0,5 s para obtener conexión, 0,5 s por el lock de cada fila (`lock_timeout`) y 1 s por
+   sentencia. Una ráfaga sobre un contador solo agota ese pool; el resto del API sigue
+   respondiendo. Los dos pools registran los errores de conexiones inactivas en vez de
+   tumbar el proceso.
 3. El BFF decide qué ruta limitar y con qué política, como antes. Envía al API la IP de
    `CF-Connecting-IP` y devuelve el 429 con `Retry-After`. Falla cerrado: sin IP, sin
-   secreto interno o sin respuesta del API en 2 s, la ruta responde 503. Con
+   secreto interno o sin respuesta del API en 3 s, la ruta responde 503. El plazo es
+   mayor que el del API, para que no se cuente después un intento ya rechazado. Con
    `ENVIRONMENT=development` no llama al API.
 4. `apps/web` deja de declarar el binding `HYPERDRIVE` y deja de depender de `pg`.
 

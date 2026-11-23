@@ -86,13 +86,26 @@ const POLICY_ENV_PREFIX = {
   [RATE_LIMIT_POLICY.publicCompetitionExplore]: "RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE",
 } as const satisfies Record<RateLimitPolicy, string>;
 
-export function parseRateLimitPolicies(source: Readonly<Record<string, string | undefined>>) {
+/**
+ * Policies from `source` over the defaults. An invalid override keeps that value's
+ * default and goes to `onInvalid`, so one typo does not disable the other policies.
+ */
+export function parseRateLimitPolicies(
+  source: Readonly<Record<string, string | undefined>>,
+  onInvalid: (error: RateLimitConfigInvalidError) => void,
+) {
   const policyFromEnv = (policy: RateLimitPolicy): RateLimitPolicyConfig => {
     const prefix = POLICY_ENV_PREFIX[policy];
     const defaults = DEFAULT_RATE_LIMIT_POLICIES[policy];
     const read = (suffix: string, fallback: number) => {
       const name = `${prefix}_${suffix}`;
-      return positiveInteger(source[name], fallback, name);
+      try {
+        return positiveInteger(source[name], fallback, name);
+      } catch (error) {
+        if (!(error instanceof RateLimitConfigInvalidError)) throw error;
+        onInvalid(error);
+        return fallback;
+      }
     };
     return {
       windowSeconds: read("WINDOW_SECONDS", defaults.windowSeconds),

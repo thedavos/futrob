@@ -69,7 +69,7 @@ describe("POST /internal/rate-limits/check", () => {
     expect(await response.json()).toMatchObject({ code: "api.rate_limit_unavailable" });
   });
 
-  it("answers 503 and reports the variable when a policy override is invalid", async () => {
+  it("keeps checking with the default when one policy override is invalid", async () => {
     const reasons: string[] = [];
     const rateLimit = rateLimitSettingsFromEnv(
       "dedicated-test-secret",
@@ -80,7 +80,8 @@ describe("POST /internal/rate-limits/check", () => {
 
     const response = await check(app, searchAttempt);
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ outcome: "allowed" });
     expect(reasons).toEqual(["rate_limit.config_invalid: RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX"]);
   });
 

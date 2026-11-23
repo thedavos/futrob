@@ -9,14 +9,25 @@ export interface PostgresHealth {
 }
 
 /**
+ * Receives errors of idle pooled connections (database restart, failover, network reset).
+ * pg emits them as an `error` event; without a listener Node crashes the process.
+ */
+export type IdleConnectionErrorHandler = (error: Error) => void;
+
+/**
  * Shared Postgres pool factory. Without `DATABASE_URL` returns undefined so
  * modules can fall back to in-memory adapters for local/dev.
  */
-export function createPostgresPool(databaseUrl: string | undefined): Pool | undefined {
+export function createPostgresPool(
+  databaseUrl: string | undefined,
+  onIdleError: IdleConnectionErrorHandler,
+): Pool | undefined {
   if (!databaseUrl) {
     return undefined;
   }
-  return new pg.Pool({ connectionString: databaseUrl, max: 5 });
+  const pool = new pg.Pool({ connectionString: databaseUrl, max: 5 });
+  pool.on("error", onIdleError);
+  return pool;
 }
 
 export type RateLimitPoolLimits = Readonly<{
@@ -28,10 +39,15 @@ export type RateLimitPoolLimits = Readonly<{
   statementTimeoutMillis: number;
 }>;
 
+/**
+ * Worst case of one check stays near 2 s (0.5 s for a connection, 0.5 s per lock wait on
+ * the actor and IP rows), under the web BFF's 3 s timeout: the API gives up first, so a
+ * request the BFF refuses is not counted afterwards.
+ */
 export const RATE_LIMIT_POOL_LIMITS = {
-  max: 2,
-  connectionTimeoutMillis: 1_000,
-  statementTimeoutMillis: 2_000,
+  max: 5,
+  connectionTimeoutMillis: 500,
+  statementTimeoutMillis: 1_000,
 } as const satisfies RateLimitPoolLimits;
 
 /**
@@ -40,20 +56,27 @@ export const RATE_LIMIT_POOL_LIMITS = {
  * pool that every other route uses.
  */
 export function createRateLimitPostgresPool(
-  databaseUrl: string | undefined,
-  limits: RateLimitPoolLimits = RATE_LIMIT_POOL_LIMITS,
-  options?: string,
+  input: Readonly<{
+    databaseUrl: string | undefined;
+    onIdleError: IdleConnectionErrorHandler;
+    limits?: RateLimitPoolLimits;
+    /** Postgres startup options, such as `-c search_path=...` in tests. */
+    options?: string;
+  }>,
 ): Pool | undefined {
-  if (!databaseUrl) {
+  if (!input.databaseUrl) {
     return undefined;
   }
-  return new pg.Pool({
-    connectionString: databaseUrl,
+  const limits = input.limits ?? RATE_LIMIT_POOL_LIMITS;
+  const pool = new pg.Pool({
+    connectionString: input.databaseUrl,
     max: limits.max,
     connectionTimeoutMillis: limits.connectionTimeoutMillis,
     statement_timeout: limits.statementTimeoutMillis,
-    options,
+    options: input.options,
   });
+  pool.on("error", input.onIdleError);
+  return pool;
 }
 
 /**

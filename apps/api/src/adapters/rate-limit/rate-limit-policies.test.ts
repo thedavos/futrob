@@ -44,23 +44,28 @@ describe("rate-limit policies", () => {
   });
 
   it("overrides defaults with positive environment integers", () => {
-    const policies = parseRateLimitPolicies({
-      RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS: "30",
-      RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX: "7",
-      RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX: "21",
-      RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS: "600",
-      RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX: "4",
-      RATE_LIMIT_INVITATION_ACCEPT_IP_MAX: "6",
-      RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS: "300",
-      RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX: "3",
-      RATE_LIMIT_INVITATION_PREVIEW_IP_MAX: "9",
-      RATE_LIMIT_PUBLIC_CLUB_SEARCH_WINDOW_SECONDS: "120",
-      RATE_LIMIT_PUBLIC_CLUB_SEARCH_ACTOR_MAX: "8",
-      RATE_LIMIT_PUBLIC_CLUB_SEARCH_IP_MAX: "12",
-      RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_WINDOW_SECONDS: "90",
-      RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_ACTOR_MAX: "10",
-      RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_IP_MAX: "15",
-    });
+    const policies = parseRateLimitPolicies(
+      {
+        RATE_LIMIT_EA_CLUB_SEARCH_WINDOW_SECONDS: "30",
+        RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX: "7",
+        RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX: "21",
+        RATE_LIMIT_INVITATION_ACCEPT_WINDOW_SECONDS: "600",
+        RATE_LIMIT_INVITATION_ACCEPT_ACTOR_MAX: "4",
+        RATE_LIMIT_INVITATION_ACCEPT_IP_MAX: "6",
+        RATE_LIMIT_INVITATION_PREVIEW_WINDOW_SECONDS: "300",
+        RATE_LIMIT_INVITATION_PREVIEW_ACTOR_MAX: "3",
+        RATE_LIMIT_INVITATION_PREVIEW_IP_MAX: "9",
+        RATE_LIMIT_PUBLIC_CLUB_SEARCH_WINDOW_SECONDS: "120",
+        RATE_LIMIT_PUBLIC_CLUB_SEARCH_ACTOR_MAX: "8",
+        RATE_LIMIT_PUBLIC_CLUB_SEARCH_IP_MAX: "12",
+        RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_WINDOW_SECONDS: "90",
+        RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_ACTOR_MAX: "10",
+        RATE_LIMIT_PUBLIC_COMPETITION_EXPLORE_IP_MAX: "15",
+      },
+      () => {
+        throw new Error("every override is valid");
+      },
+    );
 
     expect(policies[RATE_LIMIT_POLICY.eaClubSearch]).toEqual({
       windowSeconds: 30,
@@ -90,11 +95,24 @@ describe("rate-limit policies", () => {
   });
 
   it.each(["0", "-1", "1.5", "not-a-number"])(
-    "rejects invalid policy configuration %s",
+    "keeps the default and reports the variable for invalid override %s",
     (value) => {
-      expect(() => parseRateLimitPolicies({ RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX: value })).toThrow(
-        "RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX must be a positive integer",
+      const invalid: string[] = [];
+      const policies = parseRateLimitPolicies(
+        {
+          RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX: value,
+          RATE_LIMIT_EA_CLUB_SEARCH_IP_MAX: "40",
+        },
+        (error) => invalid.push(`${error.code}: ${error.variable}`),
       );
+
+      expect(invalid).toEqual(["rate_limit.config_invalid: RATE_LIMIT_EA_CLUB_SEARCH_ACTOR_MAX"]);
+      expect(policies[RATE_LIMIT_POLICY.eaClubSearch]).toEqual({
+        windowSeconds: DEFAULT_RATE_LIMIT_POLICIES[RATE_LIMIT_POLICY.eaClubSearch].windowSeconds,
+        actorMaxAttempts:
+          DEFAULT_RATE_LIMIT_POLICIES[RATE_LIMIT_POLICY.eaClubSearch].actorMaxAttempts,
+        ipMaxAttempts: 40,
+      });
     },
   );
 });
