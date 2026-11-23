@@ -91,24 +91,31 @@ describe("POST /internal/rate-limits/check", () => {
     expect(response.status).toBe(400);
   });
 
-  it("answers 503 and logs the Postgres error code when the store fails", async () => {
+  it.each([
+    ["the statement", Object.assign(new Error("lock timeout"), { code: "55P03" })],
+    [
+      "the statement behind a failed rollback",
+      new Error("Rate-limit transaction could not roll back", {
+        cause: Object.assign(new Error("server gone"), { code: "57P01" }),
+      }),
+    ],
+  ])("answers 503 and logs the Postgres error code of %s", async (_case, failure) => {
     const logEntries: CorrelationLogEntry[] = [];
     const { app } = buildAppWithModules(
       stubFetch,
       logEntries,
       {},
-      {
-        rateLimits: {
-          check: () => Promise.reject(Object.assign(new Error("lock timeout"), { code: "55P03" })),
-        },
-      },
+      { rateLimits: { check: () => Promise.reject(failure) } },
     );
 
     const response = await check(app, searchAttempt);
 
     expect(response.status).toBe(503);
     expect(logEntries).toContainEqual(
-      expect.objectContaining({ event: "rate_limit.check_failed", errorCode: "55P03" }),
+      expect.objectContaining({
+        event: "rate_limit.check_failed",
+        errorCode: failure.cause === undefined ? "55P03" : "57P01",
+      }),
     );
   });
 

@@ -22,10 +22,10 @@ export interface BffRateLimiter {
 
 /**
  * Gives up on a stalled API quickly: the check runs before every limited route. Longer
- * than the API's own budget (about 2 s), so the API gives up first and a request refused
- * here is not counted afterwards.
+ * than the API's own budget (about 2.5 s) plus the hop to it, so the API gives up first and
+ * a request refused here is not counted afterwards.
  */
-export const RATE_LIMIT_CHECK_TIMEOUT_MS = 3_000;
+export const RATE_LIMIT_CHECK_TIMEOUT_MS = 4_000;
 
 /**
  * Asks the product API (`POST /internal/rate-limits/check`) with the service secret. A

@@ -53,7 +53,7 @@ const postgresErrorSchema = z.object({ code: z.string().regex(/^[0-9A-Z]{5}$/) }
  * on the same counter row while holding pooled connections; past this the check fails
  * (503, the BFF fails closed) instead of starving the rest of the API.
  */
-export const RATE_LIMIT_LOCK_TIMEOUT_MS = 500;
+export const RATE_LIMIT_LOCK_TIMEOUT_MS = 300;
 
 const INCREMENT_WINDOW_SQL = `
 INSERT INTO app_rate_limit_windows (

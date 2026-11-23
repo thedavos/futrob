@@ -28,11 +28,14 @@ export function registerRateLimitRoutes(app: Hono, deps: AppDeps): void {
     try {
       decision = await rateLimits.check(request);
     } catch (error) {
-      const errorCode = errorCodeSchema.safeParse(error);
+      // A failed ROLLBACK wraps the statement error that caused it in `cause`.
+      const errorCode =
+        errorCodeSchema.safeParse(error).data?.code ??
+        errorCodeSchema.safeParse(error instanceof Error ? error.cause : undefined).data?.code;
       logCorrelatedError("rate_limit.check_failed", {
         policy: request.policy,
         errorName: error instanceof Error ? error.name : "unknown",
-        errorCode: errorCode.success ? errorCode.data.code : "unknown",
+        errorCode: errorCode ?? "unknown",
       });
       return rateLimitUnavailable();
     }

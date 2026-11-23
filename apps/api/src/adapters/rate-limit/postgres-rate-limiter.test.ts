@@ -350,7 +350,13 @@ suite("PostgresRateLimiter on Postgres (migration 0043)", () => {
     const rateLimitPool = createRateLimitPostgresPool({
       databaseUrl,
       onIdleError: () => undefined,
-      limits: { max: 1, connectionTimeoutMillis: 200, statementTimeoutMillis: 2_000 },
+      limits: {
+        max: 1,
+        connectionTimeoutMillis: 200,
+        statementTimeoutMillis: 2_000,
+        queryTimeoutMillis: 2_000,
+        idleTimeoutMillis: 10_000,
+      },
       options: `-c search_path=${schema}`,
     });
     const productPool = new pg.Pool({ connectionString: databaseUrl, max: 1 });

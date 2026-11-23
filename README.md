@@ -139,7 +139,7 @@ Para ejecutar el cliente nativo, sigue la [configuración móvil](apps/mobile/RE
 - **No puedes iniciar sesión:** comprueba Postgres, `DATABASE_URL` en API y auth, y las migraciones aplicadas.
 - **Rutas protegidas del BFF con 503 fuera de desarrollo:** comprueba `RATE_LIMIT_FINGERPRINT_SECRET` en el API y que web alcance `FUTROB_API_BASE_URL` con el mismo `INTERNAL_JOB_SECRET`. El API cuenta los intentos ([ADR-0034](docs/adr/0034-bff-rate-limits-in-api.md)); configura el secreto en su entorno de Railway antes de desplegar.
 
-Los valores y ajustes opcionales de rate limits están documentados en `apps/web/.dev.vars.example`.
+Los valores y ajustes opcionales de rate limits están documentados en `apps/api/.env.example`.
 
 ## Comandos habituales
 
