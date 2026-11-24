@@ -672,12 +672,13 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 - Bajo los CTA, condiciones verificables en `Caption` con check `success`: «Gratis para tu primera
   competición» y «No necesitas tarjeta». Nunca métricas ni promesas que el producto no cumpla.
 - Visual dominante: `CupBracket`, el cuadro radial de una copa de 16 clubs ficticios con el trofeo en
-  el centro, y debajo la card de la final con el sello «Oficial». Los escudos son `FictionalCrest`:
+  el centro, y debajo la card del campeón: trofeo dorado, «Real Cuervos, campeón» y «Final 2–1 ante
+  Atlético Norte · oficial», sin sello. Los escudos son `FictionalCrest`:
   SVG generados con arquetipos de escudos de fútbol (clásico, español, francés, roundel, corona,
   insignia), un patrón, dos colores de club y una letra. Nunca escudos reales. Cada escudo va centrado
   en un círculo de 48 px (30 px de alto, con aire alrededor) al que llegan las líneas del cuadro.
-- Color: lima solo para el estado oficial (ruta del campeón, «Oficiales.», «Oficial» y sello) y la CTA
-  primaria; oro (`emphasis`) solo para el trofeo. Los escudos llevan sus colores de club, como
+- Color: lima solo para el estado oficial (ruta del campeón, «Oficiales.» y «oficial» de la card) y la CTA
+  primaria; oro (`emphasis`) solo para el trofeo del centro y el de la card. Los escudos llevan sus colores de club, como
   cualquier escudo; líneas, nodos y círculos quedan en grafito.
 - Entrada, 1.5 s como máximo y en pasos de `--duration-fast`: líneas del titular, cuadro de fuera
   hacia el centro, ruta lima del campeón al trofeo, trofeo a oro y «Oficiales.» a lima, card final.

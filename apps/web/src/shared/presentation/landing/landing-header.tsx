@@ -21,6 +21,7 @@ import { Link } from "@tanstack/react-router";
 
 import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { ORGANIZER_SIGNUP_SEARCH } from "@/shared/presentation/landing/organizer-signup.ts";
 
 const styles = stylex.create({
   header: {
@@ -158,7 +159,9 @@ export function LandingHeader() {
           <Button render={<Link to="/login" />} variant="ghost" {...applyStyles(styles.login)}>
             {t("landing.nav.login")}
           </Button>
-          <Button render={<Link to="/signup" />}>{t("landing.nav.signup")}</Button>
+          <Button render={<Link search={ORGANIZER_SIGNUP_SEARCH} to="/signup" />}>
+            {t("landing.nav.signup")}
+          </Button>
           <div {...applyStyles(styles.menu)}>
             <Sheet onOpenChange={setMenuOpen} open={menuOpen}>
               <SheetTrigger

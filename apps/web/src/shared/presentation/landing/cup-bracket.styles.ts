@@ -42,11 +42,6 @@ const glow = stylex.keyframes({
   "100%": { opacity: 0, scale: 1.25 },
 });
 
-const stampIn = stylex.keyframes({
-  from: { opacity: 0, scale: 1.5 },
-  to: { opacity: 1, scale: 1 },
-});
-
 export const styles = stylex.create({
   figure: {
     marginInline: "auto",
@@ -297,11 +292,9 @@ export const styles = stylex.create({
   },
   card: {
     position: "relative",
-    // Tucks under the lowest crests without touching them.
-    marginTop: {
-      default: space.s2,
-      [media.sm]: "-0.5rem",
-    },
+    // Its own row under the bracket, centred on it: clear of the lowest crests at every width.
+    alignSelf: "center",
+    marginTop: space.s4,
     display: "flex",
     maxWidth: "100%",
     alignItems: "center",
@@ -315,7 +308,8 @@ export const styles = stylex.create({
     animationTimingFunction: "var(--ease-emphasized)",
     animationFillMode: "both",
   },
-  cardCrest: {
+  // The card tells the outcome: a gold trophy, the one place gold is used besides the centre.
+  cardTrophy: {
     display: "flex",
     width: "2.5rem",
     height: "2.5rem",
@@ -323,15 +317,12 @@ export const styles = stylex.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: "var(--corner-full)",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: "color-mix(in oklab, var(--emphasis) 16%, transparent)",
   },
-  cardCrestMark: {
-    display: "block",
-    width: "auto",
-    height: "1.5rem",
+  cardTrophyIcon: {
+    width: "1.25rem",
+    height: "1.25rem",
+    color: colors.emphasis,
   },
   cardText: {
     display: "flex",
@@ -350,27 +341,6 @@ export const styles = stylex.create({
   official: {
     color: colors.primary,
     fontWeight: "var(--font-weight-semibold)",
-  },
-  stamp: {
-    position: "absolute",
-    top: 0,
-    insetInlineEnd: space.s3,
-    translate: "0 -60%",
-    rotate: "-8deg",
-    borderWidth: 2,
-    borderStyle: "solid",
-    borderColor: colors.primary,
-    borderRadius: "var(--corner-xs)",
-    backgroundColor: colors.surface,
-    paddingInline: space.s2,
-    color: colors.primary,
-    fontWeight: "var(--font-weight-bold)",
-    letterSpacing: "var(--tracking-caps)",
-    textTransform: "uppercase",
-    animationName: stampIn,
-    animationDuration: "var(--duration-slow)",
-    animationTimingFunction: "var(--ease-emphasized)",
-    animationFillMode: "both",
   },
 });
 

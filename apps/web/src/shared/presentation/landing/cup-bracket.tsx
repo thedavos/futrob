@@ -266,23 +266,17 @@ export function CupBracket() {
         </TooltipProvider>
       </div>
       <figcaption {...applyStyles(styles.card, elevation.md, delay.card)}>
-        <span {...applyStyles(styles.cardCrest)}>
-          <FictionalCrest
-            className={applyStyles(styles.cardCrestMark).className}
-            crest={CUP_CHAMPION.crest}
-          />
+        <span aria-hidden="true" {...applyStyles(styles.cardTrophy)}>
+          <TrophyIcon weight="fill" {...applyStyles(styles.cardTrophyIcon)} />
         </span>
         <span {...applyStyles(styles.cardText)}>
           <span {...applyStyles(typography.body, styles.cardResult)}>
-            {`${CUP_CHAMPION.name} ${finalScore} ${CUP_RUNNER_UP.name}`}
+            {t("landing.cup.champion", { club: CUP_CHAMPION.name })}
           </span>
           <span {...applyStyles(typography.caption, styles.cardMeta)}>
-            {`${t("landing.cup.final")} · ${t("landing.cup.competition")} · `}
-            <span {...applyStyles(styles.official)}>{t("landing.cup.official")}</span>
+            {`${t("landing.cup.finalAgainst", { score: finalScore, opponent: CUP_RUNNER_UP.name })} · `}
+            <span {...applyStyles(styles.official)}>{t("landing.cup.officialInline")}</span>
           </span>
-        </span>
-        <span aria-hidden="true" {...applyStyles(typography.label, styles.stamp, delay.card)}>
-          {t("landing.cup.official")}
         </span>
       </figcaption>
     </figure>

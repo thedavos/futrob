@@ -71,6 +71,19 @@ describe("onboarding handoff links", () => {
     expect(fromSearch({ club: { id: 1 }, platform: "common-gen5", edition: "fc27" })).toBeNull();
     expect(fromSearch({ invitation: "" })).toBeNull();
   });
+
+  it("reads back the intent to organize, ignoring any other intent", () => {
+    const href = onboardingHandoffHref({ kind: "organizer" });
+    const url = new URL(href, "https://futrob.test");
+
+    expect(url.pathname).toBe("/onboarding/organization");
+    expect(fromUrlSearch(url.search)).toEqual({ kind: "organizer" });
+    expect(fromSearch({ intent: "admin" })).toBeNull();
+    expect(fromSearch({ invitation: "code", intent: "organizer" })).toEqual({
+      kind: "invitation",
+      code: "code",
+    });
+  });
 });
 
 describe("competition handoff links", () => {
@@ -189,6 +202,27 @@ describe("onboardingStateForHandoff", () => {
     const state = onboardingStateForHandoff({ kind: "club", club: fera }, stored);
 
     expect(state.draft.joiningCompetitionId).toBeNull();
+  });
+
+  it("opens the organization step, keeping an organization draft only", () => {
+    const fresh = onboardingStateForHandoff({ kind: "organizer" }, null);
+    expect(fresh).toMatchObject({ path: "organization", step: "organization" });
+
+    const organizationDraft = { ...createEmptyDraft(), organizationName: "Liga Norte" };
+    expect(
+      onboardingStateForHandoff(
+        { kind: "organizer" },
+        { path: "organization", step: "game-account", draft: organizationDraft },
+      ),
+    ).toEqual({ path: "organization", step: "organization", draft: organizationDraft });
+
+    const playerDraft = { ...createEmptyDraft(), gameAccountIdentifier: "fera" };
+    expect(
+      onboardingStateForHandoff(
+        { kind: "organizer" },
+        { path: "player", step: "club", draft: playerDraft },
+      ).draft.gameAccountIdentifier,
+    ).toBe("");
   });
 
   it("opens the invitation step with the code filled in", () => {

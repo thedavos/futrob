@@ -8,11 +8,12 @@ import { createEmptyDraft, type SelectedExternalClubDraft } from "./onboarding-d
 
 /**
  * A link that starts onboarding with something already chosen: an invitation code, an EA club
- * picked on the landing before signing up, or an open competition to join (with that club, if
- * one was picked).
+ * picked on the landing before signing up, an open competition to join (with that club, if
+ * one was picked), or the intent to organize a competition.
  */
 export type OnboardingHandoff =
   | Readonly<{ kind: "invitation"; code: string }>
+  | Readonly<{ kind: "organizer" }>
   | Readonly<{ kind: "club"; locator: PlayerExternalClubSelectionInputDto }>
   | Readonly<{
       kind: "competition";
@@ -22,7 +23,7 @@ export type OnboardingHandoff =
 
 /** The handoff after its club was looked up for the signed-in actor; `null` when it failed. */
 export type ResolvedOnboardingHandoff =
-  | Extract<OnboardingHandoff, { kind: "invitation" }>
+  | Extract<OnboardingHandoff, { kind: "invitation" | "organizer" }>
   | Readonly<{ kind: "club"; club: SelectedExternalClubDraft | null }>
   | Readonly<{
       kind: "competition";
@@ -42,6 +43,7 @@ const searchText = (max = Number.MAX_SAFE_INTEGER) =>
 /** Search params of every onboarding route. A malformed value is dropped, never an error. */
 export const onboardingHandoffSearchSchema = z.object({
   invitation: searchText(),
+  intent: z.literal("organizer").optional().catch(undefined),
   competition: searchText(80),
   club: searchText(80),
   platform: searchText(40),
@@ -53,8 +55,9 @@ export type OnboardingHandoffSearch = z.output<typeof onboardingHandoffSearchSch
 export function onboardingHandoffFromSearch(
   search: OnboardingHandoffSearch,
 ): OnboardingHandoff | null {
-  const { invitation, competition, club, platform, edition } = search;
+  const { invitation, intent, competition, club, platform, edition } = search;
   if (invitation) return { kind: "invitation", code: invitation };
+  if (intent === "organizer") return { kind: "organizer" };
   const locator =
     club && platform && edition
       ? ({
@@ -80,6 +83,8 @@ export function onboardingHandoffLocation(handoff: OnboardingHandoff) {
   switch (handoff.kind) {
     case "invitation":
       return { to: "/onboarding/invitation", search: { invitation: handoff.code } } as const;
+    case "organizer":
+      return { to: "/onboarding/organization", search: { intent: "organizer" } } as const;
     case "club":
       return { to: "/onboarding/club", search: clubSearch(handoff.locator) } as const;
     case "competition": {
@@ -103,6 +108,7 @@ export async function resolveOnboardingHandoff(
 ): Promise<ResolvedOnboardingHandoff> {
   switch (handoff.kind) {
     case "invitation":
+    case "organizer":
       return handoff;
     case "club":
       return { kind: "club", club: await lookupSelectedClub(handoff.locator, lookupClub) };
@@ -143,8 +149,8 @@ export function competitionHandoffDestination(
 }
 
 /**
- * Where a handoff opens: the invitation step with the code filled in, the player review with the
- * club selected (the club step when the lookup failed), or the player review set to join a
+ * Where a handoff opens: the invitation step with the code filled in, the organization step, the
+ * player review with the club selected (the club step when the lookup failed), or the player review set to join a
  * competition, with or without a club. A draft of the same path is kept.
  */
 export function onboardingStateForHandoff(
@@ -159,6 +165,10 @@ export function onboardingStateForHandoff(
         step: "invitation",
         draft: { ...draft, invitationToken: handoff.code },
       };
+    }
+    case "organizer": {
+      const draft = stored?.path === "organization" ? stored.draft : createEmptyDraft();
+      return { path: "organization", step: "organization", draft };
     }
     case "club": {
       const draft = stored?.path === "player" ? stored.draft : createEmptyDraft();

@@ -1,7 +1,7 @@
 import { Input as InputPrimitive } from "@base-ui/react/input";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -67,7 +67,9 @@ const styles = stylex.create({
   },
 });
 
-type InputProps = InputPrimitive.Props & {
+type InputProps = Omit<InputPrimitive.Props, "className"> & {
+  /** A StyleX override wins over the base styles, like `Button` and `SelectTrigger`. */
+  className?: HostClassName | InputPrimitive.Props["className"];
   /** Compact desktop/operator mode. Touch layouts stay at the accessible 44px target. */
   dense?: boolean;
 };

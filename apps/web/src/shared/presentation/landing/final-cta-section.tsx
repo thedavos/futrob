@@ -8,6 +8,7 @@ import { Link } from "@tanstack/react-router";
 
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { LandingActions, LandingSection } from "@/shared/presentation/landing/landing-section.tsx";
+import { ORGANIZER_SIGNUP_SEARCH } from "@/shared/presentation/landing/organizer-signup.ts";
 
 const styles = stylex.create({
   // `typography.headline` sizes itself against this box, as in the hero.
@@ -49,7 +50,7 @@ export function FinalCtaSection() {
             {t("landing.cta.subtitle")}
           </Body>
           <LandingActions>
-            <Button render={<Link to="/signup" />}>
+            <Button render={<Link search={ORGANIZER_SIGNUP_SEARCH} to="/signup" />}>
               {t("landing.cta.primary")}
               <ArrowRightIcon aria-hidden="true" />
             </Button>
