@@ -159,6 +159,8 @@ export function LandingSearch() {
   const [wantedClubs, setWantedClubs] = useState<SearchClubsQueryInput | null>(null);
   // Asked for while another search was in flight; runs as soon as that one settles.
   const queuedClubs = useRef<SearchClubsQueryInput | null>(null);
+  // A competition name cut to EA's length when switching to clubs, restored on the way back.
+  const clubCut = useRef<{ readonly full: string; readonly short: string } | null>(null);
 
   async function runClubSearch(input: SearchClubsQueryInput) {
     try {
@@ -177,15 +179,30 @@ export function LandingSearch() {
     if (next) await runClubSearch(next);
   }
 
-  async function searchClubsFor(nextQuery: string, platform: EaSearchPlatform) {
+  /**
+   * Asks EA for clubs named `nextQuery`. With `reuse`, a search for the same name and platform
+   * that is in flight or already answered is kept instead of asked again, and whatever was queued
+   * behind it is dropped: the visitor no longer wants it.
+   */
+  async function searchClubsFor(
+    nextQuery: string,
+    platform: EaSearchPlatform,
+    { reuse = false }: { readonly reuse?: boolean } = {},
+  ) {
     const trimmed = nextQuery.trim();
     if (!trimmed) {
       setQueryMissing(true);
       queryRef.current?.focus();
       return;
     }
-    if (retry.blocked) return;
     const input = { query: trimmed, platform };
+    const current = searchClubs.variables;
+    if (reuse && current?.query === input.query && current.platform === input.platform) {
+      queuedClubs.current = null;
+      setWantedClubs(input);
+      return;
+    }
+    if (retry.blocked) return;
     setWantedClubs(input);
     if (searchClubs.isPending) {
       queuedClubs.current = input;
@@ -214,18 +231,25 @@ export function LandingSearch() {
     setQueryMissing(false);
     let typed = typedQuery().trim();
     if (next === "competition") {
+      // Back from clubs with the field untouched: the competition name gets its full length back.
+      const cut = clubCut.current;
+      clubCut.current = null;
+      if (cut && cut.short === typed) {
+        typed = cut.full;
+        setQuery(typed);
+      }
       setCompetitionQuery(typed);
       return;
     }
     // A competition name may run longer than EA accepts; the club field keeps EA's limit.
     if (typed.length > CLUB_SEARCH_QUERY_MAX_LENGTH) {
-      typed = typed.slice(0, CLUB_SEARCH_QUERY_MAX_LENGTH).trim();
+      const short = typed.slice(0, CLUB_SEARCH_QUERY_MAX_LENGTH).trim();
+      clubCut.current = { full: typed, short };
+      typed = short;
       setQuery(typed);
     }
-    // EA searches are rate limited: only ask again when the name or platform changed.
-    const alreadySearched =
-      searchedClubs?.query === typed && searchedClubs.platform === clubPlatform;
-    if (typed && !alreadySearched) void searchClubsFor(typed, clubPlatform);
+    // EA searches are rate limited: an answered or running search for this name is reused.
+    if (typed) void searchClubsFor(typed, clubPlatform, { reuse: true });
   }
 
   function changePlatform(value: string) {

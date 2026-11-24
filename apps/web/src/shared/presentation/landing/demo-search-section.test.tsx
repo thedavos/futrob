@@ -453,29 +453,70 @@ describe("DemoSearchSection", () => {
     expect(screen.queryByRole("link", { name: "Crear cuenta con Fera Enjaulada" })).toBeNull();
   });
 
-  it("takes a competition name up to its own limit and keeps EA's for clubs", async () => {
+  it("drops a queued club search when the visitor goes back to the running one", async () => {
+    const user = userEvent.setup();
+    const held: Record<string, (response: Response) => void> = {};
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(OPEN_PATH)) return Response.json({ items: [] });
+      const query = new URL(url, "https://futrob.test").searchParams.get("query") ?? "";
+      return new Promise<Response>((resolve) => {
+        held[query] = resolve;
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderSection();
+    await searchFor("Fera");
+    const competitionField = () =>
+      screen.getByRole("searchbox", { name: "Nombre de la competición" });
+
+    await choose(user, /Buscar/, "Competiciones");
+    fireEvent.change(competitionField(), { target: { value: "Real" } });
+    await choose(user, /Buscar/, "Clubes");
+    await choose(user, /Buscar/, "Competiciones");
+    fireEvent.change(competitionField(), { target: { value: "Fera" } });
+    await choose(user, /Buscar/, "Clubes");
+    held.Fera?.(Response.json({ clubs: [FERA] }));
+
+    expect(
+      await screen.findByRole("link", { name: "Crear cuenta con Fera Enjaulada" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("searchbox", { name: "Nombre del club" })).toHaveValue("Fera");
+    expect(
+      clubSearchCalls(fetchMock).map((url) =>
+        new URL(url, "https://futrob.test").searchParams.get("query"),
+      ),
+    ).toEqual(["Fera"]);
+  });
+
+  it("cuts a long competition name to EA's length for clubs and restores it on the way back", async () => {
     const user = userEvent.setup();
     const fetchMock = stubSearch(() => Response.json({ clubs: [] }));
     renderSection();
     await choose(user, /Buscar/, "Competiciones");
-    const long = `${"Liga ".repeat(20)}Final`.slice(0, 110);
+    const name = "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027";
 
-    const field = screen.getByRole("searchbox", { name: "Nombre de la competición" });
-    expect(field).toHaveAttribute("maxLength", "120");
-    await searchFor(long, "Nombre de la competición");
-    await waitFor(() =>
-      expect(
-        new URL(openCalls(fetchMock).at(-1) ?? "", "https://futrob.test").searchParams.get("q"),
-      ).toBe(long.trim()),
-    );
+    await searchFor(name, "Nombre de la competición");
+    await waitFor(() => expect(openCalls(fetchMock).at(-1)).toContain("q=Liga+Interclubes"));
+    expect(
+      new URL(openCalls(fetchMock).at(-1) ?? "", "https://futrob.test").searchParams.get("q"),
+    ).toBe("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027");
 
     await choose(user, /Buscar/, "Clubes");
-    const clubField = screen.getByRole("searchbox", { name: "Nombre del club" });
-    expect(clubField).toHaveAttribute("maxLength", "60");
-    expect((clubField as HTMLInputElement).value.length).toBeLessThanOrEqual(60);
+    expect(screen.getByRole("searchbox", { name: "Nombre del club" })).toHaveValue(
+      "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad",
+    );
     await waitFor(() => expect(clubSearchCalls(fetchMock)).toHaveLength(1));
-    const searched = new URL(clubSearchCalls(fetchMock)[0] ?? "", "https://futrob.test");
-    expect(searched.searchParams.get("query")?.length).toBeLessThanOrEqual(60);
+    expect(
+      new URL(clubSearchCalls(fetchMock)[0] ?? "", "https://futrob.test").searchParams.get("query"),
+    ).toBe("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad");
+
+    await choose(user, /Buscar/, "Competiciones");
+    expect(screen.getByRole("searchbox", { name: "Nombre de la competición" })).toHaveValue(
+      "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027",
+    );
+    expect(
+      new URL(openCalls(fetchMock).at(-1) ?? "", "https://futrob.test").searchParams.get("q"),
+    ).toBe("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027");
   });
 
   it("keeps an empty state and recovers from a failed competition list", async () => {
