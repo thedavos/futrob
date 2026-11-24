@@ -63,9 +63,10 @@ import { requireApiPermission } from "@/http/require-api-permission.ts";
 export function registerPublicCompetitionRoutes(app: Hono, deps: AppDeps): void {
   const internal = createInternalOpenApiRouter(deps.internalJobSecret);
   internal.openapi(listOpenCompetitionsAnonymouslyRoute, async (c) => {
-    const { platform, limit } = c.req.valid("query");
+    const { q, platform, limit } = c.req.valid("query");
     const page = await deps.modules.competitions.explore.list({
       status: "registration",
+      q,
       platform,
       sort: "updated-desc",
       limit,

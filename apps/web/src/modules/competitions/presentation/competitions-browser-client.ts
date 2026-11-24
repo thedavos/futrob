@@ -52,6 +52,12 @@ import { z } from "zod";
 import { requestBrowserJson } from "@/shared/infrastructure/http/browser-json-request.ts";
 import type { UnparsedResponseBody } from "@/shared/infrastructure/http/browser-api-error.ts";
 
+/** Landing search of open competitions: a name, empty for any, and a platform, null for any. */
+export type OpenCompetitionsFilters = {
+  readonly q: string;
+  readonly platform: CompetitionPlatformDto | null;
+};
+
 export class CompetitionsClientError extends Error {
   constructor(
     readonly status: number,
@@ -238,9 +244,13 @@ export function updateCompetitionCover(
 
 /** Signed-out landing list of open, listed competitions, limited per IP. */
 export function listOpenCompetitions(
-  platform: CompetitionPlatformDto | null,
+  filters: OpenCompetitionsFilters,
 ): Promise<OpenCompetitionsResponse> {
-  const search = platform ? `?${new URLSearchParams({ platform }).toString()}` : "";
+  const params = new URLSearchParams();
+  const q = filters.q.trim();
+  if (q) params.set("q", q);
+  if (filters.platform) params.set("platform", filters.platform);
+  const search = params.size > 0 ? `?${params.toString()}` : "";
   return requestCompetitionsJson({
     path: `/api/v1/public/competitions/explore${search}`,
     method: "GET",

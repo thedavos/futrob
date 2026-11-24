@@ -140,11 +140,15 @@ describe("context discovery SDK resources", () => {
       }),
     });
 
-    const result = await client.competitions.listOpenAnonymously({ platform: "pc", limit: 3 });
+    const result = await client.competitions.listOpenAnonymously({
+      q: " Liga ",
+      platform: "pc",
+      limit: 3,
+    });
 
     expect(result.items).toEqual([]);
     expect(requestedUrl).toBe(
-      "https://app.example.com/api/v1/internal/competitions/explore/open?platform=pc&limit=3",
+      "https://app.example.com/api/v1/internal/competitions/explore/open?q=Liga&platform=pc&limit=3",
     );
   });
 

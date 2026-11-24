@@ -240,8 +240,12 @@ export type ExploreCompetitionsResponse = z.infer<typeof exploreCompetitionsResp
 /** The signed-out landing shows at most this many competitions with open registration. */
 export const OPEN_COMPETITIONS_MAX_LIMIT = 6;
 
-/** Signed-out list of competitions in registration. Status and listing are fixed server-side. */
+/**
+ * Signed-out list of competitions in registration, optionally narrowed by name. Status and
+ * listing are fixed server-side.
+ */
 export const openCompetitionsQuerySchema = z.object({
+  q: optionalQuery(z.string().trim().min(1).max(120)),
   platform: optionalQuery(competitionPlatformSchema),
   limit: z.coerce
     .number()
