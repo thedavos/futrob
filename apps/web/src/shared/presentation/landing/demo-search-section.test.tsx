@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
@@ -418,6 +418,64 @@ describe("DemoSearchSection", () => {
     await choose(user, /Buscar/, "Clubes");
     expect(await findAnchor("Crear cuenta")).toBeTruthy();
     expect(clubSearchCalls(fetchMock)).toHaveLength(1);
+  });
+
+  it("never shows an earlier search's clubs under a newer name", async () => {
+    const user = userEvent.setup();
+    const held: Record<string, (response: Response) => void> = {};
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(OPEN_PATH)) return Response.json({ items: [] });
+      const query = new URL(url, "https://futrob.test").searchParams.get("query") ?? "";
+      return new Promise<Response>((resolve) => {
+        held[query] = resolve;
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderSection();
+    await searchFor("Fera");
+
+    await choose(user, /Buscar/, "Competiciones");
+    fireEvent.change(screen.getByRole("searchbox", { name: "Nombre de la competición" }), {
+      target: { value: "Real" },
+    });
+    await choose(user, /Buscar/, "Clubes");
+    held.Fera?.(Response.json({ clubs: [FERA] }));
+
+    // «Fera» answered and «Real» is on its way: the field says «Real», so «Fera» stays hidden.
+    await waitFor(() => expect(held.Real).toBeDefined());
+    expect(screen.queryByRole("link", { name: "Crear cuenta con Fera Enjaulada" })).toBeNull();
+    expect(screen.getByRole("list", { name: "Buscando…" })).toBeTruthy();
+
+    held.Real?.(
+      Response.json({ clubs: [{ ...FERA, externalClubId: "77", name: "Real Cuervos" }] }),
+    );
+    expect(await screen.findByRole("link", { name: "Crear cuenta con Real Cuervos" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Crear cuenta con Fera Enjaulada" })).toBeNull();
+  });
+
+  it("takes a competition name up to its own limit and keeps EA's for clubs", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubSearch(() => Response.json({ clubs: [] }));
+    renderSection();
+    await choose(user, /Buscar/, "Competiciones");
+    const long = `${"Liga ".repeat(20)}Final`.slice(0, 110);
+
+    const field = screen.getByRole("searchbox", { name: "Nombre de la competición" });
+    expect(field).toHaveAttribute("maxLength", "120");
+    await searchFor(long, "Nombre de la competición");
+    await waitFor(() =>
+      expect(
+        new URL(openCalls(fetchMock).at(-1) ?? "", "https://futrob.test").searchParams.get("q"),
+      ).toBe(long.trim()),
+    );
+
+    await choose(user, /Buscar/, "Clubes");
+    const clubField = screen.getByRole("searchbox", { name: "Nombre del club" });
+    expect(clubField).toHaveAttribute("maxLength", "60");
+    expect((clubField as HTMLInputElement).value.length).toBeLessThanOrEqual(60);
+    await waitFor(() => expect(clubSearchCalls(fetchMock)).toHaveLength(1));
+    const searched = new URL(clubSearchCalls(fetchMock)[0] ?? "", "https://futrob.test");
+    expect(searched.searchParams.get("query")?.length).toBeLessThanOrEqual(60);
   });
 
   it("keeps an empty state and recovers from a failed competition list", async () => {

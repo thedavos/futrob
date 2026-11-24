@@ -5,9 +5,11 @@ import * as stylex from "@stylexjs/stylex";
 import {
   asEaSearchPlatform,
   CLUB_SEARCH_QUERY_MAX_LENGTH,
+  COMPETITION_SEARCH_QUERY_MAX_LENGTH,
   EA_SEARCH_PLATFORM,
   type CompetitionPlatformDto,
   type EaSearchPlatform,
+  type SearchClubsQueryInput,
 } from "@futrob/api-contracts";
 import { GAME_PLATFORM_VALUES } from "@futrob/shared-kernel";
 import {
@@ -152,6 +154,28 @@ export function LandingSearch() {
     { enabled: kind === "competition" },
   );
   const searchedClubs = searchClubs.variables;
+  // The club search the visitor last asked for. Results of any other search are stale: they show
+  // as loading until this one answers, never under a name the field no longer holds.
+  const [wantedClubs, setWantedClubs] = useState<SearchClubsQueryInput | null>(null);
+  // Asked for while another search was in flight; runs as soon as that one settles.
+  const queuedClubs = useRef<SearchClubsQueryInput | null>(null);
+
+  async function runClubSearch(input: SearchClubsQueryInput) {
+    try {
+      await searchClubs.mutateAsync(input);
+    } catch (cause) {
+      if (GameDataClientError.is(cause) && cause.retryAfterSeconds) {
+        retry.start(cause.retryAfterSeconds);
+        // Rate limited: the queued search cannot run, so this error is what the visitor sees.
+        queuedClubs.current = null;
+        setWantedClubs(input);
+        return;
+      }
+    }
+    const next = queuedClubs.current;
+    queuedClubs.current = null;
+    if (next) await runClubSearch(next);
+  }
 
   async function searchClubsFor(nextQuery: string, platform: EaSearchPlatform) {
     const trimmed = nextQuery.trim();
@@ -160,12 +184,14 @@ export function LandingSearch() {
       queryRef.current?.focus();
       return;
     }
-    if (searchClubs.isPending || retry.blocked) return;
-    try {
-      await searchClubs.mutateAsync({ query: trimmed, platform });
-    } catch (cause) {
-      if (GameDataClientError.is(cause)) retry.start(cause.retryAfterSeconds);
+    if (retry.blocked) return;
+    const input = { query: trimmed, platform };
+    setWantedClubs(input);
+    if (searchClubs.isPending) {
+      queuedClubs.current = input;
+      return;
     }
+    await runClubSearch(input);
   }
 
   /** Text typed before hydration is in the field but never reached `query`. */
@@ -186,10 +212,15 @@ export function LandingSearch() {
     if (next === kind) return;
     setKind(next);
     setQueryMissing(false);
-    const typed = typedQuery().trim();
+    let typed = typedQuery().trim();
     if (next === "competition") {
       setCompetitionQuery(typed);
       return;
+    }
+    // A competition name may run longer than EA accepts; the club field keeps EA's limit.
+    if (typed.length > CLUB_SEARCH_QUERY_MAX_LENGTH) {
+      typed = typed.slice(0, CLUB_SEARCH_QUERY_MAX_LENGTH).trim();
+      setQuery(typed);
     }
     // EA searches are rate limited: only ask again when the name or platform changed.
     const alreadySearched =
@@ -253,7 +284,11 @@ export function LandingSearch() {
                 className={styles.inputBare}
                 enterKeyHint="search"
                 id={queryId}
-                maxLength={CLUB_SEARCH_QUERY_MAX_LENGTH}
+                maxLength={
+                  kind === "club"
+                    ? CLUB_SEARCH_QUERY_MAX_LENGTH
+                    : COMPETITION_SEARCH_QUERY_MAX_LENGTH
+                }
                 onChange={(event) => {
                   setQuery(event.target.value);
                   setQueryMissing(false);
@@ -338,6 +373,7 @@ export function LandingSearch() {
             platformLabel={platformLabel}
             rateLimitedFor={retry.remainingSeconds}
             search={searchClubs}
+            wanted={wantedClubs}
           />
         ) : (
           <LandingCompetitionResults
