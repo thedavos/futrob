@@ -542,6 +542,33 @@ describe("DemoSearchSection", () => {
     ).toBe("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027");
   });
 
+  it("keeps the visitor's own edit of a cut name when going back to competitions", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubSearch(() => Response.json({ clubs: [] }));
+    renderSection();
+    await choose(user, /Buscar/, "Competiciones");
+    await searchFor(
+      "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027",
+      "Nombre de la competición",
+    );
+    await choose(user, /Buscar/, "Clubes");
+
+    const clubField = screen.getByRole("searchbox", { name: "Nombre del club" });
+    await user.clear(clubField);
+    await user.click(clubField);
+    await user.paste("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad");
+    await choose(user, /Buscar/, "Competiciones");
+
+    expect(screen.getByRole("searchbox", { name: "Nombre de la competición" })).toHaveValue(
+      "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad",
+    );
+    await waitFor(() =>
+      expect(
+        new URL(openCalls(fetchMock).at(-1) ?? "", "https://futrob.test").searchParams.get("q"),
+      ).toBe("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad"),
+    );
+  });
+
   it("keeps an empty state and recovers from a failed competition list", async () => {
     const user = userEvent.setup();
     let fail = true;

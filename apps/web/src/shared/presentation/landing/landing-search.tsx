@@ -311,6 +311,8 @@ export function LandingSearch() {
                 onChange={(event) => {
                   setQuery(event.target.value);
                   setQueryMissing(false);
+                  // An edit is the visitor's own text: the cut-off competition name stays gone.
+                  clubCut.current = null;
                 }}
                 placeholder={
                   kind === "club"
