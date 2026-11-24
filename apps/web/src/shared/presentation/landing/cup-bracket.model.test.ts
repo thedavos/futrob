@@ -12,6 +12,7 @@ import {
   CUP_RUNNER_UP,
   FULL_BRACKET,
   routePath,
+  routeSegments,
   routeTouches,
   type BracketLayout,
 } from "./cup-bracket.model.ts";
@@ -85,6 +86,20 @@ describe.each<[string, BracketLayout, number]>([
       } else {
         expect(endRadius(route ?? "")).toBeCloseTo(layout.radii[club.wins + 1] ?? 0, 1);
       }
+    }
+  });
+
+  it("splits each route into one segment per round, together the whole route", () => {
+    for (const club of bracketCrests(layout).map((crest) => crest.club)) {
+      const segments = routeSegments(layout, club);
+      const depths = segments.map((segment) => segment.depth);
+      expect(depths[0]).toBe(layout.crestDepth);
+      expect(depths.at(-1)).toBe(Math.min(club.wins, 3));
+      // Each segment starts where the one before it ended, and the last ends where the route does.
+      expect(endRadius(segments.at(-1)?.path ?? "")).toBeCloseTo(
+        endRadius(routePath(layout, club) ?? ""),
+        1,
+      );
     }
   });
 

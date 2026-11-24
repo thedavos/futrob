@@ -680,8 +680,12 @@ Debe demostrar en pocos scrolls: Futrob opera competiciones EA SPORTS FC Clubs, 
 - Color: lima solo para el estado oficial (ruta del campeón, «Oficiales.» y «oficial» de la card) y la CTA
   primaria; oro (`emphasis`) solo para el trofeo del centro y el de la card. Los escudos llevan sus colores de club, como
   cualquier escudo; líneas, nodos y círculos quedan en grafito.
-- Entrada, 1.5 s como máximo y en pasos de `--duration-fast`: líneas del titular, cuadro de fuera
-  hacia el centro, ruta lima del campeón al trofeo, trofeo a oro y «Oficiales.» a lima, card final.
+- Entrada, 1.5 s como máximo y en pasos de `--duration-fast`: líneas del titular, escudos en ola
+  horaria desde arriba, cuadro de fuera hacia el centro, ruta lima del campeón ronda a ronda a
+  velocidad constante (cada cruce se enciende cuando la línea llega), y al tocar el trofeo: trofeo a
+  oro con un destello, «Oficiales.» a lima y el trofeo de la card a oro a la vez.
+- Al pasar el puntero, enfocar o tocar un club, su ruta se dibuja ronda a ronda y sus cruces se
+  encienden al llegar la línea.
 - Cada club es un botón con tooltip («Atlético Norte · Finalista · perdió 1–2») que resalta su ruta al
   pasar el puntero, enfocar o tocar. El anillo es una sola parada de tabulación; las flechas recorren
   los clubes. Esa lista de botones es la alternativa accesible del cuadro.
