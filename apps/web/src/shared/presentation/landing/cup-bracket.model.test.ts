@@ -29,6 +29,16 @@ function endRadius(path: string): number {
   return Math.hypot((x ?? Number.NaN) - CENTER, (y ?? Number.NaN) - CENTER);
 }
 
+/** First (`start`) or last (`end`) point of a path. */
+function point(path: string, which: "start" | "end"): [number, number] {
+  const numbers = path
+    .split(/[ A-Z]/)
+    .filter(Boolean)
+    .map(Number);
+  const [x, y] = which === "start" ? numbers.slice(0, 2) : numbers.slice(-2);
+  return [x ?? Number.NaN, y ?? Number.NaN];
+}
+
 describe("demo cup results", () => {
   it("draws 16 clubs that stay distinguishable by their crest initials", () => {
     expect(CUP_CLUBS).toHaveLength(16);
@@ -89,18 +99,35 @@ describe.each<[string, BracketLayout, number]>([
     }
   });
 
-  it("splits each route into one segment per round, together the whole route", () => {
-    for (const club of bracketCrests(layout).map((crest) => crest.club)) {
-      const segments = routeSegments(layout, club);
-      const depths = segments.map((segment) => segment.depth);
-      expect(depths[0]).toBe(layout.crestDepth);
-      expect(depths.at(-1)).toBe(Math.min(club.wins, 3));
-      // Each segment starts where the one before it ended, and the last ends where the route does.
-      expect(endRadius(segments.at(-1)?.path ?? "")).toBeCloseTo(
-        endRadius(routePath(layout, club) ?? ""),
-        1,
-      );
+  it("splits the champion's route into one connected segment per round, ending on the trophy", () => {
+    const segments = routeSegments(layout, CUP_CHAMPION);
+
+    expect(segments.map((segment) => segment.depth)).toEqual(
+      layout === FULL_BRACKET ? [0, 1, 2, 3] : [1, 2, 3],
+    );
+    for (let round = 1; round < segments.length; round += 1) {
+      const [x, y] = point(segments[round]?.path ?? "", "start");
+      const [endX, endY] = point(segments[round - 1]?.path ?? "", "end");
+      expect(x, `round ${round} starts where round ${round - 1} ended`).toBeCloseTo(endX, 1);
+      expect(y).toBeCloseTo(endY, 1);
     }
+    expect(endRadius(segments.at(-1)?.path ?? "")).toBeCloseTo(layout.trophyRadius, 1);
+  });
+
+  it("stops a club's segments at the match it lost, and has none for a club it hides", () => {
+    // Lost in the quarter-finals: two rounds played on the full bracket, one on the compact one.
+    const quarterFinalist = CUP_CLUBS.find((club) => club.wins === 1);
+    const segments = quarterFinalist ? routeSegments(layout, quarterFinalist) : [];
+
+    expect(segments.map((segment) => segment.depth)).toEqual(
+      layout === FULL_BRACKET ? [0, 1] : [1],
+    );
+    expect(endRadius(segments.at(-1)?.path ?? "")).toBeCloseTo(layout.radii[2] ?? 0, 1);
+
+    const outInRoundOf16 = CUP_CLUBS.find((club) => club.wins === 0);
+    expect(outInRoundOf16 && routeSegments(layout, outInRoundOf16).length).toBe(
+      layout === FULL_BRACKET ? 1 : 0,
+    );
   });
 
   it("lights one junction per round on the champion's route", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ExternalClubDto, SearchClubsQueryInput } from "@futrob/api-contracts";
+import type { ExternalClubDto } from "@futrob/api-contracts";
 import { applyStyles, Caption, Text } from "@futrob/ui";
 import {
   eaPlatformLabel,
@@ -30,8 +30,6 @@ export type LandingClubResultsProps = {
   readonly platformLabel: string;
   /** Seconds left before the rate limit lets the visitor search again. */
   readonly rateLimitedFor: number;
-  /** The search the visitor last asked for; another search's results are not shown. */
-  readonly wanted: SearchClubsQueryInput | null;
 };
 
 /** EA clubs found by the landing search, each one a way to sign up with it already chosen. */
@@ -39,13 +37,9 @@ export function LandingClubResults({
   search,
   platformLabel,
   rateLimitedFor,
-  wanted,
 }: LandingClubResultsProps) {
   const { t } = useI18n();
-  const stale =
-    wanted !== null &&
-    (search.variables?.query !== wanted.query || search.variables.platform !== wanted.platform);
-  if (search.isPending || stale) {
+  if (search.isPending) {
     return <LandingResultsSkeleton label={t("gameData.clubSearch.searching")} />;
   }
   if (search.error) {

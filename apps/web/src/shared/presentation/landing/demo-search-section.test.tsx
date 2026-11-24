@@ -169,7 +169,14 @@ describe("DemoSearchSection", () => {
     expect(clubSearchCalls(fetchMock)[0]).toContain("/api/v1/public/game-data/clubs/search?");
     // Clubs never load the competition list.
     expect(openCalls(fetchMock)).toEqual([]);
-    expect(await findAnchor("Crea tu competición")).toBeTruthy();
+    const organizer = new URL(
+      (await findAnchor("Crea tu competición")).getAttribute("href") ?? "",
+      "https://futrob.test",
+    );
+    expect(handoffFromHref(organizer.searchParams.get("redirectTo"))).toEqual({
+      pathname: "/onboarding/organization",
+      handoff: { kind: "organizer" },
+    });
     const signup = new URL(cta.getAttribute("href") ?? "", "https://futrob.test");
     expect(signup.pathname).toBe("/signup");
     expect(handoffFromHref(signup.searchParams.get("redirectTo"))).toEqual({
@@ -340,30 +347,46 @@ describe("DemoSearchSection", () => {
     });
   });
 
-  it("warns when a competition is almost full", async () => {
+  it("shows each competition's capacity and warns only when one or two places are left", async () => {
     const user = userEvent.setup();
+    const open = (id: string, name: string, approved: number, max: number | null) => {
+      const item = openCompetition(id, name);
+      return {
+        ...item,
+        approvedTeamCount: approved,
+        competition: { ...item.competition, teams: { min: 2, max } },
+      };
+    };
     stubSearch(
       () => Response.json({ clubs: [FERA] }),
       () =>
         Response.json({
           items: [
-            { ...openCompetition("c-full", "Copa Llena"), approvedTeamCount: 7 },
-            {
-              ...openCompetition("c-open", "Liga Libre"),
-              competition: {
-                ...openCompetition("c-open", "Liga Libre").competition,
-                teams: { min: 2, max: null },
-              },
-            },
+            open("c-full", "Copa Llena", 7, 8),
+            open("c-roomy", "Copa Amplia", 3, 8),
+            open("c-free", "Liga Libre", 3, null),
           ],
         }),
     );
     renderSection();
     await choose(user, /Buscar/, "Competiciones");
 
-    expect(await screen.findByText("queda 1 lugar")).toBeTruthy();
-    expect(screen.getByText(/7 de 8 equipos/)).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Unirme a Liga Libre" })).toBeTruthy();
+    const almostFull = await screen.findByRole("link", { name: "Unirme a Copa Llena" });
+    expect(almostFull).toHaveTextContent("7 de 8 equipos · queda 1 lugar");
+    expect(within(almostFull).getByRole("progressbar", { hidden: true })).toHaveAttribute(
+      "aria-valuenow",
+      "87.5",
+    );
+
+    const roomy = screen.getByRole("link", { name: "Unirme a Copa Amplia" });
+    expect(roomy).toHaveTextContent("3 de 8 equipos");
+    expect(roomy).not.toHaveTextContent(/lugar/);
+
+    // No maximum: a count, with no bar and nothing to run out of.
+    const uncapped = screen.getByRole("link", { name: "Unirme a Liga Libre" });
+    expect(uncapped).toHaveTextContent("3 equipos");
+    expect(uncapped).not.toHaveTextContent(/de \d+ equipos|lugar/);
+    expect(within(uncapped).queryByRole("progressbar", { hidden: true })).toBeNull();
   });
 
   it("narrows competitions by name and platform", async () => {

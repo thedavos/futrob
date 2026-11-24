@@ -154,10 +154,8 @@ export function LandingSearch() {
     { enabled: kind === "competition" },
   );
   const searchedClubs = searchClubs.variables;
-  // The club search the visitor last asked for. Results of any other search are stale: they show
-  // as loading until this one answers, never under a name the field no longer holds.
-  const [wantedClubs, setWantedClubs] = useState<SearchClubsQueryInput | null>(null);
-  // Asked for while another search was in flight; runs as soon as that one settles.
+  // Asked for while another search was in flight; runs as soon as that one settles, so the
+  // results never stay on a name the field no longer holds.
   const queuedClubs = useRef<SearchClubsQueryInput | null>(null);
   // A competition name cut to EA's length when switching to clubs, restored on the way back.
   const clubCut = useRef<{ readonly full: string; readonly short: string } | null>(null);
@@ -170,7 +168,6 @@ export function LandingSearch() {
         retry.start(cause.retryAfterSeconds);
         // Rate limited: the queued search cannot run, so this error is what the visitor sees.
         queuedClubs.current = null;
-        setWantedClubs(input);
         return;
       }
     }
@@ -199,11 +196,9 @@ export function LandingSearch() {
     const current = searchClubs.variables;
     if (reuse && current?.query === input.query && current.platform === input.platform) {
       queuedClubs.current = null;
-      setWantedClubs(input);
       return;
     }
     if (retry.blocked) return;
-    setWantedClubs(input);
     if (searchClubs.isPending) {
       queuedClubs.current = input;
       return;
@@ -397,7 +392,6 @@ export function LandingSearch() {
             platformLabel={platformLabel}
             rateLimitedFor={retry.remainingSeconds}
             search={searchClubs}
-            wanted={wantedClubs}
           />
         ) : (
           <LandingCompetitionResults
