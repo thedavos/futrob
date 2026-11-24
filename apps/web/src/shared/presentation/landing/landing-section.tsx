@@ -8,7 +8,7 @@ import { colors, space } from "@futrob/ui/styles/tokens.stylex";
 
 export type LandingSectionTone = "base" | "band";
 export type LandingSectionAlign = "center" | "start";
-export type LandingSectionLayout = "split" | "stacked";
+export type LandingSectionLayout = "split" | "stacked" | "centered";
 
 /** A section states its copy as a title and subtitle, or brings its own header. */
 type LandingSectionCopy =
@@ -30,7 +30,10 @@ interface LandingSectionBaseProps {
   /** Extra copy-column content below the subtitle: lists, notes or `LandingActions`. */
   readonly copy?: ReactNode;
   readonly id?: string;
-  /** `stacked` gives the visual the full container width below the copy, for card grids. */
+  /**
+   * `stacked` gives the visual the full container width below the copy, for card grids.
+   * `centered` centers a single column of copy (no visual) and its headline.
+   */
   readonly layout?: LandingSectionLayout;
   /** Sections alternate `base` and `band`; the tone change is the only separator. */
   readonly tone?: LandingSectionTone;
@@ -99,6 +102,11 @@ const styles = stylex.create({
   copySingle: {
     maxWidth: "40rem",
   },
+  copyCentered: {
+    marginInline: "auto",
+    width: "100%",
+    textAlign: "center",
+  },
   copySticky: {
     position: {
       default: "static",
@@ -112,6 +120,9 @@ const styles = stylex.create({
   },
   subtitle: {
     maxWidth: "44ch",
+  },
+  subtitleCentered: {
+    marginInline: "auto",
   },
   visual: {
     minWidth: 0,
@@ -141,6 +152,7 @@ export function LandingSection({
   const hasVisual = children !== undefined;
   const isSplit = hasVisual && layout === "split";
   const isStacked = hasVisual && layout === "stacked";
+  const isCentered = !hasVisual && layout === "centered";
   return (
     <section id={id} {...applyStyles(tone === "band" && styles.band, isHero && styles.hero)}>
       <div
@@ -156,6 +168,7 @@ export function LandingSection({
           {...applyStyles(
             styles.copy,
             !isSplit && styles.copySingle,
+            isCentered && styles.copyCentered,
             isSplit && align === "start" && styles.copySticky,
           )}
         >
@@ -164,7 +177,12 @@ export function LandingSection({
               <Display as={as} {...applyStyles(styles.title)}>
                 {title}
               </Display>
-              <Body size="lg" tone="muted" {...applyStyles(styles.subtitle)}>
+              <Body
+                align={isCentered ? "center" : "start"}
+                size="lg"
+                tone="muted"
+                {...applyStyles(styles.subtitle, isCentered && styles.subtitleCentered)}
+              >
                 {subtitle}
               </Body>
             </>

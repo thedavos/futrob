@@ -256,6 +256,34 @@ export function routePath(layout: BracketLayout, club: CupClub): string | null {
   return path;
 }
 
+/** One round of a route: the link a club played at `depth`, from its node toward the centre. */
+export interface RouteSegment {
+  readonly depth: number;
+  readonly path: string;
+}
+
+/**
+ * The same route as `routePath`, one path per round so each can be drawn after the one before it.
+ * Empty when the layout does not show the club.
+ */
+export function routeSegments(layout: BracketLayout, club: CupClub): readonly RouteSegment[] {
+  if (!showsClub(layout, club)) {
+    return [];
+  }
+  const segments: RouteSegment[] = [];
+  for (let depth = layout.crestDepth; depth <= Math.min(club.wins, LAST_DEPTH); depth += 1) {
+    const index = club.index >> depth;
+    segments.push({
+      depth,
+      path: moveTo(layout, depth, index) + linkSegment(layout, depth, index),
+    });
+  }
+  return segments;
+}
+
+/** Rounds between the outermost link and the trophy; the champion's route ends on the trophy. */
+export const ROUTE_LAST_DEPTH = LAST_DEPTH;
+
 function percent(value: number): string {
   return `${round((value / BRACKET_SIZE) * 100)}%`;
 }

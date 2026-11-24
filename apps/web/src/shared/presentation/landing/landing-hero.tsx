@@ -9,6 +9,7 @@ import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { CupBracket } from "@/shared/presentation/landing/cup-bracket.tsx";
 import { LandingActions, LandingSection } from "@/shared/presentation/landing/landing-section.tsx";
+import { ORGANIZER_SIGNUP_SEARCH } from "@/shared/presentation/landing/organizer-signup.ts";
 
 const riseIn = stylex.keyframes({
   from: { opacity: 0, translate: "0 0.75rem" },
@@ -122,7 +123,7 @@ export function LandingHero() {
           </Body>
           <div {...applyStyles(styles.reveal, delay.actions)}>
             <LandingActions>
-              <Button render={<Link to="/signup" />}>
+              <Button render={<Link search={ORGANIZER_SIGNUP_SEARCH} to="/signup" />}>
                 {t("landing.hero.cta.primary")}
                 <ArrowRightIcon aria-hidden="true" />
               </Button>

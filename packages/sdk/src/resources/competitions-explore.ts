@@ -23,6 +23,7 @@ export function createCompetitionExploreMethods(http: HttpClient) {
     ): Promise<OpenCompetitionsResponse> {
       const parsed = openCompetitionsQuerySchema.parse(query);
       const search = new URLSearchParams();
+      if (parsed.q) search.set("q", parsed.q);
       if (parsed.platform) search.set("platform", parsed.platform);
       search.set("limit", String(parsed.limit));
       return http.request({

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   createMemoryHistory,
@@ -18,7 +19,6 @@ import {
   onboardingHandoffSearchSchema,
 } from "@/modules/identity/presentation/onboarding/onboarding-handoff.ts";
 import { DemoSearchSection } from "./demo-search-section.tsx";
-import { competitionPlatformForClub } from "./open-competitions-model.ts";
 
 const session = vi.hoisted(() => ({
   isPending: false,
@@ -79,7 +79,7 @@ function openCompetition(id: string, name: string, platform = "playstation") {
   };
 }
 
-/** Club searches answer `response`; the open competitions list answers `open`. */
+/** Club searches answer `response`; the open competitions search answers `open`. */
 function stubSearch(
   response: () => Response | Promise<Response>,
   open: (url: string) => Response = () => Response.json({ items: [] }),
@@ -124,11 +124,16 @@ function renderSection() {
   );
 }
 
-async function searchFor(query: string) {
-  fireEvent.change(await screen.findByRole("searchbox", { name: "Nombre del club" }), {
+async function searchFor(query: string, field = "Nombre del club") {
+  fireEvent.change(await screen.findByRole("searchbox", { name: field }), {
     target: { value: query },
   });
   fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+}
+
+async function choose(user: ReturnType<typeof userEvent.setup>, select: RegExp, option: string) {
+  await user.click(await screen.findByRole("combobox", { name: select }));
+  await user.click(await screen.findByRole("option", { name: option }));
 }
 
 /** `Button render={<Link />}` keeps the button role on the anchor, so find it by its text. */
@@ -149,22 +154,32 @@ function handoffFromHref(href: string | null) {
 }
 
 describe("DemoSearchSection", () => {
-  it("searches signed out and signs up with the first club already chosen", async () => {
+  it("searches clubs signed out and signs up with the club already chosen", async () => {
     const fetchMock = stubSearch(() => Response.json({ clubs: [FERA] }));
     renderSection();
 
+    expect(
+      await screen.findByText("Datos en vivo de EA SPORTS FC Clubs. Buscar no requiere cuenta."),
+    ).toBeTruthy();
     await searchFor("Fera");
 
-    const cta = await findAnchor("Crear cuenta con este club");
+    const cta = await findAnchor("Crear cuenta");
+    expect(cta).toHaveAccessibleName("Crear cuenta con Fera Enjaulada");
+    expect(screen.getByText("1 club en Cross-gen")).toBeTruthy();
     expect(clubSearchCalls(fetchMock)[0]).toContain("/api/v1/public/game-data/clubs/search?");
-    expect(screen.getByRole("button", { name: /Fera Enjaulada/ })).toHaveAttribute(
-      "aria-pressed",
-      "true",
+    // Clubs never load the competition list.
+    expect(openCalls(fetchMock)).toEqual([]);
+    const organizer = new URL(
+      (await findAnchor("Crea tu competición")).getAttribute("href") ?? "",
+      "https://futrob.test",
     );
+    expect(handoffFromHref(organizer.searchParams.get("redirectTo"))).toEqual({
+      pathname: "/onboarding/organization",
+      handoff: { kind: "organizer" },
+    });
     const signup = new URL(cta.getAttribute("href") ?? "", "https://futrob.test");
     expect(signup.pathname).toBe("/signup");
-    const redirectTo = signup.searchParams.get("redirectTo");
-    expect(handoffFromHref(redirectTo)).toEqual({
+    expect(handoffFromHref(signup.searchParams.get("redirectTo"))).toEqual({
       pathname: "/onboarding/club",
       handoff: {
         kind: "club",
@@ -176,10 +191,25 @@ describe("DemoSearchSection", () => {
         },
       },
     });
-    expect(await findAnchor("¿Organizas un torneo? Crea tu competición")).toHaveAttribute(
-      "href",
-      "/signup",
-    );
+  });
+
+  it("offers up to ten clubs found, each with its EA id and its own sign-up", async () => {
+    const clubs = Array.from({ length: 11 }, (_, index) => ({
+      ...FERA,
+      externalClubId: String(100 + index),
+      name: `Fera ${index}`,
+    }));
+    stubSearch(() => Response.json({ clubs }));
+    renderSection();
+
+    await searchFor("Fera");
+
+    expect(await screen.findByText("10 clubes en Cross-gen")).toBeTruthy();
+    const list = screen.getByRole("list", { name: "Clubes encontrados" });
+    expect(within(list).getAllByText("Crear cuenta")).toHaveLength(10);
+    expect(within(list).getByText("ID EA 100")).toBeTruthy();
+    expect(within(list).getByText("ID EA 109")).toBeTruthy();
+    expect(within(list).queryByText("Fera 10")).toBeNull();
   });
 
   it("searches what was typed before the page hydrated", async () => {
@@ -192,12 +222,22 @@ describe("DemoSearchSection", () => {
     input.value = "Fera";
     fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
 
-    await findAnchor("Crear cuenta con este club");
+    await findAnchor("Crear cuenta");
     expect(
       new URL(clubSearchCalls(fetchMock)[0] ?? "", "https://futrob.test").searchParams.get("query"),
     ).toBe("Fera");
     expect(input).toHaveValue("Fera");
     expect(input).not.toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("asks for a club name before searching EA", async () => {
+    const fetchMock = stubSearch(() => Response.json({ clubs: [FERA] }));
+    renderSection();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Buscar" }));
+
+    expect(await screen.findByText("Escribe el nombre del club.")).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("sends a signed-in visitor straight to onboarding with the club", async () => {
@@ -207,33 +247,32 @@ describe("DemoSearchSection", () => {
 
     await searchFor("Fera");
 
-    const cta = await findAnchor("Crear cuenta con este club");
+    const cta = await findAnchor("Crear cuenta");
     expect(handoffFromHref(cta.getAttribute("href")).pathname).toBe("/onboarding/club");
   });
 
-  it("drops the chosen club while another platform is searched", async () => {
+  it("searches the same name again on another platform", async () => {
+    const user = userEvent.setup();
     let answerPs5: (response: Response) => void = () => undefined;
     const clubSearch = vi.fn(async (url: string) =>
-      url.startsWith(OPEN_PATH)
-        ? Response.json({ items: [] })
-        : url.includes("platform=ps5")
-          ? new Promise<Response>((resolve) => {
-              answerPs5 = resolve;
-            })
-          : Response.json({ clubs: [FERA] }),
+      url.includes("platform=ps5")
+        ? new Promise<Response>((resolve) => {
+            answerPs5 = resolve;
+          })
+        : Response.json({ clubs: [FERA] }),
     );
     vi.stubGlobal("fetch", clubSearch);
     renderSection();
     await searchFor("Fera");
-    await findAnchor("Crear cuenta con este club");
+    await findAnchor("Crear cuenta");
 
-    fireEvent.click(screen.getByRole("radio", { name: "PlayStation 5" }));
+    await choose(user, /Plataforma/, "PlayStation 5");
 
     expect(await screen.findByRole("button", { name: "Buscando…" })).toBeDisabled();
-    expect(screen.queryByText("Crear cuenta con este club")).toBeNull();
+    expect(screen.queryByText("Crear cuenta")).toBeNull();
 
     answerPs5(Response.json({ clubs: [{ ...FERA, platform: "ps5" }] }));
-    const cta = await findAnchor("Crear cuenta con este club");
+    const cta = await findAnchor("Crear cuenta");
     const redirectTo = new URL(cta.getAttribute("href") ?? "", "https://futrob.test").searchParams;
     expect(handoffFromHref(redirectTo.get("redirectTo")).handoff).toMatchObject({
       locator: { platform: "ps5" },
@@ -246,12 +285,11 @@ describe("DemoSearchSection", () => {
 
     await searchFor("Nadie");
 
+    expect(await screen.findByText("Ningún club coincide con «Nadie» en Cross-gen")).toBeTruthy();
     expect(
-      await screen.findByText(
-        "Sin resultados en esa plataforma. Prueba con otra o revisa el nombre.",
-      ),
+      screen.getByText("Prueba con otra plataforma o escribe el nombre tal como aparece en EA."),
     ).toBeTruthy();
-    expect(screen.queryByText("Crear cuenta con este club")).toBeNull();
+    expect(screen.queryByText("Crear cuenta")).toBeNull();
   });
 
   it("holds the search until the rate limit lets it retry", async () => {
@@ -274,72 +312,265 @@ describe("DemoSearchSection", () => {
     expect(screen.getByRole("button", { name: /Reintentar en \d+ s/ })).toBeDisabled();
   });
 
-  it("lists open competitions signed out and joins one through signup", async () => {
-    stubSearch(
+  it("switches to competitions, lists the open ones and joins one through signup", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubSearch(
       () => Response.json({ clubs: [FERA] }),
       () => Response.json({ items: [openCompetition("c-open", "Copa Andina")] }),
     );
     renderSection();
 
+    await choose(user, /Buscar/, "Competiciones");
+
     const join = await findAnchor("Unirme");
+    expect(openCalls(fetchMock)).toEqual([OPEN_PATH]);
+    expect(clubSearchCalls(fetchMock)).toEqual([]);
     expect(join).toHaveAccessibleName("Unirme a Copa Andina");
-    expect(screen.getByText("Organiza Liga Andina")).toBeTruthy();
+    expect(screen.getByText(/^Liga Andina · /)).toBeTruthy();
+    // The platform is its logo, named for assistive tech and on hover.
+    expect(screen.getByTitle("PlayStation")).toHaveTextContent("PlayStation");
     expect(screen.getByText(/3 de 8 equipos/)).toBeTruthy();
+    expect(screen.getByRole("searchbox", { name: "Nombre de la competición" })).toBeTruthy();
     const signup = new URL(join.getAttribute("href") ?? "", "https://futrob.test");
     expect(signup.pathname).toBe("/signup");
     expect(handoffFromHref(signup.searchParams.get("redirectTo"))).toEqual({
       pathname: "/onboarding/review",
       handoff: { kind: "competition", competitionId: "c-open", club: null },
     });
-  });
-
-  it("joins with the picked club and narrows to its platform when it maps to one", async () => {
-    const fetchMock = stubSearch(
-      () => Response.json({ clubs: [{ ...FERA, platform: "ps5" }] }),
-      () => Response.json({ items: [openCompetition("c-open", "Copa Andina")] }),
-    );
-    renderSection();
-    await findAnchor("Unirme");
-
-    await searchFor("Fera");
-
-    const join = await findAnchor("Unirme con Fera Enjaulada");
-    expect(openCalls(fetchMock).at(-1)).toBe(`${OPEN_PATH}?platform=playstation`);
-    expect(
-      screen.getByText("Competiciones de PlayStation que aceptan equipos ahora."),
-    ).toBeTruthy();
-    const redirectTo = new URL(join.getAttribute("href") ?? "", "https://futrob.test").searchParams;
-    expect(handoffFromHref(redirectTo.get("redirectTo")).handoff).toEqual({
-      kind: "competition",
-      competitionId: "c-open",
-      club: {
-        providerKey: "ea-clubs",
-        externalClubId: "10754",
-        platform: "ps5",
-        gameEdition: "fc27",
-      },
+    expect(screen.getByText("¿Organizas un torneo?")).toBeTruthy();
+    const organizer = await findAnchor("Crea tu competición");
+    const organizerSignup = new URL(organizer.getAttribute("href") ?? "", "https://futrob.test");
+    expect(organizerSignup.pathname).toBe("/signup");
+    expect(handoffFromHref(organizerSignup.searchParams.get("redirectTo"))).toEqual({
+      pathname: "/onboarding/organization",
+      handoff: { kind: "organizer" },
     });
   });
 
-  it("offers every platform when the club's platform has nothing open", async () => {
-    const fetchMock = stubSearch(
-      () => Response.json({ clubs: [{ ...FERA, platform: "xbox" }] }),
-      (url) =>
+  it("shows each competition's capacity and warns only when one or two places are left", async () => {
+    const user = userEvent.setup();
+    const open = (id: string, name: string, approved: number, max: number | null) => {
+      const item = openCompetition(id, name);
+      return {
+        ...item,
+        approvedTeamCount: approved,
+        competition: { ...item.competition, teams: { min: 2, max } },
+      };
+    };
+    stubSearch(
+      () => Response.json({ clubs: [FERA] }),
+      () =>
         Response.json({
-          items: url.includes("platform=") ? [] : [openCompetition("c-pc", "Liga PC", "pc")],
+          items: [
+            open("c-full", "Copa Llena", 7, 8),
+            open("c-roomy", "Copa Amplia", 3, 8),
+            open("c-free", "Liga Libre", 3, null),
+          ],
         }),
     );
     renderSection();
-    await searchFor("Fera");
+    await choose(user, /Buscar/, "Competiciones");
 
-    fireEvent.click(await screen.findByRole("button", { name: "Ver todas las plataformas" }));
+    const almostFull = await screen.findByRole("link", { name: "Unirme a Copa Llena" });
+    expect(almostFull).toHaveTextContent("7 de 8 equipos · queda 1 lugar");
+    expect(within(almostFull).getByRole("progressbar", { hidden: true })).toHaveAttribute(
+      "aria-valuenow",
+      "87.5",
+    );
 
-    expect(await findAnchor("Unirme con Fera Enjaulada")).toBeTruthy();
-    expect(openCalls(fetchMock)).toContain(`${OPEN_PATH}?platform=xbox`);
-    expect(openCalls(fetchMock).at(-1)).toBe(OPEN_PATH);
+    const roomy = screen.getByRole("link", { name: "Unirme a Copa Amplia" });
+    expect(roomy).toHaveTextContent("3 de 8 equipos");
+    expect(roomy).not.toHaveTextContent(/lugar/);
+
+    // No maximum: a count, with no bar and nothing to run out of.
+    const uncapped = screen.getByRole("link", { name: "Unirme a Liga Libre" });
+    expect(uncapped).toHaveTextContent("3 equipos");
+    expect(uncapped).not.toHaveTextContent(/de \d+ equipos|lugar/);
+    expect(within(uncapped).queryByRole("progressbar", { hidden: true })).toBeNull();
   });
 
-  it("keeps the section with an empty state and recovers from a failed list", async () => {
+  it("narrows competitions by name and platform", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubSearch(
+      () => Response.json({ clubs: [FERA] }),
+      (url) =>
+        Response.json({
+          items: url.includes("q=Nadie") ? [] : [openCompetition("c-open", "Copa Andina")],
+        }),
+    );
+    renderSection();
+    await choose(user, /Buscar/, "Competiciones");
+    await findAnchor("Unirme");
+
+    await searchFor("Copa", "Nombre de la competición");
+    await choose(user, /Plataforma/, "PlayStation");
+
+    expect(
+      await screen.findByText("Competiciones de PlayStation que aceptan equipos ahora."),
+    ).toBeTruthy();
+    expect(openCalls(fetchMock)).toContain(`${OPEN_PATH}?q=Copa&platform=playstation`);
+
+    await searchFor("Nadie", "Nombre de la competición");
+
+    expect(
+      await screen.findByText("Ninguna competición con inscripción abierta coincide con «Nadie»."),
+    ).toBeTruthy();
+    expect(screen.getByText("Prueba con otro nombre o revisa la plataforma.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Ver todas las competiciones" }));
+
+    expect(await findAnchor("Unirme")).toBeTruthy();
+    expect(openCalls(fetchMock).at(-1)).toBe(OPEN_PATH);
+    expect(screen.getByRole("searchbox", { name: "Nombre de la competición" })).toHaveValue("");
+    expect(screen.getByRole("combobox", { name: "Plataforma" })).toHaveTextContent("Todas");
+  });
+
+  it("carries the typed name across kinds without searching EA twice", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubSearch(
+      () => Response.json({ clubs: [FERA] }),
+      () => Response.json({ items: [] }),
+    );
+    renderSection();
+    await searchFor("Fera");
+    await findAnchor("Crear cuenta");
+
+    await choose(user, /Buscar/, "Competiciones");
+    expect(await screen.findByText(/coincide con «Fera»/)).toBeTruthy();
+    expect(openCalls(fetchMock)).toEqual([`${OPEN_PATH}?q=Fera`]);
+
+    await choose(user, /Buscar/, "Clubes");
+    expect(await findAnchor("Crear cuenta")).toBeTruthy();
+    expect(clubSearchCalls(fetchMock)).toHaveLength(1);
+  });
+
+  it("never shows an earlier search's clubs under a newer name", async () => {
+    const user = userEvent.setup();
+    const held: Record<string, (response: Response) => void> = {};
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(OPEN_PATH)) return Response.json({ items: [] });
+      const query = new URL(url, "https://futrob.test").searchParams.get("query") ?? "";
+      return new Promise<Response>((resolve) => {
+        held[query] = resolve;
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderSection();
+    await searchFor("Fera");
+
+    await choose(user, /Buscar/, "Competiciones");
+    fireEvent.change(screen.getByRole("searchbox", { name: "Nombre de la competición" }), {
+      target: { value: "Real" },
+    });
+    await choose(user, /Buscar/, "Clubes");
+    held.Fera?.(Response.json({ clubs: [FERA] }));
+
+    // «Fera» answered and «Real» is on its way: the field says «Real», so «Fera» stays hidden.
+    await waitFor(() => expect(held.Real).toBeDefined());
+    expect(screen.queryByRole("link", { name: "Crear cuenta con Fera Enjaulada" })).toBeNull();
+    expect(screen.getByRole("list", { name: "Buscando…" })).toBeTruthy();
+
+    held.Real?.(
+      Response.json({ clubs: [{ ...FERA, externalClubId: "77", name: "Real Cuervos" }] }),
+    );
+    expect(await screen.findByRole("link", { name: "Crear cuenta con Real Cuervos" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Crear cuenta con Fera Enjaulada" })).toBeNull();
+  });
+
+  it("drops a queued club search when the visitor goes back to the running one", async () => {
+    const user = userEvent.setup();
+    const held: Record<string, (response: Response) => void> = {};
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith(OPEN_PATH)) return Response.json({ items: [] });
+      const query = new URL(url, "https://futrob.test").searchParams.get("query") ?? "";
+      return new Promise<Response>((resolve) => {
+        held[query] = resolve;
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderSection();
+    await searchFor("Fera");
+    const competitionField = () =>
+      screen.getByRole("searchbox", { name: "Nombre de la competición" });
+
+    await choose(user, /Buscar/, "Competiciones");
+    fireEvent.change(competitionField(), { target: { value: "Real" } });
+    await choose(user, /Buscar/, "Clubes");
+    await choose(user, /Buscar/, "Competiciones");
+    fireEvent.change(competitionField(), { target: { value: "Fera" } });
+    await choose(user, /Buscar/, "Clubes");
+    held.Fera?.(Response.json({ clubs: [FERA] }));
+
+    expect(
+      await screen.findByRole("link", { name: "Crear cuenta con Fera Enjaulada" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("searchbox", { name: "Nombre del club" })).toHaveValue("Fera");
+    expect(
+      clubSearchCalls(fetchMock).map((url) =>
+        new URL(url, "https://futrob.test").searchParams.get("query"),
+      ),
+    ).toEqual(["Fera"]);
+  });
+
+  it("cuts a long competition name to EA's length for clubs and restores it on the way back", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubSearch(() => Response.json({ clubs: [] }));
+    renderSection();
+    await choose(user, /Buscar/, "Competiciones");
+    const name = "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027";
+
+    await searchFor(name, "Nombre de la competición");
+    await waitFor(() => expect(openCalls(fetchMock).at(-1)).toContain("q=Liga+Interclubes"));
+    expect(
+      new URL(openCalls(fetchMock).at(-1) ?? "", "https://futrob.test").searchParams.get("q"),
+    ).toBe("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027");
+
+    await choose(user, /Buscar/, "Clubes");
+    expect(screen.getByRole("searchbox", { name: "Nombre del club" })).toHaveValue(
+      "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad",
+    );
+    await waitFor(() => expect(clubSearchCalls(fetchMock)).toHaveLength(1));
+    expect(
+      new URL(clubSearchCalls(fetchMock)[0] ?? "", "https://futrob.test").searchParams.get("query"),
+    ).toBe("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad");
+
+    await choose(user, /Buscar/, "Competiciones");
+    expect(screen.getByRole("searchbox", { name: "Nombre de la competición" })).toHaveValue(
+      "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027",
+    );
+    expect(
+      new URL(openCalls(fetchMock).at(-1) ?? "", "https://futrob.test").searchParams.get("q"),
+    ).toBe("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027");
+  });
+
+  it("keeps the visitor's own edit of a cut name when going back to competitions", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubSearch(() => Response.json({ clubs: [] }));
+    renderSection();
+    await choose(user, /Buscar/, "Competiciones");
+    await searchFor(
+      "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporada Apertura 2027",
+      "Nombre de la competición",
+    );
+    await choose(user, /Buscar/, "Clubes");
+
+    const clubField = screen.getByRole("searchbox", { name: "Nombre del club" });
+    await user.clear(clubField);
+    await user.click(clubField);
+    await user.paste("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad");
+    await choose(user, /Buscar/, "Competiciones");
+
+    expect(screen.getByRole("searchbox", { name: "Nombre de la competición" })).toHaveValue(
+      "Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad",
+    );
+    await waitFor(() =>
+      expect(
+        new URL(openCalls(fetchMock).at(-1) ?? "", "https://futrob.test").searchParams.get("q"),
+      ).toBe("Liga Interclubes de Fútbol Virtual del Pacífico Sur Temporad"),
+    );
+  });
+
+  it("keeps an empty state and recovers from a failed competition list", async () => {
+    const user = userEvent.setup();
     let fail = true;
     stubSearch(
       () => Response.json({ clubs: [] }),
@@ -352,23 +583,14 @@ describe("DemoSearchSection", () => {
           : Response.json({ items: [] }),
     );
     renderSection();
+    await choose(user, /Buscar/, "Competiciones");
 
     expect(await screen.findByText("No pudimos cargar las inscripciones abiertas.")).toBeTruthy();
     fail = false;
     fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
 
     expect(await screen.findByText("No hay inscripciones abiertas ahora.")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Inscripciones abiertas" })).toBeTruthy();
-  });
-});
-
-describe("competitionPlatformForClub", () => {
-  it("filters only the EA platforms that map to a single competition platform", () => {
-    expect(competitionPlatformForClub({ platform: "ps5" })).toBe("playstation");
-    expect(competitionPlatformForClub({ platform: "xbox" })).toBe("xbox");
-    expect(competitionPlatformForClub({ platform: "common-gen5" })).toBeNull();
-    expect(competitionPlatformForClub({ platform: "nx" })).toBeNull();
-    expect(competitionPlatformForClub({ platform: "unknown" })).toBeNull();
-    expect(competitionPlatformForClub(null)).toBeNull();
+    expect(screen.getByText("Vuelve más tarde para ver nuevas inscripciones.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Ver todas las competiciones" })).toBeNull();
   });
 });

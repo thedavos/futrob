@@ -207,8 +207,11 @@ function optionalQuery<T extends z.ZodType>(schema: T) {
     .transform((value) => (value === "" || value === undefined ? undefined : value));
 }
 
+/** Longest competition name a search accepts, the same as a competition name. */
+export const COMPETITION_SEARCH_QUERY_MAX_LENGTH = 120;
+
 export const exploreCompetitionsQuerySchema = z.object({
-  q: optionalQuery(z.string().trim().min(1).max(120)),
+  q: optionalQuery(z.string().trim().min(1).max(COMPETITION_SEARCH_QUERY_MAX_LENGTH)),
   format: optionalQuery(competitionFormatSchema),
   status: optionalQuery(discoverableCompetitionStatusSchema),
   region: optionalQuery(competitionRegionSchema),
@@ -240,8 +243,12 @@ export type ExploreCompetitionsResponse = z.infer<typeof exploreCompetitionsResp
 /** The signed-out landing shows at most this many competitions with open registration. */
 export const OPEN_COMPETITIONS_MAX_LIMIT = 6;
 
-/** Signed-out list of competitions in registration. Status and listing are fixed server-side. */
+/**
+ * Signed-out list of competitions in registration, optionally narrowed by name. Status and
+ * listing are fixed server-side.
+ */
 export const openCompetitionsQuerySchema = z.object({
+  q: optionalQuery(z.string().trim().min(1).max(COMPETITION_SEARCH_QUERY_MAX_LENGTH)),
   platform: optionalQuery(competitionPlatformSchema),
   limit: z.coerce
     .number()

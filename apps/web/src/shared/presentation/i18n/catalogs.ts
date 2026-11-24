@@ -2258,9 +2258,9 @@ const es = {
   "landing.status.scheduled": "Programado",
   "landing.status.published": "Publicado",
   "landing.cup.label": "Ejemplo de cuadro de copa en Futrob",
-  "landing.cup.competition": "Copa Apertura",
-  "landing.cup.final": "Final",
-  "landing.cup.official": "Oficial",
+  "landing.cup.champion": ({ club }) => `${club}, campeón`,
+  "landing.cup.finalAgainst": ({ score, opponent }) => `Final ${score} ante ${opponent}`,
+  "landing.cup.officialInline": "oficial",
   "landing.cup.stage.roundOf16": "Octavos",
   "landing.cup.stage.quarterfinal": "Cuartos",
   "landing.cup.stage.semifinal": "Semifinalista",
@@ -2289,41 +2289,55 @@ const es = {
     "Sporting Lomas propone mover todo el enfrentamiento del 18 de octubre, 21:00 al 19 de octubre, 22:00.",
   "landing.reschedule.panel.respondBy": "Responde antes del 16 de octubre, 23:59.",
   "landing.reschedule.panel.options": "CD Estrella puede aceptar, contraproponer o rechazar.",
-  "landing.demo.title": "Busca tu club en EA",
+  "landing.demo.title": "Busca tu club o tu competición",
   "landing.demo.subtitle":
-    "Encuéntralo tal como aparece en EA SPORTS FC Clubs y crea tu cuenta con él ya asociado.",
-  "landing.demo.idle": "Elige un club de los resultados para crear tu cuenta con él.",
-  "landing.demo.cta": "Crear cuenta con este club",
-  "landing.demo.organizer": "¿Organizas un torneo? Crea tu competición",
+    "Encuentra tu club tal como aparece en EA SPORTS FC Clubs, o una competición con inscripción abierta, y crea tu cuenta desde ahí.",
   "landing.openCompetitions.title": "Inscripciones abiertas",
   "landing.openCompetitions.subtitle": "Competiciones que aceptan equipos ahora.",
   "landing.openCompetitions.subtitlePlatform": ({ platform }) =>
     `Competiciones de ${platform} que aceptan equipos ahora.`,
   "landing.openCompetitions.join": "Unirme",
-  "landing.openCompetitions.joinWith": ({ club }) => `Unirme con ${club}`,
   "landing.openCompetitions.joinLabel": ({ competition }) => `Unirme a ${competition}`,
-  "landing.openCompetitions.joinWithLabel": ({ competition, club }) =>
-    `Unirme a ${competition} con ${club}`,
+  "landing.openCompetitions.placesLeft": ({ count }) =>
+    count === 1 ? "queda 1 lugar" : `quedan ${count} lugares`,
   "landing.openCompetitions.empty": "No hay inscripciones abiertas ahora.",
-  "landing.openCompetitions.emptyHint": "Vuelve pronto o crea tu propia competición.",
+  "landing.openCompetitions.emptyHint": "Vuelve más tarde para ver nuevas inscripciones.",
+  "landing.openCompetitions.emptyFilteredHint": "Prueba con otro nombre o revisa la plataforma.",
   "landing.openCompetitions.emptyPlatform": ({ platform }) =>
     `No hay inscripciones abiertas en ${platform} ahora.`,
-  "landing.openCompetitions.showAll": "Ver todas las plataformas",
+  "landing.openCompetitions.showAll": "Ver todas las competiciones",
   "landing.openCompetitions.loading": "Cargando inscripciones abiertas",
   "landing.openCompetitions.error": "No pudimos cargar las inscripciones abiertas.",
   "landing.openCompetitions.retry": "Reintentar",
+  "landing.openCompetitions.emptyQuery": ({ query }) =>
+    `Ninguna competición con inscripción abierta coincide con «${query}».`,
+  "landing.search.kindLabel": "Buscar",
+  "landing.search.kind.club": "Clubes",
+  "landing.search.kind.competition": "Competiciones",
+  "landing.search.allPlatforms": "Todas",
+  "landing.search.competitionQueryLabel": "Nombre de la competición",
+  "landing.search.competitionQueryPlaceholder": "Ej. Liga Andina",
+  "landing.search.clubCount": ({ count, platform }) =>
+    count === 1 ? `1 club en ${platform}` : `${count} clubes en ${platform}`,
+  "landing.search.clubSource": "Fuente: EA SPORTS FC",
+  "landing.search.clubId": ({ id }) => `ID EA ${id}`,
+  "landing.search.clubCtaLabel": ({ club }) => `Crear cuenta con ${club}`,
+  "landing.search.clubAction": "Crear cuenta",
+  "landing.search.clubEmpty": ({ query, platform }) =>
+    `Ningún club coincide con «${query}» en ${platform}`,
+  "landing.search.clubEmptyHint":
+    "Prueba con otra plataforma o escribe el nombre tal como aparece en EA.",
+  "landing.search.organizerPrompt": "¿Organizas un torneo?",
+  "landing.search.organizerCta": "Crea tu competición",
   "gameData.clubSearch.source": "Datos en vivo de EA SPORTS FC Clubs. Buscar no requiere cuenta.",
   "gameData.clubSearch.queryLabel": "Nombre del club",
   "gameData.clubSearch.queryPlaceholder": "Ej. Fera Enjaulada",
-  "gameData.clubSearch.examples": "Prueba con",
   "gameData.clubSearch.results": "Clubes encontrados",
   "gameData.clubSearch.queryRequired": "Escribe el nombre del club.",
   "gameData.clubSearch.platformLabel": "Plataforma",
   "gameData.clubSearch.submit": "Buscar",
   "gameData.clubSearch.searching": "Buscando…",
   "gameData.clubSearch.retryIn": ({ seconds }) => `Reintentar en ${seconds} s`,
-  "gameData.clubSearch.empty":
-    "Sin resultados en esa plataforma. Prueba con otra o revisa el nombre.",
   "gameData.clubSearch.error": "No pudimos buscar clubs. Inténtalo nuevamente.",
   "gameData.clubSearch.rateLimited": "Alcanzaste el límite temporal de búsquedas.",
   "landing.players.matches.title": "Mis partidos",
@@ -3275,13 +3289,14 @@ export type Catalog = Readonly<{ [K in MessageKey]: Message }>;
 
 export interface MessageParamsByKey {
   readonly "landing.openCompetitions.subtitlePlatform": { readonly platform: string };
-  readonly "landing.openCompetitions.joinWith": { readonly club: string };
   readonly "landing.openCompetitions.joinLabel": { readonly competition: string };
-  readonly "landing.openCompetitions.joinWithLabel": {
-    readonly competition: string;
-    readonly club: string;
-  };
+  readonly "landing.openCompetitions.placesLeft": { readonly count: number };
   readonly "landing.openCompetitions.emptyPlatform": { readonly platform: string };
+  readonly "landing.openCompetitions.emptyQuery": { readonly query: string };
+  readonly "landing.search.clubCount": { readonly count: number; readonly platform: string };
+  readonly "landing.search.clubCtaLabel": { readonly club: string };
+  readonly "landing.search.clubEmpty": { readonly query: string; readonly platform: string };
+  readonly "landing.search.clubId": { readonly id: string };
   readonly "audit.correlation": { readonly id: string };
   readonly "bracket.rounds.other": { readonly count: number };
   readonly "bracket.encounters.other": { readonly count: number };
@@ -3463,6 +3478,8 @@ export interface MessageParamsByKey {
   readonly "legal.updated": { readonly date: string };
   readonly "gameData.clubSearch.retryIn": { readonly seconds: number };
   readonly "landing.cup.lost": { readonly score: string };
+  readonly "landing.cup.champion": { readonly club: string };
+  readonly "landing.cup.finalAgainst": { readonly score: string; readonly opponent: string };
   readonly "landing.cup.won": { readonly score: string };
   readonly "organizations.profile.slug.useSuggestion": { readonly slug: string };
   readonly "organizations.profile.logo.alt": { readonly name: string };
@@ -5867,9 +5884,9 @@ const en: Catalog = {
   "landing.status.scheduled": "Scheduled",
   "landing.status.published": "Published",
   "landing.cup.label": "Example cup bracket in Futrob",
-  "landing.cup.competition": "Opening Cup",
-  "landing.cup.final": "Final",
-  "landing.cup.official": "Official",
+  "landing.cup.champion": ({ club }) => `${club}, champion`,
+  "landing.cup.finalAgainst": ({ score, opponent }) => `Final ${score} against ${opponent}`,
+  "landing.cup.officialInline": "official",
   "landing.cup.stage.roundOf16": "Round of 16",
   "landing.cup.stage.quarterfinal": "Quarterfinals",
   "landing.cup.stage.semifinal": "Semifinalist",
@@ -5898,40 +5915,53 @@ const en: Catalog = {
     "Sporting Lomas proposes moving the whole encounter from October 18, 21:00 to October 19, 22:00.",
   "landing.reschedule.panel.respondBy": "Respond by October 16, 23:59.",
   "landing.reschedule.panel.options": "CD Estrella can accept, counter or reject.",
-  "landing.demo.title": "Find your club on EA",
+  "landing.demo.title": "Find your club or competition",
   "landing.demo.subtitle":
-    "Find it as it appears in EA SPORTS FC Clubs and create your account with it already linked.",
-  "landing.demo.idle": "Pick a club from the results to create your account with it.",
-  "landing.demo.cta": "Create account with this club",
-  "landing.demo.organizer": "Running a tournament? Create your competition",
+    "Find your club as it appears in EA SPORTS FC Clubs, or a competition with open registration, and create your account from there.",
   "landing.openCompetitions.title": "Open registration",
   "landing.openCompetitions.subtitle": "Competitions taking teams now.",
   "landing.openCompetitions.subtitlePlatform": ({ platform }) =>
     `${platform} competitions taking teams now.`,
   "landing.openCompetitions.join": "Join",
-  "landing.openCompetitions.joinWith": ({ club }) => `Join with ${club}`,
   "landing.openCompetitions.joinLabel": ({ competition }) => `Join ${competition}`,
-  "landing.openCompetitions.joinWithLabel": ({ competition, club }) =>
-    `Join ${competition} with ${club}`,
+  "landing.openCompetitions.placesLeft": ({ count }) =>
+    count === 1 ? "1 place left" : `${count} places left`,
   "landing.openCompetitions.empty": "No competition has open registration right now.",
-  "landing.openCompetitions.emptyHint": "Check back soon or create your own competition.",
+  "landing.openCompetitions.emptyHint": "Check back later for new registrations.",
+  "landing.openCompetitions.emptyFilteredHint": "Try another name or check the platform.",
   "landing.openCompetitions.emptyPlatform": ({ platform }) =>
     `No ${platform} competition has open registration right now.`,
-  "landing.openCompetitions.showAll": "Show every platform",
+  "landing.openCompetitions.showAll": "Show every competition",
   "landing.openCompetitions.loading": "Loading open registrations",
   "landing.openCompetitions.error": "We couldn't load the open registrations.",
   "landing.openCompetitions.retry": "Try again",
+  "landing.openCompetitions.emptyQuery": ({ query }) =>
+    `No competition with open registration matches “${query}”.`,
+  "landing.search.kindLabel": "Search",
+  "landing.search.kind.club": "Clubs",
+  "landing.search.kind.competition": "Competitions",
+  "landing.search.allPlatforms": "All",
+  "landing.search.competitionQueryLabel": "Competition name",
+  "landing.search.competitionQueryPlaceholder": "E.g. Andean League",
+  "landing.search.clubCount": ({ count, platform }) =>
+    count === 1 ? `1 club on ${platform}` : `${count} clubs on ${platform}`,
+  "landing.search.clubSource": "Source: EA SPORTS FC",
+  "landing.search.clubId": ({ id }) => `EA ID ${id}`,
+  "landing.search.clubCtaLabel": ({ club }) => `Create account with ${club}`,
+  "landing.search.clubAction": "Create account",
+  "landing.search.clubEmpty": ({ query, platform }) => `No club matches “${query}” on ${platform}`,
+  "landing.search.clubEmptyHint": "Try another platform or type the name as it appears on EA.",
+  "landing.search.organizerPrompt": "Running a tournament?",
+  "landing.search.organizerCta": "Create your competition",
   "gameData.clubSearch.source": "Live data from EA SPORTS FC Clubs. Searching needs no account.",
   "gameData.clubSearch.queryLabel": "Club name",
   "gameData.clubSearch.queryPlaceholder": "E.g. Fera Enjaulada",
-  "gameData.clubSearch.examples": "Try",
   "gameData.clubSearch.results": "Clubs found",
   "gameData.clubSearch.queryRequired": "Enter the club name.",
   "gameData.clubSearch.platformLabel": "Platform",
   "gameData.clubSearch.submit": "Search",
   "gameData.clubSearch.searching": "Searching…",
   "gameData.clubSearch.retryIn": ({ seconds }) => `Retry in ${seconds} s`,
-  "gameData.clubSearch.empty": "No results on that platform. Try another one or check the name.",
   "gameData.clubSearch.error": "We couldn't search clubs. Please try again.",
   "gameData.clubSearch.rateLimited": "You reached the temporary search limit.",
   "landing.players.matches.title": "My matches",

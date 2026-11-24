@@ -7,7 +7,20 @@ import { colors, space } from "@futrob/ui/styles/tokens.stylex";
  * 1.5 s and collapses to the final state when reduced motion sets the duration tokens to 0 ms.
  */
 const STEP = "var(--duration-fast)";
-const DRAW_DURATION = "calc(var(--duration-normal) * 2)";
+
+/** `n` timeline steps as a CSS time; 0 ms under reduced motion, like every step. */
+export function steps(n: number): string {
+  return `calc(${STEP} * ${n})`;
+}
+
+/** The champion's route reaches the trophy here; the cup turns gold and the card's trophy too. */
+export const ARRIVAL_STEP = 9;
+/** One round of the champion's route on the way in. */
+export const CHAMPION_ROUND_STEPS = 0.75;
+/** One round of a hovered club's route. */
+export const HOVER_ROUND_STEPS = 0.5;
+/** The crests appear clockwise from the top over this many steps, starting at step 2. */
+export const CREST_WAVE_STEPS = 1.5;
 
 const fadeIn = stylex.keyframes({
   from: { opacity: 0 },
@@ -40,11 +53,6 @@ const glow = stylex.keyframes({
   "0%": { opacity: 0, scale: 0.7 },
   "40%": { opacity: 1 },
   "100%": { opacity: 0, scale: 1.25 },
-});
-
-const stampIn = stylex.keyframes({
-  from: { opacity: 0, scale: 1.5 },
-  to: { opacity: 1, scale: 1 },
 });
 
 export const styles = stylex.create({
@@ -116,6 +124,7 @@ export const styles = stylex.create({
   },
   junctionActive: {
     fill: colors.foreground,
+    animationDuration: "var(--duration-fast)",
   },
   disc: {
     fill: colors.surface,
@@ -140,9 +149,11 @@ export const styles = stylex.create({
       default: 4,
       [media.maxSm]: 6,
     },
-    animationDuration: DRAW_DURATION,
+    // Constant speed: each round takes its slot, so the line reads as one run to the trophy.
+    animationTimingFunction: "linear",
   },
   routeActive: {
+    animationTimingFunction: "linear",
     stroke: colors.foreground,
     strokeWidth: {
       default: 3,
@@ -297,11 +308,9 @@ export const styles = stylex.create({
   },
   card: {
     position: "relative",
-    // Tucks under the lowest crests without touching them.
-    marginTop: {
-      default: space.s2,
-      [media.sm]: "-0.5rem",
-    },
+    // Its own row under the bracket, centred on it: clear of the lowest crests at every width.
+    alignSelf: "center",
+    marginTop: space.s4,
     display: "flex",
     maxWidth: "100%",
     alignItems: "center",
@@ -315,7 +324,8 @@ export const styles = stylex.create({
     animationTimingFunction: "var(--ease-emphasized)",
     animationFillMode: "both",
   },
-  cardCrest: {
+  // The card tells the outcome: a gold trophy, the one place gold is used besides the centre.
+  cardTrophy: {
     display: "flex",
     width: "2.5rem",
     height: "2.5rem",
@@ -323,15 +333,16 @@ export const styles = stylex.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: "var(--corner-full)",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: "color-mix(in oklab, var(--emphasis) 16%, transparent)",
   },
-  cardCrestMark: {
-    display: "block",
-    width: "auto",
-    height: "1.5rem",
+  cardTrophyIcon: {
+    width: "1.25rem",
+    height: "1.25rem",
+    color: colors.emphasis,
+    animationName: turnGold,
+    animationDuration: "var(--duration-slow)",
+    animationTimingFunction: "var(--ease-standard)",
+    animationFillMode: "both",
   },
   cardText: {
     display: "flex",
@@ -351,50 +362,27 @@ export const styles = stylex.create({
     color: colors.primary,
     fontWeight: "var(--font-weight-semibold)",
   },
-  stamp: {
-    position: "absolute",
-    top: 0,
-    insetInlineEnd: space.s3,
-    translate: "0 -60%",
-    rotate: "-8deg",
-    borderWidth: 2,
-    borderStyle: "solid",
-    borderColor: colors.primary,
-    borderRadius: "var(--corner-xs)",
-    backgroundColor: colors.surface,
-    paddingInline: space.s2,
-    color: colors.primary,
-    fontWeight: "var(--font-weight-bold)",
-    letterSpacing: "var(--tracking-caps)",
-    textTransform: "uppercase",
-    animationName: stampIn,
-    animationDuration: "var(--duration-slow)",
-    animationTimingFunction: "var(--ease-emphasized)",
-    animationFillMode: "both",
-  },
 });
 
 /** Position on the entrance timeline, in `--duration-fast` steps. */
 export const delay = stylex.create({
-  crests: { animationDelay: `calc(${STEP} * 2)` },
   ring0: { animationDelay: `calc(${STEP} * 3)` },
   ring1: { animationDelay: `calc(${STEP} * 4)` },
   ring2: { animationDelay: `calc(${STEP} * 5)` },
   ring3: { animationDelay: `calc(${STEP} * 6)` },
-  champion: { animationDelay: `calc(${STEP} * 7)` },
-  championRing1: { animationDelay: `calc(${STEP} * 7.25)` },
-  championRing2: { animationDelay: `calc(${STEP} * 7.75)` },
-  championRing3: { animationDelay: `calc(${STEP} * 8.5)` },
-  gold: { animationDelay: `calc(${STEP} * 9)` },
-  card: { animationDelay: `calc(${STEP} * 10)` },
+  gold: { animationDelay: `calc(${STEP} * ${ARRIVAL_STEP})` },
+  // Rises just before the arrival, so its trophy turns gold with the cup's.
+  card: { animationDelay: `calc(${STEP} * ${ARRIVAL_STEP - 0.5})` },
+});
+
+/** Per-element timing on top of the shared steps: crest wave and round-by-round routes. */
+export const timing = stylex.create({
+  delay: (delay: string) => ({ animationDelay: delay }),
+  slot: (delay: string, duration: string) => ({
+    animationDelay: delay,
+    animationDuration: duration,
+  }),
 });
 
 /** Entrance delay of a ring's links, by depth. */
 export const RING_DELAY = [delay.ring0, delay.ring1, delay.ring2, delay.ring3] as const;
-
-/** When the lime route passes each junction on its way in, by depth. */
-export const CHAMPION_JUNCTION_DELAY = [
-  delay.championRing1,
-  delay.championRing2,
-  delay.championRing3,
-] as const;

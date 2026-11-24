@@ -11,7 +11,6 @@ import type {
   CompetitionDraftDto,
   CompetitionExploreListingDto,
   CompetitionParticipantInput,
-  CompetitionPlatformDto,
   CreateCompetitionDraftRequest,
   ExploreCompetitionsQueryInput,
   ListCompetitionParticipantsResponse,
@@ -43,6 +42,7 @@ import {
   getMyCompetitionApplication,
   applyToCompetition,
   CompetitionsClientError,
+  type OpenCompetitionsFilters,
 } from "./competitions-browser-client.ts";
 
 export function useExploreCompetitionsInfiniteQuery(query: ExploreCompetitionsQueryInput = {}) {
@@ -292,10 +292,15 @@ export function useUpdateCompetitionCoverMutation(organizationId: string, compet
 }
 
 /** Open, listed competitions for the signed-out landing, optionally on one platform. */
-export function useOpenCompetitionsQuery(platform: CompetitionPlatformDto | null) {
+export function useOpenCompetitionsQuery(
+  filters: OpenCompetitionsFilters,
+  options?: { readonly enabled?: boolean },
+) {
+  const q = filters.q.trim();
   return useQuery({
-    queryKey: queryKeys.competitions.exploreOpen(platform),
-    queryFn: () => listOpenCompetitions(platform),
+    queryKey: queryKeys.competitions.exploreOpen(q, filters.platform),
+    queryFn: () => listOpenCompetitions({ q, platform: filters.platform }),
+    enabled: options?.enabled ?? true,
   });
 }
 

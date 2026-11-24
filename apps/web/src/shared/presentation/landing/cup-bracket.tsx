@@ -23,17 +23,23 @@ import {
   CUP_CLUBS,
   CUP_RUNNER_UP,
   FULL_BRACKET,
-  routePath,
+  ROUTE_LAST_DEPTH,
+  routeSegments,
   routeTouches,
   showsClub,
   type BracketLayout,
   type CupClub,
 } from "@/shared/presentation/landing/cup-bracket.model.ts";
 import {
-  CHAMPION_JUNCTION_DELAY,
+  ARRIVAL_STEP,
+  CHAMPION_ROUND_STEPS,
+  CREST_WAVE_STEPS,
   delay,
+  HOVER_ROUND_STEPS,
   RING_DELAY,
+  steps,
   styles,
+  timing,
 } from "@/shared/presentation/landing/cup-bracket.styles.ts";
 import { FictionalCrest } from "@/shared/presentation/landing/fictional-crest.tsx";
 
@@ -49,7 +55,7 @@ function planOf(layout: BracketLayout) {
     crests: bracketCrests(layout),
     links: bracketLinks(layout),
     junctions: bracketJunctions(layout),
-    championRoute: routePath(layout, CUP_CHAMPION),
+    championRoute: routeSegments(layout, CUP_CHAMPION),
   };
 }
 
@@ -61,6 +67,19 @@ const LAYOUTS = [
   { plan: planOf(COMPACT_BRACKET), lines: styles.compactOnly, item: styles.clubCompact },
 ] as const;
 
+/**
+ * The champion's rounds end on the trophy at `ARRIVAL_STEP` whatever the layout, so the compact
+ * bracket, with one round fewer, starts later. A junction lights when its round's line reaches it.
+ */
+function championRoundStart(roundsLeft: number): number {
+  return ARRIVAL_STEP - roundsLeft * CHAMPION_ROUND_STEPS;
+}
+
+/** Junction at `depth` closes the round played at `depth - 1`. */
+function championJunctionStep(depth: number): number {
+  return championRoundStart(ROUTE_LAST_DEPTH - depth + 1);
+}
+
 function BracketLines({
   activeClub,
   plan,
@@ -71,7 +90,9 @@ function BracketLines({
   const { layout, links, junctions, championRoute } = plan;
   // The champion's route is always drawn in lime; hovering it adds nothing.
   const routeClub = activeClub === CUP_CHAMPION ? null : activeClub;
-  const activeRoute = routeClub === null ? null : routePath(layout, routeClub);
+  const activeRoute = routeClub === null ? [] : routeSegments(layout, routeClub);
+  const championSlot = steps(CHAMPION_ROUND_STEPS);
+  const hoverSlot = steps(HOVER_ROUND_STEPS);
   return (
     <>
       {links.map((link) => (
@@ -88,39 +109,58 @@ function BracketLines({
         r={layout.trophyRadius}
         {...applyStyles(styles.disc, delay.ring3)}
       />
-      {championRoute === null ? null : (
+      {championRoute.map((segment, round) => (
         <path
-          d={championRoute}
+          d={segment.path}
+          key={`champion-${segment.depth}`}
           pathLength={1}
-          {...applyStyles(styles.route, styles.routeChampion, delay.champion)}
+          {...applyStyles(
+            styles.route,
+            styles.routeChampion,
+            timing.slot(steps(championRoundStart(championRoute.length - round)), championSlot),
+          )}
         />
-      )}
-      {activeRoute === null ? null : (
-        // Keyed by club so the path redraws when the pointer moves to another crest.
+      ))}
+      {activeRoute.map((segment, round) => (
+        // Keyed by club so the route redraws, round by round, when the pointer moves on.
         <path
-          d={activeRoute}
-          key={routeClub?.index}
+          d={segment.path}
+          key={`${routeClub?.index}-${segment.depth}`}
           pathLength={1}
-          {...applyStyles(styles.route, styles.routeActive)}
+          {...applyStyles(
+            styles.route,
+            styles.routeActive,
+            timing.slot(steps(round * HOVER_ROUND_STEPS), hoverSlot),
+          )}
         />
-      )}
-      {junctions.map((junction) => {
-        const onActiveRoute =
-          routeClub !== null && activeRoute !== null && routeTouches(routeClub, junction);
-        return (
-          <circle
-            cx={junction.x}
-            cy={junction.y}
-            key={junction.key}
-            r={onActiveRoute ? 6 : 4}
-            {...applyStyles(
-              styles.junction,
-              RING_DELAY[junction.depth - 1],
-              onActiveRoute && styles.junctionActive,
-            )}
-          />
-        );
-      })}
+      ))}
+      {junctions.map((junction) => (
+        <circle
+          cx={junction.x}
+          cy={junction.y}
+          key={junction.key}
+          r={4}
+          {...applyStyles(styles.junction, RING_DELAY[junction.depth - 1])}
+        />
+      ))}
+      {routeClub === null
+        ? null
+        : junctions
+            .filter((junction) => routeTouches(routeClub, junction))
+            .map((junction) => (
+              // Lights as the hovered route's line reaches it.
+              <circle
+                cx={junction.x}
+                cy={junction.y}
+                key={`${routeClub.index}-${junction.key}`}
+                r={6}
+                {...applyStyles(
+                  styles.junction,
+                  styles.junctionActive,
+                  timing.delay(steps((junction.depth - layout.crestDepth) * HOVER_ROUND_STEPS)),
+                )}
+              />
+            ))}
       {junctions
         .filter((junction) => routeTouches(CUP_CHAMPION, junction))
         .map((junction) => (
@@ -128,12 +168,12 @@ function BracketLines({
           <circle
             cx={junction.x}
             cy={junction.y}
-            key={junction.key}
+            key={`champion-${junction.key}`}
             r={6}
             {...applyStyles(
               styles.junction,
               styles.junctionChampion,
-              CHAMPION_JUNCTION_DELAY[junction.depth - 1],
+              timing.delay(steps(championJunctionStep(junction.depth))),
             )}
           />
         ))}
@@ -203,7 +243,7 @@ export function CupBracket() {
               const tabStop = showsClub(layout, CUP_CLUBS[rovingClub] ?? CUP_CHAMPION)
                 ? rovingClub
                 : CUP_CHAMPION.index;
-              return crests.map(({ club, left, top }) => {
+              return crests.map(({ club, left, top }, order) => {
                 const isActive = active?.layoutId === layout.id && active.club === club.index;
                 const isChampion = club === CUP_CHAMPION;
                 const summary = describe(club);
@@ -211,7 +251,13 @@ export function CupBracket() {
                 return (
                   <li
                     key={`${layout.id}-${club.index}`}
-                    {...applyStyles(styles.club, item, delay.crests, styles.at(left, top))}
+                    {...applyStyles(
+                      styles.club,
+                      item,
+                      // Clockwise from the top: a wave around the ring instead of all at once.
+                      timing.delay(steps(2 + (order / crests.length) * CREST_WAVE_STEPS)),
+                      styles.at(left, top),
+                    )}
                   >
                     <Tooltip
                       onOpenChange={(open) => {
@@ -266,23 +312,17 @@ export function CupBracket() {
         </TooltipProvider>
       </div>
       <figcaption {...applyStyles(styles.card, elevation.md, delay.card)}>
-        <span {...applyStyles(styles.cardCrest)}>
-          <FictionalCrest
-            className={applyStyles(styles.cardCrestMark).className}
-            crest={CUP_CHAMPION.crest}
-          />
+        <span aria-hidden="true" {...applyStyles(styles.cardTrophy)}>
+          <TrophyIcon weight="fill" {...applyStyles(styles.cardTrophyIcon, delay.gold)} />
         </span>
         <span {...applyStyles(styles.cardText)}>
           <span {...applyStyles(typography.body, styles.cardResult)}>
-            {`${CUP_CHAMPION.name} ${finalScore} ${CUP_RUNNER_UP.name}`}
+            {t("landing.cup.champion", { club: CUP_CHAMPION.name })}
           </span>
           <span {...applyStyles(typography.caption, styles.cardMeta)}>
-            {`${t("landing.cup.final")} · ${t("landing.cup.competition")} · `}
-            <span {...applyStyles(styles.official)}>{t("landing.cup.official")}</span>
+            {`${t("landing.cup.finalAgainst", { score: finalScore, opponent: CUP_RUNNER_UP.name })} · `}
+            <span {...applyStyles(styles.official)}>{t("landing.cup.officialInline")}</span>
           </span>
-        </span>
-        <span aria-hidden="true" {...applyStyles(typography.label, styles.stamp, delay.card)}>
-          {t("landing.cup.official")}
         </span>
       </figcaption>
     </figure>

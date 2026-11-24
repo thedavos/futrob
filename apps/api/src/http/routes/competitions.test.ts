@@ -404,6 +404,14 @@ describe("apps/api http competitions", () => {
     const otherPlatform = onboardingCompetition.platform === "pc" ? "xbox" : "pc";
     const filtered = await app.request(`${path}?platform=${otherPlatform}`, { headers: service });
     expect(await filtered.json()).toEqual({ items: [] });
+    const named = await app.request(`${path}?q=${encodeURIComponent(onboardingCompetition.name)}`, {
+      headers: service,
+    });
+    expect(
+      ((await named.json()) as typeof body).items.map((item) => item.competition.name),
+    ).toEqual([onboardingCompetition.name]);
+    const unnamed = await app.request(`${path}?q=zzz-sin-coincidencias`, { headers: service });
+    expect(await unnamed.json()).toEqual({ items: [] });
     expect((await app.request(`${path}?limit=7`, { headers: service })).status).toBe(400);
   });
 

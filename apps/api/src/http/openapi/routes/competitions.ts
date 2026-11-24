@@ -107,7 +107,7 @@ export const listOpenCompetitionsAnonymouslyRoute = defineRoute({
   tags: ["competitions"],
   summary: "List listed competitions with open registration before signing in",
   description:
-    "Service-only endpoint authenticated with the internal bearer secret; takes no actor. Always returns competitions in registration that are listed in Explore, newest first; the caller cannot change status or listing. Lets the web BFF serve the signed-out landing, which rate-limits callers by IP.",
+    "Service-only endpoint authenticated with the internal bearer secret; takes no actor. Always returns competitions in registration that are listed in Explore, newest first, optionally narrowed by name (`q`); the caller cannot change status or listing. Lets the web BFF serve the signed-out landing, which rate-limits callers by IP.",
   query: openCompetitionsQuerySchema,
   success: {
     status: 200,
