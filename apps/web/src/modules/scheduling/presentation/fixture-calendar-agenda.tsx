@@ -92,7 +92,7 @@ export function FixtureCalendarAgenda({
         <SectionTitle as="h2" id="fixture-agenda-jump">
           {t("fixture.agenda.jumpTo")}
         </SectionTitle>
-        <nav aria-label={t("fixture.agenda.jumpLabel")}>
+        <nav aria-label={t("fixture.agenda.jumpLabel")} {...applyStyles(styles.indexNav)}>
           {indexGroups.map((group) => (
             <div key={group.key} {...applyStyles(styles.indexGroup)}>
               {format.showStage && group.stageKind ? (

@@ -219,3 +219,75 @@ export const leaguePlayoffsFixture: GetCurrentCompetitionFixtureResponse = {
 
 /** «Now» during the multi-stage tournament: Saturday 4 July 2026, right before Matchday 5. */
 export const LEAGUE_PLAYOFFS_NOW = new Date("2026-07-04T15:00:00.000Z");
+
+const LONG_PLAN = "long-league-plan";
+const LONG_STAGE = `${LONG_PLAN}:stage:1`;
+const LONG_TEAM_COUNT = 16;
+const LONG_TEAMS = Array.from(
+  { length: LONG_TEAM_COUNT },
+  (_, index) => [`team-long-${index + 1}`, `Club ${index + 1}`] as const,
+);
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+/** Matchday 1: Sunday 2 August 2026, 20:00 in America/Lima. */
+const LONG_FIRST_KICKOFF = Date.parse("2026-08-03T01:00:00.000Z");
+
+/** Circle-method round robin, mirrored for the second leg: 30 matchdays of 8 Encounters. */
+function longLeagueRounds(): readonly (readonly Kickoff[])[] {
+  const ids = LONG_TEAMS.map(([teamId]) => teamId);
+  const legRounds = ids.length - 1;
+  const firstLeg = Array.from({ length: legRounds }, (_, round) => {
+    const rotation = [ids[0], ...ids.slice(1).map((_, i) => ids[1 + ((i + round) % legRounds)])];
+    return Array.from({ length: ids.length / 2 }, (_, i) => {
+      const pair = [rotation[i] ?? "", rotation[ids.length - 1 - i] ?? ""] as const;
+      return round % 2 === 0 ? pair : ([pair[1], pair[0]] as const);
+    });
+  });
+  const secondLeg = firstLeg.map((pairs) => pairs.map(([home, away]) => [away, home] as const));
+  return [...firstLeg, ...secondLeg].map((pairs, round) => {
+    const at = new Date(LONG_FIRST_KICKOFF + round * WEEK_MS).toISOString();
+    return pairs.map(([home, away]): Kickoff => [home, away, at]);
+  });
+}
+
+const LONG_ROUNDS = longLeagueRounds();
+
+/**
+ * Home-and-away league of 16 Teams on 30 distinct Sundays (America/Lima): enough dates
+ * that the Agenda jump index outgrows a laptop-height viewport.
+ */
+export const longLeagueFixture: GetCurrentCompetitionFixtureResponse = {
+  fixture: {
+    id: LONG_PLAN,
+    revision: 1,
+    status: "active",
+    generationKey: "competition-long:1",
+    organizationId: "org-1",
+    competitionId: "competition-1",
+    rulesVersion: 1,
+    generationVersion: 1,
+    format: "league",
+    timeZone: "America/Lima",
+    homeAndAway: true,
+    seed: LONG_TEAMS.map(([teamId]) => teamId),
+    stages: [
+      {
+        id: LONG_STAGE,
+        kind: "league",
+        order: 1,
+        rounds: LONG_ROUNDS.map((kickoffs, index) => ({
+          id: `${LONG_STAGE}:round:${index + 1}`,
+          stageId: LONG_STAGE,
+          number: index + 1,
+          scheduledStartAt: kickoffs[0]?.[2] ?? "2026-08-03T01:00:00.000Z",
+          encounters: kickoffs.map((kickoff, order) =>
+            veranoEncounter(LONG_STAGE, index + 1, order + 1, kickoff),
+          ),
+        })),
+      },
+    ],
+  },
+  teams: LONG_TEAMS.map(([teamId, name]) => ({ teamId, name })),
+};
+
+/** «Now» before the long league kicks off: Saturday 1 August 2026. */
+export const LONG_LEAGUE_NOW = new Date("2026-08-01T15:00:00.000Z");

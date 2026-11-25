@@ -271,12 +271,26 @@ export const styles = stylex.create({
     gap: "0.75rem",
     position: "sticky",
     top: "1.25rem",
+    // Long leagues (30 dates) outgrow the viewport: the index scrolls on its own.
+    maxHeight: "calc(100dvh - 2.5rem)",
+    minHeight: 0,
     padding: "1rem",
     borderWidth: 1,
     borderStyle: "solid",
     borderColor: colors.border,
     borderRadius: "var(--corner-lg)",
     backgroundColor: colors.surface,
+  },
+  indexNav: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+    minHeight: 0,
+    overflowY: "auto",
+    overscrollBehavior: "contain",
+    // Room for the links' inset focus ring and the scrollbar.
+    marginInline: "-0.25rem",
+    paddingInline: "0.25rem",
   },
   indexGroup: {
     display: "flex",

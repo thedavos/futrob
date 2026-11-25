@@ -24,8 +24,10 @@ import {
 import {
   FIXTURE_CALENDAR_NOW,
   LEAGUE_PLAYOFFS_NOW,
+  LONG_LEAGUE_NOW,
   leagueFixture,
   leaguePlayoffsFixture,
+  longLeagueFixture,
 } from "./fixture-calendar.fixtures.ts";
 import type { FixtureCalendarViewKind } from "./fixture-calendar.tsx";
 import type { SwissFixtureCommands } from "./swiss-fixture-commands.ts";
@@ -45,6 +47,7 @@ const retry = () => undefined;
 type Scenario =
   | "league"
   | "leaguePlayoffs"
+  | "longLeague"
   | "knockout"
   | "stale"
   | "empty"
@@ -84,6 +87,12 @@ const STATES: Record<Scenario, CompetitionFixturePageState> = {
     refused: false,
     retry,
   }),
+  longLeague: competitionFixturePageState({
+    data: longLeagueFixture,
+    failed: false,
+    refused: false,
+    retry,
+  }),
   knockout: competitionFixturePageState({
     data: groupsKnockoutFixture,
     failed: false,
@@ -112,6 +121,11 @@ const STATES: Record<Scenario, CompetitionFixturePageState> = {
   swissNeedsTeams: generateState(1),
 };
 
+const NOW: Partial<Record<Scenario, Date>> = {
+  leaguePlayoffs: LEAGUE_PLAYOFFS_NOW,
+  longLeague: LONG_LEAGUE_NOW,
+};
+
 type StoryArgs = {
   readonly scenario: Scenario;
   readonly locale: Locale;
@@ -130,7 +144,7 @@ function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
           commands={swissCommands}
           competitionId="competition-1"
           initialView={initialView}
-          now={scenario === "leaguePlayoffs" ? LEAGUE_PLAYOFFS_NOW : FIXTURE_CALENDAR_NOW}
+          now={NOW[scenario] ?? FIXTURE_CALENDAR_NOW}
           organizationId="org-1"
           state={STATES[scenario]}
         />
@@ -160,6 +174,7 @@ function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
 const SCENARIOS = [
   "league",
   "leaguePlayoffs",
+  "longLeague",
   "knockout",
   "stale",
   "empty",
@@ -219,6 +234,64 @@ export const LeaguePlayoffsAgenda: Story = {
       "href",
       "#fixture-day-2026-07-19",
     );
+  },
+};
+
+/** A laptop-height window: the Agenda index of a 30-date league must scroll on its own. */
+const shortLaptop = {
+  viewport: {
+    options: {
+      shortLaptop: {
+        name: "Portátil bajo (1280 × 720)",
+        styles: { width: "1280px", height: "720px" },
+        type: "desktop",
+      },
+    },
+  },
+};
+
+export const LongLeagueAgendaIndex: Story = {
+  name: "Liga larga · Índice de la Agenda",
+  args: { scenario: "longLeague", initialView: "agenda" },
+  parameters: { ...shortLaptop, a11y: { test: "error" } },
+  globals: { viewport: { value: "shortLaptop", isRotated: false } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const jump = await canvas.findByRole("navigation", {
+      name: "Saltar a una fecha del calendario",
+    });
+    const links = within(jump).getAllByRole("link");
+    await expect(links).toHaveLength(30);
+    const last = links.at(-1);
+    if (!last) throw new Error("The jump index has no links");
+    await expect(last).toHaveAttribute("href", "#fixture-day-2027-02-21");
+
+    // A short page scroll pins the index under the header; from there, scrolling only the
+    // index reaches its last shortcut while the Agenda still shows its first dates.
+    const aside = jump.closest("aside");
+    if (!aside) throw new Error("The jump index is not inside its aside");
+    window.scrollBy(0, aside.getBoundingClientRect().top);
+    await waitFor(() => expect(aside.getBoundingClientRect().top).toBeLessThanOrEqual(24));
+    const pageScroll = window.scrollY;
+    await expect(pageScroll).toBeLessThan(400);
+    await expect(aside.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight);
+    await expect(jump.scrollHeight).toBeGreaterThan(jump.clientHeight);
+    jump.scrollTop = jump.scrollHeight;
+    await waitFor(() => expect(jump.scrollTop).toBeGreaterThan(0));
+    await expect(window.scrollY).toBe(pageScroll);
+    const linkBox = last.getBoundingClientRect();
+    await expect(linkBox.top).toBeGreaterThanOrEqual(0);
+    await expect(linkBox.bottom).toBeLessThanOrEqual(window.innerHeight);
+
+    // The shortcut is the topmost element at its own centre, so a pointer reaches it.
+    // (Following the hash would navigate the test runner's frame, so it is not clicked.)
+    const hit = document.elementFromPoint(
+      linkBox.left + linkBox.width / 2,
+      linkBox.top + linkBox.height / 2,
+    );
+    await expect(hit && last.contains(hit)).toBe(true);
+    const target = canvas.getByRole("heading", { level: 2, name: "domingo, 21 de febrero" });
+    await expect(target.closest("#fixture-day-2027-02-21")).not.toBeNull();
   },
 };
 
