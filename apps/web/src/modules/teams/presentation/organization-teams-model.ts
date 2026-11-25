@@ -27,6 +27,10 @@ export type CompetitionParticipantsResult =
   | { readonly kind: "forbidden" }
   | { readonly kind: "data"; readonly participants: readonly CompetitionEntryDto[] };
 
+export type CompetitionsListState = "loading" | "error" | "forbidden" | "ready";
+
+export type ParticipationFilterReadiness = "ready" | "loading" | "error" | "forbidden";
+
 export type TeamStatusFilter = "all" | "pending" | "none";
 
 export type OrganizationTeamsFilter = {
@@ -80,20 +84,60 @@ export function filterOrganizationTeams(
 
   return byName.filter((team) => {
     const entries = index.byTeam.get(team.id) ?? [];
-    if (
-      filterByCompetition &&
-      !entries.some((entry) => entry.competitionId === filter.competitionId)
-    ) {
+    if (filter.status === "none") {
+      return !filterByCompetition && index.complete && entries.length === 0;
+    }
+    const scopedEntries = filterByCompetition
+      ? entries.filter((entry) => entry.competitionId === filter.competitionId)
+      : entries;
+    if (filterByCompetition && scopedEntries.length === 0) {
       return false;
     }
     if (filter.status === "pending") {
-      return entries.some((entry) => entry.status === "pending");
-    }
-    if (filter.status === "none") {
-      return index.complete && entries.length === 0;
+      return scopedEntries.some((entry) => entry.status === "pending");
     }
     return true;
   });
+}
+
+/**
+ * Determines whether the currently active participation filter (competition and/or entry status)
+ * has enough data to treat an empty result or count as definitive. Name-only search never depends
+ * on participation reads and is always `"ready"`.
+ */
+export function getParticipationFilterReadiness(
+  filter: OrganizationTeamsFilter,
+  competitions: readonly CompetitionDto[],
+  results: readonly CompetitionParticipantsResult[],
+  competitionsState: CompetitionsListState,
+): ParticipationFilterReadiness {
+  const filterByCompetition = filter.competitionId !== "all" && filter.competitionId.length > 0;
+  if (!filterByCompetition && filter.status === "all") {
+    return "ready";
+  }
+  if (competitionsState !== "ready") {
+    return competitionsState;
+  }
+  if (filterByCompetition) {
+    if (filter.status === "none") {
+      return "ready";
+    }
+    const competitionIndex = competitions.findIndex(
+      (competition) => competition.id === filter.competitionId,
+    );
+    if (competitionIndex === -1) {
+      return "ready";
+    }
+    const result = results[competitionIndex];
+    if (!result || result.kind === "loading") return "loading";
+    if (result.kind === "error") return "error";
+    if (result.kind === "forbidden") return "forbidden";
+    return "ready";
+  }
+  if (results.some((result) => result.kind === "loading")) return "loading";
+  if (results.some((result) => result.kind === "error")) return "error";
+  if (results.some((result) => result.kind === "forbidden")) return "forbidden";
+  return "ready";
 }
 
 export function buildTeamParticipationIndex(

@@ -43,14 +43,19 @@ import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
   buildTeamParticipationIndex,
   filterOrganizationTeams,
+  getParticipationFilterReadiness,
   summarizeOrganizationTeams,
   type CompetitionParticipantsResult,
+  type CompetitionsListState,
+  type OrganizationTeamsFilter,
   type TeamStatusFilter,
 } from "./organization-teams-model.ts";
 import { OrganizationTeamsKpis, type OrganizationTeamsMetric } from "./organization-teams-kpis.tsx";
 import {
   OrganizationTeamsEmpty,
   OrganizationTeamsError,
+  OrganizationTeamsFilterLoading,
+  OrganizationTeamsFilterUnavailable,
   OrganizationTeamsForbidden,
   OrganizationTeamsLoading,
   OrganizationTeamsNoMatches,
@@ -77,19 +82,15 @@ function isForbidden(error: Error | null): boolean {
 export function OrganizationTeamsPage({
   organizationId,
   query,
-  onQueryChange,
   status: controlledStatus,
-  onStatusChange,
   competitionId: controlledCompetitionId,
-  onCompetitionIdChange,
+  onFiltersChange,
 }: {
   readonly organizationId: string;
   readonly query: string;
-  readonly onQueryChange: (query: string) => void;
   readonly status?: TeamStatusFilter;
-  readonly onStatusChange?: (status: TeamStatusFilter) => void;
   readonly competitionId?: string;
-  readonly onCompetitionIdChange?: (competitionId: string) => void;
+  readonly onFiltersChange: (next: OrganizationTeamsFilter) => void;
 }) {
   const { t } = useI18n();
   const headingId = useId();
@@ -97,9 +98,13 @@ export function OrganizationTeamsPage({
   const [uncontrolledCompetitionId, setUncontrolledCompetitionId] = useState<string>("all");
 
   const statusFilter = controlledStatus ?? uncontrolledStatus;
-  const setStatusFilter = onStatusChange ?? setUncontrolledStatus;
   const competitionFilter = controlledCompetitionId ?? uncontrolledCompetitionId;
-  const setCompetitionFilter = onCompetitionIdChange ?? setUncontrolledCompetitionId;
+
+  function applyFilters(next: OrganizationTeamsFilter) {
+    if (controlledStatus === undefined) setUncontrolledStatus(next.status);
+    if (controlledCompetitionId === undefined) setUncontrolledCompetitionId(next.competitionId);
+    onFiltersChange(next);
+  }
 
   const caps = useCapabilities({ organizationId }, CAPABILITIES);
   const denied = !caps.loading && !caps.unavailable && !caps.readTeams;
@@ -112,6 +117,14 @@ export function OrganizationTeamsPage({
   const competitionsForbidden = isForbidden(competitionsQuery.error);
   const competitions = competitionsForbidden ? [] : (competitionsQuery.data?.competitions ?? []);
   const competitionsKnown = !competitionsForbidden && competitionsQuery.data !== undefined;
+  const competitionsState: CompetitionsListState = competitionsForbidden
+    ? "forbidden"
+    : competitionsQuery.isPending
+      ? "loading"
+      : competitionsQuery.isError
+        ? "error"
+        : "ready";
+
   const showParticipation = teamsQuery.isSuccess && teams.length > 0;
   const participantQueries = useQueries({
     queries: competitions.map((competition) => ({
@@ -132,13 +145,12 @@ export function OrganizationTeamsPage({
   );
   const index = buildTeamParticipationIndex(competitions, participantResults, competitionsKnown);
   const participationLoading =
-    (competitionsQuery.isPending && !competitionsForbidden) ||
+    competitionsState === "loading" ||
     participantResults.some((result) => result.kind === "loading");
   const participationRefused =
     competitionsForbidden || participantResults.some((result) => result.kind === "forbidden");
   const participationFailed =
-    (competitionsQuery.isError && !competitionsForbidden) ||
-    participantResults.some((result) => result.kind === "error");
+    competitionsState === "error" || participantResults.some((result) => result.kind === "error");
 
   function retryParticipation() {
     if (competitionsQuery.isError) void competitionsQuery.refetch();
@@ -148,9 +160,7 @@ export function OrganizationTeamsPage({
   }
 
   function clearAllFilters() {
-    onQueryChange("");
-    setStatusFilter("all");
-    setCompetitionFilter("all");
+    applyFilters({ query: "", status: "all", competitionId: "all" });
   }
 
   const header = (
@@ -205,11 +215,24 @@ export function OrganizationTeamsPage({
     );
   }
 
-  const effectiveCompetition =
-    competitionFilter === "all" ||
-    competitions.some((competition) => competition.id === competitionFilter)
+  // Keep a deep-linked competition ID intact until the competitions list is known.
+  const effectiveCompetition = !competitionsKnown
+    ? competitionFilter
+    : competitionFilter === "all" ||
+        competitions.some((competition) => competition.id === competitionFilter)
       ? competitionFilter
       : "all";
+  const activeFilter: OrganizationTeamsFilter = {
+    query,
+    status: statusFilter,
+    competitionId: effectiveCompetition,
+  };
+  const filterReadiness = getParticipationFilterReadiness(
+    activeFilter,
+    competitions,
+    participantResults,
+    competitionsState,
+  );
   const summary = summarizeOrganizationTeams(teams, index);
   const activeMetric: OrganizationTeamsMetric = participationLoading
     ? "loading"
@@ -222,14 +245,19 @@ export function OrganizationTeamsPage({
       ? "unavailable"
       : summary.pendingEntries;
 
-  const visible = filterOrganizationTeams(
-    teams,
-    { query, status: statusFilter, competitionId: effectiveCompetition },
-    index,
-  );
+  const visible = filterOrganizationTeams(teams, activeFilter, index);
   const hasSearch = query.trim().length > 0;
   const hasFacetFilter = statusFilter !== "all" || effectiveCompetition !== "all";
   const filtering = hasSearch || hasFacetFilter;
+
+  const countLabel =
+    filterReadiness === "loading"
+      ? t("org.teams.filterLoadingCount")
+      : filterReadiness !== "ready"
+        ? t("org.teams.filterUnavailableCount")
+        : filtering
+          ? t("org.teams.countFiltered", { shown: visible.length, total: teams.length })
+          : t("org.teams.count", { count: teams.length });
 
   const competitionItems = [
     { value: "all", label: t("org.teams.filter.allCompetitions") },
@@ -238,6 +266,9 @@ export function OrganizationTeamsPage({
       label: competition.name,
     })),
   ];
+
+  const showFilterUnavailable =
+    visible.length === 0 && (filterReadiness === "error" || filterReadiness === "forbidden");
 
   return (
     <main {...applyStyles(styles.main)}>
@@ -252,12 +283,15 @@ export function OrganizationTeamsPage({
           <AlertDescription>{t("org.teams.refreshFailed")}</AlertDescription>
         </Alert>
       ) : null}
-      {participationRefused && !participationFailed && !participationLoading ? (
+      {participationRefused &&
+      !participationFailed &&
+      !participationLoading &&
+      !showFilterUnavailable ? (
         <Alert variant="warning">
           <AlertDescription>{t("org.teams.partialForbidden")}</AlertDescription>
         </Alert>
       ) : null}
-      {participationFailed && !participationLoading ? (
+      {participationFailed && !participationLoading && !showFilterUnavailable ? (
         <div {...applyStyles(styles.feedback)}>
           <Alert variant="warning">
             <AlertDescription>{t("org.teams.partial")}</AlertDescription>
@@ -274,9 +308,7 @@ export function OrganizationTeamsPage({
               {t("org.teams.directory.title")}
             </Heading>
             <Caption aria-live="polite" role="status">
-              {filtering
-                ? t("org.teams.countFiltered", { shown: visible.length, total: teams.length })
-                : t("org.teams.count", { count: teams.length })}
+              {countLabel}
             </Caption>
           </div>
           {competitions.length > 0 ? (
@@ -285,7 +317,7 @@ export function OrganizationTeamsPage({
               className={styles.statusGroup}
               onValueChange={(value) => {
                 if (value === "all" || value === "pending" || value === "none") {
-                  setStatusFilter(value);
+                  applyFilters({ ...activeFilter, status: value });
                 }
               }}
               value={statusFilter}
@@ -317,7 +349,7 @@ export function OrganizationTeamsPage({
                 aria-label={t("org.teams.search")}
                 autoComplete="off"
                 dense
-                onChange={(event) => onQueryChange(event.target.value)}
+                onChange={(event) => applyFilters({ ...activeFilter, query: event.target.value })}
                 placeholder={t("org.teams.search")}
                 startIcon={MagnifyingGlassIcon}
                 type="search"
@@ -329,7 +361,7 @@ export function OrganizationTeamsPage({
                 <Select
                   items={competitionItems}
                   onValueChange={(value) => {
-                    if (value !== null) setCompetitionFilter(value);
+                    if (value !== null) applyFilters({ ...activeFilter, competitionId: value });
                   }}
                   value={effectiveCompetition}
                 >
@@ -347,7 +379,15 @@ export function OrganizationTeamsPage({
               </Field>
             ) : null}
           </div>
-          {visible.length === 0 ? (
+          {visible.length === 0 && filterReadiness === "loading" ? (
+            <OrganizationTeamsFilterLoading />
+          ) : showFilterUnavailable ? (
+            <OrganizationTeamsFilterUnavailable
+              kind={filterReadiness}
+              onClear={clearAllFilters}
+              onRetry={filterReadiness === "error" ? retryParticipation : undefined}
+            />
+          ) : visible.length === 0 ? (
             <OrganizationTeamsNoMatches
               hasFacetFilter={hasFacetFilter}
               onClear={clearAllFilters}

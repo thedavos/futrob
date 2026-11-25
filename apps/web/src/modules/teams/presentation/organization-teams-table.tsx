@@ -267,33 +267,51 @@ function CompetitionChip({
     participants.readParticipants &&
     roster.readRoster;
   const statusLabel = t(`org.teams.entry.${entry.status}`);
-  const dotStyle =
-    entry.status === "approved"
-      ? styles.dotApproved
-      : entry.status === "pending"
-        ? styles.dotPending
-        : styles.dotRejected;
-  const title = `${entry.competitionName} · ${statusLabel}`;
+  const statusIcon =
+    entry.status === "approved" ? (
+      <CheckCircleIcon
+        aria-hidden="true"
+        {...applyStyles(styles.chipIcon, styles.chipIconApproved)}
+      />
+    ) : entry.status === "pending" ? (
+      <ClockCountdownIcon
+        aria-hidden="true"
+        {...applyStyles(styles.chipIcon, styles.chipIconPending)}
+      />
+    ) : (
+      <XCircleIcon aria-hidden="true" {...applyStyles(styles.chipIcon, styles.chipIconRejected)} />
+    );
 
   if (!linked) {
     return (
-      <span title={title} {...applyStyles(styles.chipBase)}>
-        <span aria-hidden="true" {...applyStyles(styles.dot, dotStyle)} />
+      <span {...applyStyles(styles.chipBase)}>
+        {statusIcon}
         <span>{entry.competitionName}</span>
+        <span aria-hidden="true" {...applyStyles(styles.chipStatus)}>
+          ·
+        </span>
+        <span {...applyStyles(styles.chipStatus)}>{statusLabel}</span>
       </span>
     );
   }
   return (
     <Link
-      aria-label={t("org.teams.link", { competition: entry.competitionName, team: teamName })}
+      aria-label={t("org.teams.link", {
+        competition: entry.competitionName,
+        status: statusLabel,
+        team: teamName,
+      })}
       params={{ orgId: organizationId, competitionId: entry.competitionId }}
       search={{ teamId }}
-      title={title}
       to="/orgs/$orgId/competitions/$competitionId/teams"
       {...applyStyles(styles.chipBase, styles.chipLink)}
     >
-      <span aria-hidden="true" {...applyStyles(styles.dot, dotStyle)} />
+      {statusIcon}
       <span>{entry.competitionName}</span>
+      <span aria-hidden="true" {...applyStyles(styles.chipStatus)}>
+        ·
+      </span>
+      <span {...applyStyles(styles.chipStatus)}>{statusLabel}</span>
     </Link>
   );
 }

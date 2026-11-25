@@ -255,15 +255,18 @@ export const tableStyles = stylex.create({
       ":focus-visible": "0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent)",
     },
   },
-  dot: {
-    width: "0.375rem",
-    height: "0.375rem",
+  chipIcon: {
+    width: "0.875rem",
+    height: "0.875rem",
     flexShrink: 0,
-    borderRadius: "var(--corner-full)",
   },
-  dotApproved: { backgroundColor: colors.approved },
-  dotPending: { backgroundColor: colors.warning },
-  dotRejected: { backgroundColor: colors.danger },
+  chipIconApproved: { color: colors.approved },
+  chipIconPending: { color: colors.warning },
+  chipIconRejected: { color: colors.danger },
+  chipStatus: {
+    color: colors.mutedForeground,
+    fontWeight: "var(--font-weight-normal)",
+  },
   badgeIcon: {
     width: "0.875rem",
     height: "0.875rem",

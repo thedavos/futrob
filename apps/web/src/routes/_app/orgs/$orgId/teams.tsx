@@ -17,33 +17,20 @@ function OrganizationTeamsRoute() {
   const { q, status, competition } = Route.useSearch();
   const navigate = Route.useNavigate();
 
-  function updateSearch(next: {
-    readonly q?: string;
-    readonly status?: "pending" | "none";
-    readonly competition?: string;
-  }) {
-    void navigate({
-      replace: true,
-      search: {
-        q: next.q && next.q.length > 0 ? next.q : undefined,
-        status: next.status,
-        competition: next.competition && next.competition !== "all" ? next.competition : undefined,
-      },
-    });
-  }
-
   return (
     <OrganizationTeamsPage
       competitionId={competition ?? "all"}
-      onCompetitionIdChange={(nextCompetition) =>
-        updateSearch({ q, status, competition: nextCompetition })
-      }
-      onQueryChange={(nextQuery) => updateSearch({ q: nextQuery, status, competition })}
-      onStatusChange={(nextStatus) =>
-        updateSearch({
-          q,
-          status: nextStatus === "all" ? undefined : nextStatus,
-          competition,
+      onFiltersChange={(next) =>
+        void navigate({
+          replace: true,
+          search: {
+            q: next.query.length > 0 ? next.query : undefined,
+            status: next.status === "all" ? undefined : next.status,
+            competition:
+              next.competitionId.length > 0 && next.competitionId !== "all"
+                ? next.competitionId
+                : undefined,
+          },
         })
       }
       organizationId={orgId}

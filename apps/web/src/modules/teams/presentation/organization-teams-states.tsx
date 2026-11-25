@@ -6,6 +6,7 @@ import {
   MagnifyingGlassIcon,
   PlusIcon,
   UsersThreeIcon,
+  WarningCircleIcon,
 } from "@phosphor-icons/react";
 import {
   Alert,
@@ -57,6 +58,27 @@ export function OrganizationTeamsForbidden({
   );
 }
 
+function TableRowsSkeleton({ count }: { readonly count: number }) {
+  return (
+    <div aria-hidden="true" {...applyStyles(pageStyles.loadingRows)}>
+      {Array.from({ length: count }, (_, row) => (
+        <div key={row} {...applyStyles(pageStyles.loadingRow)}>
+          <div {...applyStyles(pageStyles.loadingTeamCell)}>
+            <Skeleton {...applyStyles(pageStyles.loadingAvatar)} />
+            <Skeleton {...applyStyles(pageStyles.loadingText)} />
+          </div>
+          <div {...applyStyles(pageStyles.loadingChips)}>
+            <Skeleton {...applyStyles(pageStyles.loadingChip)} />
+            <Skeleton {...applyStyles(pageStyles.loadingChip)} />
+          </div>
+          <Skeleton {...applyStyles(pageStyles.loadingBadge)} />
+          <Skeleton {...applyStyles(pageStyles.loadingDate)} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function OrganizationTeamsLoading() {
   const { t } = useI18n();
   return (
@@ -79,25 +101,70 @@ export function OrganizationTeamsLoading() {
             <Skeleton {...applyStyles(pageStyles.loadingSearch)} />
             <Skeleton {...applyStyles(pageStyles.loadingSelect)} />
           </div>
-          <div aria-hidden="true" {...applyStyles(pageStyles.loadingRows)}>
-            {[0, 1, 2, 3, 4].map((row) => (
-              <div key={row} {...applyStyles(pageStyles.loadingRow)}>
-                <div {...applyStyles(pageStyles.loadingTeamCell)}>
-                  <Skeleton {...applyStyles(pageStyles.loadingAvatar)} />
-                  <Skeleton {...applyStyles(pageStyles.loadingText)} />
-                </div>
-                <div {...applyStyles(pageStyles.loadingChips)}>
-                  <Skeleton {...applyStyles(pageStyles.loadingChip)} />
-                  <Skeleton {...applyStyles(pageStyles.loadingChip)} />
-                </div>
-                <Skeleton {...applyStyles(pageStyles.loadingBadge)} />
-                <Skeleton {...applyStyles(pageStyles.loadingDate)} />
-              </div>
-            ))}
-          </div>
+          <TableRowsSkeleton count={5} />
         </CardContent>
       </Card>
     </>
+  );
+}
+
+export function OrganizationTeamsFilterLoading() {
+  const { t } = useI18n();
+  return (
+    <div aria-busy="true" {...applyStyles(pageStyles.loadingRows)}>
+      <Caption role="status">{t("org.teams.filterLoading")}</Caption>
+      <TableRowsSkeleton count={3} />
+    </div>
+  );
+}
+
+export function OrganizationTeamsFilterUnavailable({
+  kind,
+  onClear,
+  onRetry,
+}: {
+  readonly kind: "error" | "forbidden";
+  readonly onClear: () => void;
+  readonly onRetry?: () => void;
+}) {
+  const { t } = useI18n();
+  const isError = kind === "error";
+  return (
+    <div {...applyStyles(pageStyles.noMatches)}>
+      <EmptyState>
+        <EmptyStateIcon>
+          <span {...applyStyles(pageStyles.emptyIconIsland)}>
+            {isError ? (
+              <WarningCircleIcon aria-hidden="true" {...applyStyles(pageStyles.emptyIconGlyph)} />
+            ) : (
+              <LockSimpleIcon aria-hidden="true" {...applyStyles(pageStyles.emptyIconGlyph)} />
+            )}
+          </span>
+        </EmptyStateIcon>
+        <EmptyStateCopy>
+          <EmptyStateTitle>
+            {t(isError ? "org.teams.filterError.title" : "org.teams.filterForbidden.title")}
+          </EmptyStateTitle>
+          <EmptyStateDescription>
+            {t(
+              isError
+                ? "org.teams.filterError.description"
+                : "org.teams.filterForbidden.description",
+            )}
+          </EmptyStateDescription>
+        </EmptyStateCopy>
+        <EmptyStateActions>
+          {isError && onRetry ? (
+            <Button onClick={onRetry} type="button" variant="outline">
+              {t("common.retry")}
+            </Button>
+          ) : null}
+          <Button onClick={onClear} type="button" variant="outline">
+            {t("org.teams.noMatches.clearFilters")}
+          </Button>
+        </EmptyStateActions>
+      </EmptyState>
+    </div>
   );
 }
 

@@ -1792,10 +1792,19 @@ const es = {
     Number(count) === 1 ? "1 rechazada" : `${count} rechazadas`,
   "org.teams.more": ({ count }) => `+${count} más`,
   "org.teams.less": "Ocultar",
-  "org.teams.link": "{competition}: ver {team}",
+  "org.teams.link": "{competition} ({status}): ver {team}",
   "org.teams.noCompetitions": "Sin competiciones",
   "org.teams.competitionsUnavailable": "No disponible",
   "org.teams.loading": "Cargando equipos…",
+  "org.teams.filterLoading": "Cargando inscripciones…",
+  "org.teams.filterLoadingCount": "Comprobando inscripciones…",
+  "org.teams.filterUnavailableCount": "Resultados incompletos",
+  "org.teams.filterError.title": "No pudimos aplicar los filtros",
+  "org.teams.filterError.description":
+    "Faltan inscripciones por cargar, así que no podemos confirmar si hay equipos que coincidan.",
+  "org.teams.filterForbidden.title": "Filtros de competición no disponibles",
+  "org.teams.filterForbidden.description":
+    "No tienes acceso a las inscripciones necesarias para comprobar este filtro. Puedes limpiar los filtros y buscar por nombre.",
   "org.teams.error": "No pudimos cargar los equipos de la organización.",
   "org.teams.refreshFailed": "No pudimos actualizar los equipos. Se muestran los datos anteriores.",
   "org.teams.partial":
@@ -3392,7 +3401,11 @@ export interface MessageParamsByKey {
   readonly "org.teams.status.pending": { readonly count: number };
   readonly "org.teams.status.rejected": { readonly count: number };
   readonly "org.teams.more": { readonly count: number };
-  readonly "org.teams.link": { readonly competition: string; readonly team: string };
+  readonly "org.teams.link": {
+    readonly competition: string;
+    readonly status: string;
+    readonly team: string;
+  };
   readonly "org.teams.noMatches.description": { readonly query: string };
   "reschedule.scope.slot": { slot: number };
   "reschedule.requestedBy": { team: string };
@@ -5462,10 +5475,19 @@ const en: Catalog = {
     Number(count) === 1 ? "1 rejected" : `${count} rejected`,
   "org.teams.more": ({ count }) => `+${count} more`,
   "org.teams.less": "Show less",
-  "org.teams.link": "{competition}: view {team}",
+  "org.teams.link": "{competition} ({status}): view {team}",
   "org.teams.noCompetitions": "No competitions",
   "org.teams.competitionsUnavailable": "Unavailable",
   "org.teams.loading": "Loading teams…",
+  "org.teams.filterLoading": "Loading entries…",
+  "org.teams.filterLoadingCount": "Checking entries…",
+  "org.teams.filterUnavailableCount": "Incomplete results",
+  "org.teams.filterError.title": "We couldn't apply the filters",
+  "org.teams.filterError.description":
+    "Some entries couldn't be loaded, so we can't confirm whether any teams match.",
+  "org.teams.filterForbidden.title": "Competition filters unavailable",
+  "org.teams.filterForbidden.description":
+    "You don't have access to the entries needed for this filter. You can clear the filters and search by name.",
   "org.teams.error": "We couldn't load the organization's teams.",
   "org.teams.refreshFailed": "We couldn't refresh the teams. Showing the previous data.",
   "org.teams.partial":

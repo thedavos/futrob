@@ -5,6 +5,7 @@ import {
   filterOrganizationTeams,
   filterTeamsByName,
   formatTeamCreatedAt,
+  getParticipationFilterReadiness,
   summarizeOrganizationTeams,
   summarizeTeamStatus,
   teamInitials,
@@ -149,6 +150,26 @@ describe("filterOrganizationTeams", () => {
     );
     expect(result.map((item) => item.id)).toEqual(["pumas"]);
   });
+
+  it("checks pending status against the selected competition entry only", () => {
+    const crossTeams = [
+      team("cross", "Aprobado en Copa, Pendiente en Liga"),
+      team("real", "Pendiente en Copa"),
+    ];
+    const crossIndex = buildTeamParticipationIndex(competitions, [
+      { kind: "data", participants: [entry("liga", "cross", "pending")] },
+      {
+        kind: "data",
+        participants: [entry("copa", "cross", "approved"), entry("copa", "real", "pending")],
+      },
+    ]);
+    const result = filterOrganizationTeams(
+      crossTeams,
+      { query: "", status: "pending", competitionId: "copa" },
+      crossIndex,
+    );
+    expect(result.map((item) => item.id)).toEqual(["real"]);
+  });
 });
 
 describe("summarizeOrganizationTeams", () => {
@@ -219,6 +240,75 @@ describe("teamInitials", () => {
     expect(teamInitials("Atlético Pumas")).toBe("AP");
     expect(teamInitials("Lobos")).toBe("LO");
     expect(teamInitials("   ")).toBe("?");
+  });
+});
+
+describe("getParticipationFilterReadiness", () => {
+  const competitions = [competition("liga", "Liga"), competition("copa", "Copa")];
+
+  it("is always ready for name-only search even while competitions load or fail", () => {
+    expect(
+      getParticipationFilterReadiness(
+        { query: "pumas", status: "all", competitionId: "all" },
+        [],
+        [],
+        "loading",
+      ),
+    ).toBe("ready");
+    expect(
+      getParticipationFilterReadiness(
+        { query: "pumas", status: "all", competitionId: "all" },
+        [],
+        [],
+        "error",
+      ),
+    ).toBe("ready");
+  });
+
+  it("reports loading, error and forbidden for status filters with incomplete participation", () => {
+    expect(
+      getParticipationFilterReadiness(
+        { query: "", status: "pending", competitionId: "all" },
+        competitions,
+        [{ kind: "data", participants: [] }, { kind: "loading" }],
+        "ready",
+      ),
+    ).toBe("loading");
+    expect(
+      getParticipationFilterReadiness(
+        { query: "", status: "pending", competitionId: "all" },
+        competitions,
+        [{ kind: "error" }, { kind: "data", participants: [] }],
+        "ready",
+      ),
+    ).toBe("error");
+    expect(
+      getParticipationFilterReadiness(
+        { query: "", status: "none", competitionId: "all" },
+        competitions,
+        [{ kind: "forbidden" }, { kind: "data", participants: [] }],
+        "ready",
+      ),
+    ).toBe("forbidden");
+  });
+
+  it("uses only the selected competition query state when filtering by a specific competition", () => {
+    expect(
+      getParticipationFilterReadiness(
+        { query: "", status: "pending", competitionId: "copa" },
+        competitions,
+        [{ kind: "error" }, { kind: "data", participants: [] }],
+        "ready",
+      ),
+    ).toBe("ready");
+    expect(
+      getParticipationFilterReadiness(
+        { query: "", status: "pending", competitionId: "liga" },
+        competitions,
+        [{ kind: "error" }, { kind: "data", participants: [] }],
+        "ready",
+      ),
+    ).toBe("error");
   });
 });
 
