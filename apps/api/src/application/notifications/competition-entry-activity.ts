@@ -1,11 +1,12 @@
-import type {
-  ApproveCompetitionEntryUseCase,
-  CompetitionEntry,
-  CompetitionEntryRepository,
-  RegisterTeamEntryUseCase,
-  RejectCompetitionEntryUseCase,
+import {
+  COMPETITION_PERMISSION,
+  type ApproveCompetitionEntryUseCase,
+  type CompetitionEntry,
+  type CompetitionEntryRepository,
+  type RegisterTeamEntryUseCase,
+  type RejectCompetitionEntryUseCase,
 } from "@futrob/competitions";
-import type { ActorId, TransactionPort } from "@futrob/shared-kernel";
+import type { ActorId, AuthorizationPort, TransactionPort } from "@futrob/shared-kernel";
 import type { RosterMutationPort } from "@futrob/teams";
 import type { ActivityWriter } from "@/di/notifications.module.ts";
 import { runAtomically } from "./run-atomically.ts";
@@ -100,11 +101,14 @@ type DecideInput = Parameters<ApproveCompetitionEntryUseCase["execute"]>[0];
  *
  * Rejecting freezes the Team's roster (ADR-0019), so it takes the same exclusion as roster
  * writes and keeps it until its transaction commits: a write that already read the entry as
- * `pending` commits first, and any later one reads `rejected`.
+ * `pending` commits first, and any later one reads `rejected`. Only an authorized request
+ * for an entry of that competition queues for the lock; any other gets its typed error from
+ * the use case without waiting behind roster writes.
  */
 export function createCompetitionEntryCommands(deps: {
   readonly transaction: TransactionPort;
   readonly activity: CompetitionEntryActivity;
+  readonly authorization: AuthorizationPort;
   readonly entries: Pick<CompetitionEntryRepository, "findById">;
   readonly rosterMutations: RosterMutationPort;
   readonly register: Pick<RegisterTeamEntryUseCase, "execute">;
@@ -130,25 +134,46 @@ export function createCompetitionEntryCommands(deps: {
         }),
     },
     rejectTeamEntry: {
-      execute: (input: DecideInput) =>
-        runAtomically(transaction, async () => {
-          const reject = async () => {
-            const result = await deps.reject.execute(input);
-            if (result.isOk()) await activity.decided(result.value, input.actorId);
-            return result;
-          };
-          const entry = await deps.entries.findById(input.organizationId, input.entryId);
-          if (!entry) return reject();
-          return deps.rosterMutations.runExclusive(
-            {
-              organizationId: input.organizationId,
-              competitionId: input.competitionId,
-              teamId: entry.teamId,
-            },
-            reject,
-          );
-        }),
+      execute: async (input: DecideInput) => {
+        const reject = async () => {
+          const result = await deps.reject.execute(input);
+          if (result.isOk()) await activity.decided(result.value, input.actorId);
+          return result;
+        };
+        const lockScope = await rejectionLockScope(deps, input);
+        if (!lockScope) return runAtomically(transaction, reject);
+        return runAtomically(transaction, () =>
+          deps.rosterMutations.runExclusive(lockScope, reject),
+        );
+      },
     },
+  };
+}
+
+/**
+ * The roster scope a rejection must lock, or null when the request cannot reject: the actor
+ * lacks `participants.manage` or the entry is not in that competition. The use case
+ * re-checks both under the lock and answers the typed error.
+ */
+async function rejectionLockScope(
+  deps: {
+    readonly authorization: AuthorizationPort;
+    readonly entries: Pick<CompetitionEntryRepository, "findById">;
+  },
+  input: DecideInput,
+) {
+  const decision = await deps.authorization.decide({
+    actorId: input.actorId,
+    permission: COMPETITION_PERMISSION.participantsManage,
+    scope: { organizationId: input.organizationId, competitionId: input.competitionId },
+  });
+  if (!decision.allowed) return null;
+  const entry = await deps.entries.findById(input.organizationId, input.entryId);
+  if (!entry || entry.competitionId !== input.competitionId) return null;
+  return {
+    organizationId: input.organizationId,
+    competitionId: input.competitionId,
+    teamId: entry.teamId,
   };
 }
 

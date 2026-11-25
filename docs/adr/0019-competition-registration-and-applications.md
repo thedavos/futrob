@@ -75,7 +75,9 @@ cada escritura de plantilla lo consulta antes de mutar:
 El rechazo toma la misma exclusión por competición que las escrituras de plantilla
 (`RosterMutationPort`, advisory lock en Postgres) y la mantiene hasta su commit. Una
 escritura que ya leyó `pending` se confirma antes que el rechazo; las posteriores leen
-`rejected`. Crear una invitación no toma esa exclusión: una creada en paralelo al
+`rejected`. Solo hace cola una solicitud con `participants.manage` sobre una inscripción
+de esa competición; las demás reciben su error tipado sin esperar el bloqueo. Crear una
+invitación no toma esa exclusión: una creada en paralelo al
 rechazo queda inservible, porque aceptarla vuelve a pasar por el gate bajo el lock.
 
 El error es un conflicto de estado (HTTP 409), no una denegación de permisos: el staff

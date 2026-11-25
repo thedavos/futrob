@@ -1,14 +1,16 @@
-import type { CompetitionEntry } from "@futrob/competitions";
+import { RejectCompetitionEntryUseCase, type CompetitionEntry } from "@futrob/competitions";
 import {
   asActorId,
   asCompetitionId,
   asOrganizationId,
   asTeamId,
   ok,
+  type AuthorizationPort,
   type TransactionPort,
 } from "@futrob/shared-kernel";
 import type { RosterMutationPort } from "@futrob/teams";
 import { describe, expect, it } from "vite-plus/test";
+import { InMemoryCompetitionEntryRepository } from "@/adapters/competitions/competition-entry.repositories.ts";
 import { InMemoryRosterMutationPort } from "@/adapters/teams/roster-mutation.port.ts";
 import {
   CompetitionEntryActivity,
@@ -25,6 +27,13 @@ const entry: CompetitionEntry = {
   creationKey: null,
 };
 
+const rejectInput = {
+  actorId: asActorId("organizer"),
+  organizationId: entry.organizationId,
+  competitionId: entry.competitionId,
+  entryId: entry.id,
+};
+
 function signal() {
   let resolve: () => void = () => undefined;
   const promise = new Promise<void>((done) => {
@@ -33,80 +42,120 @@ function signal() {
   return { promise, resolve };
 }
 
-describe("competition entry commands", () => {
-  it("rejects an entry only after an in-flight roster write commits, inside its transaction", async () => {
-    const order: string[] = [];
-    let inTransaction = false;
-    const transaction: TransactionPort = {
-      runInTransaction: async (operation) => {
-        inTransaction = true;
-        try {
-          return await operation();
-        } finally {
-          inTransaction = false;
-        }
-      },
-    };
-    const roster = new InMemoryRosterMutationPort();
-    const rejectQueued = signal();
-    const rosterMutations: RosterMutationPort = {
-      runExclusive: (scope, operation) => {
-        order.push(inTransaction ? "lock:in-transaction" : "lock:outside-transaction");
-        const run = roster.runExclusive(scope, operation);
-        rejectQueued.resolve();
-        return run;
-      },
-    };
-    const rejectStarted = signal();
-    const decide = { execute: async () => ok(entry) };
-    const commands = createCompetitionEntryCommands({
-      transaction,
-      activity: new CompetitionEntryActivity({
-        writer: {
-          record: async () => undefined,
-          close: async () => undefined,
-          email: async () => undefined,
-        },
-        readers: {
-          competitions: { findById: async () => null },
-          teams: { findById: async () => null },
-        },
-      }),
-      entries: { findById: async () => entry },
-      rosterMutations,
-      register: decide,
-      approve: decide,
-      reject: {
-        execute: async () => {
-          order.push("reject");
-          rejectStarted.resolve();
-          return ok({ ...entry, status: "rejected" as const });
-        },
-      },
-    });
+function authorizationAllowing(allowed: boolean): AuthorizationPort {
+  return {
+    decide: async (request) => ({ ...request, allowed, reason: allowed ? "allowed" : "denied" }),
+    getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
+  };
+}
 
-    // A roster write that already read the entry as `pending` holds the exclusion.
-    const writeEntered = signal();
-    const releaseWrite = signal();
+/** Entry commands over in-memory stores, recording when rejection asks for the roster lock. */
+function setup(options: { readonly allowed: boolean }) {
+  const order: string[] = [];
+  let inTransaction = false;
+  const transaction: TransactionPort = {
+    runInTransaction: async (operation) => {
+      inTransaction = true;
+      try {
+        return await operation();
+      } finally {
+        inTransaction = false;
+      }
+    },
+  };
+  const roster = new InMemoryRosterMutationPort();
+  const lockRequested = signal();
+  const rosterMutations: RosterMutationPort = {
+    runExclusive: (scope, operation) => {
+      order.push(inTransaction ? "lock:in-transaction" : "lock:outside-transaction");
+      const run = roster.runExclusive(scope, operation);
+      lockRequested.resolve();
+      return run;
+    },
+  };
+  const entries = new InMemoryCompetitionEntryRepository();
+  entries.rows.set(entry.id, entry);
+  const authorization = authorizationAllowing(options.allowed);
+  const reject = new RejectCompetitionEntryUseCase({ entries, authorization });
+  const decide = { execute: async () => ok(entry) };
+  const commands = createCompetitionEntryCommands({
+    transaction,
+    activity: new CompetitionEntryActivity({
+      writer: {
+        record: async () => undefined,
+        close: async () => undefined,
+        email: async () => undefined,
+      },
+      readers: {
+        competitions: { findById: async () => null },
+        teams: { findById: async () => null },
+      },
+    }),
+    authorization,
+    entries,
+    rosterMutations,
+    register: decide,
+    approve: decide,
+    reject: {
+      execute: (input) => {
+        order.push("reject");
+        return reject.execute(input);
+      },
+    },
+  });
+
+  // A roster write that already read the entry as `pending` holds the exclusion.
+  const holdRosterWrite = async () => {
+    const entered = signal();
+    const release = signal();
     const write = roster.runExclusive(entry, async () => {
-      writeEntered.resolve();
-      await releaseWrite.promise;
+      entered.resolve();
+      await release.promise;
       order.push("write");
     });
-    await writeEntered.promise;
+    await entered.promise;
+    return {
+      finish: async () => {
+        release.resolve();
+        await write;
+      },
+    };
+  };
 
-    const rejecting = commands.rejectTeamEntry.execute({
-      actorId: asActorId("organizer"),
-      organizationId: entry.organizationId,
-      competitionId: entry.competitionId,
-      entryId: entry.id,
-    });
-    await Promise.race([rejectQueued.promise, rejectStarted.promise]);
+  return { commands, entries, order, lockRequested, holdRosterWrite };
+}
+
+describe("competition entry commands", () => {
+  it("rejects an entry only after an in-flight roster write commits, inside its transaction", async () => {
+    const { commands, entries, order, lockRequested, holdRosterWrite } = setup({ allowed: true });
+    const write = await holdRosterWrite();
+
+    const rejecting = commands.rejectTeamEntry.execute(rejectInput);
+    await lockRequested.promise;
     expect(order).toEqual(["lock:in-transaction"]);
+    expect((await entries.findById(entry.organizationId, entry.id))?.status).toBe("pending");
 
-    releaseWrite.resolve();
-    await write;
+    await write.finish();
     expect((await rejecting).isOk()).toBe(true);
     expect(order).toEqual(["lock:in-transaction", "write", "reject"]);
+    expect((await entries.findById(entry.organizationId, entry.id))?.status).toBe("rejected");
+  });
+
+  it("answers an actor without participants.manage without queueing behind roster writes", async () => {
+    const { commands, entries, order, lockRequested, holdRosterWrite } = setup({ allowed: false });
+    const write = await holdRosterWrite();
+
+    const rejecting = commands.rejectTeamEntry.execute(rejectInput);
+    const first = await Promise.race([
+      rejecting.then(() => "answered"),
+      lockRequested.promise.then(() => "queued"),
+    ]);
+
+    expect(first).toBe("answered");
+    const result = await rejecting;
+    expect(result.isErr() && result.error.code).toBe("authorization.forbidden");
+    expect(order).toEqual(["reject"]);
+    expect((await entries.findById(entry.organizationId, entry.id))?.status).toBe("pending");
+    await write.finish();
   });
 });

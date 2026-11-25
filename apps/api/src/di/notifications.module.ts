@@ -241,6 +241,7 @@ export function createActivityFeed(input: {
   readonly email?: EmailSettings;
   readonly sources: ActivityEmailSources;
   readonly transaction: TransactionPort;
+  readonly authorization: AuthorizationPort;
   readonly encounterReader: EncounterReaderPort;
   readonly competitions: CompetitionsModule;
   readonly teams: TeamsModule;
@@ -279,6 +280,7 @@ export function createActivityFeed(input: {
       ...createCompetitionEntryCommands({
         transaction: input.transaction,
         activity: entries,
+        authorization: input.authorization,
         entries: competitions.entryRepository,
         rosterMutations: input.teams.rosterMutations,
         register: competitions.registerTeamEntry,

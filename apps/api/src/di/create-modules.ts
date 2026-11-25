@@ -278,6 +278,7 @@ export function createModules(input: CreateModulesInput): AppModules {
     email: input.email,
     sources: activityEmailSources({ organizations, identity, billing, authorization }),
     transaction,
+    authorization: authorization.port,
     encounterReader,
     competitions,
     teams,
