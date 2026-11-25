@@ -102,5 +102,9 @@ Esta decisión solo cambió documentación: la visión en el [PRD](/product/prd.
   actual; no se ejecutó en esta revisión documental.
 - No hay adapters de otros proveedores con API.
 - Al implementar la fuente manual hay que comprobar que una carga pendiente no proyecta, que
-  la aprobación aporta una sola vez y que la anulación retira la contribución y revierte el
-  avance del cuadro.
+  la aprobación aporta una sola vez y que una anulación con destino reversible retira la
+  contribución y devuelve el destino a su placeholder. Si el destino ya tiene una selección
+  activa o un resultado oficial, la anulación debe fallar con
+  `scheduling.advancement_not_reversible` y el resultado original sigue aprobado
+  ([ADR-0016](/docs/adr/0016-official-results-transactional-projection.md), caso cubierto en
+  `apps/api/src/di/fixture-advancement.composition.test.ts`).
