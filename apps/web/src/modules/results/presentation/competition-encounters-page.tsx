@@ -29,11 +29,14 @@ import {
   filterEncounters,
   groupEncountersByRound,
   NO_ENCOUNTER_FILTERS,
+  roundsSpanStages,
+  searchFromFilters,
   validEncounterFilters,
   type CompetitionEncountersFilters,
 } from "./competition-encounters-model.ts";
 import { styles } from "./competition-encounters-page.styles.ts";
 import { RoundGroupSection } from "./competition-encounters-rows.tsx";
+import type { EncounterDetailSearch, EncounterListOrigin } from "./encounter-list-return.ts";
 import { isRefusal, useCompetitionEncountersQuery } from "./encounter-queries.ts";
 
 export type CompetitionEncountersState =
@@ -52,11 +55,14 @@ type ListPage = {
   readonly page?: Extract<ScaffoldPageId, "competition.encounters" | "competitionPlayer.matches">;
   readonly filters?: CompetitionEncountersFilters;
   readonly onFiltersChange?: (next: CompetitionEncountersFilters) => void;
+  /** The route showing this list, so a Match Center opened from it can return to it. */
+  readonly origin?: EncounterListOrigin;
 };
 
 export function CompetitionEncountersRoute({
   filters,
   onFiltersChange,
+  origin,
   page,
   ...scope
 }: Scope & ListPage) {
@@ -75,6 +81,7 @@ export function CompetitionEncountersRoute({
       {...scope}
       filters={filters}
       onFiltersChange={onFiltersChange}
+      origin={origin}
       page={page}
       state={state}
     />
@@ -100,6 +107,7 @@ export function CompetitionEncountersPageView({
   filters,
   onFiltersChange,
   organizationId,
+  origin = "encounters",
   page = "competition.encounters",
   state,
 }: Scope & ListPage & { readonly state: CompetitionEncountersState }) {
@@ -133,6 +141,7 @@ export function CompetitionEncountersPageView({
           locale={locale}
           onFiltersChange={setFilters}
           organizationId={organizationId}
+          origin={origin}
           t={t}
         />
       )}
@@ -191,12 +200,14 @@ function EncounterList({
   locale,
   onFiltersChange,
   organizationId,
+  origin,
   t,
 }: Scope & {
   readonly data: ListCompetitionEncountersResponse;
   readonly filters: CompetitionEncountersFilters;
   readonly locale: string;
   readonly onFiltersChange: (next: CompetitionEncountersFilters) => void;
+  readonly origin: EncounterListOrigin;
   readonly t: Translator;
 }) {
   const statusGroupRef = useRef<HTMLDivElement>(null);
@@ -207,6 +218,8 @@ function EncounterList({
   const counts = encounterStatusCounts(data.encounters, filters);
   const filtered = filterEncounters(data.encounters, filters);
   const groups = groupEncountersByRound(filtered, timeZone);
+  const withStage = roundsSpanStages(rounds);
+  const returnSearch: EncounterDetailSearch = { ...searchFromFilters(filters), from: origin };
 
   const timeFormat = new Intl.DateTimeFormat(locale, {
     timeZone,
@@ -276,16 +289,18 @@ function EncounterList({
       ) : (
         <ol {...applyStyles(styles.rounds)}>
           {groups.map((group) => (
-            <li key={group.round.number}>
+            <li key={group.round.key}>
               <RoundGroupSection
                 competitionId={competitionId}
                 group={group}
                 organizationId={organizationId}
                 rangeDateFormat={rangeDateFormat}
+                returnSearch={returnSearch}
                 shortDateFormat={shortDateFormat}
                 shortDateTimeFormat={shortDateTimeFormat}
                 t={t}
                 timeFormat={timeFormat}
+                withStage={withStage}
               />
             </li>
           ))}

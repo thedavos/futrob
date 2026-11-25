@@ -2,6 +2,7 @@
 
 import { useScheduleChanges } from "@/modules/scheduling/presentation/schedule-change-queries.ts";
 import { useDisputeReview } from "./dispute-review-queries.ts";
+import type { EncounterListReturn } from "./encounter-list-return.ts";
 import { EncounterPageView, type CandidatesState, type EncounterState } from "./encounter-page.tsx";
 import {
   isRefusal,
@@ -13,6 +14,8 @@ import { useTeamSelection } from "./team-selection-queries.ts";
 type EncounterRouteProps = {
   readonly competitionId: string;
   readonly encounterId: string;
+  /** The list the Match Center was opened from; null for a direct visit. */
+  readonly listReturn?: EncounterListReturn | null;
   readonly organizationId: string;
 };
 
@@ -27,7 +30,12 @@ export function EncounterRoute(props: EncounterRouteProps) {
   return <EncounterBody key={`${organizationId}:${competitionId}:${encounterId}`} {...props} />;
 }
 
-function EncounterBody({ competitionId, encounterId, organizationId }: EncounterRouteProps) {
+function EncounterBody({
+  competitionId,
+  encounterId,
+  listReturn,
+  organizationId,
+}: EncounterRouteProps) {
   const viewQuery = useEncounterViewQuery(organizationId, encounterId);
   const view = viewQuery.data;
   const belongsHere = view?.competition.id === competitionId;
@@ -80,6 +88,7 @@ function EncounterBody({ competitionId, encounterId, organizationId }: Encounter
       teamSelection={teamSelection}
       competitionId={competitionId}
       encounter={encounter}
+      listReturn={listReturn}
       organizationId={organizationId}
     />
   );

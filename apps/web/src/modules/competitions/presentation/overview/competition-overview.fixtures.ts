@@ -39,7 +39,12 @@ function encounter(
 ): CompetitionEncounterDto {
   return {
     encounterId: `${OVERVIEW_COMPETITION_ID}:encounter:${number}`,
-    round: { number, total: 6 },
+    round: {
+      id: `${OVERVIEW_COMPETITION_ID}:stage:1:round:${number}`,
+      number,
+      total: 6,
+      stage: { id: `${OVERVIEW_COMPETITION_ID}:stage:1`, kind: "league", order: 1 },
+    },
     scheduledStartAt,
     officialMatchCount: 1,
     resolutionMode: null,

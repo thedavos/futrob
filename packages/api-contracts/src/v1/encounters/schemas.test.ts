@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   acceptScheduleChangeProposalRequestSchema,
   getMyNextEncounterResponseSchema,
+  listCompetitionEncountersReadSchema,
   listCompetitionEncountersResponseSchema,
   listEncounterCandidatesResponseSchema,
   createScheduleChangeRequestSchema,
@@ -66,7 +67,12 @@ describe("listCompetitionEncountersResponseSchema", () => {
       encounters: [
         {
           encounterId: "enc-1",
-          round: { number: 1, total: 3 },
+          round: {
+            id: "plan-1:stage:1:round:1",
+            number: 1,
+            total: 3,
+            stage: { id: "plan-1:stage:1", kind: "league" as const, order: 1 },
+          },
           scheduledStartAt: "2026-10-12T01:00:00.000Z",
           officialMatchCount: 2 as const,
           resolutionMode: "aggregate_score" as const,
@@ -80,7 +86,12 @@ describe("listCompetitionEncountersResponseSchema", () => {
         },
         {
           encounterId: "enc-2",
-          round: { number: 2, total: 3 },
+          round: {
+            id: "plan-1:stage:1:round:2",
+            number: 2,
+            total: 3,
+            stage: { id: "plan-1:stage:1", kind: "league" as const, order: 1 },
+          },
           scheduledStartAt: "2026-10-19T01:00:00.000Z",
           officialMatchCount: 1 as const,
           resolutionMode: null,
@@ -99,6 +110,34 @@ describe("listCompetitionEncountersResponseSchema", () => {
         encounters: [{ ...base.encounters[0], score: [] }],
       }).success,
     ).toBe(false);
+    expect(listCompetitionEncountersReadSchema.parse(base)).toEqual(base);
+  });
+
+  it("requires every field from the API but reads a response from one that predates them", () => {
+    const legacy = {
+      competition: { id: "competition-1", name: "Liga Futrob", timeZone: "America/Lima" },
+      encounters: [
+        {
+          encounterId: "enc-1",
+          round: { number: 1, total: 3 },
+          scheduledStartAt: "2026-10-12T01:00:00.000Z",
+          officialMatchCount: 1 as const,
+          home: { teamId: "team-1", name: "Cuervos FC" },
+          away: { teamId: "team-2", name: "Maderas FC" },
+          status: "official" as const,
+        },
+      ],
+    };
+
+    expect(listCompetitionEncountersResponseSchema.safeParse(legacy).success).toBe(false);
+    expect(listCompetitionEncountersReadSchema.parse(legacy).encounters).toEqual([
+      {
+        ...legacy.encounters[0],
+        round: { id: null, number: 1, total: 3, stage: null },
+        resolutionMode: null,
+        score: null,
+      },
+    ]);
   });
 });
 

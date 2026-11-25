@@ -25,6 +25,7 @@ export function PlayerCompetitionMatchesRoute({
         filters={filters}
         onFiltersChange={onFiltersChange}
         organizationId={access.competition.organizationId}
+        origin="player-matches"
         page="competitionPlayer.matches"
       />
     );

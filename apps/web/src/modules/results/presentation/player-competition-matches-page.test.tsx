@@ -66,7 +66,12 @@ const encounters: ListCompetitionEncountersResponse = {
   encounters: [
     {
       encounterId: "competition-1:encounter:1",
-      round: { number: 1, total: 2 },
+      round: {
+        id: "stage-1:round:1",
+        number: 1,
+        total: 2,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-19T16:00:00.000Z",
       officialMatchCount: 2,
       resolutionMode: null,

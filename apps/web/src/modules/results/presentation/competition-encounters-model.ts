@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type {
   CompetitionEncounterDto,
+  CompetitionEncounterStageDto,
   CompetitionEncounterStatusDto,
   EncounterMatchScoreDto,
 } from "@futrob/api-contracts";
@@ -10,7 +11,8 @@ export type EncounterStatusFilter = "all" | CompetitionEncounterStatusDto;
 /** Query choices survive opening a Match Center, browser Back, reload and a shared link. */
 export const competitionEncountersSearchSchema = z.object({
   status: z.enum(["scheduled", "awaiting_result", "official"]).optional().catch(undefined),
-  round: z.coerce.number().int().positive().optional().catch(undefined),
+  /** Round key (see `encounterRoundKey`): round numbers repeat across stages, ids do not. */
+  round: z.string().min(1).optional().catch(undefined),
   team: z.string().min(1).optional().catch(undefined),
 });
 
@@ -18,13 +20,13 @@ export type CompetitionEncountersSearch = z.infer<typeof competitionEncountersSe
 
 export interface CompetitionEncountersFilters {
   readonly status: EncounterStatusFilter;
-  readonly roundNumber: number | null;
+  readonly roundKey: string | null;
   readonly teamId: string | null;
 }
 
 export const NO_ENCOUNTER_FILTERS: CompetitionEncountersFilters = {
   status: "all",
-  roundNumber: null,
+  roundKey: null,
   teamId: null,
 };
 
@@ -33,7 +35,7 @@ export function filtersFromSearch(
 ): CompetitionEncountersFilters {
   return {
     status: search.status ?? "all",
-    roundNumber: search.round ?? null,
+    roundKey: search.round ?? null,
     teamId: search.team ?? null,
   };
 }
@@ -43,13 +45,13 @@ export function searchFromFilters(
 ): CompetitionEncountersSearch {
   return {
     status: filters.status === "all" ? undefined : filters.status,
-    round: filters.roundNumber ?? undefined,
+    round: filters.roundKey ?? undefined,
     team: filters.teamId ?? undefined,
   };
 }
 
 export function hasEncounterFilters(filters: CompetitionEncountersFilters): boolean {
-  return filters.status !== "all" || filters.roundNumber !== null || filters.teamId !== null;
+  return filters.status !== "all" || filters.roundKey !== null || filters.teamId !== null;
 }
 
 export interface EncounterTeamOption {
@@ -58,8 +60,36 @@ export interface EncounterTeamOption {
 }
 
 export interface EncounterRoundOption {
+  readonly key: string;
   readonly number: number;
   readonly total: number | null;
+  readonly stage: CompetitionEncounterStageDto | null;
+}
+
+/**
+ * Identifies a round across stages: League Round 1 and Playoffs Round 1 share a number but not
+ * an id. An API that predates round ids leaves only the number, which is unique in one stage.
+ */
+export function encounterRoundKey(round: CompetitionEncounterDto["round"]): string {
+  return round.id ?? String(round.number);
+}
+
+function roundOption(round: CompetitionEncounterDto["round"]): EncounterRoundOption {
+  return {
+    key: encounterRoundKey(round),
+    number: round.number,
+    total: round.total,
+    stage: round.stage,
+  };
+}
+
+function compareRounds(left: EncounterRoundOption, right: EncounterRoundOption): number {
+  return (left.stage?.order ?? 0) - (right.stage?.order ?? 0) || left.number - right.number;
+}
+
+/** Rounds come from more than one stage, so a label needs the stage to tell them apart. */
+export function roundsSpanStages(rounds: readonly EncounterRoundOption[]): boolean {
+  return new Set(rounds.map((round) => round.stage?.id ?? null)).size > 1;
 }
 
 export function encounterFilterTeams(
@@ -80,15 +110,12 @@ export function encounterFilterTeams(
 export function encounterFilterRounds(
   encounters: readonly CompetitionEncounterDto[],
 ): readonly EncounterRoundOption[] {
-  const byNumber = new Map<number, number | null>();
+  const byKey = new Map<string, EncounterRoundOption>();
   for (const encounter of encounters) {
-    if (!byNumber.has(encounter.round.number)) {
-      byNumber.set(encounter.round.number, encounter.round.total);
-    }
+    const key = encounterRoundKey(encounter.round);
+    if (!byKey.has(key)) byKey.set(key, roundOption(encounter.round));
   }
-  return [...byNumber.entries()]
-    .sort(([left], [right]) => left - right)
-    .map(([number, total]) => ({ number, total }));
+  return [...byKey.values()].sort(compareRounds);
 }
 
 /** Drop stale URL/filter selections when the list no longer contains that round or team. */
@@ -98,20 +125,20 @@ export function validEncounterFilters(
   rounds: readonly EncounterRoundOption[],
 ): CompetitionEncountersFilters {
   const roundValid =
-    filters.roundNumber !== null && rounds.some((round) => round.number === filters.roundNumber);
+    filters.roundKey !== null && rounds.some((round) => round.key === filters.roundKey);
   const teamValid = filters.teamId !== null && teams.some((team) => team.teamId === filters.teamId);
   return {
     status: filters.status,
-    roundNumber: roundValid ? filters.roundNumber : null,
+    roundKey: roundValid ? filters.roundKey : null,
     teamId: teamValid ? filters.teamId : null,
   };
 }
 
 function matchesRoundAndTeam(
   encounter: CompetitionEncounterDto,
-  filters: Pick<CompetitionEncountersFilters, "roundNumber" | "teamId">,
+  filters: Pick<CompetitionEncountersFilters, "roundKey" | "teamId">,
 ): boolean {
-  if (filters.roundNumber !== null && encounter.round.number !== filters.roundNumber) {
+  if (filters.roundKey !== null && encounterRoundKey(encounter.round) !== filters.roundKey) {
     return false;
   }
   if (
@@ -133,7 +160,7 @@ export interface EncounterStatusCounts {
 
 export function encounterStatusCounts(
   encounters: readonly CompetitionEncounterDto[],
-  filters: Pick<CompetitionEncountersFilters, "roundNumber" | "teamId">,
+  filters: Pick<CompetitionEncountersFilters, "roundKey" | "teamId">,
 ): EncounterStatusCounts {
   let all = 0;
   let awaiting_result = 0;
@@ -171,34 +198,32 @@ export interface EncounterRoundGroup {
   readonly spansMultipleDays: boolean;
 }
 
-function localDayKey(iso: string, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date(iso));
-  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")}`;
-}
-
-/** Rounds in ascending order; each keeps its Encounters in schedule order. */
+/** Rounds in stage and round order; each keeps its Encounters in schedule order. */
 export function groupEncountersByRound(
   encounters: readonly CompetitionEncounterDto[],
   timeZone: string,
 ): readonly EncounterRoundGroup[] {
-  const byRound = new Map<number, CompetitionEncounterDto[]>();
+  // One formatter for the whole list: building one per Encounter costs tens of ms per filter.
+  const localDay = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const byRound = new Map<string, CompetitionEncounterDto[]>();
   for (const encounter of encounters) {
-    const group = byRound.get(encounter.round.number);
+    const key = encounterRoundKey(encounter.round);
+    const group = byRound.get(key);
     if (group) group.push(encounter);
-    else byRound.set(encounter.round.number, [encounter]);
+    else byRound.set(key, [encounter]);
   }
-  return [...byRound.entries()]
-    .sort(([left], [right]) => left - right)
-    .map(([, items]) => {
+  return [...byRound.values()]
+    .map((items) => ({ round: roundOption(items[0]!.round), items }))
+    .sort((left, right) => compareRounds(left.round, right.round))
+    .map(({ round, items }) => {
       const first = items[0]!;
       const last = items[items.length - 1]!;
-      const days = new Set(items.map((item) => localDayKey(item.scheduledStartAt, timeZone)));
+      const days = new Set(items.map((item) => localDay.format(new Date(item.scheduledStartAt))));
       let officialCount = 0;
       let awaitingCount = 0;
       let scheduledCount = 0;
@@ -208,7 +233,7 @@ export function groupEncountersByRound(
         else scheduledCount += 1;
       }
       return {
-        round: first.round,
+        round,
         encounters: items,
         officialCount,
         awaitingCount,

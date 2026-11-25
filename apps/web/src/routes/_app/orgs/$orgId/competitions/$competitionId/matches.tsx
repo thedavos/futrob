@@ -25,6 +25,7 @@ function MatchesPage() {
         void navigate({ replace: true, resetScroll: false, search: searchFromFilters(next) });
       }}
       organizationId={orgId}
+      origin="matches"
       page="competitionPlayer.matches"
     />
   );

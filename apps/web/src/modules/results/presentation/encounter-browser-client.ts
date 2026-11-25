@@ -1,7 +1,7 @@
 import {
   encounterViewSchema,
   listCompetitionDisputesResponseSchema,
-  listCompetitionEncountersResponseSchema,
+  listCompetitionEncountersReadSchema,
   listEncounterCandidatesResponseSchema,
   type EncounterViewDto,
   type ListCompetitionDisputesResponse,
@@ -42,7 +42,7 @@ export const encounterBrowserClient = {
     return requestBrowserJson({
       path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/competitions/${encodeURIComponent(competitionId)}/encounters`,
       method: "GET",
-      schema: listCompetitionEncountersResponseSchema,
+      schema: listCompetitionEncountersReadSchema,
       fallbackCode: "scheduling.encounters_load_failed",
       createError,
     });

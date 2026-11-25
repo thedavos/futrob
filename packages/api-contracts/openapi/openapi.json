@@ -14878,6 +14878,10 @@
           "round": {
             "type": "object",
             "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
               "number": {
                 "type": "integer",
                 "exclusiveMinimum": 0
@@ -14888,11 +14892,41 @@
                   "null"
                 ],
                 "exclusiveMinimum": 0
+              },
+              "stage": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "league",
+                      "groups",
+                      "knockout",
+                      "playoffs",
+                      "swiss"
+                    ]
+                  },
+                  "order": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "order"
+                ]
               }
             },
             "required": [
+              "id",
               "number",
-              "total"
+              "total",
+              "stage"
             ]
           },
           "scheduledStartAt": {
@@ -28111,6 +28145,10 @@
                 "round": {
                   "type": "object",
                   "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "number": {
                       "type": "integer",
                       "exclusiveMinimum": 0
@@ -28121,11 +28159,41 @@
                         "null"
                       ],
                       "exclusiveMinimum": 0
+                    },
+                    "stage": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "league",
+                            "groups",
+                            "knockout",
+                            "playoffs",
+                            "swiss"
+                          ]
+                        },
+                        "order": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "kind",
+                        "order"
+                      ]
                     }
                   },
                   "required": [
+                    "id",
                     "number",
-                    "total"
+                    "total",
+                    "stage"
                   ]
                 },
                 "scheduledStartAt": {

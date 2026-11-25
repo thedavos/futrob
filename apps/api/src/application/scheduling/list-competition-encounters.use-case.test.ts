@@ -216,6 +216,8 @@ function dependencies(
   };
 }
 
+const leagueStage = { id: stageId, kind: "league", order: 1 } as const;
+
 const run = (deps: ListCompetitionEncountersDependencies) =>
   new ListCompetitionEncountersUseCase(deps).execute({ actorId, organizationId, competitionId });
 
@@ -239,21 +241,21 @@ describe("ListCompetitionEncountersUseCase", () => {
     ).toEqual([
       {
         id: "e-official",
-        round: { number: 1, total: 2 },
+        round: { id: "round-1", number: 1, total: 2, stage: leagueStage },
         teams: "Cuervos FC vs Maderas FC",
         status: "official",
         score: [{ homeGoals: 3, awayGoals: 1 }],
       },
       {
         id: "e-played",
-        round: { number: 1, total: 2 },
+        round: { id: "round-1", number: 1, total: 2, stage: leagueStage },
         teams: "Halcones FC vs Cuervos FC",
         status: "awaiting_result",
         score: null,
       },
       {
         id: "e-later",
-        round: { number: 2, total: 2 },
+        round: { id: "round-2", number: 2, total: 2, stage: leagueStage },
         teams: "Maderas FC vs Halcones FC",
         status: "scheduled",
         score: null,
@@ -338,6 +340,54 @@ describe("ListCompetitionEncountersUseCase", () => {
         resolutionMode: null,
         score: null,
       },
+    ]);
+  });
+
+  it("keeps the round and stage of every Encounter so two stages' Round 1 stay apart", async () => {
+    const playoffsStageId = asFixtureStageId("stage-2");
+    const leaguePlan = plan();
+    const final = {
+      ...encounter("e-playoff", cuervos, maderas, "2026-11-09T21:00:00.000Z", 1),
+      stageId: playoffsStageId,
+      roundId: asFixtureRoundId("stage-2:round-1"),
+    };
+    const leaguePlayoffs: FixturePlan = {
+      ...leaguePlan,
+      format: "league-playoffs",
+      stages: [
+        ...leaguePlan.stages,
+        {
+          id: playoffsStageId,
+          kind: "playoffs",
+          order: 2,
+          rounds: [
+            {
+              id: asFixtureRoundId("stage-2:round-1"),
+              stageId: playoffsStageId,
+              number: 1,
+              scheduledStartAt: new Date("2026-11-09T21:00:00.000Z"),
+              encounters: [final],
+            },
+          ],
+        },
+      ],
+    };
+
+    const list = await run(dependencies({ plans: [leaguePlayoffs] }));
+
+    expect(list?.encounters.map((entry) => [entry.encounterId, entry.round])).toEqual([
+      ["e-official", { id: "round-1", number: 1, total: 2, stage: leagueStage }],
+      ["e-played", { id: "round-1", number: 1, total: 2, stage: leagueStage }],
+      ["e-later", { id: "round-2", number: 2, total: 2, stage: leagueStage }],
+      [
+        "e-playoff",
+        {
+          id: "stage-2:round-1",
+          number: 1,
+          total: 1,
+          stage: { id: playoffsStageId, kind: "playoffs", order: 2 },
+        },
+      ],
     ]);
   });
 

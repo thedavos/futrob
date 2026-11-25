@@ -2,6 +2,9 @@ import { COMPETITION_PERMISSION, type Competition } from "@futrob/competitions";
 import {
   ENCOUNTER_PERMISSION,
   type FixturePlan,
+  type FixtureRoundId,
+  type FixtureStage,
+  type FixtureStageId,
   type SeriesResolutionMode,
 } from "@futrob/scheduling";
 import type {
@@ -27,7 +30,17 @@ export type CompetitionEncounterStatus = "scheduled" | "awaiting_result" | "offi
 
 export type CompetitionEncounter = {
   readonly encounterId: EncounterId;
-  readonly round: { readonly number: number; readonly total: number | null };
+  readonly round: {
+    readonly id: FixtureRoundId;
+    readonly number: number;
+    /** Rounds in the round's stage. */
+    readonly total: number;
+    readonly stage: {
+      readonly id: FixtureStageId;
+      readonly kind: FixtureStage["kind"];
+      readonly order: number;
+    };
+  };
   readonly scheduledStartAt: Date;
   readonly officialMatchCount: 1 | 2;
   readonly resolutionMode: SeriesResolutionMode | null;
@@ -118,14 +131,10 @@ export class ListCompetitionEncountersUseCase {
       results.filter((result) => result.status === "approved").map((result) => result.encounterId),
     );
     const scores = officialEncounterScores(readable, results);
-    const roundTotal = plans.reduce(
-      (sum, plan) => sum + plan.stages.reduce((count, stage) => count + stage.rounds.length, 0),
-      0,
-    );
     const now = this.deps.clock.now();
 
     const encounters = readable.flatMap(
-      ({ encounter, homeTeamId, awayTeamId, roundNumber }): CompetitionEncounter[] => {
+      ({ encounter, homeTeamId, awayTeamId, round, stage }): CompetitionEncounter[] => {
         const home = names.get(homeTeamId);
         const away = names.get(awayTeamId);
         if (!home || !away) return [];
@@ -133,7 +142,12 @@ export class ListCompetitionEncountersUseCase {
         return [
           {
             encounterId: encounter.id,
-            round: { number: roundNumber, total: roundTotal > 0 ? roundTotal : null },
+            round: {
+              id: round.id,
+              number: round.number,
+              total: stage.rounds.length,
+              stage: { id: stage.id, kind: stage.kind, order: stage.order },
+            },
             scheduledStartAt: encounter.scheduledStartAt,
             officialMatchCount: encounter.officialMatchCount,
             resolutionMode: encounter.series?.resolutionMode ?? null,
@@ -158,7 +172,9 @@ export class ListCompetitionEncountersUseCase {
       },
       encounters: encounters.sort(
         (a, b) =>
-          compareTime(a.scheduledStartAt, b.scheduledStartAt) || a.round.number - b.round.number,
+          compareTime(a.scheduledStartAt, b.scheduledStartAt) ||
+          a.round.stage.order - b.round.stage.order ||
+          a.round.number - b.round.number,
       ),
     };
   }

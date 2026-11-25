@@ -18,8 +18,10 @@ import {
 } from "@futrob/ui";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 
+import { encounterRoundLabel } from "./competition-encounters-labels.ts";
 import {
   hasEncounterFilters,
+  roundsSpanStages,
   type CompetitionEncountersFilters,
   type EncounterRoundOption,
   type EncounterStatusCounts,
@@ -85,10 +87,8 @@ export function EncounterFiltersToolbar({
   const roundItems = [
     { value: ALL, label: t("encounters.list.filters.allRounds") },
     ...rounds.map((round) => ({
-      value: String(round.number),
-      label: round.total
-        ? t("encounter.roundOf", { number: round.number, total: round.total })
-        : t("encounter.round", { number: round.number }),
+      value: round.key,
+      label: encounterRoundLabel(round, roundsSpanStages(rounds), t),
     })),
   ];
 
@@ -159,10 +159,10 @@ export function EncounterFiltersToolbar({
                   onValueChange={(value) =>
                     onFiltersChange({
                       ...filters,
-                      roundNumber: !value || value === ALL ? null : Number(value),
+                      roundKey: !value || value === ALL ? null : String(value),
                     })
                   }
-                  value={filters.roundNumber === null ? ALL : String(filters.roundNumber)}
+                  value={filters.roundKey ?? ALL}
                 >
                   <SelectTrigger className={styles.filterTrigger} id="encounters-round-filter">
                     <SelectValue />

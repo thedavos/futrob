@@ -9722,6 +9722,9 @@ components:
         round:
           type: object
           properties:
+            id:
+              type: string
+              minLength: 1
             number:
               type: integer
               exclusiveMinimum: 0
@@ -9730,9 +9733,32 @@ components:
                 - integer
                 - "null"
               exclusiveMinimum: 0
+            stage:
+              type: object
+              properties:
+                id:
+                  type: string
+                  minLength: 1
+                kind:
+                  type: string
+                  enum:
+                    - league
+                    - groups
+                    - knockout
+                    - playoffs
+                    - swiss
+                order:
+                  type: integer
+                  exclusiveMinimum: 0
+              required:
+                - id
+                - kind
+                - order
           required:
+            - id
             - number
             - total
+            - stage
         scheduledStartAt:
           type: string
           format: date-time
@@ -19102,6 +19128,9 @@ components:
               round:
                 type: object
                 properties:
+                  id:
+                    type: string
+                    minLength: 1
                   number:
                     type: integer
                     exclusiveMinimum: 0
@@ -19110,9 +19139,32 @@ components:
                       - integer
                       - "null"
                     exclusiveMinimum: 0
+                  stage:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        minLength: 1
+                      kind:
+                        type: string
+                        enum:
+                          - league
+                          - groups
+                          - knockout
+                          - playoffs
+                          - swiss
+                      order:
+                        type: integer
+                        exclusiveMinimum: 0
+                    required:
+                      - id
+                      - kind
+                      - order
                 required:
+                  - id
                   - number
                   - total
+                  - stage
               scheduledStartAt:
                 type: string
                 format: date-time

@@ -36,7 +36,12 @@ const fixtureEncounters: ListCompetitionEncountersResponse = {
   encounters: [
     {
       encounterId: "competition-1:encounter:1",
-      round: { number: 1, total: 3 },
+      round: {
+        id: "stage-1:round:1",
+        number: 1,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-19T16:00:00.000Z",
       officialMatchCount: 2,
       resolutionMode: "aggregate_score",
@@ -50,7 +55,12 @@ const fixtureEncounters: ListCompetitionEncountersResponse = {
     },
     {
       encounterId: "competition-1:encounter:2",
-      round: { number: 2, total: 3 },
+      round: {
+        id: "stage-1:round:2",
+        number: 2,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-26T23:30:00.000Z",
       officialMatchCount: 1,
       resolutionMode: null,
@@ -61,7 +71,12 @@ const fixtureEncounters: ListCompetitionEncountersResponse = {
     },
     {
       encounterId: "competition-1:encounter:3",
-      round: { number: 3, total: 3 },
+      round: {
+        id: "stage-1:round:3",
+        number: 3,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-11-02T23:30:00.000Z",
       officialMatchCount: 1,
       resolutionMode: null,
@@ -123,7 +138,10 @@ describe("Competition encounters list", () => {
     expect(described).toContain("Resultado oficial");
     expect(described).toContain("11:00");
     expect(described).toContain("2 partidos oficiales");
-    expect(within(first).getByLabelText("Marcador global 3 a 1, partidos 2–1 · 1–0")).toBeTruthy();
+    // The link name replaces its text, so the score must reach the description (UX-MAT-001).
+    expect(first).toHaveAccessibleDescription(
+      /Marcador global 3 a 1, partidos 2–1 · 1–0 Resultado oficial$/,
+    );
     expect(within(first).getByText("Global · 2–1 · 1–0")).toBeTruthy();
 
     expect(screen.getByRole("heading", { name: "Jornada 1 de 3" })).toBeTruthy();
@@ -141,7 +159,12 @@ describe("Competition encounters list", () => {
       encounters: [
         {
           encounterId: "e-single",
-          round: { number: 1, total: 1 },
+          round: {
+            id: "stage-1:round:1",
+            number: 1,
+            total: 1,
+            stage: { id: "stage-1", kind: "league", order: 1 },
+          },
           scheduledStartAt: "2026-10-19T16:00:00.000Z",
           officialMatchCount: 1,
           resolutionMode: null,
@@ -152,7 +175,12 @@ describe("Competition encounters list", () => {
         },
         {
           encounterId: "e-indep",
-          round: { number: 1, total: 1 },
+          round: {
+            id: "stage-1:round:1",
+            number: 1,
+            total: 1,
+            stage: { id: "stage-1", kind: "league", order: 1 },
+          },
           scheduledStartAt: "2026-10-19T18:00:00.000Z",
           officialMatchCount: 2,
           resolutionMode: "independent_matches",
@@ -170,10 +198,10 @@ describe("Competition encounters list", () => {
     renderRoute();
 
     const single = await screen.findByRole("link", { name: "Abrir Cóndores FC vs Sporting Quipu" });
-    expect(within(single).getByLabelText("Marcador oficial 3 a 1")).toBeTruthy();
+    expect(single).toHaveAccessibleDescription(/Marcador oficial 3 a 1/);
 
     const indep = screen.getByRole("link", { name: "Abrir Inti United vs Real Vicuña" });
-    expect(within(indep).getByLabelText("Marcadores oficiales 2–0 · 1–1")).toBeTruthy();
+    expect(indep).toHaveAccessibleDescription(/Marcadores oficiales 2–0 · 1–1/);
     expect(within(indep).queryByText(/Global/)).toBeNull();
   });
 
@@ -197,13 +225,69 @@ describe("Competition encounters list", () => {
     expect(screen.getByRole("link", { name: "Abrir Pijadores FC vs Sobrenaturales" })).toBeTruthy();
   });
 
+  it("keeps League and Playoffs Round 1 apart in the round filter and the groups", async () => {
+    vi.stubGlobal("PointerEvent", MouseEvent);
+    const user = userEvent.setup();
+    const league = { id: "plan-1:stage:1", kind: "league", order: 1 } as const;
+    const playoffs = { id: "plan-1:stage:2", kind: "playoffs", order: 2 } as const;
+    const leaguePlayoffs: ListCompetitionEncountersResponse = {
+      competition: fixtureEncounters.competition,
+      encounters: [
+        {
+          ...fixtureEncounters.encounters[0]!,
+          encounterId: "league-1",
+          round: { id: "plan-1:stage:1:round:1", number: 1, total: 1, stage: league },
+        },
+        {
+          ...fixtureEncounters.encounters[1]!,
+          encounterId: "league-2",
+          round: { id: "plan-1:stage:1:round:1", number: 1, total: 1, stage: league },
+        },
+        {
+          ...fixtureEncounters.encounters[2]!,
+          encounterId: "playoff-1",
+          round: { id: "plan-1:stage:2:round:1", number: 1, total: 1, stage: playoffs },
+        },
+      ],
+    };
+    serve(() => Response.json(leaguePlayoffs));
+    renderRoute();
+
+    const leagueHeading = await screen.findByRole("heading", { name: "Liga · Jornada 1 de 1" });
+    const playoffsHeading = screen.getByRole("heading", { name: "Playoffs · Jornada 1 de 1" });
+    const groupLinks = (heading: HTMLElement) =>
+      within(heading.closest("section")!)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("aria-label"));
+    expect(groupLinks(leagueHeading)).toEqual([
+      "Abrir Pijadores FC vs Sobrenaturales",
+      "Abrir Sobrenaturales vs Cóndores FC",
+    ]);
+    expect(groupLinks(playoffsHeading)).toEqual(["Abrir Cóndores FC vs Pijadores FC"]);
+
+    await user.click(screen.getByLabelText("Jornada"));
+    await user.click(await screen.findByRole("option", { name: "Playoffs · Jornada 1 de 1" }));
+    expect(screen.getAllByRole("link").map((link) => link.getAttribute("aria-label"))).toEqual([
+      "Abrir Cóndores FC vs Pijadores FC",
+    ]);
+    expect(screen.queryByRole("heading", { name: "Liga · Jornada 1 de 1" })).toBeNull();
+
+    await user.click(screen.getByLabelText("Jornada"));
+    await user.click(await screen.findByRole("option", { name: "Liga · Jornada 1 de 1" }));
+    expect(screen.getAllByRole("link").map((link) => link.getAttribute("aria-label"))).toEqual([
+      "Abrir Pijadores FC vs Sobrenaturales",
+      "Abrir Sobrenaturales vs Cóndores FC",
+    ]);
+    expect(screen.queryByRole("heading", { name: "Playoffs · Jornada 1 de 1" })).toBeNull();
+  });
+
   it("speaks English when the session locale is English", async () => {
     serve(() => Response.json(fixtureEncounters));
     renderRoute("en");
 
     const row = await screen.findByRole("link", { name: "Open Pijadores FC vs Sobrenaturales" });
     expect(within(row).getByText("Official result")).toBeTruthy();
-    expect(within(row).getByLabelText("Aggregate score 3 to 1, matches 2–1 · 1–0")).toBeTruthy();
+    expect(row).toHaveAccessibleDescription(/Aggregate score 3 to 1, matches 2–1 · 1–0/);
     expect(screen.getByRole("heading", { name: "Matchday 1 of 3" })).toBeTruthy();
   });
 

@@ -7,12 +7,14 @@ import type { CompetitionEncounterDto, CompetitionEncounterStatusDto } from "@fu
 import { applyStyles, Badge, Caption, Heading, Text, typography, vis, type Icon } from "@futrob/ui";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 
+import { encounterRoundLabel } from "./competition-encounters-labels.ts";
 import {
   encounterScoreView,
   type EncounterRoundGroup,
   type EncounterScoreView,
 } from "./competition-encounters-model.ts";
 import { styles } from "./competition-encounters-page.styles.ts";
+import type { EncounterDetailSearch } from "./encounter-list-return.ts";
 
 const STATUS = {
   scheduled: { variant: "neutral", icon: CalendarBlankIcon },
@@ -25,27 +27,33 @@ const STATUS = {
 
 type Scope = { readonly organizationId: string; readonly competitionId: string };
 
+/** The Match Center search that brings the user back to this list as they left it. */
+type ReturnSearch = { readonly returnSearch: EncounterDetailSearch };
+
 export function RoundGroupSection({
   competitionId,
   group,
   organizationId,
   rangeDateFormat,
+  returnSearch,
   shortDateFormat,
   shortDateTimeFormat,
   t,
   timeFormat,
-}: Scope & {
-  readonly group: EncounterRoundGroup;
-  readonly rangeDateFormat: Intl.DateTimeFormat;
-  readonly shortDateFormat: Intl.DateTimeFormat;
-  readonly shortDateTimeFormat: Intl.DateTimeFormat;
-  readonly t: Translator;
-  readonly timeFormat: Intl.DateTimeFormat;
-}) {
-  const headingId = `encounters-round-${group.round.number}`;
-  const roundLabel = group.round.total
-    ? t("encounter.roundOf", { number: group.round.number, total: group.round.total })
-    : t("encounter.round", { number: group.round.number });
+  withStage,
+}: Scope &
+  ReturnSearch & {
+    readonly group: EncounterRoundGroup;
+    readonly rangeDateFormat: Intl.DateTimeFormat;
+    readonly shortDateFormat: Intl.DateTimeFormat;
+    readonly shortDateTimeFormat: Intl.DateTimeFormat;
+    readonly t: Translator;
+    readonly timeFormat: Intl.DateTimeFormat;
+    /** Rounds of several stages share numbers, so headings name the stage. */
+    readonly withStage: boolean;
+  }) {
+  const headingId = useId();
+  const roundLabel = encounterRoundLabel(group.round, withStage, t);
 
   const dateLabel = group.spansMultipleDays
     ? rangeDateFormat.formatRange(new Date(group.firstKickoffIso), new Date(group.lastKickoffIso))
@@ -99,6 +107,7 @@ export function RoundGroupSection({
                 competitionId={competitionId}
                 encounter={encounter}
                 organizationId={organizationId}
+                returnSearch={returnSearch}
                 roundLabel={roundLabel}
                 shortDateTimeFormat={shortDateTimeFormat}
                 showDateInRow={group.spansMultipleDays}
@@ -117,19 +126,21 @@ function EncounterRow({
   competitionId,
   encounter,
   organizationId,
+  returnSearch,
   roundLabel,
   shortDateTimeFormat,
   showDateInRow,
   t,
   timeFormat,
-}: Scope & {
-  readonly encounter: CompetitionEncounterDto;
-  readonly roundLabel: string;
-  readonly shortDateTimeFormat: Intl.DateTimeFormat;
-  readonly showDateInRow: boolean;
-  readonly t: Translator;
-  readonly timeFormat: Intl.DateTimeFormat;
-}) {
+}: Scope &
+  ReturnSearch & {
+    readonly encounter: CompetitionEncounterDto;
+    readonly roundLabel: string;
+    readonly shortDateTimeFormat: Intl.DateTimeFormat;
+    readonly showDateInRow: boolean;
+    readonly t: Translator;
+    readonly timeFormat: Intl.DateTimeFormat;
+  }) {
   const { variant, icon: StatusIcon } = STATUS[encounter.status];
   const detailsId = useId();
   const score = encounterScoreView(encounter);
@@ -143,15 +154,23 @@ function EncounterRow({
   const awayTrailing =
     (score?.kind === "single" || score?.kind === "aggregate") && score.leader === "home";
   const slotsLabel = t("encounters.list.slots", { count: encounter.officialMatchCount });
+  const scoreLabel = score ? scoreAccessibleLabel(score, t) : null;
 
   return (
     <Link
-      aria-describedby={`${detailsId}-meta ${detailsId}-status`}
+      aria-describedby={[
+        `${detailsId}-meta`,
+        scoreLabel ? `${detailsId}-score` : null,
+        `${detailsId}-status`,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       aria-label={t("encounters.list.open", {
         home: encounter.home.name,
         away: encounter.away.name,
       })}
       params={{ orgId: organizationId, competitionId, encounterId: encounter.encounterId }}
+      search={returnSearch}
       to="/orgs/$orgId/competitions/$competitionId/encounters/$encounterId"
       {...applyStyles(styles.row)}
     >
@@ -180,6 +199,11 @@ function EncounterRow({
           {encounter.home.name}
         </Text>
         <ScoreCenter encounterStatus={encounter.status} score={score} t={t} />
+        {scoreLabel ? (
+          <span id={`${detailsId}-score`} {...applyStyles(vis.srOnly)}>
+            {scoreLabel}
+          </span>
+        ) : null}
         <Text
           className={styles.away}
           tone={awayTrailing ? "muted" : "default"}
@@ -201,6 +225,33 @@ function EncounterRow({
   );
 }
 
+const legsText = (legs: readonly { homeGoals: number; awayGoals: number }[]) =>
+  legs.map((leg) => `${leg.homeGoals}–${leg.awayGoals}`).join(" · ");
+
+/** The official score as the row's description reads it, since the link name replaces its text. */
+function scoreAccessibleLabel(score: EncounterScoreView, t: Translator): string {
+  switch (score.kind) {
+    case "single":
+      return t("encounters.list.score.singleAria", {
+        home: score.homeGoals,
+        away: score.awayGoals,
+      });
+    case "aggregate":
+      return t("encounters.list.score.aggregateAria", {
+        home: score.aggregateHome,
+        away: score.aggregateAway,
+        legs: legsText(score.legs),
+      });
+    case "independent":
+      return t("encounters.list.score.seriesAria", { legs: legsText(score.legs) });
+    default: {
+      const exhaustive: never = score;
+      return exhaustive;
+    }
+  }
+}
+
+/** Visual score only: the row's description carries the spoken one. */
 function ScoreCenter({
   encounterStatus,
   score,
@@ -212,14 +263,8 @@ function ScoreCenter({
 }) {
   if (score?.kind === "single") {
     return (
-      <div {...applyStyles(styles.scoreCenter)}>
-        <span
-          aria-label={t("encounters.list.score.singleAria", {
-            home: score.homeGoals,
-            away: score.awayGoals,
-          })}
-          {...applyStyles(styles.scorePill)}
-        >
+      <div aria-hidden="true" {...applyStyles(styles.scoreCenter)}>
+        <span {...applyStyles(styles.scorePill)}>
           <span {...applyStyles(score.leader === "home" && styles.scoreLeader)}>
             {score.homeGoals}
           </span>
@@ -235,17 +280,9 @@ function ScoreCenter({
   }
 
   if (score?.kind === "aggregate") {
-    const legsText = score.legs.map((leg) => `${leg.homeGoals}–${leg.awayGoals}`).join(" · ");
     return (
-      <div {...applyStyles(styles.scoreCenter)}>
-        <span
-          aria-label={t("encounters.list.score.aggregateAria", {
-            home: score.aggregateHome,
-            away: score.aggregateAway,
-            legs: legsText,
-          })}
-          {...applyStyles(styles.scorePill)}
-        >
+      <div aria-hidden="true" {...applyStyles(styles.scoreCenter)}>
+        <span {...applyStyles(styles.scorePill)}>
           <span {...applyStyles(score.leader === "home" && styles.scoreLeader)}>
             {score.aggregateHome}
           </span>
@@ -257,20 +294,16 @@ function ScoreCenter({
           </span>
         </span>
         <Caption as="span" className={styles.scoreSubLabel}>
-          {t("encounters.list.score.aggregateMeta", { legs: legsText })}
+          {t("encounters.list.score.aggregateMeta", { legs: legsText(score.legs) })}
         </Caption>
       </div>
     );
   }
 
   if (score?.kind === "independent") {
-    const legsText = score.legs.map((leg) => `${leg.homeGoals}–${leg.awayGoals}`).join(" · ");
     return (
-      <div {...applyStyles(styles.scoreCenter)}>
-        <span
-          aria-label={t("encounters.list.score.seriesAria", { legs: legsText })}
-          {...applyStyles(styles.scorePill)}
-        >
+      <div aria-hidden="true" {...applyStyles(styles.scoreCenter)}>
+        <span {...applyStyles(styles.scorePill)}>
           {score.legs.map((leg, index) => {
             const legLeader =
               leg.homeGoals > leg.awayGoals

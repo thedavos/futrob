@@ -40,7 +40,12 @@ const list: ListCompetitionEncountersResponse = {
   encounters: [
     {
       encounterId: "encounter-1",
-      round: { number: 1, total: 3 },
+      round: {
+        id: "stage-1:round:1",
+        number: 1,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-12T01:00:00.000Z",
       officialMatchCount: 1,
       resolutionMode: null,
@@ -51,7 +56,12 @@ const list: ListCompetitionEncountersResponse = {
     },
     {
       encounterId: "encounter-1b",
-      round: { number: 1, total: 3 },
+      round: {
+        id: "stage-1:round:1",
+        number: 1,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-12T01:00:00.000Z",
       officialMatchCount: 2,
       resolutionMode: "aggregate_score",
@@ -65,7 +75,12 @@ const list: ListCompetitionEncountersResponse = {
     },
     {
       encounterId: "encounter-2",
-      round: { number: 2, total: 3 },
+      round: {
+        id: "stage-1:round:2",
+        number: 2,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-19T01:00:00.000Z",
       officialMatchCount: 2,
       resolutionMode: "independent_matches",
@@ -76,7 +91,12 @@ const list: ListCompetitionEncountersResponse = {
     },
     {
       encounterId: "encounter-2b",
-      round: { number: 2, total: 3 },
+      round: {
+        id: "stage-1:round:2",
+        number: 2,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-19T02:00:00.000Z",
       officialMatchCount: 2,
       resolutionMode: "independent_matches",
@@ -90,7 +110,12 @@ const list: ListCompetitionEncountersResponse = {
     },
     {
       encounterId: "encounter-3",
-      round: { number: 3, total: 3 },
+      round: {
+        id: "stage-1:round:3",
+        number: 3,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-26T01:00:00.000Z",
       officialMatchCount: 1,
       resolutionMode: null,
@@ -192,7 +217,7 @@ export const Ready: Story = {
     const canvas = within(canvasElement);
     const row = await canvas.findByRole("link", { name: "Abrir Cuervos FC vs Maderas FC" });
     await expect(within(row).getByText("Resultado oficial")).toBeVisible();
-    await expect(within(row).getByLabelText("Marcador oficial 3 a 1")).toBeVisible();
+    await expect(row).toHaveAccessibleDescription(/Marcador oficial 3 a 1/);
     await expect(canvas.getByText("Horarios en America/Lima")).toBeVisible();
 
     await userEvent.click(canvas.getByRole("radio", { name: /Pendientes/i }));
@@ -216,7 +241,7 @@ export const ReadyEnglishNarrow: Story = {
 export const FilteredEmpty: Story = {
   name: "Sin coincidencias al filtrar",
   args: {
-    initialFilters: { status: "scheduled", roundNumber: 1, teamId: null },
+    initialFilters: { status: "scheduled", roundKey: "stage-1:round:1", teamId: null },
   },
   parameters: { a11y: { test: "error" } },
 };

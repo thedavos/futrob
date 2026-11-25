@@ -1,4 +1,4 @@
-import type { FixtureEncounter, FixturePlan } from "@futrob/scheduling";
+import type { FixtureEncounter, FixturePlan, FixtureRound, FixtureStage } from "@futrob/scheduling";
 import type { TeamId } from "@futrob/shared-kernel";
 
 export type PairedEncounter = {
@@ -6,6 +6,9 @@ export type PairedEncounter = {
   readonly homeTeamId: TeamId;
   readonly awayTeamId: TeamId;
   readonly roundNumber: number;
+  /** Round numbers restart in every stage; the round and its stage tell two Round 1s apart. */
+  readonly round: FixtureRound;
+  readonly stage: FixtureStage;
 };
 
 /**
@@ -25,6 +28,8 @@ export function pairedEncounters(plan: FixturePlan): PairedEncounter[] {
                 homeTeamId: encounter.home.teamId,
                 awayTeamId: encounter.away.teamId,
                 roundNumber: round.number,
+                round,
+                stage,
               },
             ]
           : [],

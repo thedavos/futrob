@@ -2521,6 +2521,7 @@ const es = {
   "encounter.forbidden.description":
     "Tu cuenta no tiene permiso para ver este enfrentamiento. Pide acceso a la organización.",
   "encounter.backToEncounters": "Volver a enfrentamientos",
+  "encounter.backToMatches": "Volver a partidos",
   "encounters.list.label": "Enfrentamientos de la competición",
   "encounters.list.loading": "Cargando enfrentamientos",
   "encounters.list.error": "No pudimos cargar los enfrentamientos.",
@@ -2538,6 +2539,7 @@ const es = {
   "encounters.list.filters.status.scheduled": "Programados",
   "encounters.list.filters.label": "Filtrar enfrentamientos",
   "encounters.list.filters.round": "Jornada",
+  "encounters.list.stageRound": ({ stage, round }) => `${stage} · ${round}`,
   "encounters.list.filters.allRounds": "Todas las jornadas",
   "encounters.list.filters.team": "Equipo",
   "encounters.list.filters.allTeams": "Todos los equipos",
@@ -3467,6 +3469,7 @@ export interface MessageParamsByKey {
   readonly "encounter.timeZone": { readonly zone: string };
   readonly "encounters.list.timeZone": { readonly zone: string };
   readonly "encounters.list.open": { readonly home: string; readonly away: string };
+  readonly "encounters.list.stageRound": { readonly stage: string; readonly round: string };
   readonly "encounters.list.slots": { readonly count: number };
   readonly "encounters.list.summary": { readonly count: number; readonly rounds: number };
   readonly "encounters.list.roundProgress.official": {
@@ -6237,6 +6240,7 @@ const en: Catalog = {
   "encounter.forbidden.description":
     "Your account isn't allowed to view this encounter. Ask the organization for access.",
   "encounter.backToEncounters": "Back to encounters",
+  "encounter.backToMatches": "Back to matches",
   "encounters.list.label": "Competition encounters",
   "encounters.list.loading": "Loading encounters",
   "encounters.list.error": "We couldn't load the encounters.",
@@ -6254,6 +6258,7 @@ const en: Catalog = {
   "encounters.list.filters.status.scheduled": "Scheduled",
   "encounters.list.filters.label": "Filter encounters",
   "encounters.list.filters.round": "Matchday",
+  "encounters.list.stageRound": ({ stage, round }) => `${stage} · ${round}`,
   "encounters.list.filters.allRounds": "All matchdays",
   "encounters.list.filters.team": "Team",
   "encounters.list.filters.allTeams": "All teams",
