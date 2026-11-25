@@ -44,6 +44,7 @@ export const pageStyles = stylex.create({
     backgroundColor: colors.warning,
   },
   content: {
+    containerType: "inline-size",
     display: "flex",
     minWidth: 0,
     flexDirection: "column",
@@ -123,10 +124,20 @@ export const pageStyles = stylex.create({
 });
 
 export const tableStyles = stylex.create({
-  table: { minWidth: "36rem" },
+  table: { minWidth: "24rem" },
+  head: {
+    paddingInline: {
+      default: "0.75rem",
+      [media.maxSm]: "0.5rem",
+    },
+  },
   cell: {
     height: "auto",
     paddingBlock: "0.625rem",
+    paddingInline: {
+      default: "0.75rem",
+      [media.maxSm]: "0.5rem",
+    },
   },
   identity: {
     display: "flex",
@@ -137,11 +148,18 @@ export const tableStyles = stylex.create({
     },
     minWidth: {
       default: "10rem",
-      [media.maxSm]: "7.5rem",
+      [media.maxSm]: "5.5rem",
+    },
+    maxWidth: {
+      default: null,
+      [media.maxSm]: "5.75rem",
     },
   },
   monogram: {
-    display: "flex",
+    display: {
+      default: "flex",
+      [media.maxSm]: "none",
+    },
     width: "2rem",
     height: "2rem",
     flexShrink: 0,
@@ -170,6 +188,10 @@ export const tableStyles = stylex.create({
     flexWrap: "wrap",
     alignItems: "center",
     gap: "0.375rem",
+    width: {
+      default: null,
+      [media.maxSm]: "min(14rem, max(6rem, calc(100cqi - 8rem)))",
+    },
     listStyleType: "none",
     margin: 0,
     padding: 0,
@@ -186,7 +208,7 @@ export const tableStyles = stylex.create({
     rowGap: "0.125rem",
     maxWidth: {
       default: "24rem",
-      [media.maxSm]: "11rem",
+      [media.maxSm]: "100%",
     },
     minHeight: {
       default: "1.75rem",
@@ -204,6 +226,13 @@ export const tableStyles = stylex.create({
     lineHeight: "1.125rem",
     fontWeight: "var(--font-weight-medium)",
     textDecorationLine: "none",
+  },
+  chipMain: {
+    display: "inline-flex",
+    alignItems: "flex-start",
+    gap: "0.375rem",
+    minWidth: 0,
+    maxWidth: "100%",
   },
   chipName: {
     minWidth: 0,
@@ -274,6 +303,7 @@ export const tableStyles = stylex.create({
   chipIcon: {
     width: "0.875rem",
     height: "0.875rem",
+    marginTop: "0.125rem",
     flexShrink: 0,
   },
   chipIconApproved: { color: colors.approved },

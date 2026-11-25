@@ -710,7 +710,7 @@ export const CompetitionsError = story(
 export const Mobile: Story = {
   name: "Mobile",
   args: { scenario: "longCompetitionName", locale: "es" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   render: (args) => (
     <OrganizationTeamsStoryShell
       key={`${args.scenario}:${args.locale ?? "es"}`}
@@ -724,8 +724,22 @@ export const Mobile: Story = {
     const chip = await within(aguilas).findByRole("link", {
       name: `${LONG_COMPETITION_NAME} (Pendiente): ver Águilas del Sur`,
     });
+    const nameEl = within(chip).getByText(LONG_COMPETITION_NAME);
+    const statusEl = within(chip).getByText("Pendiente");
     await expect(chip).toBeVisible();
-    await expect(within(chip).getByText(LONG_COMPETITION_NAME)).toBeVisible();
-    await expect(within(chip).getByText("Pendiente")).toBeVisible();
+    await expect(nameEl).toBeVisible();
+    await expect(statusEl).toBeVisible();
+
+    const tableContainer = chip.closest('[data-slot="table-container"]');
+    if (!(tableContainer instanceof HTMLElement)) {
+      throw new Error("Expected table scroll container");
+    }
+    const containerRect = tableContainer.getBoundingClientRect();
+    const nameRect = nameEl.getBoundingClientRect();
+    const statusRect = statusEl.getBoundingClientRect();
+    await expect(nameRect.left).toBeGreaterThanOrEqual(containerRect.left);
+    await expect(nameRect.right).toBeLessThanOrEqual(containerRect.right + 1);
+    await expect(statusRect.left).toBeGreaterThanOrEqual(containerRect.left);
+    await expect(statusRect.right).toBeLessThanOrEqual(containerRect.right + 1);
   },
 };

@@ -55,6 +55,7 @@ export function OrganizationTeamsTable({
 }) {
   const { locale, t } = useI18n();
   const [expandedTeams, setExpandedTeams] = useState<ReadonlySet<string>>(() => new Set());
+  const headCell = applyStyles(styles.head);
   const bodyCell = applyStyles(styles.cell);
 
   function toggleExpanded(teamId: string) {
@@ -75,10 +76,16 @@ export function OrganizationTeamsTable({
     >
       <TableHeader>
         <TableRow>
-          <TableHead scope="col">{t("org.teams.table.team")}</TableHead>
-          <TableHead scope="col">{t("org.teams.table.competitions")}</TableHead>
-          <TableHead scope="col">{t("org.teams.table.status")}</TableHead>
-          <TableHead align="end" scope="col">
+          <TableHead className={headCell.className} scope="col" style={headCell.style}>
+            {t("org.teams.table.team")}
+          </TableHead>
+          <TableHead className={headCell.className} scope="col" style={headCell.style}>
+            {t("org.teams.table.competitions")}
+          </TableHead>
+          <TableHead className={headCell.className} scope="col" style={headCell.style}>
+            {t("org.teams.table.status")}
+          </TableHead>
+          <TableHead align="end" className={headCell.className} scope="col" style={headCell.style}>
             {t("org.teams.table.created")}
           </TableHead>
         </TableRow>
@@ -282,6 +289,12 @@ function CompetitionChip({
       <XCircleIcon aria-hidden="true" {...applyStyles(styles.chipIcon, styles.chipIconRejected)} />
     );
 
+  const chipMain = (
+    <span {...applyStyles(styles.chipMain)}>
+      {statusIcon}
+      <span {...applyStyles(styles.chipName)}>{entry.competitionName}</span>
+    </span>
+  );
   const statusText = (
     <span {...applyStyles(styles.chipStatus)}>
       <span aria-hidden="true">·</span>
@@ -292,8 +305,7 @@ function CompetitionChip({
   if (!linked) {
     return (
       <span {...applyStyles(styles.chipBase)}>
-        {statusIcon}
-        <span {...applyStyles(styles.chipName)}>{entry.competitionName}</span>
+        {chipMain}
         {statusText}
       </span>
     );
@@ -310,8 +322,7 @@ function CompetitionChip({
       to="/orgs/$orgId/competitions/$competitionId/teams"
       {...applyStyles(styles.chipBase, styles.chipLink)}
     >
-      {statusIcon}
-      <span {...applyStyles(styles.chipName)}>{entry.competitionName}</span>
+      {chipMain}
       {statusText}
     </Link>
   );
