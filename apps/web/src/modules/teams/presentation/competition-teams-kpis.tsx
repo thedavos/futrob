@@ -43,7 +43,7 @@ export function CompetitionTeamsKpis({
           emptyLabel={emptyLabel}
           icon={UsersThreeIcon}
           label={t("competition.teams.kpi.total")}
-          value={numberFormat.format(summary.total)}
+          value={numberFormat.format(summary.approved)}
         />
         <HomeKpiStat
           emptyLabel={emptyLabel}
@@ -59,7 +59,7 @@ export function CompetitionTeamsKpis({
         />
       </HomeKpiGroup>
       {partial ? (
-        <Caption>{t("competition.teams.kpi.partialScope", { count: summary.total })}</Caption>
+        <Caption>{t("competition.teams.kpi.partialScope", { count: summary.loaded })}</Caption>
       ) : null}
     </section>
   );

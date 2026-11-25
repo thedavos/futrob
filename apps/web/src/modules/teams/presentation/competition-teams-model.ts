@@ -6,21 +6,31 @@ import type {
 export type CompetitionTeamsFilter = "all" | "pending" | "no_club";
 
 export type CompetitionTeamsSummary = {
-  readonly total: number;
+  /** Entries the organizer approved: the competition's registered teams (ADR-0019). */
+  readonly approved: number;
   readonly pending: number;
+  /** Active (non-rejected) entries without an EA club. */
   readonly noClub: number;
+  /** Every loaded Team, rejected entries included. */
+  readonly loaded: number;
 };
+
+function lacksExternalClub(item: CompetitionTeamManagementSummaryDto): boolean {
+  return item.externalClub === null && item.entry.status !== "rejected";
+}
 
 export function summarizeCompetitionTeams(
   items: readonly CompetitionTeamManagementSummaryDto[],
 ): CompetitionTeamsSummary {
+  let approved = 0;
   let pending = 0;
   let noClub = 0;
   for (const item of items) {
+    if (item.entry.status === "approved") approved += 1;
     if (item.entry.status === "pending") pending += 1;
-    if (item.externalClub === null) noClub += 1;
+    if (lacksExternalClub(item)) noClub += 1;
   }
-  return { total: items.length, pending, noClub };
+  return { approved, pending, noClub, loaded: items.length };
 }
 
 export function filterCompetitionTeams(
@@ -31,7 +41,7 @@ export function filterCompetitionTeams(
   const normalizedQuery = query.trim().toLowerCase();
   return items.filter((item) => {
     if (filter === "pending" && item.entry.status !== "pending") return false;
-    if (filter === "no_club" && item.externalClub !== null) return false;
+    if (filter === "no_club" && !lacksExternalClub(item)) return false;
     if (!normalizedQuery) return true;
     const teamMatch = item.team.name.toLowerCase().includes(normalizedQuery);
     const clubMatch =

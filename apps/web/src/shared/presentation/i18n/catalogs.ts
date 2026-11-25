@@ -2307,6 +2307,11 @@ const es = {
   "competition.teams.detail.emptyRosterClosedDescription":
     "La plantilla está cerrada. Ábrela para admitir nuevos ingresos por invitación.",
   "competition.teams.detail.emptyRosterInvite": "Invitar jugador",
+  "competition.teams.detail.emptyRosterRejectedDescription":
+    "La inscripción fue rechazada; la plantilla ya no admite nuevos jugadores.",
+  "competition.teams.detail.entryClosedTitle": "Inscripción rechazada",
+  "competition.teams.detail.entryClosedDescription":
+    "Este equipo fue rechazado en la competición. La plantilla, sus roles y las invitaciones ya no admiten cambios.",
   "competition.teams.permissions.title": "Permisos no confirmados",
   "competition.teams.permissions.description":
     "No se pudieron confirmar. Las acciones están deshabilitadas.",
@@ -6062,6 +6067,11 @@ const en: Catalog = {
   "competition.teams.detail.emptyRosterClosedDescription":
     "The roster is closed. Open it to accept new players by invitation.",
   "competition.teams.detail.emptyRosterInvite": "Invite player",
+  "competition.teams.detail.emptyRosterRejectedDescription":
+    "The entry was rejected; the roster no longer accepts new players.",
+  "competition.teams.detail.entryClosedTitle": "Entry rejected",
+  "competition.teams.detail.entryClosedDescription":
+    "This team was rejected from the competition. Its roster, roles and invitations can no longer be changed.",
   "competition.teams.permissions.title": "Permissions not confirmed",
   "competition.teams.permissions.description":
     "Permissions could not be confirmed. Actions are disabled.",

@@ -294,7 +294,7 @@ export function TeamList({
             value={filter}
           >
             <ChoiceGroupItem appearance="pill" dense value="all">
-              {t("competition.teams.filter.all", { count: counts.total })}
+              {t("competition.teams.filter.all", { count: counts.loaded })}
             </ChoiceGroupItem>
             <ChoiceGroupItem appearance="pill" dense value="pending">
               {counts.pending > 0 ? (

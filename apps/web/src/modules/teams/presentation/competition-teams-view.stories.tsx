@@ -202,3 +202,45 @@ export const RecoverableError: Story = {
     },
   },
 };
+
+const rejectedDetail = {
+  ...detail,
+  entry: { ...detail.entry, status: "rejected" as const },
+  roster: { ...detail.roster, memberCount: 0 },
+  members: [],
+};
+
+export const RejectedEntry: Story = {
+  name: "Rejected entry",
+  args: {
+    items: [teamSummaryFixture(rejectedDetail)],
+    detail: rejectedDetail,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Inscripción rechazada")).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Invitar" })).not.toBeInTheDocument();
+    await expect(canvas.queryByRole("button", { name: "Invitar jugador" })).not.toBeInTheDocument();
+    await expect(canvas.getByRole("button", { name: "Cerrar plantilla" })).toBeDisabled();
+  },
+};
+
+const longListTeams = Array.from({ length: 25 }, (_, index) => {
+  const id = `team-long-${index + 1}`;
+  return {
+    ...detail,
+    team: { ...detail.team, id, name: `Equipo ${String(index + 1).padStart(2, "0")}` },
+    entry: { ...detail.entry, id: `entry-long-${index + 1}`, teamId: id },
+  };
+});
+const lowSelection = longListTeams[19]!;
+
+/** Desktop: selecting a low row keeps the sticky detail and its decision in view. */
+export const LongListLowSelection: Story = {
+  name: "Long list, low row selected",
+  args: {
+    items: longListTeams.map((team) => teamSummaryFixture(team)),
+    detail: lowSelection,
+    selectedTeamId: lowSelection.team.id,
+  },
+};

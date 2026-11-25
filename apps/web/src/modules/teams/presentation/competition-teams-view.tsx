@@ -98,6 +98,24 @@ const styles = stylex.create({
     minWidth: 0,
     overflow: "hidden",
   },
+  // Desktop: the detail stays in view while the list scrolls inside the shell's <main>
+  // (command bar 3.5rem + 1.5rem block padding on each side).
+  detailPanel: {
+    flexDirection: "column",
+    minWidth: 0,
+    position: { default: null, [media.md]: "sticky" },
+    top: { default: null, [media.md]: 0 },
+    alignSelf: { default: null, [media.md]: "start" },
+    maxHeight: { default: null, [media.md]: "calc(100svh - 6.5rem)" },
+    overflowX: "hidden",
+    overflowY: { default: "hidden", [media.md]: "auto" },
+  },
+  detailPanelVisible: {
+    display: "flex",
+  },
+  detailPanelHiddenOnMobile: {
+    display: { default: "none", [media.md]: "flex" },
+  },
 });
 
 const alertTitle = applyStyles(styles.alertTitle);
@@ -196,7 +214,12 @@ export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
             summary={summary}
           />
         </Card>
-        <Card className={showDetailMobile ? styles.panelVisible : styles.panelHiddenOnMobile}>
+        <Card
+          className={[
+            styles.detailPanel,
+            showDetailMobile ? styles.detailPanelVisible : styles.detailPanelHiddenOnMobile,
+          ]}
+        >
           <TeamDetail {...props} />
         </Card>
       </div>

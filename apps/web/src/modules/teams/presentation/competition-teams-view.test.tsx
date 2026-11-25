@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -113,6 +113,83 @@ describe("CompetitionTeamsView", () => {
     await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
     expect(screen.getByRole("button", { name: /Cuervos FC/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Halcones Sin Club/ })).toBeTruthy();
+  });
+
+  it("counts only approved entries as registered and excludes rejected teams from the EA club gap", async () => {
+    const user = userEvent.setup();
+    const base = teamManagementFixture();
+    const approvedWithClub = {
+      ...base,
+      team: { ...base.team, id: "team-a", name: "Aprobados FC" },
+      entry: { ...base.entry, id: "entry-a", teamId: "team-a", status: "approved" as const },
+    };
+    const pendingNoClub = {
+      ...base,
+      team: { ...base.team, id: "team-p", name: "Pendientes FC" },
+      entry: { ...base.entry, id: "entry-p", teamId: "team-p", status: "pending" as const },
+      externalClub: null,
+    };
+    const rejectedNoClub = {
+      ...base,
+      team: { ...base.team, id: "team-r", name: "Rechazados FC" },
+      entry: { ...base.entry, id: "entry-r", teamId: "team-r", status: "rejected" as const },
+      externalClub: null,
+    };
+
+    renderView({
+      items: [approvedWithClub, pendingNoClub, rejectedNoClub].map((item) =>
+        teamSummaryFixture(item),
+      ),
+      detail: null,
+      selectedTeamId: null,
+    });
+
+    const kpis = within(
+      screen.getByRole("region", { name: "Resumen de equipos de la competición" }),
+    );
+    const kpiValue = (label: string) => kpis.getByText(label).parentElement?.textContent;
+    expect(kpiValue("Equipos inscritos")).toBe("Equipos inscritos1");
+    expect(kpiValue("Pendientes de aprobar")).toBe("Pendientes de aprobar1");
+    expect(kpiValue("Sin club EA")).toBe("Sin club EA1");
+    expect(screen.getByRole("radio", { name: "Todos 3" })).toBeTruthy();
+
+    await user.click(screen.getByRole("radio", { name: "Sin club 1" }));
+    expect(screen.getByRole("button", { name: /Pendientes FC/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Rechazados FC/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Aprobados FC/ })).toBeNull();
+  });
+
+  it("hides invitations and locks roster changes once the entry is rejected", () => {
+    const base = teamManagementFixture({ memberCount: 0 });
+    const rejected = {
+      ...base,
+      entry: { ...base.entry, status: "rejected" as const },
+      members: [],
+    };
+    renderView({
+      items: [teamSummaryFixture(rejected)],
+      detail: rejected,
+      selectedTeamId: rejected.team.id,
+      capabilities: {
+        manageRoster: true,
+        manageRoles: true,
+        manageInvitations: true,
+        manageExternalClub: true,
+        manageEntries: true,
+        unavailable: false,
+      },
+    });
+
+    expect(screen.getByText("Inscripción rechazada")).toBeTruthy();
+    expect(
+      screen.getByText("La inscripción fue rechazada; la plantilla ya no admite nuevos jugadores."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Invitar" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Invitar jugador" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Cerrar plantilla" })).toHaveProperty(
+      "disabled",
+      true,
+    );
   });
 
   it("shows an actionable empty roster state and captaincy warning when a team has no members", () => {
