@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles } from "@futrob/ui";
+import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { CompetitionTeamsView, type CompetitionTeamsViewProps } from "./competition-teams-view.tsx";
@@ -8,16 +9,39 @@ import { teamManagementFixture, teamSummaryFixture } from "./competition-teams-v
 
 const styles = stylex.create({
   frame: {
-    display: "flex",
-    height: "100svh",
-    flexDirection: "column",
+    minHeight: "100svh",
+    padding: "1.5rem",
+    backgroundColor: colors.background,
   },
 });
 
 const noOp = async () => undefined;
 const detail = teamManagementFixture();
+const approvedTeam = {
+  ...teamManagementFixture({ memberCount: 4, maxSize: 12 }),
+  team: { ...detail.team, id: "team-2", name: "Atlético Pumas" },
+  entry: { ...detail.entry, id: "entry-2", teamId: "team-2", status: "approved" as const },
+  externalClub: {
+    ...detail.externalClub!,
+    teamId: "team-2",
+    externalClubId: "club-2",
+    externalClubName: "Atletico Pumas FC",
+  },
+};
+const missingClubTeam = {
+  ...teamManagementFixture({ memberCount: 1, maxSize: 12 }),
+  team: { ...detail.team, id: "team-3", name: "Halcones Sin Club" },
+  entry: { ...detail.entry, id: "entry-3", teamId: "team-3", status: "approved" as const },
+  externalClub: null,
+  members: detail.members.slice(0, 1),
+};
+
 const defaultArgs: CompetitionTeamsViewProps = {
-  items: [teamSummaryFixture(detail)],
+  items: [
+    teamSummaryFixture(approvedTeam),
+    teamSummaryFixture(detail),
+    teamSummaryFixture(missingClubTeam),
+  ],
   detail,
   selectedTeamId: detail.team.id,
   capabilities: {
@@ -63,7 +87,14 @@ export const EmptyRoster: Story = {
     detail: { ...detail, roster: { ...detail.roster, memberCount: 0 }, members: [] },
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText("Sin jugadores.")).toBeVisible();
+    await expect(within(canvasElement).getByText("Sin jugadores registrados")).toBeVisible();
+  },
+};
+
+export const MissingExternalClub: Story = {
+  args: {
+    detail: missingClubTeam,
+    selectedTeamId: missingClubTeam.team.id,
   },
 };
 

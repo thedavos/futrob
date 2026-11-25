@@ -2234,6 +2234,82 @@ const es = {
   "roster.club.searchFailed":
     "No se pudieron buscar clubes. Revisa tu conexión e inténtalo de nuevo.",
   "roster.club.hint": "Busca por nombre para elegir un club.",
+  "competition.teams.title": "Equipos y plantillas",
+  "competition.teams.description": "Inscripciones, plantillas y clubes EA de la competición.",
+  "competition.teams.kpi.summary": "Resumen de equipos de la competición",
+  "competition.teams.kpi.loading": "Cargando resumen de equipos",
+  "competition.teams.kpi.total": "Equipos inscritos",
+  "competition.teams.kpi.pending": "Pendientes de aprobar",
+  "competition.teams.kpi.noClub": "Sin club EA",
+  "competition.teams.kpi.partialScope":
+    "Los contadores y filtros corresponden a los {count} equipos cargados.",
+  "competition.teams.search": "Buscar equipo o club…",
+  "competition.teams.filter.label": "Filtrar equipos",
+  "competition.teams.filter.all": "Todos {count}",
+  "competition.teams.filter.pending": "Pendientes {count}",
+  "competition.teams.filter.noClub": "Sin club {count}",
+  "competition.teams.list.noMatches": "Sin coincidencias para este filtro.",
+  "competition.teams.list.clearFilters": "Limpiar filtros",
+  "competition.teams.list.noClubBadge": "Sin club EA",
+  "competition.teams.list.rosterMeta": "{count}/{max} jug. · {state}",
+  "competition.teams.list.rosterOpen": "abierta",
+  "competition.teams.list.rosterClosed": "cerrada",
+  "competition.teams.list.emptyTitle": "Sin equipos todavía",
+  "competition.teams.list.emptyDescription": "Aparecerán aquí al inscribirse.",
+  "competition.teams.list.loadMore": "Cargar más equipos",
+  "competition.teams.list.loading": "Cargando equipos",
+  "competition.teams.list.navAria": "Equipos inscritos",
+  "competition.teams.detail.emptyTitle": "Selecciona un equipo",
+  "competition.teams.detail.emptyDescription": "Verás su inscripción, plantilla y club EA.",
+  "competition.teams.detail.loading": "Cargando detalle del equipo",
+  "competition.teams.detail.back": "Volver a equipos",
+  "competition.teams.detail.noClub": "Sin club EA asociado",
+  "competition.teams.detail.decisionTitle": "Inscripción pendiente de decisión",
+  "competition.teams.detail.decisionDescription":
+    "Aprueba o rechaza al equipo. No cambia el club EA.",
+  "competition.teams.detail.approve": "Aprobar",
+  "competition.teams.detail.approveConfirmTitle": "Aprobar inscripción",
+  "competition.teams.detail.approveConfirmDescription":
+    "El equipo podrá participar si cumple el resto de reglas.",
+  "competition.teams.detail.reject": "Rechazar",
+  "competition.teams.detail.rejectConfirmTitle": "Rechazar inscripción",
+  "competition.teams.detail.rejectConfirmDescription":
+    "El equipo quedará rechazado en esta competición.",
+  "competition.teams.detail.stat.spots": "Cupo",
+  "competition.teams.detail.stat.spotsFull": "Plantilla llena",
+  "competition.teams.detail.stat.spotsLeft": "{count} disponibles",
+  "competition.teams.detail.stat.spotsLeftOne": "1 disponible",
+  "competition.teams.detail.stat.roster": "Plantilla",
+  "competition.teams.detail.stat.rosterOpen": "Abierta",
+  "competition.teams.detail.stat.rosterClosed": "Cerrada",
+  "competition.teams.detail.stat.rosterOpenHint": "Admite invitaciones",
+  "competition.teams.detail.stat.rosterClosedHint": "Bloqueada para nuevos ingresos",
+  "competition.teams.detail.stat.captaincy": "Capitanía",
+  "competition.teams.detail.stat.captaincyNone": "Sin asignar",
+  "competition.teams.detail.stat.captaincyNoneHint": "Necesario para confirmar partidos",
+  "competition.teams.detail.stat.captaincyOne": "1 asignado",
+  "competition.teams.detail.stat.captaincyMany": "{count} asignados",
+  "competition.teams.detail.stat.captaincyReadyHint": "Puede confirmar resultados",
+  "competition.teams.detail.rosterHeading": "Plantilla ({count})",
+  "competition.teams.detail.closeRoster": "Cerrar plantilla",
+  "competition.teams.detail.closeRosterDescription":
+    "Los enlaces existentes dejarán de admitir nuevos ingresos mientras esté cerrada.",
+  "competition.teams.detail.openRoster": "Abrir plantilla",
+  "competition.teams.detail.openRosterDescription":
+    "La plantilla volverá a admitir ingresos por invitación si tiene cupo.",
+  "competition.teams.detail.column.player": "Jugador",
+  "competition.teams.detail.column.account": "Cuenta EA",
+  "competition.teams.detail.column.role": "Rol",
+  "competition.teams.detail.accountMissing": "Sin cuenta EA",
+  "competition.teams.detail.emptyRosterTitle": "Sin jugadores registrados",
+  "competition.teams.detail.emptyRosterOpenDescription":
+    "Comparte un enlace de invitación para que capitán y jugadores se unan a la plantilla.",
+  "competition.teams.detail.emptyRosterClosedDescription":
+    "La plantilla está cerrada. Ábrela para admitir nuevos ingresos por invitación.",
+  "competition.teams.detail.emptyRosterInvite": "Invitar jugador",
+  "competition.teams.permissions.title": "Permisos no confirmados",
+  "competition.teams.permissions.description":
+    "No se pudieron confirmar. Las acciones están deshabilitadas.",
   "errors.teams.roster_full": "La plantilla ya alcanzó su cupo máximo.",
   "errors.teams.roster_entry_inactive":
     "Este equipo ya no está activo en la competición. No se pueden cambiar plantillas.",
@@ -3723,6 +3799,18 @@ export interface MessageParamsByKey {
   readonly "portal.rules.roster.value": { readonly count: number };
   readonly "portal.rules.rescheduling.limited": { readonly count: number; readonly hours: number };
   readonly "portal.rules.rescheduling.unlimited": { readonly hours: number };
+  readonly "competition.teams.kpi.partialScope": { readonly count: number };
+  readonly "competition.teams.filter.all": { readonly count: number };
+  readonly "competition.teams.filter.pending": { readonly count: number };
+  readonly "competition.teams.filter.noClub": { readonly count: number };
+  readonly "competition.teams.list.rosterMeta": {
+    readonly count: number;
+    readonly max: number;
+    readonly state: string;
+  };
+  readonly "competition.teams.detail.stat.spotsLeft": { readonly count: number };
+  readonly "competition.teams.detail.stat.captaincyMany": { readonly count: number };
+  readonly "competition.teams.detail.rosterHeading": { readonly count: number };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -5902,6 +5990,81 @@ const en: Catalog = {
   "roster.club.select": "Associate",
   "roster.club.searchFailed": "Unable to search clubs. Check your connection and try again.",
   "roster.club.hint": "Search by name to pick a club.",
+  "competition.teams.title": "Teams and rosters",
+  "competition.teams.description": "Entries, rosters and EA clubs for this competition.",
+  "competition.teams.kpi.summary": "Competition teams summary",
+  "competition.teams.kpi.loading": "Loading teams summary",
+  "competition.teams.kpi.total": "Registered teams",
+  "competition.teams.kpi.pending": "Pending approval",
+  "competition.teams.kpi.noClub": "No EA club",
+  "competition.teams.kpi.partialScope": "Counts and filters cover the {count} loaded teams.",
+  "competition.teams.search": "Search team or club…",
+  "competition.teams.filter.label": "Filter teams",
+  "competition.teams.filter.all": "All {count}",
+  "competition.teams.filter.pending": "Pending {count}",
+  "competition.teams.filter.noClub": "No club {count}",
+  "competition.teams.list.noMatches": "No teams match this filter.",
+  "competition.teams.list.clearFilters": "Clear filters",
+  "competition.teams.list.noClubBadge": "No EA club",
+  "competition.teams.list.rosterMeta": "{count}/{max} players · {state}",
+  "competition.teams.list.rosterOpen": "open",
+  "competition.teams.list.rosterClosed": "closed",
+  "competition.teams.list.emptyTitle": "No teams yet",
+  "competition.teams.list.emptyDescription": "Teams will appear here once registered.",
+  "competition.teams.list.loadMore": "Load more teams",
+  "competition.teams.list.loading": "Loading teams",
+  "competition.teams.list.navAria": "Registered teams",
+  "competition.teams.detail.emptyTitle": "Select a team",
+  "competition.teams.detail.emptyDescription": "View its entry, roster and EA club.",
+  "competition.teams.detail.loading": "Loading team details",
+  "competition.teams.detail.back": "Back to teams",
+  "competition.teams.detail.noClub": "No EA club linked",
+  "competition.teams.detail.decisionTitle": "Entry pending decision",
+  "competition.teams.detail.decisionDescription":
+    "Approve or reject this team. Its EA club link stays unchanged.",
+  "competition.teams.detail.approve": "Approve",
+  "competition.teams.detail.approveConfirmTitle": "Approve entry",
+  "competition.teams.detail.approveConfirmDescription":
+    "The team will be eligible to compete if it meets the remaining rules.",
+  "competition.teams.detail.reject": "Reject",
+  "competition.teams.detail.rejectConfirmTitle": "Reject entry",
+  "competition.teams.detail.rejectConfirmDescription":
+    "The team will be marked rejected in this competition.",
+  "competition.teams.detail.stat.spots": "Spots",
+  "competition.teams.detail.stat.spotsFull": "Roster full",
+  "competition.teams.detail.stat.spotsLeft": "{count} available",
+  "competition.teams.detail.stat.spotsLeftOne": "1 available",
+  "competition.teams.detail.stat.roster": "Roster",
+  "competition.teams.detail.stat.rosterOpen": "Open",
+  "competition.teams.detail.stat.rosterClosed": "Closed",
+  "competition.teams.detail.stat.rosterOpenHint": "Accepts invitations",
+  "competition.teams.detail.stat.rosterClosedHint": "Locked for new joins",
+  "competition.teams.detail.stat.captaincy": "Captaincy",
+  "competition.teams.detail.stat.captaincyNone": "Unassigned",
+  "competition.teams.detail.stat.captaincyNoneHint": "Required to confirm matches",
+  "competition.teams.detail.stat.captaincyOne": "1 assigned",
+  "competition.teams.detail.stat.captaincyMany": "{count} assigned",
+  "competition.teams.detail.stat.captaincyReadyHint": "Can confirm results",
+  "competition.teams.detail.rosterHeading": "Roster ({count})",
+  "competition.teams.detail.closeRoster": "Close roster",
+  "competition.teams.detail.closeRosterDescription":
+    "Existing links will stop accepting new players while the roster is closed.",
+  "competition.teams.detail.openRoster": "Open roster",
+  "competition.teams.detail.openRosterDescription":
+    "The roster will accept new joins by invitation if spots remain.",
+  "competition.teams.detail.column.player": "Player",
+  "competition.teams.detail.column.account": "EA account",
+  "competition.teams.detail.column.role": "Role",
+  "competition.teams.detail.accountMissing": "No EA account",
+  "competition.teams.detail.emptyRosterTitle": "No players registered",
+  "competition.teams.detail.emptyRosterOpenDescription":
+    "Share an invitation link so the captain and players can join the roster.",
+  "competition.teams.detail.emptyRosterClosedDescription":
+    "The roster is closed. Open it to accept new players by invitation.",
+  "competition.teams.detail.emptyRosterInvite": "Invite player",
+  "competition.teams.permissions.title": "Permissions not confirmed",
+  "competition.teams.permissions.description":
+    "Permissions could not be confirmed. Actions are disabled.",
   "errors.teams.roster_full": "The roster has reached its maximum size.",
   "errors.teams.roster_entry_inactive":
     "This team is no longer active in the competition. Rosters can't be changed.",

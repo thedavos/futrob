@@ -40,15 +40,18 @@ function renderView(overrides: Partial<CompetitionTeamsViewProps> = {}) {
 }
 
 describe("CompetitionTeamsView", () => {
-  it("renders explicit roster, entry and club state without granting actions", () => {
+  it("renders explicit roster, entry, captaincy and formatted EA club state without granting actions", () => {
     renderView();
 
     expect(screen.getByRole("heading", { name: "Cuervos FC" })).toBeTruthy();
     expect(screen.getAllByText("Pendiente").length).toBeGreaterThan(0);
-    expect(screen.getByText("Cuervos EA · common-gen5")).toBeTruthy();
+    expect(screen.getByText("Cuervos EA · Cross-gen · FC 26")).toBeTruthy();
     expect(screen.getByText("2/11")).toBeTruthy();
     expect(screen.getByText("Abierta")).toBeTruthy();
+    expect(screen.getByText("1 asignado")).toBeTruthy();
     expect(screen.getByText("Dani Capitán")).toBeTruthy();
+    expect(screen.getByText("PlayStation · FC 26")).toBeTruthy();
+    expect(screen.getByText("Sin cuenta EA")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Invitar" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Aprobar" })).toBeNull();
   });
@@ -79,7 +82,64 @@ describe("CompetitionTeamsView", () => {
     expect(screen.getByRole("button", { name: "Rechazar" })).toBeTruthy();
   });
 
-  it("offers an accessible control for the next Team page", async () => {
+  it("summarizes KPIs and filters teams by status, missing EA club and search query", async () => {
+    const user = userEvent.setup();
+    const pendingTeam = teamManagementFixture();
+    const noClubApproved = {
+      ...teamManagementFixture(),
+      team: { ...pendingTeam.team, id: "team-2", name: "Halcones Sin Club" },
+      entry: { ...pendingTeam.entry, id: "entry-2", teamId: "team-2", status: "approved" as const },
+      externalClub: null,
+    };
+
+    renderView({
+      items: [teamSummaryFixture(pendingTeam), teamSummaryFixture(noClubApproved)],
+      detail: pendingTeam,
+      selectedTeamId: pendingTeam.team.id,
+    });
+
+    expect(screen.getByText("Equipos inscritos")).toBeTruthy();
+    expect(screen.getByText("Pendientes de aprobar")).toBeTruthy();
+    expect(screen.getAllByText("Sin club EA").length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("radio", { name: "Sin club 1" }));
+    expect(screen.getByRole("button", { name: /Halcones Sin Club/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Cuervos FC/ })).toBeNull();
+
+    const search = screen.getByRole("searchbox", { name: "Buscar equipo o club…" });
+    await user.type(search, "inexistente");
+    expect(screen.getByText("Sin coincidencias para este filtro.")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(screen.getByRole("button", { name: /Cuervos FC/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Halcones Sin Club/ })).toBeTruthy();
+  });
+
+  it("shows an actionable empty roster state and captaincy warning when a team has no members", () => {
+    const emptyDetail = {
+      ...teamManagementFixture({ memberCount: 0 }),
+      members: [],
+    };
+    renderView({
+      items: [teamSummaryFixture(emptyDetail)],
+      detail: emptyDetail,
+      selectedTeamId: emptyDetail.team.id,
+      capabilities: {
+        manageRoster: true,
+        manageRoles: true,
+        manageInvitations: true,
+        manageExternalClub: true,
+        manageEntries: true,
+        unavailable: false,
+      },
+    });
+
+    expect(screen.getByText("Sin asignar")).toBeTruthy();
+    expect(screen.getByText("Sin jugadores registrados")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Invitar jugador" })).toBeTruthy();
+  });
+
+  it("offers an accessible control for the next Team page and notes partial KPI scope", async () => {
     let loads = 0;
     renderView({
       hasMoreTeams: true,
@@ -88,6 +148,9 @@ describe("CompetitionTeamsView", () => {
       },
     });
 
+    expect(
+      screen.getByText("Los contadores y filtros corresponden a los 1 equipos cargados."),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Cargar más equipos" }));
 
     await waitFor(() => expect(loads).toBe(1));

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type {
   CompetitionTeamManagementDetailResponse,
   CompetitionTeamManagementSummaryDto,
@@ -12,55 +13,42 @@ import {
   AlertDescription,
   AlertTitle,
   applyStyles,
-  MasterDetail,
+  Card,
+  PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { LockIcon } from "@phosphor-icons/react";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   SupportErrorAlert,
   type SupportError,
 } from "@/shared/presentation/support-error-alert.tsx";
+import { CompetitionTeamsKpis } from "./competition-teams-kpis.tsx";
+import {
+  summarizeCompetitionTeams,
+  type CompetitionTeamsFilter,
+} from "./competition-teams-model.ts";
 import { TeamDetail } from "./competition-teams-view-detail.tsx";
 import { TeamList } from "./competition-teams-view-list.tsx";
 
 const styles = stylex.create({
   main: {
     display: "flex",
-    height: "100%",
-    minHeight: 0,
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: "0%",
+    width: "100%",
+    minWidth: 0,
     flexDirection: "column",
-    backgroundColor: colors.background,
+    gap: "1rem",
     color: colors.foreground,
   },
   header: {
-    display: "flex",
-    flexShrink: 0,
-    flexDirection: "column",
-    gap: "0.5rem",
-    borderBottomWidth: 1,
-    borderBottomStyle: "solid",
-    borderBottomColor: colors.border,
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "2rem",
-    },
-    paddingBlock: "1.25rem",
+    marginBottom: 0,
   },
   alerts: {
     display: "grid",
-    flexShrink: 0,
     gap: "0.75rem",
-    paddingInline: {
-      default: "1.25rem",
-      [media.sm]: "2rem",
-    },
-    paddingBlock: "1.25rem",
   },
   lock: {
     display: "flex",
@@ -83,6 +71,32 @@ const styles = stylex.create({
   alertDescription: {
     fontSize: "0.875rem",
     fontWeight: 400,
+  },
+  split: {
+    display: "grid",
+    minWidth: 0,
+    gap: "1rem",
+    alignItems: "start",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.md]: "20rem minmax(0, 1fr)",
+      [media.lg]: "22rem minmax(0, 1fr)",
+    },
+  },
+  panelVisible: {
+    display: "flex",
+    flexDirection: "column",
+    minWidth: 0,
+    overflow: "hidden",
+  },
+  panelHiddenOnMobile: {
+    display: {
+      default: "none",
+      [media.md]: "flex",
+    },
+    flexDirection: "column",
+    minWidth: 0,
+    overflow: "hidden",
   },
 });
 
@@ -127,12 +141,20 @@ export type CompetitionTeamsViewProps = {
 };
 
 export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
+  const { t } = useI18n();
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<CompetitionTeamsFilter>("all");
+  const summary = summarizeCompetitionTeams(props.items);
+  const showDetailMobile = props.selectedTeamId !== null && props.selectedTeamId !== "";
+  const showKpis = Boolean(props.loadingList) || props.items.length > 0;
+
   return (
-    <main data-shell-bleed="" {...applyStyles(styles.main)}>
-      <header {...applyStyles(styles.header)}>
-        <PageHeaderTitle>Equipos y plantillas</PageHeaderTitle>
-        <PageHeaderDescription>Inscripciones, plantillas y clubes EA.</PageHeaderDescription>
-      </header>
+    <main {...applyStyles(styles.main)}>
+      <PageHeader className={styles.header}>
+        <PageHeaderTitle>{t("competition.teams.title")}</PageHeaderTitle>
+        <PageHeaderDescription>{t("competition.teams.description")}</PageHeaderDescription>
+      </PageHeader>
+
       {props.error || props.capabilities.unavailable ? (
         <div {...applyStyles(styles.alerts)}>
           {props.error ? <SupportErrorAlert error={props.error} /> : null}
@@ -142,23 +164,42 @@ export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
                 <LockIcon className={lockIcon.className} style={lockIcon.style} />
               </span>
               <AlertTitle className={alertTitle.className} style={alertTitle.style}>
-                Permisos no confirmados
+                {t("competition.teams.permissions.title")}
               </AlertTitle>
               <AlertDescription
                 className={alertDescription.className}
                 style={alertDescription.style}
               >
-                No se pudieron confirmar. Las acciones están deshabilitadas.
+                {t("competition.teams.permissions.description")}
               </AlertDescription>
             </Alert>
           ) : null}
         </div>
       ) : null}
-      <MasterDetail
-        detail={<TeamDetail {...props} />}
-        master={<TeamList {...props} />}
-        selectedId={props.selectedTeamId}
-      />
+
+      {showKpis ? (
+        <CompetitionTeamsKpis
+          loading={props.loadingList}
+          partial={props.hasMoreTeams}
+          summary={summary}
+        />
+      ) : null}
+
+      <div data-selected={showDetailMobile ? "true" : undefined} {...applyStyles(styles.split)}>
+        <Card className={showDetailMobile ? styles.panelHiddenOnMobile : styles.panelVisible}>
+          <TeamList
+            {...props}
+            filter={filter}
+            onFilterChange={setFilter}
+            onQueryChange={setQuery}
+            query={query}
+            summary={summary}
+          />
+        </Card>
+        <Card className={showDetailMobile ? styles.panelVisible : styles.panelHiddenOnMobile}>
+          <TeamDetail {...props} />
+        </Card>
+      </div>
     </main>
   );
 }
