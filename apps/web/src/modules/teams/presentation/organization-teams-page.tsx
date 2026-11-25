@@ -1,10 +1,8 @@
 "use client";
 
-import { useId } from "react";
-import { Link } from "@tanstack/react-router";
+import { useId, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { LockSimpleIcon, MagnifyingGlassIcon, UsersThreeIcon } from "@phosphor-icons/react";
-import * as stylex from "@stylexjs/stylex";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {
   Alert,
   AlertDescription,
@@ -14,21 +12,22 @@ import {
   Card,
   CardContent,
   CardHeader,
-  EmptyState,
-  EmptyStateActions,
-  EmptyStateCopy,
-  EmptyStateDescription,
-  EmptyStateIcon,
-  EmptyStateTitle,
+  ChoiceGroup,
+  ChoiceGroupItem,
   Field,
   Heading,
   InputWithIcon,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
-  Skeleton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   typography,
 } from "@futrob/ui";
+import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { TEAM_PERMISSION } from "@futrob/teams";
 import {
   CompetitionsClientError,
@@ -43,43 +42,35 @@ import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import {
   buildTeamParticipationIndex,
+  filterOrganizationTeams,
+  summarizeOrganizationTeams,
   type CompetitionParticipantsResult,
-  filterTeamsByName,
+  type TeamStatusFilter,
 } from "./organization-teams-model.ts";
+import { OrganizationTeamsKpis, type OrganizationTeamsMetric } from "./organization-teams-kpis.tsx";
+import {
+  OrganizationTeamsEmpty,
+  OrganizationTeamsError,
+  OrganizationTeamsForbidden,
+  OrganizationTeamsLoading,
+  OrganizationTeamsNoMatches,
+} from "./organization-teams-states.tsx";
 import { OrganizationTeamsTable } from "./organization-teams-table.tsx";
+import { pageStyles as styles } from "./organization-teams.styles.ts";
 
-const styles = stylex.create({
-  main: {
-    display: "flex",
-    width: "100%",
-    minWidth: 0,
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  header: { marginBottom: 0 },
-  cardHeader: { padding: "1.25rem", gap: "0.25rem" },
-  content: {
-    display: "flex",
-    minWidth: 0,
-    flexDirection: "column",
-    gap: "1rem",
-    paddingInline: "1.25rem",
-    paddingBottom: "1.25rem",
-  },
-  rows: { display: "flex", flexDirection: "column", gap: "0.75rem" },
-  row: { height: "2.75rem", width: "100%" },
-  feedback: { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "0.75rem" },
-  noMatches: { display: "flex", justifyContent: "center", paddingBlock: "1.5rem" },
-});
+const CAPABILITIES = {
+  readTeams: TEAM_PERMISSION.read,
+  createCompetition: COMPETITION_PERMISSION.update,
+} as const;
 
-const CAPABILITIES = { readTeams: TEAM_PERMISSION.read } as const;
+const STATUS_OPTIONS: readonly TeamStatusFilter[] = ["all", "pending", "none"];
 
 function isForbidden(error: Error | null): boolean {
   return error instanceof CompetitionsClientError && error.status === 403;
 }
 
 /**
- * Read-only directory of the organization's teams (`teams.listByOrganization`, which returns
+ * Operational directory of the organization's teams (`teams.listByOrganization`, which returns
  * every team without pagination). Competitions come from the existing participant reads and
  * only add context: their absence never hides a team.
  */
@@ -87,15 +78,32 @@ export function OrganizationTeamsPage({
   organizationId,
   query,
   onQueryChange,
+  status: controlledStatus,
+  onStatusChange,
+  competitionId: controlledCompetitionId,
+  onCompetitionIdChange,
 }: {
   readonly organizationId: string;
   readonly query: string;
   readonly onQueryChange: (query: string) => void;
+  readonly status?: TeamStatusFilter;
+  readonly onStatusChange?: (status: TeamStatusFilter) => void;
+  readonly competitionId?: string;
+  readonly onCompetitionIdChange?: (competitionId: string) => void;
 }) {
   const { t } = useI18n();
   const headingId = useId();
+  const [uncontrolledStatus, setUncontrolledStatus] = useState<TeamStatusFilter>("all");
+  const [uncontrolledCompetitionId, setUncontrolledCompetitionId] = useState<string>("all");
+
+  const statusFilter = controlledStatus ?? uncontrolledStatus;
+  const setStatusFilter = onStatusChange ?? setUncontrolledStatus;
+  const competitionFilter = controlledCompetitionId ?? uncontrolledCompetitionId;
+  const setCompetitionFilter = onCompetitionIdChange ?? setUncontrolledCompetitionId;
+
   const caps = useCapabilities({ organizationId }, CAPABILITIES);
   const denied = !caps.loading && !caps.unavailable && !caps.readTeams;
+  const canCreateCompetition = !caps.loading && !caps.unavailable && caps.createCompetition;
 
   const teamsQuery = useOrganizationTeamsQuery(organizationId);
   const teams = teamsQuery.data?.teams ?? [];
@@ -139,6 +147,12 @@ export function OrganizationTeamsPage({
     }
   }
 
+  function clearAllFilters() {
+    onQueryChange("");
+    setStatusFilter("all");
+    setCompetitionFilter("all");
+  }
+
   const header = (
     <PageHeader className={styles.header}>
       <PageHeaderTitle>{t("pages.organization.teams.title")}</PageHeaderTitle>
@@ -150,23 +164,7 @@ export function OrganizationTeamsPage({
     return (
       <main {...applyStyles(styles.main)}>
         {header}
-        <EmptyState>
-          <EmptyStateIcon>
-            <LockSimpleIcon aria-hidden />
-          </EmptyStateIcon>
-          <EmptyStateCopy>
-            <EmptyStateTitle>{t("org.teams.forbidden.title")}</EmptyStateTitle>
-            <EmptyStateDescription>{t("org.teams.forbidden.description")}</EmptyStateDescription>
-          </EmptyStateCopy>
-          <EmptyStateActions>
-            <Button
-              render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId" />}
-              variant="outline"
-            >
-              {t("org.teams.forbidden.cta")}
-            </Button>
-          </EmptyStateActions>
-        </EmptyState>
+        <OrganizationTeamsForbidden organizationId={organizationId} />
       </main>
     );
   }
@@ -175,16 +173,7 @@ export function OrganizationTeamsPage({
     return (
       <main {...applyStyles(styles.main)}>
         {header}
-        <Card aria-busy="true">
-          <CardContent className={styles.content}>
-            <Caption role="status">{t("org.teams.loading")}</Caption>
-            <div aria-hidden="true" {...applyStyles(styles.rows)}>
-              {[0, 1, 2, 3].map((row) => (
-                <Skeleton key={row} {...applyStyles(styles.row)} />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <OrganizationTeamsLoading />
       </main>
     );
   }
@@ -193,20 +182,11 @@ export function OrganizationTeamsPage({
     return (
       <main {...applyStyles(styles.main)}>
         {header}
-        <div {...applyStyles(styles.feedback)}>
-          <Alert variant="destructive">
-            <AlertDescription>{t("org.teams.error")}</AlertDescription>
-          </Alert>
-          <Button
-            onClick={() => {
-              void teamsQuery.refetch();
-            }}
-            type="button"
-            variant="outline"
-          >
-            {t("common.retry")}
-          </Button>
-        </div>
+        <OrganizationTeamsError
+          onRetry={() => {
+            void teamsQuery.refetch();
+          }}
+        />
       </main>
     );
   }
@@ -215,33 +195,58 @@ export function OrganizationTeamsPage({
     return (
       <main {...applyStyles(styles.main)}>
         {header}
-        <EmptyState>
-          <EmptyStateIcon>
-            <UsersThreeIcon aria-hidden />
-          </EmptyStateIcon>
-          <EmptyStateCopy>
-            <EmptyStateTitle>{t("org.teams.empty.title")}</EmptyStateTitle>
-            <EmptyStateDescription>{t("org.teams.empty.description")}</EmptyStateDescription>
-          </EmptyStateCopy>
-          <EmptyStateActions>
-            <Button
-              render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId/competitions" />}
-              variant="outline"
-            >
-              {t("org.teams.empty.cta")}
-            </Button>
-          </EmptyStateActions>
-        </EmptyState>
+        <OrganizationTeamsEmpty
+          organizationId={organizationId}
+          showCreateCompetition={
+            competitionsKnown && competitions.length === 0 && canCreateCompetition
+          }
+        />
       </main>
     );
   }
 
-  const visible = filterTeamsByName(teams, query);
-  const filtering = query.trim().length > 0;
+  const effectiveCompetition =
+    competitionFilter === "all" ||
+    competitions.some((competition) => competition.id === competitionFilter)
+      ? competitionFilter
+      : "all";
+  const summary = summarizeOrganizationTeams(teams, index);
+  const activeMetric: OrganizationTeamsMetric = participationLoading
+    ? "loading"
+    : summary.activeTeams === null
+      ? "unavailable"
+      : summary.activeTeams;
+  const pendingMetric: OrganizationTeamsMetric = participationLoading
+    ? "loading"
+    : summary.pendingEntries === null
+      ? "unavailable"
+      : summary.pendingEntries;
+
+  const visible = filterOrganizationTeams(
+    teams,
+    { query, status: statusFilter, competitionId: effectiveCompetition },
+    index,
+  );
+  const hasSearch = query.trim().length > 0;
+  const hasFacetFilter = statusFilter !== "all" || effectiveCompetition !== "all";
+  const filtering = hasSearch || hasFacetFilter;
+
+  const competitionItems = [
+    { value: "all", label: t("org.teams.filter.allCompetitions") },
+    ...competitions.map((competition) => ({
+      value: competition.id,
+      label: competition.name,
+    })),
+  ];
 
   return (
     <main {...applyStyles(styles.main)}>
       {header}
+      <OrganizationTeamsKpis
+        active={activeMetric}
+        pending={pendingMetric}
+        total={summary.totalTeams}
+      />
       {teamsQuery.isError ? (
         <Alert variant="warning">
           <AlertDescription>{t("org.teams.refreshFailed")}</AlertDescription>
@@ -264,17 +269,49 @@ export function OrganizationTeamsPage({
       ) : null}
       <Card aria-labelledby={headingId}>
         <CardHeader className={styles.cardHeader}>
-          <Heading className={typography.title} id={headingId}>
-            {t("org.teams.directory.title")}
-          </Heading>
-          <Caption aria-live="polite" role="status">
-            {filtering
-              ? t("org.teams.countFiltered", { shown: visible.length, total: teams.length })
-              : t("org.teams.count", { count: teams.length })}
-          </Caption>
+          <div {...applyStyles(styles.cardHeading)}>
+            <Heading className={typography.title} id={headingId}>
+              {t("org.teams.directory.title")}
+            </Heading>
+            <Caption aria-live="polite" role="status">
+              {filtering
+                ? t("org.teams.countFiltered", { shown: visible.length, total: teams.length })
+                : t("org.teams.count", { count: teams.length })}
+            </Caption>
+          </div>
+          {competitions.length > 0 ? (
+            <ChoiceGroup
+              aria-label={t("org.teams.filter.statusLabel")}
+              className={styles.statusGroup}
+              onValueChange={(value) => {
+                if (value === "all" || value === "pending" || value === "none") {
+                  setStatusFilter(value);
+                }
+              }}
+              value={statusFilter}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <ChoiceGroupItem
+                  appearance="pill"
+                  dense
+                  disabled={option === "none" && !index.complete}
+                  key={option}
+                  value={option}
+                >
+                  {option === "pending" && (summary.pendingEntries ?? 0) > 0 ? (
+                    <span aria-hidden="true" {...applyStyles(styles.statusDot)} />
+                  ) : null}
+                  {t(`org.teams.filter.${option}`)}
+                </ChoiceGroupItem>
+              ))}
+            </ChoiceGroup>
+          ) : null}
         </CardHeader>
         <CardContent className={styles.content}>
-          <div role="search">
+          <div
+            role="search"
+            {...applyStyles(competitions.length > 0 ? styles.toolbar : styles.toolbarSingle)}
+          >
             <Field name="teams-search">
               <InputWithIcon
                 aria-label={t("org.teams.search")}
@@ -287,23 +324,35 @@ export function OrganizationTeamsPage({
                 value={query}
               />
             </Field>
+            {competitions.length > 0 ? (
+              <Field name="teams-competition-filter">
+                <Select
+                  items={competitionItems}
+                  onValueChange={(value) => {
+                    if (value !== null) setCompetitionFilter(value);
+                  }}
+                  value={effectiveCompetition}
+                >
+                  <SelectTrigger aria-label={t("org.teams.filter.competitionLabel")} dense>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {competitionItems.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            ) : null}
           </div>
           {visible.length === 0 ? (
-            <div {...applyStyles(styles.noMatches)}>
-              <EmptyState>
-                <EmptyStateCopy>
-                  <EmptyStateTitle>{t("org.teams.noMatches.title")}</EmptyStateTitle>
-                  <EmptyStateDescription>
-                    {t("org.teams.noMatches.description", { query: query.trim() })}
-                  </EmptyStateDescription>
-                </EmptyStateCopy>
-                <EmptyStateActions>
-                  <Button onClick={() => onQueryChange("")} type="button" variant="outline">
-                    {t("org.teams.noMatches.clear")}
-                  </Button>
-                </EmptyStateActions>
-              </EmptyState>
-            </div>
+            <OrganizationTeamsNoMatches
+              hasFacetFilter={hasFacetFilter}
+              onClear={clearAllFilters}
+              query={query}
+            />
           ) : (
             <OrganizationTeamsTable
               labelledBy={headingId}

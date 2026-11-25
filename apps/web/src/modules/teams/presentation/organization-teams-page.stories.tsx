@@ -41,6 +41,7 @@ const SCENARIO_IDS = [
   "ready",
   "loading",
   "empty",
+  "emptyFirstUse",
   "teamsError",
   "participationError",
   "forbidden",
@@ -87,6 +88,8 @@ function competition(id: string, name: string, status: CompetitionDto["status"])
 const COMPETITIONS: CompetitionDto[] = [
   competition("liga", "Liga Metropolitana", "published"),
   competition("copa", "Copa de otoño", "registration"),
+  competition("relampago", "Copa Relámpago", "published"),
+  competition("verano", "Torneo Verano 25", "finished"),
 ];
 
 function entry(
@@ -104,7 +107,10 @@ function entry(
   };
 }
 
-const PARTICIPANTS: Record<"liga" | "copa", ListCompetitionParticipantsResponse> = {
+const PARTICIPANTS: Record<
+  "liga" | "copa" | "relampago" | "verano",
+  ListCompetitionParticipantsResponse
+> = {
   liga: {
     participants: [
       entry("liga", "cuervos", "approved"),
@@ -114,6 +120,12 @@ const PARTICIPANTS: Record<"liga" | "copa", ListCompetitionParticipantsResponse>
   },
   copa: {
     participants: [entry("copa", "cuervos", "pending"), entry("copa", "lobos", "rejected")],
+  },
+  relampago: {
+    participants: [entry("relampago", "cuervos", "approved")],
+  },
+  verano: {
+    participants: [entry("verano", "cuervos", "approved")],
   },
 };
 
@@ -143,18 +155,41 @@ function seedAccess(
   });
 }
 
+function seedAccessBatch(
+  queryClient: QueryClient,
+  scope: AccessScope,
+  entries: readonly (readonly [string, boolean])[],
+) {
+  queryClient.setQueryData(
+    queryKeys.authorization.effectiveAccess(
+      scope,
+      entries.map(([permission]) => permission),
+    ),
+    {
+      actorId: "actor-story",
+      scope,
+      roles: [],
+      permissions: entries.map(([permission, allowed]) => ({
+        permission,
+        allowed,
+        decidedAt: scope.teamId ? "team" : scope.competitionId ? "competition" : "organization",
+      })),
+    },
+  );
+}
+
 /**
  * Every destination is resolved in its own scope. `linksDenied` keeps the organization-level
  * participant/roster grants allowed (a broad grant must not expose anything) while denying
  * Liga's participants outright and Cuervos' roster in Copa; Lobos in Copa stays allowed.
  */
 function seedScenarioAccess(queryClient: QueryClient, scenario: ScenarioId) {
-  seedAccess(
-    queryClient,
-    { organizationId: ORG_ID },
-    TEAM_PERMISSION.read,
-    scenario !== "forbidden",
-  );
+  const readAllowed = scenario !== "forbidden";
+  const createAllowed = scenario === "emptyFirstUse";
+  seedAccessBatch(queryClient, { organizationId: ORG_ID }, [
+    [TEAM_PERMISSION.read, readAllowed],
+    [COMPETITION_PERMISSION.update, createAllowed],
+  ]);
   seedAccess(
     queryClient,
     { organizationId: ORG_ID },
@@ -209,6 +244,7 @@ function createStoryRouter() {
       teamsRoute,
       destination("/orgs/$orgId", "Inicio de la organización"),
       destination("/orgs/$orgId/competitions", "Listado de competiciones"),
+      destination("/orgs/$orgId/competitions/new", "Crear competición"),
       destination("/orgs/$orgId/competitions/$competitionId/teams", "Equipos de la competición"),
     ]),
     history: createMemoryHistory({ initialEntries: [`/orgs/${ORG_ID}/teams`] }),
@@ -223,14 +259,20 @@ function OrganizationTeamsStoryShell({ scenario }: { readonly scenario: Scenario
           ? "pending"
           : scenario === "teamsError"
             ? "error"
-            : scenario === "empty"
+            : scenario === "empty" || scenario === "emptyFirstUse"
               ? { teams: [] }
               : { teams: TEAMS },
       organizationCompetitions:
-        scenario === "competitionsError" ? "error" : { competitions: COMPETITIONS },
+        scenario === "competitionsError"
+          ? "error"
+          : scenario === "emptyFirstUse"
+            ? { competitions: [] }
+            : { competitions: COMPETITIONS },
       organizationParticipants: {
         liga: scenario === "participationError" ? "error" : PARTICIPANTS.liga,
         copa: PARTICIPANTS.copa,
+        relampago: PARTICIPANTS.relampago,
+        verano: PARTICIPANTS.verano,
       },
     });
     const queryClient = new QueryClient({
@@ -284,35 +326,50 @@ export const Ready = story("Con datos", "ready", async ({ canvasElement }) => {
   await expect(await canvas.findByText("4 equipos")).toBeVisible();
   await expect(canvas.getByRole("columnheader", { name: "Equipo" })).toBeVisible();
   await expect(canvas.getByRole("columnheader", { name: "Competiciones" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Estado" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Creado" })).toBeVisible();
+
   const cuervos = canvas.getByRole("row", { name: /Cuervos FC/ });
-  const link = await within(cuervos).findByRole("link", {
+  // Pending entries come first; 2 chips are visible initially and the remaining 2 sit behind "+2 más".
+  await expect(within(cuervos).getByText("1 pendiente")).toBeVisible();
+  await expect(
+    await within(cuervos).findByRole("link", { name: "Copa de otoño: ver Cuervos FC" }),
+  ).toBeVisible();
+  const more = within(cuervos).getByRole("button", { name: "+2 más" });
+  await userEvent.click(more);
+  const ligaLink = await within(cuervos).findByRole("link", {
     name: "Liga Metropolitana: ver Cuervos FC",
   });
-  await expect(link).toHaveAttribute(
+  await expect(ligaLink).toHaveAttribute(
     "href",
     "/orgs/org-story/competitions/liga/teams?teamId=cuervos",
   );
-  await expect(within(cuervos).getByText("Aprobado")).toBeVisible();
-  await expect(within(cuervos).getByText("Pendiente")).toBeVisible();
   await expect(
     within(canvas.getByRole("row", { name: /Sin Liga CF/ })).getByText("Sin competiciones"),
   ).toBeVisible();
-  await userEvent.click(link);
+
+  await userEvent.click(ligaLink);
   await expect(await canvas.findByText("Equipos de la competición")).toBeVisible();
 });
 
-export const Search = story("Búsqueda local", "ready", async ({ canvasElement }) => {
+export const Search = story("Búsqueda y filtros", "ready", async ({ canvasElement }) => {
   const canvas = within(canvasElement);
   const search = await canvas.findByRole("searchbox", { name: "Buscar equipo por nombre" });
   await userEvent.type(search, "aguilas");
   await expect(await canvas.findByText("1 de 4 equipos")).toBeVisible();
   await expect(canvas.queryByRole("row", { name: /Cuervos FC/ })).toBeNull();
   await userEvent.clear(search);
+
+  await userEvent.click(canvas.getByRole("radio", { name: "Pendientes" }));
+  await expect(await canvas.findByText("2 de 4 equipos")).toBeVisible();
+  await expect(canvas.getByRole("row", { name: /Cuervos FC/ })).toBeVisible();
+  await expect(canvas.queryByRole("row", { name: /Sin Liga CF/ })).toBeNull();
+
   await userEvent.type(search, "zzz");
   await expect(
     await canvas.findByRole("heading", { name: "Ningún equipo coincide" }),
   ).toBeVisible();
-  await userEvent.click(canvas.getByRole("button", { name: "Limpiar búsqueda" }));
+  await userEvent.click(canvas.getByRole("button", { name: "Limpiar filtros" }));
   await expect(await canvas.findByText("4 equipos")).toBeVisible();
 });
 
@@ -334,6 +391,25 @@ export const Empty = story("Sin equipos", "empty", async ({ canvasElement }) => 
   );
   await expect(canvas.queryByRole("textbox")).toBeNull();
 });
+
+export const EmptyFirstUse = story(
+  "Sin equipos ni competiciones",
+  "emptyFirstUse",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "Todavía no hay equipos" }),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Crear competición" })).toHaveAttribute(
+      "href",
+      "/orgs/org-story/competitions/new",
+    );
+    await expect(canvas.getByRole("button", { name: "Ver competiciones" })).toHaveAttribute(
+      "href",
+      "/orgs/org-story/competitions",
+    );
+  },
+);
 
 export const TeamsError = story("Error de equipos", "teamsError", async ({ canvasElement }) => {
   const canvas = within(canvasElement);
@@ -382,10 +458,9 @@ export const Forbidden = story("Sin permiso", "forbidden", async ({ canvasElemen
 export const LinksDenied = story("Sin enlaces", "linksDenied", async ({ canvasElement }) => {
   const canvas = within(canvasElement);
   const cuervos = await canvas.findByRole("row", { name: /Cuervos FC/ });
-  // Liga: participants denied in the competition scope. Copa: roster denied in the team scope.
-  await expect(within(cuervos).getByText("Liga Metropolitana")).toBeVisible();
+  // Copa: roster denied in the team scope. Liga: participants denied in the competition scope.
   await expect(within(cuervos).getByText("Copa de otoño")).toBeVisible();
-  await expect(within(cuervos).queryByRole("link")).toBeNull();
+  await expect(within(cuervos).queryByRole("link", { name: /Copa de otoño/ })).toBeNull();
   const lobos = canvas.getByRole("row", { name: /Lobos de la Costa/ });
   await expect(within(lobos).queryByRole("link", { name: /Liga Metropolitana/ })).toBeNull();
   await expect(
@@ -406,13 +481,14 @@ export const CompetitionsError = story(
       ),
     ).toBeVisible();
     // An unknown competition list is never reported as "no competitions".
-    await expect(canvas.queryByText("Sin competiciones")).toBeNull();
-    await expect(canvas.getAllByText("No disponible")).toHaveLength(TEAMS.length);
+    const table = canvas.getByRole("table");
+    await expect(within(table).queryByText("Sin competiciones")).toBeNull();
+    await expect(within(table).getAllByText("No disponible")).toHaveLength(TEAMS.length);
     configureCompetitionsStory({ organizationCompetitions: { competitions: COMPETITIONS } });
     await userEvent.click(canvas.getByRole("button", { name: "Reintentar" }));
     const cuervos = await canvas.findByRole("row", { name: /Cuervos FC/ });
     await expect(
-      await within(cuervos).findByRole("link", { name: "Liga Metropolitana: ver Cuervos FC" }),
+      await within(cuervos).findByRole("link", { name: "Copa de otoño: ver Cuervos FC" }),
     ).toBeVisible();
     await expect(
       within(canvas.getByRole("row", { name: /Sin Liga CF/ })).getByText("Sin competiciones"),
