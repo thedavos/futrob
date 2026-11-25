@@ -13,10 +13,12 @@ import {
 import type { CompetitionRosterState } from "../../domain/entities/competition-roster-state.ts";
 import type { RosterLockedEvent } from "../../domain/events/team.events.ts";
 import { TeamNotFound, type CloseRosterError } from "../../domain/errors/team.errors.ts";
+import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.port.ts";
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
 import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import { rosterEntryInactiveError } from "../require-roster-entry-live.ts";
 import { teamPermissionError } from "../require-team-permission.ts";
 
 export interface CloseRosterInput {
@@ -35,6 +37,7 @@ export class CloseRosterUseCase {
       readonly eventPublisher?: EventPublisherPort;
       readonly authorization: AuthorizationPort;
       readonly mutations: RosterMutationPort;
+      readonly entryGate: RosterEntryGatePort;
     },
   ) {}
 
@@ -74,6 +77,8 @@ export class CloseRosterUseCase {
         }),
       );
     }
+    const inactive = await rosterEntryInactiveError(this.deps.entryGate, input);
+    if (inactive) return err(inactive);
 
     const lockedAt = this.deps.clock.now();
     const state: CompetitionRosterState = {

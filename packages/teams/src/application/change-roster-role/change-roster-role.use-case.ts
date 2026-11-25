@@ -18,8 +18,10 @@ import {
   type ChangeRosterRoleError,
 } from "../../domain/errors/team.errors.ts";
 import type { CompetitionRosterMembershipRepository } from "../../domain/ports/competition-roster-membership.repository.ts";
+import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.port.ts";
 import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import { rosterEntryInactiveError } from "../require-roster-entry-live.ts";
 
 export interface ChangeRosterRoleInput {
   readonly actorId: ActorId;
@@ -36,6 +38,7 @@ export class ChangeRosterRoleUseCase {
       readonly authorization: AuthorizationPort;
       readonly rosters: CompetitionRosterMembershipRepository;
       readonly mutations: RosterMutationPort;
+      readonly entryGate: RosterEntryGatePort;
     },
   ) {}
 
@@ -87,6 +90,8 @@ export class ChangeRosterRoleUseCase {
         }),
       );
     }
+    const inactive = await rosterEntryInactiveError(this.deps.entryGate, input);
+    if (inactive) return err(inactive);
 
     if (input.role === "captain") {
       const teamMembers = await this.deps.rosters.listByTeam(

@@ -85,7 +85,7 @@ export const changeRosterRoleRoute = defineRoute({
   params: pathParams(["organizationId", "competitionId", "teamId", "membershipId"]),
   body: ChangeRosterRoleRequest,
   success: { status: 200, description: "Updated membership", schema: CompetitionRosterMembership },
-  errors: [400, 401, 403, 404],
+  errors: [400, 401, 403, 404, 409],
 });
 
 export const closeTeamRosterRoute = defineRoute({

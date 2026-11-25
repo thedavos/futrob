@@ -1,6 +1,8 @@
 import { createOrganizationCompetitionFixture } from "@/http/organization-competition.fixture.ts";
 import {
   acceptRosterInvitationResponseSchema,
+  applyToCompetitionResponseSchema,
+  listRosterResponseSchema,
   createRosterInvitationResponseSchema,
   addToRosterResponseSchema,
   createTeamResponseSchema,
@@ -310,6 +312,63 @@ describe("apps/api http teams", () => {
     expect(await roster.json()).toMatchObject({
       memberships: [{ teamId: teamBody.id, role: "player" }],
     });
+  });
+
+  it("teams: keeps a rejected entry's roster readable and blocks every roster write", async () => {
+    const app = buildApp(stubFetch);
+    const organizer = "actor-rejected-roster-org";
+    const applicant = "actor-rejected-roster-captain";
+    const created = await createOrganizationCompetitionFixture(app, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+      body: JSON.stringify({
+        name: "Rejected Roster Org",
+        competition: onboardingCompetition,
+        gameAccount: null,
+      }),
+    });
+    const competitionId = created.competition.competition.id;
+    const base = `/api/v1/organizations/${created.organizationId}/competitions/${competitionId}`;
+    const opened = await app.request(`${base}/registration/open`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+    });
+    expect(opened.status).toBe(200);
+    const application = await parseResponse(
+      applyToCompetitionResponseSchema,
+      await app.request(`/api/v1/competitions/explore/${competitionId}/application`, {
+        method: "POST",
+        headers: serviceHeaders(applicant),
+        body: JSON.stringify({ teamName: "Rechazados", creationKey: "rejected-roster-key" }),
+      }),
+    );
+    const rejected = await app.request(`${base}/entries/${application.entryId}/reject`, {
+      method: "POST",
+      headers: serviceHeaders(organizer),
+    });
+    expect(rejected.status).toBe(200);
+
+    const rosterPath = `${base}/teams/${application.teamId}/roster`;
+    const roster = await parseResponse(
+      listRosterResponseSchema,
+      await app.request(rosterPath, { headers: serviceHeaders(organizer) }),
+    );
+    const captain = roster.memberships.find((member) => member.role === "captain");
+    expect(captain).toBeDefined();
+
+    const writes = await Promise.all([
+      app.request(`${rosterPath}/close`, { method: "POST", headers: serviceHeaders(organizer) }),
+      app.request(`${rosterPath}/open`, { method: "POST", headers: serviceHeaders(organizer) }),
+      app.request(`${rosterPath}/${captain!.id}`, {
+        method: "PATCH",
+        headers: serviceHeaders(organizer),
+        body: JSON.stringify({ role: "player" }),
+      }),
+    ]);
+    for (const write of writes) {
+      expect(write.status).toBe(409);
+      expect(await write.json()).toMatchObject({ code: "teams.roster_entry_inactive" });
+    }
   });
 
   it("associates a personal EA club through players/me/external-club", async () => {

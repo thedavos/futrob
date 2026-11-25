@@ -200,6 +200,7 @@ export function createTeamsModule(input: {
       authorization: input.authorization,
       rosters,
       mutations: rosterMutations,
+      entryGate: input.entryGate,
     }),
     closeRoster: new CloseRosterUseCase({
       teams,
@@ -208,12 +209,14 @@ export function createTeamsModule(input: {
       eventPublisher,
       authorization: input.authorization,
       mutations: rosterMutations,
+      entryGate: input.entryGate,
     }),
     openRoster: new OpenRosterUseCase({
       teams,
       rosterStates,
       authorization: input.authorization,
       mutations: rosterMutations,
+      entryGate: input.entryGate,
     }),
     connectTeamExternalClub: new ConnectTeamExternalClubUseCase({
       teams,

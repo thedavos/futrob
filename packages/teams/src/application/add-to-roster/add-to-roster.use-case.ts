@@ -19,7 +19,6 @@ import {
   RosterCompetitionConflict,
   RosterFull,
   RosterLocked,
-  RosterEntryInactive,
   TeamNotFound,
   type AddToRosterError,
   type AddToRosterUncheckedError,
@@ -35,6 +34,7 @@ import {
   permissionToGrantRosterRole,
   TEAM_PERMISSION,
 } from "../../domain/policies/team-permissions.ts";
+import { rosterEntryInactiveError } from "../require-roster-entry-live.ts";
 import { teamPermissionError } from "../require-team-permission.ts";
 
 export interface AddToRosterInput {
@@ -90,19 +90,8 @@ export async function addToRosterUnchecked(
     );
   }
 
-  const canMutate = await deps.entryGate.canMutateRoster(
-    input.organizationId,
-    input.competitionId,
-    input.teamId,
-  );
-  if (!canMutate) {
-    return err(
-      new RosterEntryInactive({
-        code: "teams.roster_entry_inactive",
-        message: "Roster writes are closed for this competition entry",
-      }),
-    );
-  }
+  const inactive = await rosterEntryInactiveError(deps.entryGate, input);
+  if (inactive) return err(inactive);
 
   const maxSize = await deps.capacity.getMaxRosterSize(input.competitionId);
   const currentMembers = await deps.rosters.listByTeam(

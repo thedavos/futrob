@@ -98,11 +98,14 @@ export type AddToRosterUncheckedError =
 
 export type AddToRosterError = AddToRosterUncheckedError | TeamAuthorizationForbidden;
 
-export type ChangeRosterRoleError = RosterMembershipNotFound | TeamAuthorizationForbidden;
+export type ChangeRosterRoleError =
+  | RosterMembershipNotFound
+  | RosterEntryInactive
+  | TeamAuthorizationForbidden;
 
-export type CloseRosterError = TeamNotFound | TeamAuthorizationForbidden;
+export type CloseRosterError = TeamNotFound | RosterEntryInactive | TeamAuthorizationForbidden;
 
-export type OpenRosterError = TeamNotFound | TeamAuthorizationForbidden;
+export type OpenRosterError = TeamNotFound | RosterEntryInactive | TeamAuthorizationForbidden;
 
 export type ConnectTeamExternalClubError = TeamNotFound | TeamAuthorizationForbidden;
 

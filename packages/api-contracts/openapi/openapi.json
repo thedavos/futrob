@@ -8850,6 +8850,9 @@
           },
           "404": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiError"
           }
         },
         "operationId": "changeRosterRole",
