@@ -1,4 +1,5 @@
 import type {
+  ActivityEntryDto,
   CompetitionDto,
   CompetitionEncounterDto,
   CompetitionEntryDto,
@@ -79,6 +80,8 @@ export function awaitingResultEncounters(
 export type CompetitionProgressSummary =
   | {
       readonly kind: "encounters";
+      /** True only when the competition itself reached a terminal status. */
+      readonly completed: boolean;
       readonly official: number;
       readonly total: number;
       readonly percent: number;
@@ -91,8 +94,10 @@ export type CompetitionProgressSummary =
     };
 
 /**
- * Competition completion bar: once the fixture exists, tracks officialized encounters;
- * during open registration before a fixture exists, tracks approved teams against capacity.
+ * Overview progress bar: once the fixture exists, tracks officialized encounters among the
+ * paired ones the listing returns (later rounds without both teams are not counted yet, so
+ * 100 % is not completion); during open registration before a fixture exists, tracks
+ * approved teams against capacity. Completion comes only from the competition status.
  */
 export function competitionProgress(
   competition: OverviewSlice<CompetitionDto>,
@@ -103,6 +108,9 @@ export function competitionProgress(
     const { official, total } = officializedEncounters(encounters.data);
     return {
       kind: "encounters",
+      completed:
+        competition.status === "ready" &&
+        (competition.data.status === "finished" || competition.data.status === "archived"),
       official,
       total,
       percent: Math.round((official / total) * 100),
@@ -144,4 +152,39 @@ export function overviewTeams(
         )(left, right),
     )
     .slice(0, limit);
+}
+
+/** The viewer's open activity page as read for the overview: up to the query limit. */
+export interface PendingActivityPage {
+  readonly activities: readonly ActivityEntryDto[];
+  readonly nextCursor: string | null;
+}
+
+/**
+ * Open activities that need the viewer, minus `competition_entry`: that row is the
+ * notification of a pending entry the overview already counts from the entries list.
+ */
+export function pendingTasks(activities: readonly ActivityEntryDto[]): readonly ActivityEntryDto[] {
+  return activities.filter(
+    (entry) =>
+      entry.status === "open" && entry.requiresAction && entry.kind !== "competition_entry",
+  );
+}
+
+export interface PendingTotal {
+  readonly count: number;
+  /** The activity page had more rows than were read, so `count` is a lower bound. */
+  readonly partial: boolean;
+}
+
+/** One pending total for the KPI and the Pendientes card, each item counted once. */
+export function pendingTotal(
+  pendingEntries: number,
+  awaiting: number,
+  page: PendingActivityPage,
+): PendingTotal {
+  return {
+    count: pendingEntries + awaiting + pendingTasks(page.activities).length,
+    partial: page.nextCursor !== null,
+  };
 }

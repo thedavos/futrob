@@ -242,10 +242,12 @@ export function CompetitionProgressBanner({
   const { t } = useI18n();
   const label =
     progress.kind === "encounters"
-      ? t("competition.overview.progress.encounters", {
-          official: progress.official,
-          total: progress.total,
-        })
+      ? t(
+          progress.completed
+            ? "competition.overview.progress.completed"
+            : "competition.overview.progress.encounters",
+          { official: progress.official, total: progress.total },
+        )
       : t("competition.overview.progress.teams", {
           approved: progress.approved,
           max: progress.max,

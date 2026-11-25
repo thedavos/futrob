@@ -153,7 +153,7 @@ export const overviewTeams: readonly CompetitionTeamManagementSummaryDto[] = [
   teamSummary(overviewEntries[3]!, "Rechazado SC", 0, null),
 ];
 
-function activity(
+export function overviewActivity(
   overrides: Partial<ActivityEntryDto> & Pick<ActivityEntryDto, "id" | "kind">,
 ): ActivityEntryDto {
   return {
@@ -179,8 +179,21 @@ function activity(
 }
 
 export const overviewActivities: readonly ActivityEntryDto[] = [
-  activity({ id: "dispute", kind: "match_dispute" }),
-  activity({
+  overviewActivity({ id: "dispute", kind: "match_dispute" }),
+  // The notification of the one pending entry: the overview counts that entry once.
+  overviewActivity({
+    id: "entry-atlas",
+    kind: "competition_entry",
+    resourceType: "competition",
+    resourceId: OVERVIEW_COMPETITION_ID,
+    subject: {
+      competitionName: "Liga Nocturna",
+      encounterLabel: null,
+      teamName: "Atlas",
+      outcome: null,
+    },
+  }),
+  overviewActivity({
     id: "selection-closed",
     kind: "selection_confirmation",
     status: "closed",

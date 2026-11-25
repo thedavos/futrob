@@ -227,8 +227,8 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
             countsLoading ||
             scenario === "entriesError" ||
             scenario === "encountersError"
-            ? []
-            : overviewActivities,
+            ? { activities: [], nextCursor: null }
+            : { activities: overviewActivities, nextCursor: null },
         );
 
   return (
@@ -316,6 +316,8 @@ export const Ready: Story = {
       canvas.findByText("1 enfrentamiento sin resultado oficial"),
     ).resolves.toBeVisible();
     await expect(canvas.findByText("Resolver disputa")).resolves.toBeVisible();
+    // The entry's own open activity does not count it twice.
+    await expect(canvas.findByText("3 pendientes")).resolves.toBeVisible();
     await expect(
       canvas.findByRole("link", { name: "Abrir Orion vs Atlas" }),
     ).resolves.toBeVisible();
@@ -345,10 +347,17 @@ export const Finished: Story = {
       canvas.findByRole("heading", { name: "Últimos oficiales" }),
     ).resolves.toBeVisible();
     await expect(
-      canvas.findByRole("link", { name: "Abrir Cóndores FC vs Sporting Quipu" }),
+      canvas.findByText(/Competición finalizada · 3 de 3 enfrentamientos oficiales/),
     ).resolves.toBeVisible();
-    await expect(canvas.findByLabelText("Resultado oficial 2–1")).resolves.toBeVisible();
-    await expect(canvas.findByLabelText("Resultado oficial 2–0 · 1–1")).resolves.toBeVisible();
+    const official = await canvas.findByRole("link", {
+      name: "Abrir Cóndores FC vs Sporting Quipu",
+    });
+    await expect(official).toBeVisible();
+    // Focusing the row announces its score, not just the Official badge.
+    await expect(official).toHaveAccessibleDescription(
+      expect.stringContaining("Resultado oficial 2–1"),
+    );
+    await expect(canvas.findByText("Resultado oficial 2–0 · 1–1")).resolves.toBeInTheDocument();
   },
 };
 

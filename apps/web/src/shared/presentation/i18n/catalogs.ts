@@ -3194,9 +3194,9 @@ const es = {
   "competition.overview.publishing.rules": "Reglamento",
   "competition.overview.publishing.viewRules": "Ver reglamento",
   "competition.overview.progress.encounters": ({ official, total }) =>
-    Number(official) === Number(total)
-      ? `Competición completada · ${official} de ${total} enfrentamientos oficiales`
-      : `Progreso de la competición · ${official} de ${total} enfrentamientos oficiales`,
+    `Enfrentamientos definidos · ${official} de ${total} oficiales`,
+  "competition.overview.progress.completed": ({ official, total }) =>
+    `Competición finalizada · ${official} de ${total} enfrentamientos oficiales`,
   "competition.overview.progress.teams": ({ approved, max }) =>
     `Cupos cubiertos · ${approved} de ${max} equipos aprobados`,
   "competition.overview.kpi.label": "Indicadores de la competición",
@@ -3209,6 +3209,7 @@ const es = {
   "competition.overview.pending.title": "Pendientes",
   "competition.overview.pending.count": ({ count }) =>
     Number(count) === 1 ? "1 pendiente" : `${count} pendientes`,
+  "competition.overview.pending.countAtLeast": ({ count }) => `${count}+ pendientes`,
   "competition.overview.pending.applications": ({ count }) =>
     Number(count) === 1
       ? "1 inscripción de equipo por revisar"
@@ -3557,11 +3558,16 @@ export interface MessageParamsByKey {
     readonly official: number;
     readonly total: number;
   };
+  readonly "competition.overview.progress.completed": {
+    readonly official: number;
+    readonly total: number;
+  };
   readonly "competition.overview.progress.teams": {
     readonly approved: number;
     readonly max: number;
   };
   readonly "competition.overview.pending.count": { readonly count: number };
+  readonly "competition.overview.pending.countAtLeast": { readonly count: number };
   readonly "competition.overview.pending.applications": { readonly count: number };
   readonly "competition.overview.pending.awaiting": { readonly count: number };
   readonly "competition.overview.teams.roster": { readonly count: number; readonly max: number };
@@ -7074,9 +7080,9 @@ const en: Catalog = {
   "competition.overview.publishing.rules": "Rules",
   "competition.overview.publishing.viewRules": "View rules",
   "competition.overview.progress.encounters": ({ official, total }) =>
-    Number(official) === Number(total)
-      ? `Competition completed · ${official} of ${total} official encounters`
-      : `Competition progress · ${official} of ${total} official encounters`,
+    `Paired encounters · ${official} of ${total} official`,
+  "competition.overview.progress.completed": ({ official, total }) =>
+    `Competition finished · ${official} of ${total} official encounters`,
   "competition.overview.progress.teams": ({ approved, max }) =>
     `Spots filled · ${approved} of ${max} approved teams`,
   "competition.overview.kpi.label": "Competition indicators",
@@ -7089,6 +7095,7 @@ const en: Catalog = {
   "competition.overview.pending.title": "Pending",
   "competition.overview.pending.count": ({ count }) =>
     Number(count) === 1 ? "1 pending" : `${count} pending`,
+  "competition.overview.pending.countAtLeast": ({ count }) => `${count}+ pending`,
   "competition.overview.pending.applications": ({ count }) =>
     Number(count) === 1 ? "1 team entry to review" : `${count} team entries to review`,
   "competition.overview.pending.awaiting": ({ count }) =>

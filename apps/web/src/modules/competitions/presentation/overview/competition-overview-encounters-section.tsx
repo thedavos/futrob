@@ -275,11 +275,15 @@ function OfficialEncounterRow({
     day: "numeric",
     month: "short",
   }).format(new Date(encounter.scheduledStartAt));
+  const detailsId = useId();
   const round = encounter.round.total
     ? t("encounter.roundOf", { number: encounter.round.number, total: encounter.round.total })
     : t("encounter.round", { number: encounter.round.number });
   return (
     <Link
+      aria-describedby={
+        encounter.score ? `${detailsId}-meta ${detailsId}-score` : `${detailsId}-meta`
+      }
       aria-label={t("encounters.list.open", {
         home: encounter.home.name,
         away: encounter.away.name,
@@ -292,11 +296,12 @@ function OfficialEncounterRow({
         <Text className={styles.truncate} tone="default" weight="semibold">
           {`${encounter.home.name} ${t("encounter.vs")} ${encounter.away.name}`}
         </Text>
-        <Caption as="span">{`${round} · ${dateLabel}`}</Caption>
+        <Caption as="span" id={`${detailsId}-meta`}>{`${round} · ${dateLabel}`}</Caption>
       </span>
       <span {...applyStyles(styles.officialEnd)}>
         {encounter.score ? (
           <EncounterScorePill
+            id={`${detailsId}-score`}
             label={t("portal.encounter.score", { score: formatEncounterScore(encounter.score) })}
             score={encounter.score}
           />

@@ -3,7 +3,6 @@
 import { useId } from "react";
 import { Link } from "@tanstack/react-router";
 import { CheckIcon, ClipboardTextIcon, ClockIcon } from "@phosphor-icons/react";
-import type { ActivityEntryDto } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Badge, Skeleton, Text } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -11,7 +10,13 @@ import { ActivityFeedList } from "@/modules/notifications/presentation/activity-
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 import { OverviewCard, OverviewEmpty, ViewAllChevron } from "./competition-overview-card.tsx";
-import { OVERVIEW_PENDING_LIMIT, type OverviewSlice } from "./competition-overview-model.ts";
+import {
+  OVERVIEW_PENDING_LIMIT,
+  type OverviewSlice,
+  type PendingActivityPage,
+  pendingTasks,
+  pendingTotal,
+} from "./competition-overview-model.ts";
 
 const styles = stylex.create({
   list: {
@@ -95,7 +100,7 @@ export function PendingSection({
   now,
   organizationId,
 }: {
-  readonly activities: OverviewSlice<readonly ActivityEntryDto[]>;
+  readonly activities: OverviewSlice<PendingActivityPage>;
   readonly awaitingCount: OverviewSlice<number>;
   readonly competitionId: string;
   readonly entriesPending: OverviewSlice<number>;
@@ -105,12 +110,9 @@ export function PendingSection({
   const { t } = useI18n();
   const titleId = useId();
   const params = { orgId: organizationId, competitionId };
-  const openTasks =
-    activities.status === "ready"
-      ? activities.data
-          .filter((entry) => entry.status === "open" && entry.requiresAction)
-          .slice(0, OVERVIEW_PENDING_LIMIT)
-      : [];
+  // The total counts every task read; only the first few are rendered.
+  const openTasks = activities.status === "ready" ? pendingTasks(activities.data.activities) : [];
+  const shownTasks = openTasks.slice(0, OVERVIEW_PENDING_LIMIT);
   const pendingEntries = entriesPending.status === "ready" ? entriesPending.data : null;
   const awaiting = awaitingCount.status === "ready" ? awaitingCount.data : null;
   const sources = [activities, entriesPending, awaitingCount];
@@ -119,14 +121,22 @@ export function PendingSection({
   const allKnown = sources.every((source) => source.status === "ready");
   const nothingPending = allKnown && !hasSummaryRows && openTasks.length === 0;
   const showSkeleton = sources.some((source) => source.status === "loading");
-  const totalOpen = (pendingEntries ?? 0) + (awaiting ?? 0) + openTasks.length;
+  const total =
+    activities.status === "ready"
+      ? pendingTotal(pendingEntries ?? 0, awaiting ?? 0, activities.data)
+      : { count: (pendingEntries ?? 0) + (awaiting ?? 0), partial: false };
 
   return (
     <OverviewCard
       action={
-        totalOpen > 0 ? (
+        total.count > 0 ? (
           <Badge variant="warning">
-            {t("competition.overview.pending.count", { count: totalOpen })}
+            {t(
+              total.partial
+                ? "competition.overview.pending.countAtLeast"
+                : "competition.overview.pending.count",
+              { count: total.count },
+            )}
           </Badge>
         ) : null
       }
@@ -171,9 +181,9 @@ export function PendingSection({
           ) : null}
         </ul>
       ) : null}
-      {openTasks.length > 0 ? (
+      {shownTasks.length > 0 ? (
         <ActivityFeedList
-          activities={openTasks}
+          activities={shownTasks}
           label={t("competition.overview.pending.activities")}
           now={now}
         />

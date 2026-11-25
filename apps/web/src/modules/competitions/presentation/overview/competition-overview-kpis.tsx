@@ -11,6 +11,12 @@ import {
 /** A KPI value: a real count (zero included), still loading, or unavailable after a failed read. */
 export type OverviewMetric = number | "loading" | "unavailable";
 
+/** Pending KPI: `partial` marks a lower bound when the activity page had more rows. */
+export type OverviewPendingMetric =
+  | { readonly count: number; readonly partial: boolean }
+  | "loading"
+  | "unavailable";
+
 /** Progress ratio KPI: e.g. 15/15 officialized, or 0 when no encounters exist yet. */
 export type OverviewRatioMetric =
   | { readonly done: number; readonly total: number }
@@ -30,7 +36,7 @@ export function CompetitionOverviewKpis({
   upcoming,
 }: {
   readonly officialized: OverviewRatioMetric;
-  readonly pending: OverviewMetric;
+  readonly pending: OverviewPendingMetric;
   readonly teams: OverviewMetric;
   readonly upcoming: OverviewMetric;
 }) {
@@ -65,7 +71,9 @@ export function CompetitionOverviewKpis({
       label: t("competition.overview.kpi.pending"),
       loading: pending === "loading",
       value:
-        pending === "loading" || pending === "unavailable" ? null : numberFormat.format(pending),
+        pending === "loading" || pending === "unavailable"
+          ? null
+          : `${numberFormat.format(pending.count)}${pending.partial ? "+" : ""}`,
     },
   ] as const;
 

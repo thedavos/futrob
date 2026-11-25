@@ -2,7 +2,6 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import type {
-  ActivityEntryDto,
   CompetitionDto,
   CompetitionEntryDto,
   CompetitionTeamManagementSummaryDto,
@@ -45,11 +44,14 @@ import {
 import {
   CompetitionOverviewKpis,
   type OverviewMetric,
+  type OverviewPendingMetric,
   type OverviewRatioMetric,
 } from "./competition-overview-kpis.tsx";
 import {
   awaitingResultEncounters,
   competitionProgress,
+  type PendingActivityPage,
+  pendingTotal,
   countEntries,
   officializedEncounters,
   upcomingEncounters,
@@ -97,7 +99,7 @@ export interface CompetitionOverviewViewProps {
   readonly encounters: OverviewSlice<ListCompetitionEncountersResponse>;
   readonly entries: OverviewSlice<readonly CompetitionEntryDto[]>;
   readonly teams: OverviewSlice<readonly CompetitionTeamManagementSummaryDto[]>;
-  readonly activities: OverviewSlice<readonly ActivityEntryDto[]>;
+  readonly activities: OverviewSlice<PendingActivityPage>;
   /** Fixed «now» for deterministic relative times; defaults to the current time. */
   readonly now?: Date;
   /** The organization's public slug, once read; the portal link needs it. */
@@ -135,19 +137,17 @@ function ratioMetricOf<T>(
 function pendingTotalMetric(
   entries: OverviewSlice<readonly CompetitionEntryDto[]>,
   encounters: OverviewSlice<ListCompetitionEncountersResponse>,
-  activities: OverviewSlice<readonly ActivityEntryDto[]>,
-): OverviewMetric {
-  const slices = [entries, encounters, activities];
-  if (slices.some((slice) => slice.status === "error")) return "unavailable";
-  if (slices.some((slice) => slice.status === "loading")) return "loading";
-  const pendingEntries = entries.status === "ready" ? countEntries(entries.data).pending : 0;
-  const awaiting =
-    encounters.status === "ready" ? awaitingResultEncounters(encounters.data.encounters).length : 0;
-  const openTasks =
-    activities.status === "ready"
-      ? activities.data.filter((entry) => entry.status === "open" && entry.requiresAction).length
-      : 0;
-  return pendingEntries + awaiting + openTasks;
+  activities: OverviewSlice<PendingActivityPage>,
+): OverviewPendingMetric {
+  if (entries.status === "error" || encounters.status === "error" || activities.status === "error")
+    return "unavailable";
+  if (entries.status !== "ready" || encounters.status !== "ready" || activities.status !== "ready")
+    return "loading";
+  return pendingTotal(
+    countEntries(entries.data).pending,
+    awaitingResultEncounters(encounters.data.encounters).length,
+    activities.data,
+  );
 }
 
 export function CompetitionOverviewView({
@@ -284,7 +284,7 @@ function OperatorOverview({
 
   return (
     <CompetitionOverviewView
-      activities={sliceOf(activities, (data) => data.activities)}
+      activities={sliceOf(activities, (data) => data)}
       competition={sliceOf(draft, (data) => data.competition)}
       competitionId={competitionId}
       encounters={sliceOf(encounters, (data) => data)}
