@@ -707,6 +707,17 @@ export const CompetitionsError = story(
   },
 );
 
+async function expectTextInsideContainer(el: HTMLElement, containerRect: DOMRect) {
+  const range = el.ownerDocument.createRange();
+  range.selectNodeContents(el);
+  const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0);
+  await expect(rects.length).toBeGreaterThan(0);
+  for (const rect of rects) {
+    await expect(rect.left).toBeGreaterThanOrEqual(containerRect.left);
+    await expect(rect.right).toBeLessThanOrEqual(containerRect.right + 1);
+  }
+}
+
 export const Mobile: Story = {
   name: "Mobile",
   args: { scenario: "longCompetitionName", locale: "es" },
@@ -735,11 +746,7 @@ export const Mobile: Story = {
       throw new Error("Expected table scroll container");
     }
     const containerRect = tableContainer.getBoundingClientRect();
-    const nameRect = nameEl.getBoundingClientRect();
-    const statusRect = statusEl.getBoundingClientRect();
-    await expect(nameRect.left).toBeGreaterThanOrEqual(containerRect.left);
-    await expect(nameRect.right).toBeLessThanOrEqual(containerRect.right + 1);
-    await expect(statusRect.left).toBeGreaterThanOrEqual(containerRect.left);
-    await expect(statusRect.right).toBeLessThanOrEqual(containerRect.right + 1);
+    await expectTextInsideContainer(nameEl, containerRect);
+    await expectTextInsideContainer(statusEl, containerRect);
   },
 };
