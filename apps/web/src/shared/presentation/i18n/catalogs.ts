@@ -1763,19 +1763,48 @@ const es = {
   "pages.organization.teams.subtitle":
     "Consulta los equipos de tu organización y las competiciones en las que participan.",
   "org.teams.directory.title": "Directorio de equipos",
+  "org.teams.summary": "Resumen de equipos",
+  "org.teams.kpi.total": "Equipos",
+  "org.teams.kpi.active": "Con inscripciones activas",
+  "org.teams.kpi.pending": "Inscripciones pendientes",
   "org.teams.count": ({ count }) => (Number(count) === 1 ? "1 equipo" : `${count} equipos`),
   "org.teams.countFiltered": ({ shown, total }) => `${shown} de ${total} equipos`,
   "org.teams.search": "Buscar equipo por nombre",
+  "org.teams.filter.statusLabel": "Filtrar por estado de inscripción",
+  "org.teams.filter.all": "Todos",
+  "org.teams.filter.pending": "Pendientes",
+  "org.teams.filter.none": "Sin competiciones",
+  "org.teams.filter.competitionLabel": "Filtrar por competición",
+  "org.teams.filter.allCompetitions": "Todas las competiciones",
   "org.teams.table.team": "Equipo",
   "org.teams.table.competitions": "Competiciones",
+  "org.teams.table.status": "Estado",
+  "org.teams.table.created": "Creado",
   "org.teams.created": "Creado el {date}",
   "org.teams.entry.approved": "Aprobado",
   "org.teams.entry.pending": "Pendiente",
   "org.teams.entry.rejected": "Rechazado",
-  "org.teams.link": "{competition}: ver {team}",
+  "org.teams.status.approved": ({ count }) =>
+    Number(count) === 1 ? "1 aprobada" : `${count} aprobadas`,
+  "org.teams.status.pending": ({ count }) =>
+    Number(count) === 1 ? "1 pendiente" : `${count} pendientes`,
+  "org.teams.status.rejected": ({ count }) =>
+    Number(count) === 1 ? "1 rechazada" : `${count} rechazadas`,
+  "org.teams.more": ({ count }) => `+${count} más`,
+  "org.teams.less": "Ocultar",
+  "org.teams.link": "{competition} ({status}): ver {team}",
   "org.teams.noCompetitions": "Sin competiciones",
   "org.teams.competitionsUnavailable": "No disponible",
   "org.teams.loading": "Cargando equipos…",
+  "org.teams.filterLoading": "Cargando inscripciones…",
+  "org.teams.filterLoadingCount": "Comprobando inscripciones…",
+  "org.teams.filterUnavailableCount": "Resultados incompletos",
+  "org.teams.filterError.title": "No pudimos aplicar los filtros",
+  "org.teams.filterError.description":
+    "Faltan inscripciones por cargar, así que no podemos confirmar si hay equipos que coincidan.",
+  "org.teams.filterForbidden.title": "Filtros de competición no disponibles",
+  "org.teams.filterForbidden.description":
+    "No tienes acceso a las inscripciones necesarias para comprobar este filtro. Puedes limpiar los filtros y buscar por nombre.",
   "org.teams.error": "No pudimos cargar los equipos de la organización.",
   "org.teams.refreshFailed": "No pudimos actualizar los equipos. Se muestran los datos anteriores.",
   "org.teams.partial":
@@ -1789,11 +1818,16 @@ const es = {
   "org.teams.empty.title": "Todavía no hay equipos",
   "org.teams.empty.description":
     "Los equipos aparecen aquí cuando se inscriben en una competición de tu organización.",
+  "org.teams.empty.hint":
+    "Crea una competición o abre inscripciones para empezar a recibir equipos.",
   "org.teams.empty.cta": "Ver competiciones",
   "org.teams.noMatches.title": "Ningún equipo coincide",
   "org.teams.noMatches.description":
     "No encontramos equipos con «{query}». Prueba con otro nombre.",
+  "org.teams.noMatches.descriptionFilters":
+    "Ningún equipo cumple con los filtros actuales. Ajusta o limpia los filtros para ver todo el directorio.",
   "org.teams.noMatches.clear": "Limpiar búsqueda",
+  "org.teams.noMatches.clearFilters": "Limpiar filtros",
   "pages.organization.players.title": "Jugadores",
   "pages.organization.players.subtitle": "Quién juega en cada plantilla de tu organización.",
   "pages.organization.invitations.title": "Invitaciones",
@@ -3363,7 +3397,15 @@ export interface MessageParamsByKey {
   readonly "org.teams.count": { readonly count: number };
   readonly "org.teams.countFiltered": { readonly shown: number; readonly total: number };
   readonly "org.teams.created": { readonly date: string };
-  readonly "org.teams.link": { readonly competition: string; readonly team: string };
+  readonly "org.teams.status.approved": { readonly count: number };
+  readonly "org.teams.status.pending": { readonly count: number };
+  readonly "org.teams.status.rejected": { readonly count: number };
+  readonly "org.teams.more": { readonly count: number };
+  readonly "org.teams.link": {
+    readonly competition: string;
+    readonly status: string;
+    readonly team: string;
+  };
   readonly "org.teams.noMatches.description": { readonly query: string };
   "reschedule.scope.slot": { slot: number };
   "reschedule.requestedBy": { team: string };
@@ -5404,19 +5446,48 @@ const en: Catalog = {
   "pages.organization.teams.subtitle":
     "Browse your organization's teams and the competitions they take part in.",
   "org.teams.directory.title": "Team directory",
+  "org.teams.summary": "Teams summary",
+  "org.teams.kpi.total": "Teams",
+  "org.teams.kpi.active": "With active entries",
+  "org.teams.kpi.pending": "Pending entries",
   "org.teams.count": ({ count }) => (Number(count) === 1 ? "1 team" : `${count} teams`),
   "org.teams.countFiltered": ({ shown, total }) => `${shown} of ${total} teams`,
   "org.teams.search": "Search teams by name",
+  "org.teams.filter.statusLabel": "Filter by entry status",
+  "org.teams.filter.all": "All",
+  "org.teams.filter.pending": "Pending",
+  "org.teams.filter.none": "No competitions",
+  "org.teams.filter.competitionLabel": "Filter by competition",
+  "org.teams.filter.allCompetitions": "All competitions",
   "org.teams.table.team": "Team",
   "org.teams.table.competitions": "Competitions",
+  "org.teams.table.status": "Status",
+  "org.teams.table.created": "Created",
   "org.teams.created": "Created {date}",
   "org.teams.entry.approved": "Approved",
   "org.teams.entry.pending": "Pending",
   "org.teams.entry.rejected": "Rejected",
-  "org.teams.link": "{competition}: view {team}",
+  "org.teams.status.approved": ({ count }) =>
+    Number(count) === 1 ? "1 approved" : `${count} approved`,
+  "org.teams.status.pending": ({ count }) =>
+    Number(count) === 1 ? "1 pending" : `${count} pending`,
+  "org.teams.status.rejected": ({ count }) =>
+    Number(count) === 1 ? "1 rejected" : `${count} rejected`,
+  "org.teams.more": ({ count }) => `+${count} more`,
+  "org.teams.less": "Show less",
+  "org.teams.link": "{competition} ({status}): view {team}",
   "org.teams.noCompetitions": "No competitions",
   "org.teams.competitionsUnavailable": "Unavailable",
   "org.teams.loading": "Loading teams…",
+  "org.teams.filterLoading": "Loading entries…",
+  "org.teams.filterLoadingCount": "Checking entries…",
+  "org.teams.filterUnavailableCount": "Incomplete results",
+  "org.teams.filterError.title": "We couldn't apply the filters",
+  "org.teams.filterError.description":
+    "Some entries couldn't be loaded, so we can't confirm whether any teams match.",
+  "org.teams.filterForbidden.title": "Competition filters unavailable",
+  "org.teams.filterForbidden.description":
+    "You don't have access to the entries needed for this filter. You can clear the filters and search by name.",
   "org.teams.error": "We couldn't load the organization's teams.",
   "org.teams.refreshFailed": "We couldn't refresh the teams. Showing the previous data.",
   "org.teams.partial":
@@ -5430,10 +5501,14 @@ const en: Catalog = {
   "org.teams.empty.title": "No teams yet",
   "org.teams.empty.description":
     "Teams appear here once they register in one of your organization's competitions.",
+  "org.teams.empty.hint": "Create a competition or open registrations to start receiving teams.",
   "org.teams.empty.cta": "View competitions",
   "org.teams.noMatches.title": "No teams match",
   "org.teams.noMatches.description": "We found no teams matching “{query}”. Try another name.",
+  "org.teams.noMatches.descriptionFilters":
+    "No teams match the current filters. Adjust or clear them to view the full directory.",
   "org.teams.noMatches.clear": "Clear search",
+  "org.teams.noMatches.clearFilters": "Clear filters",
   "pages.organization.players.title": "Players",
   "pages.organization.players.subtitle": "Who plays on each roster in your organization.",
   "pages.organization.invitations.title": "Invitations",

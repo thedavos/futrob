@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -9,6 +9,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
+import { z } from "zod";
 import type {
   CompetitionDto,
   CompetitionEntryDto,
@@ -39,10 +40,15 @@ const styles = stylex.create({
 
 const SCENARIO_IDS = [
   "ready",
+  "longCompetitionName",
+  "zeroPending",
   "loading",
   "empty",
+  "emptyFirstUse",
   "teamsError",
   "participationError",
+  "pendingLoading",
+  "pendingError",
   "forbidden",
   "linksDenied",
   "competitionsError",
@@ -50,7 +56,13 @@ const SCENARIO_IDS = [
 
 type ScenarioId = (typeof SCENARIO_IDS)[number];
 
-type StoryArgs = { readonly scenario: ScenarioId };
+type StoryLocale = "es" | "en";
+
+type StoryArgs = {
+  readonly scenario: ScenarioId;
+  readonly locale?: StoryLocale;
+  readonly initialSearch?: string;
+};
 
 function team(id: string, name: string, createdAt: string): TeamDto {
   return { id, organizationId: ORG_ID, name, createdAt };
@@ -84,9 +96,19 @@ function competition(id: string, name: string, status: CompetitionDto["status"])
   };
 }
 
+const LONG_COMPETITION_NAME =
+  "Torneo Internacional Interclubes de Verano Sudamérica División Élite Temporada 2026";
+
 const COMPETITIONS: CompetitionDto[] = [
   competition("liga", "Liga Metropolitana", "published"),
   competition("copa", "Copa de otoño", "registration"),
+  competition("relampago", "Copa Relámpago", "published"),
+  competition("verano", "Torneo Verano 25", "finished"),
+];
+
+const LONG_NAME_COMPETITIONS: CompetitionDto[] = [
+  competition("liga", LONG_COMPETITION_NAME, "published"),
+  ...COMPETITIONS.slice(1),
 ];
 
 function entry(
@@ -104,7 +126,10 @@ function entry(
   };
 }
 
-const PARTICIPANTS: Record<"liga" | "copa", ListCompetitionParticipantsResponse> = {
+const PARTICIPANTS: Record<
+  "liga" | "copa" | "relampago" | "verano",
+  ListCompetitionParticipantsResponse
+> = {
   liga: {
     participants: [
       entry("liga", "cuervos", "approved"),
@@ -114,6 +139,12 @@ const PARTICIPANTS: Record<"liga" | "copa", ListCompetitionParticipantsResponse>
   },
   copa: {
     participants: [entry("copa", "cuervos", "pending"), entry("copa", "lobos", "rejected")],
+  },
+  relampago: {
+    participants: [entry("relampago", "cuervos", "approved")],
+  },
+  verano: {
+    participants: [entry("verano", "cuervos", "approved")],
   },
 };
 
@@ -143,18 +174,41 @@ function seedAccess(
   });
 }
 
+function seedAccessBatch(
+  queryClient: QueryClient,
+  scope: AccessScope,
+  entries: readonly (readonly [string, boolean])[],
+) {
+  queryClient.setQueryData(
+    queryKeys.authorization.effectiveAccess(
+      scope,
+      entries.map(([permission]) => permission),
+    ),
+    {
+      actorId: "actor-story",
+      scope,
+      roles: [],
+      permissions: entries.map(([permission, allowed]) => ({
+        permission,
+        allowed,
+        decidedAt: scope.teamId ? "team" : scope.competitionId ? "competition" : "organization",
+      })),
+    },
+  );
+}
+
 /**
  * Every destination is resolved in its own scope. `linksDenied` keeps the organization-level
  * participant/roster grants allowed (a broad grant must not expose anything) while denying
  * Liga's participants outright and Cuervos' roster in Copa; Lobos in Copa stays allowed.
  */
 function seedScenarioAccess(queryClient: QueryClient, scenario: ScenarioId) {
-  seedAccess(
-    queryClient,
-    { organizationId: ORG_ID },
-    TEAM_PERMISSION.read,
-    scenario !== "forbidden",
-  );
+  const readAllowed = scenario !== "forbidden";
+  const createAllowed = scenario === "emptyFirstUse";
+  seedAccessBatch(queryClient, { organizationId: ORG_ID }, [
+    [TEAM_PERMISSION.read, readAllowed],
+    [COMPETITION_PERMISSION.update, createAllowed],
+  ]);
   seedAccess(
     queryClient,
     { organizationId: ORG_ID },
@@ -186,17 +240,43 @@ function seedScenarioAccess(queryClient: QueryClient, scenario: ScenarioId) {
   }
 }
 
-function OrganizationTeamsRoute() {
-  const [query, setQuery] = useState("");
-  return <OrganizationTeamsPage onQueryChange={setQuery} organizationId={ORG_ID} query={query} />;
-}
+const teamsSearchSchema = z.object({
+  q: z.string().optional(),
+  status: z.enum(["pending", "none"]).optional(),
+  competition: z.string().optional(),
+});
 
-function createStoryRouter() {
+function createStoryRouter(initialSearch = "") {
   const rootRoute = createRootRoute({ component: Outlet });
   const teamsRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/orgs/$orgId/teams",
-    component: OrganizationTeamsRoute,
+    validateSearch: teamsSearchSchema,
+    component: function OrganizationTeamsRoute() {
+      const { q, status, competition: competitionParam } = teamsRoute.useSearch();
+      const navigate = teamsRoute.useNavigate();
+      return (
+        <OrganizationTeamsPage
+          competitionId={competitionParam ?? "all"}
+          onFiltersChange={(next) =>
+            void navigate({
+              replace: true,
+              search: {
+                q: next.query.length > 0 ? next.query : undefined,
+                status: next.status === "all" ? undefined : next.status,
+                competition:
+                  next.competitionId.length > 0 && next.competitionId !== "all"
+                    ? next.competitionId
+                    : undefined,
+              },
+            })
+          }
+          organizationId={ORG_ID}
+          query={q ?? ""}
+          status={status ?? "all"}
+        />
+      );
+    },
   });
   const destination = (path: string, label: string) =>
     createRoute({
@@ -209,13 +289,24 @@ function createStoryRouter() {
       teamsRoute,
       destination("/orgs/$orgId", "Inicio de la organización"),
       destination("/orgs/$orgId/competitions", "Listado de competiciones"),
+      destination("/orgs/$orgId/competitions/new", "Crear competición"),
       destination("/orgs/$orgId/competitions/$competitionId/teams", "Equipos de la competición"),
     ]),
-    history: createMemoryHistory({ initialEntries: [`/orgs/${ORG_ID}/teams`] }),
+    history: createMemoryHistory({
+      initialEntries: [`/orgs/${ORG_ID}/teams${initialSearch}`],
+    }),
   });
 }
 
-function OrganizationTeamsStoryShell({ scenario }: { readonly scenario: ScenarioId }) {
+function OrganizationTeamsStoryShell({
+  scenario,
+  locale = "es",
+  initialSearch = "",
+}: {
+  readonly scenario: ScenarioId;
+  readonly locale?: StoryLocale;
+  readonly initialSearch?: string;
+}) {
   const client = useMemo(() => {
     configureCompetitionsStory({
       organizationTeams:
@@ -223,15 +314,53 @@ function OrganizationTeamsStoryShell({ scenario }: { readonly scenario: Scenario
           ? "pending"
           : scenario === "teamsError"
             ? "error"
-            : scenario === "empty"
+            : scenario === "empty" || scenario === "emptyFirstUse"
               ? { teams: [] }
               : { teams: TEAMS },
       organizationCompetitions:
-        scenario === "competitionsError" ? "error" : { competitions: COMPETITIONS },
-      organizationParticipants: {
-        liga: scenario === "participationError" ? "error" : PARTICIPANTS.liga,
-        copa: PARTICIPANTS.copa,
-      },
+        scenario === "competitionsError"
+          ? "error"
+          : scenario === "emptyFirstUse"
+            ? { competitions: [] }
+            : scenario === "longCompetitionName"
+              ? { competitions: LONG_NAME_COMPETITIONS }
+              : { competitions: COMPETITIONS },
+      organizationParticipants:
+        scenario === "zeroPending"
+          ? {
+              liga: {
+                participants: [
+                  entry("liga", "cuervos", "approved"),
+                  entry("liga", "lobos", "approved"),
+                  entry("liga", "aguilas", "approved"),
+                ],
+              },
+              copa: {
+                participants: [entry("copa", "cuervos", "approved")],
+              },
+              relampago: PARTICIPANTS.relampago,
+              verano: PARTICIPANTS.verano,
+            }
+          : scenario === "pendingLoading"
+            ? {
+                liga: "pending",
+                copa: "pending",
+                relampago: { participants: [] },
+                verano: { participants: [] },
+              }
+            : scenario === "pendingError"
+              ? {
+                  liga: "error",
+                  copa: { participants: [entry("copa", "lobos", "approved")] },
+                  relampago: PARTICIPANTS.relampago,
+                  verano: PARTICIPANTS.verano,
+                }
+              : {
+                  liga: scenario === "participationError" ? "error" : PARTICIPANTS.liga,
+                  copa: PARTICIPANTS.copa,
+                  relampago: PARTICIPANTS.relampago,
+                  verano: PARTICIPANTS.verano,
+                },
     });
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -243,12 +372,12 @@ function OrganizationTeamsStoryShell({ scenario }: { readonly scenario: Scenario
     return queryClient;
   }, [scenario]);
 
-  // Built once per scenario: the search query lives inside the route, so typing never rebuilds it.
-  const router = useMemo(createStoryRouter, [scenario]);
+  // Built once per scenario/initialSearch so typing or filtering updates the router's search state.
+  const router = useMemo(() => createStoryRouter(initialSearch), [initialSearch, scenario]);
 
   return (
     <QueryClientProvider client={client}>
-      <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+      <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
         <div {...applyProps(undefined, undefined, styles.frame)}>
           <RouterProvider router={router} />
         </div>
@@ -260,18 +389,36 @@ function OrganizationTeamsStoryShell({ scenario }: { readonly scenario: Scenario
 const meta = {
   title: "Product/Organizer/Teams",
   parameters: { layout: "fullscreen" },
-  args: { scenario: "ready" },
-  argTypes: { scenario: { control: "select", options: [...SCENARIO_IDS] } },
+  args: { scenario: "ready", locale: "es" },
+  argTypes: {
+    scenario: { control: "select", options: [...SCENARIO_IDS] },
+    locale: { control: "inline-radio", options: ["es", "en"] },
+    initialSearch: { table: { disable: true } },
+  },
 } satisfies Meta<StoryArgs>;
 
 export default meta;
 type Story = StoryObj<StoryArgs>;
 
-function story(name: string, scenario: ScenarioId, play?: Story["play"]): Story {
+function story(
+  name: string,
+  scenario: ScenarioId,
+  play?: Story["play"],
+  options?: { readonly initialSearch?: string; readonly locale?: StoryLocale },
+): Story {
+  const initialSearch = options?.initialSearch ?? "";
+  const locale = options?.locale ?? "es";
   return {
     name,
-    args: { scenario },
-    render: (args) => <OrganizationTeamsStoryShell key={args.scenario} scenario={args.scenario} />,
+    args: { scenario, locale, initialSearch },
+    render: (args) => (
+      <OrganizationTeamsStoryShell
+        initialSearch={args.initialSearch}
+        key={`${args.scenario}:${args.locale ?? "es"}:${args.initialSearch ?? ""}`}
+        locale={args.locale}
+        scenario={args.scenario}
+      />
+    ),
     play,
   };
 }
@@ -284,37 +431,154 @@ export const Ready = story("Con datos", "ready", async ({ canvasElement }) => {
   await expect(await canvas.findByText("4 equipos")).toBeVisible();
   await expect(canvas.getByRole("columnheader", { name: "Equipo" })).toBeVisible();
   await expect(canvas.getByRole("columnheader", { name: "Competiciones" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Estado" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Creado" })).toBeVisible();
+
   const cuervos = canvas.getByRole("row", { name: /Cuervos FC/ });
-  const link = await within(cuervos).findByRole("link", {
-    name: "Liga Metropolitana: ver Cuervos FC",
+  // Pending entries come first; each chip surfaces its own status text without relying on color or hover.
+  await expect(within(cuervos).getByText("1 pendiente")).toBeVisible();
+  const copaChip = await within(cuervos).findByRole("link", {
+    name: "Copa de otoño (Pendiente): ver Cuervos FC",
   });
-  await expect(link).toHaveAttribute(
+  await expect(copaChip).toBeVisible();
+  await expect(within(copaChip).getByText("Pendiente")).toBeVisible();
+  const relampagoChip = within(cuervos).getByRole("link", {
+    name: "Copa Relámpago (Aprobado): ver Cuervos FC",
+  });
+  await expect(within(relampagoChip).getByText("Aprobado")).toBeVisible();
+
+  const more = within(cuervos).getByRole("button", { name: "+2 más" });
+  await userEvent.click(more);
+  const ligaLink = await within(cuervos).findByRole("link", {
+    name: "Liga Metropolitana (Aprobado): ver Cuervos FC",
+  });
+  await expect(ligaLink).toHaveAttribute(
     "href",
     "/orgs/org-story/competitions/liga/teams?teamId=cuervos",
   );
-  await expect(within(cuervos).getByText("Aprobado")).toBeVisible();
-  await expect(within(cuervos).getByText("Pendiente")).toBeVisible();
   await expect(
     within(canvas.getByRole("row", { name: /Sin Liga CF/ })).getByText("Sin competiciones"),
   ).toBeVisible();
-  await userEvent.click(link);
+
+  await userEvent.click(ligaLink);
   await expect(await canvas.findByText("Equipos de la competición")).toBeVisible();
 });
 
-export const Search = story("Búsqueda local", "ready", async ({ canvasElement }) => {
+export const Search = story("Búsqueda y filtros", "ready", async ({ canvasElement }) => {
   const canvas = within(canvasElement);
   const search = await canvas.findByRole("searchbox", { name: "Buscar equipo por nombre" });
   await userEvent.type(search, "aguilas");
   await expect(await canvas.findByText("1 de 4 equipos")).toBeVisible();
   await expect(canvas.queryByRole("row", { name: /Cuervos FC/ })).toBeNull();
   await userEvent.clear(search);
+
+  await userEvent.click(canvas.getByRole("radio", { name: "Pendientes" }));
+  await expect(await canvas.findByText("2 de 4 equipos")).toBeVisible();
+  await expect(canvas.getByRole("row", { name: /Cuervos FC/ })).toBeVisible();
+  await expect(canvas.queryByRole("row", { name: /Sin Liga CF/ })).toBeNull();
+
   await userEvent.type(search, "zzz");
   await expect(
     await canvas.findByRole("heading", { name: "Ningún equipo coincide" }),
   ).toBeVisible();
-  await userEvent.click(canvas.getByRole("button", { name: "Limpiar búsqueda" }));
+  await userEvent.click(canvas.getByRole("button", { name: "Limpiar filtros" }));
   await expect(await canvas.findByText("4 equipos")).toBeVisible();
 });
+
+export const ClearFiltersFromUrl = story(
+  "Limpiar filtros desde URL",
+  "ready",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "Ningún equipo coincide" }),
+    ).toBeVisible();
+    const search = canvas.getByRole("searchbox", { name: "Buscar equipo por nombre" });
+    await expect(search).toHaveValue("zzz");
+
+    await userEvent.click(canvas.getByRole("button", { name: "Limpiar filtros" }));
+    await expect(await canvas.findByText("4 equipos")).toBeVisible();
+    await expect(search).toHaveValue("");
+    await expect(canvas.getByRole("radio", { name: "Todos" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    await expect(canvas.getByRole("row", { name: /Cuervos FC/ })).toBeVisible();
+    await expect(canvas.getByRole("row", { name: /Sin Liga CF/ })).toBeVisible();
+  },
+  { initialSearch: "?q=zzz&status=pending&competition=liga" },
+);
+
+export const PendingDeepLinkLoading = story(
+  "Pendientes cargando (URL)",
+  "pendingLoading",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText("Comprobando inscripciones…")).toBeVisible();
+    await expect(canvas.getByText("Cargando inscripciones…")).toBeVisible();
+    await expect(canvas.queryByText("0 de 4 equipos")).toBeNull();
+    await expect(canvas.queryByRole("heading", { name: "Ningún equipo coincide" })).toBeNull();
+  },
+  { initialSearch: "?status=pending" },
+);
+
+export const PendingDeepLinkErrorRetry = story(
+  "Pendientes con error y reintento",
+  "pendingError",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "No pudimos aplicar los filtros" }),
+    ).toBeVisible();
+    await expect(canvas.getByText("Resultados incompletos")).toBeVisible();
+    await expect(canvas.queryByText("0 de 4 equipos")).toBeNull();
+    await expect(canvas.queryByRole("heading", { name: "Ningún equipo coincide" })).toBeNull();
+
+    configureCompetitionsStory({
+      organizationParticipants: {
+        liga: PARTICIPANTS.liga,
+        copa: { participants: [entry("copa", "lobos", "approved")] },
+        relampago: PARTICIPANTS.relampago,
+        verano: PARTICIPANTS.verano,
+      },
+    });
+    await userEvent.click(canvas.getByRole("button", { name: "Reintentar" }));
+    await expect(await canvas.findByText("1 de 4 equipos")).toBeVisible();
+    await expect(canvas.getByRole("row", { name: /Águilas del Sur/ })).toBeVisible();
+  },
+  { initialSearch: "?status=pending" },
+);
+
+export const ZeroPending = story(
+  "Sin pendientes (cero real)",
+  "zeroPending",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const summary = await canvas.findByRole("region", { name: "Resumen de equipos" });
+    await expect(within(summary).getByText("4")).toBeVisible();
+    await expect(within(summary).getByText("3")).toBeVisible();
+    await expect(within(summary).getByText("0")).toBeVisible();
+  },
+);
+
+export const English = story(
+  "English (EN)",
+  "ready",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Teams" })).toBeVisible();
+    await expect(await canvas.findByText("Team directory")).toBeVisible();
+    await expect(canvas.getByText("4 teams")).toBeVisible();
+    const cuervos = canvas.getByRole("row", { name: /Cuervos FC/ });
+    await expect(within(cuervos).getByText("1 pending")).toBeVisible();
+    await expect(
+      within(cuervos).getByRole("link", {
+        name: "Copa de otoño (Pending): view Cuervos FC",
+      }),
+    ).toBeVisible();
+  },
+  { locale: "en" },
+);
 
 export const Loading = story("Cargando", "loading", async ({ canvasElement }) => {
   const canvas = within(canvasElement);
@@ -334,6 +598,25 @@ export const Empty = story("Sin equipos", "empty", async ({ canvasElement }) => 
   );
   await expect(canvas.queryByRole("textbox")).toBeNull();
 });
+
+export const EmptyFirstUse = story(
+  "Sin equipos ni competiciones",
+  "emptyFirstUse",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "Todavía no hay equipos" }),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Crear competición" })).toHaveAttribute(
+      "href",
+      "/orgs/org-story/competitions/new",
+    );
+    await expect(canvas.getByRole("button", { name: "Ver competiciones" })).toHaveAttribute(
+      "href",
+      "/orgs/org-story/competitions",
+    );
+  },
+);
 
 export const TeamsError = story("Error de equipos", "teamsError", async ({ canvasElement }) => {
   const canvas = within(canvasElement);
@@ -361,7 +644,7 @@ export const ParticipationError = story(
     ).toBeVisible();
     await expect(
       within(canvas.getByRole("row", { name: /Cuervos FC/ })).getByRole("link", {
-        name: "Copa de otoño: ver Cuervos FC",
+        name: "Copa de otoño (Pendiente): ver Cuervos FC",
       }),
     ).toBeVisible();
   },
@@ -382,15 +665,16 @@ export const Forbidden = story("Sin permiso", "forbidden", async ({ canvasElemen
 export const LinksDenied = story("Sin enlaces", "linksDenied", async ({ canvasElement }) => {
   const canvas = within(canvasElement);
   const cuervos = await canvas.findByRole("row", { name: /Cuervos FC/ });
-  // Liga: participants denied in the competition scope. Copa: roster denied in the team scope.
-  await expect(within(cuervos).getByText("Liga Metropolitana")).toBeVisible();
+  // Copa: roster denied in the team scope. Unlinked chip still exposes its status text visibly.
   await expect(within(cuervos).getByText("Copa de otoño")).toBeVisible();
-  await expect(within(cuervos).queryByRole("link")).toBeNull();
+  await expect(within(cuervos).getByText("Pendiente")).toBeVisible();
+  await expect(within(cuervos).queryByRole("link", { name: /Copa de otoño/ })).toBeNull();
+
   const lobos = canvas.getByRole("row", { name: /Lobos de la Costa/ });
   await expect(within(lobos).queryByRole("link", { name: /Liga Metropolitana/ })).toBeNull();
   await expect(
     within(lobos).getByRole("link", {
-      name: "Copa de otoño: ver Lobos de la Costa Atlántica Unidos",
+      name: "Copa de otoño (Rechazado): ver Lobos de la Costa Atlántica Unidos",
     }),
   ).toHaveAttribute("href", "/orgs/org-story/competitions/copa/teams?teamId=lobos");
 });
@@ -406,13 +690,16 @@ export const CompetitionsError = story(
       ),
     ).toBeVisible();
     // An unknown competition list is never reported as "no competitions".
-    await expect(canvas.queryByText("Sin competiciones")).toBeNull();
-    await expect(canvas.getAllByText("No disponible")).toHaveLength(TEAMS.length);
+    const table = canvas.getByRole("table");
+    await expect(within(table).queryByText("Sin competiciones")).toBeNull();
+    await expect(within(table).getAllByText("No disponible")).toHaveLength(TEAMS.length);
     configureCompetitionsStory({ organizationCompetitions: { competitions: COMPETITIONS } });
     await userEvent.click(canvas.getByRole("button", { name: "Reintentar" }));
     const cuervos = await canvas.findByRole("row", { name: /Cuervos FC/ });
     await expect(
-      await within(cuervos).findByRole("link", { name: "Liga Metropolitana: ver Cuervos FC" }),
+      await within(cuervos).findByRole("link", {
+        name: "Copa de otoño (Pendiente): ver Cuervos FC",
+      }),
     ).toBeVisible();
     await expect(
       within(canvas.getByRole("row", { name: /Sin Liga CF/ })).getByText("Sin competiciones"),
@@ -420,9 +707,46 @@ export const CompetitionsError = story(
   },
 );
 
+async function expectTextInsideContainer(el: HTMLElement, containerRect: DOMRect) {
+  const range = el.ownerDocument.createRange();
+  range.selectNodeContents(el);
+  const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0);
+  await expect(rects.length).toBeGreaterThan(0);
+  for (const rect of rects) {
+    await expect(rect.left).toBeGreaterThanOrEqual(containerRect.left);
+    await expect(rect.right).toBeLessThanOrEqual(containerRect.right + 1);
+  }
+}
+
 export const Mobile: Story = {
   name: "Mobile",
-  args: { scenario: "ready" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
-  render: (args) => <OrganizationTeamsStoryShell key={args.scenario} scenario={args.scenario} />,
+  args: { scenario: "longCompetitionName", locale: "es" },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  render: (args) => (
+    <OrganizationTeamsStoryShell
+      key={`${args.scenario}:${args.locale ?? "es"}`}
+      locale={args.locale}
+      scenario={args.scenario}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const aguilas = await canvas.findByRole("row", { name: /Águilas del Sur/ });
+    const chip = await within(aguilas).findByRole("link", {
+      name: `${LONG_COMPETITION_NAME} (Pendiente): ver Águilas del Sur`,
+    });
+    const nameEl = within(chip).getByText(LONG_COMPETITION_NAME);
+    const statusEl = within(chip).getByText("Pendiente");
+    await expect(chip).toBeVisible();
+    await expect(nameEl).toBeVisible();
+    await expect(statusEl).toBeVisible();
+
+    const tableContainer = chip.closest('[data-slot="table-container"]');
+    if (!(tableContainer instanceof HTMLElement)) {
+      throw new Error("Expected table scroll container");
+    }
+    const containerRect = tableContainer.getBoundingClientRect();
+    await expectTextInsideContainer(nameEl, containerRect);
+    await expectTextInsideContainer(statusEl, containerRect);
+  },
 };
