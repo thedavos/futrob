@@ -23,6 +23,9 @@ export const styles = stylex.create({
     gap: "0.375rem 0.75rem",
     margin: 0,
   },
+  columnsToggle: {
+    display: { default: "inline-flex", [media.md]: "none" },
+  },
   metaSep: {
     color: colors.textTertiary,
   },

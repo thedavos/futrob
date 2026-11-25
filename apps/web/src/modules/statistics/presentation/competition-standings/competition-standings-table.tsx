@@ -1,11 +1,12 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { CompetitionStandingSnapshotDto } from "@futrob/api-contracts";
-import { CheckCircleIcon, FlagCheckeredIcon } from "@phosphor-icons/react";
+import { CheckCircleIcon, FlagCheckeredIcon, TableIcon } from "@phosphor-icons/react";
 import {
   applyStyles,
   Badge,
+  Button,
   Caption,
   Table,
   TableBody,
@@ -61,6 +62,9 @@ export function CompetitionStandingsTable({
   readonly t: Translator;
 }) {
   const headingId = useId();
+  const tableId = useId();
+  // Below `md` the table prioritises identity and points; this keeps W/D/L/GF/GA one tap away.
+  const [allColumns, setAllColumns] = useState(false);
   const formats: StandingsFormats = {
     integer: new Intl.NumberFormat(t.locale),
     signed: new Intl.NumberFormat(t.locale, { signDisplay: "exceptZero" }),
@@ -105,12 +109,23 @@ export function CompetitionStandingsTable({
             {tiebreakCopy}
           </Caption>
         </p>
+        <Button
+          aria-controls={tableId}
+          aria-expanded={allColumns}
+          className={styles.columnsToggle}
+          onClick={() => setAllColumns((value) => !value)}
+          variant="outline"
+        >
+          <TableIcon aria-hidden="true" size={16} />
+          {allColumns ? t("standings.columns.showFewer") : t("standings.columns.showAll")}
+        </Button>
       </div>
       {snapshot.swiss ? <Caption as="p">{t("standings.swiss.tiebreak")}</Caption> : null}
       <Table
         className={styles.table}
         containerClassName={styles.tableContainer}
         containerLabelledBy={headingId}
+        id={tableId}
       >
         <TableHeader className={styles.header}>
           <TableRow className={styles.headerRow}>
@@ -125,7 +140,10 @@ export function CompetitionStandingsTable({
             {preFormFigures.map((figure) => (
               <TableHead
                 align="end"
-                className={[styles.headCell, SECONDARY_FIGURES.has(figure) && styles.headSecondary]}
+                className={[
+                  styles.headCell,
+                  !allColumns && SECONDARY_FIGURES.has(figure) && styles.headSecondary,
+                ]}
                 key={figure}
                 scope="col"
               >
@@ -149,6 +167,7 @@ export function CompetitionStandingsTable({
         <TableBody>
           {rows.map((entry) => (
             <StandingsRow
+              allColumns={allColumns}
               entry={entry}
               formats={formats}
               key={entry.row.teamId}

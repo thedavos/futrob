@@ -86,15 +86,15 @@ export function CompetitionStandingsSummary({
           emptyLabel={unavailable}
           hint={
             <StatHint>
-              {t("standings.summary.matches.hint", {
+              {t("standings.summary.results.hint", {
                 teams: integer.format(summary.teamCount),
                 time: updated,
               })}
             </StatHint>
           }
           icon={CheckCircleIcon}
-          label={t("standings.summary.matches")}
-          value={integer.format(summary.officialMatches)}
+          label={t("standings.summary.results")}
+          value={integer.format(summary.computedResults)}
         />
       </ProfileKpiGroup>
     </section>

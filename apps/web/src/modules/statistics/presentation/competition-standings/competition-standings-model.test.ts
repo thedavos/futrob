@@ -107,7 +107,7 @@ describe("standings rows", () => {
 });
 
 describe("standingsSummary", () => {
-  it("derives leader gap, best attack, best defense and official match count from rows", () => {
+  it("derives leader gap, best attack, best defense and computed result count from rows", () => {
     const summary = standingsSummary({
       ...snapshot,
       rows: [
@@ -120,9 +120,21 @@ describe("standingsSummary", () => {
       leader: { teamId: "rv", points: 18, leadOverSecond: 7 },
       bestAttack: { value: 15, perMatch: 15 / 7, teamIds: ["rv"] },
       bestDefense: { value: 7, perMatch: 1, teamIds: ["rv", "sq"] },
-      officialMatches: 9,
+      computedResults: 9,
       teamCount: 3,
     });
+  });
+
+  it("counts a two-leg aggregate series as one computed result, not two official matches", () => {
+    // The projection adds `played: 1` per team once both approved slots of the series resolve.
+    const summary = standingsSummary({
+      ...snapshot,
+      rows: [
+        row(1, "home", { played: 1, wins: 1, goalsFor: 4, goalsAgainst: 3, points: 3 }),
+        row(2, "away", { played: 1, wins: 0, losses: 1, goalsFor: 3, goalsAgainst: 4, points: 0 }),
+      ],
+    });
+    expect(summary.computedResults).toBe(1);
   });
 
   it("avoids fabricating best attack/defense when no team has played a match", () => {
@@ -137,7 +149,7 @@ describe("standingsSummary", () => {
       leader: { teamId: "a", points: 0, leadOverSecond: 0 },
       bestAttack: null,
       bestDefense: null,
-      officialMatches: 0,
+      computedResults: 0,
       teamCount: 2,
     });
   });

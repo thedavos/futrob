@@ -41,7 +41,11 @@ export type StandingsSummary = {
   readonly leader: StandingsLeaderSummary | null;
   readonly bestAttack: StandingsGoalsLeader | null;
   readonly bestDefense: StandingsGoalsLeader | null;
-  readonly officialMatches: number;
+  /**
+   * Results the table has computed, not official matches: a two-leg aggregate series adds one
+   * `played` per team although it groups two approved slots. The snapshot carries no slot count.
+   */
+  readonly computedResults: number;
   readonly teamCount: number;
 };
 
@@ -90,13 +94,13 @@ export function standingsSummary(snapshot: CompetitionStandingSnapshotDto): Stan
   const playedRows = rows.filter((row) => row.played > 0);
   const bestAttack = pickGoalsLeader(playedRows, (row) => row.goalsFor, "max");
   const bestDefense = pickGoalsLeader(playedRows, (row) => row.goalsAgainst, "min");
-  const totalTeamAppearances = rows.reduce((sum, row) => sum + row.played, 0);
+  const totalTeamResults = rows.reduce((sum, row) => sum + row.played, 0);
 
   return {
     leader,
     bestAttack,
     bestDefense,
-    officialMatches: Math.floor(totalTeamAppearances / 2),
+    computedResults: Math.floor(totalTeamResults / 2),
     teamCount: rows.length,
   };
 }

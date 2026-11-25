@@ -3019,6 +3019,8 @@ const es = {
   "standings.legend.leader": "Líder actual",
   "standings.legend.cut": "Corte de clasificación",
   "standings.legend.form": "Forma: últimos 5 oficiales (más reciente a la derecha)",
+  "standings.columns.showAll": "Ver todas las columnas",
+  "standings.columns.showFewer": "Ver menos columnas",
   "standings.summary.label": "Resumen de la clasificación",
   "standings.summary.unavailable": "Sin datos",
   "standings.summary.leader": "Líder",
@@ -3030,8 +3032,8 @@ const es = {
   "standings.summary.perMatch": ({ rate }) => `${rate}/PJ`,
   "standings.summary.tiedTeams": ({ team, count }) => `${team} y ${count} más`,
   "standings.summary.join": ({ first, second }) => `${first} · ${second}`,
-  "standings.summary.matches": "Partidos oficiales",
-  "standings.summary.matches.hint": ({ teams, time }) => `${teams} equipos · ${time}`,
+  "standings.summary.results": "Resultados computados",
+  "standings.summary.results.hint": ({ teams, time }) => `${teams} equipos · ${time}`,
   "standings.swiss.round": ({ current, total }) => `Ronda ${current} de ${total}`,
   "standings.swiss.completed": ({ completed, total }) =>
     `${completed} de ${total} rondas completadas`,
@@ -3695,7 +3697,7 @@ export interface MessageParamsByKey {
   readonly "standings.summary.perMatch": { readonly rate: string };
   readonly "standings.summary.tiedTeams": { readonly team: string; readonly count: number };
   readonly "standings.summary.join": { readonly first: string; readonly second: string };
-  readonly "standings.summary.matches.hint": { readonly teams: string; readonly time: string };
+  readonly "standings.summary.results.hint": { readonly teams: string; readonly time: string };
   readonly "standings.playoffCut": { readonly count: number };
   readonly "standings.swiss.round": { readonly current: number; readonly total: number };
   readonly "standings.swiss.completed": { readonly completed: number; readonly total: number };
@@ -6715,6 +6717,8 @@ const en: Catalog = {
   "standings.legend.leader": "Current leader",
   "standings.legend.cut": "Playoff cut",
   "standings.legend.form": "Form: last 5 official matches (most recent on the right)",
+  "standings.columns.showAll": "Show all columns",
+  "standings.columns.showFewer": "Show fewer columns",
   "standings.summary.label": "Standings summary",
   "standings.summary.unavailable": "No data",
   "standings.summary.leader": "Leader",
@@ -6726,8 +6730,8 @@ const en: Catalog = {
   "standings.summary.perMatch": ({ rate }) => `${rate}/P`,
   "standings.summary.tiedTeams": ({ team, count }) => `${team} and ${count} more`,
   "standings.summary.join": ({ first, second }) => `${first} · ${second}`,
-  "standings.summary.matches": "Official matches",
-  "standings.summary.matches.hint": ({ teams, time }) => `${teams} teams · ${time}`,
+  "standings.summary.results": "Results counted",
+  "standings.summary.results.hint": ({ teams, time }) => `${teams} teams · ${time}`,
   "standings.swiss.round": ({ current, total }) => `Round ${current} of ${total}`,
   "standings.swiss.completed": ({ completed, total }) =>
     `${completed} of ${total} rounds completed`,

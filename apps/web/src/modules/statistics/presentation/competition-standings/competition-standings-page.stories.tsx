@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import type { CompetitionStandingSnapshotDto } from "@futrob/api-contracts";
 import { applyProps } from "@futrob/ui";
@@ -355,6 +355,9 @@ export const Playoffs: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Los cuatro primeros pasan al playoff")).toBeVisible();
     await expect(canvas.getByText("Corte de clasificación")).toBeVisible();
+    // From `md` every column fits, so the column toggle stays out of the way.
+    await expect(canvas.getByTitle("Goles a favor")).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Ver todas las columnas" })).toBeNull();
   },
 };
 
@@ -384,11 +387,35 @@ export const ZeroPlayed: Story = {
 export const PlayoffsEnglishNarrow: Story = {
   name: "Con corte de playoff · EN 360",
   args: { scenario: "playoffs", locale: "en", narrow: true },
-  parameters: { a11y: { test: "error" } },
+  // A real 360 px viewport, so the `md` media queries hide the secondary columns as on a phone.
+  globals: { viewport: { value: "phone360" } },
+  parameters: {
+    a11y: { test: "error" },
+    viewport: {
+      options: { phone360: { name: "Phone 360", styles: { width: "360px", height: "800px" } } },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("The top four advance to the playoffs")).toBeVisible();
     await expect(canvas.getByText("Tiebreaker: Points → GD → GF")).toBeVisible();
+
+    const table = canvas.getByRole("table");
+    await expect(within(table).getByTitle("Goals for")).not.toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Show all columns" }));
+    await expect(within(table).getByTitle("Goals for")).toBeVisible();
+
+    // The full matrix scrolls inside the table, never the page.
+    const scroller = table.parentElement!;
+    await expect(scroller.scrollWidth).toBeGreaterThan(scroller.clientWidth);
+    const leader = within(table).getAllByRole("row")[1]!;
+    const goalsFor = within(leader).getByText("15");
+    goalsFor.scrollIntoView({ inline: "center", block: "nearest" });
+    await expect(goalsFor).toBeVisible();
+    await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+
+    await userEvent.click(canvas.getByRole("button", { name: "Show fewer columns" }));
+    await expect(within(table).getByTitle("Goals for")).not.toBeVisible();
   },
 };
 

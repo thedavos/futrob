@@ -65,11 +65,14 @@ function figureValue(
 }
 
 export function StandingsRow({
+  allColumns,
   entry,
   formats,
   preFormFigures,
   t,
 }: {
+  /** Shows W/D/L/GF/GA below `md`, where they are otherwise left out to prioritise points. */
+  readonly allColumns: boolean;
   readonly entry: StandingsTableRow;
   readonly formats: StandingsFormats;
   readonly preFormFigures: readonly PreFormFigureId[];
@@ -109,7 +112,10 @@ export function StandingsRow({
       {preFormFigures.map((figure) => (
         <TableCell
           align="end"
-          className={[styles.cell, SECONDARY_FIGURES.has(figure) && styles.secondaryCell]}
+          className={[
+            styles.cell,
+            !allColumns && SECONDARY_FIGURES.has(figure) && styles.secondaryCell,
+          ]}
           key={figure}
         >
           <Score
