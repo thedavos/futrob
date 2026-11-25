@@ -42,8 +42,10 @@ Decisión aceptada por instrucción explícita del usuario el 2026-11-24.
    - **Manual:** las partes cargan el marcador (y, si la competición lo pide, goles, asistencias
      y tarjetas) sin proveedor externo. Es la fuente de las competiciones de fútbol real y el
      respaldo de las de videojuegos cuando no hay API.
-4. **Invariante conservada:** ninguna fuente oficializa por sí sola. Tabla, bracket,
-   estadísticas, rankings y portal solo cambian tras `results.official-result-approved`
+4. **Invariante conservada:** ninguna fuente altera por sí sola tabla, bracket, estadísticas,
+   rankings ni portal. Un dato cargado o sincronizado es candidato hasta que `results` lo
+   oficializa. Las proyecciones solo cambian con las transiciones de `results` que ya las
+   actualizan en la misma transacción, la aprobación y la anulación
    ([ADR-0016](/docs/adr/0016-official-results-transactional-projection.md)), cualquiera que
    sea el origen del dato.
 5. **Ownership:** la fuente y sus datos crudos pertenecen a `game-data`; la confirmación y la
@@ -88,7 +90,17 @@ Decisión aceptada por instrucción explícita del usuario el 2026-11-24.
 
 ## Estado de implementación y evidencia
 
-Solo se actualizó la documentación (visión en [PRD](/product/prd.md), [README](/README.md),
-[roadmap](/product/mvp-requirements.md) y [DEC-001](/product/open-decisions.md)). No hay
-código ni contratos nuevos. El port neutral de ADR-0006 existe; no hay adapter de fuente
-manual ni de otros proveedores.
+Esta decisión solo cambió documentación: la visión en el [PRD](/product/prd.md), el
+[README](/README.md), el [roadmap](/product/mvp-requirements.md) y
+[DEC-001](/product/open-decisions.md). No hay código ni contratos nuevos.
+
+- El port neutral de ADR-0006 existe y la composición de la API ya registra
+  `ManualGameDataAdapter` con la clave `manual` (`apps/api/src/di/create-modules.ts`). Su
+  lectura de partidos devuelve `game_data.provider_not_implemented`; la captura, la ingesta y
+  la confirmación de resultados manuales siguen pendientes. La prueba
+  `apps/api/src/di/game-data-providers.composition.test.ts` cubre ese registro y el error
+  actual; no se ejecutó en esta revisión documental.
+- No hay adapters de otros proveedores con API.
+- Al implementar la fuente manual hay que comprobar que una carga pendiente no proyecta, que
+  la aprobación aporta una sola vez y que la anulación retira la contribución y revierte el
+  avance del cuadro.
