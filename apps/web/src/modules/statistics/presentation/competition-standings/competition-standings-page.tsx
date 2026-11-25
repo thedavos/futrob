@@ -24,6 +24,7 @@ import {
   useCompetitionStandings,
   useStandingsTeamNames,
 } from "./competition-standings-queries.ts";
+import { CompetitionStandingsSummary } from "./competition-standings-summary.tsx";
 import { CompetitionStandingsTable } from "./competition-standings-table.tsx";
 import { styles } from "./competition-standings.styles.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
@@ -47,6 +48,8 @@ export type CompetitionStandingsState =
       readonly kind: "ready";
       readonly snapshot: CompetitionStandingSnapshotDto;
       readonly names: TeamNames;
+      /** Actors who can read encounters get a contextual header action to jump there. */
+      readonly canViewEncounters: boolean;
       /** The last refresh failed; the table is the last good read, not a confirmed current one. */
       readonly refreshFailed: boolean;
       readonly namesRefreshFailed: boolean;
@@ -103,6 +106,7 @@ export function CompetitionStandingsRoute({
           : teams.isError || teams.data
             ? { kind: "unavailable" }
             : { kind: "loading" },
+        canViewEncounters,
         refreshFailed: standings.isError,
         namesRefreshFailed: Boolean(teamsValue) && teams.isError,
         retry: () => void standings.refetch(),
@@ -132,8 +136,24 @@ export function CompetitionStandingsPageView({
   readonly state: CompetitionStandingsState;
 }) {
   const { t } = useI18n();
+  const headerActions =
+    state.kind === "ready" && state.canViewEncounters ? (
+      <Button
+        render={
+          <Link
+            params={{ orgId: organizationId, competitionId }}
+            to="/orgs/$orgId/competitions/$competitionId/encounters"
+          />
+        }
+        role="link"
+        variant="outline"
+      >
+        {t("standings.empty.action")}
+      </Button>
+    ) : undefined;
+
   return (
-    <PageScaffold page="competition.standings">
+    <PageScaffold actions={headerActions} page="competition.standings">
       {(() => {
         switch (state.kind) {
           case "loading":
@@ -144,9 +164,17 @@ export function CompetitionStandingsPageView({
                 role="status"
                 {...applyStyles(styles.stack)}
               >
-                <Skeleton {...applyStyles(styles.skeleton)} />
-                <Skeleton {...applyStyles(styles.skeleton)} />
-                <Skeleton {...applyStyles(styles.skeleton)} />
+                <div {...applyStyles(styles.skeletonKpiGrid)}>
+                  <Skeleton className={styles.skeletonKpi} />
+                  <Skeleton className={styles.skeletonKpi} />
+                  <Skeleton className={styles.skeletonKpi} />
+                  <Skeleton className={styles.skeletonKpi} />
+                </div>
+                <div {...applyStyles(styles.skeletonList)}>
+                  <Skeleton className={styles.skeleton} />
+                  <Skeleton className={styles.skeleton} />
+                  <Skeleton className={styles.skeleton} />
+                </div>
               </div>
             );
           case "access_error":
@@ -252,6 +280,7 @@ export function CompetitionStandingsPageView({
                     t={t}
                   />
                 ) : null}
+                <CompetitionStandingsSummary names={state.names} snapshot={state.snapshot} t={t} />
                 <CompetitionStandingsTable names={state.names} snapshot={state.snapshot} t={t} />
               </div>
             );

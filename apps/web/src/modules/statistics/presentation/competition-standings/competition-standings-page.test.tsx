@@ -121,7 +121,7 @@ afterEach(() => {
 });
 
 describe("Competition standings page", () => {
-  it("shows the official table in server order with resolved team names", async () => {
+  it("shows the official table in server order with resolved team names, full stats and KPIs", async () => {
     serve({});
     renderRoute();
 
@@ -132,7 +132,38 @@ describe("Competition standings page", () => {
     expect(within(rows[0]!).getByText("+3")).toBeTruthy();
     expect(within(rows[1]!).getByText("Cuervos FC")).toBeTruthy();
     expect(within(rows[1]!).getByText("-2")).toBeTruthy();
-    expect(screen.getByText("Fórmula points-gd-gf-v1")).toBeTruthy();
+    expect(screen.getByText("Oficial")).toBeTruthy();
+    expect(screen.getByText("Desempate: Puntos → DG → GF")).toBeTruthy();
+    expect(screen.getByTitle("Fórmula points-gd-gf-v1")).toBeTruthy();
+    expect(screen.getByTitle("Ganados")).toBeTruthy();
+    expect(screen.getByTitle("Goles a favor")).toBeTruthy();
+    expect(screen.getByText("4 pts")).toBeTruthy();
+    expect(screen.getByText("Mejor ataque")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Ver enfrentamientos" })).toBeTruthy();
+  });
+
+  it("hides the header Encounters action when the actor cannot read encounters", async () => {
+    serve({ access: allow(true, false) });
+    renderRoute();
+
+    expect(await screen.findByText("Maderas FC")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Ver enfrentamientos" })).toBeNull();
+  });
+
+  it("shows active sanction point deductions beside the team name", async () => {
+    serve({
+      standings: () =>
+        Response.json({
+          standings: {
+            ...snapshot,
+            rows: [{ ...row(1, "t2", 1, 3), pointsDeducted: 3 }, row(2, "t1", 0, -2)],
+          },
+        }),
+    });
+    renderRoute();
+
+    expect(await screen.findByText("−3 pts")).toBeTruthy();
+    expect(screen.getByTitle("Sanción activa: 3 puntos descontados")).toBeTruthy();
   });
 
   it("names the rows for competition staff who cannot read the organization teams", async () => {
@@ -188,8 +219,10 @@ describe("Competition standings page", () => {
   it("speaks English", async () => {
     serve({});
     renderRoute("en");
-    expect(await screen.findByText("Formula points-gd-gf-v1")).toBeTruthy();
+    expect(await screen.findByText("Tiebreaker: Points → GD → GF")).toBeTruthy();
+    expect(screen.getByTitle("Formula points-gd-gf-v1")).toBeTruthy();
     expect(screen.getAllByText("GD").length).toBeGreaterThan(0);
+    expect(screen.getByText("Best attack")).toBeTruthy();
   });
 
   it("explains no approved results instead of an error or empty table", async () => {
@@ -326,7 +359,7 @@ describe("Competition standings page", () => {
     serve({ standings: () => Response.json({ standings: snapshot }) });
     renderRoute();
 
-    expect(await screen.findByText("Fórmula points-gd-gf-v1")).toBeTruthy();
+    expect(await screen.findByText("Desempate: Puntos → DG → GF")).toBeTruthy();
     expect(screen.queryByText("Buch.")).toBeNull();
     expect(screen.queryByText(/Empates: primero Buchholz/)).toBeNull();
   });
