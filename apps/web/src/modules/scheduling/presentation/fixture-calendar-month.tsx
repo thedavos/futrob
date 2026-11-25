@@ -10,8 +10,13 @@ import {
   type DateKey,
   type MonthKey,
 } from "./fixture-calendar-dates.ts";
-import { adjacentFixtureMonth, type FixtureCalendarDay } from "./fixture-calendar-model.ts";
 import {
+  adjacentFixtureMonth,
+  fixtureDayUniformContext,
+  type FixtureCalendarDay,
+} from "./fixture-calendar-model.ts";
+import {
+  fixtureDayMeta,
   FixtureEncounterRow,
   type FixtureCalendarFormat,
   type FixtureCalendarScope,
@@ -52,133 +57,177 @@ export function FixtureCalendarMonth({
   const { locale, t } = format;
   const byDate = new Map(days.map((day) => [day.date, day]));
   const selected = selectedDay ? byDate.get(selectedDay) : undefined;
+  const selectedUniform = selected ? fixtureDayUniformContext(selected.entries) : undefined;
   const titleId = "fixture-month-title";
   const previous = adjacentFixtureMonth(days, month, "previous");
   const next = adjacentFixtureMonth(days, month, "next");
   const weekdays = weekdayNames(locale, "short");
+  const weeks = monthWeeks(month);
+  const activeDatesInMonth = days.filter((day) => monthOf(day.date) === month).length;
+
   return (
     <section aria-labelledby={titleId}>
       <div {...applyStyles(monthStyles.monthToolbar)}>
-        <Heading as="h2" className={monthStyles.monthTitle} id={titleId}>
-          {formatMonthKey(month, locale)}
-        </Heading>
-        <Button
-          aria-label={t("fixture.month.previous")}
-          onClick={() => onMonthChange(shiftMonth(month, -1))}
-          size="icon"
-          variant="outline"
-        >
-          <CaretLeftIcon aria-hidden="true" />
-        </Button>
-        {nextDate ? (
+        <div {...applyStyles(monthStyles.monthHeading)}>
+          <Heading as="h2" id={titleId}>
+            {formatMonthKey(month, locale)}
+          </Heading>
+          {activeDatesInMonth > 0 ? (
+            <Caption as="p">
+              {t("fixture.month.activeDates", { count: activeDatesInMonth })}
+            </Caption>
+          ) : null}
+        </div>
+        <div {...applyStyles(monthStyles.monthActions)}>
           <Button
-            onClick={() => {
-              onMonthChange(monthOf(nextDate));
-              onSelectDay(nextDate);
-            }}
+            aria-label={t("fixture.month.previous")}
+            dense
+            onClick={() => onMonthChange(shiftMonth(month, -1))}
+            size="icon"
             variant="outline"
           >
-            {t("fixture.month.goToNext")}
+            <CaretLeftIcon aria-hidden="true" />
           </Button>
-        ) : null}
-        <Button
-          aria-label={t("fixture.month.next")}
-          onClick={() => onMonthChange(shiftMonth(month, 1))}
-          size="icon"
-          variant="outline"
-        >
-          <CaretRightIcon aria-hidden="true" />
-        </Button>
+          {nextDate ? (
+            <Button
+              dense
+              onClick={() => {
+                onMonthChange(monthOf(nextDate));
+                onSelectDay(nextDate);
+              }}
+              variant="outline"
+            >
+              {t("fixture.month.goToNext")}
+            </Button>
+          ) : null}
+          <Button
+            aria-label={t("fixture.month.next")}
+            dense
+            onClick={() => onMonthChange(shiftMonth(month, 1))}
+            size="icon"
+            variant="outline"
+          >
+            <CaretRightIcon aria-hidden="true" />
+          </Button>
+        </div>
       </div>
       <div {...applyStyles(monthStyles.monthLayout)}>
         <div>
-          <div aria-hidden="true" {...applyStyles(monthStyles.weekdayRow)}>
-            {weekdays.map((weekday) => (
-              <Caption as="span" className={monthStyles.weekday} key={weekday}>
-                {weekday}
-              </Caption>
-            ))}
-          </div>
-          <ol aria-label={t("fixture.month.label")} {...applyStyles(monthStyles.monthGrid)}>
-            {monthWeeks(month).flatMap((week, weekIndex) =>
-              week.map((date, dayIndex) => {
-                const key = date ?? `outside-${weekIndex}-${dayIndex}`;
-                if (!date) {
-                  return (
-                    <li
-                      aria-hidden="true"
-                      key={key}
-                      {...applyStyles(monthStyles.cell, monthStyles.cellOutside)}
-                    />
-                  );
-                }
-                const day = byDate.get(date);
-                const number = (
-                  <span
-                    {...applyStyles(
-                      monthStyles.dayNumber,
-                      date === today && monthStyles.dayNumberToday,
-                    )}
-                  >
-                    {dayOfMonth(date)}
-                  </span>
-                );
-                if (!day) {
-                  return (
-                    <li key={key} {...applyStyles(monthStyles.cell)}>
-                      <Caption as="span" className={monthStyles.dayStatic}>
-                        {number}
-                      </Caption>
-                    </li>
-                  );
-                }
-                const hidden = day.entries.length - CELL_EVENTS;
-                return (
-                  <li key={key} {...applyStyles(monthStyles.cell)}>
-                    <button
-                      aria-label={t("fixture.month.day", {
-                        date: format.longDate(date),
-                        count: day.entries.length,
-                      })}
-                      aria-pressed={date === selectedDay}
-                      onClick={() => onSelectDay(date)}
-                      type="button"
+          <div {...applyStyles(monthStyles.calendarFrame)}>
+            <div aria-hidden="true" {...applyStyles(monthStyles.weekdayRow)}>
+              {weekdays.map((weekday) => (
+                <Caption as="span" className={monthStyles.weekday} key={weekday}>
+                  {weekday}
+                </Caption>
+              ))}
+            </div>
+            <ol aria-label={t("fixture.month.label")} {...applyStyles(monthStyles.monthGrid)}>
+              {weeks.flatMap((week, weekIndex) => {
+                const isLastRow = weekIndex === weeks.length - 1;
+                return week.map((date, dayIndex) => {
+                  const isLastCol = dayIndex === 6;
+                  const key = date ?? `outside-${weekIndex}-${dayIndex}`;
+                  const cellTokens = [
+                    monthStyles.cell,
+                    isLastCol && monthStyles.cellLastCol,
+                    isLastRow && monthStyles.cellLastRow,
+                  ];
+                  if (!date) {
+                    return (
+                      <li
+                        aria-hidden="true"
+                        key={key}
+                        {...applyStyles(...cellTokens, monthStyles.cellOutside)}
+                      />
+                    );
+                  }
+                  const day = byDate.get(date);
+                  const isSelected = date === selectedDay;
+                  const isToday = date === today;
+                  const number = (
+                    <span
                       {...applyStyles(
-                        monthStyles.day,
-                        date === selectedDay && monthStyles.daySelected,
+                        monthStyles.dayNumber,
+                        isToday && monthStyles.dayNumberToday,
+                        !isToday && isSelected && monthStyles.dayNumberSelected,
                       )}
                     >
-                      <Caption as="span" tone="default">
-                        {number}
-                      </Caption>
-                      {day.entries.slice(0, CELL_EVENTS).map((entry) => (
-                        <Caption
-                          as="span"
-                          className={monthStyles.event}
-                          key={entry.encounter.id}
-                          tone="default"
-                        >
-                          {format.time(entry.encounter.scheduledStartAt)}
-                          <br />
-                          {fixtureSideLabel(entry.encounter.home, t)} ·{" "}
-                          {fixtureSideLabel(entry.encounter.away, t)}
+                      {dayOfMonth(date)}
+                    </span>
+                  );
+                  if (!day) {
+                    return (
+                      <li key={key} {...applyStyles(...cellTokens)}>
+                        <Caption as="span" className={monthStyles.dayStatic}>
+                          {number}
                         </Caption>
-                      ))}
-                      {hidden > 0 ? (
-                        <Caption as="span">{t("fixture.month.more", { count: hidden })}</Caption>
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              }),
-            )}
-          </ol>
-          {days.some((day) => monthOf(day.date) === month) ? null : (
+                      </li>
+                    );
+                  }
+                  const hidden = day.entries.length - CELL_EVENTS;
+                  return (
+                    <li key={key} {...applyStyles(...cellTokens)}>
+                      <button
+                        aria-label={t("fixture.month.day", {
+                          date: format.longDate(date),
+                          count: day.entries.length,
+                        })}
+                        aria-pressed={isSelected}
+                        onClick={() => onSelectDay(date)}
+                        type="button"
+                        {...applyStyles(monthStyles.day, isSelected && monthStyles.daySelected)}
+                      >
+                        <span {...applyStyles(monthStyles.dayHeader)}>
+                          <Caption as="span" tone="default">
+                            {number}
+                          </Caption>
+                          <Caption
+                            as="span"
+                            className={
+                              isSelected ? monthStyles.dayCountSelected : monthStyles.dayCount
+                            }
+                          >
+                            {day.entries.length}
+                          </Caption>
+                        </span>
+                        {day.entries.slice(0, CELL_EVENTS).map((entry) => (
+                          <span
+                            key={entry.encounter.id}
+                            {...applyStyles(
+                              monthStyles.event,
+                              isSelected && monthStyles.eventSelected,
+                            )}
+                          >
+                            <Caption as="span" className={monthStyles.eventTime}>
+                              {format.time(entry.encounter.scheduledStartAt)}
+                            </Caption>
+                            <Caption as="span" className={monthStyles.eventTeams} tone="default">
+                              {fixtureSideLabel(entry.encounter.home, t)} ·{" "}
+                              {fixtureSideLabel(entry.encounter.away, t)}
+                            </Caption>
+                          </span>
+                        ))}
+                        {hidden > 0 ? (
+                          <Caption
+                            as="span"
+                            className={isSelected ? monthStyles.moreSelected : undefined}
+                          >
+                            {t("fixture.month.more", { count: hidden })}
+                          </Caption>
+                        ) : null}
+                      </button>
+                    </li>
+                  );
+                });
+              })}
+            </ol>
+          </div>
+          {activeDatesInMonth > 0 ? null : (
             <div {...applyStyles(monthStyles.emptyMonth)}>
               <Text tone="muted">{t("fixture.month.emptyMonth")}</Text>
               {[previous, next].map((target) =>
                 target ? (
-                  <Button key={target} onClick={() => onMonthChange(target)} variant="ghost">
+                  <Button dense key={target} onClick={() => onMonthChange(target)} variant="ghost">
                     {t("fixture.month.goTo", { month: formatMonthKey(target, locale) })}
                   </Button>
                 ) : null,
@@ -193,13 +242,21 @@ export function FixtureCalendarMonth({
               {format.longDate(selectedDay)}
             </Heading>
             <Caption as="p">
-              {t("fixture.encounters", { count: selected?.entries.length ?? 0 })} · {timeZone}
+              {selected && selectedUniform
+                ? `${fixtureDayMeta(selected.entries.length, selectedUniform, format)} · ${timeZone}`
+                : `${t("fixture.encounters", { count: 0 })} · ${timeZone}`}
             </Caption>
             {selected ? (
               <ol {...applyStyles(styles.rows, monthStyles.dayDetailRows)}>
                 {selected.entries.map((entry) => (
                   <li key={entry.encounter.id} {...applyStyles(styles.rowItem)}>
-                    <FixtureEncounterRow compact entry={entry} format={format} {...scope} />
+                    <FixtureEncounterRow
+                      compact
+                      entry={entry}
+                      format={format}
+                      uniform={selectedUniform}
+                      {...scope}
+                    />
                   </li>
                 ))}
               </ol>

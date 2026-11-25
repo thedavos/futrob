@@ -248,3 +248,78 @@ export function currentFixtureRoundId(
 ): string | null {
   return entries.find((entry) => entry.date >= today)?.roundId ?? null;
 }
+
+/**
+ * Attributes shared by every Encounter on a day. Lifting them to the day heading avoids
+ * repeating «Liga · Jornada 1 · 1 partido» on every row while keeping mixed days accurate.
+ */
+export type FixtureDayUniformContext = {
+  readonly stageKind: FixtureStageKind | null;
+  readonly roundId: string | null;
+  readonly roundName: FixtureRoundName | null;
+  readonly officialMatchCount: 1 | 2 | null;
+};
+
+export function fixtureDayUniformContext(
+  entries: readonly FixtureCalendarEntry[],
+): FixtureDayUniformContext {
+  const first = entries[0];
+  if (!first) {
+    return { stageKind: null, roundId: null, roundName: null, officialMatchCount: null };
+  }
+  const sameStage = entries.every((entry) => entry.stageKind === first.stageKind);
+  const sameRound = entries.every((entry) => entry.roundId === first.roundId);
+  const sameSlots = entries.every(
+    (entry) => entry.encounter.officialMatchCount === first.encounter.officialMatchCount,
+  );
+  return {
+    stageKind: sameStage ? first.stageKind : null,
+    roundId: sameRound ? first.roundId : null,
+    roundName: sameRound ? first.roundName : null,
+    officialMatchCount: sameSlots ? first.encounter.officialMatchCount : null,
+  };
+}
+
+export type FixtureAgendaIndexItem = {
+  readonly date: DateKey;
+  readonly roundName: FixtureRoundName | null;
+  readonly count: number;
+};
+
+export type FixtureAgendaIndexGroup = {
+  readonly key: string;
+  readonly stageKind: FixtureStageKind | null;
+  readonly items: readonly FixtureAgendaIndexItem[];
+};
+
+/**
+ * Quick-jump index for the Agenda sidebar: groups consecutive dates by stage when every
+ * encounter on a date belongs to one stage, so Liga and Playoffs read as separate bands.
+ */
+export function fixtureAgendaIndex(days: readonly FixtureCalendarDay[]): FixtureAgendaIndexGroup[] {
+  const groups: {
+    key: string;
+    stageKind: FixtureStageKind | null;
+    items: FixtureAgendaIndexItem[];
+  }[] = [];
+  for (const day of days) {
+    const uniform = fixtureDayUniformContext(day.entries);
+    const stageKind = uniform.stageKind;
+    const last = groups.at(-1);
+    const item: FixtureAgendaIndexItem = {
+      date: day.date,
+      roundName: uniform.roundName,
+      count: day.entries.length,
+    };
+    if (last && last.stageKind === stageKind) {
+      last.items.push(item);
+    } else {
+      groups.push({
+        key: `${stageKind ?? "mixed"}-${day.date}`,
+        stageKind,
+        items: [item],
+      });
+    }
+  }
+  return groups;
+}

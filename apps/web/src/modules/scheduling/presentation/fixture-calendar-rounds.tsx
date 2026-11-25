@@ -7,11 +7,11 @@ import {
   type FixtureCalendarFormat,
   type FixtureCalendarScope,
 } from "./fixture-calendar-parts.tsx";
-import { styles } from "./fixture-calendar.styles.ts";
+import { roundStyles } from "./fixture-calendar-rounds.styles.ts";
 
 /**
- * Rounds side by side, one board per stage. Wide screens scroll the columns inside
- * their own region; narrow screens stack them.
+ * Rounds side by side in bounded flat columns, one board per stage. Wide screens scroll
+ * the columns inside their own region; narrow screens stack them.
  */
 export function FixtureCalendarRounds({
   boards,
@@ -25,24 +25,33 @@ export function FixtureCalendarRounds({
 }) {
   const { t } = format;
   return (
-    <div {...applyStyles(styles.board)}>
+    <div {...applyStyles(roundStyles.board)}>
       {boards.map((board) => {
         const headingId = `fixture-board-${board.stageId}`;
         const stage = fixtureStageLabel(board.stageKind, t);
         return (
-          <section aria-labelledby={headingId} key={board.stageId} {...applyStyles(styles.stage)}>
-            <Heading as="h2" id={headingId}>
-              {stage}
-            </Heading>
+          <section
+            aria-labelledby={headingId}
+            key={board.stageId}
+            {...applyStyles(roundStyles.stage)}
+          >
+            <div {...applyStyles(roundStyles.stageHead)}>
+              <Heading as="h2" id={headingId}>
+                {stage}
+              </Heading>
+              <Badge variant="neutral">
+                {t("fixture.rounds.count", { count: board.columns.length })}
+              </Badge>
+            </div>
             {/* Scrollable on wide screens, so it must take keyboard focus to scroll. */}
             {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
             <div
               aria-label={t("fixture.rounds.scroll", { stage })}
               role="region"
               tabIndex={0}
-              {...applyStyles(styles.columnsScroller)}
+              {...applyStyles(roundStyles.columnsScroller)}
             >
-              <ol {...applyStyles(styles.columns)}>
+              <ol {...applyStyles(roundStyles.columns)}>
                 {board.columns.map((column) => (
                   <RoundColumn
                     column={column}
@@ -72,28 +81,39 @@ function RoundColumn({
   readonly format: FixtureCalendarFormat;
 }) {
   const { t } = format;
+  const singleDay = column.firstDate !== null && column.firstDate === column.lastDate;
   return (
-    <li {...applyStyles(styles.column)}>
-      <div {...applyStyles(styles.columnHead, current && styles.columnHeadCurrent)}>
-        <div {...applyStyles(styles.columnCopy)}>
+    <li {...applyStyles(roundStyles.column)}>
+      <div {...applyStyles(roundStyles.columnHead, current && roundStyles.columnHeadCurrent)}>
+        <div {...applyStyles(roundStyles.columnCopy)}>
           <Heading as="h3">{fixtureRoundLabel(column.name, t)}</Heading>
-          {column.firstDate ? (
-            <Caption as="p">{dateRange(column.firstDate, column.lastDate, format.locale)}</Caption>
-          ) : null}
-          <Caption as="p">{t("fixture.encounters", { count: column.entries.length })}</Caption>
+          <Caption as="p">
+            {[
+              column.firstDate ? dateRange(column.firstDate, column.lastDate, format.locale) : null,
+              t("fixture.encounters", { count: column.entries.length }),
+            ]
+              .filter((part): part is string => part !== null)
+              .join(" · ")}
+          </Caption>
         </div>
         {current ? <Badge variant="primary">{t("fixture.rounds.current")}</Badge> : null}
       </div>
       {column.entries.length > 0 ? (
-        <ol {...applyStyles(styles.rows)}>
-          {column.entries.map((entry) => (
-            <li key={entry.encounter.id} {...applyStyles(styles.rowItem)}>
-              <FixtureBoardMatch entry={entry} format={format} {...scope} />
+        <ol {...applyStyles(roundStyles.columnRows)}>
+          {column.entries.map((entry, index) => (
+            <li
+              key={entry.encounter.id}
+              {...applyStyles(
+                roundStyles.columnRowItem,
+                index === column.entries.length - 1 && roundStyles.columnRowItemLast,
+              )}
+            >
+              <FixtureBoardMatch entry={entry} format={format} singleDay={singleDay} {...scope} />
             </li>
           ))}
         </ol>
       ) : (
-        <Caption as="p" className={styles.emptyRound}>
+        <Caption as="p" className={roundStyles.emptyRound}>
           {t("fixture.rounds.emptyRound")}
         </Caption>
       )}

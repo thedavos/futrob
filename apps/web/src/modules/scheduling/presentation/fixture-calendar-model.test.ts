@@ -7,16 +7,19 @@ import {
   currentFixtureRoundId,
   defaultFixtureDay,
   filterFixtureEntries,
+  fixtureAgendaIndex,
   fixtureCalendarDays,
   fixtureCalendarEntries,
   fixtureCalendarRounds,
   fixtureCalendarTeams,
+  fixtureDayUniformContext,
   fixtureRoundBoards,
   initialFixtureMonth,
   nextFixtureDate,
   NO_FIXTURE_FILTERS,
   validFixtureFilters,
 } from "./fixture-calendar-model.ts";
+import { leaguePlayoffsFixture } from "./fixture-calendar.fixtures.ts";
 
 function viewOf(response: Parameters<typeof competitionFixtureView>[0]): CompetitionFixtureView {
   const view = competitionFixtureView(response);
@@ -151,5 +154,52 @@ describe("fixtureRoundBoards", () => {
   it("marks the round of the next date as current", () => {
     expect(currentFixtureRoundId(leagueEntries, "2026-11-11")).toBe(ROUND_2);
     expect(currentFixtureRoundId(leagueEntries, "2027-01-01")).toBeNull();
+  });
+});
+
+describe("fixtureDayUniformContext and fixtureAgendaIndex", () => {
+  it("extracts shared stage, round and match count for a uniform day", () => {
+    const day = fixtureCalendarDays(leagueEntries).find((item) => item.date === "2026-11-09");
+    expect(day).toBeDefined();
+    expect(fixtureDayUniformContext(day?.entries ?? [])).toEqual({
+      stageKind: "league",
+      roundId: "league-plan:stage:1:round:1",
+      roundName: { kind: "matchday", number: 1 },
+      officialMatchCount: 2,
+    });
+  });
+
+  it("returns null for attributes that differ across encounters on the same day", () => {
+    const first = leagueEntries[0];
+    const laterRound = leagueEntries[4];
+    if (!first || !laterRound) throw new Error("entries expected");
+    expect(
+      fixtureDayUniformContext([
+        first,
+        {
+          ...laterRound,
+          encounter: { ...laterRound.encounter, officialMatchCount: 1 },
+        },
+      ]),
+    ).toEqual({
+      stageKind: "league",
+      roundId: null,
+      roundName: null,
+      officialMatchCount: null,
+    });
+  });
+
+  it("groups multi-stage dates by stage in the Agenda quick-jump index", () => {
+    const verano = viewOf(leaguePlayoffsFixture);
+    const days = fixtureCalendarDays(fixtureCalendarEntries(verano));
+    const groups = fixtureAgendaIndex(days);
+    expect(groups.map((group) => [group.stageKind, group.items.length])).toEqual([
+      ["league", 5],
+      ["playoffs", 2],
+    ]);
+    expect(groups[1]?.items.map((item) => [item.date, item.roundName?.kind, item.count])).toEqual([
+      ["2026-07-12", "semifinal", 2],
+      ["2026-07-19", "final", 1],
+    ]);
   });
 });

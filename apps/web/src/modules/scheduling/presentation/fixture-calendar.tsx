@@ -10,8 +10,6 @@ import {
   EmptyStateCopy,
   EmptyStateDescription,
   EmptyStateTitle,
-  Field,
-  FieldLabel,
   Select,
   SelectContent,
   SelectItem,
@@ -21,6 +19,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  vis,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
@@ -180,15 +179,7 @@ export function FixtureCalendar({
     if (filtered.length === 0) return filteredEmpty;
     switch (activeView) {
       case "agenda":
-        return (
-          <FixtureCalendarAgenda
-            days={days}
-            format={format}
-            nextDate={nextDate}
-            timeZone={view.timeZone}
-            {...scope}
-          />
-        );
+        return <FixtureCalendarAgenda days={days} format={format} nextDate={nextDate} {...scope} />;
       case "month":
         return (
           <FixtureCalendarMonth
@@ -247,15 +238,15 @@ export function FixtureCalendar({
               </TabsTrigger>
             ))}
           </TabsList>
-          <Caption as="p" className={styles.zone}>
-            <ClockIcon aria-hidden="true" {...applyStyles(styles.zoneIcon)} />
-            {t("fixture.timeZone", { zone: view.timeZone })}
-          </Caption>
-        </div>
-        <div aria-label={t("fixture.filters.label")} role="group" {...applyStyles(styles.filters)}>
-          <div {...applyStyles(styles.filterField)}>
-            <Field>
-              <FieldLabel htmlFor="fixture-team-filter">{t("fixture.filters.team")}</FieldLabel>
+          <div
+            aria-label={t("fixture.filters.label")}
+            role="group"
+            {...applyStyles(styles.controls)}
+          >
+            <div {...applyStyles(styles.filterSlot)}>
+              <label htmlFor="fixture-team-filter" {...applyStyles(vis.srOnly)}>
+                {t("fixture.filters.team")}
+              </label>
               <Select
                 items={teamItems}
                 onValueChange={(value) =>
@@ -268,6 +259,7 @@ export function FixtureCalendar({
               >
                 <SelectTrigger
                   className={styles.filterTrigger}
+                  dense
                   id="fixture-team-filter"
                   ref={teamTrigger}
                 >
@@ -281,11 +273,11 @@ export function FixtureCalendar({
                   ))}
                 </SelectContent>
               </Select>
-            </Field>
-          </div>
-          <div {...applyStyles(styles.filterField)}>
-            <Field>
-              <FieldLabel htmlFor="fixture-round-filter">{t("fixture.filters.round")}</FieldLabel>
+            </div>
+            <div {...applyStyles(styles.filterSlot)}>
+              <label htmlFor="fixture-round-filter" {...applyStyles(vis.srOnly)}>
+                {t("fixture.filters.round")}
+              </label>
               <Select
                 items={roundItems}
                 onValueChange={(value) =>
@@ -296,7 +288,7 @@ export function FixtureCalendar({
                 }
                 value={filters.roundId ?? ALL}
               >
-                <SelectTrigger className={styles.filterTrigger} id="fixture-round-filter">
+                <SelectTrigger className={styles.filterTrigger} dense id="fixture-round-filter">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -307,15 +299,21 @@ export function FixtureCalendar({
                   ))}
                 </SelectContent>
               </Select>
-            </Field>
+            </div>
+            {hasFixtureFilters(filters) ? (
+              <Button dense onClick={resetFilters} variant="ghost">
+                {t("fixture.filters.reset")}
+              </Button>
+            ) : null}
           </div>
-          {hasFixtureFilters(filters) ? (
-            <Button onClick={resetFilters} variant="ghost">
-              {t("fixture.filters.reset")}
-            </Button>
-          ) : null}
+        </div>
+        <div {...applyStyles(styles.metaBar)}>
           <Caption as="p" className={styles.status} role="status">
             {t("fixture.summary", { count: filtered.length, dates: days.length })}
+          </Caption>
+          <Caption as="p" className={styles.zone}>
+            <ClockIcon aria-hidden="true" {...applyStyles(styles.zoneIcon)} />
+            {t("fixture.timeZone", { zone: view.timeZone })}
           </Caption>
         </div>
         {views.map(({ value }) => (

@@ -21,7 +21,12 @@ import {
   competitionFixturePageState,
   type CompetitionFixturePageState,
 } from "./competition-fixture-state.ts";
-import { FIXTURE_CALENDAR_NOW, leagueFixture } from "./fixture-calendar.fixtures.ts";
+import {
+  FIXTURE_CALENDAR_NOW,
+  LEAGUE_PLAYOFFS_NOW,
+  leagueFixture,
+  leaguePlayoffsFixture,
+} from "./fixture-calendar.fixtures.ts";
 import type { FixtureCalendarViewKind } from "./fixture-calendar.tsx";
 import type { SwissFixtureCommands } from "./swiss-fixture-commands.ts";
 import { fixtureCalendarSearchSchema } from "./fixture-calendar-search.ts";
@@ -39,6 +44,7 @@ const retry = () => undefined;
 
 type Scenario =
   | "league"
+  | "leaguePlayoffs"
   | "knockout"
   | "stale"
   | "empty"
@@ -68,6 +74,12 @@ const swissCommands: SwissFixtureCommands = {
 const STATES: Record<Scenario, CompetitionFixturePageState> = {
   league: competitionFixturePageState({
     data: leagueFixture,
+    failed: false,
+    refused: false,
+    retry,
+  }),
+  leaguePlayoffs: competitionFixturePageState({
+    data: leaguePlayoffsFixture,
     failed: false,
     refused: false,
     retry,
@@ -118,7 +130,7 @@ function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
           commands={swissCommands}
           competitionId="competition-1"
           initialView={initialView}
-          now={FIXTURE_CALENDAR_NOW}
+          now={scenario === "leaguePlayoffs" ? LEAGUE_PLAYOFFS_NOW : FIXTURE_CALENDAR_NOW}
           organizationId="org-1"
           state={STATES[scenario]}
         />
@@ -147,6 +159,7 @@ function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
 
 const SCENARIOS = [
   "league",
+  "leaguePlayoffs",
   "knockout",
   "stale",
   "empty",
@@ -177,6 +190,71 @@ export default meta;
 type Story = StoryObj<StoryArgs>;
 
 const narrow = { viewport: { defaultViewport: "mobile1" } };
+
+export const Playground: Story = {
+  args: { scenario: "leaguePlayoffs", locale: "es", initialView: "agenda" },
+};
+
+export const LeaguePlayoffsAgenda: Story = {
+  name: "Liga y Playoffs · Agenda",
+  args: { scenario: "leaguePlayoffs", initialView: "agenda" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("status")).toHaveTextContent(
+      "18 enfrentamientos en 7 fechas",
+    );
+    await expect(canvas.getByText("Horarios en America/Lima")).toBeVisible();
+    // Shared round & match count are lifted to the day heading instead of repeated per row.
+    await expect(
+      canvas.getByText("Liga · Jornada 1 · 3 enfrentamientos · 1 partido"),
+    ).toBeVisible();
+    await expect(canvas.getByText("Playoffs · Final · 1 enfrentamiento · 1 partido")).toBeVisible();
+    const jump = canvas.getByRole("navigation", { name: "Saltar a una fecha del calendario" });
+    await expect(within(jump).getByRole("link", { name: /Jornada 5/ })).toHaveAttribute(
+      "href",
+      "#fixture-day-2026-07-05",
+    );
+    await expect(within(jump).getByRole("link", { name: /Final/ })).toHaveAttribute(
+      "href",
+      "#fixture-day-2026-07-19",
+    );
+  },
+};
+
+export const LeaguePlayoffsMonth: Story = {
+  name: "Liga y Playoffs · Mes",
+  args: { scenario: "leaguePlayoffs", initialView: "month" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { name: "Julio de 2026" })).toBeVisible();
+    await expect(canvas.getByText("3 fechas con partidos")).toBeVisible();
+    const sunday = canvas.getByRole("button", { name: "domingo, 5 de julio: 3 enfrentamientos" });
+    await expect(sunday).toHaveAttribute("aria-pressed", "true");
+    await expect(sunday).toHaveTextContent("+1 más");
+    // Compact day-detail rows preserve the visible "vs" separator between teams.
+    const detail = canvas.getByRole("heading", { level: 3, name: "domingo, 5 de julio" });
+    await expect(detail).toBeVisible();
+    await expect(
+      canvas.getByText("Liga · Jornada 5 · 3 enfrentamientos · 1 partido · America/Lima"),
+    ).toBeVisible();
+  },
+};
+
+export const LeaguePlayoffsRounds: Story = {
+  name: "Liga y Playoffs · Jornadas",
+  args: { scenario: "leaguePlayoffs", initialView: "rounds" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { level: 2, name: "Liga" })).toBeVisible();
+    await expect(canvas.getByText("5 jornadas")).toBeVisible();
+    await expect(canvas.getByRole("heading", { level: 2, name: "Playoffs" })).toBeVisible();
+    await expect(canvas.getByText("2 jornadas")).toBeVisible();
+    await expect(canvas.getByText("Próxima")).toBeVisible();
+  },
+};
 
 export const Agenda: Story = {
   name: "Agenda",

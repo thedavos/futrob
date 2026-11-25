@@ -3197,6 +3197,8 @@ const es = {
     }`,
   "fixture.agenda.label": "Enfrentamientos por fecha",
   "fixture.agenda.nextDate": "Próxima fecha",
+  "fixture.agenda.jumpTo": "Ir a fecha",
+  "fixture.agenda.jumpLabel": "Saltar a una fecha del calendario",
   "fixture.agenda.overview": "Resumen del calendario",
   "fixture.agenda.noNextDate": "Sin fechas pendientes",
   "fixture.agenda.dates": "Fechas",
@@ -3206,6 +3208,8 @@ const es = {
   "fixture.month.previous": "Mes anterior",
   "fixture.month.next": "Mes siguiente",
   "fixture.month.goToNext": "Próxima fecha",
+  "fixture.month.activeDates": ({ count }) =>
+    Number(count) === 1 ? "1 fecha con partidos" : `${count} fechas con partidos`,
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 enfrentamiento" : `${count} enfrentamientos`}`,
   "fixture.month.more": ({ count }) => `+${count} más`,
@@ -3214,6 +3218,7 @@ const es = {
   "fixture.month.emptyMonth": "No hay enfrentamientos este mes.",
   "fixture.month.goTo": ({ month }) => `Ver ${month}`,
   "fixture.rounds.current": "Próxima",
+  "fixture.rounds.count": ({ count }) => (Number(count) === 1 ? "1 jornada" : `${count} jornadas`),
   "fixture.rounds.emptyRound": "Sin enfrentamientos con estos filtros.",
   "fixture.rounds.scroll": ({ stage }) => `Jornadas de ${stage}`,
   "portal.nav.label": "Secciones de la competición",
@@ -3681,9 +3686,11 @@ export interface MessageParamsByKey {
   readonly "fixture.filters.roundOption": { readonly stage: string; readonly round: string };
   readonly "fixture.encounters": { readonly count: number };
   readonly "fixture.summary": { readonly count: number; readonly dates: number };
+  readonly "fixture.month.activeDates": { readonly count: number };
   readonly "fixture.month.day": { readonly date: string; readonly count: number };
   readonly "fixture.month.more": { readonly count: number };
   readonly "fixture.month.goTo": { readonly month: string };
+  readonly "fixture.rounds.count": { readonly count: number };
   readonly "fixture.rounds.scroll": { readonly stage: string };
   readonly "fixture.round.pending": { readonly number: number };
   readonly "fixture.round.expected": { readonly date: string };
@@ -6848,6 +6855,8 @@ const en: Catalog = {
     }`,
   "fixture.agenda.label": "Encounters by date",
   "fixture.agenda.nextDate": "Next date",
+  "fixture.agenda.jumpTo": "Jump to date",
+  "fixture.agenda.jumpLabel": "Jump to a schedule date",
   "fixture.agenda.overview": "Schedule overview",
   "fixture.agenda.noNextDate": "No dates ahead",
   "fixture.agenda.dates": "Dates",
@@ -6857,6 +6866,8 @@ const en: Catalog = {
   "fixture.month.previous": "Previous month",
   "fixture.month.next": "Next month",
   "fixture.month.goToNext": "Next date",
+  "fixture.month.activeDates": ({ count }) =>
+    Number(count) === 1 ? "1 match date" : `${count} match dates`,
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 encounter" : `${count} encounters`}`,
   "fixture.month.more": ({ count }) => `+${count} more`,
@@ -6865,6 +6876,7 @@ const en: Catalog = {
   "fixture.month.emptyMonth": "No encounters this month.",
   "fixture.month.goTo": ({ month }) => `Go to ${month}`,
   "fixture.rounds.current": "Up next",
+  "fixture.rounds.count": ({ count }) => (Number(count) === 1 ? "1 round" : `${count} rounds`),
   "fixture.rounds.emptyRound": "No encounters match these filters.",
   "fixture.rounds.scroll": ({ stage }) => `${stage} rounds`,
   "portal.nav.label": "Competition sections",
