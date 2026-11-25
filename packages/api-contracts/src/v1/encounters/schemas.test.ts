@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   acceptScheduleChangeProposalRequestSchema,
   getMyNextEncounterResponseSchema,
+  listCompetitionEncountersResponseSchema,
   listEncounterCandidatesResponseSchema,
   createScheduleChangeRequestSchema,
   listScheduleChangeRequestsResponseSchema,
@@ -55,6 +56,49 @@ describe("getMyNextEncounterResponseSchema", () => {
     expect(getMyNextEncounterResponseSchema.parse({ encounter: withoutRound })).toEqual({
       encounter: withoutRound,
     });
+  });
+});
+
+describe("listCompetitionEncountersResponseSchema", () => {
+  it("accepts official scores for single and two-match series, and rejects empty score arrays", () => {
+    const base = {
+      competition: { id: "competition-1", name: "Liga Futrob", timeZone: "America/Lima" },
+      encounters: [
+        {
+          encounterId: "enc-1",
+          round: { number: 1, total: 3 },
+          scheduledStartAt: "2026-10-12T01:00:00.000Z",
+          officialMatchCount: 2 as const,
+          resolutionMode: "aggregate_score" as const,
+          home: { teamId: "team-1", name: "Cuervos FC" },
+          away: { teamId: "team-2", name: "Maderas FC" },
+          status: "official" as const,
+          score: [
+            { homeGoals: 2, awayGoals: 1 },
+            { homeGoals: 1, awayGoals: 0 },
+          ],
+        },
+        {
+          encounterId: "enc-2",
+          round: { number: 2, total: 3 },
+          scheduledStartAt: "2026-10-19T01:00:00.000Z",
+          officialMatchCount: 1 as const,
+          resolutionMode: null,
+          home: { teamId: "team-2", name: "Maderas FC" },
+          away: { teamId: "team-1", name: "Cuervos FC" },
+          status: "scheduled" as const,
+          score: null,
+        },
+      ],
+    };
+
+    expect(listCompetitionEncountersResponseSchema.parse(base)).toEqual(base);
+    expect(
+      listCompetitionEncountersResponseSchema.safeParse({
+        ...base,
+        encounters: [{ ...base.encounters[0], score: [] }],
+      }).success,
+    ).toBe(false);
   });
 });
 

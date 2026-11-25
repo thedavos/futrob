@@ -45,6 +45,9 @@ export function competitionEncountersDto(
     encounters: list.encounters.map((encounter) => ({
       ...encounter,
       scheduledStartAt: encounter.scheduledStartAt.toISOString(),
+      score: encounter.score
+        ? encounter.score.map(({ homeGoals, awayGoals }) => ({ homeGoals, awayGoals }))
+        : null,
     })),
   };
 }

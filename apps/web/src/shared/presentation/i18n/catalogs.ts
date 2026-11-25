@@ -2531,6 +2531,34 @@ const es = {
   "encounters.list.status.scheduled": "Programado",
   "encounters.list.status.awaiting_result": "Pendiente de resultado",
   "encounters.list.status.official": "Resultado oficial",
+  "encounters.list.filters.status.label": "Filtrar enfrentamientos por estado",
+  "encounters.list.filters.status.all": "Todos",
+  "encounters.list.filters.status.awaiting_result": "Pendientes",
+  "encounters.list.filters.status.official": "Oficiales",
+  "encounters.list.filters.status.scheduled": "Programados",
+  "encounters.list.filters.label": "Filtrar enfrentamientos",
+  "encounters.list.filters.round": "Jornada",
+  "encounters.list.filters.allRounds": "Todas las jornadas",
+  "encounters.list.filters.team": "Equipo",
+  "encounters.list.filters.allTeams": "Todos los equipos",
+  "encounters.list.filters.reset": "Limpiar filtros",
+  "encounters.list.summary": ({ count, rounds }) =>
+    `${count === 1 ? "1 enfrentamiento" : `${count} enfrentamientos`} en ${rounds === 1 ? "1 jornada" : `${rounds} jornadas`}`,
+  "encounters.list.filtered.title": "No hay enfrentamientos con esos filtros",
+  "encounters.list.filtered.description":
+    "Prueba otra combinación o limpia los filtros para ver todos los cruces.",
+  "encounters.list.roundProgress.official": ({ official, total }) =>
+    `${official}/${total} oficiales`,
+  "encounters.list.roundProgress.attention": ({ awaiting, official, total }) =>
+    `${awaiting === 1 ? "1 pendiente" : `${awaiting} pendientes`} · ${official}/${total} oficiales`,
+  "encounters.list.roundProgress.partial": ({ official, total }) =>
+    `${official}/${total} oficiales`,
+  "encounters.list.roundProgress.scheduled": "Programada",
+  "encounters.list.score.singleAria": ({ home, away }) => `Marcador oficial ${home} a ${away}`,
+  "encounters.list.score.aggregateAria": ({ home, away, legs }) =>
+    `Marcador global ${home} a ${away}, partidos ${legs}`,
+  "encounters.list.score.aggregateMeta": ({ legs }) => `Global · ${legs}`,
+  "encounters.list.score.seriesAria": ({ legs }) => `Marcadores oficiales ${legs}`,
   "encounters.list.empty.title": "Aún no hay enfrentamientos",
   "encounters.list.empty.description":
     "Aparecerán aquí cuando la competición tenga un calendario con ambos equipos definidos.",
@@ -3440,6 +3468,28 @@ export interface MessageParamsByKey {
   readonly "encounters.list.timeZone": { readonly zone: string };
   readonly "encounters.list.open": { readonly home: string; readonly away: string };
   readonly "encounters.list.slots": { readonly count: number };
+  readonly "encounters.list.summary": { readonly count: number; readonly rounds: number };
+  readonly "encounters.list.roundProgress.official": {
+    readonly official: number;
+    readonly total: number;
+  };
+  readonly "encounters.list.roundProgress.attention": {
+    readonly awaiting: number;
+    readonly official: number;
+    readonly total: number;
+  };
+  readonly "encounters.list.roundProgress.partial": {
+    readonly official: number;
+    readonly total: number;
+  };
+  readonly "encounters.list.score.singleAria": { readonly home: number; readonly away: number };
+  readonly "encounters.list.score.aggregateAria": {
+    readonly home: number;
+    readonly away: number;
+    readonly legs: string;
+  };
+  readonly "encounters.list.score.aggregateMeta": { readonly legs: string };
+  readonly "encounters.list.score.seriesAria": { readonly legs: string };
   readonly "disputes.list.timeZone": { readonly zone: string };
   readonly "disputes.list.open": { readonly home: string; readonly away: string };
   readonly "disputes.list.kickoff": { readonly when: string };
@@ -6197,6 +6247,33 @@ const en: Catalog = {
   "encounters.list.status.scheduled": "Scheduled",
   "encounters.list.status.awaiting_result": "Awaiting result",
   "encounters.list.status.official": "Official result",
+  "encounters.list.filters.status.label": "Filter encounters by status",
+  "encounters.list.filters.status.all": "All",
+  "encounters.list.filters.status.awaiting_result": "Pending",
+  "encounters.list.filters.status.official": "Official",
+  "encounters.list.filters.status.scheduled": "Scheduled",
+  "encounters.list.filters.label": "Filter encounters",
+  "encounters.list.filters.round": "Matchday",
+  "encounters.list.filters.allRounds": "All matchdays",
+  "encounters.list.filters.team": "Team",
+  "encounters.list.filters.allTeams": "All teams",
+  "encounters.list.filters.reset": "Clear filters",
+  "encounters.list.summary": ({ count, rounds }) =>
+    `${count === 1 ? "1 encounter" : `${count} encounters`} across ${rounds === 1 ? "1 matchday" : `${rounds} matchdays`}`,
+  "encounters.list.filtered.title": "No encounters match these filters",
+  "encounters.list.filtered.description":
+    "Try another combination or clear the filters to see every encounter.",
+  "encounters.list.roundProgress.official": ({ official, total }) =>
+    `${official}/${total} official`,
+  "encounters.list.roundProgress.attention": ({ awaiting, official, total }) =>
+    `${awaiting} pending · ${official}/${total} official`,
+  "encounters.list.roundProgress.partial": ({ official, total }) => `${official}/${total} official`,
+  "encounters.list.roundProgress.scheduled": "Scheduled",
+  "encounters.list.score.singleAria": ({ home, away }) => `Official score ${home} to ${away}`,
+  "encounters.list.score.aggregateAria": ({ home, away, legs }) =>
+    `Aggregate score ${home} to ${away}, matches ${legs}`,
+  "encounters.list.score.aggregateMeta": ({ legs }) => `Agg · ${legs}`,
+  "encounters.list.score.seriesAria": ({ legs }) => `Official scores ${legs}`,
   "encounters.list.empty.title": "No encounters yet",
   "encounters.list.empty.description":
     "They'll appear here once the competition has a fixture with both teams set.",

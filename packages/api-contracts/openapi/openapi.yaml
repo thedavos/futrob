@@ -9744,6 +9744,14 @@ components:
             - type: number
               enum:
                 - 2
+        resolutionMode:
+          type:
+            - string
+            - "null"
+          enum:
+            - independent_matches
+            - aggregate_score
+            - null
         home:
           type: object
           properties:
@@ -9774,14 +9782,34 @@ components:
             - scheduled
             - awaiting_result
             - official
+        score:
+          type:
+            - array
+            - "null"
+          items:
+            type: object
+            properties:
+              homeGoals:
+                type: integer
+                minimum: 0
+              awayGoals:
+                type: integer
+                minimum: 0
+            required:
+              - homeGoals
+              - awayGoals
+          minItems: 1
+          maxItems: 2
       required:
         - encounterId
         - round
         - scheduledStartAt
         - officialMatchCount
+        - resolutionMode
         - home
         - away
         - status
+        - score
     CompetitionEntry:
       type: object
       properties:
@@ -19096,6 +19124,14 @@ components:
                   - type: number
                     enum:
                       - 2
+              resolutionMode:
+                type:
+                  - string
+                  - "null"
+                enum:
+                  - independent_matches
+                  - aggregate_score
+                  - null
               home:
                 type: object
                 properties:
@@ -19126,14 +19162,34 @@ components:
                   - scheduled
                   - awaiting_result
                   - official
+              score:
+                type:
+                  - array
+                  - "null"
+                items:
+                  type: object
+                  properties:
+                    homeGoals:
+                      type: integer
+                      minimum: 0
+                    awayGoals:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - homeGoals
+                    - awayGoals
+                minItems: 1
+                maxItems: 2
             required:
               - encounterId
               - round
               - scheduledStartAt
               - officialMatchCount
+              - resolutionMode
               - home
               - away
               - status
+              - score
       required:
         - competition
         - encounters

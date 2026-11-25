@@ -268,6 +268,14 @@ export const competitionEncounterStatusSchema = z.enum([
 
 export type CompetitionEncounterStatusDto = z.infer<typeof competitionEncounterStatusSchema>;
 
+/** Goals of one approved official match, oriented to the Encounter's home and away Teams. */
+export const encounterMatchScoreSchema = z.object({
+  homeGoals: z.number().int().nonnegative(),
+  awayGoals: z.number().int().nonnegative(),
+});
+
+export type EncounterMatchScoreDto = z.infer<typeof encounterMatchScoreSchema>;
+
 export const competitionEncounterSchema = z.object({
   encounterId: z.string().min(1),
   round: z.object({
@@ -276,9 +284,12 @@ export const competitionEncounterSchema = z.object({
   }),
   scheduledStartAt: z.string().datetime(),
   officialMatchCount: z.union([z.literal(1), z.literal(2)]),
+  resolutionMode: seriesResolutionModeSchema.nullable(),
   home: z.object({ teamId: z.string().min(1), name: z.string().min(1) }),
   away: z.object({ teamId: z.string().min(1), name: z.string().min(1) }),
   status: competitionEncounterStatusSchema,
+  /** Approved official match scores in slot order, home-oriented; null until official or unattributable. */
+  score: z.array(encounterMatchScoreSchema).min(1).max(2).nullable(),
 });
 
 export type CompetitionEncounterDto = z.infer<typeof competitionEncounterSchema>;

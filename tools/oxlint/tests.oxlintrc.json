@@ -67,7 +67,6 @@
         "**/apps/auth/src/adapters/auth/auth-postgres.integration.test.ts",
         "**/apps/web/src/modules/identity/presentation/private-content-gate.test.tsx",
         "**/apps/web/src/modules/results/presentation/competition-disputes-page.test.tsx",
-        "**/apps/web/src/modules/results/presentation/competition-encounters-page.test.tsx",
         "**/apps/web/src/modules/scheduling/presentation/schedule-change-recovery.test.tsx",
         "**/apps/web/src/modules/statistics/presentation/competition-standings/competition-standings-page.test.tsx",
         "**/apps/web/src/modules/statistics/presentation/team-performance/team-performance-page.test.tsx"

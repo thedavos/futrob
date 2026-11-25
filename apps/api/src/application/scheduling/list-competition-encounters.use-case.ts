@@ -1,6 +1,9 @@
 import { COMPETITION_PERMISSION, type Competition } from "@futrob/competitions";
-import type { OfficialResult } from "@futrob/results";
-import { ENCOUNTER_PERMISSION, type FixturePlan } from "@futrob/scheduling";
+import {
+  ENCOUNTER_PERMISSION,
+  type FixturePlan,
+  type SeriesResolutionMode,
+} from "@futrob/scheduling";
 import type {
   ActorId,
   AuthorizationBatchPort,
@@ -13,6 +16,11 @@ import type {
 } from "@futrob/shared-kernel";
 import { compareTime } from "@futrob/shared-kernel";
 import type { Team } from "@futrob/teams";
+import {
+  officialEncounterScores,
+  type OfficialResultScoreSource,
+  type OrientedEncounterScore,
+} from "./official-encounter-scores.ts";
 import { pairedEncounters, type PairedEncounter } from "./paired-encounters.ts";
 
 export type CompetitionEncounterStatus = "scheduled" | "awaiting_result" | "official";
@@ -22,9 +30,11 @@ export type CompetitionEncounter = {
   readonly round: { readonly number: number; readonly total: number | null };
   readonly scheduledStartAt: Date;
   readonly officialMatchCount: 1 | 2;
+  readonly resolutionMode: SeriesResolutionMode | null;
   readonly home: { readonly teamId: TeamId; readonly name: string };
   readonly away: { readonly teamId: TeamId; readonly name: string };
   readonly status: CompetitionEncounterStatus;
+  readonly score: readonly OrientedEncounterScore[] | null;
 };
 
 export type CompetitionEncounters = {
@@ -58,7 +68,7 @@ export type ListCompetitionEncountersDependencies = {
     listByCompetition(
       competitionId: CompetitionId,
       organizationId?: OrganizationId,
-    ): Promise<readonly Pick<OfficialResult, "encounterId" | "status">[]>;
+    ): Promise<readonly OfficialResultScoreSource[]>;
   };
 };
 
@@ -107,6 +117,7 @@ export class ListCompetitionEncountersUseCase {
     const official = new Set(
       results.filter((result) => result.status === "approved").map((result) => result.encounterId),
     );
+    const scores = officialEncounterScores(readable, results);
     const roundTotal = plans.reduce(
       (sum, plan) => sum + plan.stages.reduce((count, stage) => count + stage.rounds.length, 0),
       0,
@@ -118,19 +129,22 @@ export class ListCompetitionEncountersUseCase {
         const home = names.get(homeTeamId);
         const away = names.get(awayTeamId);
         if (!home || !away) return [];
+        const isOfficial = official.has(encounter.id);
         return [
           {
             encounterId: encounter.id,
             round: { number: roundNumber, total: roundTotal > 0 ? roundTotal : null },
             scheduledStartAt: encounter.scheduledStartAt,
             officialMatchCount: encounter.officialMatchCount,
+            resolutionMode: encounter.series?.resolutionMode ?? null,
             home: { teamId: homeTeamId, name: home },
             away: { teamId: awayTeamId, name: away },
-            status: official.has(encounter.id)
+            status: isOfficial
               ? "official"
               : encounter.scheduledStartAt.getTime() <= now.getTime()
                 ? "awaiting_result"
                 : "scheduled",
+            score: isOfficial ? (scores.get(encounter.id) ?? null) : null,
           },
         ];
       },

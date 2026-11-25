@@ -69,9 +69,11 @@ const encounters: ListCompetitionEncountersResponse = {
       round: { number: 1, total: 2 },
       scheduledStartAt: "2026-10-19T16:00:00.000Z",
       officialMatchCount: 2,
+      resolutionMode: null,
       home: { teamId: "team-pijadores", name: "Pijadores FC" },
       away: { teamId: "team-sobrenaturales", name: "Sobrenaturales" },
       status: "scheduled",
+      score: null,
     },
   ],
 };

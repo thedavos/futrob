@@ -14915,6 +14915,17 @@
               }
             ]
           },
+          "resolutionMode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "independent_matches",
+              "aggregate_score",
+              null
+            ]
+          },
           "home": {
             "type": "object",
             "properties": {
@@ -14956,6 +14967,31 @@
               "awaiting_result",
               "official"
             ]
+          },
+          "score": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "homeGoals": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "awayGoals": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "homeGoals",
+                "awayGoals"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 2
           }
         },
         "required": [
@@ -14963,9 +14999,11 @@
           "round",
           "scheduledStartAt",
           "officialMatchCount",
+          "resolutionMode",
           "home",
           "away",
-          "status"
+          "status",
+          "score"
         ]
       },
       "CompetitionEntry": {
@@ -28110,6 +28148,17 @@
                     }
                   ]
                 },
+                "resolutionMode": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "independent_matches",
+                    "aggregate_score",
+                    null
+                  ]
+                },
                 "home": {
                   "type": "object",
                   "properties": {
@@ -28151,6 +28200,31 @@
                     "awaiting_result",
                     "official"
                   ]
+                },
+                "score": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "homeGoals": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "awayGoals": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "homeGoals",
+                      "awayGoals"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 2
                 }
               },
               "required": [
@@ -28158,9 +28232,11 @@
                 "round",
                 "scheduledStartAt",
                 "officialMatchCount",
+                "resolutionMode",
                 "home",
                 "away",
-                "status"
+                "status",
+                "score"
               ]
             }
           }

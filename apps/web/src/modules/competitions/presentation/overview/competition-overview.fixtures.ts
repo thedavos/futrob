@@ -42,9 +42,11 @@ function encounter(
     round: { number, total: 6 },
     scheduledStartAt,
     officialMatchCount: 1,
+    resolutionMode: null,
     home: { teamId: home.toLowerCase(), name: home },
     away: { teamId: away.toLowerCase(), name: away },
     status,
+    score: status === "official" ? [{ homeGoals: 2, awayGoals: 1 }] : null,
   };
 }
 

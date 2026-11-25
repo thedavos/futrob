@@ -32,11 +32,7 @@ import type {
   PublishedCompetitionReaderPort,
 } from "@futrob/public-portal";
 import { asPublicCompetitionKey } from "@futrob/public-portal";
-import type {
-  OfficialResult,
-  OfficialResultReaderPort,
-  OfficialResultSlotSnapshot,
-} from "@futrob/results";
+import type { OfficialResultReaderPort } from "@futrob/results";
 import type {
   FixtureParticipantSlot,
   FixturePlan,
@@ -54,6 +50,7 @@ import type {
   PlayerGameAccountRepository,
   TeamRepository,
 } from "@futrob/teams";
+import { officialEncounterScores } from "@/application/scheduling/official-encounter-scores.ts";
 import { pairedEncounters } from "@/application/scheduling/paired-encounters.ts";
 
 /**
@@ -191,16 +188,15 @@ export class SchedulingPublicCalendarReader implements PublicCalendarReaderPort 
       this.fixturePlans.listActive(scope.organizationId, scope.competitionId),
       this.officialResults.listByCompetition(scope.competitionId, scope.organizationId),
     ]);
-    const scores = officialScores(plans, results);
-    return plans
-      .flatMap(pairedEncounters)
-      .map(({ encounter, homeTeamId, awayTeamId, roundNumber }) => ({
-        roundNumber,
-        scheduledStartAt: encounter.scheduledStartAt,
-        homeTeamId,
-        awayTeamId,
-        officialScore: scores.get(encounter.id) ?? null,
-      }));
+    const paired = plans.flatMap(pairedEncounters);
+    const scores = officialEncounterScores(paired, results);
+    return paired.map(({ encounter, homeTeamId, awayTeamId, roundNumber }) => ({
+      roundNumber,
+      scheduledStartAt: encounter.scheduledStartAt,
+      homeTeamId,
+      awayTeamId,
+      officialScore: scores.get(encounter.id) ?? null,
+    }));
   }
 }
 
@@ -234,53 +230,6 @@ export class TeamsPublicTeamDirectory implements PublicTeamDirectoryPort {
   }
 }
 
-/**
- * Latest approved revision of each played Encounter's OfficialResult, reduced to goals per slot
- * and oriented to the Encounter. A slot keeps EA's home/away sides, which may be the reverse of
- * the fixture, so each slot is flipped when the Teams frozen on it at approval face the
- * Encounter the other way round. Current ExternalClubConnections are never consulted: a re-link
- * must not reinterpret an approved result. A result with a slot that cannot be attributed to the
- * Encounter's Teams publishes no score rather than guessing the provider's order.
- */
-function officialScores(
-  plans: readonly FixturePlan[],
-  results: readonly OfficialResult[],
-): ReadonlyMap<EncounterId, readonly PublicMatchScore[]> {
-  const latest = new Map<EncounterId, OfficialResult>();
-  for (const result of results) {
-    if (result.status !== "approved") continue;
-    const current = latest.get(result.encounterId);
-    if (current && current.revision > result.revision) continue;
-    latest.set(result.encounterId, result);
-  }
-  const scores = new Map<EncounterId, readonly PublicMatchScore[]>();
-  for (const { encounter, homeTeamId, awayTeamId } of plans.flatMap(pairedEncounters)) {
-    const result = latest.get(encounter.id);
-    if (!result) continue;
-    const oriented = [...result.slots]
-      .sort((a, b) => a.officialSlot - b.officialSlot)
-      .map((slot) => orientSlot(slot, homeTeamId, awayTeamId));
-    if (oriented.every((score): score is PublicMatchScore => score !== null)) {
-      scores.set(encounter.id, oriented);
-    }
-  }
-  return scores;
-}
-
-function orientSlot(
-  slot: OfficialResultSlotSnapshot,
-  homeTeamId: TeamId,
-  awayTeamId: TeamId,
-): PublicMatchScore | null {
-  if (slot.homeTeamId === homeTeamId || slot.awayTeamId === awayTeamId) {
-    return { homeGoals: slot.homeGoals, awayGoals: slot.awayGoals };
-  }
-  if (slot.homeTeamId === awayTeamId || slot.awayTeamId === homeTeamId) {
-    return { homeGoals: slot.awayGoals, awayGoals: slot.homeGoals };
-  }
-  return null;
-}
-
 /** Knockout and playoff stages of the active fixture, with Encounter ids turned into positions. */
 export class SchedulingPublicBracketReader implements PublicBracketReaderPort {
   constructor(
@@ -295,7 +244,7 @@ export class SchedulingPublicBracketReader implements PublicBracketReaderPort {
     ]);
     const plan = plans[0];
     if (!plan) return null;
-    const scores = officialScores([plan], results);
+    const scores = officialEncounterScores(pairedEncounters(plan), results);
     return { timeZone: plan.timeZone, stages: bracketStages(plan, scores) };
   }
 }
