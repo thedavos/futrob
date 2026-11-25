@@ -161,13 +161,20 @@ export interface PendingActivityPage {
 }
 
 /**
- * Open activities that need the viewer, minus `competition_entry`: that row is the
- * notification of a pending entry the overview already counts from the entries list.
+ * Open activities that need the viewer. While the entries list is loaded, `competition_entry`
+ * is left out: that row is the notification of a pending entry the overview already counts
+ * and links from the entries summary. Without that list, the activity stays as the fallback
+ * way to review the entry.
  */
-export function pendingTasks(activities: readonly ActivityEntryDto[]): readonly ActivityEntryDto[] {
+export function pendingTasks(
+  activities: readonly ActivityEntryDto[],
+  entriesKnown: boolean,
+): readonly ActivityEntryDto[] {
   return activities.filter(
     (entry) =>
-      entry.status === "open" && entry.requiresAction && entry.kind !== "competition_entry",
+      entry.status === "open" &&
+      entry.requiresAction &&
+      (!entriesKnown || entry.kind !== "competition_entry"),
   );
 }
 
@@ -177,14 +184,21 @@ export interface PendingTotal {
   readonly partial: boolean;
 }
 
-/** One pending total for the KPI and the Pendientes card, each item counted once. */
+/**
+ * One pending total for the KPI and the Pendientes card, each item counted once.
+ * `pendingEntries` is `null` when the entries list is unavailable; their open activities
+ * are counted instead.
+ */
 export function pendingTotal(
-  pendingEntries: number,
+  pendingEntries: number | null,
   awaiting: number,
   page: PendingActivityPage,
 ): PendingTotal {
   return {
-    count: pendingEntries + awaiting + pendingTasks(page.activities).length,
+    count:
+      (pendingEntries ?? 0) +
+      awaiting +
+      pendingTasks(page.activities, pendingEntries !== null).length,
     partial: page.nextCursor !== null,
   };
 }

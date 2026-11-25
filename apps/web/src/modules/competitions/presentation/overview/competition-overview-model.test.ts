@@ -112,10 +112,21 @@ describe("competition overview model", () => {
   it("counts a pending entry once, not again through its open activity", () => {
     const pendingEntries = countEntries(overviewEntries).pending;
     expect(pendingEntries).toBe(1);
-    expect(pendingTasks(overviewActivities).map((entry) => entry.id)).toEqual(["dispute"]);
+    expect(pendingTasks(overviewActivities, true).map((entry) => entry.id)).toEqual(["dispute"]);
     expect(
       pendingTotal(pendingEntries, 0, { activities: overviewActivities, nextCursor: null }),
     ).toEqual({ count: 2, partial: false });
+  });
+
+  it("keeps the entry activity as the way to review it when the entries list is unavailable", () => {
+    expect(pendingTasks(overviewActivities, false).map((entry) => entry.id)).toEqual([
+      "dispute",
+      "entry-atlas",
+    ]);
+    expect(pendingTotal(null, 0, { activities: overviewActivities, nextCursor: null })).toEqual({
+      count: 2,
+      partial: false,
+    });
   });
 
   it("counts every open task read, not just the ones the card renders", () => {

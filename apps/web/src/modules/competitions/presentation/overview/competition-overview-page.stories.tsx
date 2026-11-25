@@ -562,6 +562,12 @@ export const EntriesErrorWithData: Story = {
     await expect(
       pending.findByText("1 enfrentamiento sin resultado oficial"),
     ).resolves.toBeVisible();
+    // Without the entries list, the open entry activity still leads to Equipos.
+    const reviewEntry = await pending.findByRole("link", { name: /Revisar inscripción/ });
+    await expect(reviewEntry).toHaveAttribute(
+      "href",
+      expect.stringMatching(/\/competitions\/[^/]+\/teams$/),
+    );
     await expect(pending.queryByRole("status")).toBeNull();
   },
 };

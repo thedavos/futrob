@@ -111,9 +111,12 @@ export function PendingSection({
   const titleId = useId();
   const params = { orgId: organizationId, competitionId };
   // The total counts every task read; only the first few are rendered.
-  const openTasks = activities.status === "ready" ? pendingTasks(activities.data.activities) : [];
-  const shownTasks = openTasks.slice(0, OVERVIEW_PENDING_LIMIT);
   const pendingEntries = entriesPending.status === "ready" ? entriesPending.data : null;
+  const openTasks =
+    activities.status === "ready"
+      ? pendingTasks(activities.data.activities, pendingEntries !== null)
+      : [];
+  const shownTasks = openTasks.slice(0, OVERVIEW_PENDING_LIMIT);
   const awaiting = awaitingCount.status === "ready" ? awaitingCount.data : null;
   const sources = [activities, entriesPending, awaitingCount];
   const failedSources = sources.filter((source) => source.status === "error");
@@ -123,7 +126,7 @@ export function PendingSection({
   const showSkeleton = sources.some((source) => source.status === "loading");
   const total =
     activities.status === "ready"
-      ? pendingTotal(pendingEntries ?? 0, awaiting ?? 0, activities.data)
+      ? pendingTotal(pendingEntries, awaiting ?? 0, activities.data)
       : { count: (pendingEntries ?? 0) + (awaiting ?? 0), partial: false };
 
   return (
