@@ -9,4 +9,7 @@ export const textTone = stylex.create({
   muted: {
     color: colors.mutedForeground,
   },
+  tertiary: {
+    color: colors.textTertiary,
+  },
 });

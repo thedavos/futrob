@@ -3,7 +3,7 @@ import { CheckIcon, CaretDownIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
 import { applyProps, type HostClassName } from "#styles/apply";
-import { colors } from "#styles/tokens.stylex";
+import { colors, z } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
 import { typography } from "#styles/typography";
@@ -75,7 +75,7 @@ const styles = stylex.create({
     color: colors.mutedForeground,
   },
   positioner: {
-    zIndex: 50,
+    zIndex: z.popover,
     outlineWidth: 0,
     outlineStyle: "none",
   },
@@ -200,8 +200,10 @@ function SelectContent({
   style,
   sideOffset = 6,
   ...props
-}: SelectPrimitive.Popup.Props &
-  Pick<SelectPrimitive.Positioner.Props, "align" | "alignItemWithTrigger" | "sideOffset">) {
+}: Omit<SelectPrimitive.Popup.Props, "className"> &
+  Pick<SelectPrimitive.Positioner.Props, "align" | "alignItemWithTrigger" | "sideOffset"> & {
+    className?: HostClassName | SelectPrimitive.Popup.Props["className"];
+  }) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
@@ -222,7 +224,13 @@ function SelectContent({
   );
 }
 
-function SelectLabel({ className, style, ...props }: SelectPrimitive.Label.Props) {
+function SelectLabel({
+  className,
+  style,
+  ...props
+}: Omit<SelectPrimitive.Label.Props, "className"> & {
+  className?: HostClassName | SelectPrimitive.Label.Props["className"];
+}) {
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
@@ -232,7 +240,14 @@ function SelectLabel({ className, style, ...props }: SelectPrimitive.Label.Props
   );
 }
 
-function SelectItem({ children, className, style, ...props }: SelectPrimitive.Item.Props) {
+function SelectItem({
+  children,
+  className,
+  style,
+  ...props
+}: Omit<SelectPrimitive.Item.Props, "className"> & {
+  className?: HostClassName | SelectPrimitive.Item.Props["className"];
+}) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -250,7 +265,13 @@ function SelectItem({ children, className, style, ...props }: SelectPrimitive.It
   );
 }
 
-function SelectSeparator({ className, style, ...props }: SelectPrimitive.Separator.Props) {
+function SelectSeparator({
+  className,
+  style,
+  ...props
+}: Omit<SelectPrimitive.Separator.Props, "className"> & {
+  className?: HostClassName | SelectPrimitive.Separator.Props["className"];
+}) {
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"

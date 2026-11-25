@@ -32,3 +32,18 @@ describe("native typography tokens", () => {
     expect(theme.typo("body").fontVariant).toBeUndefined();
   });
 });
+
+describe("native geometry and color tokens", () => {
+  it("converts rem and px corner tokens into dp without scaling px by 16", () => {
+    expect(theme.corner.md).toBe(8);
+    expect(theme.corner.lg).toBe(12);
+    expect(theme.corner.full).toBe(9999);
+    expect(theme.spacing[0]).toBe(0);
+    expect(theme.spacing[4]).toBe(16);
+  });
+
+  it("provides a distinct destructive-hover color for pressed destructive buttons", () => {
+    expect(theme.colors["destructive-hover"]).toBeDefined();
+    expect(theme.colors["destructive-hover"]).not.toBe(theme.colors.danger);
+  });
+});

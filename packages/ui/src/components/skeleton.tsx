@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { motion } from "#styles/motion";
 
@@ -12,7 +12,11 @@ const styles = stylex.create({
   },
 });
 
-function Skeleton({ className, style, ...props }: React.ComponentProps<"div">) {
+function Skeleton({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div
       aria-hidden="true"

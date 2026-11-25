@@ -13,5 +13,9 @@ export const LAYERING_TOKENS: TokenMap = {
   "z-dropdown": raw("40"),
   "z-overlay": raw("60"),
   "z-dialog": raw("80"),
+  /** Portaled floating surfaces (Select, DropdownMenu, Popover) stay above Dialog/Sheet. */
+  "z-popover": raw("90"),
+  /** Tooltips stay above dialogs and popovers. */
+  "z-tooltip": raw("95"),
   "z-toast": raw("100"),
 };

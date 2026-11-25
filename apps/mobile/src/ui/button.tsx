@@ -39,9 +39,9 @@ const SKINS = {
     textColor: "secondary-foreground",
   },
   outline: {
-    background: undefined,
+    background: theme.colors.surface,
     pressedBackground: theme.colors.muted,
-    border: theme.colors.border,
+    border: theme.colors["border-strong"],
     textColor: "foreground",
   },
   ghost: {
@@ -52,7 +52,7 @@ const SKINS = {
   },
   destructive: {
     background: theme.colors.danger,
-    pressedBackground: theme.colors.danger,
+    pressedBackground: theme.colors["destructive-hover"],
     border: undefined,
     textColor: "danger-foreground",
   },
@@ -91,7 +91,7 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
         style={[
           {
             minHeight: theme.controlHeight,
-            borderRadius: theme.corner.md,
+            borderRadius: theme.corner.lg,
             alignItems: "center",
             justifyContent: "center",
             paddingHorizontal: theme.spacing[4],
@@ -102,23 +102,29 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
               : pressed
                 ? skin.pressedBackground
                 : skin.background,
-            borderWidth: skin.border === undefined ? 0 : 1,
+            borderWidth:
+              skin.border === undefined && !isInactive ? 0 : skin.background === undefined ? 0 : 1,
             borderColor: isInactive
-              ? theme.colors["border-subtle"]
+              ? skin.background === undefined
+                ? "transparent"
+                : theme.colors.border
               : (skin.border ?? "transparent"),
-            opacity: isInactive && skin.background === undefined ? 0.5 : 1,
           },
         ]}
       >
         {loading ? (
-          <ActivityIndicator color={theme.colors[skin.textColor]} />
+          <ActivityIndicator color={theme.colors["muted-foreground"]} />
         ) : (
           <RNText
             style={{
               fontFamily: theme.fontFamily.semibold,
               fontSize: theme.textSizes.sm,
               lineHeight: 20,
-              color: isInactive ? theme.colors["muted-foreground"] : theme.colors[skin.textColor],
+              color: isInactive
+                ? skin.background === undefined
+                  ? theme.colors["text-disabled"]
+                  : theme.colors["muted-foreground"]
+                : theme.colors[skin.textColor],
             }}
           >
             {label}

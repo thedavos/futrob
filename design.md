@@ -114,7 +114,7 @@ composición. Medir el par renderizado, incluidas mezclas y opacidad, antes de d
 
 - `packages/ui-tokens/src/scales.ts`: colores sRGB del brief convertidos a OKLCH con precisión
   suficiente para recuperar el HEX exacto; solo colores de la paleta vigente. Los pasos
-  derivados (`gray-mid`, `gray-dim`) se calculan con `mixOklab` a partir de esos colores.
+  derivados (`gray-mid`, `gray-dim`, `red-soft`) se calculan con `mixOklab` a partir de esos colores.
 - `theme.ts`: asignación semántica única. Los alias light/dark mantienen compatibilidad.
 - `typography.ts`, `geometry.ts`, `motion.ts`: roles, medidas, duración y capas compartidos.
 - `packages/ui/src/tokens.css`: artefacto generado. Nunca editar valores aquí a mano.
@@ -192,7 +192,7 @@ el look desciende con el nivel.
 - `Score` — cualquier cifra que cambia (marcador, %, conteo, celda); `align` `start` \| `center` \| `end`; `tone` `muted` para no disponible (`—`). El color de estado vive en `StatValue`
 - `Eyebrow` — kicker sobre un título (`typography.label` muted). No es un `<label>`
 - `SectionTitle` — heading semántico (`h2`–`h4`) con look de label (“Rendimiento”, “Atributos”)
-- `TextLink` — enlace de texto (no `Button variant="link"`); `text` `body` \| `caption` \| `label`; `render` para el router
+- `TextLink` — enlace de texto para navegación (`<a>`, no `Button variant="link"`, que se reserva para acciones inline de botón como «Reintentar» o «Editar»); `text` `body` \| `caption` \| `label`; `render` para el router
 - `MetaList` — `dl` de metadata (`MetaItem` + `MetaTerm` + `MetaValue`); `columns` `1` \| `2`
 - `Label` — `<label>` de formulario. Navegación y columnas reutilizan el rol vía `FieldLabel` / `TableHead`
 
@@ -226,17 +226,17 @@ La navegación de producto usa `typography.label`. El estado activo no depende �
 
 ### Datos
 
-- `Table` y primitivas de fila/celda. `TableHead` y `TableCell` aceptan `align`
+- `Table` y primitivas de fila/celda con estilo editorial sin marco exterior (`border-collapse: collapse`, cabecera transparente en mayúsculas con `tracking-caps`, divisores horizontales finos y hover sutil solo en filas del cuerpo) para integrarse limpiamente tanto sobre el fondo de página como dentro de `Card`. `TableHead` y `TableCell` aceptan `align`
   `start` \| `center` \| `end`; `end` alinea a la derecha, mantiene `tabular-nums` y no envuelve.
-  `stickyHeader` fija la fila de encabezado: el contenedor pasa a ser el scroll vertical y
+  `stickyHeader` fija la fila de encabezado sobre el fondo opaco de su superficie anfitriona: el contenedor pasa a ser el scroll vertical y
   necesita un alto máximo vía `containerClassName`.
 - `Badge` con variantes `approved` (solo resultados oficiales) y `emphasis` (acento categórico; no es un estado).
   `neutral` y `outline` usan peso 500 para no competir con el nombre de la fila; las variantes
   de estado mantienen 600 porque el estado es el mensaje.
 - `Card` para entidades o resúmenes autónomos. `CardTitle` usa `typography.title`;
   `CardDescription` usa `typography.subtitle` (14 px muted), con 4 px entre ambos
-  - `variant="flat"` (default): borde estructural, sin elevación.
-  - `variant="elevated"`: `elevation.md`. Sin `border`/`ring` en el mismo elemento.
+  - `variant="flat"` (default): `surface` + borde estructural, sin elevación.
+  - `variant="elevated"`: `surface-raised` + `elevation.md` (sombras calibradas para Grafito con hairline y bisel superior embebidos). Sin `border`/`ring` en el mismo elemento.
     Solo entidades autónomas sobre fondo plano. No usar en grids densas, forms ni cards anidadas.
 - `EmptyState`: composición abierta sobre el fondo de página, sin panel dashed ni
   elevación. Ilustración opcional, heading, subtitle, CTA y pie opcional.
@@ -255,9 +255,12 @@ La navegación de producto usa `typography.label`. El estado activo no depende �
   - `tone`: `default` (`foreground`) | `muted` | `success` | `warning` | `error` (`error` → danger).
     `muted` para valores no disponibles (`—`). El color no comunica solo; acompaña label/hint.
     El formateo (locale, `%`, miles) es de la presentación; el primitivo no conoce dominio.
-  - `StatHint`: `typography.caption` (12 px, 400), `muted-foreground`.
+  - `StatHint`: `typography.caption` (12 px, 400), `text-tertiary`.
   - `StatGroup` `wrap`: flex, gap 32×20 px. `triple`: grid 3 columnas, gap 12 px.
     Las teselas de Inicio y perfil sustituyen ese group por un grid de producto.
+- `LeadCard`: tarjeta con isla de icono circular (`tone` `primary` lima diluida \| `muted`),
+  título (`typography.title`), subtítulo opcional, contenido y acción opcional; usada en
+  bloques laterales de Inicio y guías rápidas.
 - `ScrollArea` para listas densas y overflow controlado
 - `Progress` para sync/jobs con estado explícito (texto + barra; `value={null}` = indeterminado)
 
@@ -284,6 +287,7 @@ Variantes cerradas: `default`, `secondary`, `outline`, `ghost`, `destructive`, `
 - `secondary`/`outline`: acciones de apoyo.
 - `ghost`: acciones de baja prominencia.
 - `destructive`: solo con semántica destructiva; normalmente dentro de confirmación.
+- `link`: solo acciones botón inline de baja prominencia («Reintentar», «Editar»); para navegación (`<a>`) usar `TextLink`.
 - `ButtonIcon`: isla circular distintiva exclusiva para CTA de marketing. No usarla en tablas,
   toolbars ni formularios operativos.
 
@@ -372,7 +376,9 @@ formateo local en la presentación; cuatro teselas pares usan la misma escala de
 
 #### Composición Stat Inicio {#composicion-stat-inicio}
 
-Referencia: `home-performance.tsx` (fila de rendimiento de `/player`). Es la tesela de
+Referencia: `shared/presentation/stats/home-kpi.tsx` (`HomeKpiGroup`, `HomeKpiStat`,
+`HomeKpiSkeletonGroup`), consumido en `home-performance.tsx` (Inicio del jugador),
+`organization-home-kpis.tsx` y `competition-overview-kpis.tsx`. Es la tesela de
 dashboard: cifra grande, sin hint, icono lima como ancla. Reutilizarla en otras homes o
 resúmenes de una sola cifra (organización, portal autenticado, bloques equivalentes).
 
@@ -1168,10 +1174,13 @@ La marca y el lenguaje visual son los mismos que en web; cambia la plataforma de
 Viven en `apps/mobile/src/ui/` — espejo de contrato, no de implementación:
 
 - `Text` (roles cerrados), `Button` (`primary | secondary | outline | ghost | destructive`),
-  `Input` (label + error + hint), `EmptyState` (flat dashed), `Screen`, `Logo`.
+  `Input` (label + error + hint + estado no editable), `Card` (`flat` con título `title`),
+  `List` / `ListItem` / `ListSection`, `Dialog` (bottom sheet modal), `Tabs` (`line` \| `pills`,
+  con scroll horizontal), `Skeleton`, `EmptyState` (composición abierta sin panel dashed),
+  `LoadingState`, `ErrorState`, `Icon`, `Screen`, `Logo`.
 - Variantes cerradas: prohibido inventar variantes o colores ad hoc, igual que en web.
 - Elevación: solo overlays futuros usarían elevación nativa; nunca combinar borde y sombra.
-- Iconos: catálogo RN pendiente (Phosphor tiene build para RN); MVP no usa iconografía decorativa.
+- Iconos: `Icon` provee el subconjunto SVG operativo vigente; catálogo Phosphor RN completo pendiente.
 
 ### Marca de app
 
@@ -1276,13 +1285,13 @@ Los estilos de producto se escriben con StyleX. Importa `colors` desde
 Los componentes se importan desde la API pública:
 
 ```tsx
-import { applyProps, Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo, readFormString } from "@futrob/ui";
+import { Button, Field, FieldError, FieldLabel, Form, Input, InputWithIcon, Logo, readFormString } from "@futrob/ui";
 import { CheckCircleIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
 const logo = stylex.create({ mark: { height: "2rem", width: "auto" } });
 
-<Logo {...applyProps(undefined, undefined, logo.mark)} title="Futrob" />
+<Logo className={logo.mark} title="Futrob" />
 <Form validationMode="onBlur">
   <Field
     name="name"
@@ -1378,13 +1387,13 @@ Después:
 El componente público está en [`packages/ui/src/logo.tsx`](/packages/ui/src/logo.tsx):
 
 ```tsx
-import { applyProps, Logo } from "@futrob/ui";
+import { Logo } from "@futrob/ui";
 import * as stylex from "@stylexjs/stylex";
 
 const logo = stylex.create({ mark: { height: "2rem", width: "auto" } });
 
-<Logo {...applyProps(undefined, undefined, logo.mark)} title="Futrob" />
-<Logo {...applyProps(undefined, undefined, logo.mark)} monochrome />
+<Logo className={logo.mark} title="Futrob" />
+<Logo className={logo.mark} monochrome />
 ```
 
 - Sin `title`, el SVG es decorativo. Úsalo así junto al wordmark visible “Futrob”.

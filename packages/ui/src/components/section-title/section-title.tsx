@@ -1,14 +1,15 @@
 import type { ComponentProps } from "react";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { textTone } from "#styles/text-tone";
 import { typography, type TextTone } from "#styles/typography";
 
 export type SectionTitleLevel = "h2" | "h3" | "h4";
 
-export type SectionTitleProps = ComponentProps<"h2"> & {
+export type SectionTitleProps = Omit<ComponentProps<"h2">, "className"> & {
   as?: SectionTitleLevel;
+  className?: HostClassName;
   tone?: TextTone;
   truncate?: boolean;
 };

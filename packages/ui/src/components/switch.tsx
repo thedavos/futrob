@@ -1,7 +1,7 @@
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -20,11 +20,18 @@ const styles = stylex.create({
       ":focus-visible": colors.ring,
       ':is([aria-invalid="true"])': colors.danger,
       ':is([aria-invalid="true"]):focus-visible': colors.danger,
+      ":disabled": colors.border,
+      ":is([data-disabled])": colors.border,
+      ":is([data-checked][data-disabled])": colors.border,
     },
     backgroundColor: {
       default: colors.input,
       ":is([data-checked])": colors.primary,
       ":is([data-unchecked])": colors.input,
+      ":disabled": colors.muted,
+      ":is([data-disabled])": colors.muted,
+      ":is([data-checked][data-disabled])": colors.muted,
+      ":is([data-unchecked][data-disabled])": colors.muted,
     },
     padding: "0.125rem",
     transitionProperty: "background-color, border-color, box-shadow",
@@ -42,16 +49,13 @@ const styles = stylex.create({
     cursor: {
       default: null,
       ":disabled": "not-allowed",
-    },
-    opacity: {
-      default: 1,
-      ":disabled": 0.5,
+      ":is([data-disabled])": "not-allowed",
     },
     "::after": {
       content: '""',
       position: "absolute",
-      top: "-0.5rem",
-      bottom: "-0.5rem",
+      top: "-0.625rem",
+      bottom: "-0.625rem",
       left: "-0.375rem",
       right: "-0.375rem",
     },
@@ -65,6 +69,8 @@ const styles = stylex.create({
     backgroundColor: {
       default: colors.surface,
       ":is([data-checked])": colors.primaryForeground,
+      ":is([data-disabled])": colors.textDisabled,
+      ":is([data-checked][data-disabled])": colors.textDisabled,
     },
     transitionProperty: "translate",
     transitionDuration: "var(--duration-normal)",
@@ -77,7 +83,11 @@ const styles = stylex.create({
   },
 });
 
-function Switch({ className, style, ...props }: SwitchPrimitive.Root.Props) {
+type SwitchProps = Omit<SwitchPrimitive.Root.Props, "className"> & {
+  className?: HostClassName | SwitchPrimitive.Root.Props["className"];
+};
+
+function Switch({ className, style, ...props }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"

@@ -44,6 +44,7 @@ export const colors = stylex.defineVars({
   danger: "var(--danger)",
   dangerForeground: "var(--danger-foreground)",
   destructive: "var(--destructive)",
+  destructiveHover: "var(--destructive-hover)",
   destructiveActive: "var(--destructive-active)",
   destructiveForeground: "var(--destructive-foreground)",
   info: "var(--info)",
@@ -58,6 +59,16 @@ export const colors = stylex.defineVars({
   sidebarAccentForeground: "var(--sidebar-accent-foreground)",
   sidebarBorder: "var(--sidebar-border)",
   sidebarRing: "var(--sidebar-ring)",
+  statusSync: "var(--status-sync)",
+  statusSelection: "var(--status-selection)",
+  statusApproved: "var(--status-approved)",
+  statusDispute: "var(--status-dispute)",
+  statusCancelled: "var(--status-cancelled)",
+  chart1: "var(--chart-1)",
+  chart2: "var(--chart-2)",
+  chart3: "var(--chart-3)",
+  chart4: "var(--chart-4)",
+  chart5: "var(--chart-5)",
   brand500: "var(--brand-500)",
   brand700: "var(--brand-700)",
   neutral950: "var(--neutral-950)",
@@ -78,4 +89,48 @@ export const space = stylex.defineVars({
   s8: "var(--space-8)",
   s10: "var(--space-10)",
   s12: "var(--space-12)",
+  s16: "var(--space-16)",
+  s20: "var(--space-20)",
+});
+
+/** Corner radius ramp from `tokens.css` (`--corner-*`). */
+export const corner = stylex.defineVars({
+  xs: "var(--corner-xs)",
+  sm: "var(--corner-sm)",
+  md: "var(--corner-md)",
+  lg: "var(--corner-lg)",
+  xl: "var(--corner-xl)",
+  xxl: "var(--corner-2xl)",
+  xxxl: "var(--corner-3xl)",
+  full: "var(--corner-full)",
+});
+
+/** Control height tokens from `tokens.css` (`--control-height*`). */
+export const control = stylex.defineVars({
+  height: "var(--control-height)",
+  heightDense: "var(--control-height-dense)",
+  heightTouch: "var(--control-height-touch)",
+});
+
+/** Motion timing tokens from `tokens.css` (`--duration-*`, `--ease-*`). */
+export const timing = stylex.defineVars({
+  fast: "var(--duration-fast)",
+  normal: "var(--duration-normal)",
+  slow: "var(--duration-slow)",
+  easeStandard: "var(--ease-standard)",
+  easeEmphasized: "var(--ease-emphasized)",
+});
+
+/**
+ * Layering scale mirroring `LAYERING_TOKENS` in `@futrob/ui-tokens`.
+ * Defined as compile-time constants so StyleX `zIndex` stays strictly numeric.
+ */
+export const z = stylex.defineConsts({
+  sticky: 20,
+  dropdown: 40,
+  overlay: 60,
+  dialog: 80,
+  popover: 90,
+  tooltip: 95,
+  toast: 100,
 });

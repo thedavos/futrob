@@ -2,15 +2,15 @@ import type { ComponentProps } from "react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
-import { colors } from "#styles/tokens.stylex";
+import { applyProps, type HostClassName } from "#styles/apply";
+import { colors, z } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
 import { typography } from "#styles/typography";
 
 const styles = stylex.create({
   positioner: {
-    zIndex: 50,
+    zIndex: z.popover,
     outlineWidth: 0,
     outlineStyle: "none",
   },
@@ -66,13 +66,13 @@ const styles = stylex.create({
       default: null,
       ":is([data-highlighted])": colors.muted,
     },
+    color: {
+      default: null,
+      ":is([data-disabled])": colors.textDisabled,
+    },
     pointerEvents: {
       default: null,
       ":is([data-disabled])": "none",
-    },
-    opacity: {
-      default: 1,
-      ":is([data-disabled])": 0.5,
     },
   },
   itemInset: {
@@ -97,8 +97,10 @@ function DropdownMenuContent({
   side = "bottom",
   sideOffset = 8,
   ...props
-}: MenuPrimitive.Popup.Props &
-  Pick<MenuPrimitive.Positioner.Props, "align" | "side" | "sideOffset">) {
+}: Omit<MenuPrimitive.Popup.Props, "className"> &
+  Pick<MenuPrimitive.Positioner.Props, "align" | "side" | "sideOffset"> & {
+    className?: HostClassName | MenuPrimitive.Popup.Props["className"];
+  }) {
   return (
     <DropdownMenuPortal>
       <MenuPrimitive.Positioner
@@ -117,7 +119,13 @@ function DropdownMenuContent({
   );
 }
 
-function DropdownMenuLabel({ className, style, ...props }: MenuPrimitive.GroupLabel.Props) {
+function DropdownMenuLabel({
+  className,
+  style,
+  ...props
+}: Omit<MenuPrimitive.GroupLabel.Props, "className"> & {
+  className?: HostClassName | MenuPrimitive.GroupLabel.Props["className"];
+}) {
   return (
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
@@ -132,7 +140,10 @@ function DropdownMenuItem({
   style,
   inset,
   ...props
-}: MenuPrimitive.Item.Props & { inset?: boolean }) {
+}: Omit<MenuPrimitive.Item.Props, "className"> & {
+  className?: HostClassName | MenuPrimitive.Item.Props["className"];
+  inset?: boolean;
+}) {
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
@@ -146,7 +157,9 @@ function DropdownMenuSeparator({
   className,
   style,
   ...props
-}: ComponentProps<typeof MenuPrimitive.Separator>) {
+}: Omit<ComponentProps<typeof MenuPrimitive.Separator>, "className"> & {
+  className?: HostClassName | ComponentProps<typeof MenuPrimitive.Separator>["className"];
+}) {
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"

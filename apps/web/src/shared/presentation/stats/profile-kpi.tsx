@@ -59,7 +59,7 @@ const styles = stylex.create({
 
 /** Grid of the profile stat composition (design.md, "Composición Stat perfil"). */
 export function ProfileKpiGroup({ children }: { readonly children: ReactNode }) {
-  return <StatGroup {...applyStyles(styles.group)}>{children}</StatGroup>;
+  return <StatGroup className={styles.group}>{children}</StatGroup>;
 }
 
 /** Profile tile: muted icon without an island, value and an optional hint with context. */
@@ -77,7 +77,7 @@ export function ProfileKpiStat({
   readonly value: string | null;
 }) {
   return (
-    <Stat {...applyStyles(styles.panel)}>
+    <Stat className={styles.panel}>
       <div {...applyStyles(styles.stack)}>
         <span aria-hidden {...applyStyles(styles.iconCell)}>
           <Glyph aria-hidden size={KPI_ICON_SIZE} {...applyStyles(styles.icon)} />

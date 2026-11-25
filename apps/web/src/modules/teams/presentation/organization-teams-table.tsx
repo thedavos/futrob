@@ -27,7 +27,6 @@ import {
 } from "./organization-teams-model.ts";
 
 const styles = stylex.create({
-  tableContainer: { borderWidth: 0, borderRadius: 0 },
   table: { minWidth: "24rem" },
   team: { display: "flex", flexDirection: "column", gap: "0.125rem", minWidth: 0 },
   name: { fontWeight: 600, overflowWrap: "anywhere" },
@@ -82,7 +81,6 @@ export function OrganizationTeamsTable({
   return (
     <Table
       aria-labelledby={labelledBy}
-      containerClassName={styles.tableContainer}
       containerLabelledBy={labelledBy}
       dense
       {...applyStyles(styles.table)}

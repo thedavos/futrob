@@ -90,13 +90,11 @@ export function SummaryCardLoading({
   readonly style?: CSSProperties;
 } & Omit<ComponentProps<typeof Card>, "children" | "className" | "style">) {
   const card = applyProps(className, style, styles.card);
-  const title = applyStyles(styles.skeletonTitle);
-  const value = applyStyles(styles.skeletonValue);
   return (
     <Card className={card.className} style={card.style} {...props}>
       <CardContent className={styles.loadingContent}>
-        <Skeleton className={title.className} style={title.style} />
-        <Skeleton className={value.className} style={value.style} />
+        <Skeleton className={styles.skeletonTitle} />
+        <Skeleton className={styles.skeletonValue} />
       </CardContent>
     </Card>
   );

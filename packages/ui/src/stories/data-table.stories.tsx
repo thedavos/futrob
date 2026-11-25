@@ -24,6 +24,20 @@ const styles = stylex.create({
   },
   // `stickyHeader` makes the container the vertical scroller; the caller sets its height.
   scroller: { maxHeight: "16rem" },
+  positionHead: { width: "2.5rem" },
+  leader: {
+    color: colors.primary,
+    fontWeight: "var(--font-weight-bold)",
+  },
+  position: {
+    color: colors.mutedForeground,
+  },
+  aboveCut: {
+    borderBottomWidth: 1,
+    borderBottomStyle: "dashed",
+    borderBottomColor: colors.primary,
+  },
+  mutedFigure: { color: colors.mutedForeground },
   points: { fontWeight: "var(--font-weight-bold)" },
   medium: { fontWeight: 500 },
   semibold: { fontWeight: 600 },
@@ -121,6 +135,9 @@ export const AlignedFigures: Story = {
       <Table dense>
         <TableHeader>
           <TableRow>
+            <TableHead className={styles.positionHead} scope="col">
+              <abbr title="Posición">#</abbr>
+            </TableHead>
             <TableHead scope="col">Equipo</TableHead>
             <TableHead align="end" scope="col">
               <abbr title="Partidos jugados">PJ</abbr>
@@ -134,16 +151,19 @@ export const AlignedFigures: Story = {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {standings.map((row) => (
-            <TableRow key={row.team}>
-              <TableCell>{row.team}</TableCell>
+          {standings.map((row, index) => (
+            <TableRow className={index === 1 ? styles.aboveCut : undefined} key={row.team}>
+              <TableCell className={index === 0 ? styles.leader : styles.position}>
+                {index + 1}
+              </TableCell>
+              <TableCell className={styles.semibold}>{row.team}</TableCell>
               <TableCell align="end">
-                <Score align="end" as="span" size="table">
+                <Score align="end" as="span" className={styles.mutedFigure} size="table">
                   {row.played}
                 </Score>
               </TableCell>
               <TableCell align="end">
-                <Score align="end" as="span" size="table">
+                <Score align="end" as="span" className={styles.mutedFigure} size="table">
                   {signed.format(row.goalDifference)}
                 </Score>
               </TableCell>
@@ -159,7 +179,11 @@ export const AlignedFigures: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
+    const container = canvasElement.querySelector("[data-slot='table-container']")!;
+    const table = canvasElement.querySelector("[data-slot='table']")!;
     const heads = canvasElement.querySelectorAll("[data-slot='table-head'][data-align='end']");
+    await expect(getComputedStyle(container).borderTopWidth).toBe("0px");
+    await expect(getComputedStyle(table).borderCollapse).toBe("collapse");
     await expect(heads).toHaveLength(3);
     for (const head of heads) {
       await expect(getComputedStyle(head).textAlign).toBe("end");

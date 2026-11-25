@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import * as stylex from "@stylexjs/stylex";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { textAlign, type TextAlign } from "#styles/text-align";
 import { textTone } from "#styles/text-tone";
 import { textWeight, type TextWeight } from "#styles/text-weight";
@@ -23,8 +23,9 @@ export type BodySize = "md" | "lg";
 
 export type BodyElement = "p" | "span";
 
-export type BodyProps = ComponentProps<"p"> & {
+export type BodyProps = Omit<ComponentProps<"p">, "className"> & {
   as?: BodyElement;
+  className?: HostClassName;
   /** `md` 14px (body) · `lg` 16px. Closed; 12 px copy uses `Caption`. */
   size?: BodySize;
   tone?: TextTone;

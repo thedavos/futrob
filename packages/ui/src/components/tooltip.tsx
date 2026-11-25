@@ -1,12 +1,12 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
-import { colors } from "#styles/tokens.stylex";
+import { applyProps, type HostClassName } from "#styles/apply";
+import { colors, z } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
   positioner: {
-    zIndex: 50,
+    zIndex: z.tooltip,
     outlineWidth: 0,
     outlineStyle: "none",
   },
@@ -44,8 +44,10 @@ function TooltipContent({
   side = "top",
   sideOffset = 6,
   ...props
-}: TooltipPrimitive.Popup.Props &
-  Pick<TooltipPrimitive.Positioner.Props, "align" | "side" | "sideOffset">) {
+}: Omit<TooltipPrimitive.Popup.Props, "className"> &
+  Pick<TooltipPrimitive.Positioner.Props, "align" | "side" | "sideOffset"> & {
+    className?: HostClassName | TooltipPrimitive.Popup.Props["className"];
+  }) {
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Positioner

@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 
@@ -97,7 +97,11 @@ function Alert({
   elevation: elevationProp = "flat",
   variant = "default",
   ...props
-}: React.ComponentProps<"div"> & { elevation?: AlertElevation; variant?: AlertVariant }) {
+}: Omit<React.ComponentProps<"div">, "className"> & {
+  className?: HostClassName;
+  elevation?: AlertElevation;
+  variant?: AlertVariant;
+}) {
   return (
     <div
       data-slot="alert"
@@ -116,11 +120,19 @@ function Alert({
   );
 }
 
-function AlertTitle({ className, style, ...props }: React.ComponentProps<"div">) {
+function AlertTitle({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return <div data-slot="alert-title" {...applyProps(className, style, styles.title)} {...props} />;
 }
 
-function AlertDescription({ className, style, ...props }: React.ComponentProps<"div">) {
+function AlertDescription({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div
       data-slot="alert-description"

@@ -60,7 +60,11 @@ function PageHeader({
   );
 }
 
-function PageHeaderEyebrow({ className, style, ...props }: ComponentProps<"p">) {
+function PageHeaderEyebrow({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"p">, "className"> & { className?: HostClassName }) {
   return (
     <Eyebrow
       data-slot="page-header-eyebrow"
@@ -80,7 +84,11 @@ function PageHeaderTitle({
   title,
   children,
   ...props
-}: ComponentProps<"h1"> & { size?: PageHeaderTitleSize; truncate?: boolean }) {
+}: Omit<ComponentProps<"h1">, "className"> & {
+  className?: HostClassName;
+  size?: PageHeaderTitleSize;
+  truncate?: boolean;
+}) {
   return (
     <h1
       data-slot="page-header-title"
@@ -103,7 +111,11 @@ function PageHeaderTitle({
   );
 }
 
-function PageHeaderDescription({ className, style, ...props }: ComponentProps<"p">) {
+function PageHeaderDescription({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"p">, "className"> & { className?: HostClassName }) {
   return (
     <Subtitle
       data-slot="page-header-description"

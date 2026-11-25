@@ -1,14 +1,15 @@
 import type { ComponentProps } from "react";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { textTone } from "#styles/text-tone";
 import { typography } from "#styles/typography";
 
 export type EyebrowElement = "p" | "span";
 
-export type EyebrowProps = ComponentProps<"p"> & {
+export type EyebrowProps = Omit<ComponentProps<"p">, "className"> & {
   as?: EyebrowElement;
+  className?: HostClassName;
   truncate?: boolean;
 };
 

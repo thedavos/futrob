@@ -31,7 +31,7 @@ export function Card({ title, flush = false, style, children, ...props }: CardPr
     >
       {title ? (
         <Text
-          role="subtitle"
+          role="title"
           accessibilityRole="header"
           style={
             flush ? { paddingHorizontal: theme.spacing[5], paddingTop: theme.spacing[5] } : null

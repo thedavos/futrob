@@ -1,12 +1,12 @@
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { theme } from "@/theme/theme";
 import { Text } from "./text";
 
 /**
  * Mobile Tabs — the closed variants of `@futrob/ui` Tabs for switching views inside a screen:
  * `line` (2dp lime indicator, default) and `pills` (filled segment). The active tab is also
- * semibold and announced as selected, so it never depends on color alone. Render the panel
- * for `value` below the tab list.
+ * semibold and announced as selected, so it never depends on color alone. Scrolls horizontally
+ * when narrow.
  */
 export type TabsVariant = "line" | "pills";
 
@@ -33,70 +33,82 @@ export function Tabs<Id extends string>({
 }: TabsProps<Id>) {
   const pills = variant === "pills";
   return (
-    <View
-      accessibilityRole="tablist"
-      accessibilityLabel={label}
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
       style={
         pills
-          ? {
-              flexDirection: "row",
-              gap: theme.spacing[1],
-              padding: theme.spacing[1],
-              borderRadius: theme.corner.lg,
-              backgroundColor: theme.colors.muted,
-              alignSelf: "flex-start",
-            }
-          : {
-              flexDirection: "row",
-              gap: theme.spacing[5],
-              borderBottomWidth: 1,
-              borderBottomColor: theme.colors.border,
-            }
+          ? { alignSelf: "flex-start", maxWidth: "100%" }
+          : { borderBottomWidth: 1, borderBottomColor: theme.colors.border }
       }
+      contentContainerStyle={{ flexGrow: pills ? 0 : 1 }}
     >
-      {items.map((item) => {
-        const selected = item.id === value;
-        return (
-          <Pressable
-            key={item.id}
-            accessibilityRole="tab"
-            aria-selected={selected}
-            accessibilityLabel={item.label}
-            onPress={() => {
-              if (!selected) onChange(item.id);
-            }}
-            style={
-              pills
-                ? {
-                    minHeight: theme.controlHeight,
-                    minWidth: theme.controlHeight,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    paddingHorizontal: theme.spacing[3],
-                    borderRadius: theme.corner.md,
-                    backgroundColor: selected ? theme.colors.background : "transparent",
-                  }
-                : {
-                    minHeight: theme.controlHeight,
-                    minWidth: theme.controlHeight,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    borderBottomWidth: 2,
-                    borderBottomColor: selected ? theme.colors.primary : "transparent",
-                    marginBottom: -1,
-                  }
-            }
-          >
-            <Text
-              role="label"
-              color={selected ? "foreground" : "muted-foreground"}
-              style={{ fontFamily: selected ? theme.fontFamily.semibold : theme.fontFamily.medium }}
+      <View
+        accessibilityRole="tablist"
+        accessibilityLabel={label}
+        style={
+          pills
+            ? {
+                flexDirection: "row",
+                gap: theme.spacing[1],
+                padding: theme.spacing[1],
+                borderRadius: theme.corner.lg,
+                backgroundColor: theme.colors.muted,
+                alignSelf: "flex-start",
+              }
+            : {
+                flexDirection: "row",
+                gap: theme.spacing[5],
+              }
+        }
+      >
+        {items.map((item) => {
+          const selected = item.id === value;
+          return (
+            <Pressable
+              key={item.id}
+              accessibilityRole="tab"
+              aria-selected={selected}
+              accessibilityLabel={item.label}
+              onPress={() => {
+                if (!selected) onChange(item.id);
+              }}
+              style={
+                pills
+                  ? {
+                      minHeight: theme.controlHeight,
+                      minWidth: theme.controlHeight,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      paddingHorizontal: theme.spacing[3],
+                      borderRadius: theme.corner.md,
+                      borderWidth: 1,
+                      borderColor: selected ? theme.colors.border : "transparent",
+                      backgroundColor: selected ? theme.colors.background : "transparent",
+                    }
+                  : {
+                      minHeight: theme.controlHeight,
+                      minWidth: theme.controlHeight,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderBottomWidth: 2,
+                      borderBottomColor: selected ? theme.colors.primary : "transparent",
+                    }
+              }
             >
-              {item.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+              <Text
+                role="label"
+                color={selected ? "foreground" : "muted-foreground"}
+                style={{
+                  fontFamily: selected ? theme.fontFamily.semibold : theme.fontFamily.medium,
+                }}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </ScrollView>
   );
 }

@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 
@@ -16,7 +16,9 @@ const styles = stylex.create({
   },
 });
 
-export type LabelProps = ComponentProps<"label">;
+export type LabelProps = Omit<ComponentProps<"label">, "className"> & {
+  className?: HostClassName;
+};
 
 function Label({ className, style, ...props }: LabelProps) {
   return (

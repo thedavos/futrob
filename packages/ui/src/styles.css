@@ -109,6 +109,11 @@
     resize: vertical;
   }
 
+  table {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
   /*
    * Tailwind Preflight equivalent. Without this, classed `<a>` hosts
    * (Button render={<Link>}, Button render={<a>}) keep the UA underline.

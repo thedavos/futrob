@@ -3,7 +3,7 @@ import { useRender } from "@base-ui/react/use-render";
 import { CaretRightIcon, DotsThreeIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 import { vis } from "#styles/sr-only";
@@ -62,23 +62,47 @@ const styles = stylex.create({
   },
 });
 
-function Breadcrumb(props: React.ComponentProps<"nav">) {
-  return <nav aria-label="Migas de pan" data-slot="breadcrumb" {...props} />;
+function Breadcrumb({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"nav">, "className"> & { className?: HostClassName }) {
+  return (
+    <nav
+      aria-label="Migas de pan"
+      data-slot="breadcrumb"
+      {...applyProps(className, style)}
+      {...props}
+    />
+  );
 }
 
-function BreadcrumbList({ className, style, ...props }: React.ComponentProps<"ol">) {
+function BreadcrumbList({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"ol">, "className"> & { className?: HostClassName }) {
   return (
     <ol data-slot="breadcrumb-list" {...applyProps(className, style, styles.list)} {...props} />
   );
 }
 
-function BreadcrumbItem({ className, style, ...props }: React.ComponentProps<"li">) {
+function BreadcrumbItem({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"li">, "className"> & { className?: HostClassName }) {
   return (
     <li data-slot="breadcrumb-item" {...applyProps(className, style, styles.item)} {...props} />
   );
 }
 
-function BreadcrumbLink({ className, style, render, ...props }: useRender.ComponentProps<"a">) {
+function BreadcrumbLink({
+  className,
+  style,
+  render,
+  ...props
+}: Omit<useRender.ComponentProps<"a">, "className"> & { className?: HostClassName }) {
   return useRender({
     defaultTagName: "a",
     props: {
@@ -90,7 +114,11 @@ function BreadcrumbLink({ className, style, render, ...props }: useRender.Compon
   });
 }
 
-function BreadcrumbPage({ className, style, ...props }: React.ComponentProps<"span">) {
+function BreadcrumbPage({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"span">, "className"> & { className?: HostClassName }) {
   return (
     <span
       aria-current="page"
@@ -101,7 +129,12 @@ function BreadcrumbPage({ className, style, ...props }: React.ComponentProps<"sp
   );
 }
 
-function BreadcrumbSeparator({ children, className, style, ...props }: React.ComponentProps<"li">) {
+function BreadcrumbSeparator({
+  children,
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"li">, "className"> & { className?: HostClassName }) {
   return (
     <li
       aria-hidden="true"
@@ -115,17 +148,27 @@ function BreadcrumbSeparator({ children, className, style, ...props }: React.Com
   );
 }
 
-function BreadcrumbEllipsis({ className, style, ...props }: React.ComponentProps<"span">) {
+function BreadcrumbEllipsis({
+  className,
+  label = "Más",
+  style,
+  ...props
+}: Omit<React.ComponentProps<"span">, "className"> & {
+  className?: HostClassName;
+  /** Accessible label for the collapsed breadcrumb segment in the active locale. */
+  label?: string;
+}) {
   return (
     <span
-      aria-hidden="true"
       data-slot="breadcrumb-ellipsis"
-      role="presentation"
       {...applyProps(className, style, styles.ellipsis)}
       {...props}
     >
-      <DotsThreeIcon {...applyProps(undefined, undefined, styles.ellipsisIcon)} />
-      <span {...applyProps(undefined, undefined, vis.srOnly)}>Más</span>
+      <DotsThreeIcon
+        aria-hidden="true"
+        {...applyProps(undefined, undefined, styles.ellipsisIcon)}
+      />
+      <span {...applyProps(undefined, undefined, vis.srOnly)}>{label}</span>
     </span>
   );
 }

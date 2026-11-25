@@ -42,7 +42,10 @@ const styles = stylex.create({
     gap: "0.625rem",
     borderRadius: "var(--corner-lg)",
     textAlign: "start",
-    color: colors.foreground,
+    color: {
+      default: colors.foreground,
+      ":disabled": colors.textDisabled,
+    },
     outlineWidth: 0,
     outlineStyle: "none",
     transitionProperty: "color, background-color",
@@ -55,10 +58,6 @@ const styles = stylex.create({
     pointerEvents: {
       default: null,
       ":disabled": "none",
-    },
-    opacity: {
-      default: 1,
-      ":disabled": 0.5,
     },
   },
   triggerIdle: {

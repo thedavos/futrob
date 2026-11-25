@@ -167,13 +167,13 @@ export const Monochrome: Story = {
     <div {...applyProps(undefined, undefined, styles.monoRow)}>
       <div {...applyProps(undefined, undefined, styles.monoOnSurface)}>
         <p {...applyProps(undefined, undefined, typography.caption, styles.caption)}>On surface</p>
-        <Logo monochrome title="Futrob" {...applyProps(undefined, undefined, styles.logoMd)} />
+        <Logo className={styles.logoMd} monochrome title="Futrob" />
       </div>
       <div {...applyProps(undefined, undefined, styles.monoOnDark)}>
         <p {...applyProps(undefined, undefined, typography.caption, styles.captionOnDark)}>
           On dark / print
         </p>
-        <Logo monochrome title="Futrob" {...applyProps(undefined, undefined, styles.logoMd)} />
+        <Logo className={styles.logoMd} monochrome title="Futrob" />
       </div>
     </div>
   ),
@@ -186,15 +186,15 @@ export const Sizes: Story = {
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>
           Header · 36 px
         </p>
-        <Logo title="Futrob" {...applyProps(undefined, undefined, styles.logoSm)} />
+        <Logo className={styles.logoSm} title="Futrob" />
       </div>
       <div {...applyProps(undefined, undefined, styles.group)}>
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Auth · 48 px</p>
-        <Logo title="Futrob" {...applyProps(undefined, undefined, styles.logoMd)} />
+        <Logo className={styles.logoMd} title="Futrob" />
       </div>
       <div {...applyProps(undefined, undefined, styles.group)}>
         <p {...applyProps(undefined, undefined, typography.caption, styles.muted)}>Hero · 64 px</p>
-        <Logo title="Futrob" {...applyProps(undefined, undefined, styles.logoLg)} />
+        <Logo className={styles.logoLg} title="Futrob" />
       </div>
     </div>
   ),
@@ -204,7 +204,7 @@ export const WithWordmark: Story = {
   name: "With wordmark",
   render: () => (
     <div {...applyProps(undefined, undefined, styles.wordmark)}>
-      <Logo aria-hidden="true" {...applyProps(undefined, undefined, styles.logoSm)} />
+      <Logo aria-hidden="true" className={styles.logoSm} />
       <span {...applyProps(undefined, undefined, typography.heading, styles.heading)}>Futrob</span>
     </div>
   ),
@@ -220,7 +220,7 @@ export const Decorative: Story = {
         cuando el wordmark visible ya dice Futrob.
       </p>
       <div {...applyProps(undefined, undefined, styles.inlineRow)}>
-        <Logo {...applyProps(undefined, undefined, styles.logoSm)} />
+        <Logo className={styles.logoSm} />
         <span {...applyProps(undefined, undefined, typography.heading, styles.heading)}>
           Futrob
         </span>

@@ -3,8 +3,8 @@ import { Text } from "@/ui/text";
 import { theme } from "@/theme/theme";
 
 /**
- * Mobile EmptyState — flat variant with dashed structural border,
- * mirroring `@futrob/ui` EmptyState (`variant="flat"`).
+ * Mobile EmptyState — open composition on the page background (no dashed panel or elevation),
+ * mirroring `@futrob/ui` EmptyState.
  */
 export interface EmptyStateProps extends ViewProps {
   title: string;
@@ -17,33 +17,28 @@ export function EmptyState({ title, description, action, style, ...props }: Empt
     <View
       style={[
         {
-          borderRadius: theme.corner.lg,
-          borderWidth: 1,
-          borderStyle: "dashed",
-          borderColor: theme.colors.border,
-          backgroundColor: theme.colors.surface,
           paddingHorizontal: theme.spacing[6],
           paddingVertical: theme.spacing[8],
           alignItems: "center",
-          gap: theme.spacing[2],
+          gap: theme.spacing[3],
         },
         style,
       ]}
       {...props}
     >
-      <Text role="heading" style={{ textAlign: "center" }}>
+      <Text role="title" style={{ textAlign: "center" }}>
         {title}
       </Text>
       {description ? (
         <Text
-          role="caption"
+          role="subtitle"
           color="muted-foreground"
-          style={{ textAlign: "center", maxWidth: 280 }}
+          style={{ textAlign: "center", maxWidth: 320 }}
         >
           {description}
         </Text>
       ) : null}
-      {action ? <View style={{ marginTop: theme.spacing[4] }}>{action}</View> : null}
+      {action ? <View style={{ marginTop: theme.spacing[3] }}>{action}</View> : null}
     </View>
   );
 }

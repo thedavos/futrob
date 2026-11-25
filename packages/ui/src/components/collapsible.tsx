@@ -1,7 +1,7 @@
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -13,7 +13,11 @@ const styles = stylex.create({
     display: "flex",
     minHeight: "var(--control-height)",
     width: "100%",
-    cursor: "pointer",
+    cursor: {
+      default: "pointer",
+      ":disabled": "not-allowed",
+      ":is([data-disabled])": "not-allowed",
+    },
     alignItems: "center",
     justifyContent: "space-between",
     gap: "0.5rem",
@@ -27,12 +31,19 @@ const styles = stylex.create({
     backgroundColor: {
       default: colors.surface,
       ":hover": colors.muted,
+      ":disabled": colors.muted,
+      ":is([data-disabled])": colors.muted,
+    },
+    color: {
+      default: colors.foreground,
+      ":disabled": colors.textDisabled,
+      ":is([data-disabled])": colors.textDisabled,
     },
     paddingInline: "0.75rem",
     textAlign: "left",
     outlineWidth: 0,
     outlineStyle: "none",
-    transitionProperty: "background-color, border-color",
+    transitionProperty: "background-color, border-color, color",
     transitionDuration: "var(--duration-normal)",
     transitionTimingFunction: "var(--ease-emphasized)",
     boxShadow: {
@@ -43,11 +54,6 @@ const styles = stylex.create({
       default: null,
       ":disabled": "none",
       ":is([data-disabled])": "none",
-    },
-    opacity: {
-      default: 1,
-      ":disabled": 0.5,
-      ":is([data-disabled])": 0.5,
     },
   },
   content: {
@@ -67,7 +73,13 @@ const styles = stylex.create({
   },
 });
 
-function Collapsible({ className, style, ...props }: CollapsiblePrimitive.Root.Props) {
+function Collapsible({
+  className,
+  style,
+  ...props
+}: Omit<CollapsiblePrimitive.Root.Props, "className"> & {
+  className?: HostClassName | CollapsiblePrimitive.Root.Props["className"];
+}) {
   return (
     <CollapsiblePrimitive.Root
       data-slot="collapsible"
@@ -77,7 +89,13 @@ function Collapsible({ className, style, ...props }: CollapsiblePrimitive.Root.P
   );
 }
 
-function CollapsibleTrigger({ className, style, ...props }: CollapsiblePrimitive.Trigger.Props) {
+function CollapsibleTrigger({
+  className,
+  style,
+  ...props
+}: Omit<CollapsiblePrimitive.Trigger.Props, "className"> & {
+  className?: HostClassName | CollapsiblePrimitive.Trigger.Props["className"];
+}) {
   return (
     <CollapsiblePrimitive.Trigger
       data-slot="collapsible-trigger"
@@ -87,7 +105,13 @@ function CollapsibleTrigger({ className, style, ...props }: CollapsiblePrimitive
   );
 }
 
-function CollapsibleContent({ className, style, ...props }: CollapsiblePrimitive.Panel.Props) {
+function CollapsibleContent({
+  className,
+  style,
+  ...props
+}: Omit<CollapsiblePrimitive.Panel.Props, "className"> & {
+  className?: HostClassName | CollapsiblePrimitive.Panel.Props["className"];
+}) {
   return (
     <CollapsiblePrimitive.Panel
       data-slot="collapsible-content"

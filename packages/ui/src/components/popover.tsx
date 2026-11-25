@@ -1,13 +1,13 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
-import { colors } from "#styles/tokens.stylex";
+import { applyProps, type HostClassName } from "#styles/apply";
+import { colors, z } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 
 const styles = stylex.create({
   positioner: {
-    zIndex: 50,
+    zIndex: z.popover,
     outlineWidth: 0,
     outlineStyle: "none",
   },
@@ -56,8 +56,10 @@ function PopoverContent({
   side = "bottom",
   sideOffset = 8,
   ...props
-}: PopoverPrimitive.Popup.Props &
-  Pick<PopoverPrimitive.Positioner.Props, "align" | "side" | "sideOffset">) {
+}: Omit<PopoverPrimitive.Popup.Props, "className"> &
+  Pick<PopoverPrimitive.Positioner.Props, "align" | "side" | "sideOffset"> & {
+    className?: HostClassName | PopoverPrimitive.Popup.Props["className"];
+  }) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -78,7 +80,13 @@ function PopoverContent({
   );
 }
 
-function PopoverTitle({ className, style, ...props }: PopoverPrimitive.Title.Props) {
+function PopoverTitle({
+  className,
+  style,
+  ...props
+}: Omit<PopoverPrimitive.Title.Props, "className"> & {
+  className?: HostClassName | PopoverPrimitive.Title.Props["className"];
+}) {
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
@@ -88,7 +96,13 @@ function PopoverTitle({ className, style, ...props }: PopoverPrimitive.Title.Pro
   );
 }
 
-function PopoverDescription({ className, style, ...props }: PopoverPrimitive.Description.Props) {
+function PopoverDescription({
+  className,
+  style,
+  ...props
+}: Omit<PopoverPrimitive.Description.Props, "className"> & {
+  className?: HostClassName | PopoverPrimitive.Description.Props["className"];
+}) {
   return (
     <PopoverPrimitive.Description
       data-slot="popover-description"

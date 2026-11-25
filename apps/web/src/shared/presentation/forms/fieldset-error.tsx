@@ -31,12 +31,7 @@ export function FieldsetError({
   const icon = applyStyles(styles.icon);
   return (
     <p id={id} {...applyStyles(styles.root)}>
-      <WarningCircleIcon
-        aria-hidden="true"
-        className={icon.className}
-        style={icon.style}
-        strokeWidth={1.5}
-      />
+      <WarningCircleIcon aria-hidden="true" className={icon.className} style={icon.style} />
       <span>{children}</span>
     </p>
   );

@@ -73,10 +73,6 @@ const styles = stylex.create({
   content: {
     padding: 0,
   },
-  tableFrame: {
-    borderWidth: 0,
-    borderRadius: 0,
-  },
   bodyCell: {
     height: "auto",
     paddingBlock: "1rem",
@@ -183,14 +179,14 @@ export function OrganizationHomeCompetitionsTable({
         </TextLink>
       </CardHeader>
       <CardContent className={styles.content}>
-        <Table containerClassName={styles.tableFrame} containerLabelledBy={titleId}>
-          <TableHeader style={{ backgroundColor: "transparent" }}>
+        <Table containerLabelledBy={titleId}>
+          <TableHeader>
             <TableRow>
               <TableHead>{t("org.home.table.name")}</TableHead>
               <TableHead>{t("org.home.table.status")}</TableHead>
               <TableHead>{t("org.home.table.teams")}</TableHead>
               <TableHead>{t("org.home.table.start")}</TableHead>
-              <TableHead style={{ textAlign: "center" }}>{t("org.home.table.actions")}</TableHead>
+              <TableHead align="center">{t("org.home.table.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
