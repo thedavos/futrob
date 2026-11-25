@@ -118,18 +118,33 @@ export function encounterFilterRounds(
   return [...byKey.values()].sort(compareRounds);
 }
 
+/**
+ * A saved round key that is no longer listed may be a bare number from a link made while the API
+ * sent no round ids. It still names that round when exactly one listed round has the number;
+ * when the number repeats across stages it is ambiguous and dropped rather than mixing stages.
+ */
+function resolveRoundKey(
+  roundKey: string | null,
+  rounds: readonly EncounterRoundOption[],
+): string | null {
+  if (roundKey === null) return null;
+  if (rounds.some((round) => round.key === roundKey)) return roundKey;
+  if (!/^\d+$/.test(roundKey)) return null;
+  const number = Number(roundKey);
+  const matches = rounds.filter((round) => round.number === number);
+  return matches.length === 1 ? matches[0]!.key : null;
+}
+
 /** Drop stale URL/filter selections when the list no longer contains that round or team. */
 export function validEncounterFilters(
   filters: CompetitionEncountersFilters,
   teams: readonly EncounterTeamOption[],
   rounds: readonly EncounterRoundOption[],
 ): CompetitionEncountersFilters {
-  const roundValid =
-    filters.roundKey !== null && rounds.some((round) => round.key === filters.roundKey);
   const teamValid = filters.teamId !== null && teams.some((team) => team.teamId === filters.teamId);
   return {
     status: filters.status,
-    roundKey: roundValid ? filters.roundKey : null,
+    roundKey: resolveRoundKey(filters.roundKey, rounds),
     teamId: teamValid ? filters.teamId : null,
   };
 }

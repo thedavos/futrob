@@ -5,6 +5,7 @@ import {
   filterEncounters,
   groupEncountersByRound,
   NO_ENCOUNTER_FILTERS,
+  validEncounterFilters,
 } from "./competition-encounters-model.ts";
 
 const league = { id: "plan-1:stage:1", kind: "league", order: 1 } as const;
@@ -91,5 +92,54 @@ describe("groupEncountersByRound", () => {
         (item) => item.encounterId,
       ),
     ).toEqual(["second"]);
+  });
+});
+
+describe("validEncounterFilters", () => {
+  it("keeps a round chosen from an older API response once the API sends round ids", () => {
+    const legacy = [
+      encounter("first", "2026-10-12T01:00:00.000Z", { id: null, stage: null }),
+      encounter("second", "2026-10-19T01:00:00.000Z", { id: null, number: 2, stage: null }),
+    ];
+    const current = [
+      encounter("first", "2026-10-12T01:00:00.000Z"),
+      encounter("second", "2026-10-19T01:00:00.000Z", {
+        id: "plan-1:stage:1:round:2",
+        number: 2,
+      }),
+    ];
+    const savedKey = encounterFilterRounds(legacy)[1]!.key;
+
+    const filters = validEncounterFilters(
+      { ...NO_ENCOUNTER_FILTERS, roundKey: savedKey },
+      [],
+      encounterFilterRounds(current),
+    );
+
+    expect(savedKey).toBe("2");
+    expect(filters.roundKey).toBe("plan-1:stage:1:round:2");
+    expect(filterEncounters(current, filters).map((item) => item.encounterId)).toEqual(["second"]);
+  });
+
+  it("drops an older round number that now names a round in more than one stage", () => {
+    const current = [
+      encounter("league", "2026-10-12T01:00:00.000Z", {
+        id: "plan-1:stage:1:round:2",
+        number: 2,
+      }),
+      encounter("playoff", "2026-10-19T01:00:00.000Z", {
+        id: "plan-1:stage:2:round:2",
+        number: 2,
+        stage: playoffs,
+      }),
+    ];
+
+    const filters = validEncounterFilters(
+      { ...NO_ENCOUNTER_FILTERS, roundKey: "2" },
+      [],
+      encounterFilterRounds(current),
+    );
+
+    expect(filters.roundKey).toBeNull();
   });
 });
