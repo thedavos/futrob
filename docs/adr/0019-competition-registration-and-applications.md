@@ -72,6 +72,12 @@ cada escritura de plantilla lo consulta antes de mutar:
 | Abrir o cerrar la plantilla                 | Bloqueado: `teams.roster_entry_inactive` |
 | Cambiar el rol de un miembro                | Bloqueado: `teams.roster_entry_inactive` |
 
+El rechazo toma la misma exclusión por competición que las escrituras de plantilla
+(`RosterMutationPort`, advisory lock en Postgres) y la mantiene hasta su commit. Una
+escritura que ya leyó `pending` se confirma antes que el rechazo; las posteriores leen
+`rejected`. Crear una invitación no toma esa exclusión: una creada en paralelo al
+rechazo queda inservible, porque aceptarla vuelve a pasar por el gate bajo el lock.
+
 El error es un conflicto de estado (HTTP 409), no una denegación de permisos: el staff
 conserva sus permisos heredados (ADR-0017), pero el estado de la inscripción impide la
 escritura. Cerrar la plantilla para «congelarla» no aporta nada, porque ya no admite
@@ -120,7 +126,8 @@ Bajar el cupo por debajo de los aprobados responde `competitions.invalid_capacit
 - Rutas `registration/open|close` y `explore/:id/application`, SDK y CLI
   (`comp-registration-open|close`, `comp-apply`, `comp-application`).
 - Tests de dominio, API (`competitions.test.ts`), SDK y stories de Explorar.
-- Plantilla rechazada: `team-roster.use-cases.test.ts` (`@futrob/teams`), regresión HTTP
+- Plantilla rechazada: `team-roster.use-cases.test.ts` (`@futrob/teams`), orden frente a
+  una escritura en curso en `competition-entry-activity.test.ts`, regresión HTTP
   en `apps/api/src/http/routes/teams.test.ts` y story `RejectedEntry` de la consola de
   equipos.
 

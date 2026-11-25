@@ -279,6 +279,8 @@ export function createActivityFeed(input: {
       ...createCompetitionEntryCommands({
         transaction: input.transaction,
         activity: entries,
+        entries: competitions.entryRepository,
+        rosterMutations: input.teams.rosterMutations,
         register: competitions.registerTeamEntry,
         approve: competitions.approveTeamEntry,
         reject: competitions.rejectTeamEntry,

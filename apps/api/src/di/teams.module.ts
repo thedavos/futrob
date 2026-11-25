@@ -277,6 +277,8 @@ export function createTeamsModule(input: {
     }),
     externalClubConnections: connections,
     externalClubTeams,
+    /** Roster write exclusion, shared with commands that freeze a roster (entry rejection). */
+    rosterMutations,
     repositories: {
       profiles,
       teams,

@@ -1,10 +1,12 @@
 import type {
   ApproveCompetitionEntryUseCase,
   CompetitionEntry,
+  CompetitionEntryRepository,
   RegisterTeamEntryUseCase,
   RejectCompetitionEntryUseCase,
 } from "@futrob/competitions";
 import type { ActorId, TransactionPort } from "@futrob/shared-kernel";
+import type { RosterMutationPort } from "@futrob/teams";
 import type { ActivityWriter } from "@/di/notifications.module.ts";
 import { runAtomically } from "./run-atomically.ts";
 import { competitionName, teamName, type ActivitySubjectReaders } from "./activity-subjects.ts";
@@ -93,13 +95,21 @@ export class CompetitionEntryActivity {
 type RegisterInput = Parameters<RegisterTeamEntryUseCase["execute"]>[0];
 type DecideInput = Parameters<ApproveCompetitionEntryUseCase["execute"]>[0];
 
-/** Entry commands composed with their activity in one transaction. */
+/**
+ * Entry commands composed with their activity in one transaction.
+ *
+ * Rejecting freezes the Team's roster (ADR-0019), so it takes the same exclusion as roster
+ * writes and keeps it until its transaction commits: a write that already read the entry as
+ * `pending` commits first, and any later one reads `rejected`.
+ */
 export function createCompetitionEntryCommands(deps: {
   readonly transaction: TransactionPort;
   readonly activity: CompetitionEntryActivity;
-  readonly register: RegisterTeamEntryUseCase;
-  readonly approve: ApproveCompetitionEntryUseCase;
-  readonly reject: RejectCompetitionEntryUseCase;
+  readonly entries: Pick<CompetitionEntryRepository, "findById">;
+  readonly rosterMutations: RosterMutationPort;
+  readonly register: Pick<RegisterTeamEntryUseCase, "execute">;
+  readonly approve: Pick<ApproveCompetitionEntryUseCase, "execute">;
+  readonly reject: Pick<RejectCompetitionEntryUseCase, "execute">;
 }) {
   const { transaction, activity } = deps;
   return {
@@ -122,9 +132,21 @@ export function createCompetitionEntryCommands(deps: {
     rejectTeamEntry: {
       execute: (input: DecideInput) =>
         runAtomically(transaction, async () => {
-          const result = await deps.reject.execute(input);
-          if (result.isOk()) await activity.decided(result.value, input.actorId);
-          return result;
+          const reject = async () => {
+            const result = await deps.reject.execute(input);
+            if (result.isOk()) await activity.decided(result.value, input.actorId);
+            return result;
+          };
+          const entry = await deps.entries.findById(input.organizationId, input.entryId);
+          if (!entry) return reject();
+          return deps.rosterMutations.runExclusive(
+            {
+              organizationId: input.organizationId,
+              competitionId: input.competitionId,
+              teamId: entry.teamId,
+            },
+            reject,
+          );
         }),
     },
   };
