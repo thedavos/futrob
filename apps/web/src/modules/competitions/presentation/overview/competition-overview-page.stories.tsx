@@ -18,6 +18,8 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
+  finishedCompetition,
+  finishedEncounters,
   overviewActivities,
   overviewCompetition,
   overviewEncounters,
@@ -49,6 +51,7 @@ const styles = stylex.create({
 
 type Scenario =
   | "ready"
+  | "finished"
   | "empty"
   | "loading"
   | "countsLoading"
@@ -114,8 +117,21 @@ function OverviewStory({
       path: "/orgs/$orgId/competitions/$competitionId/disputes",
       component: () => <p>Disputas</p>,
     });
+    const rules = createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/orgs/$orgId/competitions/$competitionId/rules",
+      component: () => <p>Reglamento</p>,
+    });
     return createRouter({
-      routeTree: rootRoute.addChildren([home, setup, teams, encounters, encounter, disputes]),
+      routeTree: rootRoute.addChildren([
+        home,
+        setup,
+        teams,
+        encounters,
+        encounter,
+        disputes,
+        rules,
+      ]),
       history: createMemoryHistory({
         initialEntries: [`/orgs/${OVERVIEW_ORG_ID}/competitions/${OVERVIEW_COMPETITION_ID}`],
       }),
@@ -146,6 +162,7 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
   }
 
   const isLoading = scenario === "loading";
+  const isFinished = scenario === "finished";
   const countsLoading = scenario === "countsLoading";
   const sectionsFailed = scenario === "sectionsError";
   const isEmpty = scenario === "empty";
@@ -161,7 +178,9 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
       : ready(
           scenario === "draft"
             ? { ...overviewCompetition, status: "draft" as const }
-            : overviewCompetition,
+            : isFinished
+              ? finishedCompetition
+              : overviewCompetition,
         );
   const encounters =
     isLoading || countsLoading
@@ -171,25 +190,43 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
         : ready(
             isEmpty || scenario === "entriesError"
               ? { ...overviewEncounters, encounters: [] }
-              : overviewEncounters,
+              : isFinished
+                ? finishedEncounters
+                : overviewEncounters,
           );
   const entries =
     isLoading || countsLoading
       ? loading
       : sectionsFailed || entriesFailed
         ? failed(() => setRecovered(true))
-        : ready(isEmpty ? [] : overviewEntries);
+        : ready(
+            isEmpty
+              ? []
+              : isFinished
+                ? overviewEntries.filter((item) => item.status === "approved")
+                : overviewEntries,
+          );
   const teams = isLoading
     ? loading
     : sectionsFailed
       ? failed(() => undefined)
-      : ready(isEmpty ? [] : overviewTeams);
+      : ready(
+          isEmpty
+            ? []
+            : isFinished
+              ? overviewTeams.filter((item) => item.entry.status === "approved")
+              : overviewTeams,
+        );
   const activities = isLoading
     ? loading
     : sectionsFailed
       ? failed(() => undefined)
       : ready(
-          isEmpty || countsLoading || scenario === "entriesError" || scenario === "encountersError"
+          isEmpty ||
+            isFinished ||
+            countsLoading ||
+            scenario === "entriesError" ||
+            scenario === "encountersError"
             ? []
             : overviewActivities,
         );
@@ -235,6 +272,7 @@ const meta = {
       control: "select",
       options: [
         "ready",
+        "finished",
         "empty",
         "loading",
         "countsLoading",
@@ -269,7 +307,10 @@ export const Ready: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.findByRole("heading", { name: "Liga Nocturna" })).resolves.toBeVisible();
     await expect(canvas.findByText("Publicada")).resolves.toBeVisible();
+    await expect(canvas.findByText(/FC 26/)).resolves.toBeVisible();
     await expect(canvas.findByText(/2 de 8 equipos/)).resolves.toBeVisible();
+    await expect(canvas.findByText("1/5")).resolves.toBeVisible();
+    await expect(canvas.findByText("20%")).resolves.toBeVisible();
     await expect(canvas.findByText("1 inscripción de equipo por revisar")).resolves.toBeVisible();
     await expect(
       canvas.findByText("1 enfrentamiento sin resultado oficial"),
@@ -279,11 +320,35 @@ export const Ready: Story = {
       canvas.findByRole("link", { name: "Abrir Orion vs Atlas" }),
     ).resolves.toBeVisible();
     await expect(canvas.findByText("Horarios en America/Lima")).resolves.toBeVisible();
+    await expect(canvas.findByText("Cuervos Clubs")).resolves.toBeVisible();
+    await expect(canvas.findByText("Sin vincular")).resolves.toBeVisible();
     await expect(canvas.findByText("Atlas")).resolves.toBeVisible();
     await expect(canvas.queryByText("Rechazado SC")).toBeNull();
     await expect(canvas.queryByText("Inscrito")).toBeNull();
     const portal = await canvas.findByRole("link", { name: "Ver portal público" });
     await expect(portal.getAttribute("href")).toBe(`/liga-nocturna/${OVERVIEW_COMPETITION_ID}`);
+  },
+};
+
+export const Finished: Story = {
+  name: "Finalizada con oficiales",
+  args: { scenario: "finished" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.findByRole("heading", { name: "Torneo Verano 25" })).resolves.toBeVisible();
+    await expect(canvas.findByText("Finalizada")).resolves.toBeVisible();
+    await expect(canvas.findByText("3/3")).resolves.toBeVisible();
+    await expect(canvas.findByText("100%")).resolves.toBeVisible();
+    await expect(canvas.findByText("Todo al día")).resolves.toBeVisible();
+    await expect(
+      canvas.findByRole("heading", { name: "Últimos oficiales" }),
+    ).resolves.toBeVisible();
+    await expect(
+      canvas.findByRole("link", { name: "Abrir Cóndores FC vs Sporting Quipu" }),
+    ).resolves.toBeVisible();
+    await expect(canvas.findByLabelText("Resultado oficial 2–1")).resolves.toBeVisible();
+    await expect(canvas.findByLabelText("Resultado oficial 2–0 · 1–1")).resolves.toBeVisible();
   },
 };
 

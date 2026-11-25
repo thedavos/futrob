@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  CalendarBlankIcon,
-  ClockIcon,
-  ClipboardTextIcon,
-  UsersThreeIcon,
-} from "@phosphor-icons/react";
+import { CalendarBlankIcon, ClockIcon, SealCheckIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
   HomeKpiGroup,
@@ -16,42 +11,65 @@ import {
 /** A KPI value: a real count (zero included), still loading, or unavailable after a failed read. */
 export type OverviewMetric = number | "loading" | "unavailable";
 
+/** Progress ratio KPI: e.g. 15/15 officialized, or 0 when no encounters exist yet. */
+export type OverviewRatioMetric =
+  | { readonly done: number; readonly total: number }
+  | "loading"
+  | "unavailable";
+
+function formatRatio(metric: OverviewRatioMetric, format: Intl.NumberFormat): string | null {
+  if (metric === "loading" || metric === "unavailable") return null;
+  if (metric.total === 0) return format.format(0);
+  return `${format.format(metric.done)}/${format.format(metric.total)}`;
+}
+
 export function CompetitionOverviewKpis({
-  applications,
-  awaiting,
+  officialized,
+  pending,
   teams,
   upcoming,
 }: {
-  readonly applications: OverviewMetric;
-  readonly awaiting: OverviewMetric;
+  readonly officialized: OverviewRatioMetric;
+  readonly pending: OverviewMetric;
   readonly teams: OverviewMetric;
   readonly upcoming: OverviewMetric;
 }) {
   const { locale, t } = useI18n();
   const numberFormat = new Intl.NumberFormat(locale);
   const metrics = [
-    { id: "teams", icon: UsersThreeIcon, label: t("competition.overview.kpi.teams"), value: teams },
     {
-      id: "applications",
-      icon: ClipboardTextIcon,
-      label: t("competition.overview.kpi.applications"),
-      value: applications,
+      id: "teams",
+      icon: UsersThreeIcon,
+      label: t("competition.overview.kpi.teams"),
+      loading: teams === "loading",
+      value: teams === "loading" || teams === "unavailable" ? null : numberFormat.format(teams),
+    },
+    {
+      id: "officialized",
+      icon: SealCheckIcon,
+      label: t("competition.overview.kpi.officialized"),
+      loading: officialized === "loading",
+      value: formatRatio(officialized, numberFormat),
     },
     {
       id: "upcoming",
       icon: CalendarBlankIcon,
       label: t("competition.overview.kpi.upcoming"),
-      value: upcoming,
+      loading: upcoming === "loading",
+      value:
+        upcoming === "loading" || upcoming === "unavailable" ? null : numberFormat.format(upcoming),
     },
     {
-      id: "awaiting",
+      id: "pending",
       icon: ClockIcon,
-      label: t("competition.overview.kpi.awaiting"),
-      value: awaiting,
+      label: t("competition.overview.kpi.pending"),
+      loading: pending === "loading",
+      value:
+        pending === "loading" || pending === "unavailable" ? null : numberFormat.format(pending),
     },
   ] as const;
 
-  if (metrics.every((metric) => metric.value === "loading")) {
+  if (metrics.every((metric) => metric.loading)) {
     return <HomeKpiSkeletonGroup columns={4} label={t("competition.overview.kpi.label")} />;
   }
 
@@ -66,12 +84,8 @@ export function CompetitionOverviewKpis({
             icon={metric.icon}
             key={metric.id}
             label={metric.label}
-            loading={metric.value === "loading"}
-            value={
-              metric.value === "loading" || metric.value === "unavailable"
-                ? null
-                : numberFormat.format(metric.value)
-            }
+            loading={metric.loading}
+            value={metric.value}
           />
         ))}
       </HomeKpiGroup>

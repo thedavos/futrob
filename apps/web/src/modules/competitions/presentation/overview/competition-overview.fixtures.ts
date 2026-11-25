@@ -4,6 +4,7 @@ import type {
   CompetitionEncounterDto,
   CompetitionEntryDto,
   CompetitionTeamManagementSummaryDto,
+  EncounterMatchScoreDto,
   ListCompetitionEncountersResponse,
 } from "@futrob/api-contracts";
 
@@ -18,7 +19,7 @@ export const overviewCompetition: CompetitionDto = {
   status: "published",
   modality: "fc-clubs",
   exploreListing: "listed",
-  gameEdition: "FC 26",
+  gameEdition: "fc26",
   platform: "playstation",
   region: "south-america",
   timeZone: "America/Lima",
@@ -30,12 +31,22 @@ export const overviewCompetition: CompetitionDto = {
   updatedAt: "2026-10-05T12:00:00.000Z",
 };
 
+export const finishedCompetition: CompetitionDto = {
+  ...overviewCompetition,
+  name: "Torneo Verano 25",
+  status: "finished",
+  format: "league-playoffs",
+  cover: { kind: "preset", preset: "cup" },
+  schedule: { startsOn: "2026-06-08", endsOn: null },
+};
+
 function encounter(
   number: number,
   home: string,
   away: string,
   scheduledStartAt: string,
   status: CompetitionEncounterDto["status"],
+  score: EncounterMatchScoreDto[] | null = null,
 ): CompetitionEncounterDto {
   return {
     encounterId: `${OVERVIEW_COMPETITION_ID}:encounter:${number}`,
@@ -46,12 +57,12 @@ function encounter(
       stage: { id: `${OVERVIEW_COMPETITION_ID}:stage:1`, kind: "league", order: 1 },
     },
     scheduledStartAt,
-    officialMatchCount: 1,
-    resolutionMode: null,
+    officialMatchCount: score && score.length === 2 ? 2 : 1,
+    resolutionMode: score && score.length === 2 ? "aggregate_score" : null,
     home: { teamId: home.toLowerCase(), name: home },
     away: { teamId: away.toLowerCase(), name: away },
     status,
-    score: status === "official" ? [{ homeGoals: 2, awayGoals: 1 }] : null,
+    score,
   };
 }
 
@@ -60,10 +71,28 @@ export const overviewEncounters: ListCompetitionEncountersResponse = {
   competition: { id: OVERVIEW_COMPETITION_ID, name: "Liga Nocturna", timeZone: "America/Lima" },
   encounters: [
     encounter(4, "Halcones", "Titans", "2026-10-30T01:00:00.000Z", "scheduled"),
-    encounter(1, "Cuervos FC", "Nova FC", "2026-10-13T01:00:00.000Z", "official"),
+    encounter(1, "Cuervos FC", "Nova FC", "2026-10-13T01:00:00.000Z", "official", [
+      { homeGoals: 2, awayGoals: 1 },
+    ]),
     encounter(3, "Orion", "Atlas", "2026-10-23T01:00:00.000Z", "scheduled"),
     encounter(2, "Nova FC", "Orion", "2026-10-18T01:00:00.000Z", "awaiting_result"),
     encounter(5, "Atlas", "Cuervos FC", "2026-11-06T01:00:00.000Z", "scheduled"),
+  ],
+};
+
+export const finishedEncounters: ListCompetitionEncountersResponse = {
+  competition: { id: OVERVIEW_COMPETITION_ID, name: "Torneo Verano 25", timeZone: "America/Lima" },
+  encounters: [
+    encounter(5, "Atlético Pumas", "Inti United", "2026-06-13T23:00:00.000Z", "official", [
+      { homeGoals: 1, awayGoals: 3 },
+    ]),
+    encounter(6, "Cóndores FC", "Sporting Quipu", "2026-06-14T23:00:00.000Z", "official", [
+      { homeGoals: 2, awayGoals: 1 },
+    ]),
+    encounter(4, "Deportivo Llama", "Real Vicuña", "2026-06-12T23:00:00.000Z", "official", [
+      { homeGoals: 2, awayGoals: 0 },
+      { homeGoals: 1, awayGoals: 1 },
+    ]),
   ],
 };
 
@@ -93,6 +122,7 @@ function teamSummary(
   entryValue: CompetitionEntryDto,
   name: string,
   memberCount: number,
+  externalClubName: string | null = null,
 ): CompetitionTeamManagementSummaryDto {
   return {
     team: {
@@ -103,15 +133,24 @@ function teamSummary(
     },
     entry: entryValue,
     roster: { state: "open", memberCount, maxSize: 11, lockedAt: null },
-    externalClub: null,
+    externalClub: externalClubName
+      ? {
+          teamId: entryValue.teamId,
+          providerKey: "ea-clubs",
+          externalClubId: `ea-${entryValue.teamId}`,
+          externalClubName,
+          platform: "playstation",
+          gameEdition: "fc26",
+        }
+      : null,
   };
 }
 
 export const overviewTeams: readonly CompetitionTeamManagementSummaryDto[] = [
-  teamSummary(overviewEntries[0]!, "Cuervos FC", 9),
-  teamSummary(overviewEntries[1]!, "Nova FC", 11),
-  teamSummary(overviewEntries[2]!, "Atlas", 4),
-  teamSummary(overviewEntries[3]!, "Rechazado SC", 0),
+  teamSummary(overviewEntries[0]!, "Cuervos FC", 9, "Cuervos Clubs"),
+  teamSummary(overviewEntries[1]!, "Nova FC", 11, "Nova Esports"),
+  teamSummary(overviewEntries[2]!, "Atlas", 4, null),
+  teamSummary(overviewEntries[3]!, "Rechazado SC", 0, null),
 ];
 
 function activity(

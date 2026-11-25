@@ -1,8 +1,6 @@
 "use client";
 
-import { CompetitionAuditTabs } from "@/modules/organizations/presentation/audit/competition-audit-tabs.tsx";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import type {
   ActivityEntryDto,
   CompetitionDto,
@@ -12,23 +10,17 @@ import type {
 } from "@futrob/api-contracts";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { isPubliclyVisibleStatus } from "@futrob/public-portal";
-import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { RESULT_PERMISSION } from "@futrob/results";
 import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
-  Badge,
-  Button,
-  Caption,
   PageHeader,
-  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderTitle,
   Skeleton,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { usePendingActivitiesQuery } from "@/modules/notifications/presentation/activity-queries.ts";
-import { organizationCompetitionStatusLabel } from "@/modules/organizations/presentation/organization-home-copy.ts";
 import { useOrganizationProfileQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 import { portalPath } from "@/modules/public-portal/presentation/public-portal-model.ts";
 import { useCompetitionEncountersQuery } from "@/modules/results/presentation/encounter-queries.ts";
@@ -38,13 +30,6 @@ import { useCapabilities } from "@/shared/presentation/permissions/index.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 import {
-  competitionFormatLabel,
-  competitionListBadgeVariant,
-  competitionPlatformLabel,
-  competitionScheduleLabel,
-  competitionTeamsLabel,
-} from "../competition-labels.ts";
-import {
   useCompetitionDraftQuery,
   useCompetitionParticipantsQuery,
   useUpdateCompetitionExploreListingMutation,
@@ -53,14 +38,26 @@ import {
   CompetitionExploreListingCard,
   type ExploreListingControl,
 } from "./competition-explore-listing-card.tsx";
-import { CompetitionOverviewKpis, type OverviewMetric } from "./competition-overview-kpis.tsx";
+import {
+  CompetitionOverviewHeader,
+  CompetitionProgressBanner,
+} from "./competition-overview-header.tsx";
+import {
+  CompetitionOverviewKpis,
+  type OverviewMetric,
+  type OverviewRatioMetric,
+} from "./competition-overview-kpis.tsx";
 import {
   awaitingResultEncounters,
+  competitionProgress,
   countEntries,
+  officializedEncounters,
   upcomingEncounters,
   type OverviewSlice,
 } from "./competition-overview-model.ts";
-import { PendingSection, TeamsSection, UpcomingSection } from "./competition-overview-sections.tsx";
+import { UpcomingSection } from "./competition-overview-encounters-section.tsx";
+import { PendingSection } from "./competition-overview-sections.tsx";
+import { TeamsSection } from "./competition-overview-teams-section.tsx";
 
 const styles = stylex.create({
   main: {
@@ -70,29 +67,26 @@ const styles = stylex.create({
     flexDirection: "column",
     gap: "1rem",
   },
-  header: {
-    marginBottom: 0,
-  },
   titleSkeleton: {
     width: "16rem",
     maxWidth: "100%",
     height: "2.25rem",
   },
-  summary: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: "0.5rem 0.75rem",
-  },
-  columns: {
+  layout: {
     display: "grid",
     minWidth: 0,
     gridTemplateColumns: {
       default: "minmax(0, 1fr)",
-      [media.lg]: "repeat(2, minmax(0, 1fr))",
+      [media.lg]: "minmax(0, 2fr) minmax(0, 1fr)",
     },
     gap: "1rem",
     alignItems: "start",
+  },
+  column: {
+    display: "flex",
+    minWidth: 0,
+    flexDirection: "column",
+    gap: "1rem",
   },
 });
 
@@ -127,6 +121,35 @@ function metricOf<T>(slice: OverviewSlice<T>, count: (data: T) => number): Overv
       : "loading";
 }
 
+function ratioMetricOf<T>(
+  slice: OverviewSlice<T>,
+  pick: (data: T) => { readonly done: number; readonly total: number },
+): OverviewRatioMetric {
+  return slice.status === "ready"
+    ? pick(slice.data)
+    : slice.status === "error"
+      ? "unavailable"
+      : "loading";
+}
+
+function pendingTotalMetric(
+  entries: OverviewSlice<readonly CompetitionEntryDto[]>,
+  encounters: OverviewSlice<ListCompetitionEncountersResponse>,
+  activities: OverviewSlice<readonly ActivityEntryDto[]>,
+): OverviewMetric {
+  const slices = [entries, encounters, activities];
+  if (slices.some((slice) => slice.status === "error")) return "unavailable";
+  if (slices.some((slice) => slice.status === "loading")) return "loading";
+  const pendingEntries = entries.status === "ready" ? countEntries(entries.data).pending : 0;
+  const awaiting =
+    encounters.status === "ready" ? awaitingResultEncounters(encounters.data.encounters).length : 0;
+  const openTasks =
+    activities.status === "ready"
+      ? activities.data.filter((entry) => entry.status === "open" && entry.requiresAction).length
+      : 0;
+  return pendingEntries + awaiting + openTasks;
+}
+
 export function CompetitionOverviewView({
   activities,
   competition,
@@ -149,63 +172,34 @@ export function CompetitionOverviewView({
       ? portalPath({ organizationSlug, competitionKey: competitionId })
       : null;
 
+  const progress = competitionProgress(
+    competition,
+    mapSlice(encounters, (data) => data.encounters),
+    entries,
+  );
+
   return (
     <main {...applyStyles(styles.main)}>
-      <PageHeader className={styles.header}>
-        {competition.status === "ready" ? (
-          <PageHeaderTitle truncate>{competition.data.name}</PageHeaderTitle>
-        ) : competition.status === "loading" ? (
-          <Skeleton {...applyStyles(styles.titleSkeleton)} />
-        ) : (
-          <PageHeaderTitle>{t("shell.nav.competition.overview")}</PageHeaderTitle>
-        )}
-        <PageHeaderDescription>{t("competition.overview.description")}</PageHeaderDescription>
-        {competition.status === "ready" && competition.data.status === "draft" ? (
-          <PageHeaderActions>
-            <Button
-              render={
-                <Link
-                  params={{ orgId: organizationId, competitionId }}
-                  to="/orgs/$orgId/competitions/$competitionId/setup"
-                />
-              }
-            >
-              {t("competition.overview.continueSetup")}
-            </Button>
-          </PageHeaderActions>
-        ) : null}
-        {portalHref ? (
-          <PageHeaderActions>
-            <Button
-              render={<a href={portalHref} rel="noopener" target="_blank" />}
-              role="link"
-              variant="outline"
-            >
-              <ArrowSquareOutIcon aria-hidden="true" />
-              {t("competition.overview.viewPortal")}
-            </Button>
-          </PageHeaderActions>
-        ) : null}
-      </PageHeader>
-
-      <CompetitionAuditTabs
-        organizationId={organizationId}
+      <CompetitionOverviewHeader
+        approvedTeams={entryCounts?.approved ?? null}
+        competition={competition}
         competitionId={competitionId}
-        active="overview"
+        organizationId={organizationId}
+        portalHref={portalHref}
       />
+
       {competition.status === "error" ? (
         <RetryAlert message={t("competition.overview.error")} retry={competition.retry} t={t} />
       ) : null}
-      {competition.status === "ready" ? (
-        <CompetitionSummary
-          approved={entryCounts?.approved ?? null}
-          competition={competition.data}
-        />
-      ) : null}
+
+      {progress ? <CompetitionProgressBanner progress={progress} /> : null}
 
       <CompetitionOverviewKpis
-        applications={metricOf(entries, (data) => countEntries(data).pending)}
-        awaiting={metricOf(encounters, (data) => awaitingResultEncounters(data.encounters).length)}
+        officialized={ratioMetricOf(encounters, (data) => {
+          const { official, total } = officializedEncounters(data.encounters);
+          return { done: official, total };
+        })}
+        pending={pendingTotalMetric(entries, encounters, activities)}
         teams={metricOf(entries, (data) => countEntries(data).approved)}
         upcoming={metricOf(
           encounters,
@@ -213,52 +207,41 @@ export function CompetitionOverviewView({
         )}
       />
 
-      <div {...applyStyles(styles.columns)}>
-        <PendingSection
-          activities={activities}
-          awaitingCount={mapSlice(
-            encounters,
-            (data) => awaitingResultEncounters(data.encounters).length,
-          )}
-          competitionId={competitionId}
-          entriesPending={mapSlice(entries, (data) => countEntries(data).pending)}
-          now={now}
-          organizationId={organizationId}
-        />
-        <UpcomingSection
-          competitionId={competitionId}
-          encounters={encounters}
-          organizationId={organizationId}
-        />
+      <div {...applyStyles(styles.layout)}>
+        <div {...applyStyles(styles.column)}>
+          <TeamsSection
+            competitionId={competitionId}
+            organizationId={organizationId}
+            teams={teams}
+          />
+          <UpcomingSection
+            competitionId={competitionId}
+            encounters={encounters}
+            organizationId={organizationId}
+          />
+        </div>
+        <div {...applyStyles(styles.column)}>
+          <PendingSection
+            activities={activities}
+            awaitingCount={mapSlice(
+              encounters,
+              (data) => awaitingResultEncounters(data.encounters).length,
+            )}
+            competitionId={competitionId}
+            entriesPending={mapSlice(entries, (data) => countEntries(data).pending)}
+            now={now}
+            organizationId={organizationId}
+          />
+          <CompetitionExploreListingCard
+            competitionId={competitionId}
+            control={exploreListing}
+            organizationId={organizationId}
+            portalHref={portalHref}
+            timeZone={competition.status === "ready" ? competition.data.timeZone : null}
+          />
+        </div>
       </div>
-      <TeamsSection competitionId={competitionId} organizationId={organizationId} teams={teams} />
-      {exploreListing ? <CompetitionExploreListingCard control={exploreListing} /> : null}
     </main>
-  );
-}
-
-function CompetitionSummary({
-  approved,
-  competition,
-}: {
-  readonly approved: number | null;
-  readonly competition: CompetitionDto;
-}) {
-  const { locale, t } = useI18n();
-  const schedule = competitionScheduleLabel(competition.schedule, locale, t);
-  const details = [
-    competitionFormatLabel(competition.format, t),
-    `${competition.gameEdition} · ${competitionPlatformLabel(competition.platform)}`,
-    approved === null ? null : competitionTeamsLabel(approved, competition.teams.max, t),
-    schedule,
-  ].filter((part): part is string => part !== null);
-  return (
-    <section aria-label={t("competition.overview.status")} {...applyStyles(styles.summary)}>
-      <Badge variant={competitionListBadgeVariant(competition.status)}>
-        {organizationCompetitionStatusLabel(competition.status, t)}
-      </Badge>
-      <Caption as="p">{details.join(" · ")}</Caption>
-    </section>
   );
 }
 

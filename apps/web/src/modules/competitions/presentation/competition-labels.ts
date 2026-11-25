@@ -24,6 +24,13 @@ export function competitionRegionLabel(region: CompetitionRegionDto, t: Translat
   return t(competitionRegionKey(region));
 }
 
+export function competitionGameEditionLabel(gameEdition: string): string {
+  const trimmed = gameEdition.trim();
+  const fcMatch = /^fc\s*(\d{2,4})$/i.exec(trimmed);
+  if (fcMatch) return `FC ${fcMatch[1]}`;
+  return trimmed;
+}
+
 export function competitionPlatformLabel(platform: GamePlatformDto): string {
   return {
     [GAME_PLATFORM.PLAYSTATION]: "PlayStation",

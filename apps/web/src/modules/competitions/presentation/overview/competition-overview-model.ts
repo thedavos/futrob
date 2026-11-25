@@ -1,4 +1,5 @@
 import type {
+  CompetitionDto,
   CompetitionEncounterDto,
   CompetitionEntryDto,
   CompetitionTeamManagementSummaryDto,
@@ -38,6 +39,34 @@ export function upcomingEncounters(
     .slice(0, limit);
 }
 
+/** Encounters with status `official`, most recent kickoff first. */
+export function recentOfficialEncounters(
+  encounters: readonly CompetitionEncounterDto[],
+  limit = OVERVIEW_UPCOMING_LIMIT,
+): readonly CompetitionEncounterDto[] {
+  return encounters
+    .filter((encounter) => encounter.status === "official")
+    .sort(
+      compareByTime((encounter) => new Date(encounter.scheduledStartAt), TIME_SORT_DIRECTION.desc),
+    )
+    .slice(0, limit);
+}
+
+export interface OfficializedCounts {
+  readonly official: number;
+  readonly total: number;
+}
+
+/** Count of officialized encounters out of the total paired encounters in the active fixture. */
+export function officializedEncounters(
+  encounters: readonly CompetitionEncounterDto[],
+): OfficializedCounts {
+  return {
+    official: encounters.filter((encounter) => encounter.status === "official").length,
+    total: encounters.length,
+  };
+}
+
 /** Encounters with status `awaiting_result`, oldest kickoff first. */
 export function awaitingResultEncounters(
   encounters: readonly CompetitionEncounterDto[],
@@ -45,6 +74,57 @@ export function awaitingResultEncounters(
   return encounters
     .filter((encounter) => encounter.status === "awaiting_result")
     .sort(compareByTime((encounter) => new Date(encounter.scheduledStartAt)));
+}
+
+export type CompetitionProgressSummary =
+  | {
+      readonly kind: "encounters";
+      readonly official: number;
+      readonly total: number;
+      readonly percent: number;
+    }
+  | {
+      readonly kind: "teams";
+      readonly approved: number;
+      readonly max: number;
+      readonly percent: number;
+    };
+
+/**
+ * Competition completion bar: once the fixture exists, tracks officialized encounters;
+ * during open registration before a fixture exists, tracks approved teams against capacity.
+ */
+export function competitionProgress(
+  competition: OverviewSlice<CompetitionDto>,
+  encounters: OverviewSlice<readonly CompetitionEncounterDto[]>,
+  entries: OverviewSlice<readonly CompetitionEntryDto[]>,
+): CompetitionProgressSummary | null {
+  if (encounters.status === "ready" && encounters.data.length > 0) {
+    const { official, total } = officializedEncounters(encounters.data);
+    return {
+      kind: "encounters",
+      official,
+      total,
+      percent: Math.round((official / total) * 100),
+    };
+  }
+  if (
+    competition.status === "ready" &&
+    competition.data.status === "registration" &&
+    competition.data.teams.max !== null &&
+    competition.data.teams.max > 0 &&
+    entries.status === "ready"
+  ) {
+    const { approved } = countEntries(entries.data);
+    const max = competition.data.teams.max;
+    return {
+      kind: "teams",
+      approved,
+      max,
+      percent: Math.min(100, Math.round((approved / max) * 100)),
+    };
+  }
+  return null;
 }
 
 /** Pending approvals first, then approved teams; rejected entries stay out of the summary. */

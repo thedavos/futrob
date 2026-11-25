@@ -3187,12 +3187,28 @@ const es = {
   "competition.overview.exploreListing.saving": "Guardando…",
   "competition.overview.exploreListing.error":
     "No pudimos cambiar la visibilidad. Inténtalo de nuevo.",
+  "competition.overview.publishing.title": "Publicación y alcance",
+  "competition.overview.publishing.portal": "Portal público",
+  "competition.overview.publishing.openPortal": "Abrir portal",
+  "competition.overview.publishing.timeZone": "Zona horaria",
+  "competition.overview.publishing.rules": "Reglamento",
+  "competition.overview.publishing.viewRules": "Ver reglamento",
+  "competition.overview.progress.encounters": ({ official, total }) =>
+    Number(official) === Number(total)
+      ? `Competición completada · ${official} de ${total} enfrentamientos oficiales`
+      : `Progreso de la competición · ${official} de ${total} enfrentamientos oficiales`,
+  "competition.overview.progress.teams": ({ approved, max }) =>
+    `Cupos cubiertos · ${approved} de ${max} equipos aprobados`,
   "competition.overview.kpi.label": "Indicadores de la competición",
   "competition.overview.kpi.teams": "Equipos aprobados",
+  "competition.overview.kpi.officialized": "Oficializados",
   "competition.overview.kpi.applications": "Inscripciones por revisar",
   "competition.overview.kpi.upcoming": "Próximos enfrentamientos",
   "competition.overview.kpi.awaiting": "Sin resultado oficial",
+  "competition.overview.kpi.pending": "Por resolver",
   "competition.overview.pending.title": "Pendientes",
+  "competition.overview.pending.count": ({ count }) =>
+    Number(count) === 1 ? "1 pendiente" : `${count} pendientes`,
   "competition.overview.pending.applications": ({ count }) =>
     Number(count) === 1
       ? "1 inscripción de equipo por revisar"
@@ -3212,6 +3228,8 @@ const es = {
   "competition.overview.upcoming.empty.title": "Sin enfrentamientos programados",
   "competition.overview.upcoming.empty.description":
     "Cuando el calendario tenga cruces por jugar, los verás aquí.",
+  "competition.overview.official.title": "Últimos oficiales",
+  "competition.overview.official.badge": "Oficial",
   "competition.overview.teams.title": "Equipos",
   "competition.overview.teams.viewAll": "Ver todos",
   "competition.overview.teams.error": "No pudimos cargar los equipos.",
@@ -3219,6 +3237,11 @@ const es = {
   "competition.overview.teams.empty.description":
     "Invita a capitanes o aprueba solicitudes para completar la competición.",
   "competition.overview.teams.empty.action": "Gestionar equipos",
+  "competition.overview.teams.column.team": "Equipo",
+  "competition.overview.teams.column.eaClub": "Club EA",
+  "competition.overview.teams.column.roster": "Plantilla",
+  "competition.overview.teams.column.status": "Estado",
+  "competition.overview.teams.ea.unlinked": "Sin vincular",
   "competition.overview.teams.roster": ({ count, max }) => `${count} de ${max} jugadores`,
   "competition.overview.teams.entry.pending": "Por revisar",
   "competition.overview.teams.entry.approved": "Aprobado",
@@ -3530,6 +3553,15 @@ export interface MessageParamsByKey {
   readonly "pricing.competitions": { readonly count: number };
   readonly "pricing.format": { readonly format: string };
   readonly "pricing.staff": { readonly count: number };
+  readonly "competition.overview.progress.encounters": {
+    readonly official: number;
+    readonly total: number;
+  };
+  readonly "competition.overview.progress.teams": {
+    readonly approved: number;
+    readonly max: number;
+  };
+  readonly "competition.overview.pending.count": { readonly count: number };
   readonly "competition.overview.pending.applications": { readonly count: number };
   readonly "competition.overview.pending.awaiting": { readonly count: number };
   readonly "competition.overview.teams.roster": { readonly count: number; readonly max: number };
@@ -7035,12 +7067,28 @@ const en: Catalog = {
     "Hidden from Explore: only people with the link can see it.",
   "competition.overview.exploreListing.saving": "Saving…",
   "competition.overview.exploreListing.error": "We couldn't change the visibility. Try again.",
+  "competition.overview.publishing.title": "Publishing and reach",
+  "competition.overview.publishing.portal": "Public portal",
+  "competition.overview.publishing.openPortal": "Open portal",
+  "competition.overview.publishing.timeZone": "Time zone",
+  "competition.overview.publishing.rules": "Rules",
+  "competition.overview.publishing.viewRules": "View rules",
+  "competition.overview.progress.encounters": ({ official, total }) =>
+    Number(official) === Number(total)
+      ? `Competition completed · ${official} of ${total} official encounters`
+      : `Competition progress · ${official} of ${total} official encounters`,
+  "competition.overview.progress.teams": ({ approved, max }) =>
+    `Spots filled · ${approved} of ${max} approved teams`,
   "competition.overview.kpi.label": "Competition indicators",
   "competition.overview.kpi.teams": "Approved teams",
+  "competition.overview.kpi.officialized": "Officialized",
   "competition.overview.kpi.applications": "Entries to review",
   "competition.overview.kpi.upcoming": "Upcoming encounters",
   "competition.overview.kpi.awaiting": "No official result",
+  "competition.overview.kpi.pending": "To resolve",
   "competition.overview.pending.title": "Pending",
+  "competition.overview.pending.count": ({ count }) =>
+    Number(count) === 1 ? "1 pending" : `${count} pending`,
   "competition.overview.pending.applications": ({ count }) =>
     Number(count) === 1 ? "1 team entry to review" : `${count} team entries to review`,
   "competition.overview.pending.awaiting": ({ count }) =>
@@ -7058,6 +7106,8 @@ const en: Catalog = {
   "competition.overview.upcoming.empty.title": "No scheduled encounters",
   "competition.overview.upcoming.empty.description":
     "When the schedule has encounters left to play, you will see them here.",
+  "competition.overview.official.title": "Latest official results",
+  "competition.overview.official.badge": "Official",
   "competition.overview.teams.title": "Teams",
   "competition.overview.teams.viewAll": "View all",
   "competition.overview.teams.error": "We couldn't load the teams.",
@@ -7065,6 +7115,11 @@ const en: Catalog = {
   "competition.overview.teams.empty.description":
     "Invite captains or approve applications to fill the competition.",
   "competition.overview.teams.empty.action": "Manage teams",
+  "competition.overview.teams.column.team": "Team",
+  "competition.overview.teams.column.eaClub": "EA club",
+  "competition.overview.teams.column.roster": "Roster",
+  "competition.overview.teams.column.status": "Status",
+  "competition.overview.teams.ea.unlinked": "Not linked",
   "competition.overview.teams.roster": ({ count, max }) => `${count} of ${max} players`,
   "competition.overview.teams.entry.pending": "To review",
   "competition.overview.teams.entry.approved": "Approved",

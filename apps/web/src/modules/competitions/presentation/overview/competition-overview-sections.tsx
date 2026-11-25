@@ -2,26 +2,16 @@
 
 import { useId } from "react";
 import { Link } from "@tanstack/react-router";
-import { ClipboardTextIcon, ClockIcon } from "@phosphor-icons/react";
-import type {
-  ActivityEntryDto,
-  CompetitionEncounterDto,
-  CompetitionTeamManagementSummaryDto,
-  ListCompetitionEncountersResponse,
-} from "@futrob/api-contracts";
+import { CheckIcon, ClipboardTextIcon, ClockIcon } from "@phosphor-icons/react";
+import type { ActivityEntryDto } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, Button, Caption, Skeleton, Text, TextLink } from "@futrob/ui";
+import { applyStyles, Badge, Skeleton, Text } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { ActivityFeedList } from "@/modules/notifications/presentation/activity-feed-list.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 import { OverviewCard, OverviewEmpty, ViewAllChevron } from "./competition-overview-card.tsx";
-import {
-  OVERVIEW_PENDING_LIMIT,
-  overviewTeams,
-  upcomingEncounters,
-  type OverviewSlice,
-} from "./competition-overview-model.ts";
+import { OVERVIEW_PENDING_LIMIT, type OverviewSlice } from "./competition-overview-model.ts";
 
 const styles = stylex.create({
   list: {
@@ -30,6 +20,14 @@ const styles = stylex.create({
     margin: 0,
     padding: 0,
     listStyleType: "none",
+  },
+  rowItem: {
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: "color-mix(in oklab, var(--border) 60%, transparent)",
+    ":last-child": {
+      borderBottomWidth: 0,
+    },
   },
   row: {
     display: "flex",
@@ -55,29 +53,16 @@ const styles = stylex.create({
     height: "1rem",
     color: colors.mutedForeground,
   },
+  rowChevron: {
+    flexShrink: 0,
+    color: colors.mutedForeground,
+  },
   copy: {
     display: "flex",
     minWidth: 0,
     flexGrow: 1,
     flexDirection: "column",
     gap: "0.125rem",
-  },
-  truncate: {
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  meta: {
-    flexShrink: 0,
-    fontVariantNumeric: "tabular-nums",
-  },
-  action: {
-    display: "inline-flex",
-    alignItems: "center",
-    flexShrink: 0,
-    gap: "0.25rem",
-    textDecorationLine: "none",
-    fontWeight: "var(--font-weight-medium)",
   },
   stack: {
     display: "flex",
@@ -89,17 +74,18 @@ const styles = stylex.create({
     height: "2.75rem",
     width: "100%",
   },
+  okIsland: {
+    display: "flex",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "2.25rem",
+    height: "2.25rem",
+    borderRadius: "var(--corner-full)",
+    backgroundColor: "color-mix(in oklab, var(--success) 16%, transparent)",
+    color: colors.success,
+  },
 });
-
-function SectionSkeleton({ label, rows = 3 }: { readonly label: string; readonly rows?: number }) {
-  return (
-    <div aria-busy="true" aria-label={label} role="status" {...applyStyles(styles.stack)}>
-      {Array.from({ length: rows }, (_, index) => (
-        <Skeleton key={index} {...applyStyles(styles.skeleton)} />
-      ))}
-    </div>
-  );
-}
 
 export function PendingSection({
   activities,
@@ -133,13 +119,24 @@ export function PendingSection({
   const allKnown = sources.every((source) => source.status === "ready");
   const nothingPending = allKnown && !hasSummaryRows && openTasks.length === 0;
   const showSkeleton = sources.some((source) => source.status === "loading");
+  const totalOpen = (pendingEntries ?? 0) + (awaiting ?? 0) + openTasks.length;
 
   return (
-    <OverviewCard title={t("competition.overview.pending.title")} titleId={titleId}>
+    <OverviewCard
+      action={
+        totalOpen > 0 ? (
+          <Badge variant="warning">
+            {t("competition.overview.pending.count", { count: totalOpen })}
+          </Badge>
+        ) : null
+      }
+      title={t("competition.overview.pending.title")}
+      titleId={titleId}
+    >
       {hasSummaryRows ? (
         <ul aria-label={t("competition.overview.pending.title")} {...applyStyles(styles.list)}>
           {(pendingEntries ?? 0) > 0 ? (
-            <li>
+            <li {...applyStyles(styles.rowItem)}>
               <Link
                 params={params}
                 to="/orgs/$orgId/competitions/$competitionId/teams"
@@ -149,11 +146,14 @@ export function PendingSection({
                 <Text className={styles.copy} weight="semibold">
                   {t("competition.overview.pending.applications", { count: pendingEntries ?? 0 })}
                 </Text>
+                <span aria-hidden="true" {...applyStyles(styles.rowChevron)}>
+                  <ViewAllChevron />
+                </span>
               </Link>
             </li>
           ) : null}
           {(awaiting ?? 0) > 0 ? (
-            <li>
+            <li {...applyStyles(styles.rowItem)}>
               <Link
                 params={params}
                 to="/orgs/$orgId/competitions/$competitionId/encounters"
@@ -163,6 +163,9 @@ export function PendingSection({
                 <Text className={styles.copy} weight="semibold">
                   {t("competition.overview.pending.awaiting", { count: awaiting ?? 0 })}
                 </Text>
+                <span aria-hidden="true" {...applyStyles(styles.rowChevron)}>
+                  <ViewAllChevron />
+                </span>
               </Link>
             </li>
           ) : null}
@@ -183,224 +186,28 @@ export function PendingSection({
           variant="warning"
         />
       ) : null}
-      {showSkeleton ? <SectionSkeleton label={t("shell.queue.loading")} rows={2} /> : null}
+      {showSkeleton ? (
+        <div
+          aria-busy="true"
+          aria-label={t("shell.queue.loading")}
+          role="status"
+          {...applyStyles(styles.stack)}
+        >
+          {[0, 1].map((index) => (
+            <Skeleton key={index} {...applyStyles(styles.skeleton)} />
+          ))}
+        </div>
+      ) : null}
       {nothingPending ? (
         <OverviewEmpty
           description={t("competition.overview.pending.empty.description")}
+          icon={
+            <span aria-hidden="true" {...applyStyles(styles.okIsland)}>
+              <CheckIcon size={18} weight="bold" />
+            </span>
+          }
           title={t("competition.overview.pending.empty.title")}
         />
-      ) : null}
-    </OverviewCard>
-  );
-}
-
-export function UpcomingSection({
-  competitionId,
-  encounters,
-  organizationId,
-}: {
-  readonly competitionId: string;
-  readonly encounters: OverviewSlice<ListCompetitionEncountersResponse>;
-  readonly organizationId: string;
-}) {
-  const { locale, t } = useI18n();
-  const titleId = useId();
-  const upcoming =
-    encounters.status === "ready" ? upcomingEncounters(encounters.data.encounters) : [];
-
-  return (
-    <OverviewCard
-      action={
-        encounters.status === "ready" && encounters.data.encounters.length > 0 ? (
-          <TextLink
-            className={styles.action}
-            render={
-              <Link
-                params={{ orgId: organizationId, competitionId }}
-                to="/orgs/$orgId/competitions/$competitionId/encounters"
-              />
-            }
-            text="caption"
-          >
-            {t("competition.overview.upcoming.viewAll")}
-            <ViewAllChevron />
-          </TextLink>
-        ) : null
-      }
-      title={t("competition.overview.upcoming.title")}
-      titleId={titleId}
-    >
-      {encounters.status === "loading" ? (
-        <SectionSkeleton label={t("encounters.list.loading")} />
-      ) : null}
-      {encounters.status === "error" ? (
-        <RetryAlert
-          message={t("competition.overview.upcoming.error")}
-          retry={encounters.retry}
-          t={t}
-        />
-      ) : null}
-      {encounters.status === "ready" && upcoming.length === 0 ? (
-        <OverviewEmpty
-          description={t("competition.overview.upcoming.empty.description")}
-          title={t("competition.overview.upcoming.empty.title")}
-        />
-      ) : null}
-      {encounters.status === "ready" && upcoming.length > 0 ? (
-        <>
-          <ol aria-labelledby={titleId} {...applyStyles(styles.list)}>
-            {upcoming.map((encounter) => (
-              <li key={encounter.encounterId}>
-                <UpcomingRow
-                  competitionId={competitionId}
-                  encounter={encounter}
-                  locale={locale}
-                  organizationId={organizationId}
-                  timeZone={encounters.data.competition.timeZone}
-                />
-              </li>
-            ))}
-          </ol>
-          <Caption as="p">
-            {t("encounters.list.timeZone", { zone: encounters.data.competition.timeZone })}
-          </Caption>
-        </>
-      ) : null}
-    </OverviewCard>
-  );
-}
-
-function UpcomingRow({
-  competitionId,
-  encounter,
-  locale,
-  organizationId,
-  timeZone,
-}: {
-  readonly competitionId: string;
-  readonly encounter: CompetitionEncounterDto;
-  readonly locale: string;
-  readonly organizationId: string;
-  readonly timeZone: string;
-}) {
-  const { t } = useI18n();
-  const kickoff = new Intl.DateTimeFormat(locale, {
-    timeZone,
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const round = encounter.round.total
-    ? t("encounter.roundOf", { number: encounter.round.number, total: encounter.round.total })
-    : t("encounter.round", { number: encounter.round.number });
-  return (
-    <Link
-      aria-label={t("encounters.list.open", {
-        home: encounter.home.name,
-        away: encounter.away.name,
-      })}
-      params={{ orgId: organizationId, competitionId, encounterId: encounter.encounterId }}
-      to="/orgs/$orgId/competitions/$competitionId/encounters/$encounterId"
-      {...applyStyles(styles.row)}
-    >
-      <span {...applyStyles(styles.copy)}>
-        <Text className={styles.truncate} tone="default" weight="semibold">
-          {`${encounter.home.name} ${t("encounter.vs")} ${encounter.away.name}`}
-        </Text>
-        <Caption as="span">{round}</Caption>
-      </span>
-      <Caption as="span" className={styles.meta}>
-        <time dateTime={encounter.scheduledStartAt}>
-          {kickoff.format(new Date(encounter.scheduledStartAt))}
-        </time>
-      </Caption>
-    </Link>
-  );
-}
-
-export function TeamsSection({
-  competitionId,
-  organizationId,
-  teams,
-}: {
-  readonly competitionId: string;
-  readonly organizationId: string;
-  readonly teams: OverviewSlice<readonly CompetitionTeamManagementSummaryDto[]>;
-}) {
-  const { t } = useI18n();
-  const titleId = useId();
-  const params = { orgId: organizationId, competitionId };
-  const listed = teams.status === "ready" ? overviewTeams(teams.data) : [];
-
-  return (
-    <OverviewCard
-      action={
-        listed.length > 0 ? (
-          <TextLink
-            className={styles.action}
-            render={<Link params={params} to="/orgs/$orgId/competitions/$competitionId/teams" />}
-            text="caption"
-          >
-            {t("competition.overview.teams.viewAll")}
-            <ViewAllChevron />
-          </TextLink>
-        ) : null
-      }
-      title={t("competition.overview.teams.title")}
-      titleId={titleId}
-    >
-      {teams.status === "loading" ? (
-        <SectionSkeleton label={t("competition.overview.loading")} />
-      ) : null}
-      {teams.status === "error" ? (
-        <RetryAlert message={t("competition.overview.teams.error")} retry={teams.retry} t={t} />
-      ) : null}
-      {teams.status === "ready" && listed.length === 0 ? (
-        <OverviewEmpty
-          action={
-            <Button
-              render={<Link params={params} to="/orgs/$orgId/competitions/$competitionId/teams" />}
-              variant="outline"
-            >
-              {t("competition.overview.teams.empty.action")}
-            </Button>
-          }
-          description={t("competition.overview.teams.empty.description")}
-          title={t("competition.overview.teams.empty.title")}
-        />
-      ) : null}
-      {listed.length > 0 ? (
-        <ul aria-labelledby={titleId} {...applyStyles(styles.list)}>
-          {listed.map((item) => (
-            <li key={item.team.id}>
-              <Link
-                params={params}
-                search={{ teamId: item.team.id }}
-                to="/orgs/$orgId/competitions/$competitionId/teams"
-                {...applyStyles(styles.row)}
-              >
-                <span {...applyStyles(styles.copy)}>
-                  <Text className={styles.truncate} tone="default" weight="semibold">
-                    {item.team.name}
-                  </Text>
-                  <Caption as="span">
-                    {t("competition.overview.teams.roster", {
-                      count: item.roster.memberCount,
-                      max: item.roster.maxSize,
-                    })}
-                  </Caption>
-                </span>
-                <Badge variant={item.entry.status === "approved" ? "approved" : "warning"}>
-                  {item.entry.status === "approved"
-                    ? t("competition.overview.teams.entry.approved")
-                    : t("competition.overview.teams.entry.pending")}
-                </Badge>
-              </Link>
-            </li>
-          ))}
-        </ul>
       ) : null}
     </OverviewCard>
   );
