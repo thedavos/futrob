@@ -123,6 +123,24 @@ export const ReadOnly: Story = {
   },
 };
 
+const rejectedDetail = { ...detail, entry: { ...detail.entry, status: "rejected" as const } };
+
+export const RejectedEntry: Story = {
+  args: {
+    items: [teamSummaryFixture(rejectedDetail)],
+    detail: rejectedDetail,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Inscripción rechazada")).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Invitar" })).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole("button", { name: "Cerrar plantilla" }),
+    ).not.toBeInTheDocument();
+    await expect(canvas.getByText("Dani Capitán")).toBeVisible();
+  },
+};
+
 export const Mobile: Story = {
   parameters: { viewport: { defaultViewport: "mobile1" } },
 };

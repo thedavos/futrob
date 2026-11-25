@@ -1,6 +1,10 @@
 "use client";
 
+import { isRosterWritable } from "@futrob/sdk";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   applyStyles,
   Button,
   EmptyState,
@@ -65,8 +69,20 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
     );
   }
   const { detail, capabilities } = props;
+  // A rejected entry is terminal (ADR-0019): the API answers every roster write with
+  // `teams.roster_entry_inactive`, staff included, so the roster stays read-only.
+  const writable = isRosterWritable(detail.entry.status);
   return (
     <div {...applyStyles(styles.detail)}>
+      {writable ? null : (
+        <Alert>
+          <AlertTitle>Inscripción rechazada</AlertTitle>
+          <AlertDescription>
+            La plantilla queda en solo lectura: no admite invitaciones, cambios de rol ni abrirla o
+            cerrarla.
+          </AlertDescription>
+        </Alert>
+      )}
       <div {...applyStyles(styles.header)}>
         <div {...applyStyles(styles.identity)}>
           <Button
@@ -92,7 +108,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
           </div>
         </div>
         <div {...applyStyles(styles.actions)}>
-          {capabilities.manageInvitations ? (
+          {writable && capabilities.manageInvitations ? (
             <InvitationDialog
               allowedRoles={capabilities.manageRoles ? undefined : ["player"]}
               busy={props.busy}
@@ -139,7 +155,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
       <section {...applyStyles(styles.roster)}>
         <div {...applyStyles(styles.rosterHeader)}>
           <h3 {...applyStyles(styles.sectionTitle)}>Plantilla</h3>
-          {capabilities.manageRoster ? (
+          {writable && capabilities.manageRoster ? (
             <ConfirmAction
               confirmLabel={detail.roster.state === "open" ? "Cerrar plantilla" : "Abrir plantilla"}
               description={
@@ -178,7 +194,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
                     />
                   </TableCell>
                   <TableCell>
-                    {capabilities.manageRoles ? (
+                    {writable && capabilities.manageRoles ? (
                       <RosterRoleEditor
                         busy={props.busy}
                         displayName={member.presentation.displayName}

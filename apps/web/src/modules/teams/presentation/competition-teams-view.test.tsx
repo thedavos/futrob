@@ -79,6 +79,31 @@ describe("CompetitionTeamsView", () => {
     expect(screen.getByRole("button", { name: "Rechazar" })).toBeTruthy();
   });
 
+  it("keeps a rejected entry's roster read-only for staff", () => {
+    const base = teamManagementFixture();
+    const rejected = { ...base, entry: { ...base.entry, status: "rejected" as const } };
+    renderView({
+      items: [teamSummaryFixture(rejected)],
+      detail: rejected,
+      selectedTeamId: rejected.team.id,
+      capabilities: {
+        manageRoster: true,
+        manageRoles: true,
+        manageInvitations: true,
+        manageExternalClub: true,
+        manageEntries: true,
+        unavailable: false,
+      },
+    });
+
+    expect(screen.getByText("Inscripción rechazada")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Invitar" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Cerrar plantilla" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Rol de Dani Capitán" })).toBeNull();
+    expect(screen.getByText("Dani Capitán")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Asociar club" })).toBeTruthy();
+  });
+
   it("offers an accessible control for the next Team page", async () => {
     let loads = 0;
     renderView({
