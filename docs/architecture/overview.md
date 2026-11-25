@@ -157,7 +157,7 @@ cases a través del product API (SDK), no instancia adapters propios.
 
 `game-data` es el único módulo que conoce adapters de fuentes externas. El egress EA Clubs vive en `apps/api/src/adapters/game-data/ea-clubs/`; sus schemas y mappers puros viven en `@futrob/ea-clubs`. El dominio usa modelos neutrales (`ProviderMatch`, `ExternalClub`, `RawProviderObservation`) e identidad `UNIQUE(provider_key, external_id)`.
 
-Proveedores MVP: `ea-clubs`, `manual`. Extensiones futuras (`screenshot-ocr`, comunitarios) no cambian `results` / `statistics` / `scheduling`.
+Proveedores registrados: `ea-clubs` y `manual`. `manual` solo existe como adapter registrado: su lectura devuelve `game_data.provider_not_implemented` y la carga de resultados manuales llega después del MVP ([ADR-0035](/docs/adr/0035-competition-result-sources-beyond-ea.md)). Extensiones futuras (`screenshot-ocr`, comunitarios) no cambian `results` / `statistics` / `scheduling`.
 
 ## Propiedad de datos
 

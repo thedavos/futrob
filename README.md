@@ -1,8 +1,8 @@
 # Futrob
 
-**Ligas, copas y torneos de EA SPORTS FC, con foco en FC Clubs.**
+**Ligas, copas y torneos de fútbol, en la cancha o en videojuegos. El MVP empieza por EA SPORTS FC, con foco en FC Clubs.**
 
-Futrob reúne la operación de una competición: organizaciones, equipos, plantillas, calendario, resultados oficiales y estadísticas. Combina datos de EA Clubs con la selección y confirmación de los partidos que cuentan para cada enfrentamiento.
+Futrob reúne la operación de una competición: organizaciones, equipos, plantillas, calendario, resultados oficiales y estadísticas. En el MVP combina datos de EA Clubs con la selección y confirmación de los partidos que cuentan para cada enfrentamiento.
 
 El producto contempla una aplicación web y un cliente móvil nativo para organizadores, capitanes y jugadores, además de un portal público para seguidores.
 

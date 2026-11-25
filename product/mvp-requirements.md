@@ -179,7 +179,7 @@ Entidades conceptuales mínimas (nombres de persistencia orientativos):
 3. **EA Data Layer** — vinculación, sync, almacenamiento, normalización, observabilidad.
 4. **Resultados oficiales** — candidatos, selección, confirmación, disputas, agregado, proyecciones.
 5. **Estadísticas y premium** — rankings, premios, analíticas.
-6. **Expansión** — otras modalidades, white-label, push nativo y más integraciones.
+6. **Expansión** — competiciones abiertas al público con resultados manuales o de otros proveedores con API (fútbol real y otros juegos, ver [ADR-0035](/docs/adr/0035-competition-result-sources-beyond-ea.md)), otras modalidades, white-label, push nativo y más integraciones.
 
 ## 9. Trazabilidad
 
