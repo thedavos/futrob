@@ -123,7 +123,7 @@ export const pageStyles = stylex.create({
 });
 
 export const tableStyles = stylex.create({
-  table: { minWidth: "38rem" },
+  table: { minWidth: "44rem" },
   cell: {
     height: "auto",
     paddingBlock: "0.625rem",
@@ -132,7 +132,7 @@ export const tableStyles = stylex.create({
     display: "flex",
     alignItems: "center",
     gap: "0.75rem",
-    minWidth: 0,
+    minWidth: "11rem",
   },
   monogram: {
     display: "flex",
@@ -191,7 +191,7 @@ export const tableStyles = stylex.create({
     lineHeight: "1rem",
     fontWeight: "var(--font-weight-medium)",
     textDecorationLine: "none",
-    overflowWrap: "anywhere",
+    whiteSpace: "nowrap",
   },
   chipLink: {
     transitionProperty: "background-color, border-color, color, box-shadow",
@@ -266,6 +266,8 @@ export const tableStyles = stylex.create({
   chipStatus: {
     color: colors.mutedForeground,
     fontWeight: "var(--font-weight-normal)",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
   },
   badgeIcon: {
     width: "0.875rem",

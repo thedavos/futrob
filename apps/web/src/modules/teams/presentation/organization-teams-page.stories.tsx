@@ -40,6 +40,7 @@ const styles = stylex.create({
 
 const SCENARIO_IDS = [
   "ready",
+  "zeroPending",
   "loading",
   "empty",
   "emptyFirstUse",
@@ -54,8 +55,11 @@ const SCENARIO_IDS = [
 
 type ScenarioId = (typeof SCENARIO_IDS)[number];
 
+type StoryLocale = "es" | "en";
+
 type StoryArgs = {
   readonly scenario: ScenarioId;
+  readonly locale?: StoryLocale;
   readonly initialSearch?: string;
 };
 
@@ -287,9 +291,11 @@ function createStoryRouter(initialSearch = "") {
 
 function OrganizationTeamsStoryShell({
   scenario,
+  locale = "es",
   initialSearch = "",
 }: {
   readonly scenario: ScenarioId;
+  readonly locale?: StoryLocale;
   readonly initialSearch?: string;
 }) {
   const client = useMemo(() => {
@@ -309,26 +315,41 @@ function OrganizationTeamsStoryShell({
             ? { competitions: [] }
             : { competitions: COMPETITIONS },
       organizationParticipants:
-        scenario === "pendingLoading"
+        scenario === "zeroPending"
           ? {
-              liga: "pending",
-              copa: "pending",
-              relampago: { participants: [] },
-              verano: { participants: [] },
-            }
-          : scenario === "pendingError"
-            ? {
-                liga: "error",
-                copa: { participants: [entry("copa", "lobos", "approved")] },
-                relampago: PARTICIPANTS.relampago,
-                verano: PARTICIPANTS.verano,
-              }
-            : {
-                liga: scenario === "participationError" ? "error" : PARTICIPANTS.liga,
-                copa: PARTICIPANTS.copa,
-                relampago: PARTICIPANTS.relampago,
-                verano: PARTICIPANTS.verano,
+              liga: {
+                participants: [
+                  entry("liga", "cuervos", "approved"),
+                  entry("liga", "lobos", "approved"),
+                  entry("liga", "aguilas", "approved"),
+                ],
               },
+              copa: {
+                participants: [entry("copa", "cuervos", "approved")],
+              },
+              relampago: PARTICIPANTS.relampago,
+              verano: PARTICIPANTS.verano,
+            }
+          : scenario === "pendingLoading"
+            ? {
+                liga: "pending",
+                copa: "pending",
+                relampago: { participants: [] },
+                verano: { participants: [] },
+              }
+            : scenario === "pendingError"
+              ? {
+                  liga: "error",
+                  copa: { participants: [entry("copa", "lobos", "approved")] },
+                  relampago: PARTICIPANTS.relampago,
+                  verano: PARTICIPANTS.verano,
+                }
+              : {
+                  liga: scenario === "participationError" ? "error" : PARTICIPANTS.liga,
+                  copa: PARTICIPANTS.copa,
+                  relampago: PARTICIPANTS.relampago,
+                  verano: PARTICIPANTS.verano,
+                },
     });
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -345,7 +366,7 @@ function OrganizationTeamsStoryShell({
 
   return (
     <QueryClientProvider client={client}>
-      <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+      <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
         <div {...applyProps(undefined, undefined, styles.frame)}>
           <RouterProvider router={router} />
         </div>
@@ -357,8 +378,12 @@ function OrganizationTeamsStoryShell({
 const meta = {
   title: "Product/Organizer/Teams",
   parameters: { layout: "fullscreen" },
-  args: { scenario: "ready" },
-  argTypes: { scenario: { control: "select", options: [...SCENARIO_IDS] } },
+  args: { scenario: "ready", locale: "es" },
+  argTypes: {
+    scenario: { control: "select", options: [...SCENARIO_IDS] },
+    locale: { control: "inline-radio", options: ["es", "en"] },
+    initialSearch: { table: { disable: true } },
+  },
 } satisfies Meta<StoryArgs>;
 
 export default meta;
@@ -368,15 +393,18 @@ function story(
   name: string,
   scenario: ScenarioId,
   play?: Story["play"],
-  initialSearch = "",
+  options?: { readonly initialSearch?: string; readonly locale?: StoryLocale },
 ): Story {
+  const initialSearch = options?.initialSearch ?? "";
+  const locale = options?.locale ?? "es";
   return {
     name,
-    args: { scenario, initialSearch },
+    args: { scenario, locale, initialSearch },
     render: (args) => (
       <OrganizationTeamsStoryShell
         initialSearch={args.initialSearch}
-        key={`${args.scenario}:${args.initialSearch ?? ""}`}
+        key={`${args.scenario}:${args.locale ?? "es"}:${args.initialSearch ?? ""}`}
+        locale={args.locale}
         scenario={args.scenario}
       />
     ),
@@ -467,7 +495,7 @@ export const ClearFiltersFromUrl = story(
     await expect(canvas.getByRole("row", { name: /Cuervos FC/ })).toBeVisible();
     await expect(canvas.getByRole("row", { name: /Sin Liga CF/ })).toBeVisible();
   },
-  "?q=zzz&status=pending&competition=liga",
+  { initialSearch: "?q=zzz&status=pending&competition=liga" },
 );
 
 export const PendingDeepLinkLoading = story(
@@ -480,7 +508,7 @@ export const PendingDeepLinkLoading = story(
     await expect(canvas.queryByText("0 de 4 equipos")).toBeNull();
     await expect(canvas.queryByRole("heading", { name: "Ningún equipo coincide" })).toBeNull();
   },
-  "?status=pending",
+  { initialSearch: "?status=pending" },
 );
 
 export const PendingDeepLinkErrorRetry = story(
@@ -507,7 +535,38 @@ export const PendingDeepLinkErrorRetry = story(
     await expect(await canvas.findByText("1 de 4 equipos")).toBeVisible();
     await expect(canvas.getByRole("row", { name: /Águilas del Sur/ })).toBeVisible();
   },
-  "?status=pending",
+  { initialSearch: "?status=pending" },
+);
+
+export const ZeroPending = story(
+  "Sin pendientes (cero real)",
+  "zeroPending",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const summary = await canvas.findByRole("region", { name: "Resumen de equipos" });
+    await expect(within(summary).getByText("4")).toBeVisible();
+    await expect(within(summary).getByText("3")).toBeVisible();
+    await expect(within(summary).getByText("0")).toBeVisible();
+  },
+);
+
+export const English = story(
+  "English (EN)",
+  "ready",
+  async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Teams" })).toBeVisible();
+    await expect(await canvas.findByText("Team directory")).toBeVisible();
+    await expect(canvas.getByText("4 teams")).toBeVisible();
+    const cuervos = canvas.getByRole("row", { name: /Cuervos FC/ });
+    await expect(within(cuervos).getByText("1 pending")).toBeVisible();
+    await expect(
+      within(cuervos).getByRole("link", {
+        name: "Copa de otoño (Pending): view Cuervos FC",
+      }),
+    ).toBeVisible();
+  },
+  { locale: "en" },
 );
 
 export const Loading = story("Cargando", "loading", async ({ canvasElement }) => {
