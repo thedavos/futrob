@@ -221,7 +221,7 @@ export const RejectedEntry: Story = {
     await expect(canvas.getByText("Inscripción rechazada")).toBeVisible();
     await expect(canvas.queryByRole("button", { name: "Invitar" })).not.toBeInTheDocument();
     await expect(canvas.queryByRole("button", { name: "Invitar jugador" })).not.toBeInTheDocument();
-    await expect(canvas.getByRole("button", { name: "Cerrar plantilla" })).toBeDisabled();
+    await expect(canvas.getByRole("button", { name: "Cerrar plantilla" })).toBeEnabled();
   },
 };
 

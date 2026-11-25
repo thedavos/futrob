@@ -2311,7 +2311,7 @@ const es = {
     "La inscripción fue rechazada; la plantilla ya no admite nuevos jugadores.",
   "competition.teams.detail.entryClosedTitle": "Inscripción rechazada",
   "competition.teams.detail.entryClosedDescription":
-    "Este equipo fue rechazado en la competición. La plantilla, sus roles y las invitaciones ya no admiten cambios.",
+    "Este equipo fue rechazado en la competición, así que su plantilla ya no admite invitaciones.",
   "competition.teams.permissions.title": "Permisos no confirmados",
   "competition.teams.permissions.description":
     "No se pudieron confirmar. Las acciones están deshabilitadas.",
@@ -6071,7 +6071,7 @@ const en: Catalog = {
     "The entry was rejected; the roster no longer accepts new players.",
   "competition.teams.detail.entryClosedTitle": "Entry rejected",
   "competition.teams.detail.entryClosedDescription":
-    "This team was rejected from the competition. Its roster, roles and invitations can no longer be changed.",
+    "This team was rejected from the competition, so its roster no longer accepts invitations.",
   "competition.teams.permissions.title": "Permissions not confirmed",
   "competition.teams.permissions.description":
     "Permissions could not be confirmed. Actions are disabled.",

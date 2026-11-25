@@ -1,6 +1,6 @@
 "use client";
 
-import { isRosterWritable, rosterInvitationBlock } from "@futrob/sdk";
+import { rosterInvitationBlock } from "@futrob/sdk";
 import {
   Alert,
   AlertDescription,
@@ -97,8 +97,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
   const missingClub = detail.externalClub === null;
   const rosterOpen = detail.roster.state === "open";
   const isRejected = detail.entry.status === "rejected";
-  // The API refuses invitations and roster changes once the entry is rejected.
-  const writable = isRosterWritable(detail.entry.status);
+  // A rejected entry only blocks invitations; staff keep open/close and role changes.
   const entryClosed = rosterInvitationBlock(detail) === "entry_closed";
   const canInvite = capabilities.manageInvitations && !entryClosed;
 
@@ -162,14 +161,14 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
       ) : null}
 
       <div {...applyStyles(styles.body)}>
-        {writable ? null : (
+        {entryClosed ? (
           <Alert>
             <AlertTitle>{t("competition.teams.detail.entryClosedTitle")}</AlertTitle>
             <AlertDescription>
               {t("competition.teams.detail.entryClosedDescription")}
             </AlertDescription>
           </Alert>
-        )}
+        ) : null}
         <div {...applyStyles(styles.header)}>
           <div {...applyStyles(styles.identity)}>
             <Button
@@ -258,7 +257,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
                     ? t("competition.teams.detail.closeRosterDescription")
                     : t("competition.teams.detail.openRosterDescription")
                 }
-                disabled={props.busy || !writable}
+                disabled={props.busy}
                 onConfirm={() => props.onSetRosterOpen(!rosterOpen)}
                 triggerIcon={
                   rosterOpen ? (
@@ -346,7 +345,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
                       <TableCell>
                         {capabilities.manageRoles ? (
                           <RosterRoleEditor
-                            busy={props.busy || !writable}
+                            busy={props.busy}
                             displayName={member.presentation.displayName}
                             membershipId={member.membership.id}
                             onChangeRole={props.onChangeRole}

@@ -159,7 +159,7 @@ describe("CompetitionTeamsView", () => {
     expect(screen.queryByRole("button", { name: /Aprobados FC/ })).toBeNull();
   });
 
-  it("hides invitations and locks roster changes once the entry is rejected", () => {
+  it("hides invitations once the entry is rejected", () => {
     const base = teamManagementFixture({ memberCount: 0 });
     const rejected = {
       ...base,
@@ -188,8 +188,35 @@ describe("CompetitionTeamsView", () => {
     expect(screen.queryByRole("button", { name: "Invitar jugador" })).toBeNull();
     expect(screen.getByRole("button", { name: "Cerrar plantilla" })).toHaveProperty(
       "disabled",
-      true,
+      false,
     );
+  });
+
+  it("keeps roster state and role management for staff on a rejected entry", () => {
+    const base = teamManagementFixture();
+    const rejected = { ...base, entry: { ...base.entry, status: "rejected" as const } };
+    renderView({
+      items: [teamSummaryFixture(rejected)],
+      detail: rejected,
+      selectedTeamId: rejected.team.id,
+      capabilities: {
+        manageRoster: true,
+        manageRoles: true,
+        manageInvitations: true,
+        manageExternalClub: true,
+        manageEntries: true,
+        unavailable: false,
+      },
+    });
+
+    expect(screen.queryByRole("button", { name: "Invitar" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Cerrar plantilla" })).toHaveProperty(
+      "disabled",
+      false,
+    );
+    expect(
+      screen.getByRole("combobox", { name: "Rol de Dani Capitán" }).hasAttribute("disabled"),
+    ).toBe(false);
   });
 
   it("shows an actionable empty roster state and captaincy warning when a team has no members", () => {
