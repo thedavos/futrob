@@ -4,6 +4,7 @@
 - Fecha: 2026-07-17
 - Actualizada: 2026-09-22
 - Reemplaza: ADR de “EA Clubs port” acoplado al nombre EA en el bounded context
+- Relacionado: [ADR-0035](/docs/adr/0035-competition-result-sources-beyond-ea.md) (fuentes manuales y otros proveedores después del MVP)
 
 ## Contexto
 

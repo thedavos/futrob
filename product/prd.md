@@ -1,11 +1,11 @@
 # Futrob — Documento maestro de producto y PRD del MVP
 
 **Estado:** canónico  
-**Fecha de revisión documental:** 2026-09-16
+**Fecha de revisión documental:** 2026-11-24
 
 **Precedencia:** la solicitud vigente del usuario prevalece sobre este documento cuando exista conflicto.
 
-Futrob es una plataforma especializada en crear, operar y seguir ligas, copas y torneos de EA SPORTS FC. Su primer enfoque es **FC Clubs**, utilizando los datos de `proclubs.ea.com/api` para identificar partidos, registrar resultados oficiales, almacenar estadísticas y generar rankings y analíticas.
+Futrob es una plataforma para crear, operar y seguir ligas, copas y torneos de fútbol, ya sea en la vida real o en videojuegos de fútbol. El MVP se especializa en **EA SPORTS FC** con foco en **FC Clubs**, utilizando los datos de `proclubs.ea.com/api` para identificar partidos, registrar resultados oficiales, almacenar estadísticas y generar rankings y analíticas.
 
 Este PRD define el alcance objetivo. La existencia de un requisito no indica que esté implementado o aceptado; el [README](/README.md#status) resume el estado del repositorio y [acceptance-criteria.md](/product/acceptance-criteria.md) define su verificación.
 
@@ -26,11 +26,13 @@ Una jornada puede programar un enfrentamiento con uno o dos partidos oficiales. 
 
 ## 2. Visión
 
-> Convertir a Futrob en el sistema operativo de las competiciones de EA SPORTS FC: una plataforma donde organizadores, clubes, capitanes, jugadores y espectadores puedan participar en torneos confiables, automatizados y basados en datos.
+> Convertir a Futrob en el sistema operativo de las competiciones de fútbol, en la cancha o en videojuegos: una plataforma donde organizadores, clubes, capitanes, jugadores y espectadores puedan participar en torneos confiables, automatizados y basados en datos.
+
+El MVP valida esa visión con EA SPORTS FC / FC Clubs, donde la API de EA permite automatizar resultados y estadísticas. Después del MVP, cualquier persona podrá crear ligas, copas y torneos con resultados cargados manualmente o desde otras fuentes que dispongan de API, no solo EA ([ADR-0035](/docs/adr/0035-competition-result-sources-beyond-ea.md)).
 
 ### Propuesta de valor
 
-- Especialización en EA SPORTS FC.
+- Especialización en EA SPORTS FC durante el MVP; fútbol real y otros juegos después.
 - Gestión completa de ligas, copas y torneos.
 - Resultados y estadísticas obtenidos desde EA Clubs.
 - Selección auditable de partidos oficiales.
@@ -139,11 +141,11 @@ La app nativa cubre los flujos autenticados Must aplicables al rol del actor —
 
 ### Fuera del MVP
 
-FC Temporadas/Amistosos; marketplace; fantasy; streaming; white-label completo; doble eliminación; automatización de pagos/premios; predicciones con IA; OCR de capturas como fuente primaria de resultados; WhatsApp/Telegram y push nativo como canales operativos del MVP.
+FC Temporadas/Amistosos; competiciones de fútbol real o de otros juegos y resultados cargados manualmente o desde fuentes distintas de EA ([ADR-0035](/docs/adr/0035-competition-result-sources-beyond-ea.md)); marketplace; fantasy; streaming; white-label completo; doble eliminación; automatización de pagos/premios; predicciones con IA; OCR de capturas como fuente primaria de resultados; WhatsApp/Telegram y push nativo como canales operativos del MVP.
 
 ## 21–23. Métricas, riesgos y roadmap
 
-Ver [open-decisions.md](/product/open-decisions.md) y [mvp-requirements.md](/product/mvp-requirements.md). Fases: Fundamentos → Perfil personal y acceso → Operación → EA Data Layer → Resultados oficiales → Estadísticas/premium → Expansión.
+Ver [open-decisions.md](/product/open-decisions.md) y [mvp-requirements.md](/product/mvp-requirements.md). Fases: Fundamentos → Perfil personal y acceso → Operación → EA Data Layer → Resultados oficiales → Estadísticas/premium → Expansión (fuentes manuales y otros proveedores, fútbol real y otros juegos).
 
 ## 24. Decisiones pendientes
 

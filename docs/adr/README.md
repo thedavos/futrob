@@ -1,6 +1,6 @@
 # Registro de decisiones de arquitectura
 
-Actualizado: 2026-11-10.
+Actualizado: 2026-11-24.
 
 Este índice distingue la **vigencia de una decisión** del **estado de su implementación**.
 Aceptada no significa desplegada ni verificada de extremo a extremo. Las referencias
@@ -56,6 +56,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 | [ADR-0032: Auth como servidor Node (Hono) fuera de Cloudflare](/docs/adr/0032-auth-node-runtime.md)                                                 | Aceptada    | Implementado en el checkout; hosting sin decidir y sin desplegar                                   |
 | [ADR-0033: Inscripciones abiertas en la landing y competiciones no listadas](/docs/adr/0033-public-open-registrations-and-unlisted-competitions.md) | Aceptada    | Lista anónima de `registration` en la landing y `exploreListing`; móvil sin ajuste                 |
 | [ADR-0034: Los rate limits del BFF se cuentan en el API de producto](/docs/adr/0034-bff-rate-limits-in-api.md)                                      | Aceptada    | Web sin Hyperdrive ni `pg`; sin medir latencia ni probar contra Railway                            |
+| [ADR-0035: Competiciones de fútbol con fuentes de resultados más allá de EA](/docs/adr/0035-competition-result-sources-beyond-ea.md)                | Aceptada    | Visión y roadmap post-MVP; solo documentación, sin código                                          |
 
 ## Consolidación de septiembre de 2026
 
@@ -67,7 +68,7 @@ al código describen el checkout revisado, no certifican infraestructura de prod
 - ADR-0032 (noviembre) reemplaza el runtime Worker de auth: Hono sobre Node, web por HTTP con secreto de proxy.
 - ADR-0034 (noviembre) mueve los rate limits del BFF al API: web deja Hyperdrive y `pg`.
 
-Quedan **27 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
+Quedan **28 decisiones vigentes y 3 registros reemplazados**. Los IDs y nombres de
 archivo antiguos se conservan para no romper referencias. Para implementación nueva,
 seguir el sucesor indicado, aunque un enlace histórico aún apunte al documento anterior.
 
