@@ -282,15 +282,19 @@ function CompetitionChip({
       <XCircleIcon aria-hidden="true" {...applyStyles(styles.chipIcon, styles.chipIconRejected)} />
     );
 
+  const statusText = (
+    <span {...applyStyles(styles.chipStatus)}>
+      <span aria-hidden="true">·</span>
+      <span>{statusLabel}</span>
+    </span>
+  );
+
   if (!linked) {
     return (
       <span {...applyStyles(styles.chipBase)}>
         {statusIcon}
-        <span>{entry.competitionName}</span>
-        <span aria-hidden="true" {...applyStyles(styles.chipStatus)}>
-          ·
-        </span>
-        <span {...applyStyles(styles.chipStatus)}>{statusLabel}</span>
+        <span {...applyStyles(styles.chipName)}>{entry.competitionName}</span>
+        {statusText}
       </span>
     );
   }
@@ -307,11 +311,8 @@ function CompetitionChip({
       {...applyStyles(styles.chipBase, styles.chipLink)}
     >
       {statusIcon}
-      <span>{entry.competitionName}</span>
-      <span aria-hidden="true" {...applyStyles(styles.chipStatus)}>
-        ·
-      </span>
-      <span {...applyStyles(styles.chipStatus)}>{statusLabel}</span>
+      <span {...applyStyles(styles.chipName)}>{entry.competitionName}</span>
+      {statusText}
     </Link>
   );
 }

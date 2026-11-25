@@ -40,6 +40,7 @@ const styles = stylex.create({
 
 const SCENARIO_IDS = [
   "ready",
+  "longCompetitionName",
   "zeroPending",
   "loading",
   "empty",
@@ -95,11 +96,19 @@ function competition(id: string, name: string, status: CompetitionDto["status"])
   };
 }
 
+const LONG_COMPETITION_NAME =
+  "Torneo Internacional Interclubes de Verano Sudamérica División Élite Temporada 2026";
+
 const COMPETITIONS: CompetitionDto[] = [
   competition("liga", "Liga Metropolitana", "published"),
   competition("copa", "Copa de otoño", "registration"),
   competition("relampago", "Copa Relámpago", "published"),
   competition("verano", "Torneo Verano 25", "finished"),
+];
+
+const LONG_NAME_COMPETITIONS: CompetitionDto[] = [
+  competition("liga", LONG_COMPETITION_NAME, "published"),
+  ...COMPETITIONS.slice(1),
 ];
 
 function entry(
@@ -313,7 +322,9 @@ function OrganizationTeamsStoryShell({
           ? "error"
           : scenario === "emptyFirstUse"
             ? { competitions: [] }
-            : { competitions: COMPETITIONS },
+            : scenario === "longCompetitionName"
+              ? { competitions: LONG_NAME_COMPETITIONS }
+              : { competitions: COMPETITIONS },
       organizationParticipants:
         scenario === "zeroPending"
           ? {
@@ -698,7 +709,23 @@ export const CompetitionsError = story(
 
 export const Mobile: Story = {
   name: "Mobile",
-  args: { scenario: "ready" },
+  args: { scenario: "longCompetitionName", locale: "es" },
   parameters: { viewport: { defaultViewport: "mobile1" } },
-  render: (args) => <OrganizationTeamsStoryShell key={args.scenario} scenario={args.scenario} />,
+  render: (args) => (
+    <OrganizationTeamsStoryShell
+      key={`${args.scenario}:${args.locale ?? "es"}`}
+      locale={args.locale}
+      scenario={args.scenario}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const aguilas = await canvas.findByRole("row", { name: /Águilas del Sur/ });
+    const chip = await within(aguilas).findByRole("link", {
+      name: `${LONG_COMPETITION_NAME} (Pendiente): ver Águilas del Sur`,
+    });
+    await expect(chip).toBeVisible();
+    await expect(within(chip).getByText(LONG_COMPETITION_NAME)).toBeVisible();
+    await expect(within(chip).getByText("Pendiente")).toBeVisible();
+  },
 };

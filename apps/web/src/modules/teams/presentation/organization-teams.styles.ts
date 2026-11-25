@@ -123,7 +123,7 @@ export const pageStyles = stylex.create({
 });
 
 export const tableStyles = stylex.create({
-  table: { minWidth: "44rem" },
+  table: { minWidth: "36rem" },
   cell: {
     height: "auto",
     paddingBlock: "0.625rem",
@@ -131,8 +131,14 @@ export const tableStyles = stylex.create({
   identity: {
     display: "flex",
     alignItems: "center",
-    gap: "0.75rem",
-    minWidth: "11rem",
+    gap: {
+      default: "0.75rem",
+      [media.maxSm]: "0.5rem",
+    },
+    minWidth: {
+      default: "10rem",
+      [media.maxSm]: "7.5rem",
+    },
   },
   monogram: {
     display: "flex",
@@ -170,28 +176,38 @@ export const tableStyles = stylex.create({
   },
   chipItem: {
     display: "inline-flex",
+    maxWidth: "100%",
   },
   chipBase: {
     display: "inline-flex",
+    flexWrap: "wrap",
     alignItems: "center",
-    gap: "0.375rem",
+    columnGap: "0.375rem",
+    rowGap: "0.125rem",
+    maxWidth: {
+      default: "24rem",
+      [media.maxSm]: "11rem",
+    },
     minHeight: {
       default: "1.75rem",
       [media.maxSm]: "var(--control-height-touch)",
     },
     paddingInline: "0.625rem",
-    paddingBlock: "0.125rem",
-    borderRadius: "var(--corner-full)",
+    paddingBlock: "0.3125rem",
+    borderRadius: "var(--corner-lg)",
     borderWidth: 1,
     borderStyle: "solid",
     borderColor: colors.border,
     backgroundColor: colors.background,
     color: colors.foreground,
     fontSize: "var(--text-xs)",
-    lineHeight: "1rem",
+    lineHeight: "1.125rem",
     fontWeight: "var(--font-weight-medium)",
     textDecorationLine: "none",
-    whiteSpace: "nowrap",
+  },
+  chipName: {
+    minWidth: 0,
+    overflowWrap: "break-word",
   },
   chipLink: {
     transitionProperty: "background-color, border-color, color, box-shadow",
@@ -264,6 +280,9 @@ export const tableStyles = stylex.create({
   chipIconPending: { color: colors.warning },
   chipIconRejected: { color: colors.danger },
   chipStatus: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.25rem",
     color: colors.mutedForeground,
     fontWeight: "var(--font-weight-normal)",
     whiteSpace: "nowrap",
