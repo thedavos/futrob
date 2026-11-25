@@ -2,7 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-09-27
-- Actualizada: 2026-11-10
+- Actualizada: 2026-11-25
 - Relacionado: [ADR-0017](/docs/adr/0017-contextual-capability-authorization.md) · [ADR-0018](/docs/adr/0018-authenticated-competition-discovery.md)
 - Reemplaza en parte: la consecuencia de ADR-0018 «la inscripción por cuenta propia sigue fuera de alcance»
 - Índice: [Registro de decisiones](/docs/adr/README.md)
@@ -58,6 +58,27 @@ El organizador aprueba o rechaza con el flujo existente. No hace falta una
 capitán ya concede acceso (ADR-0017). La solicitud del actor se deriva de su
 plantilla (`GET …/application`), sin columna nueva en `competition_entries`.
 
+**Plantilla de una inscripción rechazada.** Rechazar es terminal: aprobar y rechazar
+solo parten de `pending`, y volver a postular queda fuera de alcance. Por eso, con la
+`CompetitionEntry` en `rejected` la plantilla es de solo lectura para todos, staff
+incluido. `RosterEntryGatePort.canMutateRoster` solo acepta `pending` o `approved`, y
+cada escritura de plantilla lo consulta antes de mutar:
+
+| Operación en una inscripción `rejected`     | Resultado                                |
+| ------------------------------------------- | ---------------------------------------- |
+| Leer plantilla, estado y miembros           | Permitido (según `EffectiveAccess`)      |
+| Añadir miembro, unirse o aceptar invitación | Bloqueado: `teams.roster_entry_inactive` |
+| Crear invitación                            | Bloqueado: `teams.roster_entry_inactive` |
+| Abrir o cerrar la plantilla                 | Bloqueado: `teams.roster_entry_inactive` |
+| Cambiar el rol de un miembro                | Bloqueado: `teams.roster_entry_inactive` |
+
+El error es un conflicto de estado (HTTP 409), no una denegación de permisos: el staff
+conserva sus permisos heredados (ADR-0017), pero el estado de la inscripción impide la
+escritura. Cerrar la plantilla para «congelarla» no aporta nada, porque ya no admite
+ningún cambio. Web (consola de staff y vista de capitán) y móvil usan `isRosterWritable`
+de `@futrob/sdk` para ocultar esas acciones. Si en el futuro se permite reabrir o volver
+a postular, esa decisión deberá revisar esta regla.
+
 **Cupo y fecha de inicio.** Reemplazado por `teams` y `schedule` en
 [ADR-0020](/docs/adr/0020-competition-profile-and-media.md). El organizador declara
 un cupo (2–256, opcional) y fechas (`YYYY-MM-DD` en la zona horaria de la
@@ -80,6 +101,8 @@ Bajar el cupo por debajo de los aprobados responde `competitions.invalid_capacit
   superarlo por uno.
 - Fuera de alcance: fecha de cierre automática y volver a postular después de un
   rechazo.
+- Una plantilla rechazada queda congelada tal como estaba al rechazar; el staff no puede
+  prepararla ni corregir sus roles.
 
 ## Alternativas consideradas
 
@@ -97,6 +120,9 @@ Bajar el cupo por debajo de los aprobados responde `competitions.invalid_capacit
 - Rutas `registration/open|close` y `explore/:id/application`, SDK y CLI
   (`comp-registration-open|close`, `comp-apply`, `comp-application`).
 - Tests de dominio, API (`competitions.test.ts`), SDK y stories de Explorar.
+- Plantilla rechazada: `team-roster.use-cases.test.ts` (`@futrob/teams`), regresión HTTP
+  en `apps/api/src/http/routes/teams.test.ts` y story `RejectedEntry` de la consola de
+  equipos.
 
 La verificación [FEED-01](/.agents/skills/verify-futrob/evidence/feed-01-2026-11-10/NOTES.md)
 comprueba aprobación, rechazo, cierre de actividad y reintentos en Postgres local aislado.

@@ -2,6 +2,7 @@
 
 - Estado: Aceptada
 - Fecha: 2026-09-22
+- Actualizada: 2026-11-25
 - Relacionado: [ADR-0004](/docs/adr/0004-multi-tenant-d1-scoping.md) · [ADR-0015](/docs/adr/0015-auth-extraction.md)
 - Índice: [Registro de decisiones](/docs/adr/README.md)
 
@@ -56,7 +57,10 @@ superarlo. Esta semántica debe conservarse en UI, auditoría y cambios del reso
 
 Las capacidades de capitán/subcapitán/jugador se derivan del roster contextual, con
 las comprobaciones de participación que exige la operación. No se elevan a rol de
-organización. El acceso personal a estadísticas propias tiene semántica de actor,
+organización. Rechazar la inscripción recorta los permisos derivados de la plantilla,
+pero no los heredados de organización o competición. Las reglas de estado se aplican
+aparte del permiso: con la inscripción `rejected`, ninguna escritura de plantilla
+procede, ni siquiera la del staff ([ADR-0019](/docs/adr/0019-competition-registration-and-applications.md)). El acceso personal a estadísticas propias tiene semántica de actor,
 no requiere inventar una organización ni autoriza leer el perfil de otro actor.
 
 ### Presentación
