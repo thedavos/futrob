@@ -40,7 +40,7 @@ import { ShellPendingQueue } from "@/modules/notifications/presentation/shell-pe
 const styles = stylex.create({
   sheet: {
     width: "min(20rem, 90vw)",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.sidebar,
   },
   sheetHeader: {
     height: "auto",
@@ -323,7 +323,7 @@ function PendingQueueSidebarBody({
             dense
             onClick={toggleCollapsed}
             size="icon"
-            title="Expandir barra lateral"
+            title={t("shell.queue.expand")}
             variant="ghost"
           >
             <CheckSquareOffsetIcon aria-hidden="true" />

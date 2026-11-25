@@ -17,6 +17,9 @@ const styles = stylex.create({
     borderStyle: "solid",
     borderColor: colors.border,
   },
+  elevated: {
+    backgroundColor: colors.surfaceRaised,
+  },
   header: {
     display: "flex",
     flexDirection: "column",
@@ -58,7 +61,7 @@ function Card({ className, style, variant = "flat", ...props }: CardProps) {
         className,
         style,
         styles.root,
-        variant === "elevated" ? elevation.sm : styles.flat,
+        variant === "elevated" ? [styles.elevated, elevation.md] : styles.flat,
       )}
       {...props}
     />

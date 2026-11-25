@@ -4,7 +4,7 @@ import { XIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
 import { applyProps, type HostClassName } from "#styles/apply";
-import { colors } from "#styles/tokens.stylex";
+import { colors, z } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
 
@@ -12,7 +12,7 @@ const styles = stylex.create({
   backdrop: {
     position: "fixed",
     inset: 0,
-    zIndex: 50,
+    zIndex: z.overlay,
     backgroundColor: "color-mix(in oklab, var(--neutral-950) 55%, transparent)",
     backdropFilter: "blur(2px)",
     transitionProperty: "opacity",
@@ -21,7 +21,7 @@ const styles = stylex.create({
   viewport: {
     position: "fixed",
     inset: 0,
-    zIndex: 50,
+    zIndex: z.dialog,
     display: "grid",
     placeItems: "center",
     overflowY: "auto",
@@ -111,7 +111,13 @@ const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogClose = DialogPrimitive.Close;
 
-function DialogBackdrop({ className, style, ...props }: DialogPrimitive.Backdrop.Props) {
+function DialogBackdrop({
+  className,
+  style,
+  ...props
+}: Omit<DialogPrimitive.Backdrop.Props, "className"> & {
+  className?: HostClassName | DialogPrimitive.Backdrop.Props["className"];
+}) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-backdrop"
@@ -159,19 +165,33 @@ function DialogContent({
   );
 }
 
-function DialogHeader({ className, style, ...props }: ComponentProps<"div">) {
+function DialogHeader({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div data-slot="dialog-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
-function DialogFooter({ className, style, ...props }: ComponentProps<"div">) {
+function DialogFooter({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div data-slot="dialog-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
 }
 
-function DialogTitle({ className, style, ...props }: DialogPrimitive.Title.Props) {
+function DialogTitle({
+  className,
+  style,
+  ...props
+}: Omit<DialogPrimitive.Title.Props, "className"> & {
+  className?: HostClassName | DialogPrimitive.Title.Props["className"];
+}) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -181,7 +201,13 @@ function DialogTitle({ className, style, ...props }: DialogPrimitive.Title.Props
   );
 }
 
-function DialogDescription({ className, style, ...props }: DialogPrimitive.Description.Props) {
+function DialogDescription({
+  className,
+  style,
+  ...props
+}: Omit<DialogPrimitive.Description.Props, "className"> & {
+  className?: HostClassName | DialogPrimitive.Description.Props["className"];
+}) {
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"

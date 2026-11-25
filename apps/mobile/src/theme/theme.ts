@@ -16,8 +16,16 @@ import type { TextStyle } from "react-native";
 
 const REM = 16;
 
-function remToDp(value: string): number {
-  return Number.parseFloat(value) * REM;
+function lengthToDp(value: string): number {
+  const trimmed = value.trim();
+  if (trimmed === "0") return 0;
+  if (trimmed.endsWith("rem")) {
+    return Number.parseFloat(trimmed) * REM;
+  }
+  if (trimmed.endsWith("px")) {
+    return Number.parseFloat(trimmed);
+  }
+  throw new Error(`Unsupported length unit in token value: ${value}`);
 }
 
 function rawValue(token: TokenValue): string {
@@ -70,7 +78,7 @@ export function typoStyle(role: TypoRole): TextStyle {
     return cached;
   }
 
-  const size = remToDp(typographyValue(TYPOGRAPHY_TOKENS[`typo-${role}-size`]));
+  const size = lengthToDp(typographyValue(TYPOGRAPHY_TOKENS[`typo-${role}-size`]));
   const fontKey = fontKeyForWeight(TYPOGRAPHY_TOKENS[`typo-${role}-weight`]);
   const leading = Number.parseFloat(typographyValue(TYPOGRAPHY_TOKENS[`typo-${role}-leading`]));
   const trackingEm = Number.parseFloat(typographyValue(TYPOGRAPHY_TOKENS[`typo-${role}-tracking`]));
@@ -133,39 +141,39 @@ export const theme: FutrobTheme = {
   colors: themeColors,
 
   spacing: {
-    0: remToDp(rawValue(GEOMETRY_TOKENS["space-0"])),
-    1: remToDp(rawValue(GEOMETRY_TOKENS["space-1"])),
-    2: remToDp(rawValue(GEOMETRY_TOKENS["space-2"])),
-    3: remToDp(rawValue(GEOMETRY_TOKENS["space-3"])),
-    4: remToDp(rawValue(GEOMETRY_TOKENS["space-4"])),
-    5: remToDp(rawValue(GEOMETRY_TOKENS["space-5"])),
-    6: remToDp(rawValue(GEOMETRY_TOKENS["space-6"])),
-    8: remToDp(rawValue(GEOMETRY_TOKENS["space-8"])),
-    10: remToDp(rawValue(GEOMETRY_TOKENS["space-10"])),
-    12: remToDp(rawValue(GEOMETRY_TOKENS["space-12"])),
-    16: remToDp(rawValue(GEOMETRY_TOKENS["space-16"])),
-    20: remToDp(rawValue(GEOMETRY_TOKENS["space-20"])),
+    0: lengthToDp(rawValue(GEOMETRY_TOKENS["space-0"])),
+    1: lengthToDp(rawValue(GEOMETRY_TOKENS["space-1"])),
+    2: lengthToDp(rawValue(GEOMETRY_TOKENS["space-2"])),
+    3: lengthToDp(rawValue(GEOMETRY_TOKENS["space-3"])),
+    4: lengthToDp(rawValue(GEOMETRY_TOKENS["space-4"])),
+    5: lengthToDp(rawValue(GEOMETRY_TOKENS["space-5"])),
+    6: lengthToDp(rawValue(GEOMETRY_TOKENS["space-6"])),
+    8: lengthToDp(rawValue(GEOMETRY_TOKENS["space-8"])),
+    10: lengthToDp(rawValue(GEOMETRY_TOKENS["space-10"])),
+    12: lengthToDp(rawValue(GEOMETRY_TOKENS["space-12"])),
+    16: lengthToDp(rawValue(GEOMETRY_TOKENS["space-16"])),
+    20: lengthToDp(rawValue(GEOMETRY_TOKENS["space-20"])),
   },
 
   corner: {
-    xs: remToDp(rawValue(GEOMETRY_TOKENS["corner-xs"])),
-    sm: remToDp(rawValue(GEOMETRY_TOKENS["corner-sm"])),
-    md: remToDp(rawValue(GEOMETRY_TOKENS["corner-md"])),
-    lg: remToDp(rawValue(GEOMETRY_TOKENS["corner-lg"])),
-    xl: remToDp(rawValue(GEOMETRY_TOKENS["corner-xl"])),
-    "2xl": remToDp(rawValue(GEOMETRY_TOKENS["corner-2xl"])),
-    "3xl": remToDp(rawValue(GEOMETRY_TOKENS["corner-3xl"])),
-    full: remToDp(rawValue(GEOMETRY_TOKENS["corner-full"])),
+    xs: lengthToDp(rawValue(GEOMETRY_TOKENS["corner-xs"])),
+    sm: lengthToDp(rawValue(GEOMETRY_TOKENS["corner-sm"])),
+    md: lengthToDp(rawValue(GEOMETRY_TOKENS["corner-md"])),
+    lg: lengthToDp(rawValue(GEOMETRY_TOKENS["corner-lg"])),
+    xl: lengthToDp(rawValue(GEOMETRY_TOKENS["corner-xl"])),
+    "2xl": lengthToDp(rawValue(GEOMETRY_TOKENS["corner-2xl"])),
+    "3xl": lengthToDp(rawValue(GEOMETRY_TOKENS["corner-3xl"])),
+    full: lengthToDp(rawValue(GEOMETRY_TOKENS["corner-full"])),
   },
 
-  controlHeight: remToDp(rawValue(GEOMETRY_TOKENS["control-height"])),
+  controlHeight: lengthToDp(rawValue(GEOMETRY_TOKENS["control-height"])),
 
   textSizes: {
-    xs: remToDp(rawValue(TYPOGRAPHY_TOKENS["text-xs"])),
-    sm: remToDp(rawValue(TYPOGRAPHY_TOKENS["text-sm"])),
-    base: remToDp(rawValue(TYPOGRAPHY_TOKENS["text-base"])),
-    lg: remToDp(rawValue(TYPOGRAPHY_TOKENS["text-lg"])),
-    xl: remToDp(rawValue(TYPOGRAPHY_TOKENS["text-xl"])),
+    xs: lengthToDp(rawValue(TYPOGRAPHY_TOKENS["text-xs"])),
+    sm: lengthToDp(rawValue(TYPOGRAPHY_TOKENS["text-sm"])),
+    base: lengthToDp(rawValue(TYPOGRAPHY_TOKENS["text-base"])),
+    lg: lengthToDp(rawValue(TYPOGRAPHY_TOKENS["text-lg"])),
+    xl: lengthToDp(rawValue(TYPOGRAPHY_TOKENS["text-xl"])),
   },
 
   fontFamily: FONT_FAMILY,

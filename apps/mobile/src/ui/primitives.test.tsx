@@ -3,7 +3,19 @@ import userEvent from "@testing-library/user-event";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import { Dialog, ErrorState, List, ListItem, LoadingState, Tabs } from "./index";
+import {
+  Button,
+  Card,
+  Dialog,
+  EmptyState,
+  ErrorState,
+  Input,
+  List,
+  ListItem,
+  LoadingState,
+  Tabs,
+} from "./index";
+import { theme } from "@/theme/theme";
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -107,5 +119,51 @@ describe("states", () => {
     expect(screen.getByRole("heading", { name: "No pudimos cargar" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Reintentar" }));
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+});
+
+describe("Button", () => {
+  it("uses a readable spinner color on the muted loading surface", () => {
+    renderUi(<Button label="Guardar" loading variant="primary" />);
+    const button = screen.getByRole("button", { name: "Guardar" });
+    const spinner = button.querySelector('[role="progressbar"]');
+    expect(spinner).not.toBeNull();
+    const circle = spinner?.querySelector("circle");
+    expect(circle).not.toBeNull();
+    expect(circle?.style.stroke).toBe("rgb(173, 181, 189)");
+    expect(theme.colors["muted-foreground"]).toBe("#adb5bd");
+  });
+
+  it("uses corner-lg and avoids opacity dimming on disabled ghost buttons", () => {
+    renderUi(<Button label="Cancelar" disabled variant="ghost" />);
+    const button = screen.getByRole("button", { name: "Cancelar" });
+    expect(button.style.borderRadius).toBe("12px");
+    expect(button.style.opacity).not.toBe("0.5");
+  });
+});
+
+describe("Input", () => {
+  it("associates error text with aria-describedby and styles non-editable fields without opacity", () => {
+    renderUi(<Input label="Club" value="Cuervos" editable={false} error="Solo lectura" />);
+    const input = screen.getByLabelText("Club");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    const describedBy = input.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy!)?.textContent).toBe("Solo lectura");
+    expect(input.style.borderRadius).toBe("12px");
+  });
+});
+
+describe("Card and EmptyState", () => {
+  it("renders Card title with the title scale and EmptyState without a dashed frame", () => {
+    const { container } = renderUi(
+      <>
+        <Card title="Resumen" />
+        <EmptyState title="Sin partidos" description="Aún no hay partidos registrados." />
+      </>,
+    );
+    const cardHeading = screen.getByRole("heading", { name: "Resumen" });
+    expect(cardHeading.style.fontSize).toBe("18px");
+    expect(container.innerHTML).not.toContain("dashed");
   });
 });

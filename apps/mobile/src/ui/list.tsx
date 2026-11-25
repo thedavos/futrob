@@ -74,18 +74,26 @@ export function ListItem({
     <>
       {leading ? <View>{leading}</View> : null}
       <View style={{ flex: 1, gap: theme.spacing[1] }}>
-        <Text role="label" numberOfLines={2}>
+        <Text role="label" color={disabled ? "text-disabled" : "foreground"} numberOfLines={2}>
           {title}
         </Text>
         {description ? (
-          <Text role="caption" color="muted-foreground" numberOfLines={2}>
+          <Text
+            role="caption"
+            color={disabled ? "text-disabled" : "muted-foreground"}
+            numberOfLines={2}
+          >
             {description}
           </Text>
         ) : null}
       </View>
       {trailing ? <View>{trailing}</View> : null}
-      {selected ? <Icon name="check" color="primary" size={18} /> : null}
-      {onPress && !selected ? <Icon name="chevron-right" /> : null}
+      {selected ? (
+        <Icon name="check" color={disabled ? "text-disabled" : "primary"} size={18} />
+      ) : null}
+      {onPress && !selected ? (
+        <Icon name="chevron-right" color={disabled ? "text-disabled" : undefined} />
+      ) : null}
     </>
   );
   const rowStyle = {
@@ -118,8 +126,7 @@ export function ListItem({
       style={[
         rowStyle,
         {
-          backgroundColor: pressed ? theme.colors.muted : "transparent",
-          opacity: disabled ? 0.5 : 1,
+          backgroundColor: pressed && !disabled ? theme.colors.muted : "transparent",
         },
       ]}
     >

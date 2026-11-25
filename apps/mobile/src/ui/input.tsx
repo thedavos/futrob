@@ -18,11 +18,14 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 ) {
   const [focused, setFocused] = useState(false);
   const hintId = useId();
+  const isDisabled = props.editable === false;
   const borderColor = error
     ? theme.colors.danger
-    : focused
-      ? theme.colors.ring
-      : theme.colors.input;
+    : isDisabled
+      ? theme.colors.border
+      : focused
+        ? theme.colors.ring
+        : theme.colors.input;
 
   return (
     <View>
@@ -30,7 +33,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         accessibilityElementsHidden={false}
         style={{
           ...theme.typo("label"),
-          color: theme.colors.foreground,
+          color: isDisabled ? theme.colors["text-disabled"] : theme.colors.foreground,
           marginBottom: theme.spacing[2],
         }}
       >
@@ -40,6 +43,8 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         ref={ref}
         accessibilityLabel={props.accessibilityLabel ?? label}
         accessibilityHint={error ?? hint}
+        aria-describedby={error || hint ? hintId : undefined}
+        aria-invalid={error ? true : undefined}
         onFocus={(event) => {
           setFocused(true);
           props.onFocus?.(event);
@@ -52,15 +57,15 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         style={[
           {
             minHeight: theme.controlHeight,
-            borderRadius: theme.corner.md,
+            borderRadius: theme.corner.lg,
             borderWidth: 1,
             borderColor,
-            backgroundColor: theme.colors.surface,
+            backgroundColor: isDisabled ? theme.colors.muted : theme.colors.surface,
             paddingHorizontal: theme.spacing[3],
             paddingVertical: theme.spacing[2],
             fontFamily: theme.fontFamily.regular,
             fontSize: theme.textSizes.sm,
-            color: theme.colors.foreground,
+            color: isDisabled ? theme.colors["text-tertiary"] : theme.colors.foreground,
           },
           style,
         ]}

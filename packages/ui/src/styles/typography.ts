@@ -88,4 +88,4 @@ export const typography = stylex.create({
   },
 });
 
-export type TextTone = "default" | "muted";
+export type TextTone = "default" | "muted" | "tertiary";

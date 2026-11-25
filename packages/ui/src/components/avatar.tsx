@@ -51,7 +51,13 @@ function Avatar({ className, style, ...props }: AvatarProps) {
   );
 }
 
-function AvatarImage({ className, style, ...props }: AvatarPrimitive.Image.Props) {
+function AvatarImage({
+  className,
+  style,
+  ...props
+}: Omit<AvatarPrimitive.Image.Props, "className"> & {
+  className?: HostClassName | AvatarPrimitive.Image.Props["className"];
+}) {
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
@@ -61,7 +67,13 @@ function AvatarImage({ className, style, ...props }: AvatarPrimitive.Image.Props
   );
 }
 
-function AvatarFallback({ className, style, ...props }: AvatarPrimitive.Fallback.Props) {
+function AvatarFallback({
+  className,
+  style,
+  ...props
+}: Omit<AvatarPrimitive.Fallback.Props, "className"> & {
+  className?: HostClassName | AvatarPrimitive.Fallback.Props["className"];
+}) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"

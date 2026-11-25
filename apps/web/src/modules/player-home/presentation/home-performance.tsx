@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import {
   ChartBarIcon,
   CourtBasketballIcon,
@@ -8,65 +7,16 @@ import {
   TrophyIcon,
 } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Text, Stat, StatGroup, StatLabel, type Icon } from "@futrob/ui";
+import { applyStyles, Text } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { MetricStatValue } from "@/shared/presentation/stats/metric-stat-value.tsx";
+import { HomeKpiGroup, HomeKpiStat } from "@/shared/presentation/stats/home-kpi.tsx";
 import { HomeBanner, HomeCard } from "./home-card.tsx";
 import type { PlayerHomePerformanceSlot } from "./player-home-model.ts";
 
 const KPI_ICON_SIZE = 32;
 
 const styles = stylex.create({
-  group: {
-    display: "grid",
-    width: "100%",
-    gap: "1rem",
-    gridTemplateColumns: {
-      default: "repeat(2, minmax(0, 1fr))",
-      [media.lg]: "repeat(4, minmax(0, 1fr))",
-    },
-    columnGap: "1rem",
-    rowGap: "1rem",
-  },
-  panel: {
-    minWidth: 0,
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    borderRadius: "var(--corner-lg)",
-    backgroundColor: colors.surface,
-    padding: "1rem",
-    gap: "0.5rem",
-  },
-  stack: {
-    display: "grid",
-    gridTemplateColumns: "auto minmax(0, 1fr)",
-    alignItems: "center",
-    minWidth: 0,
-    columnGap: "0.75rem",
-  },
-  iconCell: {
-    gridColumn: "1",
-    gridRow: "1 / -1",
-    alignSelf: "center",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    padding: "0.75rem",
-    borderRadius: "var(--corner-full)",
-    backgroundColor: "color-mix(in oklab, var(--primary) 20%, transparent)",
-    color: colors.primary,
-  },
-  textCol: {
-    gridColumn: "2",
-    display: "flex",
-    flexDirection: "column",
-    minWidth: 0,
-    gap: "0.25rem",
-  },
   icon: {
     display: "block",
     width: "2rem",
@@ -101,34 +51,34 @@ export function HomePerformance({ slot }: { readonly slot: PlayerHomePerformance
       const emptyLabel = t("player.noData");
       return (
         <section aria-label={t("player.statistics.summary")}>
-          <StatGroup className={styles.group}>
-            <KpiStat
+          <HomeKpiGroup>
+            <HomeKpiStat
               emptyLabel={emptyLabel}
-              icon={<KpiIcon icon={CourtBasketballIcon} />}
+              icon={CourtBasketballIcon}
               label={t("player.home.stats.matches")}
               value={slot.profile ? numberFormat.format(slot.profile.sampleSize) : null}
             />
-            <KpiStat
+            <HomeKpiStat
               emptyLabel={emptyLabel}
-              icon={<KpiIcon icon={TrophyIcon} />}
+              icon={TrophyIcon}
               label={t("player.home.stats.wins")}
               value={summary ? numberFormat.format(summary.wins) : null}
             />
-            <KpiStat
+            <HomeKpiStat
               emptyLabel={emptyLabel}
-              icon={<KpiIcon icon={StarIcon} />}
+              icon={StarIcon}
               label={t("player.home.stats.rating")}
               value={rating == null ? null : numberFormat.format(rating)}
             />
-            <KpiStat
+            <HomeKpiStat
               emptyLabel={emptyLabel}
-              icon={<KpiIcon icon={SoccerBallIcon} />}
+              icon={SoccerBallIcon}
               label={t("player.home.stats.goalsAssists")}
               value={
                 summary ? numberFormat.format(summary.totals.goals + summary.totals.assists) : null
               }
             />
-          </StatGroup>
+          </HomeKpiGroup>
         </section>
       );
     }
@@ -169,36 +119,4 @@ export function HomePerformance({ slot }: { readonly slot: PlayerHomePerformance
       return _exhaustive;
     }
   }
-}
-
-function KpiStat({
-  emptyLabel,
-  icon,
-  label,
-  value,
-}: {
-  readonly emptyLabel: string;
-  readonly icon: ReactNode;
-  readonly label: ReactNode;
-  readonly value: string | null;
-}) {
-  return (
-    <Stat className={styles.panel}>
-      <div {...applyStyles(styles.stack)}>
-        {icon}
-        <div {...applyStyles(styles.textCol)}>
-          <StatLabel>{label}</StatLabel>
-          <MetricStatValue emptyLabel={emptyLabel} size="default" value={value} />
-        </div>
-      </div>
-    </Stat>
-  );
-}
-
-function KpiIcon({ icon: Glyph }: { readonly icon: Icon }) {
-  return (
-    <span aria-hidden {...applyStyles(styles.iconCell)}>
-      <Glyph aria-hidden size={KPI_ICON_SIZE} {...applyStyles(styles.icon)} />
-    </span>
-  );
 }

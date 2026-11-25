@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { CheckIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 import { typography } from "#styles/typography";
@@ -15,7 +15,7 @@ export interface StepperStep {
 interface StepperProps {
   readonly steps: readonly StepperStep[];
   readonly currentStepId?: string;
-  readonly className?: string;
+  readonly className?: HostClassName;
   readonly style?: CSSProperties;
   readonly "aria-label"?: string;
   readonly mobileSummary?: (current: number, total: number, label: string) => string;
@@ -215,9 +215,11 @@ function Stepper({
           );
         })}
       </ol>
-      <p {...applyProps(undefined, undefined, typography.caption, styles.mobileSummary)}>
-        {mobileSummary(currentIndex + 1, steps.length, steps[currentIndex]?.label ?? "")}
-      </p>
+      {currentIndex >= 0 ? (
+        <p {...applyProps(undefined, undefined, typography.caption, styles.mobileSummary)}>
+          {mobileSummary(currentIndex + 1, steps.length, steps[currentIndex]?.label ?? "")}
+        </p>
+      ) : null}
     </nav>
   );
 }

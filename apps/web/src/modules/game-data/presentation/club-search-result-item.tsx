@@ -72,18 +72,19 @@ const styles = stylex.create({
     backgroundColor: {
       default: colors.background,
       ":hover": colors.muted,
+      ":disabled": colors.muted,
       ":is([aria-pressed='true'])": colors.accent,
       ":is([aria-pressed='true']):hover": colors.accent,
+    },
+    color: {
+      default: colors.foreground,
+      ":disabled": colors.textDisabled,
     },
     outlineWidth: 0,
     outlineStyle: "none",
     boxShadow: {
       default: null,
       ":focus-visible": "0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent)",
-    },
-    opacity: {
-      default: 1,
-      ":disabled": 0.6,
     },
   },
   itemSelected: {

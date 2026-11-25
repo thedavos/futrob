@@ -43,6 +43,7 @@ export const GRAPHITE_LIME_THEME: TokenMap = {
   danger: ref("palette-red"),
   "danger-foreground": ref("background"),
   destructive: ref("danger"),
+  "destructive-hover": ref("palette-red-soft"),
   "destructive-active": raw("color-mix(in oklab, var(--destructive) 88%, var(--background))"),
   "destructive-foreground": ref("danger-foreground"),
   info: ref("palette-blue"),

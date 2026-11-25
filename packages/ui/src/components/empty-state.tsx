@@ -109,7 +109,7 @@ function EmptyStateTitle({
   return (
     <h2
       data-slot="empty-state-title"
-      {...applyProps(className, style, typography.host, typography.heading, textTone.default)}
+      {...applyProps(className, style, typography.host, typography.title, textTone.default)}
       {...props}
     />
   );

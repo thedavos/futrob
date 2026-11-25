@@ -27,19 +27,17 @@ const styles = stylex.create({
     position: "relative",
     width: "100%",
     overflowX: "auto",
-    borderRadius: "var(--corner-lg)",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
   },
   table: {
     width: "100%",
+    borderCollapse: "collapse",
+    borderSpacing: 0,
     captionSide: "bottom",
     fontSize: "var(--text-sm)",
     lineHeight: "1.25rem",
   },
   header: {
-    backgroundColor: "color-mix(in oklab, var(--muted) 60%, transparent)",
+    backgroundColor: "transparent",
   },
   containerSticky: {
     overflowY: "auto",
@@ -55,17 +53,17 @@ const styles = stylex.create({
     borderTopWidth: 1,
     borderTopStyle: "solid",
     borderTopColor: colors.border,
-    backgroundColor: "color-mix(in oklab, var(--muted) 60%, transparent)",
+    backgroundColor: "transparent",
     fontWeight: "var(--font-weight-semibold)",
   },
   row: {
     borderBottomWidth: 1,
     borderBottomStyle: "solid",
-    borderBottomColor: colors.borderSubtle,
+    borderBottomColor: "color-mix(in oklab, var(--border-subtle) 65%, transparent)",
     backgroundColor: {
-      default: colors.surface,
+      default: "transparent",
       ":hover": "color-mix(in oklab, var(--muted) 45%, transparent)",
-      ':is([data-state="selected"])': "color-mix(in oklab, var(--primary) 8%, transparent)",
+      ':is([data-state="selected"])': "color-mix(in oklab, var(--primary) 10%, transparent)",
     },
     transitionProperty: "background-color",
     transitionDuration: "var(--duration-normal)",
@@ -75,6 +73,9 @@ const styles = stylex.create({
     paddingInline: "0.75rem",
     verticalAlign: "middle",
     color: colors.mutedForeground,
+    textTransform: "uppercase",
+    letterSpacing: "var(--tracking-caps)",
+    whiteSpace: "nowrap",
     paddingRight: {
       default: "0.75rem",
       ":has([role=checkbox])": 0,
@@ -117,6 +118,7 @@ function Table({
   return (
     <div
       data-slot="table-container"
+      role={containerLabelledBy ? "group" : undefined}
       tabIndex={0}
       aria-labelledby={containerLabelledBy}
       {...applyProps(
@@ -147,11 +149,19 @@ function TableHeader({
   );
 }
 
-function TableBody({ className, style, ...props }: React.ComponentProps<"tbody">) {
+function TableBody({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"tbody">, "className"> & { className?: HostClassName }) {
   return <tbody data-slot="table-body" {...applyProps(className, style)} {...props} />;
 }
 
-function TableFooter({ className, style, ...props }: React.ComponentProps<"tfoot">) {
+function TableFooter({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"tfoot">, "className"> & { className?: HostClassName }) {
   return (
     <tfoot data-slot="table-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
@@ -204,7 +214,11 @@ function TableCell({ className, style, align = "start", ...props }: TableCellPro
   );
 }
 
-function TableCaption({ className, style, ...props }: React.ComponentProps<"caption">) {
+function TableCaption({
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<"caption">, "className"> & { className?: HostClassName }) {
   return (
     <caption
       data-slot="table-caption"
@@ -220,7 +234,7 @@ function TableEmpty({
   style,
   colSpan,
   ...props
-}: React.ComponentProps<"td">) {
+}: Omit<React.ComponentProps<"td">, "className"> & { className?: HostClassName }) {
   return (
     <td
       data-slot="table-empty"

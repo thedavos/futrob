@@ -1,11 +1,16 @@
 import { Form as FormPrimitive } from "@base-ui/react/form";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import type { FormFieldValue } from "#lib/read-form-string";
 
 type FormValuesRecord = { readonly [key: string]: FormFieldValue };
 
-type FormProps<FormValues extends object = FormValuesRecord> = FormPrimitive.Props<FormValues>;
+type FormProps<FormValues extends object = FormValuesRecord> = Omit<
+  FormPrimitive.Props<FormValues>,
+  "className"
+> & {
+  className?: HostClassName | FormPrimitive.Props<FormValues>["className"];
+};
 
 type FormErrors<Field extends string = string> = Partial<Record<Field, string | string[]>>;
 

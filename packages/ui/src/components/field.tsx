@@ -2,7 +2,7 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { typography } from "#styles/typography";
 import { formFieldValueSchema, type FormFieldValue } from "#lib/read-form-string";
@@ -16,7 +16,8 @@ type FieldValidate = (
   formValues: FieldFormValues,
 ) => ReturnType<NonNullable<FieldPrimitive.Root.Props["validate"]>>;
 
-type FieldProps = Omit<FieldPrimitive.Root.Props, "validate"> & {
+type FieldProps = Omit<FieldPrimitive.Root.Props, "className" | "validate"> & {
+  className?: HostClassName | FieldPrimitive.Root.Props["className"];
   validate?: FieldValidate;
 };
 
@@ -71,7 +72,13 @@ function Field({ className, style, validate, ...props }: FieldProps) {
   );
 }
 
-function FieldLabel({ className, style, ...props }: FieldPrimitive.Label.Props) {
+function FieldLabel({
+  className,
+  style,
+  ...props
+}: Omit<FieldPrimitive.Label.Props, "className"> & {
+  className?: HostClassName | FieldPrimitive.Label.Props["className"];
+}) {
   return (
     <FieldPrimitive.Label
       data-slot="field-label"
@@ -81,7 +88,13 @@ function FieldLabel({ className, style, ...props }: FieldPrimitive.Label.Props) 
   );
 }
 
-function FieldDescription({ className, style, ...props }: FieldPrimitive.Description.Props) {
+function FieldDescription({
+  className,
+  style,
+  ...props
+}: Omit<FieldPrimitive.Description.Props, "className"> & {
+  className?: HostClassName | FieldPrimitive.Description.Props["className"];
+}) {
   return (
     <FieldPrimitive.Description
       data-slot="field-description"
@@ -91,7 +104,13 @@ function FieldDescription({ className, style, ...props }: FieldPrimitive.Descrip
   );
 }
 
-function FieldError({ className, style, ...props }: Omit<FieldPrimitive.Error.Props, "render">) {
+function FieldError({
+  className,
+  style,
+  ...props
+}: Omit<FieldPrimitive.Error.Props, "className" | "render"> & {
+  className?: HostClassName | FieldPrimitive.Error.Props["className"];
+}) {
   return (
     <FieldPrimitive.Error
       data-slot="field-error"
@@ -101,7 +120,6 @@ function FieldError({ className, style, ...props }: Omit<FieldPrimitive.Error.Pr
           <WarningCircleIcon
             aria-hidden="true"
             {...applyProps(undefined, undefined, styles.errorIcon)}
-            strokeWidth={1.5}
           />
           <span>{elementProps.children}</span>
         </div>

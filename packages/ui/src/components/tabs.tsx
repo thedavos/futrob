@@ -205,7 +205,13 @@ function TabsTrigger({ className, style, ...props }: TabsTriggerProps) {
   );
 }
 
-function TabsIndicator({ className, style, ...props }: TabsPrimitive.Indicator.Props) {
+function TabsIndicator({
+  className,
+  style,
+  ...props
+}: Omit<TabsPrimitive.Indicator.Props, "className"> & {
+  className?: HostClassName | TabsPrimitive.Indicator.Props["className"];
+}) {
   const variant = useTabsVariant();
 
   switch (variant) {

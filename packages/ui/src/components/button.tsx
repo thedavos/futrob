@@ -45,53 +45,69 @@ const styles = stylex.create({
       default: null,
       ":disabled": "none",
     },
-    // Fallback for buttons disabled without the prop (e.g. inside `<fieldset disabled>`).
-    opacity: {
-      default: 1,
-      ":disabled": 0.5,
-    },
   },
   // Applied last for disabled buttons: a dimmed lima reads as muddy olive on graphite, so
   // filled variants switch to a neutral fill instead of lowering opacity.
   disabledFilled: {
-    opacity: 1,
     borderColor: colors.border,
     backgroundColor: colors.muted,
     color: colors.mutedForeground,
   },
   disabledPlain: {
-    opacity: 1,
     color: colors.textDisabled,
   },
   defaultVariant: {
+    borderColor: {
+      default: "transparent",
+      ":focus-visible": colors.ring,
+      ":disabled": colors.border,
+    },
     backgroundColor: {
       default: colors.primary,
       ":hover": colors.primaryHover,
       ":active": colors.primaryActive,
+      ":disabled": colors.muted,
     },
-    color: colors.primaryForeground,
+    color: {
+      default: colors.primaryForeground,
+      ":disabled": colors.mutedForeground,
+    },
   },
   outline: {
     borderColor: {
       default: colors.borderStrong,
       ":focus-visible": colors.ring,
+      ":disabled": colors.border,
     },
     backgroundColor: {
       default: colors.surface,
       ":hover": colors.muted,
       ":active": colors.mutedActive,
       ':is([aria-expanded="true"])': colors.muted,
+      ":disabled": colors.muted,
     },
-    color: colors.foreground,
+    color: {
+      default: colors.foreground,
+      ":disabled": colors.mutedForeground,
+    },
   },
   secondary: {
+    borderColor: {
+      default: "transparent",
+      ":focus-visible": colors.ring,
+      ":disabled": colors.border,
+    },
     backgroundColor: {
       default: colors.secondary,
       ":hover": colors.secondaryHover,
       ":active": colors.secondaryActive,
       ':is([aria-expanded="true"])': colors.secondaryHover,
+      ":disabled": colors.muted,
     },
-    color: colors.secondaryForeground,
+    color: {
+      default: colors.secondaryForeground,
+      ":disabled": colors.mutedForeground,
+    },
   },
   ghost: {
     backgroundColor: {
@@ -99,19 +115,28 @@ const styles = stylex.create({
       ":hover": colors.muted,
       ":active": colors.mutedActive,
       ':is([aria-expanded="true"])': colors.muted,
+      ":disabled": "transparent",
     },
-    color: colors.foreground,
+    color: {
+      default: colors.foreground,
+      ":disabled": colors.textDisabled,
+    },
   },
   destructive: {
     backgroundColor: {
       default: colors.danger,
-      ":hover": colors.destructive,
+      ":hover": colors.destructiveHover,
       ":active": colors.destructiveActive,
+      ":disabled": colors.muted,
     },
-    color: colors.dangerForeground,
+    color: {
+      default: colors.dangerForeground,
+      ":disabled": colors.mutedForeground,
+    },
     borderColor: {
       default: "transparent",
       ":focus-visible": colors.danger,
+      ":disabled": colors.border,
     },
     boxShadow: {
       default: null,
@@ -121,11 +146,15 @@ const styles = stylex.create({
   link: {
     borderColor: "transparent",
     backgroundColor: "transparent",
-    color: colors.primary,
+    color: {
+      default: colors.primary,
+      ":disabled": colors.textDisabled,
+    },
     textUnderlineOffset: "4px",
     textDecorationLine: {
       default: "none",
       ":hover": "underline",
+      ":disabled": "none",
     },
   },
   sizeDefault: {
@@ -221,11 +250,13 @@ function Button({
   static: isStatic = false,
   ...props
 }: ButtonProps) {
+  const isNativeButton = nativeButton ?? render == null;
+
   return (
     <ButtonPrimitive
       data-slot="button"
       data-density={dense ? "dense" : "default"}
-      nativeButton={nativeButton ?? render == null}
+      nativeButton={isNativeButton}
       render={render}
       {...applyProps(
         className,
@@ -245,7 +276,7 @@ function Button({
         stylex.defaultMarker(),
       )}
       {...props}
-      {...disableFormStateRestore}
+      {...(isNativeButton ? disableFormStateRestore : undefined)}
     />
   );
 }

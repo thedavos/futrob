@@ -25,7 +25,12 @@ function useSidebar(): SidebarContextValue {
   return value;
 }
 
-type SidebarProviderProps = React.ComponentProps<"div"> & {
+type HostProps<Tag extends keyof React.JSX.IntrinsicElements> = Omit<
+  React.ComponentProps<Tag>,
+  "className"
+> & { readonly className?: HostClassName };
+
+type SidebarProviderProps = HostProps<"div"> & {
   readonly collapsed?: boolean;
   readonly defaultCollapsed?: boolean;
   readonly onCollapsedChange?: (collapsed: boolean) => void;
@@ -51,8 +56,9 @@ const styles = stylex.create({
     flexDirection: "column",
     borderRightWidth: 1,
     borderRightStyle: "solid",
-    borderRightColor: colors.border,
-    backgroundColor: colors.surface,
+    borderRightColor: colors.sidebarBorder,
+    backgroundColor: colors.sidebar,
+    color: colors.sidebarForeground,
   },
   sidebarExpanded: {
     width: "16rem",
@@ -132,20 +138,23 @@ const styles = stylex.create({
       default: null,
       ":disabled": "none",
     },
-    opacity: {
-      default: 1,
-      ":disabled": 0.5,
-    },
   },
   menuButtonActive: {
     backgroundColor: colors.muted,
-    color: colors.foreground,
+    color: {
+      default: colors.foreground,
+      ":disabled": colors.textDisabled,
+    },
   },
   menuButtonInactive: {
-    color: colors.foreground,
+    color: {
+      default: colors.foreground,
+      ":disabled": colors.textDisabled,
+    },
     backgroundColor: {
       default: "transparent",
       ":hover": "color-mix(in oklab, var(--muted) 70%, transparent)",
+      ":disabled": "transparent",
     },
   },
   menuButtonDense: {
@@ -251,7 +260,7 @@ function SidebarProvider({
   );
 }
 
-function Sidebar({ className, style, ...props }: React.ComponentProps<"aside">) {
+function Sidebar({ className, style, ...props }: HostProps<"aside">) {
   const { collapsed } = useSidebar();
 
   return (
@@ -269,47 +278,31 @@ function Sidebar({ className, style, ...props }: React.ComponentProps<"aside">) 
   );
 }
 
-function SidebarHeader({
-  className,
-  style,
-  ...props
-}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
+function SidebarHeader({ className, style, ...props }: HostProps<"div">) {
   return (
     <div data-slot="sidebar-header" {...applyProps(className, style, styles.header)} {...props} />
   );
 }
 
-function SidebarContent({
-  className,
-  style,
-  ...props
-}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
+function SidebarContent({ className, style, ...props }: HostProps<"div">) {
   return (
     <div data-slot="sidebar-content" {...applyProps(className, style, styles.content)} {...props} />
   );
 }
 
-function SidebarFooter({
-  className,
-  style,
-  ...props
-}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
+function SidebarFooter({ className, style, ...props }: HostProps<"div">) {
   return (
     <div data-slot="sidebar-footer" {...applyProps(className, style, styles.footer)} {...props} />
   );
 }
 
-function SidebarGroup({
-  className,
-  style,
-  ...props
-}: Omit<React.ComponentProps<"div">, "className"> & { readonly className?: HostClassName }) {
+function SidebarGroup({ className, style, ...props }: HostProps<"div">) {
   return (
     <div data-slot="sidebar-group" {...applyProps(className, style, styles.group)} {...props} />
   );
 }
 
-function SidebarGroupLabel({ className, style, ...props }: React.ComponentProps<"p">) {
+function SidebarGroupLabel({ className, style, ...props }: HostProps<"p">) {
   return (
     <p
       data-slot="sidebar-group-label"
@@ -319,11 +312,11 @@ function SidebarGroupLabel({ className, style, ...props }: React.ComponentProps<
   );
 }
 
-function SidebarMenu({ className, style, ...props }: React.ComponentProps<"ul">) {
+function SidebarMenu({ className, style, ...props }: HostProps<"ul">) {
   return <ul data-slot="sidebar-menu" {...applyProps(className, style, styles.menu)} {...props} />;
 }
 
-function SidebarMenuItem({ className, style, ...props }: React.ComponentProps<"li">) {
+function SidebarMenuItem({ className, style, ...props }: HostProps<"li">) {
   return (
     <li
       data-slot="sidebar-menu-item"
@@ -333,7 +326,7 @@ function SidebarMenuItem({ className, style, ...props }: React.ComponentProps<"l
   );
 }
 
-type SidebarMenuButtonProps = React.ComponentProps<"button"> & {
+type SidebarMenuButtonProps = HostProps<"button"> & {
   active?: boolean;
   dense?: boolean;
 };
@@ -363,7 +356,7 @@ function SidebarMenuButton({
   );
 }
 
-type SidebarMenuLinkProps = React.ComponentProps<"a"> & {
+type SidebarMenuLinkProps = HostProps<"a"> & {
   active?: boolean;
   dense?: boolean;
 };
@@ -392,13 +385,13 @@ function SidebarMenuLink({
   );
 }
 
-function SidebarInset({ className, style, ...props }: React.ComponentProps<"div">) {
+function SidebarInset({ className, style, ...props }: HostProps<"div">) {
   return (
     <div data-slot="sidebar-inset" {...applyProps(className, style, styles.inset)} {...props} />
   );
 }
 
-function SidebarRail({ className, style, ...props }: React.ComponentProps<"div">) {
+function SidebarRail({ className, style, ...props }: HostProps<"div">) {
   return <div data-slot="sidebar-rail" {...applyProps(className, style, styles.rail)} {...props} />;
 }
 

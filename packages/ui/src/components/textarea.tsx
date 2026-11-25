@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
@@ -65,7 +65,8 @@ const styles = stylex.create({
   },
 });
 
-type TextareaProps = React.ComponentProps<"textarea"> & {
+type TextareaProps = Omit<React.ComponentProps<"textarea">, "className"> & {
+  className?: HostClassName;
   /** Compact desktop/operator mode. Touch layouts retain comfortable padding. */
   dense?: boolean;
 };

@@ -2,11 +2,12 @@ import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { CheckIcon, MinusIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
   root: {
+    position: "relative",
     display: "flex",
     width: "1.25rem",
     height: "1.25rem",
@@ -23,13 +24,27 @@ const styles = stylex.create({
       ":is([data-indeterminate])": colors.primary,
       ':is([aria-invalid="true"])': colors.danger,
       ':is([aria-invalid="true"]):focus-visible': colors.danger,
+      ":disabled": colors.border,
+      ":is([data-disabled])": colors.border,
+      ":is([data-checked][data-disabled])": colors.border,
+      ":is([data-indeterminate][data-disabled])": colors.border,
     },
     backgroundColor: {
       default: colors.surface,
       ":is([data-checked])": colors.primary,
       ":is([data-indeterminate])": colors.primary,
+      ":disabled": colors.muted,
+      ":is([data-disabled])": colors.muted,
+      ":is([data-checked][data-disabled])": colors.muted,
+      ":is([data-indeterminate][data-disabled])": colors.muted,
     },
-    color: colors.primaryForeground,
+    color: {
+      default: colors.primaryForeground,
+      ":disabled": colors.textDisabled,
+      ":is([data-disabled])": colors.textDisabled,
+      ":is([data-checked][data-disabled])": colors.textDisabled,
+      ":is([data-indeterminate][data-disabled])": colors.textDisabled,
+    },
     transitionProperty: "background-color, border-color, box-shadow",
     transitionDuration: "var(--duration-normal)",
     outlineWidth: 0,
@@ -44,10 +59,13 @@ const styles = stylex.create({
     cursor: {
       default: null,
       ":disabled": "not-allowed",
+      ":is([data-disabled])": "not-allowed",
     },
-    opacity: {
-      default: 1,
-      ":disabled": 0.5,
+    // Expand the visual 20px box to a 44px touch target without affecting surrounding layout.
+    "::after": {
+      content: '""',
+      position: "absolute",
+      inset: "-0.75rem",
     },
   },
   indicator: {
@@ -73,7 +91,11 @@ const styles = stylex.create({
   },
 });
 
-function Checkbox({ className, style, ...props }: CheckboxPrimitive.Root.Props) {
+type CheckboxProps = Omit<CheckboxPrimitive.Root.Props, "className"> & {
+  className?: HostClassName | CheckboxPrimitive.Root.Props["className"];
+};
+
+function Checkbox({ className, style, ...props }: CheckboxProps) {
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
@@ -86,13 +108,13 @@ function Checkbox({ className, style, ...props }: CheckboxPrimitive.Root.Props) 
       >
         <CheckIcon
           aria-hidden="true"
+          weight="bold"
           {...applyProps(undefined, undefined, styles.checkIcon)}
-          strokeWidth={2.5}
         />
         <MinusIcon
           aria-hidden="true"
+          weight="bold"
           {...applyProps(undefined, undefined, styles.minusIcon)}
-          strokeWidth={2.5}
         />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>

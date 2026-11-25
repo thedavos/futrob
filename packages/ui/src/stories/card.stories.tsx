@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps, applyStyles, typography } from "@futrob/ui";
 import { colors } from "#styles/tokens.stylex";
@@ -50,7 +51,8 @@ const meta = {
     variant: {
       control: "select",
       options: ["flat", "elevated"],
-      description: "flat = border only (default). elevated = StyleX elevation.md (no border).",
+      description:
+        "flat = surface + border (default). elevated = surface-raised + elevation.md (no border).",
     },
   },
 } satisfies Meta<typeof Card>;
@@ -132,7 +134,7 @@ export const Compare: Story = {
       <Card variant="elevated">
         <CardHeader>
           <CardTitle>elevated</CardTitle>
-          <CardDescription>elevation.sm · sin border.</CardDescription>
+          <CardDescription>surface-raised · elevation.md · sin border.</CardDescription>
         </CardHeader>
         <CardContent>
           <p {...applyProps(undefined, undefined, typography.body)}>
@@ -142,6 +144,18 @@ export const Compare: Story = {
       </Card>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const flat = canvasElement.querySelector('[data-slot="card"][data-variant="flat"]')!;
+    const elevated = canvasElement.querySelector('[data-slot="card"][data-variant="elevated"]')!;
+    const flatStyle = getComputedStyle(flat);
+    const elevatedStyle = getComputedStyle(elevated);
+
+    await expect(flatStyle.borderTopWidth).toBe("1px");
+    await expect(flatStyle.boxShadow).toBe("none");
+    await expect(elevatedStyle.borderTopWidth).toBe("0px");
+    await expect(elevatedStyle.boxShadow).not.toBe("none");
+    await expect(elevatedStyle.backgroundColor).not.toBe(flatStyle.backgroundColor);
+  },
 };
 
 /**

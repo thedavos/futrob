@@ -219,8 +219,6 @@ export { FUTROB_ICON_CATALOG } from "./icons/catalog";
 export type { FutrobIconEntry } from "./icons/catalog";
 export { applyProps, applyStyles } from "./styles/apply";
 export type { HostClassName, StyleXStyles } from "./styles/apply";
-export { colors } from "./styles/tokens.stylex";
-export { media } from "./styles/media.stylex";
 export { typography } from "./styles/typography";
 export type { TextTone } from "./styles/typography";
 export type { TextAlign } from "./styles/text-align";

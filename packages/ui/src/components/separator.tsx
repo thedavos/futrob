@@ -1,7 +1,7 @@
 import { Separator as SeparatorPrimitive } from "@base-ui/react/separator";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 
 const styles = stylex.create({
@@ -24,7 +24,9 @@ function Separator({
   style,
   orientation = "horizontal",
   ...props
-}: SeparatorPrimitive.Props) {
+}: Omit<SeparatorPrimitive.Props, "className"> & {
+  className?: HostClassName | SeparatorPrimitive.Props["className"];
+}) {
   return (
     <SeparatorPrimitive
       data-slot="separator"

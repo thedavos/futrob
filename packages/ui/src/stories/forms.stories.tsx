@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/select";
+import { Switch } from "../components/switch";
 import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "../components/tabs";
 import { Textarea } from "../components/textarea";
 
@@ -237,6 +238,10 @@ export const DisabledControls: Story = {
         </TabsList>
       </Tabs>
       <div {...applyProps(undefined, undefined, disabledStyles.row)}>
+        <Checkbox checked disabled aria-label="Confirmación automática" />
+        <Switch checked disabled aria-label="Notificaciones" />
+      </div>
+      <div {...applyProps(undefined, undefined, disabledStyles.row)}>
         <Button disabled>Guardar</Button>
         <Button disabled variant="outline">
           Cancelar
@@ -253,8 +258,10 @@ export const DisabledControls: Story = {
   play: async ({ canvasElement }) => {
     const probe = document.createElement("span");
     probe.style.color = "var(--text-disabled)";
+    probe.style.backgroundColor = "var(--muted)";
     canvasElement.append(probe);
     const disabledColor = getComputedStyle(probe).color;
+    const mutedBg = getComputedStyle(probe).backgroundColor;
     probe.remove();
 
     const tab = canvasElement.querySelector("[role='tab'][data-disabled]")!;
@@ -262,5 +269,11 @@ export const DisabledControls: Story = {
     await expect(getComputedStyle(tab).opacity).toBe("1");
     const label = canvasElement.querySelector("[data-slot='field-label']")!;
     await expect(getComputedStyle(label).color).toBe(disabledColor);
+    const checkbox = canvasElement.querySelector("[data-slot='checkbox']")!;
+    await expect(getComputedStyle(checkbox).opacity).toBe("1");
+    await expect(getComputedStyle(checkbox).backgroundColor).toBe(mutedBg);
+    const switchEl = canvasElement.querySelector("[data-slot='switch']")!;
+    await expect(getComputedStyle(switchEl).opacity).toBe("1");
+    await expect(getComputedStyle(switchEl).backgroundColor).toBe(mutedBg);
   },
 };

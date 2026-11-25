@@ -68,17 +68,36 @@
   border-bottom-color: var(--border);
 }
 
+[data-slot="table-header"] tr:hover {
+  background-color: transparent;
+}
+
+[data-slot="table-head"] abbr {
+  text-decoration: none;
+  cursor: help;
+}
+
 [data-slot="table-body"] tr:last-child {
   border-bottom-width: 0;
 }
 
-/* `stickyHeader`: header cells stay on top while the container scrolls. Opaque fill: the
-   same 60 % muted tint flattened over the surface so rows do not show through. */
+/* `stickyHeader`: header cells stay opaque on their host surface while rows scroll underneath. */
 [data-slot="table"][data-sticky-header="true"] [data-slot="table-head"] {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background-color: color-mix(in oklab, var(--muted) 60%, var(--surface));
+  background-color: var(--background);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+[data-slot="card"] [data-slot="table"][data-sticky-header="true"] [data-slot="table-head"] {
+  background-color: var(--surface);
+}
+
+[data-slot="card"][data-variant="elevated"]
+  [data-slot="table"][data-sticky-header="true"]
+  [data-slot="table-head"] {
+  background-color: var(--surface-raised);
 }
 
 [data-slot="table"][data-density="dense"] [data-slot="table-head"],

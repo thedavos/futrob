@@ -309,7 +309,7 @@ const styles = stylex.create({
   },
   disabledLink: {
     pointerEvents: "none",
-    opacity: 0.5,
+    color: colors.textDisabled,
   },
   density: {
     display: "grid",

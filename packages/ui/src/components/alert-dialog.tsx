@@ -2,8 +2,8 @@ import type { ComponentProps } from "react";
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
-import { colors } from "#styles/tokens.stylex";
+import { applyProps, type HostClassName } from "#styles/apply";
+import { colors, z } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
 
@@ -11,7 +11,7 @@ const styles = stylex.create({
   backdrop: {
     position: "fixed",
     inset: 0,
-    zIndex: 50,
+    zIndex: z.overlay,
     backgroundColor: "color-mix(in oklab, var(--neutral-950) 55%, transparent)",
     backdropFilter: "blur(2px)",
     transitionProperty: "opacity",
@@ -20,7 +20,7 @@ const styles = stylex.create({
   viewport: {
     position: "fixed",
     inset: 0,
-    zIndex: 50,
+    zIndex: z.dialog,
     display: "grid",
     placeItems: "center",
     overflowY: "auto",
@@ -83,7 +83,9 @@ function AlertDialogContent({
   className,
   style,
   ...props
-}: AlertDialogPrimitive.Popup.Props) {
+}: Omit<AlertDialogPrimitive.Popup.Props, "className"> & {
+  className?: HostClassName | AlertDialogPrimitive.Popup.Props["className"];
+}) {
   return (
     <AlertDialogPrimitive.Portal>
       <AlertDialogPrimitive.Backdrop {...applyProps(undefined, undefined, styles.backdrop)} />
@@ -100,7 +102,11 @@ function AlertDialogContent({
   );
 }
 
-function AlertDialogHeader({ className, style, ...props }: ComponentProps<"div">) {
+function AlertDialogHeader({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div
       data-slot="alert-dialog-header"
@@ -110,7 +116,11 @@ function AlertDialogHeader({ className, style, ...props }: ComponentProps<"div">
   );
 }
 
-function AlertDialogFooter({ className, style, ...props }: ComponentProps<"div">) {
+function AlertDialogFooter({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return (
     <div
       data-slot="alert-dialog-footer"
@@ -120,7 +130,13 @@ function AlertDialogFooter({ className, style, ...props }: ComponentProps<"div">
   );
 }
 
-function AlertDialogTitle({ className, style, ...props }: AlertDialogPrimitive.Title.Props) {
+function AlertDialogTitle({
+  className,
+  style,
+  ...props
+}: Omit<AlertDialogPrimitive.Title.Props, "className"> & {
+  className?: HostClassName | AlertDialogPrimitive.Title.Props["className"];
+}) {
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
@@ -134,7 +150,9 @@ function AlertDialogDescription({
   className,
   style,
   ...props
-}: AlertDialogPrimitive.Description.Props) {
+}: Omit<AlertDialogPrimitive.Description.Props, "className"> & {
+  className?: HostClassName | AlertDialogPrimitive.Description.Props["className"];
+}) {
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"

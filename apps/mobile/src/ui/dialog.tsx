@@ -51,7 +51,8 @@ export function Dialog({
             right: 0,
             bottom: 0,
             left: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            backgroundColor: theme.colors.background,
+            opacity: 0.65,
           }}
         />
         <View
@@ -90,7 +91,7 @@ export function Dialog({
                 height: theme.controlHeight,
                 alignItems: "center",
                 justifyContent: "center",
-                borderRadius: theme.corner.full,
+                borderRadius: theme.corner.lg,
               }}
             >
               <Icon name="close" size={20} color="foreground" />

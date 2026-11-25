@@ -22,14 +22,22 @@ const styles = stylex.create({
       default: colors.input,
       ":focus-visible": colors.ring,
       ":is([data-checked])": colors.primary,
+      ":is([data-disabled])": colors.border,
+      ":is([data-checked][data-disabled])": colors.border,
     },
     backgroundColor: {
       default: colors.surface,
       ":hover": colors.muted,
       ":is([data-checked])": colors.accent,
       ":is([data-checked]):hover": colors.accent,
+      ":is([data-disabled])": colors.muted,
+      ":is([data-checked][data-disabled])": colors.muted,
     },
-    color: colors.foreground,
+    color: {
+      default: colors.foreground,
+      ":is([data-disabled])": colors.textDisabled,
+      ":is([data-checked][data-disabled])": colors.textDisabled,
+    },
     outlineWidth: 0,
     outlineStyle: "none",
     transitionProperty: "background-color, border-color, color, scale",
@@ -46,10 +54,6 @@ const styles = stylex.create({
     cursor: {
       default: "pointer",
       ":is([data-disabled])": "not-allowed",
-    },
-    opacity: {
-      default: 1,
-      ":is([data-disabled])": 0.5,
     },
     scale: {
       default: 1,
@@ -125,7 +129,7 @@ const styles = stylex.create({
     borderRadius: "var(--corner-full)",
     backgroundColor: colors.primary,
     color: colors.primaryForeground,
-    transitionProperty: "opacity, filter, scale",
+    transitionProperty: "opacity, scale",
     transitionDuration: "var(--duration-normal)",
     transitionTimingFunction: "var(--ease-emphasized)",
     scale: {
@@ -137,11 +141,6 @@ const styles = stylex.create({
       default: null,
       ":is([data-unchecked])": 0,
       ":is([data-checked])": 1,
-    },
-    filter: {
-      default: null,
-      ":is([data-unchecked])": "blur(4px)",
-      ":is([data-checked])": "blur(0)",
     },
   },
   indicatorIcon: {
@@ -202,7 +201,13 @@ function ChoiceGroupItem<Value>({
   );
 }
 
-function ChoiceGroupIndicator({ className, style, ...props }: Radio.Indicator.Props) {
+function ChoiceGroupIndicator({
+  className,
+  style,
+  ...props
+}: Omit<Radio.Indicator.Props, "className"> & {
+  className?: HostClassName | Radio.Indicator.Props["className"];
+}) {
   return (
     <Radio.Indicator
       keepMounted
@@ -212,8 +217,8 @@ function ChoiceGroupIndicator({ className, style, ...props }: Radio.Indicator.Pr
     >
       <CheckIcon
         aria-hidden="true"
+        weight="bold"
         {...applyProps(undefined, undefined, styles.indicatorIcon)}
-        strokeWidth={2.5}
       />
     </Radio.Indicator>
   );

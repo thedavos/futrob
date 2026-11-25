@@ -4,7 +4,7 @@ import { XIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
 
 import { applyProps, type HostClassName } from "#styles/apply";
-import { colors } from "#styles/tokens.stylex";
+import { colors, z } from "#styles/tokens.stylex";
 import { elevation } from "#styles/elevation";
 import { media } from "#styles/media.stylex";
 
@@ -12,14 +12,14 @@ const styles = stylex.create({
   backdrop: {
     position: "fixed",
     inset: 0,
-    zIndex: 50,
+    zIndex: z.overlay,
     backgroundColor: "color-mix(in oklab, var(--neutral-950) 45%, transparent)",
     transitionProperty: "opacity",
     transitionDuration: "var(--duration-normal)",
   },
   content: {
     position: "fixed",
-    zIndex: 50,
+    zIndex: z.dialog,
     display: "flex",
     backgroundColor: colors.popover,
     color: colors.popoverForeground,
@@ -226,7 +226,13 @@ function SheetTitle({
   );
 }
 
-function SheetDescription({ className, style, ...props }: DialogPrimitive.Description.Props) {
+function SheetDescription({
+  className,
+  style,
+  ...props
+}: Omit<DialogPrimitive.Description.Props, "className"> & {
+  className?: HostClassName | DialogPrimitive.Description.Props["className"];
+}) {
   return (
     <DialogPrimitive.Description
       data-slot="sheet-description"

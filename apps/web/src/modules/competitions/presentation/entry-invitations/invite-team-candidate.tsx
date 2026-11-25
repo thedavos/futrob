@@ -42,18 +42,18 @@ const styles = stylex.create({
     backgroundColor: {
       default: colors.background,
       ":hover": colors.muted,
+      ":disabled": colors.muted,
     },
     paddingInline: "0.75rem",
     paddingBlock: "0.625rem",
     textAlign: "start",
-    color: colors.foreground,
+    color: {
+      default: colors.foreground,
+      ":disabled": colors.textDisabled,
+    },
     cursor: {
       default: "pointer",
       ":disabled": "not-allowed",
-    },
-    opacity: {
-      default: 1,
-      ":disabled": 0.6,
     },
     outlineWidth: 0,
     outlineStyle: "none",

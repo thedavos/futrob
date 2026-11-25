@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 
 const styles = stylex.create({
   root: {
@@ -38,7 +38,7 @@ function ButtonIcon({
   className,
   style,
   ...props
-}: React.ComponentProps<"span">) {
+}: Omit<React.ComponentProps<"span">, "className"> & { className?: HostClassName }) {
   return (
     <span
       aria-hidden={ariaHidden}

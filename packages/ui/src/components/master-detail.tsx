@@ -1,11 +1,12 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
 
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { colors } from "#styles/tokens.stylex";
 import { media } from "#styles/media.stylex";
 
-type MasterDetailProps = React.ComponentProps<"div"> & {
+type MasterDetailProps = Omit<React.ComponentProps<"div">, "className"> & {
+  readonly className?: HostClassName;
   readonly master: React.ReactNode;
   readonly detail: React.ReactNode;
   /** When set on small screens, shows detail full-bleed instead of the master list. */

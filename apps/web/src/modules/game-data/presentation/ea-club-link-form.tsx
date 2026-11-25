@@ -217,7 +217,7 @@ export function EaClubLinkForm({
                   />
                 }
               >
-                <ArrowCounterClockwiseIcon aria-hidden="true" strokeWidth={2} />
+                <ArrowCounterClockwiseIcon aria-hidden="true" />
               </TooltipTrigger>
               <TooltipContent>{t("onboarding.club.reset")}</TooltipContent>
             </Tooltip>

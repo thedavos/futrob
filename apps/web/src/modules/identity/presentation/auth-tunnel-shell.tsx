@@ -93,7 +93,7 @@ const styles = stylex.create({
     bottom: 0,
     left: 0,
     backgroundImage:
-      "linear-gradient(to top, rgb(0 0 0 / 0.8), rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.15))",
+      "linear-gradient(to top, color-mix(in oklab, var(--background) 85%, transparent), color-mix(in oklab, var(--background) 40%, transparent), color-mix(in oklab, var(--background) 15%, transparent))",
   },
   copy: {
     position: "relative",
@@ -102,7 +102,7 @@ const styles = stylex.create({
     maxWidth: "36rem",
     flexDirection: "column",
     gap: "1.5rem",
-    color: "white",
+    color: colors.foreground,
   },
   highlight: {
     color: colors.primary,
@@ -110,17 +110,16 @@ const styles = stylex.create({
   support: {
     fontSize: "1.125rem",
     lineHeight: "1.75rem",
-    color: "rgb(255 255 255 / 0.8)",
+    color: colors.mutedForeground,
   },
 });
 
 export function AuthTunnelShell({ children }: Readonly<{ children: ReactNode }>) {
-  const logo = applyStyles(styles.logo);
   return (
     <main {...applyStyles(styles.main)}>
       <section {...applyStyles(styles.formPanel)}>
         <header {...applyStyles(styles.brand)}>
-          <Logo className={logo.className} style={logo.style} title="Futrob" />
+          <Logo className={styles.logo} title="Futrob" />
         </header>
 
         <div {...applyStyles(styles.form)}>{children}</div>

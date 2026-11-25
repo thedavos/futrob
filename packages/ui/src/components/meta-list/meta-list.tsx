@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import * as stylex from "@stylexjs/stylex";
 
 import { titleWhenTruncated } from "#lib/title-when-truncated";
-import { applyProps } from "#styles/apply";
+import { applyProps, type HostClassName } from "#styles/apply";
 import { media } from "#styles/media.stylex";
 import { textTone } from "#styles/text-tone";
 import { typography } from "#styles/typography";
@@ -38,7 +38,8 @@ const columnStyles = {
 
 export type MetaListColumns = keyof typeof columnStyles;
 
-export type MetaListProps = ComponentProps<"dl"> & {
+export type MetaListProps = Omit<ComponentProps<"dl">, "className"> & {
+  className?: HostClassName;
   columns?: MetaListColumns;
 };
 
@@ -53,11 +54,19 @@ function MetaList({ className, style, columns = 1, ...props }: MetaListProps) {
   );
 }
 
-function MetaItem({ className, style, ...props }: ComponentProps<"div">) {
+function MetaItem({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"div">, "className"> & { className?: HostClassName }) {
   return <div data-slot="meta-item" {...applyProps(className, style, styles.item)} {...props} />;
 }
 
-function MetaTerm({ className, style, ...props }: ComponentProps<"dt">) {
+function MetaTerm({
+  className,
+  style,
+  ...props
+}: Omit<ComponentProps<"dt">, "className"> & { className?: HostClassName }) {
   return (
     <dt
       data-slot="meta-term"
@@ -67,7 +76,8 @@ function MetaTerm({ className, style, ...props }: ComponentProps<"dt">) {
   );
 }
 
-export type MetaValueProps = ComponentProps<"dd"> & {
+export type MetaValueProps = Omit<ComponentProps<"dd">, "className"> & {
+  className?: HostClassName;
   truncate?: boolean;
 };
 

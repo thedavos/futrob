@@ -11,7 +11,7 @@ const styles = stylex.create({
       default: colors.primary,
       ":hover": colors.primaryHover,
       ":active": colors.primaryHover,
-      ':is([aria-disabled="true"])': colors.mutedForeground,
+      ':is([aria-disabled="true"])': colors.textDisabled,
     },
     textDecorationLine: "underline",
     textDecorationThickness: "from-font",
