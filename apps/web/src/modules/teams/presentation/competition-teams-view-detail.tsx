@@ -143,7 +143,11 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
             {detail.roster.state === "open" ? "Abierta" : "Cerrada"}
           </StatValue>
           <StatHint>
-            {detail.roster.lockedAt ? "Bloqueada para nuevos ingresos" : "Admite invitaciones"}
+            {!writable
+              ? "Solo lectura por inscripción rechazada"
+              : detail.roster.lockedAt
+                ? "Bloqueada para nuevos ingresos"
+                : "Admite invitaciones"}
           </StatHint>
         </Stat>
         <Stat>

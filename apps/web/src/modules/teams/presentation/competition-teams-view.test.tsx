@@ -97,6 +97,9 @@ describe("CompetitionTeamsView", () => {
     });
 
     expect(screen.getByText("Inscripción rechazada")).toBeTruthy();
+    expect(rejected.roster.state).toBe("open");
+    expect(screen.queryByText("Admite invitaciones")).toBeNull();
+    expect(screen.getByText("Solo lectura por inscripción rechazada")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Invitar" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Cerrar plantilla" })).toBeNull();
     expect(screen.queryByRole("combobox", { name: "Rol de Dani Capitán" })).toBeNull();

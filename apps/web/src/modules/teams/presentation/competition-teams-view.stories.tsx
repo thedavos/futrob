@@ -133,6 +133,7 @@ export const RejectedEntry: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Inscripción rechazada")).toBeVisible();
+    await expect(canvas.queryByText("Admite invitaciones")).not.toBeInTheDocument();
     await expect(canvas.queryByRole("button", { name: "Invitar" })).not.toBeInTheDocument();
     await expect(
       canvas.queryByRole("button", { name: "Cerrar plantilla" }),
