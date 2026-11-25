@@ -5,7 +5,8 @@ import { Text } from "./text";
 /**
  * Mobile Tabs — the closed variants of `@futrob/ui` Tabs for switching views inside a screen:
  * `line` (2dp lime indicator, default) and `pills` (filled segment). The active tab is also
- * announced as selected, so it never depends on color alone. Scrolls horizontally when narrow.
+ * semibold and announced as selected, so it never depends on color alone. Scrolls horizontally
+ * when narrow.
  */
 export type TabsVariant = "line" | "pills";
 
@@ -81,6 +82,8 @@ export function Tabs<Id extends string>({
                       alignItems: "center",
                       paddingHorizontal: theme.spacing[3],
                       borderRadius: theme.corner.md,
+                      borderWidth: 1,
+                      borderColor: selected ? theme.colors.border : "transparent",
                       backgroundColor: selected ? theme.colors.background : "transparent",
                     }
                   : {
@@ -93,7 +96,13 @@ export function Tabs<Id extends string>({
                     }
               }
             >
-              <Text role="label" color={selected ? "foreground" : "muted-foreground"}>
+              <Text
+                role="label"
+                color={selected ? "foreground" : "muted-foreground"}
+                style={{
+                  fontFamily: selected ? theme.fontFamily.semibold : theme.fontFamily.medium,
+                }}
+              >
                 {item.label}
               </Text>
             </Pressable>

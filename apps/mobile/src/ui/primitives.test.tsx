@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   Button,
@@ -52,6 +52,43 @@ describe("Tabs", () => {
     expect(onChange).not.toHaveBeenCalled();
     await user.click(screen.getByRole("tab", { name: "Todos" }));
     expect(onChange).toHaveBeenCalledWith("all");
+  });
+
+  it("moves both aria-selected and a non-color weight indicator together on pills tabs", async () => {
+    const user = userEvent.setup();
+    function PillsHarness() {
+      const [value, setValue] = useState<"goals" | "rating">("goals");
+      return (
+        <Tabs
+          label="Tipo de ranking"
+          variant="pills"
+          value={value}
+          onChange={setValue}
+          items={[
+            { id: "goals", label: "Goles" },
+            { id: "rating", label: "Rating" },
+          ]}
+        />
+      );
+    }
+
+    renderUi(<PillsHarness />);
+    const goalsTab = screen.getByRole("tab", { name: "Goles" });
+    const ratingTab = screen.getByRole("tab", { name: "Rating" });
+    const goalsLabel = screen.getByText("Goles");
+    const ratingLabel = screen.getByText("Rating");
+
+    expect(goalsTab).toHaveAttribute("aria-selected", "true");
+    expect(ratingTab).toHaveAttribute("aria-selected", "false");
+    expect(goalsLabel.style.fontFamily).toBe(theme.fontFamily.semibold);
+    expect(ratingLabel.style.fontFamily).toBe(theme.fontFamily.medium);
+
+    await user.click(ratingTab);
+
+    expect(goalsTab).toHaveAttribute("aria-selected", "false");
+    expect(ratingTab).toHaveAttribute("aria-selected", "true");
+    expect(goalsLabel.style.fontFamily).toBe(theme.fontFamily.medium);
+    expect(ratingLabel.style.fontFamily).toBe(theme.fontFamily.semibold);
   });
 });
 
