@@ -293,8 +293,12 @@ export const Loading = story("Cargando", "loading", async ({ canvasElement }) =>
   await expect(canvas.queryByRole("heading", { name: "Tu organización empieza aquí" })).toBeNull();
   await expect(canvas.queryByRole("button", { name: "Crear competición" })).toBeNull();
   await expect(canvas.getByLabelText("Resumen")).toHaveAttribute("aria-busy", "true");
-  const competitionsStatus = canvas.getByRole("status", { name: "Cargando competiciones" });
-  await expect(competitionsStatus.parentElement).toHaveAttribute("aria-busy", "true");
+  const competitionsStatus = await canvas.findByText("Cargando competiciones");
+  await expect(competitionsStatus).toHaveAttribute("role", "status");
+  await expect(competitionsStatus.closest("[aria-busy='true']")).toBeNull();
+  await expect(
+    canvas.getByRole("heading", { name: "Competiciones" }).closest("[aria-busy='true']"),
+  ).not.toBeNull();
   await expect(canvas.getByRole("heading", { name: "Competiciones" })).toBeVisible();
   await expect(canvas.getByRole("columnheader", { name: "Nombre" })).toBeVisible();
   await expect(canvas.getByRole("columnheader", { name: "Estado" })).toBeVisible();
@@ -366,9 +370,7 @@ export const LoadingMobile: Story = {
   render: (args) => <OrganizationHomeStoryShell key={args.scenario} scenario={args.scenario} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByRole("status", { name: "Cargando competiciones" }),
-    ).toBeInTheDocument();
+    await expect(await canvas.findByText("Cargando competiciones")).toBeInTheDocument();
     await expect(canvas.getByRole("heading", { name: "Competiciones" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Actividad reciente" })).toBeVisible();
   },

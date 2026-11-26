@@ -16,7 +16,6 @@ import {
   TableHeader,
   TableRow,
   typography,
-  vis,
 } from "@futrob/ui";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { ActivityFeedSkeleton } from "@/modules/notifications/presentation/activity-feed-list.tsx";
@@ -84,15 +83,11 @@ const bones = stylex.create({
 export function OrganizationHomeSectionsSkeleton() {
   const { t } = useI18n();
   const titleId = useId();
-  const label = t("org.home.competitions.loading");
   const bodyCell = applyStyles(layout.bodyCell);
   const actionsCell = applyStyles(layout.bodyCell, layout.alignCenter);
 
   return (
-    <div aria-busy="true" aria-label={label} {...applyStyles(layout.stack)}>
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
+    <div aria-busy="true" {...applyStyles(layout.stack)}>
       <Card className={layout.card}>
         <CardHeader className={layout.header}>
           <Heading className={typography.title} id={titleId}>

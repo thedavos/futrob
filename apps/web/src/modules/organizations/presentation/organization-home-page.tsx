@@ -15,6 +15,7 @@ import {
   useOrganizationTeamsQuery,
 } from "@/modules/competitions/presentation/competition-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LoadingStatus } from "@/shared/presentation/loading-status.tsx";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { CreateCompetitionButton } from "./create-competition-button.tsx";
 import { OrganizationHomeEmpty, OrganizationHomeLoadError } from "./organization-home-empty.tsx";
@@ -67,6 +68,9 @@ export function OrganizationHomePage({ organizationId }: { readonly organization
 
   return (
     <main {...applyStyles(styles.main)}>
+      <LoadingStatus
+        message={competitionsQuery.isPending ? t("org.home.competitions.loading") : ""}
+      />
       <PageHeader className={styles.header}>
         {profileQuery.isPending ? (
           <Skeleton {...applyStyles(styles.titleSkeleton)} />
