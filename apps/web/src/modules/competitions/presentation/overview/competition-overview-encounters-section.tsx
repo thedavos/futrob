@@ -7,7 +7,7 @@ import type {
   ListCompetitionEncountersResponse,
 } from "@futrob/api-contracts";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, Caption, Skeleton, Text, TextLink } from "@futrob/ui";
+import { applyStyles, Badge, Caption, Text, TextLink } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import {
   EncounterScorePill,
@@ -21,6 +21,10 @@ import {
   upcomingEncounters,
   type OverviewSlice,
 } from "./competition-overview-model.ts";
+import {
+  OverviewEncounterRowsSkeleton,
+  OverviewViewAllSkeleton,
+} from "./competition-overview-skeleton.tsx";
 
 const styles = stylex.create({
   list: {
@@ -85,16 +89,6 @@ const styles = stylex.create({
     textDecorationLine: "none",
     fontWeight: "var(--font-weight-medium)",
   },
-  stack: {
-    display: "flex",
-    minWidth: 0,
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  skeleton: {
-    height: "2.75rem",
-    width: "100%",
-  },
 });
 
 export function UpcomingSection({
@@ -119,7 +113,9 @@ export function UpcomingSection({
   return (
     <OverviewCard
       action={
-        encounters.status === "ready" && encounters.data.encounters.length > 0 ? (
+        encounters.status === "loading" ? (
+          <OverviewViewAllSkeleton />
+        ) : encounters.status === "ready" && encounters.data.encounters.length > 0 ? (
           <TextLink
             className={styles.action}
             render={
@@ -143,15 +139,8 @@ export function UpcomingSection({
       titleId={titleId}
     >
       {encounters.status === "loading" ? (
-        <div
-          aria-busy="true"
-          aria-label={t("encounters.list.loading")}
-          role="status"
-          {...applyStyles(styles.stack)}
-        >
-          {[0, 1, 2].map((index) => (
-            <Skeleton key={index} {...applyStyles(styles.skeleton)} />
-          ))}
+        <div aria-busy="true" aria-label={t("encounters.list.loading")} role="status">
+          <OverviewEncounterRowsSkeleton />
         </div>
       ) : null}
       {encounters.status === "error" ? (

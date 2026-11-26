@@ -19,7 +19,6 @@ import {
   ProgressLabel,
   ProgressTrack,
   ProgressValue,
-  Skeleton,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { organizationCompetitionStatusLabel } from "@/modules/organizations/presentation/organization-home-copy.ts";
@@ -34,56 +33,9 @@ import {
   competitionTeamsLabel,
 } from "../competition-labels.ts";
 import type { CompetitionProgressSummary, OverviewSlice } from "./competition-overview-model.ts";
+import { overviewLayout } from "./competition-overview.styles.ts";
 
 const styles = stylex.create({
-  header: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: "0.75rem 1rem",
-    marginBottom: 0,
-  },
-  headerActions: {
-    gridColumnStart: "auto",
-    gridRowStart: "auto",
-    gridRowEnd: "auto",
-    justifyContent: "flex-start",
-  },
-  identity: {
-    display: "flex",
-    minWidth: 0,
-    flexGrow: 1,
-    alignItems: "center",
-    gap: "0.875rem",
-  },
-  identityCopy: {
-    display: "flex",
-    minWidth: 0,
-    flexDirection: "column",
-    gap: "0.25rem",
-  },
-  titleRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: "0.5rem 0.625rem",
-    minWidth: 0,
-  },
-  coverFrame: {
-    display: "flex",
-    width: "3rem",
-    height: "3rem",
-    flexShrink: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "var(--corner-lg)",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: "0.25rem",
-  },
   coverImage: {
     display: "block",
     width: "100%",
@@ -105,20 +57,6 @@ const styles = stylex.create({
     flexShrink: 0,
     borderRadius: "var(--corner-full)",
     backgroundColor: "currentColor",
-  },
-  titleSkeleton: {
-    width: "16rem",
-    maxWidth: "100%",
-    height: "2.25rem",
-  },
-  progressPanel: {
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    borderRadius: "var(--corner-lg)",
-    backgroundColor: colors.surface,
-    paddingBlock: "0.875rem",
-    paddingInline: "1.25rem",
   },
   progressValue: {
     color: colors.primary,
@@ -156,12 +94,12 @@ export function CompetitionOverviewHeader({
       : null;
 
   return (
-    <PageHeader className={styles.header}>
+    <PageHeader className={overviewLayout.header}>
       {competition.status === "ready" ? (
-        <div {...applyStyles(styles.identity)}>
+        <div {...applyStyles(overviewLayout.identity)}>
           <CompetitionCoverMark cover={competition.data.cover} />
-          <div {...applyStyles(styles.identityCopy)}>
-            <div {...applyStyles(styles.titleRow)}>
+          <div {...applyStyles(overviewLayout.identityCopy)}>
+            <div {...applyStyles(overviewLayout.titleRow)}>
               <PageHeaderTitle truncate>{competition.data.name}</PageHeaderTitle>
               <Badge
                 className={styles.statusBadge}
@@ -174,19 +112,14 @@ export function CompetitionOverviewHeader({
             {summaryMeta ? <Caption as="p">{summaryMeta}</Caption> : null}
           </div>
         </div>
-      ) : competition.status === "loading" ? (
-        <div {...applyStyles(styles.identityCopy)}>
-          <Skeleton {...applyStyles(styles.titleSkeleton)} />
-          <PageHeaderDescription>{t("competition.overview.description")}</PageHeaderDescription>
-        </div>
       ) : (
-        <div {...applyStyles(styles.identityCopy)}>
+        <div {...applyStyles(overviewLayout.identityCopy)}>
           <PageHeaderTitle>{t("shell.nav.competition.overview")}</PageHeaderTitle>
           <PageHeaderDescription>{t("competition.overview.description")}</PageHeaderDescription>
         </div>
       )}
       {competition.status === "ready" && competition.data.status === "draft" ? (
-        <PageHeaderActions className={styles.headerActions}>
+        <PageHeaderActions className={overviewLayout.headerActions}>
           <Button
             render={
               <Link
@@ -200,7 +133,7 @@ export function CompetitionOverviewHeader({
         </PageHeaderActions>
       ) : null}
       {portalHref ? (
-        <PageHeaderActions className={styles.headerActions}>
+        <PageHeaderActions className={overviewLayout.headerActions}>
           <Button
             render={<a href={portalHref} rel="noopener" target="_blank" />}
             role="link"
@@ -218,7 +151,7 @@ export function CompetitionOverviewHeader({
 function CompetitionCoverMark({ cover }: { readonly cover: CompetitionCoverDto }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div aria-hidden="true" {...applyStyles(styles.coverFrame)}>
+    <div aria-hidden="true" {...applyStyles(overviewLayout.coverFrame)}>
       {failed ? (
         <TrophyIcon size={24} {...applyStyles(styles.coverFallback)} />
       ) : (
@@ -254,7 +187,7 @@ export function CompetitionProgressBanner({
         });
 
   return (
-    <section aria-label={label} {...applyStyles(styles.progressPanel)}>
+    <section aria-label={label} {...applyStyles(overviewLayout.progressPanel)}>
       <Progress max={100} value={progress.percent}>
         <ProgressLabel>{label}</ProgressLabel>
         <ProgressValue className={styles.progressValue}>

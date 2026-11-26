@@ -420,10 +420,44 @@ export const Loading: Story = {
   args: { scenario: "loading" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.findAllByRole("status")).resolves.not.toHaveLength(0);
+    const page = await canvas.findByRole("main", { name: "Cargando la competición" });
+    await expect(page).toHaveAttribute("aria-busy", "true");
+    await expect(
+      canvas.getByRole("status", { name: "Cargando la competición" }),
+    ).toBeInTheDocument();
+    await expect(canvas.findByRole("heading", { name: "Equipos" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Equipo" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Club EA" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Plantilla" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Estado" })).resolves.toBeVisible();
+    await expect(
+      canvas.findByRole("heading", { name: "Últimos oficiales" }),
+    ).resolves.toBeVisible();
+    await expect(canvas.findByRole("heading", { name: "Pendientes" })).resolves.toBeVisible();
+    await expect(
+      canvas.findByRole("heading", { name: "Publicación y alcance" }),
+    ).resolves.toBeVisible();
+    await expect(canvas.findByText("Equipos aprobados")).resolves.toBeVisible();
+    await expect(canvas.findByText("Oficializados")).resolves.toBeVisible();
+    await expect(canvas.findByText("Próximos enfrentamientos")).resolves.toBeVisible();
+    await expect(canvas.findByText("Por resolver")).resolves.toBeVisible();
     await expect(canvas.queryByText("0")).toBeNull();
     await expect(canvas.queryByText("Todo al día")).toBeNull();
     await expect(canvas.queryByText("Liga Nocturna")).toBeNull();
+    await expect(canvas.queryByRole("link", { name: "Ver portal público" })).toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.findByRole("main")).resolves.toHaveAttribute("aria-busy", "true");
+    await expect(canvas.findByRole("heading", { name: "Equipos" })).resolves.toBeVisible();
+    await expect(
+      canvas.findByRole("heading", { name: "Últimos oficiales" }),
+    ).resolves.toBeVisible();
   },
 };
 

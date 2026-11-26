@@ -10,15 +10,7 @@ import type {
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { isPubliclyVisibleStatus } from "@futrob/public-portal";
 import { RESULT_PERMISSION } from "@futrob/results";
-import * as stylex from "@stylexjs/stylex";
-import {
-  applyStyles,
-  PageHeader,
-  PageHeaderDescription,
-  PageHeaderTitle,
-  Skeleton,
-} from "@futrob/ui";
-import { media } from "@futrob/ui/styles/media.stylex";
+import { applyStyles, PageHeader, PageHeaderDescription, PageHeaderTitle } from "@futrob/ui";
 import { usePendingActivitiesQuery } from "@/modules/notifications/presentation/activity-queries.ts";
 import { useOrganizationProfileQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 import { portalPath } from "@/modules/public-portal/presentation/public-portal-model.ts";
@@ -59,38 +51,12 @@ import {
 } from "./competition-overview-model.ts";
 import { UpcomingSection } from "./competition-overview-encounters-section.tsx";
 import { PendingSection } from "./competition-overview-sections.tsx";
+import {
+  CompetitionOverviewSkeleton,
+  OverviewProgressSkeleton,
+} from "./competition-overview-skeleton.tsx";
 import { TeamsSection } from "./competition-overview-teams-section.tsx";
-
-const styles = stylex.create({
-  main: {
-    display: "flex",
-    width: "100%",
-    minWidth: 0,
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  titleSkeleton: {
-    width: "16rem",
-    maxWidth: "100%",
-    height: "2.25rem",
-  },
-  layout: {
-    display: "grid",
-    minWidth: 0,
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.lg]: "minmax(0, 2fr) minmax(0, 1fr)",
-    },
-    gap: "1rem",
-    alignItems: "start",
-  },
-  column: {
-    display: "flex",
-    minWidth: 0,
-    flexDirection: "column",
-    gap: "1rem",
-  },
-});
+import { overviewLayout } from "./competition-overview.styles.ts";
 
 export interface CompetitionOverviewViewProps {
   readonly organizationId: string;
@@ -172,14 +138,20 @@ export function CompetitionOverviewView({
       ? portalPath({ organizationSlug, competitionKey: competitionId })
       : null;
 
+  if (competition.status === "loading") {
+    return <CompetitionOverviewSkeleton />;
+  }
+
   const progress = competitionProgress(
     competition,
     mapSlice(encounters, (data) => data.encounters),
     entries,
   );
+  const progressPending =
+    progress === null && (encounters.status === "loading" || entries.status === "loading");
 
   return (
-    <main {...applyStyles(styles.main)}>
+    <main {...applyStyles(overviewLayout.main)}>
       <CompetitionOverviewHeader
         approvedTeams={entryCounts?.approved ?? null}
         competition={competition}
@@ -192,7 +164,11 @@ export function CompetitionOverviewView({
         <RetryAlert message={t("competition.overview.error")} retry={competition.retry} t={t} />
       ) : null}
 
-      {progress ? <CompetitionProgressBanner progress={progress} /> : null}
+      {progress ? (
+        <CompetitionProgressBanner progress={progress} />
+      ) : progressPending ? (
+        <OverviewProgressSkeleton />
+      ) : null}
 
       <CompetitionOverviewKpis
         officialized={ratioMetricOf(encounters, (data) => {
@@ -207,8 +183,8 @@ export function CompetitionOverviewView({
         )}
       />
 
-      <div {...applyStyles(styles.layout)}>
-        <div {...applyStyles(styles.column)}>
+      <div {...applyStyles(overviewLayout.layout)}>
+        <div {...applyStyles(overviewLayout.column)}>
           <TeamsSection
             competitionId={competitionId}
             organizationId={organizationId}
@@ -220,7 +196,7 @@ export function CompetitionOverviewView({
             organizationId={organizationId}
           />
         </div>
-        <div {...applyStyles(styles.column)}>
+        <div {...applyStyles(overviewLayout.column)}>
           <PendingSection
             activities={activities}
             awaitingCount={mapSlice(
@@ -326,11 +302,7 @@ export function CompetitionOverviewRoute({
   const access = useCapabilities({ organizationId, competitionId }, CAPABILITIES);
 
   if (access.loading) {
-    return (
-      <main aria-busy="true" {...applyStyles(styles.main)}>
-        <Skeleton {...applyStyles(styles.titleSkeleton)} />
-      </main>
-    );
+    return <CompetitionOverviewSkeleton />;
   }
   if (access.unavailable) {
     return (
@@ -357,7 +329,7 @@ export function CompetitionOverviewRoute({
 export function CompetitionOverviewMember() {
   const { t } = useI18n();
   return (
-    <main {...applyStyles(styles.main)}>
+    <main {...applyStyles(overviewLayout.main)}>
       <PageHeader>
         <PageHeaderTitle>{t("competition.overview.memberTitle")}</PageHeaderTitle>
         <PageHeaderDescription>{t("competition.overview.memberDescription")}</PageHeaderDescription>
@@ -370,7 +342,7 @@ export function CompetitionOverviewMember() {
 export function CompetitionOverviewAccessError({ onRetry }: { readonly onRetry: () => void }) {
   const { t } = useI18n();
   return (
-    <main {...applyStyles(styles.main)}>
+    <main {...applyStyles(overviewLayout.main)}>
       <PageHeader>
         <PageHeaderTitle>{t("shell.nav.competition.overview")}</PageHeaderTitle>
         <PageHeaderDescription>{t("competition.overview.description")}</PageHeaderDescription>
