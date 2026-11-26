@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
@@ -11,9 +10,7 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
   Stepper,
-  Subtitle,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type {
   CompetitionDraftDto,
   CompetitionFormatDto,
@@ -35,6 +32,11 @@ import { competitionPlatformLabel } from "./competition-draft-meta.ts";
 import { PlanUpsellAlert } from "@/modules/billing/presentation/plan-upsell-alert.tsx";
 import { CompetitionsClientError } from "./competitions-browser-client.ts";
 import { PageAlert } from "./competition-setup-fields.tsx";
+import {
+  CompetitionSetupLoadingStatus,
+  CompetitionSetupSkeleton,
+} from "./competition-setup-skeleton.tsx";
+import { styles } from "./competition-setup-page.styles.ts";
 import { useCompetitionEntryInvitations } from "./entry-invitations/use-competition-entry-invitations.tsx";
 import {
   profileFieldsFromCompetition,
@@ -53,34 +55,6 @@ import {
   useRemoveCompetitionParticipantMutation,
   useUpdateCompetitionDraftMutation,
 } from "./competition-queries.ts";
-
-const styles = stylex.create({
-  loading: {
-    color: colors.mutedForeground,
-  },
-  main: {
-    width: "100%",
-  },
-  titleRow: {
-    display: "flex",
-    minWidth: 0,
-    alignItems: "center",
-    gap: "0.5rem",
-  },
-  title: {
-    width: "fit-content",
-    minWidth: 0,
-    maxWidth: "100%",
-    flexShrink: 1,
-  },
-  stepper: {
-    marginBottom: "2.5rem",
-  },
-  body: {
-    display: "grid",
-    gap: "1rem",
-  },
-});
 
 const stepper = applyStyles(styles.stepper);
 const setupTitle = applyStyles(styles.title);
@@ -198,160 +172,173 @@ export function CompetitionSetupPage({
     if (next) onStepChange(next.id);
   }
 
-  if (draftQuery.isError)
-    return <PageAlert> No se pudo cargar el borrador de la competición. </PageAlert>;
-  if (!draft || !form)
+  if (draftQuery.isError) {
     return (
-      <main>
-        <Subtitle {...applyStyles(styles.loading)}>Cargando competición…</Subtitle>
-      </main>
+      <>
+        <CompetitionSetupLoadingStatus active={false} />
+        <PageAlert> No se pudo cargar el borrador de la competición. </PageAlert>
+      </>
     );
+  }
+  if (!draft || !form) {
+    return (
+      <>
+        <CompetitionSetupLoadingStatus active />
+        <CompetitionSetupSkeleton />
+      </>
+    );
+  }
 
   return (
-    <main {...applyStyles(styles.main)}>
-      <PageHeader>
-        <div {...applyStyles(styles.titleRow)}>
-          <PageHeaderTitle className={setupTitle.className} style={setupTitle.style} truncate>
-            Configurar competición
-          </PageHeaderTitle>
-          <Badge variant={registrationOpen ? "info" : "neutral"}>{setupStatusLabel(status)}</Badge>
-        </div>
-        <PageHeaderDescription>
-          Define los datos de tu competición. Puedes guardar y continuar después.
-        </PageHeaderDescription>
-      </PageHeader>
-      <Stepper
-        aria-label="Configuración de competición"
-        className={stepper.className}
-        currentStepId={currentStep}
-        steps={steps}
-        style={stepper.style}
-      />
-      <div {...applyStyles(styles.body)}>
-        {registrationOpen ? (
-          <Alert>
-            <AlertDescription>
-              Las inscripciones están abiertas. El formato y las reglas quedan bloqueados hasta que
-              las cierres; puedes seguir gestionando participantes.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        {error instanceof CompetitionsClientError && error.status === 402 ? (
-          <PlanUpsellAlert code={error.code} organizationId={organizationId} />
-        ) : error ? (
-          <PageAlert>
-            No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
-          </PageAlert>
-        ) : null}
-        {currentStep === "information" ? (
-          <InformationStep
-            disabled={readOnly}
-            form={form}
-            onChange={(patch) => setForm({ ...form, ...patch })}
-            profile={
-              profile
-                ? {
-                    coverDisabled: !canUpdate || status === "archived" || coverUpdate.isPending,
-                    fieldError: profileError,
-                    onChange: (patch) => {
-                      setProfile({ ...profile, ...patch });
-                      if (patch.cover)
-                        coverUpdate.mutate(patch.cover, {
-                          onError: () =>
-                            setProfile((current) =>
-                              current ? { ...current, cover: draft.competition.cover } : current,
-                            ),
-                        });
-                    },
-                    onClearFieldError: () => setProfileError(null),
-                    value: profile,
-                  }
-                : null
-            }
-          />
-        ) : null}
-        {currentStep === "format" ? (
-          <FormatStep
-            disabled={readOnly}
-            form={form}
-            onFormatChange={(next) => {
-              if (next === form.format) return;
-              if (
-                !globalThis.confirm(
-                  "Cambiar el formato reemplazará las reglas incompatibles. ¿Continuar?",
+    <>
+      <CompetitionSetupLoadingStatus active={false} />
+      <main {...applyStyles(styles.main)}>
+        <PageHeader>
+          <div {...applyStyles(styles.titleRow)}>
+            <PageHeaderTitle className={setupTitle.className} style={setupTitle.style} truncate>
+              Configurar competición
+            </PageHeaderTitle>
+            <Badge variant={registrationOpen ? "info" : "neutral"}>
+              {setupStatusLabel(status)}
+            </Badge>
+          </div>
+          <PageHeaderDescription>
+            Define los datos de tu competición. Puedes guardar y continuar después.
+          </PageHeaderDescription>
+        </PageHeader>
+        <Stepper
+          aria-label="Configuración de competición"
+          className={stepper.className}
+          currentStepId={currentStep}
+          steps={steps}
+          style={stepper.style}
+        />
+        <div {...applyStyles(styles.body)}>
+          {registrationOpen ? (
+            <Alert>
+              <AlertDescription>
+                Las inscripciones están abiertas. El formato y las reglas quedan bloqueados hasta
+                que las cierres; puedes seguir gestionando participantes.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          {error instanceof CompetitionsClientError && error.status === 402 ? (
+            <PlanUpsellAlert code={error.code} organizationId={organizationId} />
+          ) : error ? (
+            <PageAlert>
+              No se pudo completar la operación. Revisa los datos e inténtalo de nuevo.
+            </PageAlert>
+          ) : null}
+          {currentStep === "information" ? (
+            <InformationStep
+              disabled={readOnly}
+              form={form}
+              onChange={(patch) => setForm({ ...form, ...patch })}
+              profile={
+                profile
+                  ? {
+                      coverDisabled: !canUpdate || status === "archived" || coverUpdate.isPending,
+                      fieldError: profileError,
+                      onChange: (patch) => {
+                        setProfile({ ...profile, ...patch });
+                        if (patch.cover)
+                          coverUpdate.mutate(patch.cover, {
+                            onError: () =>
+                              setProfile((current) =>
+                                current ? { ...current, cover: draft.competition.cover } : current,
+                              ),
+                          });
+                      },
+                      onClearFieldError: () => setProfileError(null),
+                      value: profile,
+                    }
+                  : null
+              }
+            />
+          ) : null}
+          {currentStep === "format" ? (
+            <FormatStep
+              disabled={readOnly}
+              form={form}
+              onFormatChange={(next) => {
+                if (next === form.format) return;
+                if (
+                  !globalThis.confirm(
+                    "Cambiar el formato reemplazará las reglas incompatibles. ¿Continuar?",
+                  )
                 )
-              )
-                return;
-              setForm({ ...form, format: next, rules: rulesForFormat(next) });
-            }}
-            onRulesChange={(rules) => setForm({ ...form, rules })}
-          />
-        ) : null}
-        {currentStep === "rules" ? (
-          <RulesStep
-            disabled={readOnly}
-            form={form}
-            onChange={(rules) => setForm({ ...form, rules })}
-          />
-        ) : null}
-        {currentStep === "participants" ? (
-          <ParticipantsStep
-            capacity={draft.competition.teams}
-            clubs={clubs}
-            clubsPending={clubNames.isPending}
-            disabled={participantsLocked || busy || !canManageParticipants}
-            gameEdition={draft.competition.gameEdition}
-            invite={invitations.invite}
-            onRemove={(id: string) => remove.mutateAsync(id)}
-            participants={participantsQuery.data?.participants ?? []}
-            platformLabel={competitionPlatformLabel(draft.competition.platform)}
-            sentInvitations={invitations.sentInvitations}
-            teams={teamsQuery.data?.teams ?? []}
-          />
-        ) : null}
-        {invitations.dialog}
-        {currentStep === "review" ? (
-          <ReviewStep
-            draft={draft}
-            onEdit={onStepChange}
-            participants={participantsQuery.data?.participants ?? []}
-            teams={teamsQuery.data?.teams ?? []}
-          />
-        ) : null}
-      </div>
-      <CompetitionSetupActionBarRegistration
-        busy={busy}
-        canContinue={currentStep !== "review"}
-        canGoBack={currentStep !== "information"}
-        canSave={!readOnly}
-        onBack={() => move(-1)}
-        onContinue={continueNext}
-        onSave={save}
-        publish={
-          currentStep === "review" && !participantsLocked && canPublish
-            ? {
-                disabled: approvedParticipantCount < draft.competition.teams.min,
-                label: publish.isPending ? "Publicando…" : "Publicar competición",
-                onPublish: () => void publish.mutateAsync(),
-              }
-            : undefined
-        }
-        registration={
-          (currentStep === "participants" || currentStep === "review") &&
-          !participantsLocked &&
-          canPublish
-            ? {
-                label: registrationLabel(registrationOpen, registration.isPending),
-                onRegistration: () =>
-                  void registration.mutateAsync(registrationOpen ? "close" : "open"),
-              }
-            : undefined
-        }
-        saving={update.isPending ? (confirmingContinue ? "continue" : "draft") : null}
-        step={steps.findIndex((step) => step.id === currentStep) + 1}
-        total={steps.length}
-      />
-    </main>
+                  return;
+                setForm({ ...form, format: next, rules: rulesForFormat(next) });
+              }}
+              onRulesChange={(rules) => setForm({ ...form, rules })}
+            />
+          ) : null}
+          {currentStep === "rules" ? (
+            <RulesStep
+              disabled={readOnly}
+              form={form}
+              onChange={(rules) => setForm({ ...form, rules })}
+            />
+          ) : null}
+          {currentStep === "participants" ? (
+            <ParticipantsStep
+              capacity={draft.competition.teams}
+              clubs={clubs}
+              clubsPending={clubNames.isPending}
+              disabled={participantsLocked || busy || !canManageParticipants}
+              gameEdition={draft.competition.gameEdition}
+              invite={invitations.invite}
+              onRemove={(id: string) => remove.mutateAsync(id)}
+              participants={participantsQuery.data?.participants ?? []}
+              platformLabel={competitionPlatformLabel(draft.competition.platform)}
+              sentInvitations={invitations.sentInvitations}
+              teams={teamsQuery.data?.teams ?? []}
+            />
+          ) : null}
+          {invitations.dialog}
+          {currentStep === "review" ? (
+            <ReviewStep
+              draft={draft}
+              onEdit={onStepChange}
+              participants={participantsQuery.data?.participants ?? []}
+              teams={teamsQuery.data?.teams ?? []}
+            />
+          ) : null}
+        </div>
+        <CompetitionSetupActionBarRegistration
+          busy={busy}
+          canContinue={currentStep !== "review"}
+          canGoBack={currentStep !== "information"}
+          canSave={!readOnly}
+          onBack={() => move(-1)}
+          onContinue={continueNext}
+          onSave={save}
+          publish={
+            currentStep === "review" && !participantsLocked && canPublish
+              ? {
+                  disabled: approvedParticipantCount < draft.competition.teams.min,
+                  label: publish.isPending ? "Publicando…" : "Publicar competición",
+                  onPublish: () => void publish.mutateAsync(),
+                }
+              : undefined
+          }
+          registration={
+            (currentStep === "participants" || currentStep === "review") &&
+            !participantsLocked &&
+            canPublish
+              ? {
+                  label: registrationLabel(registrationOpen, registration.isPending),
+                  onRegistration: () =>
+                    void registration.mutateAsync(registrationOpen ? "close" : "open"),
+                }
+              : undefined
+          }
+          saving={update.isPending ? (confirmingContinue ? "continue" : "draft") : null}
+          step={steps.findIndex((step) => step.id === currentStep) + 1}
+          total={steps.length}
+        />
+      </main>
+    </>
   );
 }
 

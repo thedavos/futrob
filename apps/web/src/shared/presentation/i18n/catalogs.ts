@@ -1055,6 +1055,7 @@ const es = {
   "competitions.setup.saveDraft": "Guardar borrador",
   "competitions.setup.saving": "Guardando…",
   "competitions.setup.continue": "Continuar",
+  "competitions.setup.loading": "Cargando competición…",
   "errors.organizations.slug_conflict": "Ese slug ya está en uso. Elige otro.",
   "errors.organizations.invalid_slug": "El slug no es válido. Usa minúsculas, números y guiones.",
   "errors.organizations.invalid_time_zone": "La zona horaria no es válida.",
@@ -4982,6 +4983,7 @@ const en: Catalog = {
   "competitions.setup.saveDraft": "Save draft",
   "competitions.setup.saving": "Saving…",
   "competitions.setup.continue": "Continue",
+  "competitions.setup.loading": "Loading competition…",
   "errors.organizations.slug_conflict": "That slug is already in use. Choose another one.",
   "errors.organizations.invalid_slug":
     "The slug isn't valid. Use lowercase letters, numbers and hyphens.",
