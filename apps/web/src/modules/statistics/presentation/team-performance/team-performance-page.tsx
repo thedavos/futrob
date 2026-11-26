@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { CaretRightIcon } from "@phosphor-icons/react";
 import type { TeamPerformanceRankingSnapshotDto } from "@futrob/api-contracts";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import {
@@ -27,16 +28,18 @@ import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { invalidateEffectiveAccessQueries } from "@/shared/presentation/query/invalidate-effective-access.ts";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
+import { Criteria } from "./team-performance-criteria.tsx";
 import {
+  teamPerformanceHighlights,
   teamPerformanceRows,
   teamPerformanceSummary,
   type TeamPerformanceNames,
 } from "./team-performance-model.ts";
-import { useTeamPerformanceRankingQuery } from "./team-performance-queries.ts";
 import { styles } from "./team-performance-page.styles.ts";
-import { Criteria } from "./team-performance-criteria.tsx";
+import { useTeamPerformanceRankingQuery } from "./team-performance-queries.ts";
+import { TeamPerformanceSummary } from "./team-performance-summary.tsx";
 import { RankingTable } from "./team-performance-table.tsx";
-import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type { TeamPerformanceNames } from "./team-performance-model.ts";
 
@@ -106,8 +109,26 @@ export function TeamPerformancePageView({
   state,
 }: Scope & { readonly state: TeamPerformanceState; readonly names: TeamPerformanceNames }) {
   const { t } = useI18n();
+  const headerActions =
+    state.kind === "ready" && state.ranking !== null ? (
+      <Button
+        nativeButton={false}
+        render={
+          <Link
+            params={{ orgId: organizationId, competitionId }}
+            to="/orgs/$orgId/competitions/$competitionId/standings"
+          />
+        }
+        role="link"
+        variant="outline"
+      >
+        {t("teamPerformance.standingsLink")}
+        <CaretRightIcon aria-hidden="true" {...applyStyles(styles.chevron)} />
+      </Button>
+    ) : undefined;
+
   return (
-    <PageScaffold page="competition.teamPerformance">
+    <PageScaffold actions={headerActions} page="competition.teamPerformance">
       {(() => {
         switch (state.kind) {
           case "loading":
@@ -118,9 +139,17 @@ export function TeamPerformancePageView({
                 role="status"
                 {...applyStyles(styles.skeletonStack)}
               >
-                <Skeleton {...applyStyles(styles.skeletonRow)} />
-                <Skeleton {...applyStyles(styles.skeletonRow)} />
-                <Skeleton {...applyStyles(styles.skeletonRow)} />
+                <div {...applyStyles(styles.skeletonKpiGrid)}>
+                  <Skeleton className={styles.skeletonKpi} />
+                  <Skeleton className={styles.skeletonKpi} />
+                  <Skeleton className={styles.skeletonKpi} />
+                  <Skeleton className={styles.skeletonKpi} />
+                </div>
+                <div {...applyStyles(styles.skeletonList)}>
+                  <Skeleton className={styles.skeletonRow} />
+                  <Skeleton className={styles.skeletonRow} />
+                  <Skeleton className={styles.skeletonRow} />
+                </div>
               </div>
             );
           case "error":
@@ -247,9 +276,7 @@ export function TeamPerformancePageView({
             }
             return (
               <RankingContent
-                competitionId={competitionId}
                 names={names}
-                organizationId={organizationId}
                 ranking={state.ranking}
                 refreshRetry={state.refreshRetry}
                 t={t}
@@ -266,13 +293,11 @@ export function TeamPerformancePageView({
 }
 
 function RankingContent({
-  competitionId,
   names,
-  organizationId,
   ranking,
   refreshRetry,
   t,
-}: Scope & {
+}: {
   readonly names: TeamPerformanceNames;
   readonly ranking: TeamPerformanceRankingSnapshotDto;
   readonly refreshRetry?: () => void;
@@ -284,6 +309,8 @@ function RankingContent({
   );
   const rows = teamPerformanceRows(ranking, nameMap);
   const summary = teamPerformanceSummary(ranking);
+  const highlights = teamPerformanceHighlights(ranking);
+
   return (
     <div {...applyStyles(styles.content)}>
       {refreshRetry ? (
@@ -320,20 +347,19 @@ function RankingContent({
           </EmptyStateCopy>
         </EmptyState>
       ) : (
-        <RankingTable
-          minimum={ranking.window.minimumEncounters}
-          names={names}
-          rows={rows}
-          summary={t("teamPerformance.table.summary", summary)}
-          t={t}
-        />
+        <>
+          <TeamPerformanceSummary nameMap={nameMap} names={names} ranking={ranking} t={t} />
+          <RankingTable
+            bestByMetric={highlights.bestByMetric}
+            minimum={ranking.window.minimumEncounters}
+            names={names}
+            rows={rows}
+            summary={t("teamPerformance.table.summary", summary)}
+            t={t}
+          />
+        </>
       )}
-      <Criteria
-        competitionId={competitionId}
-        organizationId={organizationId}
-        ranking={ranking}
-        t={t}
-      />
+      <Criteria ranking={ranking} t={t} />
     </div>
   );
 }

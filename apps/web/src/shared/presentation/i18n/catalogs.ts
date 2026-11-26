@@ -2091,19 +2091,62 @@ const es = {
       : `${approved} aprobados · ${voided} anulados (no cuentan)`,
   "teamPerformance.criteria.versions": ({ formula, normalization, window }) =>
     `Versiones: ${formula} · ${normalization} · ${window}`,
+  "teamPerformance.criteria.toggleShow": "Fórmula y versiones",
+  "teamPerformance.criteria.toggleHide": "Ocultar criterio",
+  "teamPerformance.criteria.compactWindow": ({ recent }) =>
+    `Toda la competición · últimos ${recent}`,
+  "teamPerformance.criteria.compactEligibility": ({ minimum }) => `≥ ${minimum} enf. y 5 pilares`,
   "teamPerformance.weights.label": "Pesos de la fórmula",
   "teamPerformance.weight": ({ weight }) => `${weight} %`,
+  "teamPerformance.summary.label": "Resumen del rendimiento",
+  "teamPerformance.summary.leader": "Líder del índice",
+  "teamPerformance.summary.leader.ahead": ({ points }) => `+${points} sobre el 2.º`,
+  "teamPerformance.summary.leader.tied": "Empatado en cabeza",
+  "teamPerformance.summary.bestForm": "Mejor forma reciente",
+  "teamPerformance.summary.bestDefense": "Mejor defensa",
+  "teamPerformance.summary.coverage": "Cobertura oficial",
+  "teamPerformance.summary.coverageValue": ({ scored, total }) => `${scored} / ${total}`,
+  "teamPerformance.summary.coverageAll": ({ approved }) =>
+    `Todos puntuados · ${approved} aprobados`,
+  "teamPerformance.summary.coveragePartial": ({ incomplete, approved }) =>
+    `${incomplete} sin puntuación · ${approved} aprobados`,
+  "teamPerformance.summary.unavailable": "Sin datos",
+  "teamPerformance.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "teamPerformance.summary.tiedTeams": ({ team, count }) => `${team} y ${count} más`,
+  "teamPerformance.summary.pointsRatio": ({ points, maximum }) => `${points}/${maximum} pts`,
+  "teamPerformance.summary.defenseRatio": ({ conceded, shots }) =>
+    `${conceded} encaj. / ${shots} tiros`,
   "teamPerformance.table.title": "Ranking",
   "teamPerformance.table.summary": ({ scored, incomplete }) =>
     `${scored} con puntuación · ${incomplete} sin puntuación`,
+  "teamPerformance.table.inspectHint": "Haz clic en un equipo para ver su evidencia",
+  "teamPerformance.table.details": "Detalle",
+  "teamPerformance.table.expandRow": ({ team }) => `Ver evidencia de ${team}`,
+  "teamPerformance.table.collapseRow": ({ team }) => `Ocultar evidencia de ${team}`,
   "teamPerformance.table.position": "Pos.",
   "teamPerformance.table.team": "Equipo",
   "teamPerformance.table.score": "Puntuación",
   "teamPerformance.table.encounters": "Enfrentamientos",
+  "teamPerformance.table.encountersShort": "Enf.",
   "teamPerformance.table.coverage": "Cobertura",
   "teamPerformance.table.noValue": "Sin dato",
   "teamPerformance.table.unranked": "Sin puntuación",
   "teamPerformance.table.scrollHint": "Desliza la tabla para ver todos los componentes.",
+  "teamPerformance.evidence.contribution": ({ points }) => `+${points} pts`,
+  "teamPerformance.evidence.results": ({ points, maximum }) => `${points} / ${maximum} pts`,
+  "teamPerformance.evidence.goalDifference": ({ perUnit }) => `${perUnit} gol/unidad`,
+  "teamPerformance.evidence.recentForm": ({ points, maximum, encounters }) =>
+    `${points} / ${maximum} pts (últ. ${encounters})`,
+  "teamPerformance.evidence.offensive": ({ goals, shots }) => `${goals} goles / ${shots} tiros`,
+  "teamPerformance.evidence.defensive": ({ conceded, shots }) =>
+    `${conceded} encaj. / ${shots} tiros riv.`,
+  "teamPerformance.evidence.noShots": "Sin registro de tiros",
+  "teamPerformance.evidence.formula": ({ terms, score }) =>
+    `Aporte ponderado: ${terms} → ${score} / 100`,
+  "teamPerformance.evidence.failClosed": ({ reason }) =>
+    `Sin puntuación (${reason}): no se rellena con cero ni se reparten pesos.`,
+  "teamPerformance.evidence.sample": ({ encounters, matches }) =>
+    `${encounters} enf. · ${matches} partidos oficiales`,
   "teamPerformance.team.unknown": "Equipo no disponible",
   "teamPerformance.teamsUnavailable":
     "No pudimos cargar los nombres de los equipos. El ranking sigue siendo válido.",
@@ -3676,10 +3719,59 @@ export interface MessageParamsByKey {
     readonly normalization: string;
     readonly window: string;
   };
+  readonly "teamPerformance.criteria.compactWindow": { readonly recent: number };
+  readonly "teamPerformance.criteria.compactEligibility": { readonly minimum: number };
   readonly "teamPerformance.weight": { readonly weight: number };
+  readonly "teamPerformance.summary.leader.ahead": { readonly points: string };
+  readonly "teamPerformance.summary.coverageValue": {
+    readonly scored: string;
+    readonly total: string;
+  };
+  readonly "teamPerformance.summary.coverageAll": { readonly approved: string };
+  readonly "teamPerformance.summary.coveragePartial": {
+    readonly incomplete: string;
+    readonly approved: string;
+  };
+  readonly "teamPerformance.summary.join": { readonly first: string; readonly second: string };
+  readonly "teamPerformance.summary.tiedTeams": { readonly team: string; readonly count: number };
+  readonly "teamPerformance.summary.pointsRatio": {
+    readonly points: string;
+    readonly maximum: string;
+  };
+  readonly "teamPerformance.summary.defenseRatio": {
+    readonly conceded: string;
+    readonly shots: string;
+  };
   readonly "teamPerformance.table.summary": {
     readonly scored: number;
     readonly incomplete: number;
+  };
+  readonly "teamPerformance.table.expandRow": { readonly team: string };
+  readonly "teamPerformance.table.collapseRow": { readonly team: string };
+  readonly "teamPerformance.evidence.contribution": { readonly points: string };
+  readonly "teamPerformance.evidence.results": {
+    readonly points: string;
+    readonly maximum: string;
+  };
+  readonly "teamPerformance.evidence.goalDifference": { readonly perUnit: string };
+  readonly "teamPerformance.evidence.recentForm": {
+    readonly points: string;
+    readonly maximum: string;
+    readonly encounters: number;
+  };
+  readonly "teamPerformance.evidence.offensive": {
+    readonly goals: string;
+    readonly shots: string;
+  };
+  readonly "teamPerformance.evidence.defensive": {
+    readonly conceded: string;
+    readonly shots: string;
+  };
+  readonly "teamPerformance.evidence.formula": { readonly terms: string; readonly score: string };
+  readonly "teamPerformance.evidence.failClosed": { readonly reason: string };
+  readonly "teamPerformance.evidence.sample": {
+    readonly encounters: number;
+    readonly matches: number;
   };
   readonly "teamPerformance.reason.insufficient_sample": {
     readonly count: number;
@@ -6000,19 +6092,60 @@ const en: Catalog = {
     voided === 0 ? `${approved} approved` : `${approved} approved · ${voided} voided (don't count)`,
   "teamPerformance.criteria.versions": ({ formula, normalization, window }) =>
     `Versions: ${formula} · ${normalization} · ${window}`,
+  "teamPerformance.criteria.toggleShow": "Formula & versions",
+  "teamPerformance.criteria.toggleHide": "Hide criteria",
+  "teamPerformance.criteria.compactWindow": ({ recent }) => `Whole competition · last ${recent}`,
+  "teamPerformance.criteria.compactEligibility": ({ minimum }) => `≥ ${minimum} enc. & 5 pillars`,
   "teamPerformance.weights.label": "Formula weights",
   "teamPerformance.weight": ({ weight }) => `${weight}%`,
+  "teamPerformance.summary.label": "Performance summary",
+  "teamPerformance.summary.leader": "Index leader",
+  "teamPerformance.summary.leader.ahead": ({ points }) => `+${points} ahead of 2nd`,
+  "teamPerformance.summary.leader.tied": "Tied at the top",
+  "teamPerformance.summary.bestForm": "Best recent form",
+  "teamPerformance.summary.bestDefense": "Best defense",
+  "teamPerformance.summary.coverage": "Official coverage",
+  "teamPerformance.summary.coverageValue": ({ scored, total }) => `${scored} / ${total}`,
+  "teamPerformance.summary.coverageAll": ({ approved }) => `All scored · ${approved} approved`,
+  "teamPerformance.summary.coveragePartial": ({ incomplete, approved }) =>
+    `${incomplete} unranked · ${approved} approved`,
+  "teamPerformance.summary.unavailable": "No data",
+  "teamPerformance.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "teamPerformance.summary.tiedTeams": ({ team, count }) => `${team} +${count} more`,
+  "teamPerformance.summary.pointsRatio": ({ points, maximum }) => `${points}/${maximum} pts`,
+  "teamPerformance.summary.defenseRatio": ({ conceded, shots }) =>
+    `${conceded} conceded / ${shots} shots`,
   "teamPerformance.table.title": "Ranking",
   "teamPerformance.table.summary": ({ scored, incomplete }) =>
     `${scored} scored · ${incomplete} without a score`,
+  "teamPerformance.table.inspectHint": "Select a team row to inspect its evidence",
+  "teamPerformance.table.details": "Details",
+  "teamPerformance.table.expandRow": ({ team }) => `Show evidence for ${team}`,
+  "teamPerformance.table.collapseRow": ({ team }) => `Hide evidence for ${team}`,
   "teamPerformance.table.position": "Pos.",
   "teamPerformance.table.team": "Team",
   "teamPerformance.table.score": "Score",
   "teamPerformance.table.encounters": "Encounters",
+  "teamPerformance.table.encountersShort": "Enc.",
   "teamPerformance.table.coverage": "Coverage",
   "teamPerformance.table.noValue": "No data",
   "teamPerformance.table.unranked": "No score",
   "teamPerformance.table.scrollHint": "Scroll the table to see every component.",
+  "teamPerformance.evidence.contribution": ({ points }) => `+${points} pts`,
+  "teamPerformance.evidence.results": ({ points, maximum }) => `${points} / ${maximum} pts`,
+  "teamPerformance.evidence.goalDifference": ({ perUnit }) => `${perUnit} GD/unit`,
+  "teamPerformance.evidence.recentForm": ({ points, maximum, encounters }) =>
+    `${points} / ${maximum} pts (last ${encounters})`,
+  "teamPerformance.evidence.offensive": ({ goals, shots }) => `${goals} goals / ${shots} shots`,
+  "teamPerformance.evidence.defensive": ({ conceded, shots }) =>
+    `${conceded} conceded / ${shots} opp. shots`,
+  "teamPerformance.evidence.noShots": "No shot data",
+  "teamPerformance.evidence.formula": ({ terms, score }) =>
+    `Weighted sum: ${terms} → ${score} / 100`,
+  "teamPerformance.evidence.failClosed": ({ reason }) =>
+    `Unranked (${reason}): never zero-filled or reweighted.`,
+  "teamPerformance.evidence.sample": ({ encounters, matches }) =>
+    `${encounters} enc. · ${matches} official matches`,
   "teamPerformance.team.unknown": "Team unavailable",
   "teamPerformance.teamsUnavailable": "We couldn't load team names. The ranking is still valid.",
   "teamPerformance.metric.results": "Results",

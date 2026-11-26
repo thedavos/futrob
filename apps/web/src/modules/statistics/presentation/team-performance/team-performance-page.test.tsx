@@ -118,26 +118,38 @@ describe("team performance page", () => {
     expect(screen.queryByRole("table")).toBeNull();
   });
 
-  it("shows the server ranking with names, scores and incomplete coverage", async () => {
+  it("shows KPIs, server ranking with names, expandable evidence and collapsible criteria", async () => {
     const body: GetTeamPerformanceRankingResponse = { ranking: teamPerformanceRankingFixture() };
     serve({ ranking: [() => Response.json(body)] });
     renderRoute();
 
     const table = await screen.findByRole("table");
+    const summary = screen.getByRole("region", { name: "Resumen del rendimiento" });
+    expect(within(summary).getByText("95")).toBeTruthy();
+    expect(within(summary).getByText("3 / 6")).toBeTruthy();
+
     const rows = within(table).getAllByRole("row").slice(1);
-    expect(rows.map((row) => within(row).getAllByRole("cell")[1]?.textContent)).toEqual([
-      "Cuervos FC",
-      "Halcones",
-      "Maderas FC",
-      "Pumas del Sur",
-      "Club Atlético Tiburones del Pacífico",
-      "Equipo no disponible",
-    ]);
+    expect(rows).toHaveLength(6);
+    expect(within(rows[0]!).getByText("Cuervos FC")).toBeTruthy();
     expect(within(rows[0]!).getByText("95")).toBeTruthy();
+    expect(within(rows[1]!).getByText("Halcones")).toBeTruthy();
+    expect(within(rows[2]!).getByText("Maderas FC")).toBeTruthy();
+    expect(within(rows[3]!).getByText("Pumas del Sur")).toBeTruthy();
     expect(within(rows[3]!).getByText("Sin puntuación")).toBeTruthy();
     expect(within(rows[3]!).getByText("Falta: Eficiencia defensiva")).toBeTruthy();
+    expect(within(rows[4]!).getByText("Club Atlético Tiburones del Pacífico")).toBeTruthy();
     expect(within(rows[4]!).getByText("Muestra insuficiente: 2 de 3 enfrentamientos")).toBeTruthy();
+    expect(within(rows[5]!).getByText("Equipo no disponible")).toBeTruthy();
     expect(within(rows[5]!).getByText("Sin partidos oficiales")).toBeTruthy();
+
+    await userEvent.click(screen.getByRole("button", { name: "Ver evidencia de Cuervos FC" }));
+    expect(screen.getByText("+40 pts")).toBeTruthy();
+    expect(screen.getByText("6 goles / 12 tiros")).toBeTruthy();
+
+    await userEvent.click(screen.getByRole("button", { name: "Ver evidencia de Pumas del Sur" }));
+    expect(screen.getByText(/Sin registro de tiros/)).toBeTruthy();
+
+    await userEvent.click(screen.getByRole("button", { name: "Fórmula y versiones" }));
     expect(
       screen.getByText(
         "Versiones: team-performance-v1 · team-performance-normalization-v1 · competition-all-form-5-min-3-v1",
