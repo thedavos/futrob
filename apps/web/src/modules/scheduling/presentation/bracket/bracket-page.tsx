@@ -9,8 +9,8 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  Skeleton,
   TextLink,
+  vis,
 } from "@futrob/ui";
 import pendingBracketUrl from "@/assets/illustration-pending-bracket.png";
 import accessUrl from "@/assets/illustration-permissions.png";
@@ -27,6 +27,7 @@ import { BracketContent } from "./bracket-content.tsx";
 import type { Scope, TeamFilter, ViewModeControl } from "./bracket-page-shared.ts";
 import { styles } from "./bracket-page.styles.ts";
 import { bracketResults, type BracketResults } from "./bracket-results.ts";
+import { BracketPageSkeleton } from "./bracket-skeleton.tsx";
 import { bracketPageState, type BracketPageState } from "./bracket-state.ts";
 
 export function CompetitionBracketRoute({
@@ -87,21 +88,16 @@ export function CompetitionBracketPageView({
   }) {
   const { locale, t } = useI18n();
   const scope = { competitionId, organizationId };
+  const loadingLabel = state.kind === "loading" ? t("bracket.loading") : "";
   return (
     <PageScaffold page="competition.bracket">
+      <span aria-atomic="true" role="status" {...applyStyles(vis.srOnly)}>
+        {loadingLabel}
+      </span>
       {(() => {
         switch (state.kind) {
           case "loading":
-            return (
-              <div
-                aria-busy="true"
-                aria-label={t("bracket.loading")}
-                role="status"
-                {...applyStyles(styles.stack)}
-              >
-                <Skeleton {...applyStyles(styles.skeleton)} />
-              </div>
-            );
+            return <BracketPageSkeleton view={view} />;
           case "error":
             return <RetryAlert message={t("bracket.error")} retry={state.retry} t={t} />;
           case "not_found":

@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { colors, space } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 
 /** Height of the round headings above the cards, inside the scrollable canvas. */
@@ -61,6 +61,10 @@ export const styles = stylex.create({
     flexDirection: "column",
     gap: "2rem",
     minWidth: 0,
+  },
+  /** `TabsContent` pads the loaded panel; the skeleton reserves the same gap. */
+  skeletonPanel: {
+    paddingTop: space.s4,
   },
   stage: {
     display: "flex",
@@ -341,9 +345,65 @@ export const styles = stylex.create({
     alignItems: "center",
     gap: "0.25rem 0.75rem",
   },
-  skeleton: {
-    minHeight: "20rem",
+  timezone: {
+    width: "16rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  skeletonTabs: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+    minWidth: 0,
+  },
+  tabsBone: {
+    width: "13rem",
+    maxWidth: "100%",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-full)",
+  },
+  filterControl: {
     width: "100%",
-    borderRadius: "var(--corner-xl)",
+    height: "var(--control-height)",
+  },
+  stageTitle: {
+    width: "11rem",
+    maxWidth: "100%",
+    height: "1.75rem",
+  },
+  fact: {
+    width: "6.5rem",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
+  hint: {
+    width: "22rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  columnTitle: {
+    width: "8.5rem",
+    maxWidth: "100%",
+    height: "1.25rem",
+  },
+  columnMeta: {
+    width: "4.5rem",
+    height: "0.75rem",
+  },
+  cardNumber: {
+    width: "1.5rem",
+    height: "0.75rem",
+  },
+  cardWhen: {
+    width: "4rem",
+    height: "0.75rem",
+  },
+  cardSide: {
+    width: "80%",
+    height: "1rem",
+  },
+  cardStatus: {
+    width: "7rem",
+    height: "0.75rem",
   },
 });

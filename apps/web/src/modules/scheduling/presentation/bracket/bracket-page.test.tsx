@@ -28,29 +28,37 @@ import {
 import type { BracketViewMode } from "./bracket-page-shared.ts";
 import { CompetitionBracketPageView, type BracketResultsState } from "./bracket-page.tsx";
 import { bracketResults } from "./bracket-results.ts";
-import { bracketPageState } from "./bracket-state.ts";
+import { bracketPageState, type BracketPageState } from "./bracket-state.ts";
 
 afterEach(cleanup);
 
-function mount(
-  data: GetCurrentCompetitionFixtureResponse,
+type MountOptions = {
+  teamId?: string | null;
+  onTeamChange?: (teamId: string | null) => void;
+  view?: BracketViewMode;
+  onViewChange?: (view: BracketViewMode) => void;
+  results?: BracketResultsState;
+};
+
+function mount(data: GetCurrentCompetitionFixtureResponse, options?: MountOptions) {
+  return mountState(
+    bracketPageState(
+      competitionFixturePageState({ data, failed: false, refused: false, retry: () => undefined }),
+    ),
+    options,
+  );
+}
+
+function mountState(
+  state: BracketPageState,
   {
     teamId = null,
     onTeamChange = () => undefined,
     view = "canvas",
     onViewChange = () => undefined,
     results,
-  } = {} as {
-    teamId?: string | null;
-    onTeamChange?: (teamId: string | null) => void;
-    view?: BracketViewMode;
-    onViewChange?: (view: BracketViewMode) => void;
-    results?: BracketResultsState;
-  },
+  }: MountOptions = {},
 ) {
-  const state = bracketPageState(
-    competitionFixturePageState({ data, failed: false, refused: false, retry: () => undefined }),
-  );
   const rootRoute = createRootRoute({ component: Outlet });
   const routes = [
     createRoute({
@@ -94,6 +102,39 @@ function mount(
 }
 
 describe("CompetitionBracketPageView", () => {
+  it("reserves the draw layout while the fixture loads, without putting controls in tab order", async () => {
+    const { container } = mountState({ kind: "loading" });
+    expect(await screen.findByRole("heading", { name: "Bracket" })).toBeTruthy();
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Cargando el cuadro");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(status.closest("[inert]")).toBeNull();
+    const busy = container.querySelector("[aria-busy='true']");
+    expect(busy?.getAttribute("aria-busy")).toBe("true");
+    expect(busy?.hasAttribute("inert")).toBe(true);
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Aún no hay cuadro" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Eliminación" })).toBeNull();
+    expect(
+      container.querySelectorAll(
+        "a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])",
+      ),
+    ).toHaveLength(0);
+    const scroller = container.querySelector("[data-slot='bracket-skeleton-scroller']");
+    expect(scroller).toBeTruthy();
+    expect(scroller?.closest("[inert]")).toBeTruthy();
+  });
+
+  it("mirrors the list view while loading a link opened with view=list", async () => {
+    const { container } = mountState({ kind: "loading" }, { view: "list" });
+    expect(await screen.findByRole("heading", { name: "Bracket" })).toBeTruthy();
+    expect(container.querySelector("[data-slot='bracket-skeleton-list']")).toBeTruthy();
+    expect(container.querySelector("[data-slot='bracket-skeleton-scroller']")).toBeNull();
+    expect(container.querySelector("[aria-busy='true']")?.hasAttribute("inert")).toBe(true);
+  });
+
   it("draws every Encounter as a link to its page, with one line per traced source", async () => {
     const { container } = mount(sixteenTeamKnockout);
     const region = await screen.findByRole("region", { name: "Cuadro desplazable: Eliminación" });

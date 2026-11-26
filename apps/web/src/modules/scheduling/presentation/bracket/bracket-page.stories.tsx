@@ -109,6 +109,8 @@ type StoryArgs = {
   readonly locale: Locale;
   readonly narrow?: boolean;
   readonly team?: string;
+  /** View the link opens with (`?view=`); the tabs change it afterwards. */
+  readonly initialView?: BracketViewMode;
 };
 
 type Harness = {
@@ -121,9 +123,15 @@ type Harness = {
 /** Story state reaches the route through context, so the router is built once per scenario. */
 const HarnessContext = createContext<Harness | null>(null);
 
-function BracketStory({ locale, narrow = false, scenario, team }: StoryArgs) {
+function BracketStory({
+  initialView = "canvas",
+  locale,
+  narrow = false,
+  scenario,
+  team,
+}: StoryArgs) {
   const [teamId, setTeamId] = useState<string | null>(team ?? null);
-  const [view, setView] = useState<BracketViewMode>("canvas");
+  const [view, setView] = useState<BracketViewMode>(initialView);
   const harness = useMemo(() => ({ teamId, setTeamId, view, setView }), [teamId, view]);
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
@@ -365,7 +373,62 @@ export const Empty: Story = {
   },
 };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const LoadingList: Story = {
+  name: "Cargando · lista",
+  args: { scenario: "loading", initialView: "list" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("status")).toHaveTextContent("Cargando el cuadro");
+    await expect(canvasElement.querySelector("[data-slot='bracket-skeleton-list']")).not.toBeNull();
+    await expect(canvasElement.querySelector("[data-slot='bracket-skeleton-scroller']")).toBeNull();
+  },
+};
+
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status");
+    await expect(status).toHaveTextContent("Cargando el cuadro");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    const busy = canvasElement.querySelector("[aria-busy='true']");
+    await expect(busy).toHaveAttribute("aria-busy", "true");
+    await expect(busy).toHaveAttribute("inert");
+    await expect(canvas.queryByRole("link")).toBeNull();
+    await expect(canvas.queryByRole("button")).toBeNull();
+    await expect(canvas.queryByRole("combobox")).toBeNull();
+    await expect(
+      canvasElement.querySelectorAll(
+        "a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])",
+      ),
+    ).toHaveLength(0);
+    await expect(canvas.queryByRole("heading", { name: "Aún no hay cuadro" })).toBeNull();
+    await expect(canvas.queryByRole("heading", { name: "Eliminación" })).toBeNull();
+    const scroller = canvasElement.querySelector("[data-slot='bracket-skeleton-scroller']");
+    await expect(scroller).not.toBeNull();
+    await expect(scroller?.closest("[inert]")).not.toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status");
+    await expect(status).toHaveTextContent("Cargando el cuadro");
+    await expect(status.closest("[inert]")).toBeNull();
+    const scroller = canvasElement.querySelector("[data-slot='bracket-skeleton-scroller']");
+    await expect(scroller).not.toBeNull();
+    await expect(scroller?.scrollWidth ?? 0).toBeGreaterThan(scroller?.clientWidth ?? 0);
+
+    // Synthetic Tab skips scrollers, but Chromium makes an overflowing scroller
+    // focusable. `focus()` is a no-op only while the decorative tree is inert.
+    (scroller as HTMLElement).focus();
+    await expect(document.activeElement).not.toBe(scroller);
+  },
+};
 
 export const NotFound: Story = { name: "No disponible", args: { scenario: "notFound" } };
 
