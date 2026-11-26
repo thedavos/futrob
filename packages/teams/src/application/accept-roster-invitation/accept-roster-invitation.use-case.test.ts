@@ -689,6 +689,7 @@ describe("AcceptRosterInvitationUseCase multi policy", () => {
       clock: ctx.clock,
       authorization: ctx.authorization,
       mutations: ctx.mutations,
+      entryGate: { canMutateRoster: async () => true },
     });
 
     const accepting = ctx.acceptInvitation.execute({

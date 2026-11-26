@@ -186,13 +186,9 @@ describe("CompetitionTeamsView", () => {
     ).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Invitar" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Invitar jugador" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Cerrar plantilla" })).toHaveProperty(
-      "disabled",
-      false,
-    );
   });
 
-  it("keeps roster state and role management for staff on a rejected entry", () => {
+  it("keeps a rejected entry's roster read-only for staff", () => {
     const base = teamManagementFixture();
     const rejected = { ...base, entry: { ...base.entry, status: "rejected" as const } };
     renderView({
@@ -209,14 +205,15 @@ describe("CompetitionTeamsView", () => {
       },
     });
 
+    expect(screen.getByText("Inscripción rechazada")).toBeTruthy();
+    expect(rejected.roster.state).toBe("open");
+    expect(screen.getByText("Abierta")).toBeTruthy();
+    expect(screen.queryByText("Admite invitaciones")).toBeNull();
+    expect(screen.getByText("Solo lectura por inscripción rechazada")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Invitar" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Cerrar plantilla" })).toHaveProperty(
-      "disabled",
-      false,
-    );
-    expect(
-      screen.getByRole("combobox", { name: "Rol de Dani Capitán" }).hasAttribute("disabled"),
-    ).toBe(false);
+    expect(screen.queryByRole("button", { name: "Cerrar plantilla" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Rol de Dani Capitán" })).toBeNull();
+    expect(screen.getByText("Dani Capitán")).toBeTruthy();
   });
 
   it("shows an actionable empty roster state and captaincy warning when a team has no members", () => {

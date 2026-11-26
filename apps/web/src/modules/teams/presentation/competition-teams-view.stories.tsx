@@ -154,6 +154,31 @@ export const ReadOnly: Story = {
   },
 };
 
+const rejectedWithRoster = { ...detail, entry: { ...detail.entry, status: "rejected" as const } };
+
+/** A rejected entry's roster stays readable but has no write controls, staff included. */
+export const RejectedEntryWithRoster: Story = {
+  name: "Rejected entry, roster read-only",
+  args: {
+    items: [teamSummaryFixture(rejectedWithRoster)],
+    detail: rejectedWithRoster,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Inscripción rechazada")).toBeVisible();
+    await expect(canvas.queryByText("Admite invitaciones")).not.toBeInTheDocument();
+    await expect(canvas.getByText("Solo lectura por inscripción rechazada")).toBeVisible();
+    await expect(
+      canvas.queryByRole("combobox", { name: "Rol de Dani Capitán" }),
+    ).not.toBeInTheDocument();
+    await expect(canvas.queryByRole("button", { name: "Invitar" })).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole("button", { name: "Cerrar plantilla" }),
+    ).not.toBeInTheDocument();
+    await expect(canvas.getByText("Dani Capitán")).toBeVisible();
+  },
+};
+
 export const Mobile: Story = {
   parameters: { viewport: { defaultViewport: "mobile1" } },
 };
@@ -221,7 +246,9 @@ export const RejectedEntry: Story = {
     await expect(canvas.getByText("Inscripción rechazada")).toBeVisible();
     await expect(canvas.queryByRole("button", { name: "Invitar" })).not.toBeInTheDocument();
     await expect(canvas.queryByRole("button", { name: "Invitar jugador" })).not.toBeInTheDocument();
-    await expect(canvas.getByRole("button", { name: "Cerrar plantilla" })).toBeEnabled();
+    await expect(
+      canvas.queryByRole("button", { name: "Cerrar plantilla" }),
+    ).not.toBeInTheDocument();
   },
 };
 

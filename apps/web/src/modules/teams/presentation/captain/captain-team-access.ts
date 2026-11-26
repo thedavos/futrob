@@ -16,7 +16,11 @@ export type CaptainTeamAccess =
   | { readonly kind: "forbidden"; readonly scope: CaptainTeamScope }
   | { readonly kind: "ready"; readonly scope: CaptainTeamScope };
 
-/** The API only accepts roster changes while the entry is pending or approved. */
+/**
+ * The API only accepts roster writes (members, invitations, roles, open/close) while the
+ * entry is pending or approved. A rejected entry is terminal and read-only, staff included
+ * (ADR-0019, `teams.roster_entry_inactive`).
+ */
 export function isRosterWritable(status: CompetitionEntryStatusDto): boolean {
   return status === "pending" || status === "approved";
 }

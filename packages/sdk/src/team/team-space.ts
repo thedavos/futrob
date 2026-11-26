@@ -49,8 +49,9 @@ export function teamScopeOf(membership: PlayerTeamMembershipDto): TeamScope {
 }
 
 /**
- * The API only accepts roster invitations and joins while the entry is pending or approved.
- * Staff can still open/close the roster and change roles on a rejected entry.
+ * The API only accepts roster writes (members, invitations, roles, open/close) while the
+ * entry is pending or approved. A rejected entry is terminal and read-only, staff included
+ * (ADR-0019, `teams.roster_entry_inactive`).
  */
 export function isRosterWritable(status: CompetitionEntryStatusDto): boolean {
   return status === "pending" || status === "approved";

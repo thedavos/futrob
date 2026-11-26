@@ -2284,6 +2284,7 @@ const es = {
   "competition.teams.detail.stat.rosterClosed": "Cerrada",
   "competition.teams.detail.stat.rosterOpenHint": "Admite invitaciones",
   "competition.teams.detail.stat.rosterClosedHint": "Bloqueada para nuevos ingresos",
+  "competition.teams.detail.stat.rosterReadOnlyHint": "Solo lectura por inscripción rechazada",
   "competition.teams.detail.stat.captaincy": "Capitanía",
   "competition.teams.detail.stat.captaincyNone": "Sin asignar",
   "competition.teams.detail.stat.captaincyNoneHint": "Necesario para confirmar partidos",
@@ -2311,7 +2312,7 @@ const es = {
     "La inscripción fue rechazada; la plantilla ya no admite nuevos jugadores.",
   "competition.teams.detail.entryClosedTitle": "Inscripción rechazada",
   "competition.teams.detail.entryClosedDescription":
-    "Este equipo fue rechazado en la competición, así que su plantilla ya no admite invitaciones.",
+    "Este equipo fue rechazado en la competición. La plantilla, sus roles y las invitaciones ya no admiten cambios.",
   "competition.teams.permissions.title": "Permisos no confirmados",
   "competition.teams.permissions.description":
     "No se pudieron confirmar. Las acciones están deshabilitadas.",
@@ -6093,6 +6094,7 @@ const en: Catalog = {
   "competition.teams.detail.stat.rosterClosed": "Closed",
   "competition.teams.detail.stat.rosterOpenHint": "Accepts invitations",
   "competition.teams.detail.stat.rosterClosedHint": "Locked for new joins",
+  "competition.teams.detail.stat.rosterReadOnlyHint": "Read-only: entry rejected",
   "competition.teams.detail.stat.captaincy": "Captaincy",
   "competition.teams.detail.stat.captaincyNone": "Unassigned",
   "competition.teams.detail.stat.captaincyNoneHint": "Required to confirm matches",
@@ -6120,7 +6122,7 @@ const en: Catalog = {
     "The entry was rejected; the roster no longer accepts new players.",
   "competition.teams.detail.entryClosedTitle": "Entry rejected",
   "competition.teams.detail.entryClosedDescription":
-    "This team was rejected from the competition, so its roster no longer accepts invitations.",
+    "This team was rejected from the competition. Its roster, roles and invitations can no longer be changed.",
   "competition.teams.permissions.title": "Permissions not confirmed",
   "competition.teams.permissions.description":
     "Permissions could not be confirmed. Actions are disabled.",

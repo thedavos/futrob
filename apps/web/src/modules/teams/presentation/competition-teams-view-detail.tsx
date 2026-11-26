@@ -1,6 +1,6 @@
 "use client";
 
-import { rosterInvitationBlock } from "@futrob/sdk";
+import { isRosterWritable } from "@futrob/sdk";
 import {
   Alert,
   AlertDescription,
@@ -97,9 +97,12 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
   const missingClub = detail.externalClub === null;
   const rosterOpen = detail.roster.state === "open";
   const isRejected = detail.entry.status === "rejected";
-  // A rejected entry only blocks invitations; staff keep open/close and role changes.
-  const entryClosed = rosterInvitationBlock(detail) === "entry_closed";
+  // A rejected entry's roster is read-only, staff included (ADR-0019): no invitations,
+  // open/close or role changes.
+  const entryClosed = !isRosterWritable(detail.entry.status);
   const canInvite = capabilities.manageInvitations && !entryClosed;
+  const canSetRosterOpen = capabilities.manageRoster && !entryClosed;
+  const canChangeRoles = capabilities.manageRoles && !entryClosed;
 
   // One primary Lima action per context (design.md):
   // 1) Approve when pending decision is active
@@ -243,7 +246,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
             <SectionTitle as="h3">
               {t("competition.teams.detail.rosterHeading", { count: detail.members.length })}
             </SectionTitle>
-            {capabilities.manageRoster ? (
+            {canSetRosterOpen ? (
               <ConfirmAction
                 confirmLabel={
                   rosterOpen
@@ -343,7 +346,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
                         )}
                       </TableCell>
                       <TableCell>
-                        {capabilities.manageRoles ? (
+                        {canChangeRoles ? (
                           <RosterRoleEditor
                             busy={props.busy}
                             displayName={member.presentation.displayName}

@@ -10,10 +10,12 @@ import {
 } from "@futrob/shared-kernel";
 import type { CompetitionRosterState } from "../../domain/entities/competition-roster-state.ts";
 import { TeamNotFound, type OpenRosterError } from "../../domain/errors/team.errors.ts";
+import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.port.ts";
 import type { CompetitionRosterStateRepository } from "../../domain/ports/competition-roster-state.repository.ts";
 import type { RosterMutationPort } from "../../domain/ports/roster-mutation.port.ts";
 import type { TeamRepository } from "../../domain/ports/team.repository.ts";
 import { TEAM_PERMISSION } from "../../domain/policies/team-permissions.ts";
+import { rosterEntryInactiveError } from "../require-roster-entry-live.ts";
 import { teamPermissionError } from "../require-team-permission.ts";
 
 export interface OpenRosterInput {
@@ -30,6 +32,7 @@ export class OpenRosterUseCase {
       readonly rosterStates: CompetitionRosterStateRepository;
       readonly authorization: AuthorizationPort;
       readonly mutations: RosterMutationPort;
+      readonly entryGate: RosterEntryGatePort;
     },
   ) {}
 
@@ -67,6 +70,8 @@ export class OpenRosterUseCase {
         }),
       );
     }
+    const inactive = await rosterEntryInactiveError(this.deps.entryGate, input);
+    if (inactive) return err(inactive);
 
     return ok(
       await this.deps.rosterStates.save({

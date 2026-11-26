@@ -23,7 +23,7 @@ import {
   RosterInviteeNotFound,
   type CreateRosterInvitationError,
 } from "../../domain/errors/roster-invitation.errors.ts";
-import { TeamNotFound, RosterEntryInactive } from "../../domain/errors/team.errors.ts";
+import { TeamNotFound } from "../../domain/errors/team.errors.ts";
 import type { PlayerGameAccountRepository } from "../../domain/ports/player-game-account.repository.ts";
 import type { PlayerProfileRepository } from "../../domain/ports/player-profile.repository.ts";
 import type { RosterEntryGatePort } from "../../domain/ports/roster-entry-gate.port.ts";
@@ -34,6 +34,7 @@ import {
   permissionToGrantRosterRole,
   TEAM_PERMISSION,
 } from "../../domain/policies/team-permissions.ts";
+import { rosterEntryInactiveError } from "../require-roster-entry-live.ts";
 import { teamPermissionError } from "../require-team-permission.ts";
 
 const DEFAULT_EXPIRES_IN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -132,19 +133,8 @@ export class CreateRosterInvitationUseCase {
         }),
       );
     }
-    const canMutate = await this.deps.entryGate.canMutateRoster(
-      input.organizationId,
-      input.competitionId,
-      input.teamId,
-    );
-    if (!canMutate) {
-      return err(
-        new RosterEntryInactive({
-          code: "teams.roster_entry_inactive",
-          message: "Roster writes are closed for this competition entry",
-        }),
-      );
-    }
+    const inactive = await rosterEntryInactiveError(this.deps.entryGate, input);
+    if (inactive) return err(inactive);
 
     const inviteeIdentifier = normalizeOptionalText(input.inviteeIdentifier);
     let inviteeActorId: ActorId | null = null;

@@ -310,12 +310,14 @@ function rosterDeps(options?: { maxSize?: number }) {
     clock: deps.clock,
     authorization: allowAllAuthorization,
     mutations,
+    entryGate,
   });
   const openRoster = new OpenRosterUseCase({
     teams,
     rosterStates,
     authorization: allowAllAuthorization,
     mutations,
+    entryGate,
   });
   return {
     ...deps,
@@ -327,6 +329,7 @@ function rosterDeps(options?: { maxSize?: number }) {
       authorization: allowAllAuthorization,
       rosters,
       mutations,
+      entryGate,
     }),
     closeRoster: {
       execute: (input: Omit<CloseRosterInput, "actorId">) =>
@@ -716,6 +719,54 @@ describe("team and roster use cases", () => {
     expect(added.isOk()).toBe(false);
     if (added.isOk()) return;
     expect(RosterEntryInactive.is(added.error)).toBe(true);
+  });
+
+  it("rejects roster state and role changes when the competition entry is no longer live", async () => {
+    const {
+      teams,
+      rosters,
+      rosterStates,
+      addToRoster,
+      closeRoster,
+      openRoster,
+      changeRole,
+      entryGate,
+    } = rosterDeps();
+    const orgId = asOrganizationId("org-1");
+    const compId = asCompetitionId("comp-1");
+    const team = await new CreateTeamUseCase({ teams, ...shared() }).execute({
+      organizationId: orgId,
+      actorId: asActorId("actor-1"),
+      name: "Rejected FC",
+    });
+    if (!team.isOk()) throw team.error;
+    const scope = { organizationId: orgId, competitionId: compId, teamId: team.value.id };
+    const player = await addToRoster.execute({
+      ...scope,
+      playerProfileId: "profile-1",
+      role: "player",
+    });
+    if (!player.isOk()) throw player.error;
+
+    entryGate.canMutateRoster = async () => false;
+    const errors = [
+      unwrapErr(await closeRoster.execute(scope)),
+      unwrapErr(await openRoster.execute(scope)),
+      unwrapErr(
+        await changeRole.execute({
+          actorId: asActorId("staff"),
+          ...scope,
+          rosterMembershipId: player.value.id,
+          role: "vice_captain",
+        }),
+      ),
+    ];
+
+    for (const error of errors) {
+      expect(RosterEntryInactive.is(error)).toBe(true);
+    }
+    expect(await rosterStates.get(orgId, compId, team.value.id)).toBeNull();
+    expect((await rosters.listByTeam(orgId, compId, team.value.id))[0]?.role).toBe("player");
   });
 
   it("keeps exactly one captain when two promotions run concurrently", async () => {
