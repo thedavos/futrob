@@ -74,6 +74,8 @@ const styles = stylex.create({
     flexBasis: "0%",
     flexDirection: "column",
     overflowY: "auto",
+    // The page scrolls here, below the command bar: `cqb` gives sticky panels this height.
+    containerType: "size",
     paddingInline: { default: "1.5rem", ":has([data-shell-bleed])": 0 },
     paddingBlock: { default: "1.5rem", ":has([data-shell-bleed])": 0 },
   },
