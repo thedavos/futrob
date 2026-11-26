@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import { PlayerCompetitionsExplorePage } from "@/modules/competitions/presentation/explore/explore-competitions-page.tsx";
 import type { ExploreCompetitionsSearch } from "@/modules/competitions/presentation/explore/explore-search.ts";
 import type { PlayerStoryState } from "./player-story-client.ts";
@@ -157,8 +157,42 @@ export const Loading: Story = {
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Cargando competiciones…")).toBeVisible();
+    const page = canvas.getByRole("main");
+    await expect(page).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("status", { name: "Cargando competiciones…" })).toHaveAttribute(
+      "aria-label",
+      "Cargando competiciones…",
+    );
     await expect(canvas.getByRole("heading", { name: "Mis competiciones" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
+      "href",
+      "/player/competitions/explore",
+    );
+    await expect(canvasElement.querySelectorAll("[data-slot='skeleton']").length).toBe(6);
+    await expect(canvas.queryByText("Competición copa-invierno")).toBeNull();
+    await expect(canvas.queryByRole("link", { name: /Competición/ })).toBeNull();
+    await userEvent.tab();
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toHaveFocus();
+    await userEvent.tab();
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).not.toHaveFocus();
+    await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toHaveFocus();
+  },
+};
+
+export const LoadingMobile: Story = {
+  name: "Loading mobile",
+  args: { scenario: "loading" },
+  parameters: { viewport: { defaultViewport: "mobile1" } },
+  render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("status", { name: "Cargando competiciones…" })).toHaveAttribute(
+      "aria-label",
+      "Cargando competiciones…",
+    );
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toBeVisible();
+    await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toBeNull();
   },
 };
 

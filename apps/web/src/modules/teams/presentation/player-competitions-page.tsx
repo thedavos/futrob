@@ -7,17 +7,20 @@ import {
   AlertDescription,
   applyStyles,
   Button,
-  Caption,
   PageHeader,
   PageHeaderActions,
   PageHeaderDescription,
   PageHeaderTitle,
+  Skeleton,
   typography,
+  vis,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PlayerCompetitionsEmptySection } from "./player-competitions-empty-section.tsx";
 import { useMyTeamsQuery } from "./player-queries.ts";
+
+const LIST_SKELETON_ROWS = [0, 1, 2];
 
 const styles = stylex.create({
   main: {
@@ -34,9 +37,6 @@ const styles = stylex.create({
     flexGrow: 1,
     flexDirection: "column",
     gap: "2rem",
-  },
-  status: {
-    color: colors.mutedForeground,
   },
   list: {
     overflow: "hidden",
@@ -83,6 +83,16 @@ const styles = stylex.create({
   meta: {
     color: colors.mutedForeground,
   },
+  nameBone: {
+    width: "12rem",
+    maxWidth: "70%",
+    height: "1rem",
+  },
+  metaBone: {
+    width: "8rem",
+    maxWidth: "50%",
+    height: "0.75rem",
+  },
 });
 
 type PlayerCompetitionRow = {
@@ -95,10 +105,17 @@ export function PlayerCompetitionsPage() {
   const { t } = useI18n();
   const teamsQuery = useMyTeamsQuery();
   const competitions = competitionsFromTeams(teamsQuery.data?.teams ?? []);
-  const showEmpty = !teamsQuery.isPending && competitions.length === 0;
+  const loading = teamsQuery.isPending;
+  const loadingLabel = t("player.competitions.loading");
+  const showEmpty = !loading && competitions.length === 0;
 
   return (
-    <main {...applyStyles(styles.main)}>
+    <main aria-busy={loading || undefined} {...applyStyles(styles.main)}>
+      {loading ? (
+        <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
+          {loadingLabel}
+        </span>
+      ) : null}
       <PageHeader>
         <PageHeaderTitle>{t("player.competitions.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("player.competitions.description")}</PageHeaderDescription>
@@ -118,8 +135,8 @@ export function PlayerCompetitionsPage() {
           </Alert>
         ) : null}
 
-        {teamsQuery.isPending ? (
-          <Caption {...applyStyles(styles.status)}>{t("player.competitions.loading")}</Caption>
+        {loading ? (
+          <PlayerCompetitionsListSkeleton />
         ) : showEmpty ? (
           <PlayerCompetitionsEmptySection />
         ) : (
@@ -149,6 +166,23 @@ export function PlayerCompetitionsPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function PlayerCompetitionsListSkeleton() {
+  return (
+    <ul aria-hidden="true" {...applyStyles(styles.list)}>
+      {LIST_SKELETON_ROWS.map((index) => (
+        <li key={index} {...applyStyles(styles.row)}>
+          <div {...applyStyles(styles.item)}>
+            <span {...applyStyles(styles.copy)}>
+              <Skeleton {...applyStyles(styles.nameBone)} />
+              <Skeleton {...applyStyles(styles.metaBone)} />
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 

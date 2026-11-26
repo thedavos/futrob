@@ -130,6 +130,26 @@ describe("PlayerCompetitionsPage", () => {
     expect(screen.getByText("¿Buscas otro club?", { exact: false })).toBeTruthy();
   });
 
+  it("reserves the competition list layout while teams are loading", () => {
+    getMyTeams.mockReturnValue(new Promise(() => undefined));
+    getMyProfile.mockReturnValue(new Promise(() => undefined));
+
+    renderPage();
+
+    expect(screen.getByRole("main").getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByRole("status", { name: "Cargando competiciones…" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Mis competiciones" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
+      "href",
+      "/player/competitions/explore",
+    );
+    expect(document.querySelectorAll("[data-slot='skeleton']")).toHaveLength(6);
+    expect(screen.queryByRole("link", { name: /Competición/ })).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Tu club aún no participa en competiciones" }),
+    ).toBeNull();
+  });
+
   it("lists competitions derived from team memberships", async () => {
     getMyTeams.mockResolvedValue({
       activeRosterMembershipId: "m1",
