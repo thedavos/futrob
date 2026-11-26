@@ -2,14 +2,12 @@
 
 import { Link } from "@tanstack/react-router";
 import type { CompetitionDto, CompetitionStatusDto } from "@futrob/api-contracts";
-import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
   applyStyles,
   Badge,
   Button,
-  Caption,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
@@ -20,74 +18,12 @@ import {
   PageHeaderTitle,
   typography,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import noCompetitionsUrl from "@/assets/illustration-no-matches.png";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { useOrganizationCompetitionsQuery } from "./competition-queries.ts";
-
-const styles = stylex.create({
-  main: {
-    width: "100%",
-  },
-  body: {
-    marginTop: "1rem",
-    display: "flex",
-    flexDirection: "column",
-    gap: "2rem",
-  },
-  status: {
-    color: colors.mutedForeground,
-  },
-  list: {
-    overflow: "hidden",
-    borderRadius: "var(--corner-xl)",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surface,
-  },
-  item: {
-    borderTopWidth: {
-      default: 1,
-      ":first-child": 0,
-    },
-    borderTopStyle: "solid",
-    borderTopColor: colors.borderSubtle,
-  },
-  row: {
-    display: "flex",
-    minHeight: "var(--control-height)",
-    alignItems: "center",
-    gap: "1rem",
-    paddingInline: "1rem",
-    paddingBlock: "0.75rem",
-    transitionProperty: "background-color, color, border-color",
-    transitionDuration: "var(--duration-fast)",
-    transitionTimingFunction: "var(--ease-standard)",
-    backgroundColor: {
-      default: null,
-      ":hover": "color-mix(in oklab, var(--muted) 40%, transparent)",
-    },
-  },
-  copy: {
-    display: "grid",
-    minWidth: 0,
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: "0%",
-    gap: "0.25rem",
-  },
-  name: {
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    fontWeight: 600,
-  },
-  meta: {
-    color: colors.mutedForeground,
-  },
-});
+import { styles } from "./organization-competitions-page.styles.ts";
+import { OrganizationCompetitionsSkeleton } from "./organization-competitions-skeleton.tsx";
 
 const row = applyStyles(styles.row);
 
@@ -120,7 +56,7 @@ export function OrganizationCompetitionsPage({
         ) : null}
 
         {competitionsQuery.isPending ? (
-          <Caption {...applyStyles(styles.status)}>Cargando competiciones…</Caption>
+          <OrganizationCompetitionsSkeleton />
         ) : competitions.length === 0 ? (
           <EmptyState>
             <EmptyStateIcon>
@@ -194,5 +130,9 @@ function statusLabel(status: CompetitionStatusDto): string {
       return "Finalizada";
     case "archived":
       return "Archivada";
+    default: {
+      const _exhaustive: never = status;
+      return _exhaustive;
+    }
   }
 }

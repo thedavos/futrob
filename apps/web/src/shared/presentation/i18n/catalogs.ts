@@ -1969,6 +1969,7 @@ const es = {
   "org.home.error.competitions":
     "No se pudieron cargar las competiciones. Comprueba la conexión e inténtalo de nuevo.",
   "org.home.error.profile": "No se pudo cargar el nombre de la organización.",
+  "org.competitions.loading": "Cargando competiciones…",
   "pages.competition.fixture.title": "Calendario",
   "pages.competition.fixture.subtitle": "Jornadas y fechas de cada enfrentamiento.",
   "pages.competition.encounters.title": "Enfrentamientos",
@@ -5882,6 +5883,7 @@ const en: Catalog = {
   "org.home.error.competitions":
     "Unable to load competitions. Check your connection and try again.",
   "org.home.error.profile": "Unable to load the organization name.",
+  "org.competitions.loading": "Loading competitions…",
   "pages.competition.fixture.title": "Schedule",
   "pages.competition.fixture.subtitle": "Rounds and dates for each encounter.",
   "pages.competition.encounters.title": "Encounters",
