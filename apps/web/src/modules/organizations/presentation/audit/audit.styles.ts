@@ -12,6 +12,8 @@ export const styles = stylex.create({
   },
   filterActions: { display: "flex", alignItems: "end", flexWrap: "wrap", gap: "0.75rem" },
   table: { minWidth: "54rem" },
+  /** Grid child that holds the skeleton table; lets the table scroll inside it. */
+  skeletonTableFrame: { minWidth: 0 },
   text: { maxWidth: "28rem", overflowWrap: "anywhere" },
   stack: { display: "grid", gap: "0.25rem", minWidth: 0, overflowWrap: "anywhere" },
   pagination: {

@@ -279,6 +279,21 @@ export const Loading: Story = {
 export const LoadingNarrow: Story = {
   name: "Cargando · 360",
   args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const frame = canvasElement.querySelector<HTMLElement>("[data-slot='audit-skeleton-table']");
+    await expect(frame).not.toBeNull();
+    const scroller = frame!.querySelector<HTMLElement>("[data-slot='table-container']");
+    await expect(scroller).not.toBeNull();
+    // The 54rem table scrolls inside its container instead of widening the page.
+    const available = frame!.parentElement!.clientWidth;
+    await expect(frame!.getBoundingClientRect().width).toBeLessThanOrEqual(available);
+    await expect(scroller!.scrollWidth).toBeGreaterThan(scroller!.clientWidth);
+    // Clicking the decorative header must not focus the scroller and re-expose the table.
+    await userEvent.click(within(frame!).getAllByText(/.+/)[0]!, { pointerEventsCheck: 0 });
+    await expect(scroller).not.toHaveFocus();
+    scroller!.focus();
+    await expect(scroller).not.toHaveFocus();
+  },
 };
 export const Denied: Story = { name: "Sin permiso", args: { scenario: "denied" } };
 export const Error: Story = {

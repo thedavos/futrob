@@ -22,7 +22,12 @@ export function AuditLoadingSkeleton() {
   return (
     <div aria-busy="true" aria-label={label}>
       <div {...applyStyles(styles.body)}>
-        <div aria-hidden="true">
+        <div
+          aria-hidden="true"
+          data-slot="audit-skeleton-table"
+          inert
+          {...applyStyles(styles.skeletonTableFrame)}
+        >
           <Table className={styles.table} containerTabIndex={-1} dense>
             <TableHeader>
               <TableRow>
@@ -62,7 +67,7 @@ export function AuditLoadingSkeleton() {
             </TableBody>
           </Table>
         </div>
-        <div aria-hidden="true" {...applyStyles(styles.pagination)}>
+        <div aria-hidden="true" inert {...applyStyles(styles.pagination)}>
           <Caption>{t("audit.order")}</Caption>
           <div {...applyStyles(styles.paginationActions)}>
             <Skeleton {...applyStyles(styles.skeletonPageButton)} />
