@@ -5,7 +5,11 @@ import type {
   PublicMatchScoreDto,
   PublicRankingKindDto,
 } from "@futrob/api-contracts";
-import { publicCompetitionKeySchema, publicOrganizationSlugSchema } from "@futrob/api-contracts";
+import {
+  publicCompetitionKeySchema,
+  publicOrganizationSlugSchema,
+  publicRankingKindSchema,
+} from "@futrob/api-contracts";
 import { compareByTime, TIME_SORT_DIRECTION } from "@futrob/shared-kernel";
 import { z } from "zod";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
@@ -86,6 +90,22 @@ export function portalSectionFromPathname(pathname: string): PortalSection {
     default:
       return "cover";
   }
+}
+
+/**
+ * Search contract for `/$organizationSlug/$competitionKey/rankings`. Shared by the route loader
+ * and the pending frame skeleton so deep links keep their ranking kind while identity loads.
+ */
+export const portalRankingSearchSchema = z.object({
+  kind: publicRankingKindSchema.optional().catch(undefined),
+});
+
+/** Validated ranking kind from a URL search string, defaulting to `scorer` when missing or invalid. */
+export function portalRankingKindFromSearch(searchStr: string): PublicRankingKindDto {
+  const parsed = portalRankingSearchSchema.safeParse({
+    kind: new URLSearchParams(searchStr).get("kind") ?? undefined,
+  });
+  return parsed.success ? (parsed.data.kind ?? "scorer") : "scorer";
 }
 
 /** «2–1», or «2–1 · 0–0» when the Encounter is played over two official matches. */

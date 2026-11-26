@@ -92,6 +92,10 @@ export const styles = stylex.create({
     margin: 0,
     padding: 0,
     listStyle: "none",
+    outlineOffset: {
+      default: null,
+      ":focus-visible": "-2px",
+    },
   },
   tab: {
     display: "inline-flex",

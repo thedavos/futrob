@@ -264,8 +264,9 @@ export const LoadingStandings: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const busy = canvasElement.querySelector("[aria-busy='true']");
+    const status = canvas.getByRole("status", { name: "Cargando la sección" });
     await expect(busy).toHaveAttribute("aria-label", "Cargando la sección");
-    await expect(canvas.getByRole("status", { name: "Cargando la sección" })).toBeTruthy();
+    await expect(busy?.contains(status)).toBe(false);
     await expect(
       canvas.findByText("Tabla oficial, calculada solo con resultados oficializados."),
     ).resolves.toBeVisible();
@@ -309,14 +310,57 @@ export const LoadingFrame: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const busy = canvasElement.querySelector("[aria-busy='true']");
+    const status = canvas.getByRole("status", { name: "Cargando la competición" });
     await expect(busy).toHaveAttribute("aria-label", "Cargando la competición");
-    await expect(canvas.getByRole("status", { name: "Cargando la competición" })).toBeTruthy();
+    await expect(busy?.contains(status)).toBe(false);
     await expect(canvas.queryByRole("heading", { name: "Liga Norte Apertura" })).toBeNull();
     await expect(canvas.findByRole("link", { name: "Futrob" })).resolves.toBeVisible();
     await expect(canvas.queryByRole("link", { name: "Tabla" })).toBeNull();
     await expect(canvas.findByText("Tabla")).resolves.toBeVisible();
     const table = canvasElement.querySelector("[data-slot='table-container']");
     await expect(table).toHaveAttribute("tabindex", "-1");
+  },
+};
+export const LoadingFrameNarrow: Story = {
+  name: "Cargando competición · 390",
+  args: { scenario: "loadingFrame" },
+  // A real 390 px viewport so the pending tab strip overflows horizontally and needs keyboard scroll.
+  globals: { viewport: { value: "phone390" } },
+  parameters: {
+    viewport: {
+      options: { phone390: { name: "Phone 390", styles: { width: "390px", height: "844px" } } },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const busy = canvasElement.querySelector("[aria-busy='true']");
+    const status = canvas.getByRole("status", { name: "Cargando la competición" });
+    await expect(busy).toHaveAttribute("aria-label", "Cargando la competición");
+    await expect(busy?.contains(status)).toBe(false);
+
+    const nav = await canvas.findByRole("navigation", { name: "Secciones de la competición" });
+    await expect(nav.querySelector("a")).toBeNull();
+
+    const tabs = within(nav).getByRole("list", { name: "Secciones de la competición" });
+    await expect(tabs).toHaveAttribute("tabindex", "0");
+    await expect(tabs.scrollWidth).toBeGreaterThan(tabs.clientWidth);
+
+    const brand = canvas.getByRole("link", { name: "Futrob" });
+    brand.focus();
+    await userEvent.tab();
+    await expect(tabs).toHaveFocus();
+
+    const lastLabel = within(tabs).getByText("Reglamento");
+    await expect(lastLabel.getBoundingClientRect().right).toBeGreaterThan(
+      tabs.getBoundingClientRect().right,
+    );
+    lastLabel.scrollIntoView({ inline: "end", block: "nearest" });
+    await expect(tabs.scrollLeft).toBeGreaterThan(0);
+    await expect(lastLabel.getBoundingClientRect().right).toBeLessThanOrEqual(
+      tabs.getBoundingClientRect().right + 1,
+    );
+    await expect(lastLabel).toBeVisible();
+    await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   },
 };
 export const LoadingStandingsNarrow: Story = {

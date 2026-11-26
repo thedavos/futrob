@@ -8,6 +8,7 @@ import {
   latestResults,
   parsePortalRef,
   portalPath,
+  portalRankingKindFromSearch,
   portalSectionFromPathname,
   portalSections,
   scoreLabel,
@@ -42,6 +43,13 @@ describe("portal sections", () => {
     expect(portalSectionFromPathname("/liga-norte/cmp_apertura/")).toBe("cover");
     expect(portalSectionFromPathname("/liga-norte/cmp_apertura/standings")).toBe("standings");
     expect(portalSectionFromPathname("/liga-norte/cmp_apertura/rankings/")).toBe("rankings");
+  });
+
+  it("validates the ranking kind from search params and defaults to scorer only when missing or invalid", () => {
+    expect(portalRankingKindFromSearch("?kind=assister")).toBe("assister");
+    expect(portalRankingKindFromSearch("?kind=goalkeeper")).toBe("goalkeeper");
+    expect(portalRankingKindFromSearch("")).toBe("scorer");
+    expect(portalRankingKindFromSearch("?kind=invalid")).toBe("scorer");
   });
 
   it("rejects params no published competition can have", () => {

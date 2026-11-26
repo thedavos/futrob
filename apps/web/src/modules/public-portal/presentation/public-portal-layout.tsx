@@ -107,96 +107,103 @@ export function PublicPortalLayout({
   const tabs = competition ? portalSections(competition.format) : PORTAL_SECTIONS;
 
   return (
-    <div
-      aria-busy={busyLabel ? true : undefined}
-      aria-label={busyLabel}
-      {...applyStyles(styles.page)}
-    >
+    <>
       {busyLabel ? (
         <span aria-label={busyLabel} role="status" {...applyStyles(vis.srOnly)}>
           {busyLabel}
         </span>
       ) : null}
-      <header>
-        <div {...applyStyles(styles.container, styles.topBar)}>
-          <Link aria-label="Futrob" to="/" {...applyStyles(styles.brand)}>
-            <Logo {...applyStyles(styles.brandLogo)} />
-          </Link>
-          {pending ? (
-            <Skeleton {...applyStyles(styles.timeZoneBone)} />
-          ) : (
-            <Caption>{t("portal.header.timeZone", { zone: competition.timeZone })}</Caption>
-          )}
-        </div>
-        <div {...applyStyles(styles.container, styles.hero)}>
-          {cover ? (
-            <img
-              alt=""
-              data-outline="none"
-              height={120}
-              src={cover}
-              width={120}
-              {...applyStyles(styles.cover)}
-            />
-          ) : (
-            <Skeleton {...applyStyles(styles.cover)} />
-          )}
-          <div {...applyStyles(styles.heroCopy)}>
-            <Eyebrow>{t("portal.header.eyebrow")}</Eyebrow>
+      <div
+        aria-busy={busyLabel ? true : undefined}
+        aria-label={busyLabel}
+        role={busyLabel ? "group" : undefined}
+        {...applyStyles(styles.page)}
+      >
+        <header>
+          <div {...applyStyles(styles.container, styles.topBar)}>
+            <Link aria-label="Futrob" to="/" {...applyStyles(styles.brand)}>
+              <Logo {...applyStyles(styles.brandLogo)} />
+            </Link>
             {pending ? (
-              <Skeleton {...applyStyles(styles.titleBone)} />
+              <Skeleton {...applyStyles(styles.timeZoneBone)} />
             ) : (
-              <PageHeaderTitle {...applyStyles(styles.title)}>{competition.name}</PageHeaderTitle>
+              <Caption>{t("portal.header.timeZone", { zone: competition.timeZone })}</Caption>
             )}
-            <div {...applyStyles(styles.facts)}>
+          </div>
+          <div {...applyStyles(styles.container, styles.hero)}>
+            {cover ? (
+              <img
+                alt=""
+                data-outline="none"
+                height={120}
+                src={cover}
+                width={120}
+                {...applyStyles(styles.cover)}
+              />
+            ) : (
+              <Skeleton {...applyStyles(styles.cover)} />
+            )}
+            <div {...applyStyles(styles.heroCopy)}>
+              <Eyebrow>{t("portal.header.eyebrow")}</Eyebrow>
               {pending ? (
-                <>
-                  <Skeleton {...applyStyles(styles.badgeBone)} />
-                  <Skeleton {...applyStyles(styles.factsBone)} />
-                </>
+                <Skeleton {...applyStyles(styles.titleBone)} />
               ) : (
-                <>
-                  <Badge variant={STATUS_BADGES[competition.status]}>
-                    {t(STATUS_LABELS[competition.status])}
-                  </Badge>
-                  <Caption as="p">{facts.join(" · ")}</Caption>
-                </>
+                <PageHeaderTitle {...applyStyles(styles.title)}>{competition.name}</PageHeaderTitle>
               )}
+              <div {...applyStyles(styles.facts)}>
+                {pending ? (
+                  <>
+                    <Skeleton {...applyStyles(styles.badgeBone)} />
+                    <Skeleton {...applyStyles(styles.factsBone)} />
+                  </>
+                ) : (
+                  <>
+                    <Badge variant={STATUS_BADGES[competition.status]}>
+                      {t(STATUS_LABELS[competition.status])}
+                    </Badge>
+                    <Caption as="p">{facts.join(" · ")}</Caption>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </header>
-      <nav aria-label={t("portal.nav.label")} {...applyStyles(styles.tabsBar)}>
-        <ul {...applyStyles(styles.container, styles.tabs)}>
-          {tabs.map((item) => (
-            <li key={item}>
-              {portalRef ? (
-                <Link
-                  aria-current={item === section ? "page" : undefined}
-                  params={portalRef}
-                  to={SECTION_ROUTES[item]}
-                  {...applyStyles(styles.tab, item === section && styles.tabActive)}
-                >
-                  {t(SECTION_LABELS[item])}
-                </Link>
-              ) : (
-                <span {...applyStyles(styles.tab, item === section && styles.tabActive)}>
-                  {t(SECTION_LABELS[item])}
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <main {...applyStyles(styles.container, styles.main)}>{children}</main>
-      <footer {...applyStyles(styles.footer)}>
-        <div {...applyStyles(styles.container, styles.footerInner)}>
-          <Caption>{t("portal.footer.poweredBy")}</Caption>
-          <TextLink render={<Link to="/" />} text="caption">
-            {t("portal.footer.home")}
-          </TextLink>
-        </div>
-      </footer>
-    </div>
+        </header>
+        <nav aria-label={t("portal.nav.label")} {...applyStyles(styles.tabsBar)}>
+          <ul
+            aria-label={portalRef ? undefined : t("portal.nav.label")}
+            tabIndex={portalRef ? undefined : 0}
+            {...applyStyles(styles.container, styles.tabs)}
+          >
+            {tabs.map((item) => (
+              <li key={item}>
+                {portalRef ? (
+                  <Link
+                    aria-current={item === section ? "page" : undefined}
+                    params={portalRef}
+                    to={SECTION_ROUTES[item]}
+                    {...applyStyles(styles.tab, item === section && styles.tabActive)}
+                  >
+                    {t(SECTION_LABELS[item])}
+                  </Link>
+                ) : (
+                  <span {...applyStyles(styles.tab, item === section && styles.tabActive)}>
+                    {t(SECTION_LABELS[item])}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <main {...applyStyles(styles.container, styles.main)}>{children}</main>
+        <footer {...applyStyles(styles.footer)}>
+          <div {...applyStyles(styles.container, styles.footerInner)}>
+            <Caption>{t("portal.footer.poweredBy")}</Caption>
+            <TextLink render={<Link to="/" />} text="caption">
+              {t("portal.footer.home")}
+            </TextLink>
+          </div>
+        </footer>
+      </div>
+    </>
   );
 }

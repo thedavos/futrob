@@ -6,6 +6,8 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PublicPortalLayout } from "./public-portal-layout.tsx";
 import { PortalSectionBones } from "./public-portal-skeleton-bones.tsx";
 import {
+  portalRankingKindFromSearch,
+  portalRankingSearchSchema,
   portalSectionFromPathname,
   type PortalRef,
   type PortalSection,
@@ -13,12 +15,14 @@ import {
 
 function Busy({ children, label }: { readonly children: ReactNode; readonly label: string }) {
   return (
-    <div aria-busy="true" aria-label={label}>
+    <>
       <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
         {label}
       </span>
-      {children}
-    </div>
+      <div aria-busy="true" aria-label={label} role="group">
+        {children}
+      </div>
+    </>
   );
 }
 
@@ -74,11 +78,18 @@ export function PortalRulesLoading() {
 /** Full portal chrome while the competition identity is still loading. */
 export function PortalFrameLoading() {
   const { t } = useI18n();
-  const { pathname } = useLocation();
+  const { pathname, search, searchStr } = useLocation();
   const section = portalSectionFromPathname(pathname);
+  const parsedSearch = portalRankingSearchSchema.safeParse(search);
+  const rankingKind =
+    section === "rankings"
+      ? parsedSearch.success && parsedSearch.data.kind !== undefined
+        ? parsedSearch.data.kind
+        : portalRankingKindFromSearch(searchStr)
+      : undefined;
   return (
     <PublicPortalLayout busyLabel={t("portal.loading.page")} section={section}>
-      <PortalSectionBones section={section} />
+      <PortalSectionBones rankingKind={rankingKind} section={section} />
     </PublicPortalLayout>
   );
 }
