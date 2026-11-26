@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -181,7 +181,7 @@ export const Loading: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const status = await canvas.findByRole("status");
-    await expect(status).toHaveTextContent("Cargando ranking de rendimiento");
+    await waitFor(() => expect(status).toHaveTextContent("Cargando ranking de rendimiento"));
     await expect(status.closest("[aria-busy='true']")).toBeNull();
     await expect(canvasElement.querySelector("[aria-busy='true']")).not.toBeNull();
     await expect(canvas.getByRole("heading", { name: "Ranking" })).toBeVisible();
@@ -206,7 +206,7 @@ export const LoadingNarrow: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const status = await canvas.findByRole("status");
-    await expect(status).toHaveTextContent("Cargando ranking de rendimiento");
+    await waitFor(() => expect(status).toHaveTextContent("Cargando ranking de rendimiento"));
     await expect(status.closest("[aria-busy='true']")).toBeNull();
     await expect(canvas.queryByRole("table")).toBeNull();
     await expect(canvas.getByRole("heading", { name: "Ranking" })).toBeVisible();

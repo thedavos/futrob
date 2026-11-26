@@ -17,12 +17,12 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  vis,
 } from "@futrob/ui";
 import accessUrl from "@/assets/illustration-permissions.png";
 import emptyStandingsUrl from "@/assets/illustration-empty-standings.png";
 import { useOrganizationTeamsQuery } from "@/modules/competitions/presentation/competition-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LoadingStatus } from "@/shared/presentation/loading-status.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
@@ -109,9 +109,7 @@ export function TeamPerformancePageView({
   const { t } = useI18n();
   return (
     <PageScaffold page="competition.teamPerformance">
-      <span role="status" {...applyStyles(vis.srOnly)}>
-        {state.kind === "loading" ? t("teamPerformance.loading") : ""}
-      </span>
+      <LoadingStatus message={state.kind === "loading" ? t("teamPerformance.loading") : ""} />
       {(() => {
         switch (state.kind) {
           case "loading":

@@ -116,8 +116,10 @@ describe("team performance page", () => {
     const fetch = serve({ ranking: [() => pendingRanking] });
     renderRoute();
 
+    // The region mounts empty and receives the message afterwards, so it is announced.
     const status = screen.getByRole("status");
-    expect(status.textContent).toBe("Cargando ranking de rendimiento");
+    expect(status.textContent).toBe("");
+    await waitFor(() => expect(status.textContent).toBe("Cargando ranking de rendimiento"));
     expect(status.closest("[aria-busy='true']")).toBeNull();
     expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
     expect(screen.queryByRole("table")).toBeNull();
