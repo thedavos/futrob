@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -202,7 +202,43 @@ export const ProEnglishNarrow: Story = {
   parameters: { a11y: { test: "error" } },
 };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status", { name: "Cargando el plan…" });
+    await expect(status).toHaveTextContent("Cargando el plan…");
+    await expect(status.closest("[aria-busy='true']")).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("heading", { name: "Uso" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Plan actual" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Incluido en tu plan" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Cambios de plan" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Cambio" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Motivo" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Fecha" })).toBeVisible();
+    const changesTable = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(changesTable).toHaveAttribute("tabindex", "-1");
+    await userEvent.tab();
+    await expect(changesTable).not.toHaveFocus();
+    await expect(canvas.queryByRole("button", { name: /Solicitar/ })).toBeNull();
+    await expect(canvas.queryByText("Todavía no hubo cambios de plan.")).toBeNull();
+    await expect(canvas.queryByText("Gratis")).toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("status", { name: "Cargando el plan…" }),
+    ).toHaveTextContent("Cargando el plan…");
+    await expect(canvas.getByRole("heading", { name: "Uso" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Cambios de plan" })).toBeVisible();
+  },
+};
 
 export const Forbidden: Story = {
   name: "Sin permiso",

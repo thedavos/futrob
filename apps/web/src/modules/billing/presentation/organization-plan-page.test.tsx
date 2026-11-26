@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type { EffectiveAccessDto } from "@futrob/api-contracts";
 import { BILLING_PERMISSION } from "@futrob/billing";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { OrganizationPlanRoute } from "./organization-plan-page.tsx";
+import { OrganizationPlanPageView, OrganizationPlanRoute } from "./organization-plan-page.tsx";
 import { freePlanFixture } from "./organization-plan.fixtures.ts";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -76,6 +76,29 @@ afterEach(() => {
 });
 
 describe("organization plan page", () => {
+  it("reserves the plan layout while loading and keeps the changes table out of the tab order", () => {
+    render(
+      <I18nProvider initialLocale="es">
+        <OrganizationPlanPageView state={{ kind: "loading" }} />
+      </I18nProvider>,
+    );
+
+    const status = screen.getByRole("status", { name: "Cargando el plan…" });
+    expect(status).toBeTruthy();
+    expect(status.closest("[aria-busy='true']")?.getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByRole("heading", { name: "Uso" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Plan actual" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Incluido en tu plan" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Cambios de plan" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Cambio" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Solicitar/ })).toBeNull();
+    expect(screen.queryByText("Todavía no hubo cambios de plan.")).toBeNull();
+    expect(screen.queryByText("Gratis")).toBeNull();
+    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+      "-1",
+    );
+  });
+
   it("shows the free plan, usage against limits and the exhausted sync quota", async () => {
     serve({
       allowed: true,
