@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
-import { publicRankingKindSchema } from "@futrob/api-contracts";
+import { portalRankingSearchSchema } from "@/modules/public-portal/presentation/public-portal-model.ts";
 import {
   PortalSectionRead,
   sectionRead,
 } from "@/modules/public-portal/presentation/public-portal-route.tsx";
-import { PortalLoading } from "@/modules/public-portal/presentation/public-portal-states.tsx";
+import { PortalRankingsLoading } from "@/modules/public-portal/presentation/public-portal-skeleton.tsx";
 import { PortalRankingView } from "@/modules/public-portal/presentation/public-portal-tables.tsx";
 import { getPublicPortalRanking } from "@/modules/public-portal/server/public-portal.functions.ts";
 
@@ -13,18 +12,19 @@ import { getPublicPortalRanking } from "@/modules/public-portal/server/public-po
  * The ranking kind lives in the URL so each one can be linked. It stays optional so the bare
  * section URL renders top scorers with a 200 instead of redirecting to add a default.
  */
-const searchSchema = z.object({
-  kind: publicRankingKindSchema.optional().catch(undefined),
-});
-
 export const Route = createFileRoute("/$organizationSlug/$competitionKey/rankings")({
-  validateSearch: searchSchema,
+  validateSearch: portalRankingSearchSchema,
   loaderDeps: ({ search }) => ({ kind: search.kind ?? "scorer" }),
   loader: async ({ deps, params }) =>
     sectionRead(await getPublicPortalRanking({ data: { ...params, kind: deps.kind } })),
-  pendingComponent: PortalLoading,
+  pendingComponent: RankingsPending,
   component: PortalRankingsRoute,
 });
+
+function RankingsPending() {
+  const { kind } = Route.useSearch();
+  return <PortalRankingsLoading rankingKind={kind ?? "scorer"} />;
+}
 
 function PortalRankingsRoute() {
   const read = Route.useLoaderData();

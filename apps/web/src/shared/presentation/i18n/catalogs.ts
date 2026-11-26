@@ -3412,6 +3412,7 @@ const es = {
   "portal.meta.description": ({ name }) =>
     `Calendario, resultados, tabla, bracket y rankings de ${name}, publicados en Futrob.`,
   "portal.loading": "Cargando la sección",
+  "portal.loading.page": "Cargando la competición",
   "portal.error.title": "No pudimos cargar esta sección",
   "portal.error.description":
     "Puede ser un problema temporal. Vuelve a intentarlo en unos segundos.",
@@ -7296,6 +7297,7 @@ const en: Catalog = {
   "portal.meta.description": ({ name }) =>
     `Fixtures, results, table, bracket and rankings for ${name}, published on Futrob.`,
   "portal.loading": "Loading the section",
+  "portal.loading.page": "Loading the competition",
   "portal.error.title": "We couldn't load this section",
   "portal.error.description": "It may be a temporary problem. Try again in a few seconds.",
   "portal.error.retry": "Try again",

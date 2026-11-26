@@ -4,12 +4,12 @@ import {
   PortalSectionRead,
   sectionRead,
 } from "@/modules/public-portal/presentation/public-portal-route.tsx";
-import { PortalLoading } from "@/modules/public-portal/presentation/public-portal-states.tsx";
+import { PortalCalendarLoading } from "@/modules/public-portal/presentation/public-portal-skeleton.tsx";
 import { getPublicPortalCalendar } from "@/modules/public-portal/server/public-portal.functions.ts";
 
 export const Route = createFileRoute("/$organizationSlug/$competitionKey/calendar")({
   loader: async ({ params }) => sectionRead(await getPublicPortalCalendar({ data: params })),
-  pendingComponent: PortalLoading,
+  pendingComponent: PortalCalendarLoading,
   component: PortalCalendarRoute,
 });
 

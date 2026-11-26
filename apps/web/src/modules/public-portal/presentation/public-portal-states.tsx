@@ -8,7 +8,6 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  Skeleton,
 } from "@futrob/ui";
 import emptyFixturesUrl from "@/assets/illustration-pending-fixtures.png";
 import notFoundUrl from "@/assets/illustration-sports-venue.png";
@@ -79,21 +78,5 @@ export function PortalNotFound() {
         </EmptyStateActions>
       </EmptyState>
     </main>
-  );
-}
-
-export function PortalLoading() {
-  const { t } = useI18n();
-  return (
-    <div
-      aria-busy="true"
-      aria-label={t("portal.loading")}
-      role="status"
-      {...applyStyles(styles.section)}
-    >
-      <Skeleton {...applyStyles(styles.skeleton)} />
-      <Skeleton {...applyStyles(styles.skeleton)} />
-      <Skeleton {...applyStyles(styles.skeleton)} />
-    </div>
   );
 }
