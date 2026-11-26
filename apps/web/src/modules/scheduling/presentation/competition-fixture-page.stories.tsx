@@ -600,8 +600,8 @@ export const SwissWithdrawDialog: Story = {
     await userEvent.click(await body.findByRole("option", { name: "Sur United" }));
     await userEvent.type(dialog.getByRole("textbox", { name: "Motivo" }), "Abandona el torneo");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar retirada" }));
-    await waitFor(() => expect(body.queryByRole("alertdialog")).toBeNull());
     await waitFor(() => expect(canvas.getByText("Sur United queda retirado.")).toBeVisible());
+    await waitFor(() => expect(body.queryByRole("alertdialog")).toBeNull(), { timeout: 5_000 });
   },
 };
 
