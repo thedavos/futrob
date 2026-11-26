@@ -200,14 +200,109 @@ export const styles = stylex.create({
     gap: "0.25rem",
     minWidth: 0,
   },
-  skeletonHero: {
-    minHeight: "12rem",
-    width: "100%",
-    borderRadius: "var(--corner-xl)",
+  skeletonCrumb: {
+    width: "11rem",
+    maxWidth: "100%",
+    height: "1rem",
   },
-  skeletonRow: {
-    minHeight: "6rem",
-    width: "100%",
-    borderRadius: "var(--corner-xl)",
+  skeletonCrest: {
+    borderRadius: "var(--corner-full)",
+  },
+  skeletonTeamName: {
+    width: "7rem",
+    maxWidth: "100%",
+    height: "1.125rem",
+  },
+  skeletonSideLabel: {
+    width: "3.25rem",
+    height: "0.75rem",
+  },
+  skeletonVs: {
+    width: "1.75rem",
+    height: "1rem",
+    alignSelf: "center",
+  },
+  skeletonBadge: {
+    width: "11rem",
+    maxWidth: "100%",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
+  skeletonKickoff: {
+    width: "8.5rem",
+    height: "1rem",
+  },
+  skeletonZone: {
+    width: "10.5rem",
+    maxWidth: "100%",
+    height: "0.75rem",
+  },
+  skeletonSlotTitle: {
+    width: "5.5rem",
+    height: "1.125rem",
+  },
+  skeletonSlotTime: {
+    width: "7rem",
+    height: "0.75rem",
+  },
+  skeletonSlotStatus: {
+    width: "10.5rem",
+    maxWidth: "100%",
+    height: "0.75rem",
+  },
+  skeletonPreviewCopy: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+  },
+  skeletonPreviewSummary: {
+    width: "16rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  skeletonPreviewNote: {
+    width: "19rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  skeletonRefresh: {
+    width: "11.5rem",
+    maxWidth: "100%",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-md)",
+    flexShrink: 0,
+  },
+  skeletonCandidateTime: {
+    width: "6.5rem",
+    height: "0.75rem",
+  },
+  skeletonCandidateStatus: {
+    width: "5.5rem",
+    height: "0.75rem",
+  },
+  skeletonScoreHome: {
+    width: "7rem",
+    maxWidth: "100%",
+    height: "1.125rem",
+    marginInlineStart: "auto",
+  },
+  skeletonScorePill: {
+    width: "3.25rem",
+    height: "2rem",
+    borderRadius: "var(--corner-lg)",
+  },
+  skeletonScoreAway: {
+    width: "7rem",
+    maxWidth: "100%",
+    height: "1.125rem",
+  },
+  skeletonMetaChip: {
+    width: "6rem",
+    height: "0.75rem",
+  },
+  skeletonAction: {
+    width: "8.25rem",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-md)",
   },
 });
