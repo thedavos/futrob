@@ -5,7 +5,7 @@ import {
   PortalSectionRead,
   sectionRead,
 } from "@/modules/public-portal/presentation/public-portal-route.tsx";
-import { PortalLoading } from "@/modules/public-portal/presentation/public-portal-states.tsx";
+import { PortalRankingsLoading } from "@/modules/public-portal/presentation/public-portal-skeleton.tsx";
 import { PortalRankingView } from "@/modules/public-portal/presentation/public-portal-tables.tsx";
 import { getPublicPortalRanking } from "@/modules/public-portal/server/public-portal.functions.ts";
 
@@ -22,9 +22,14 @@ export const Route = createFileRoute("/$organizationSlug/$competitionKey/ranking
   loaderDeps: ({ search }) => ({ kind: search.kind ?? "scorer" }),
   loader: async ({ deps, params }) =>
     sectionRead(await getPublicPortalRanking({ data: { ...params, kind: deps.kind } })),
-  pendingComponent: PortalLoading,
+  pendingComponent: RankingsPending,
   component: PortalRankingsRoute,
 });
+
+function RankingsPending() {
+  const { kind } = Route.useSearch();
+  return <PortalRankingsLoading rankingKind={kind ?? "scorer"} />;
+}
 
 function PortalRankingsRoute() {
   const read = Route.useLoaderData();

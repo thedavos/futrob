@@ -9,6 +9,7 @@ import {
   portalSectionAt,
 } from "@/modules/public-portal/presentation/public-portal-meta.ts";
 import { PublicPortalLayout } from "@/modules/public-portal/presentation/public-portal-layout.tsx";
+import { PortalFrameLoading } from "@/modules/public-portal/presentation/public-portal-skeleton.tsx";
 import {
   PortalError,
   PortalNotFound,
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/$organizationSlug/$competitionKey")({
     return portalHead({ origin, ref, competition, section: portalSectionAt(ref, pathname), t });
   },
   component: PortalLayoutRoute,
+  pendingComponent: PortalFrameLoading,
   notFoundComponent: PortalNotFound,
   errorComponent: PortalLayoutError,
 });

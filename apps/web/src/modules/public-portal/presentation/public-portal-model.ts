@@ -68,6 +68,26 @@ export function portalPath(ref: PortalRef, section: PortalSection = "cover"): st
   return section === "cover" ? base : `${base}/${section}`;
 }
 
+/**
+ * Section a public portal pathname is asking for, without needing the competition identity.
+ * Used while the layout loader is still pending.
+ */
+export function portalSectionFromPathname(pathname: string): PortalSection {
+  const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  const tail = normalized.split("/").pop() ?? "";
+  switch (tail) {
+    case "calendar":
+    case "standings":
+    case "bracket":
+    case "teams":
+    case "rankings":
+    case "rules":
+      return tail;
+    default:
+      return "cover";
+  }
+}
+
 /** «2–1», or «2–1 · 0–0» when the Encounter is played over two official matches. */
 export function scoreLabel(score: readonly PublicMatchScoreDto[]): string {
   return score.map((match) => `${match.homeGoals}–${match.awayGoals}`).join(" · ");

@@ -273,9 +273,96 @@ export const styles = stylex.create({
     color: colors.primaryForeground,
     fontWeight: 600,
   },
-  skeleton: {
-    height: "4rem",
-    width: "100%",
+  titleBone: {
+    width: "16rem",
+    maxWidth: "100%",
+    height: "2.25rem",
+  },
+  headingBone: {
+    width: "12rem",
+    maxWidth: "100%",
+    height: "1.75rem",
+  },
+  headingBoneSm: {
+    width: "7rem",
+    maxWidth: "100%",
+    height: "1.25rem",
+  },
+  badgeBone: {
+    width: "5rem",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
+  factsBone: {
+    width: "22rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  timeZoneBone: {
+    width: "10rem",
+    height: "1rem",
+  },
+  linkBone: {
+    width: "11rem",
+    height: "1.25rem",
+  },
+  whenBone: {
+    width: "7.5rem",
+    height: "0.875rem",
+  },
+  teamNameBone: {
+    width: "8rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  versusBone: {
+    width: "1.25rem",
+    height: "0.75rem",
+  },
+  scoreBone: {
+    width: "2.5rem",
+    height: "1.25rem",
+  },
+  tableSkeleton: {
+    overflowX: "hidden",
+  },
+  tableCellBone: {
+    height: "auto",
+    paddingBlock: "0.75rem",
+  },
+  figureBone: {
+    width: "1.75rem",
+    height: "1rem",
+    marginInlineStart: "auto",
+  },
+  positionBone: {
+    width: "1.5rem",
+    height: "1.25rem",
+  },
+  playerBone: {
+    width: "7rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  teamCardBone: {
+    width: "9rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  metaValueBone: {
+    width: "8rem",
+    maxWidth: "100%",
+    height: "1.25rem",
+  },
+  bracketCaptionBone: {
+    width: "12rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  bracketSideBone: {
+    width: "9rem",
+    maxWidth: "100%",
+    height: "1rem",
   },
   footer: {
     borderTopWidth: 1,

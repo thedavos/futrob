@@ -15,6 +15,7 @@ import {
 } from "./public-portal.fixtures.ts";
 import { PortalCalendarView, PortalCoverView } from "./public-portal-calendar.tsx";
 import { PublicPortalLayout } from "./public-portal-layout.tsx";
+import { PortalSectionLoading } from "./public-portal-skeleton.tsx";
 import { PortalNotFound } from "./public-portal-states.tsx";
 import { PortalBracketView, PortalRulesView, PortalTeamsView } from "./public-portal-structure.tsx";
 import { PortalRankingView, PortalStandingsView } from "./public-portal-tables.tsx";
@@ -44,6 +45,9 @@ vi.mock("@tanstack/react-router", () => ({
     );
   },
   useRouter: () => ({ invalidate: async () => undefined }),
+  useLocation: () => ({ pathname: "/liga-norte/cmp_apertura/standings" }),
+  useParams: () => portalRefFixture,
+  useSearch: () => ({}),
 }));
 
 function renderEs(node: ReactNode) {
@@ -73,6 +77,47 @@ describe("PublicPortalLayout", () => {
     expect(screen.getByText("En juego")).toBeTruthy();
     // No operator actions on the public frame.
     expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("keeps the chrome layout while the competition identity is still loading", () => {
+    renderEs(
+      <PublicPortalLayout busyLabel="Cargando la competición" section="standings">
+        <p>contenido</p>
+      </PublicPortalLayout>,
+    );
+    expect(screen.queryByRole("heading", { level: 1, name: "Liga Norte Apertura" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Futrob" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Tabla" })).toBeNull();
+    expect(screen.getByText("Tabla")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Cargando la competición" })).toBeTruthy();
+    expect(document.querySelector("[aria-busy='true']")?.getAttribute("aria-label")).toBe(
+      "Cargando la competición",
+    );
+  });
+});
+
+describe("loading skeletons", () => {
+  it("mirrors the standings table and leaves sequential focus", () => {
+    renderEs(<PortalSectionLoading section="standings" />);
+    expect(
+      screen.getByText("Tabla oficial, calculada solo con resultados oficializados."),
+    ).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Equipo" })).toBeTruthy();
+    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+      "-1",
+    );
+    expect(screen.queryByRole("cell", { name: "Atlético Norte" })).toBeNull();
+    const busy = document.querySelector("[aria-busy='true']");
+    expect(busy?.getAttribute("aria-label")).toBe("Cargando la sección");
+  });
+
+  it("keeps cover headings in place while encounters load", () => {
+    renderEs(<PortalSectionLoading portalRef={portalRefFixture} section="cover" />);
+    expect(screen.getByRole("heading", { name: "Últimos resultados" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Próximos enfrentamientos" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Ver calendario completo" }).getAttribute("href")).toBe(
+      "/liga-norte/cmp_apertura/calendar",
+    );
   });
 });
 

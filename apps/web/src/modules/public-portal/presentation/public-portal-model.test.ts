@@ -8,6 +8,7 @@ import {
   latestResults,
   parsePortalRef,
   portalPath,
+  portalSectionFromPathname,
   portalSections,
   scoreLabel,
   upcomingEntries,
@@ -34,6 +35,13 @@ describe("portal sections", () => {
   it("builds the public path under the organization slug", () => {
     expect(portalPath(portalRefFixture)).toBe("/liga-norte/cmp_apertura");
     expect(portalPath(portalRefFixture, "standings")).toBe("/liga-norte/cmp_apertura/standings");
+  });
+
+  it("reads the section from the pathname while identity is still loading", () => {
+    expect(portalSectionFromPathname("/liga-norte/cmp_apertura")).toBe("cover");
+    expect(portalSectionFromPathname("/liga-norte/cmp_apertura/")).toBe("cover");
+    expect(portalSectionFromPathname("/liga-norte/cmp_apertura/standings")).toBe("standings");
+    expect(portalSectionFromPathname("/liga-norte/cmp_apertura/rankings/")).toBe("rankings");
   });
 
   it("rejects params no published competition can have", () => {
