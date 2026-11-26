@@ -106,21 +106,58 @@ describe("PlayerEaClubsPage", () => {
     expect(screen.getByRole("button", { name: "Ir al espacio personal" })).toBeTruthy();
   });
 
-  it("mirrors associated club cards while the profile is loading", () => {
-    getMyProfile.mockReturnValue(new Promise(() => undefined));
+  it("announces loading outside the busy skeleton list and clears it on resolution", async () => {
+    let resolveProfile!: (value: GetMyPlayerProfileResponse) => void;
+    const deferred = new Promise<GetMyPlayerProfileResponse>((resolve) => {
+      resolveProfile = resolve;
+    });
+    getMyProfile.mockReturnValue(deferred);
 
     renderPage();
 
-    const status = screen.getByRole("status", { name: "Cargando clubes…" });
-    expect(status.getAttribute("aria-busy")).toBe("true");
-    const bones = status.querySelectorAll("[data-slot='skeleton']");
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Cargando clubes…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+
+    const busyList = document.querySelector("[aria-busy='true']");
+    expect(busyList).not.toBeNull();
+    expect(busyList?.contains(status)).toBe(false);
+
+    const bones = busyList?.querySelectorAll("[data-slot='skeleton']") ?? [];
     expect(bones.length).toBeGreaterThan(0);
     for (const bone of bones) {
       expect(bone.getAttribute("aria-hidden")).toBe("true");
     }
-    expect(status.querySelectorAll("a, button, [tabindex]:not([tabindex='-1'])")).toHaveLength(0);
+    expect(busyList?.querySelectorAll("a, button, [tabindex]:not([tabindex='-1'])")).toHaveLength(
+      0,
+    );
     expect(screen.queryByRole("heading", { name: "Night Owls" })).toBeNull();
     expect(screen.queryByText("Sin clubes asociados")).toBeNull();
+
+    resolveProfile({
+      profile: { id: "p1", createdAt: "2026-08-01T00:00:00.000Z" },
+      gameAccounts: [],
+      externalClubs: [
+        {
+          playerProfileId: "p1",
+          providerKey: "ea-clubs",
+          externalClubId: "10754",
+          externalClubName: "Night Owls",
+          platform: "common-gen5",
+          gameEdition: "fc26",
+          imageUrl: null,
+          associatedAt: "2026-08-01T12:00:00.000Z",
+        },
+      ],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Night Owls" })).toBeTruthy();
+    });
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.textContent).toBe("");
+    expect(document.querySelector("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[data-slot='skeleton']")).toBeNull();
   });
 });
 

@@ -19,6 +19,7 @@ import {
   PageHeaderTitle,
   Skeleton,
   typography,
+  vis,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
@@ -150,6 +151,7 @@ const fallback = applyStyles(styles.fallback);
 const chipIcon = applyStyles(styles.chipIcon);
 
 export function PlayerEaClubsPage() {
+  const { t } = useI18n();
   const profileQuery = useMyPlayerProfileQuery();
   const clubs = profileQuery.data?.externalClubs ?? [];
 
@@ -162,6 +164,10 @@ export function PlayerEaClubsPage() {
         </PageHeaderDescription>
       </PageHeader>
 
+      <span role="status" {...applyStyles(vis.srOnly)}>
+        {profileQuery.isPending ? t("player.eaClubs.loading") : ""}
+      </span>
+
       <div {...applyStyles(styles.body)}>
         {profileQuery.isError ? (
           <Alert variant="destructive">
@@ -171,23 +177,25 @@ export function PlayerEaClubsPage() {
           </Alert>
         ) : null}
 
-        {profileQuery.isPending ? (
-          <AssociatedClubsSkeleton />
-        ) : clubs.length > 0 ? (
-          clubs.map((club) => <AssociatedClub club={club} key={club.externalClubId} />)
-        ) : (
-          <EmptyState>
-            <EmptyStateTitle>Sin clubes asociados</EmptyStateTitle>
-            <EmptyStateDescription>
-              Usa Añadir club en el selector de contexto para vincular un club de EA a tu perfil.
-            </EmptyStateDescription>
-            <EmptyStateActions>
-              <Button render={<Link to="/player" />} variant="secondary">
-                Ir al espacio personal
-              </Button>
-            </EmptyStateActions>
-          </EmptyState>
-        )}
+        <div aria-busy={profileQuery.isPending || undefined} {...applyStyles(styles.stack)}>
+          {profileQuery.isPending ? (
+            <AssociatedClubsSkeleton />
+          ) : clubs.length > 0 ? (
+            clubs.map((club) => <AssociatedClub club={club} key={club.externalClubId} />)
+          ) : (
+            <EmptyState>
+              <EmptyStateTitle>Sin clubes asociados</EmptyStateTitle>
+              <EmptyStateDescription>
+                Usa Añadir club en el selector de contexto para vincular un club de EA a tu perfil.
+              </EmptyStateDescription>
+              <EmptyStateActions>
+                <Button render={<Link to="/player" />} variant="secondary">
+                  Ir al espacio personal
+                </Button>
+              </EmptyStateActions>
+            </EmptyState>
+          )}
+        </div>
       </div>
     </main>
   );
@@ -196,18 +204,12 @@ export function PlayerEaClubsPage() {
 const SKELETON_CARD_COUNT = 3;
 
 function AssociatedClubsSkeleton() {
-  const { t } = useI18n();
   return (
-    <div
-      aria-busy="true"
-      aria-label={t("player.eaClubs.loading")}
-      role="status"
-      {...applyStyles(styles.stack)}
-    >
+    <>
       {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
         <AssociatedClubSkeleton key={index} />
       ))}
-    </div>
+    </>
   );
 }
 

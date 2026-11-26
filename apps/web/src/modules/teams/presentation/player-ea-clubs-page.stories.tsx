@@ -87,7 +87,9 @@ export const LinkedClubs: Story = {
     await expect(canvas.getByRole("heading", { name: "Night Owls" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Fera Enjaulada" })).toBeVisible();
     await expect(canvas.getByText(/ID 10754/)).toBeVisible();
-    await expect(canvas.queryByRole("status", { name: "Cargando clubes…" })).toBeNull();
+    await expect(canvas.getByRole("status")).toHaveTextContent("");
+    await expect(canvas.queryByText("Cargando clubes…")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).toBeNull();
   },
 };
 
@@ -97,14 +99,18 @@ export const Loading: Story = {
   render: (args) => <EaClubsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Clubes EA" })).toBeVisible();
-    const status = canvas.getByRole("status", { name: "Cargando clubes…" });
-    await expect(status).toBeVisible();
-    await expect(status).toHaveAttribute("aria-busy", "true");
-    await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toBeNull();
+    await expect(await canvas.findByRole("heading", { name: "Clubes EA" })).toBeVisible();
+    const status = canvas.getByRole("status");
+    await expect(status).toHaveTextContent("Cargando clubes…");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    const busyList = canvasElement.querySelector("[aria-busy='true']");
+    await expect(busyList).not.toBeNull();
+    await expect(busyList?.contains(status)).toBe(false);
+    const bones = busyList?.querySelectorAll("[data-slot='skeleton']") ?? [];
+    await expect(bones.length).toBeGreaterThan(0);
     await expect(canvas.queryByRole("heading", { name: "Night Owls" })).toBeNull();
     await expect(canvas.queryByText("Sin clubes asociados")).toBeNull();
-    for (const bone of canvasElement.querySelectorAll("[data-slot='skeleton']")) {
+    for (const bone of bones) {
       await expect(bone).toHaveAttribute("aria-hidden", "true");
     }
   },
@@ -123,7 +129,9 @@ export const Empty: Story = {
       "href",
       "/player",
     );
-    await expect(canvas.queryByRole("status", { name: "Cargando clubes…" })).toBeNull();
+    await expect(canvas.getByRole("status")).toHaveTextContent("");
+    await expect(canvas.queryByText("Cargando clubes…")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).toBeNull();
   },
 };
 
@@ -139,27 +147,71 @@ export const ErrorState: Story = {
       ),
     ).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Sin clubes asociados" })).toBeVisible();
-    await expect(canvas.queryByRole("status", { name: "Cargando clubes…" })).toBeNull();
+    await expect(canvas.getByRole("status")).toHaveTextContent("");
+    await expect(canvas.queryByText("Cargando clubes…")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).toBeNull();
   },
 };
 
 export const Mobile: Story = {
   name: "Mobile",
   args: { scenario: "ready" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   render: (args) => <EaClubsStoryShell key={args.scenario} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(window.innerWidth).toBeLessThan(640);
+    const heading = await canvas.findByRole("heading", { name: "Night Owls" });
+    const card = heading.closest("section");
+    if (!(card instanceof HTMLElement)) {
+      throw new Error("Expected associated club card");
+    }
+    const avatar = card.querySelector("[data-slot='avatar']");
+    if (!(avatar instanceof HTMLElement)) {
+      throw new Error("Expected club crest avatar");
+    }
+    await expect(getComputedStyle(card).flexDirection).toBe("column");
+    await expect(avatar.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      heading.getBoundingClientRect().top,
+    );
+  },
 };
 
 export const LoadingMobile: Story = {
   name: "Loading mobile",
   args: { scenario: "loading" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   render: (args) => <EaClubsStoryShell key={args.scenario} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { name: "Clubes EA" })).toBeVisible();
+    await expect(window.innerWidth).toBeLessThan(640);
+    const busyList = canvasElement.querySelector("[aria-busy='true']");
+    const firstCard = busyList?.firstElementChild;
+    if (!(firstCard instanceof HTMLElement)) {
+      throw new Error("Expected loading skeleton card");
+    }
+    const [crestBone, details] = Array.from(firstCard.children);
+    if (!(crestBone instanceof HTMLElement) || !(details instanceof HTMLElement)) {
+      throw new Error("Expected skeleton crest and details");
+    }
+    await expect(getComputedStyle(firstCard).flexDirection).toBe("column");
+    await expect(crestBone.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      details.getBoundingClientRect().top,
+    );
+  },
 };
 
 export const EmptyMobile: Story = {
   name: "Empty mobile",
   args: { scenario: "empty" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   render: (args) => <EaClubsStoryShell key={args.scenario} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(window.innerWidth).toBeLessThan(640);
+    await expect(
+      await canvas.findByRole("heading", { name: "Sin clubes asociados" }),
+    ).toBeVisible();
+  },
 };
