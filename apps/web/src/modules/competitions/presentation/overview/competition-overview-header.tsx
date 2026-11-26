@@ -33,6 +33,7 @@ import {
   competitionTeamsLabel,
 } from "../competition-labels.ts";
 import type { CompetitionProgressSummary, OverviewSlice } from "./competition-overview-model.ts";
+import { OverviewHeaderSkeleton } from "./competition-overview-skeleton.tsx";
 import { overviewLayout } from "./competition-overview.styles.ts";
 
 const styles = stylex.create({
@@ -93,9 +94,13 @@ export function CompetitionOverviewHeader({
           .join(" · ")
       : null;
 
-  return (
-    <PageHeader className={overviewLayout.header}>
-      {competition.status === "ready" ? (
+  let identity;
+  switch (competition.status) {
+    case "loading":
+      identity = <OverviewHeaderSkeleton />;
+      break;
+    case "ready":
+      identity = (
         <div {...applyStyles(overviewLayout.identity)}>
           <CompetitionCoverMark cover={competition.data.cover} />
           <div {...applyStyles(overviewLayout.identityCopy)}>
@@ -112,12 +117,25 @@ export function CompetitionOverviewHeader({
             {summaryMeta ? <Caption as="p">{summaryMeta}</Caption> : null}
           </div>
         </div>
-      ) : (
+      );
+      break;
+    case "error":
+      identity = (
         <div {...applyStyles(overviewLayout.identityCopy)}>
           <PageHeaderTitle>{t("shell.nav.competition.overview")}</PageHeaderTitle>
           <PageHeaderDescription>{t("competition.overview.description")}</PageHeaderDescription>
         </div>
-      )}
+      );
+      break;
+    default: {
+      const _exhaustive: never = competition;
+      return _exhaustive;
+    }
+  }
+
+  return (
+    <PageHeader className={overviewLayout.header}>
+      {identity}
       {competition.status === "ready" && competition.data.status === "draft" ? (
         <PageHeaderActions className={overviewLayout.headerActions}>
           <Button

@@ -109,6 +109,35 @@ describe("Table", () => {
     );
     expect(unlabelledMarkup).not.toContain('role="group"');
   });
+
+  it("keeps the scroll container in the tab order by default and can omit it", () => {
+    const defaultMarkup = renderToStaticMarkup(
+      createElement(
+        Table,
+        null,
+        createElement(
+          TableBody,
+          null,
+          createElement(TableRow, null, createElement(TableCell, null, "Cuervos")),
+        ),
+      ),
+    );
+    expect(defaultMarkup).toContain('tabindex="0"');
+
+    const decorativeMarkup = renderToStaticMarkup(
+      createElement(
+        Table,
+        { containerTabIndex: -1 },
+        createElement(
+          TableBody,
+          null,
+          createElement(TableRow, null, createElement(TableCell, null, "Cuervos")),
+        ),
+      ),
+    );
+    expect(decorativeMarkup).toContain('tabindex="-1"');
+    expect(decorativeMarkup).not.toContain('tabindex="0"');
+  });
 });
 
 describe("Layering constants", () => {

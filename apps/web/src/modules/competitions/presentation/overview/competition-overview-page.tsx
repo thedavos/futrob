@@ -10,7 +10,7 @@ import type {
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { isPubliclyVisibleStatus } from "@futrob/public-portal";
 import { RESULT_PERMISSION } from "@futrob/results";
-import { applyStyles, PageHeader, PageHeaderDescription, PageHeaderTitle } from "@futrob/ui";
+import { applyStyles, PageHeader, PageHeaderDescription, PageHeaderTitle, vis } from "@futrob/ui";
 import { usePendingActivitiesQuery } from "@/modules/notifications/presentation/activity-queries.ts";
 import { useOrganizationProfileQuery } from "@/modules/organizations/presentation/organization-queries.ts";
 import { portalPath } from "@/modules/public-portal/presentation/public-portal-model.ts";
@@ -137,10 +137,13 @@ export function CompetitionOverviewView({
     isPubliclyVisibleStatus(competition.data.status)
       ? portalPath({ organizationSlug, competitionKey: competitionId })
       : null;
-
-  if (competition.status === "loading") {
-    return <CompetitionOverviewSkeleton />;
-  }
+  const pageLoading =
+    competition.status === "loading" &&
+    encounters.status === "loading" &&
+    entries.status === "loading" &&
+    teams.status === "loading" &&
+    activities.status === "loading";
+  const loadingLabel = t("competition.overview.loading");
 
   const progress = competitionProgress(
     competition,
@@ -151,7 +154,16 @@ export function CompetitionOverviewView({
     progress === null && (encounters.status === "loading" || entries.status === "loading");
 
   return (
-    <main {...applyStyles(overviewLayout.main)}>
+    <main
+      aria-busy={pageLoading || undefined}
+      aria-label={pageLoading ? loadingLabel : undefined}
+      {...applyStyles(overviewLayout.main)}
+    >
+      {pageLoading ? (
+        <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
+          {loadingLabel}
+        </span>
+      ) : null}
       <CompetitionOverviewHeader
         approvedTeams={entryCounts?.approved ?? null}
         competition={competition}
@@ -212,6 +224,7 @@ export function CompetitionOverviewView({
             competitionId={competitionId}
             control={exploreListing}
             organizationId={organizationId}
+            pending={competition.status === "loading"}
             portalHref={portalHref}
             timeZone={competition.status === "ready" ? competition.data.timeZone : null}
           />

@@ -38,11 +38,33 @@ export function OverviewProgressSkeleton() {
   );
 }
 
+export function OverviewHeaderSkeleton() {
+  return (
+    <>
+      <div aria-hidden="true" {...applyStyles(overviewLayout.identity)}>
+        <div {...applyStyles(overviewLayout.coverFrame)}>
+          <Skeleton {...applyStyles(bones.cover)} />
+        </div>
+        <div {...applyStyles(overviewLayout.identityCopy)}>
+          <div {...applyStyles(overviewLayout.titleRow)}>
+            <Skeleton {...applyStyles(bones.title)} />
+            <Skeleton {...applyStyles(bones.badge)} />
+          </div>
+          <Skeleton {...applyStyles(bones.meta)} />
+        </div>
+      </div>
+      <PageHeaderActions className={overviewLayout.headerActions}>
+        <Skeleton aria-hidden="true" {...applyStyles(bones.portalButton)} />
+      </PageHeaderActions>
+    </>
+  );
+}
+
 export function OverviewTeamsBodySkeleton() {
   const { t } = useI18n();
   const bodyCell = applyStyles(bones.tableCell);
   return (
-    <Table dense>
+    <Table containerTabIndex={-1} dense>
       <TableHeader>
         <TableRow>
           <TableHead>{t("competition.overview.teams.column.team")}</TableHead>
@@ -157,21 +179,7 @@ export function CompetitionOverviewSkeleton() {
         {label}
       </span>
       <PageHeader className={overviewLayout.header}>
-        <div aria-hidden="true" {...applyStyles(overviewLayout.identity)}>
-          <div {...applyStyles(overviewLayout.coverFrame)}>
-            <Skeleton {...applyStyles(bones.cover)} />
-          </div>
-          <div {...applyStyles(overviewLayout.identityCopy)}>
-            <div {...applyStyles(overviewLayout.titleRow)}>
-              <Skeleton {...applyStyles(bones.title)} />
-              <Skeleton {...applyStyles(bones.badge)} />
-            </div>
-            <Skeleton {...applyStyles(bones.meta)} />
-          </div>
-        </div>
-        <PageHeaderActions className={overviewLayout.headerActions}>
-          <Skeleton aria-hidden="true" {...applyStyles(bones.portalButton)} />
-        </PageHeaderActions>
+        <OverviewHeaderSkeleton />
       </PageHeader>
 
       <OverviewProgressSkeleton />
@@ -195,7 +203,7 @@ export function CompetitionOverviewSkeleton() {
           </OverviewCard>
           <OverviewCard
             action={<OverviewViewAllSkeleton />}
-            title={t("competition.overview.official.title")}
+            title={t("competition.overview.upcoming.title")}
             titleId={officialTitleId}
           >
             <OverviewEncounterRowsSkeleton />
