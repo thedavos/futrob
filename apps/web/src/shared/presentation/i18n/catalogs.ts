@@ -3385,8 +3385,6 @@ const es = {
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 enfrentamiento" : `${count} enfrentamientos`}`,
   "fixture.month.more": ({ count }) => `+${count} más`,
-  "fixture.month.selectedDay": "Día seleccionado",
-  "fixture.month.emptyDay": "No hay enfrentamientos este día.",
   "fixture.month.emptyMonth": "No hay enfrentamientos este mes.",
   "fixture.month.goTo": ({ month }) => `Ver ${month}`,
   "fixture.rounds.current": "Próxima",
@@ -7270,8 +7268,6 @@ const en: Catalog = {
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 encounter" : `${count} encounters`}`,
   "fixture.month.more": ({ count }) => `+${count} more`,
-  "fixture.month.selectedDay": "Selected day",
-  "fixture.month.emptyDay": "No encounters on this day.",
   "fixture.month.emptyMonth": "No encounters this month.",
   "fixture.month.goTo": ({ month }) => `Go to ${month}`,
   "fixture.rounds.current": "Up next",

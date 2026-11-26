@@ -23,12 +23,6 @@ export const monthStyles = stylex.create({
     alignItems: "center",
     gap: "0.375rem",
   },
-  monthLayout: {
-    display: "grid",
-    gridTemplateColumns: { default: "minmax(0, 1fr)", [media.xl]: "minmax(0, 1fr) 19rem" },
-    gap: "1.25rem",
-    alignItems: "start",
-  },
   calendarFrame: {
     borderWidth: 1,
     borderStyle: "solid",
@@ -174,22 +168,11 @@ export const monthStyles = stylex.create({
   moreSelected: {
     color: colors.accentForeground,
   },
-  dayDetail: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.25rem",
-    position: "sticky",
-    top: "1.25rem",
-    padding: "1rem",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    borderRadius: "var(--corner-lg)",
-    backgroundColor: colors.surface,
-    minWidth: 0,
+  dayDialog: {
+    maxWidth: "30rem",
   },
-  dayDetailRows: {
-    marginTop: "0.75rem",
+  dayDialogRows: {
+    marginTop: "1rem",
   },
   emptyMonth: {
     display: "flex",

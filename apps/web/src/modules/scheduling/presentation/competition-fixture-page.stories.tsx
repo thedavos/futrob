@@ -349,11 +349,15 @@ export const LeaguePlayoffsMonth: Story = {
     const sunday = canvas.getByRole("button", { name: "domingo, 5 de julio: 3 enfrentamientos" });
     await expect(sunday).toHaveAttribute("aria-pressed", "true");
     await expect(sunday).toHaveTextContent("+1 más");
-    // Compact day-detail rows preserve the visible "vs" separator between teams.
-    const detail = canvas.getByRole("heading", { level: 3, name: "domingo, 5 de julio" });
-    await expect(detail).toBeVisible();
+    // The day opens in a dialog (portalled to the body), with the shared context lifted
+    // into its description.
+    await userEvent.click(sunday);
+    const dialog = await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+      name: "domingo, 5 de julio",
+    });
+    await waitFor(() => expect(dialog).toBeVisible());
     await expect(
-      canvas.getByText("Liga · Jornada 5 · 3 enfrentamientos · 1 partido · America/Lima"),
+      within(dialog).getByText("Liga · Jornada 5 · 3 enfrentamientos · 1 partido · America/Lima"),
     ).toBeVisible();
   },
 };
@@ -412,21 +416,25 @@ export const Month: Story = {
     ).toHaveAttribute("aria-pressed", "true");
     const busy = canvas.getByRole("button", { name: "lunes, 16 de noviembre: 3 enfrentamientos" });
     await expect(busy).toHaveTextContent("+1 más");
+    // A day opens its Encounters in a dialog; closing it keeps the reader on the month.
     await userEvent.click(busy);
-    await expect(busy).toHaveAttribute("aria-pressed", "true");
+    const body = within(canvasElement.ownerDocument.body);
+    const dialog = await body.findByRole("dialog", { name: "lunes, 16 de noviembre" });
+    await waitFor(() => expect(dialog).toBeVisible());
     await expect(
-      canvas.getByRole("heading", { level: 3, name: "lunes, 16 de noviembre" }),
-    ).toBeVisible();
-    await expect(
-      canvas.getByRole("link", {
+      within(dialog).getByRole("link", {
         name: "Abrir Rayo Esports vs Unión Club, lunes, 16 de noviembre, 21:30",
       }),
     ).toBeVisible();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cerrar" }));
+    await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+    await expect(canvas.getByRole("heading", { name: "Noviembre de 2026" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Mes siguiente" }));
     await expect(canvas.getByRole("heading", { name: "Diciembre de 2026" })).toBeVisible();
-    await expect(
-      canvas.getByRole("heading", { level: 3, name: "martes, 1 de diciembre" }),
-    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: /^martes, 1 de diciembre:/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await userEvent.click(canvas.getByRole("button", { name: "Mes siguiente" }));
     await expect(canvas.getByText("No hay enfrentamientos este mes.")).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Ver Diciembre de 2026" }));
