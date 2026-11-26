@@ -233,7 +233,37 @@ export const NamesPartiallyRestricted: Story = {
 
 export const NamesFailed: Story = { name: "Nombres con error", args: { scenario: "namesFailed" } };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status", { name: "Cargando rankings…" });
+    await expect(status.closest("[aria-busy='true']")).not.toBeNull();
+    await expect(canvas.getByText("Criterio")).toBeVisible();
+    await expect(canvas.getByText("Elegibilidad")).toBeVisible();
+    await expect(canvas.getByText("Actualizado")).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Jugador" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Goles" })).toBeVisible();
+    const table = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(table).toHaveAttribute("tabindex", "-1");
+    await userEvent.tab();
+    await expect(table).not.toHaveFocus();
+    await expect(canvas.queryByRole("tab")).toBeNull();
+    await expect(canvas.queryByText("Aún no hay rankings")).toBeNull();
+    await expect(canvas.queryByText("Lucía Pérez")).toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("status", { name: "Cargando rankings…" });
+    await expect(canvas.getByRole("columnheader", { name: "Jugador" })).toBeVisible();
+  },
+};
 
 export const Forbidden: Story = {
   name: "Sin permiso",

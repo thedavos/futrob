@@ -22,7 +22,7 @@ const BASE = "/api/v1/organizations/org-1/competitions/competition-1";
 
 type Serve = {
   readonly allowed?: readonly string[];
-  readonly rankings?: () => Response;
+  readonly rankings?: () => Response | Promise<Response>;
   readonly roster?: (teamId: string) => Response;
 };
 
@@ -95,6 +95,22 @@ afterEach(() => {
 });
 
 describe("Competition player rankings", () => {
+  it("reserves the rankings layout while the first snapshot is in flight", async () => {
+    serve({ rankings: () => new Promise<Response>(() => {}) });
+    renderRoute();
+
+    const status = await screen.findByRole("status", { name: "Cargando rankings…" });
+    expect(status.closest("[aria-busy='true']")).not.toBeNull();
+    expect(screen.getByText("Criterio")).toBeTruthy();
+    expect(screen.getByText("Elegibilidad")).toBeTruthy();
+    expect(screen.getByText("Actualizado")).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Jugador" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Goles" })).toBeTruthy();
+    expect(screen.queryByRole("tab")).toBeNull();
+    expect(screen.queryByText("Aún no hay rankings")).toBeNull();
+    expect(screen.queryByText("Lucía Pérez")).toBeNull();
+  });
+
   it("shows the scorer ranking with criterion, eligibility and resolved names", async () => {
     serve();
     renderRoute();
