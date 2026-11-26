@@ -83,15 +83,21 @@ const styles = stylex.create({
   meta: {
     color: colors.mutedForeground,
   },
+  line: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    minHeight: "1lh",
+  },
   nameBone: {
     width: "12rem",
     maxWidth: "70%",
-    height: "1rem",
+    height: "0.625rem",
   },
   metaBone: {
     width: "8rem",
     maxWidth: "50%",
-    height: "0.75rem",
+    height: "0.5rem",
   },
 });
 
@@ -110,7 +116,7 @@ export function PlayerCompetitionsPage() {
   const showEmpty = !loading && competitions.length === 0;
 
   return (
-    <main aria-busy={loading || undefined} {...applyStyles(styles.main)}>
+    <main {...applyStyles(styles.main)}>
       {loading ? (
         <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
           {loadingLabel}
@@ -128,7 +134,7 @@ export function PlayerCompetitionsPage() {
         )}
       </PageHeader>
 
-      <div {...applyStyles(styles.body)}>
+      <div aria-busy={loading || undefined} {...applyStyles(styles.body)}>
         {teamsQuery.isError ? (
           <Alert variant="destructive">
             <AlertDescription>{t("player.competitions.error")}</AlertDescription>
@@ -152,7 +158,7 @@ export function PlayerCompetitionsPage() {
                   {...applyStyles(styles.item)}
                 >
                   <span {...applyStyles(styles.copy)}>
-                    <span {...applyStyles(styles.name)}>
+                    <span {...applyStyles(typography.body, styles.name)}>
                       Competición {competition.competitionId}
                     </span>
                     <span {...applyStyles(typography.caption, styles.meta)}>
@@ -176,8 +182,12 @@ function PlayerCompetitionsListSkeleton() {
         <li key={index} {...applyStyles(styles.row)}>
           <div {...applyStyles(styles.item)}>
             <span {...applyStyles(styles.copy)}>
-              <Skeleton {...applyStyles(styles.nameBone)} />
-              <Skeleton {...applyStyles(styles.metaBone)} />
+              <span {...applyStyles(typography.body, styles.name, styles.line)}>
+                <Skeleton {...applyStyles(styles.nameBone)} />
+              </span>
+              <span {...applyStyles(typography.caption, styles.meta, styles.line)}>
+                <Skeleton {...applyStyles(styles.metaBone)} />
+              </span>
             </span>
           </div>
         </li>

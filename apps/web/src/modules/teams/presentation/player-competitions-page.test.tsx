@@ -136,8 +136,11 @@ describe("PlayerCompetitionsPage", () => {
 
     renderPage();
 
-    expect(screen.getByRole("main").getAttribute("aria-busy")).toBe("true");
-    expect(screen.getByRole("status", { name: "Cargando competiciones…" })).toBeTruthy();
+    const status = screen.getByRole("status", { name: "Cargando competiciones…" });
+    expect(screen.getByRole("main").getAttribute("aria-busy")).toBeNull();
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
+    expect(status).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Mis competiciones" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
       "href",

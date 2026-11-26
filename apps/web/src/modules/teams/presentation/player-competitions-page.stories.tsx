@@ -157,12 +157,11 @@ export const Loading: Story = {
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const page = canvas.getByRole("main");
-    await expect(page).toHaveAttribute("aria-busy", "true");
-    await expect(canvas.getByRole("status", { name: "Cargando competiciones…" })).toHaveAttribute(
-      "aria-label",
-      "Cargando competiciones…",
-    );
+    const status = canvas.getByRole("status", { name: "Cargando competiciones…" });
+    await expect(canvas.getByRole("main")).not.toHaveAttribute("aria-busy");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).not.toBeNull();
+    await expect(status).toHaveAttribute("aria-label", "Cargando competiciones…");
     await expect(canvas.getByRole("heading", { name: "Mis competiciones" })).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
       "href",
@@ -182,17 +181,17 @@ export const Loading: Story = {
 export const LoadingMobile: Story = {
   name: "Loading mobile",
   args: { scenario: "loading" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("main")).toHaveAttribute("aria-busy", "true");
-    await expect(canvas.getByRole("status", { name: "Cargando competiciones…" })).toHaveAttribute(
-      "aria-label",
-      "Cargando competiciones…",
-    );
+    const status = canvas.getByRole("status", { name: "Cargando competiciones…" });
+    await expect(canvas.getByRole("main")).not.toHaveAttribute("aria-busy");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(status).toHaveAttribute("aria-label", "Cargando competiciones…");
     await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toBeVisible();
     await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toBeNull();
+    await expect(canvasElement.ownerDocument.defaultView?.innerWidth).toBe(320);
   },
 };
 
@@ -216,14 +215,14 @@ export const ErrorState: Story = {
 export const Mobile: Story = {
   name: "Mobile",
   args: { scenario: "ready" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
 };
 
 export const EmptyMobile: Story = {
   name: "Empty mobile",
   args: { scenario: "empty" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
 };
 
