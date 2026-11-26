@@ -32,6 +32,7 @@ import {
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import {
   competitionFormatLabel,
+  competitionGameEditionLabel,
   competitionListBadgeVariant,
 } from "@/modules/competitions/presentation/competition-labels.ts";
 import { competitionCoverSrc } from "@/modules/competitions/presentation/competition-cover-assets.ts";
@@ -214,7 +215,7 @@ export function OrganizationHomeCompetitionsTable({
                           {competition.name}
                         </Link>
                         <Caption {...applyStyles(styles.subtitle)}>
-                          {`${competitionFormatLabel(competition.format, t)} · ${competition.gameEdition}`}
+                          {`${competitionFormatLabel(competition.format, t)} · ${competitionGameEditionLabel(competition.gameEdition)}`}
                         </Caption>
                       </span>
                     </div>

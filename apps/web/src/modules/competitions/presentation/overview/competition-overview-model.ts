@@ -1,4 +1,6 @@
 import type {
+  ActivityEntryDto,
+  CompetitionDto,
   CompetitionEncounterDto,
   CompetitionEntryDto,
   CompetitionTeamManagementSummaryDto,
@@ -38,6 +40,34 @@ export function upcomingEncounters(
     .slice(0, limit);
 }
 
+/** Encounters with status `official`, most recent kickoff first. */
+export function recentOfficialEncounters(
+  encounters: readonly CompetitionEncounterDto[],
+  limit = OVERVIEW_UPCOMING_LIMIT,
+): readonly CompetitionEncounterDto[] {
+  return encounters
+    .filter((encounter) => encounter.status === "official")
+    .sort(
+      compareByTime((encounter) => new Date(encounter.scheduledStartAt), TIME_SORT_DIRECTION.desc),
+    )
+    .slice(0, limit);
+}
+
+export interface OfficializedCounts {
+  readonly official: number;
+  readonly total: number;
+}
+
+/** Count of officialized encounters out of the total paired encounters in the active fixture. */
+export function officializedEncounters(
+  encounters: readonly CompetitionEncounterDto[],
+): OfficializedCounts {
+  return {
+    official: encounters.filter((encounter) => encounter.status === "official").length,
+    total: encounters.length,
+  };
+}
+
 /** Encounters with status `awaiting_result`, oldest kickoff first. */
 export function awaitingResultEncounters(
   encounters: readonly CompetitionEncounterDto[],
@@ -45,6 +75,64 @@ export function awaitingResultEncounters(
   return encounters
     .filter((encounter) => encounter.status === "awaiting_result")
     .sort(compareByTime((encounter) => new Date(encounter.scheduledStartAt)));
+}
+
+export type CompetitionProgressSummary =
+  | {
+      readonly kind: "encounters";
+      /** True only when the competition itself reached a terminal status. */
+      readonly completed: boolean;
+      readonly official: number;
+      readonly total: number;
+      readonly percent: number;
+    }
+  | {
+      readonly kind: "teams";
+      readonly approved: number;
+      readonly max: number;
+      readonly percent: number;
+    };
+
+/**
+ * Overview progress bar: once the fixture exists, tracks officialized encounters among the
+ * paired ones the listing returns (later rounds without both teams are not counted yet, so
+ * 100 % is not completion); during open registration before a fixture exists, tracks
+ * approved teams against capacity. Completion comes only from the competition status.
+ */
+export function competitionProgress(
+  competition: OverviewSlice<CompetitionDto>,
+  encounters: OverviewSlice<readonly CompetitionEncounterDto[]>,
+  entries: OverviewSlice<readonly CompetitionEntryDto[]>,
+): CompetitionProgressSummary | null {
+  if (encounters.status === "ready" && encounters.data.length > 0) {
+    const { official, total } = officializedEncounters(encounters.data);
+    return {
+      kind: "encounters",
+      completed:
+        competition.status === "ready" &&
+        (competition.data.status === "finished" || competition.data.status === "archived"),
+      official,
+      total,
+      percent: Math.round((official / total) * 100),
+    };
+  }
+  if (
+    competition.status === "ready" &&
+    competition.data.status === "registration" &&
+    competition.data.teams.max !== null &&
+    competition.data.teams.max > 0 &&
+    entries.status === "ready"
+  ) {
+    const { approved } = countEntries(entries.data);
+    const max = competition.data.teams.max;
+    return {
+      kind: "teams",
+      approved,
+      max,
+      percent: Math.min(100, Math.round((approved / max) * 100)),
+    };
+  }
+  return null;
 }
 
 /** Pending approvals first, then approved teams; rejected entries stay out of the summary. */
@@ -64,4 +152,53 @@ export function overviewTeams(
         )(left, right),
     )
     .slice(0, limit);
+}
+
+/** The viewer's open activity page as read for the overview: up to the query limit. */
+export interface PendingActivityPage {
+  readonly activities: readonly ActivityEntryDto[];
+  readonly nextCursor: string | null;
+}
+
+/**
+ * Open activities that need the viewer. While the entries list is loaded, `competition_entry`
+ * is left out: that row is the notification of a pending entry the overview already counts
+ * and links from the entries summary. Without that list, the activity stays as the fallback
+ * way to review the entry.
+ */
+export function pendingTasks(
+  activities: readonly ActivityEntryDto[],
+  entriesKnown: boolean,
+): readonly ActivityEntryDto[] {
+  return activities.filter(
+    (entry) =>
+      entry.status === "open" &&
+      entry.requiresAction &&
+      (!entriesKnown || entry.kind !== "competition_entry"),
+  );
+}
+
+export interface PendingTotal {
+  readonly count: number;
+  /** The activity page had more rows than were read, so `count` is a lower bound. */
+  readonly partial: boolean;
+}
+
+/**
+ * One pending total for the KPI and the Pendientes card, each item counted once.
+ * `pendingEntries` is `null` when the entries list is unavailable; their open activities
+ * are counted instead.
+ */
+export function pendingTotal(
+  pendingEntries: number | null,
+  awaiting: number,
+  page: PendingActivityPage,
+): PendingTotal {
+  return {
+    count:
+      (pendingEntries ?? 0) +
+      awaiting +
+      pendingTasks(page.activities, pendingEntries !== null).length,
+    partial: page.nextCursor !== null,
+  };
 }
