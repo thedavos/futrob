@@ -1,6 +1,16 @@
 "use client";
 
-import { applyStyles, Card, CardContent, PageHeader, Separator, Skeleton, vis } from "@futrob/ui";
+import { useRef } from "react";
+import {
+  applyStyles,
+  Card,
+  CardContent,
+  PageHeader,
+  Separator,
+  Skeleton,
+  useExternalSync,
+  vis,
+} from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { styles as pageStyles } from "./competition-setup-page.styles.ts";
 import { styles as stepStyles } from "./competition-setup-steps.styles.ts";
@@ -8,6 +18,33 @@ import { setupSkeleton as bones } from "./competition-setup-skeleton.styles.ts";
 
 const STEPS = [0, 1, 2, 3, 4] as const;
 const PRESETS = [0, 1, 2, 3] as const;
+
+/**
+ * Polite loading announcement kept outside the busy skeleton so assistive
+ * technology can hear it, then cleared when the draft query settles.
+ */
+export function CompetitionSetupLoadingStatus({ active }: { readonly active: boolean }) {
+  const { t } = useI18n();
+  const label = t("competitions.setup.loading");
+  const node = useRef<HTMLSpanElement>(null);
+  useExternalSync(() => {
+    const el = node.current;
+    if (!el) return undefined;
+    el.textContent = active ? label : "";
+    return () => {
+      el.textContent = "";
+    };
+  }, [active, label]);
+  return (
+    <span
+      ref={node}
+      aria-label={active ? label : undefined}
+      aria-live="polite"
+      role="status"
+      {...applyStyles(vis.srOnly)}
+    />
+  );
+}
 
 /**
  * Full-page loading layout for competition setup. Mirrors the information-step
@@ -19,9 +56,6 @@ export function CompetitionSetupSkeleton() {
 
   return (
     <main aria-busy="true" aria-label={label} {...applyStyles(pageStyles.main)}>
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
       <PageHeader>
         <div aria-hidden="true" {...applyStyles(pageStyles.titleRow)}>
           <Skeleton {...applyStyles(bones.title)} />

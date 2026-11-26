@@ -118,15 +118,36 @@ describe("loading the competition setup", () => {
     renderSetup("information");
 
     const status = await screen.findByRole("status", { name: "Cargando competición…" });
-    const main = status.closest("main");
-    expect(main?.getAttribute("aria-busy")).toBe("true");
+    const main = screen.getByRole("main");
+    expect(main.getAttribute("aria-busy")).toBe("true");
+    expect(main.contains(status)).toBe(false);
     expect(screen.queryByRole("heading", { name: "Configurar competición" })).toBeNull();
     expect(screen.queryByLabelText("Nombre de la competición")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
-    expect(main?.querySelector("[data-slot='skeleton']")).not.toBeNull();
+    expect(main.querySelector("[data-slot='skeleton']")).not.toBeNull();
     expect(
-      main?.querySelectorAll("a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])"),
+      main.querySelectorAll("a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])"),
     ).toHaveLength(0);
+  });
+
+  it("announces loading outside the busy region and clears it when the draft arrives", async () => {
+    let resolveDraft: (draft: CompetitionDraftDto) => void = () => {};
+    getCompetitionDraft.mockReturnValue(
+      new Promise((resolve) => {
+        resolveDraft = resolve;
+      }),
+    );
+    renderSetup("information");
+
+    const status = await screen.findByRole("status", { name: "Cargando competición…" });
+    expect(screen.getByRole("main").contains(status)).toBe(false);
+
+    resolveDraft(leagueDraft);
+
+    await waitFor(() =>
+      expect(screen.queryByRole("status", { name: "Cargando competición…" })).toBeNull(),
+    );
+    expect(await screen.findByRole("heading", { name: "Configurar competición" })).toBeTruthy();
   });
 
   it("shows a load error instead of the skeleton", async () => {

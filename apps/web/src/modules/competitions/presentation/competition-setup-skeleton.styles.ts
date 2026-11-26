@@ -5,8 +5,8 @@ import { media } from "@futrob/ui/styles/media.stylex";
 /** Bones sized to the information-step blocks they reserve. */
 export const setupSkeleton = stylex.create({
   title: {
-    width: "16.5rem",
-    maxWidth: "100%",
+    width: "min(16.5rem, 100%)",
+    minWidth: 0,
     height: "2rem",
   },
   badge: {
@@ -16,8 +16,7 @@ export const setupSkeleton = stylex.create({
     borderRadius: "var(--corner-full)",
   },
   description: {
-    width: "24rem",
-    maxWidth: "100%",
+    width: "min(24rem, 100%)",
     height: "1.25rem",
   },
   stepper: {

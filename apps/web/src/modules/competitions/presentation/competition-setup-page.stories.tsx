@@ -182,7 +182,9 @@ export const Loading: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const status = await canvas.findByRole("status", { name: "Cargando competición…" });
-    await expect(status.closest("main")?.getAttribute("aria-busy")).toBe("true");
+    const main = canvas.getByRole("main");
+    await expect(main.getAttribute("aria-busy")).toBe("true");
+    await expect(main.contains(status)).toBe(false);
     await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toBeNull();
     await expect(canvas.queryByRole("heading", { name: "Configurar competición" })).toBeNull();
     await expect(canvas.queryByLabelText("Nombre de la competición")).toBeNull();
@@ -195,14 +197,26 @@ export const Loading: Story = {
 
 export const LoadingNarrow: Story = {
   name: "Cargando (estrecho)",
-  args: { scenario: "loading", narrow: true },
+  args: { scenario: "loading" },
+  globals: { viewport: { value: "phone390" } },
+  parameters: {
+    viewport: {
+      defaultViewport: "phone390",
+      options: {
+        phone390: { name: "Phone 390", styles: { width: "390px", height: "844px" } },
+      },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      canvas.findByRole("status", { name: "Cargando competición…" }),
-    ).resolves.toBeTruthy();
+    const status = await canvas.findByRole("status", { name: "Cargando competición…" });
+    const main = canvas.getByRole("main");
+    await expect(main.contains(status)).toBe(false);
+    await expect(main.getAttribute("aria-busy")).toBe("true");
     await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toBeNull();
     await expect(canvas.queryByRole("heading", { name: "Configurar competición" })).toBeNull();
+    await expect(main.scrollWidth).toBeLessThanOrEqual(main.clientWidth);
+    await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   },
 };
 

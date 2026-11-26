@@ -3,6 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 export const styles = stylex.create({
   main: {
     width: "100%",
+    minWidth: 0,
   },
   titleRow: {
     display: "flex",
