@@ -139,7 +139,7 @@ export const styles = stylex.create({
       borderBottomWidth: 0,
     },
   },
-  row: {
+  rowLayout: {
     display: "grid",
     gridTemplateColumns: {
       default: "minmax(0, 1fr) auto",
@@ -150,13 +150,15 @@ export const styles = stylex.create({
     minHeight: "var(--control-height)",
     paddingBlock: { default: "0.875rem", [media.md]: "0.75rem" },
     paddingInline: { default: "1rem", [media.sm]: "1.25rem" },
+    minWidth: 0,
+  },
+  rowInteractive: {
     backgroundColor: {
       default: "transparent",
       ":hover": colors.surfaceRaised,
     },
     color: "inherit",
     textDecoration: "none",
-    minWidth: 0,
     outlineColor: colors.ring,
     outlineStyle: { default: "none", ":focus-visible": "solid" },
     outlineWidth: 2,
@@ -280,20 +282,90 @@ export const styles = stylex.create({
     color: colors.textTertiary,
     flexShrink: 0,
   },
-  skeletonStack: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
+  skeletonPill: {
+    height: {
+      default: "var(--control-height-touch)",
+      [media.sm]: "var(--control-height-dense)",
+    },
+    borderRadius: "var(--corner-full)",
+    flexShrink: 0,
   },
-  skeletonToolbar: {
-    height: "2.25rem",
-    width: "18rem",
+  skeletonPillAll: {
+    width: "5.5rem",
+  },
+  skeletonPillAwaiting: {
+    width: "7.25rem",
+  },
+  skeletonPillOfficial: {
+    width: "6.5rem",
+  },
+  skeletonPillScheduled: {
+    width: "8rem",
+  },
+  skeletonZone: {
+    width: "11.5rem",
     maxWidth: "100%",
+    height: "1rem",
+  },
+  skeletonField: {
+    display: "flex",
+    width: "100%",
+    flexDirection: "column",
+    gap: "0.5rem",
+  },
+  skeletonFieldLabel: {
+    width: "4.5rem",
+    height: "1rem",
+  },
+  skeletonSelect: {
+    width: "100%",
+    height: "var(--control-height)",
     borderRadius: "var(--corner-lg)",
   },
-  skeletonGroup: {
-    minHeight: "10.5rem",
-    width: "100%",
-    borderRadius: "var(--corner-xl)",
+  skeletonFilterStatus: {
+    width: "10rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  skeletonRoundTitle: {
+    width: "8.5rem",
+    maxWidth: "100%",
+    height: "1.5rem",
+  },
+  skeletonRoundDate: {
+    width: "5.5rem",
+    height: "1rem",
+  },
+  skeletonRoundProgress: {
+    width: "8rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  skeletonTime: {
+    width: "3.25rem",
+    height: "1rem",
+  },
+  skeletonSlots: {
+    width: "5.5rem",
+    height: "0.75rem",
+  },
+  skeletonTeam: {
+    width: "70%",
+    maxWidth: "9rem",
+    height: "1rem",
+  },
+  skeletonTeamHome: {
+    marginInlineStart: "auto",
+  },
+  skeletonScore: {
+    width: "3.5rem",
+    height: "1.75rem",
+    borderRadius: "var(--corner-md)",
+  },
+  skeletonBadge: {
+    width: "7.5rem",
+    maxWidth: "100%",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
   },
 });
