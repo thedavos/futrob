@@ -21,7 +21,7 @@ export function FixtureCalendarSkeleton() {
       <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
         {label}
       </span>
-      <div aria-hidden="true" {...applyStyles(styles.toolbar, bones.inert)}>
+      <div aria-hidden="true" inert {...applyStyles(styles.toolbar, bones.inert)}>
         <div {...applyStyles(bones.tabsList)}>
           <span {...applyStyles(typography.label, bones.tab, bones.tabActive)}>
             <ListBulletsIcon aria-hidden="true" {...applyStyles(bones.tabIcon)} />
@@ -45,11 +45,11 @@ export function FixtureCalendarSkeleton() {
           </div>
         </div>
       </div>
-      <div aria-hidden="true" {...applyStyles(styles.metaBar, bones.inert)}>
+      <div aria-hidden="true" inert {...applyStyles(styles.metaBar, bones.inert)}>
         <Skeleton {...applyStyles(bones.summary)} />
         <Skeleton {...applyStyles(bones.zone)} />
       </div>
-      <div aria-hidden="true" {...applyStyles(styles.panel, bones.inert)}>
+      <div aria-hidden="true" inert {...applyStyles(styles.panel, bones.inert)}>
         <div {...applyStyles(styles.agendaLayout)}>
           <ol {...applyStyles(styles.dayList)}>
             {DAYS.map((day, dayIndex) => (
@@ -89,7 +89,7 @@ export function FixtureCalendarSkeleton() {
           </ol>
           <aside {...applyStyles(styles.aside)}>
             <Skeleton {...applyStyles(bones.indexTitle)} />
-            <div {...applyStyles(styles.indexNav)}>
+            <div data-slot="fixture-index-skeleton" {...applyStyles(styles.indexNav)}>
               <IndexGroup count={INDEX_PRIMARY} />
               <IndexGroup count={INDEX_SECONDARY} />
             </div>

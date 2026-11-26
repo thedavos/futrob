@@ -571,6 +571,15 @@ export const Loading: Story = {
     await expect(canvasElement.ownerDocument.activeElement?.closest("[data-slot='skeleton']")).toBe(
       null,
     );
+    // Chromium makes overflowing scrollers keyboard-focusable. Force the decorative
+    // index to overflow and confirm it still cannot take focus while loading.
+    const index = canvasElement.querySelector<HTMLElement>("[data-slot='fixture-index-skeleton']");
+    await expect(index).not.toBeNull();
+    index!.style.maxHeight = "2rem";
+    index!.style.overflowY = "auto";
+    await expect(index!.scrollHeight).toBeGreaterThan(index!.clientHeight);
+    index!.focus();
+    await expect(canvasElement.ownerDocument.activeElement).not.toBe(index);
   },
 };
 

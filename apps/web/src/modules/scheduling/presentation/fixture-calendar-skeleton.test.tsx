@@ -36,6 +36,13 @@ describe("FixtureCalendarSkeleton", () => {
     expect(screen.queryByRole("button")).toBeNull();
     expect(document.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(10);
     expect(document.querySelector("[data-slot='skeleton'][tabindex]")).toBeNull();
+    // Chromium makes overflowing scrollers keyboard-focusable; `inert` keeps the
+    // decorative index and panels out of the Tab order while they load.
+    const hidden = Array.from(document.querySelectorAll("[aria-hidden='true']")).filter(
+      (node) => node.parentElement?.closest("[aria-hidden='true']") === null,
+    );
+    expect(hidden.length).toBeGreaterThan(0);
+    for (const node of hidden) expect(node.hasAttribute("inert")).toBe(true);
   });
 
   it("localizes the loading status in English", () => {
