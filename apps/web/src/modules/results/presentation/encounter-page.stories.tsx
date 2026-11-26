@@ -284,7 +284,40 @@ export const CandidatesError: Story = { args: { scenario: "candidatesError" } };
 
 export const RefreshFailedWithCachedCandidates: Story = { args: { scenario: "refreshFailed" } };
 
-export const Loading: Story = { args: { scenario: "loading" } };
+export const Loading: Story = {
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const main = await canvas.findByRole("main");
+    await expect(main).toHaveAttribute("aria-busy", "true");
+    await expect(
+      await canvas.findByRole("heading", { level: 1, name: "Cargando enfrentamiento" }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole("status", { name: "Cargando enfrentamiento" }),
+    ).toBeInTheDocument();
+    await expect(canvas.getByRole("heading", { name: "Partidos oficiales" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Partido 1" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Partido 2" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Vista previa" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Partidos EA candidatos" })).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Enfrentamientos" })).toBeVisible();
+    await expect(canvas.queryByRole("heading", { name: "Cuervos FC vs Maderas FC" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: /Usar en partido/ })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Actualizar candidatos" })).toBeNull();
+  },
+};
+
+export const LoadingNarrow360: Story = {
+  name: "Cargando · 360 px",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("heading", { level: 1, name: "Cargando enfrentamiento" });
+    const frame = canvasElement.firstElementChild as HTMLElement;
+    await expect(frame.scrollWidth).toBeLessThanOrEqual(frame.clientWidth);
+  },
+};
 
 export const NotFound: Story = { args: { scenario: "notFound" } };
 

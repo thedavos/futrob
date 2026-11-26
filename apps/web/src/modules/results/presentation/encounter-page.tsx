@@ -35,6 +35,7 @@ import {
 import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
 import { CandidatesSection } from "./encounter-candidates.tsx";
 import type { EncounterListReturn } from "./encounter-list-return.ts";
+import { EncounterPageSkeleton } from "./encounter-page-skeleton.tsx";
 import { previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 import { type Formats } from "./encounter-parts.tsx";
@@ -113,12 +114,10 @@ export function EncounterPageView({
       );
     case "loading":
       return (
-        <main aria-busy="true" {...applyStyles(styles.main)}>
-          <h1 {...applyStyles(vis.srOnly)}>{t("encounter.loading")}</h1>
-          <EncounterBreadcrumb link={encountersLink} t={t} />
-          <Skeleton {...applyStyles(styles.skeletonHero)} />
-          <Skeleton {...applyStyles(styles.skeletonRow)} />
-        </main>
+        <EncounterPageSkeleton
+          breadcrumb={<EncounterBreadcrumb pending link={encountersLink} t={t} />}
+          t={t}
+        />
       );
     case "error":
       return (
@@ -307,10 +306,12 @@ function listLink({
 function EncounterBreadcrumb({
   current,
   link,
+  pending = false,
   t,
 }: {
   readonly current?: string;
   readonly link: ListLink;
+  readonly pending?: boolean;
   readonly t: Translator;
 }) {
   return (
@@ -319,11 +320,15 @@ function EncounterBreadcrumb({
         <BreadcrumbItem>
           <BreadcrumbLink render={link.element}>{link.label}</BreadcrumbLink>
         </BreadcrumbItem>
-        {current ? (
+        {current || pending ? (
           <>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{current}</BreadcrumbPage>
+              {current ? (
+                <BreadcrumbPage>{current}</BreadcrumbPage>
+              ) : (
+                <Skeleton aria-hidden="true" {...applyStyles(styles.skeletonCrumb)} />
+              )}
             </BreadcrumbItem>
           </>
         ) : null}
