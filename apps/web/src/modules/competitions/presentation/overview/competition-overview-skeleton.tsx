@@ -28,7 +28,11 @@ const PUBLISHING_META_ROWS = [0, 1, 2];
 
 export function OverviewProgressSkeleton() {
   return (
-    <section aria-hidden="true" {...applyStyles(overviewLayout.progressPanel)}>
+    <section
+      aria-hidden="true"
+      data-slot="competition-overview-progress"
+      {...applyStyles(overviewLayout.progressPanel)}
+    >
       <div {...applyStyles(bones.progress)}>
         <Skeleton {...applyStyles(bones.progressLabel)} />
         <Skeleton {...applyStyles(bones.progressValue)} />

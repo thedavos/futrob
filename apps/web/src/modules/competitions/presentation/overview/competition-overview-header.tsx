@@ -205,7 +205,11 @@ export function CompetitionProgressBanner({
         });
 
   return (
-    <section aria-label={label} {...applyStyles(overviewLayout.progressPanel)}>
+    <section
+      aria-label={label}
+      data-slot="competition-overview-progress"
+      {...applyStyles(overviewLayout.progressPanel)}
+    >
       <Progress max={100} value={progress.percent}>
         <ProgressLabel>{label}</ProgressLabel>
         <ProgressValue className={styles.progressValue}>

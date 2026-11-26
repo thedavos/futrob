@@ -55,6 +55,7 @@ type Scenario =
   | "empty"
   | "loading"
   | "identityLoading"
+  | "identityLoadingNoFixture"
   | "countsLoading"
   | "competitionError"
   | "sectionsError"
@@ -164,6 +165,7 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
 
   const isLoading = scenario === "loading";
   const identityLoading = scenario === "identityLoading";
+  const identityLoadingNoFixture = scenario === "identityLoadingNoFixture";
   const isFinished = scenario === "finished";
   const countsLoading = scenario === "countsLoading";
   const sectionsFailed = scenario === "sectionsError";
@@ -172,7 +174,7 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
     !recovered && (scenario === "entriesError" || scenario === "entriesErrorWithData");
   const encountersFailed = !recovered && scenario === "encountersError";
   const competition =
-    isLoading || identityLoading
+    isLoading || identityLoading || identityLoadingNoFixture
       ? loading
       : scenario === "competitionError"
         ? failed(() => {
@@ -191,7 +193,7 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
       : sectionsFailed || encountersFailed
         ? failed(() => setRecovered(true))
         : ready(
-            isEmpty || scenario === "entriesError"
+            isEmpty || scenario === "entriesError" || identityLoadingNoFixture
               ? { ...overviewEncounters, encounters: [] }
               : isFinished
                 ? finishedEncounters
@@ -279,6 +281,7 @@ const meta = {
         "empty",
         "loading",
         "identityLoading",
+        "identityLoadingNoFixture",
         "countsLoading",
         "competitionError",
         "sectionsError",
@@ -479,6 +482,21 @@ export const IdentityLoading: Story = {
     await expect(canvas.findByText("Cuervos Clubs")).resolves.toBeVisible();
     await expect(canvas.queryByRole("main")).not.toHaveAttribute("aria-busy");
     await expect(canvas.queryByRole("link", { name: "Ver portal público" })).toBeNull();
+  },
+};
+
+export const IdentityLoadingNoFixture: Story = {
+  name: "Ficha cargando sin calendario",
+  args: { scenario: "identityLoadingNoFixture" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.findByText("Cuervos Clubs")).resolves.toBeVisible();
+    await expect(
+      canvasElement.querySelector("[data-slot='competition-overview-progress']"),
+    ).not.toBeNull();
+    await expect(canvas.queryByText(/enfrentamientos oficiales/)).toBeNull();
+    await expect(canvas.queryByText(/de 8 equipos/)).toBeNull();
+    await expect(canvas.queryByRole("heading", { name: "Liga Nocturna" })).toBeNull();
   },
 };
 

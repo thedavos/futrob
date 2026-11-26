@@ -151,7 +151,10 @@ export function CompetitionOverviewView({
     entries,
   );
   const progressPending =
-    progress === null && (encounters.status === "loading" || entries.status === "loading");
+    progress === null &&
+    (encounters.status === "loading" ||
+      entries.status === "loading" ||
+      competition.status === "loading");
 
   return (
     <main
