@@ -1,17 +1,11 @@
 "use client";
 
-import { useReducer, type ReactElement } from "react";
+import { useReducer } from "react";
 import { Link } from "@tanstack/react-router";
 import type { EncounterViewDto, ListEncounterCandidatesResponse } from "@futrob/api-contracts";
 import {
   applyStyles,
   Badge,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
   Button,
   Caption,
   Card,
@@ -20,7 +14,6 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
   SectionTitle,
-  Skeleton,
   Text,
   vis,
 } from "@futrob/ui";
@@ -35,7 +28,11 @@ import {
 import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
 import { CandidatesSection } from "./encounter-candidates.tsx";
 import type { EncounterListReturn } from "./encounter-list-return.ts";
-import { EncounterPageSkeleton } from "./encounter-page-skeleton.tsx";
+import {
+  EncounterBreadcrumb,
+  EncounterPageSkeleton,
+  type ListLink,
+} from "./encounter-page-skeleton.tsx";
 import { previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 import { type Formats } from "./encounter-parts.tsx";
@@ -88,6 +85,41 @@ export function EncounterPageView({
   const { t } = useI18n();
   const encountersLink = listLink({ competitionId, listReturn, organizationId, t });
 
+  return (
+    <>
+      <span role="status" {...applyStyles(vis.srOnly)}>
+        {encounter.kind === "loading" ? t("encounter.loading") : ""}
+      </span>
+      <EncounterContent
+        candidates={candidates}
+        disputeReview={disputeReview}
+        encounter={encounter}
+        encountersLink={encountersLink}
+        scheduleChanges={scheduleChanges}
+        t={t}
+        teamSelection={teamSelection}
+      />
+    </>
+  );
+}
+
+function EncounterContent({
+  candidates,
+  disputeReview,
+  encounter,
+  encountersLink,
+  scheduleChanges,
+  t,
+  teamSelection,
+}: {
+  readonly candidates: CandidatesState;
+  readonly disputeReview?: DisputeReviewState;
+  readonly encounter: EncounterState;
+  readonly encountersLink: ListLink;
+  readonly scheduleChanges?: ScheduleChangesState;
+  readonly t: Translator;
+  readonly teamSelection?: TeamSelectionState;
+}) {
   switch (encounter.kind) {
     case "not_found":
     case "forbidden":
@@ -113,12 +145,7 @@ export function EncounterPageView({
         </main>
       );
     case "loading":
-      return (
-        <EncounterPageSkeleton
-          breadcrumb={<EncounterBreadcrumb pending link={encountersLink} t={t} />}
-          t={t}
-        />
-      );
+      return <EncounterPageSkeleton link={encountersLink} t={t} />;
     case "error":
       return (
         <main {...applyStyles(styles.main)}>
@@ -233,13 +260,6 @@ function EncounterReady({
   );
 }
 
-/** Where the Match Center goes back to, with the list's own name. */
-interface ListLink {
-  readonly element: ReactElement;
-  readonly label: string;
-  readonly back: string;
-}
-
 /**
  * Back to the list the user came from, with its filters; a direct visit goes to the staff list.
  * Each origin maps to a fixed route, so the search cannot point anywhere else.
@@ -301,40 +321,6 @@ function listLink({
       return exhaustive;
     }
   }
-}
-
-function EncounterBreadcrumb({
-  current,
-  link,
-  pending = false,
-  t,
-}: {
-  readonly current?: string;
-  readonly link: ListLink;
-  readonly pending?: boolean;
-  readonly t: Translator;
-}) {
-  return (
-    <Breadcrumb aria-label={t("encounter.breadcrumb")}>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink render={link.element}>{link.label}</BreadcrumbLink>
-        </BreadcrumbItem>
-        {current || pending ? (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              {current ? (
-                <BreadcrumbPage>{current}</BreadcrumbPage>
-              ) : (
-                <Skeleton aria-hidden="true" {...applyStyles(styles.skeletonCrumb)} />
-              )}
-            </BreadcrumbItem>
-          </>
-        ) : null}
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
 }
 
 function EncounterHero({

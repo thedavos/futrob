@@ -237,9 +237,33 @@ export const styles = stylex.create({
     maxWidth: "100%",
     height: "0.75rem",
   },
+  skeletonSlotTitle: {
+    width: "5.5rem",
+    height: "1.125rem",
+  },
   skeletonSlotTime: {
     width: "7rem",
     height: "0.75rem",
+  },
+  skeletonSlotStatus: {
+    width: "10.5rem",
+    maxWidth: "100%",
+    height: "0.75rem",
+  },
+  skeletonPreviewCopy: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+  },
+  skeletonPreviewSummary: {
+    width: "16rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  skeletonPreviewNote: {
+    width: "19rem",
+    maxWidth: "100%",
+    height: "0.875rem",
   },
   skeletonRefresh: {
     width: "11.5rem",

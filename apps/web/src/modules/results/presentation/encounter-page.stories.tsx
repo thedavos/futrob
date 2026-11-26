@@ -293,15 +293,16 @@ export const Loading: Story = {
     await expect(
       await canvas.findByRole("heading", { level: 1, name: "Cargando enfrentamiento" }),
     ).toBeInTheDocument();
-    await expect(
-      canvas.getByRole("status", { name: "Cargando enfrentamiento" }),
-    ).toBeInTheDocument();
+    const status = canvas.getByRole("status");
+    await expect(status).toHaveTextContent("Cargando enfrentamiento");
+    await expect(status.closest('[aria-busy="true"]')).toBeNull();
     await expect(canvas.getByRole("heading", { name: "Partidos oficiales" })).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Partido 1" })).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Partido 2" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Vista previa" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Partidos EA candidatos" })).toBeVisible();
     await expect(canvas.getByRole("link", { name: "Enfrentamientos" })).toBeVisible();
+    await expect(canvas.queryByRole("heading", { name: "Partido 1" })).toBeNull();
+    await expect(canvas.queryByRole("heading", { name: "Partido 2" })).toBeNull();
+    await expect(canvas.queryByText("Sin partido EA asignado")).toBeNull();
     await expect(canvas.queryByRole("heading", { name: "Cuervos FC vs Maderas FC" })).toBeNull();
     await expect(canvas.queryByRole("button", { name: /Usar en partido/ })).toBeNull();
     await expect(canvas.queryByRole("button", { name: "Actualizar candidatos" })).toBeNull();

@@ -1,11 +1,65 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { applyStyles, Caption, Card, Heading, SectionTitle, Skeleton, vis } from "@futrob/ui";
-import { InfoIcon } from "@phosphor-icons/react";
+import type { ReactElement } from "react";
+import {
+  applyStyles,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  Caption,
+  Card,
+  Heading,
+  SectionTitle,
+  Skeleton,
+  vis,
+} from "@futrob/ui";
 import { MatchPitchSurface } from "@/shared/presentation/match-pitch-surface.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { styles } from "./encounter-page.styles.ts";
+
+/** Where the Match Center goes back to, with the list's own name. */
+export interface ListLink {
+  readonly element: ReactElement;
+  readonly label: string;
+  readonly back: string;
+}
+
+export function EncounterBreadcrumb({
+  current,
+  link,
+  pending = false,
+  t,
+}: {
+  readonly current?: string;
+  readonly link: ListLink;
+  readonly pending?: boolean;
+  readonly t: Translator;
+}) {
+  return (
+    <Breadcrumb aria-label={t("encounter.breadcrumb")}>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink render={link.element}>{link.label}</BreadcrumbLink>
+        </BreadcrumbItem>
+        {current || pending ? (
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              {current ? (
+                <BreadcrumbPage>{current}</BreadcrumbPage>
+              ) : (
+                <Skeleton aria-hidden="true" {...applyStyles(styles.skeletonCrumb)} />
+              )}
+            </BreadcrumbItem>
+          </>
+        ) : null}
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
 
 const EMPTY_CREST = { imageUrl: null, name: "" } as const;
 const SLOT_ROWS = [1, 2] as const;
@@ -18,21 +72,18 @@ const CANDIDATE_ROWS = [0, 1, 2] as const;
  * the encounter is known.
  */
 export function EncounterPageSkeleton({
-  breadcrumb,
+  link,
   t,
 }: {
-  readonly breadcrumb: ReactNode;
+  readonly link: ListLink;
   readonly t: Translator;
 }) {
   const label = t("encounter.loading");
   return (
     <main aria-busy="true" aria-label={label} {...applyStyles(styles.main)}>
       <h1 {...applyStyles(vis.srOnly)}>{label}</h1>
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
       <header {...applyStyles(styles.header)}>
-        {breadcrumb}
+        <EncounterBreadcrumb pending link={link} t={t} />
         <EncounterHeroSkeleton />
       </header>
       <EncounterSlotsSkeleton t={t} />
@@ -107,26 +158,25 @@ function EncounterSlotsSkeleton({ t }: { readonly t: Translator }) {
         <SectionTitle id="encounter-slots">{t("encounter.slots.title")}</SectionTitle>
         <Caption>{t("encounter.slots.description")}</Caption>
       </div>
-      <ol {...applyStyles(styles.list)}>
+      <div aria-hidden="true" {...applyStyles(styles.list)}>
         {SLOT_ROWS.map((slot) => (
-          <li key={slot} {...applyStyles(styles.row)}>
+          <div key={slot} {...applyStyles(styles.row)}>
             <div {...applyStyles(styles.rowTop)}>
               <div {...applyStyles(styles.slotHeading)}>
-                <Heading as="h3">{t("encounter.slot.label", { slot })}</Heading>
+                <Skeleton {...applyStyles(styles.skeletonSlotTitle)} />
                 <Skeleton {...applyStyles(styles.skeletonSlotTime)} />
               </div>
             </div>
-            <Caption>{t("encounter.slot.unassigned")}</Caption>
-          </li>
+            <Skeleton {...applyStyles(styles.skeletonSlotStatus)} />
+          </div>
         ))}
-      </ol>
+      </div>
       <div {...applyStyles(styles.preview)}>
         <Heading as="h3">{t("encounter.preview.title")}</Heading>
-        <Caption>{t("encounter.preview.incomplete")}</Caption>
-        <Caption className={styles.status}>
-          <InfoIcon aria-hidden="true" />
-          {t("encounter.preview.note")}
-        </Caption>
+        <div aria-hidden="true" {...applyStyles(styles.skeletonPreviewCopy)}>
+          <Skeleton {...applyStyles(styles.skeletonPreviewSummary)} />
+          <Skeleton {...applyStyles(styles.skeletonPreviewNote)} />
+        </div>
       </div>
     </section>
   );
