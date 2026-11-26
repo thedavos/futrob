@@ -29,7 +29,10 @@ import {
   PlanUsageCard,
   type PlanRequestControls,
 } from "./organization-plan-sections.tsx";
-import { OrganizationPlanSkeleton } from "./organization-plan-skeleton.tsx";
+import {
+  OrganizationPlanLoadingStatus,
+  OrganizationPlanSkeleton,
+} from "./organization-plan-skeleton.tsx";
 import { styles } from "./organization-plan.styles.ts";
 
 export type OrganizationPlanState =
@@ -101,6 +104,7 @@ export function OrganizationPlanPageView({ state }: { readonly state: Organizati
   const { t } = useI18n();
   return (
     <PageScaffold page="organization.plan">
+      <OrganizationPlanLoadingStatus active={state.kind === "loading"} />
       {(() => {
         switch (state.kind) {
           case "loading":

@@ -189,10 +189,20 @@ export const FreeAtLimit: Story = {
 export const Pro: Story = {
   name: "Pro con historial",
   args: { scenario: "pro" },
+  parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Acuerdo comercial")).toBeVisible();
     await expect(canvas.getByText("Activo")).toBeVisible();
+    const table = canvas.getByRole("table");
+    await expect(table).toBeVisible();
+    await expect(within(table).getByRole("columnheader", { name: "Cambio" })).toBeVisible();
+    await expect(within(table).getByRole("columnheader", { name: "Motivo" })).toBeVisible();
+    await expect(within(table).getByRole("columnheader", { name: "Fecha" })).toBeVisible();
+    await expect(canvasElement.querySelector("[data-slot='table-container']")).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
   },
 };
 
@@ -205,20 +215,24 @@ export const ProEnglishNarrow: Story = {
 export const Loading: Story = {
   name: "Cargando",
   args: { scenario: "loading" },
+  parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const status = await canvas.findByRole("status", { name: "Cargando el plan…" });
     await expect(status).toHaveTextContent("Cargando el plan…");
-    await expect(status.closest("[aria-busy='true']")).toHaveAttribute("aria-busy", "true");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    const busyGrid = canvasElement.querySelector("[aria-busy='true']");
+    await expect(busyGrid).not.toBeNull();
+    await expect(busyGrid?.contains(status)).toBe(false);
     await expect(canvas.getByRole("heading", { name: "Uso" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Plan actual" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Incluido en tu plan" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Cambios de plan" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Cambio" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Motivo" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Fecha" })).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
+    await expect(canvas.queryByRole("columnheader")).toBeNull();
     const changesTable = canvasElement.querySelector("[data-slot='table-container']");
     await expect(changesTable).toHaveAttribute("tabindex", "-1");
+    await expect(changesTable?.closest("[aria-hidden='true']")).not.toBeNull();
     await userEvent.tab();
     await expect(changesTable).not.toHaveFocus();
     await expect(canvas.queryByRole("button", { name: /Solicitar/ })).toBeNull();
@@ -230,13 +244,15 @@ export const Loading: Story = {
 export const LoadingNarrow: Story = {
   name: "Cargando · 360",
   args: { scenario: "loading", narrow: true },
+  parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByRole("status", { name: "Cargando el plan…" }),
-    ).toHaveTextContent("Cargando el plan…");
+    const status = await canvas.findByRole("status", { name: "Cargando el plan…" });
+    await expect(status).toHaveTextContent("Cargando el plan…");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
     await expect(canvas.getByRole("heading", { name: "Uso" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Cambios de plan" })).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
   },
 };
 

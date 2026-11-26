@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
 import {
   applyStyles,
   Body,
@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
   typography,
+  useExternalSync,
   vis,
 } from "@futrob/ui";
 import type { ParameterlessMessageKey as MessageKey } from "@/shared/presentation/i18n/catalogs.ts";
@@ -57,6 +58,33 @@ function SkeletonCard({
 }
 
 /**
+ * Polite loading announcement kept outside the busy skeleton so assistive
+ * technology can hear it, then cleared when the plan state settles.
+ */
+export function OrganizationPlanLoadingStatus({ active }: { readonly active: boolean }) {
+  const { t } = useI18n();
+  const label = t("billing.loading");
+  const node = useRef<HTMLSpanElement>(null);
+  useExternalSync(() => {
+    const el = node.current;
+    if (!el) return undefined;
+    el.textContent = active ? label : "";
+    return () => {
+      el.textContent = "";
+    };
+  }, [active, label]);
+  return (
+    <span
+      ref={node}
+      aria-label={active ? label : undefined}
+      aria-live="polite"
+      role="status"
+      {...applyStyles(vis.srOnly)}
+    />
+  );
+}
+
+/**
  * Layout-matched bones for Plan y uso. Card titles stay real so the grid does not
  * jump when the plan read resolves.
  */
@@ -66,60 +94,56 @@ export function OrganizationPlanSkeleton() {
   const summaryHeadingId = useId();
   const featuresHeadingId = useId();
   const changesHeadingId = useId();
-  const label = t("billing.loading");
 
   return (
-    <div aria-busy="true">
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
-      <div {...applyStyles(styles.grid)}>
-        <SkeletonCard
-          description={t("billing.usage.description")}
-          headingId={usageHeadingId}
-          title={t("billing.usage.title")}
-        >
-          <ul {...applyStyles(styles.usageList)}>
-            {USAGE_LABELS.map((key) => (
-              <li key={key} {...applyStyles(styles.usageItem)}>
-                <div {...applyStyles(styles.usageLine)}>
-                  <Body as="span">{t(key)}</Body>
-                  <Skeleton {...applyStyles(styles.boneValue)} />
-                </div>
-                <Skeleton {...applyStyles(styles.boneTrack)} />
-                {key === "billing.usage.providerSyncJobs" ? (
-                  <Skeleton {...applyStyles(styles.boneCaption)} />
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </SkeletonCard>
+    <div aria-busy="true" {...applyStyles(styles.grid)}>
+      <SkeletonCard
+        description={t("billing.usage.description")}
+        headingId={usageHeadingId}
+        title={t("billing.usage.title")}
+      >
+        <ul {...applyStyles(styles.usageList)}>
+          {USAGE_LABELS.map((key) => (
+            <li key={key} {...applyStyles(styles.usageItem)}>
+              <div {...applyStyles(styles.usageLine)}>
+                <Body as="span">{t(key)}</Body>
+                <Skeleton {...applyStyles(styles.boneValue)} />
+              </div>
+              <Skeleton {...applyStyles(styles.boneTrack)} />
+              {key === "billing.usage.providerSyncJobs" ? (
+                <Skeleton {...applyStyles(styles.boneCaption)} />
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </SkeletonCard>
 
-        <SkeletonCard headingId={summaryHeadingId} title={t("billing.plan.current")}>
-          <div {...applyStyles(styles.planLine)}>
-            <Skeleton {...applyStyles(styles.bonePlanName)} />
-            <Skeleton {...applyStyles(styles.boneBadge)} />
-          </div>
-          <div {...applyStyles(styles.actions)}>
-            <Skeleton {...applyStyles(styles.boneAction)} />
-            <Skeleton {...applyStyles(styles.boneAction)} />
-          </div>
-          <Skeleton {...applyStyles(styles.boneHint)} />
-        </SkeletonCard>
+      <SkeletonCard headingId={summaryHeadingId} title={t("billing.plan.current")}>
+        <div {...applyStyles(styles.planLine)}>
+          <Skeleton {...applyStyles(styles.bonePlanName)} />
+          <Skeleton {...applyStyles(styles.boneBadge)} />
+        </div>
+        <div {...applyStyles(styles.actions)}>
+          <Skeleton {...applyStyles(styles.boneAction)} />
+          <Skeleton {...applyStyles(styles.boneAction)} />
+        </div>
+        <Skeleton {...applyStyles(styles.boneHint)} />
+      </SkeletonCard>
 
-        <SkeletonCard headingId={featuresHeadingId} title={t("billing.features.title")}>
-          <ul aria-hidden="true" {...applyStyles(styles.featureList)}>
-            {FEATURE_ROWS.map((index) => (
-              <li key={index} {...applyStyles(styles.feature)}>
-                <Skeleton {...applyStyles(styles.boneFeatureIcon)} />
-                <Skeleton {...applyStyles(styles.boneFeatureLabel)} />
-              </li>
-            ))}
-          </ul>
-        </SkeletonCard>
+      <SkeletonCard headingId={featuresHeadingId} title={t("billing.features.title")}>
+        <ul aria-hidden="true" {...applyStyles(styles.featureList)}>
+          {FEATURE_ROWS.map((index) => (
+            <li key={index} {...applyStyles(styles.feature)}>
+              <Skeleton {...applyStyles(styles.boneFeatureIcon)} />
+              <Skeleton {...applyStyles(styles.boneFeatureLabel)} />
+            </li>
+          ))}
+        </ul>
+      </SkeletonCard>
 
-        <SkeletonCard headingId={changesHeadingId} title={t("billing.changes.title")} wide>
-          <Table containerLabelledBy={changesHeadingId} containerTabIndex={-1} dense>
+      <SkeletonCard headingId={changesHeadingId} title={t("billing.changes.title")} wide>
+        <div aria-hidden="true" {...applyStyles(styles.skeletonTable)}>
+          <Table containerTabIndex={-1} dense>
             <TableHeader>
               <TableRow>
                 <TableHead scope="col">{t("billing.changes.change")}</TableHead>
@@ -143,8 +167,8 @@ export function OrganizationPlanSkeleton() {
               ))}
             </TableBody>
           </Table>
-        </SkeletonCard>
-      </div>
+        </div>
+      </SkeletonCard>
     </div>
   );
 }

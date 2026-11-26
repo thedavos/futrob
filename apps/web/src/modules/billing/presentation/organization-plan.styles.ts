@@ -115,4 +115,8 @@ export const styles = stylex.create({
     maxWidth: "100%",
     height: "1rem",
   },
+  skeletonTable: {
+    width: "100%",
+    minWidth: 0,
+  },
 });

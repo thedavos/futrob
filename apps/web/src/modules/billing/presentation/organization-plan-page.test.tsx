@@ -2,14 +2,14 @@
 
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type { EffectiveAccessDto } from "@futrob/api-contracts";
 import { BILLING_PERMISSION } from "@futrob/billing";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { OrganizationPlanPageView, OrganizationPlanRoute } from "./organization-plan-page.tsx";
-import { freePlanFixture } from "./organization-plan.fixtures.ts";
+import { freePlanFixture, proPlanFixture } from "./organization-plan.fixtures.ts";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
@@ -76,7 +76,7 @@ afterEach(() => {
 });
 
 describe("organization plan page", () => {
-  it("reserves the plan layout while loading and keeps the changes table out of the tab order", () => {
+  it("reserves the plan layout while loading, keeps status outside aria-busy, and hides the provisional table", () => {
     render(
       <I18nProvider initialLocale="es">
         <OrganizationPlanPageView state={{ kind: "loading" }} />
@@ -84,18 +84,51 @@ describe("organization plan page", () => {
     );
 
     const status = screen.getByRole("status", { name: "Cargando el plan…" });
-    expect(status).toBeTruthy();
-    expect(status.closest("[aria-busy='true']")?.getAttribute("aria-busy")).toBe("true");
+    expect(status.textContent).toBe("Cargando el plan…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    const busyGrid = document.querySelector("[aria-busy='true']");
+    expect(busyGrid).not.toBeNull();
+    expect(busyGrid?.contains(status)).toBe(false);
     expect(screen.getByRole("heading", { name: "Uso" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Plan actual" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Incluido en tu plan" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Cambios de plan" })).toBeTruthy();
-    expect(screen.getByRole("columnheader", { name: "Cambio" })).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("columnheader")).toBeNull();
     expect(screen.queryByRole("button", { name: /Solicitar/ })).toBeNull();
     expect(screen.queryByText("Todavía no hubo cambios de plan.")).toBeNull();
     expect(screen.queryByText("Gratis")).toBeNull();
+    const tableContainer = document.querySelector("[data-slot='table-container']");
+    expect(tableContainer?.getAttribute("tabindex")).toBe("-1");
+    expect(tableContainer?.closest("[aria-hidden='true']")).not.toBeNull();
+  });
+
+  it("keeps the loading status mounted across ready transition and exposes the history table once loaded", () => {
+    const { rerender } = render(
+      <I18nProvider initialLocale="es">
+        <OrganizationPlanPageView state={{ kind: "loading" }} />
+      </I18nProvider>,
+    );
+
+    const status = screen.getByRole("status", { name: "Cargando el plan…" });
+    expect(screen.queryByRole("table")).toBeNull();
+
+    rerender(
+      <I18nProvider initialLocale="es">
+        <OrganizationPlanPageView state={{ kind: "ready", plan: proPlanFixture }} />
+      </I18nProvider>,
+    );
+
+    expect(status.isConnected).toBe(true);
+    expect(status.textContent).toBe("");
+    expect(screen.queryByRole("status", { name: "Cargando el plan…" })).toBeNull();
+    const table = screen.getByRole("table");
+    expect(within(table).getByRole("columnheader", { name: "Cambio" })).toBeTruthy();
+    expect(within(table).getByRole("columnheader", { name: "Motivo" })).toBeTruthy();
+    expect(within(table).getByRole("columnheader", { name: "Fecha" })).toBeTruthy();
+    expect(within(table).getByText("Acuerdo comercial")).toBeTruthy();
     expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
-      "-1",
+      "0",
     );
   });
 
