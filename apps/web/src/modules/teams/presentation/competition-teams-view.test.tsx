@@ -9,9 +9,9 @@ import { teamManagementFixture, teamSummaryFixture } from "./competition-teams-v
 
 afterEach(cleanup);
 
-function renderView(overrides: Partial<CompetitionTeamsViewProps> = {}) {
+function buildProps(overrides: Partial<CompetitionTeamsViewProps> = {}): CompetitionTeamsViewProps {
   const detail = teamManagementFixture();
-  const props: CompetitionTeamsViewProps = {
+  return {
     items: [teamSummaryFixture(detail)],
     detail,
     selectedTeamId: detail.team.id,
@@ -32,11 +32,25 @@ function renderView(overrides: Partial<CompetitionTeamsViewProps> = {}) {
     onDecideEntry: async () => undefined,
     ...overrides,
   };
-  render(
+}
+
+function renderView(overrides: Partial<CompetitionTeamsViewProps> = {}) {
+  const baseProps = buildProps(overrides);
+  const view = render(
     <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
-      <CompetitionTeamsView {...props} />
+      <CompetitionTeamsView {...baseProps} />
     </I18nProvider>,
   );
+  return {
+    ...view,
+    rerenderView(nextOverrides: Partial<CompetitionTeamsViewProps>) {
+      view.rerender(
+        <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+          <CompetitionTeamsView {...baseProps} {...nextOverrides} />
+        </I18nProvider>,
+      );
+    },
+  };
 }
 
 describe("CompetitionTeamsView", () => {
@@ -72,9 +86,11 @@ describe("CompetitionTeamsView", () => {
       loadingDetail: true,
     });
 
-    expect(screen.getByRole("main").getAttribute("aria-busy")).toBe("true");
-    expect(screen.getByRole("status", { name: "Cargando equipos" })).toBeTruthy();
-    expect(screen.getByRole("status", { name: "Cargando detalle del equipo" })).toBeTruthy();
+    expect(screen.getByRole("main").getAttribute("aria-busy")).toBeNull();
+    const status = screen.getByText("Cargando equipos");
+    expect(status.getAttribute("role")).toBe("status");
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+    expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Jugador" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Cuenta EA" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Rol" })).toBeTruthy();
@@ -93,6 +109,71 @@ describe("CompetitionTeamsView", () => {
     expect(screen.queryByText("Selecciona un equipo")).toBeNull();
     expect(screen.getByRole("columnheader", { name: "Jugador" })).toBeTruthy();
     expect(screen.getByRole("main").getAttribute("aria-busy")).toBeNull();
+    const status = screen.getByText("Cargando detalle del equipo");
+    expect(status.getAttribute("role")).toBe("status");
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /Cuervos FC/ }).closest('[aria-busy="true"]'),
+    ).toBeNull();
+    expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeTruthy();
+  });
+
+  it("keeps a live status region mounted outside busy subtrees across list and detail transitions", () => {
+    const detail = teamManagementFixture();
+    const { rerenderView } = renderView({
+      items: [],
+      detail: null,
+      selectedTeamId: null,
+      loadingList: false,
+      loadingDetail: false,
+    });
+
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("");
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+
+    rerenderView({
+      items: [],
+      detail: null,
+      selectedTeamId: null,
+      loadingList: true,
+      loadingDetail: true,
+    });
+
+    expect(status.isConnected).toBe(true);
+    expect(screen.getByText("Cargando equipos")).toBe(status);
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+    expect(screen.getByRole("main").getAttribute("aria-busy")).toBeNull();
+    expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeTruthy();
+
+    rerenderView({
+      items: [teamSummaryFixture(detail)],
+      detail: null,
+      selectedTeamId: detail.team.id,
+      loadingList: false,
+      loadingDetail: true,
+    });
+
+    expect(status.isConnected).toBe(true);
+    expect(screen.getByText("Cargando detalle del equipo")).toBe(status);
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /Cuervos FC/ }).closest('[aria-busy="true"]'),
+    ).toBeNull();
+    expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeTruthy();
+
+    rerenderView({
+      items: [teamSummaryFixture(detail)],
+      detail,
+      selectedTeamId: detail.team.id,
+      loadingList: false,
+      loadingDetail: false,
+    });
+
+    expect(status.isConnected).toBe(true);
+    expect(status.textContent).toBe("");
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+    expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeNull();
   });
 
   it("exposes management controls only when effective capabilities allow them", () => {

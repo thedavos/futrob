@@ -10,7 +10,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  vis,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { styles as detailStyles } from "./competition-teams-view-detail.styles.ts";
@@ -63,13 +62,10 @@ const ROSTER_SKELETON_ROWS = [0, 1, 2, 3] as const;
 const STAT_SKELETON_CELLS = [0, 1, 2] as const;
 const skeletonTableCell = applyStyles(detailStyles.skeletonTableCell);
 
-export function TeamListSkeleton({ label }: { readonly label: string }) {
+export function TeamListSkeleton() {
   const lastIndex = LIST_SKELETON_ROWS.length - 1;
   return (
     <div aria-busy="true">
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
       <div aria-hidden="true" {...applyStyles(listStyles.toolbar)}>
         <Skeleton {...applyStyles(bones.search)} />
         <div {...applyStyles(listStyles.pills)}>
@@ -80,7 +76,11 @@ export function TeamListSkeleton({ label }: { readonly label: string }) {
       </div>
       <div aria-hidden="true" {...applyStyles(listStyles.nav)}>
         {LIST_SKELETON_ROWS.map((index) => (
-          <div key={index} {...applyStyles(bones.item, index === lastIndex && listStyles.itemLast)}>
+          <div
+            data-slot="team-list-skeleton-item"
+            key={index}
+            {...applyStyles(bones.item, index === lastIndex && listStyles.itemLast)}
+          >
             <span {...applyStyles(listStyles.row)}>
               <span {...applyStyles(listStyles.copy)}>
                 <Skeleton {...applyStyles(bones.name)} />
@@ -95,13 +95,10 @@ export function TeamListSkeleton({ label }: { readonly label: string }) {
   );
 }
 
-export function TeamDetailSkeleton({ label }: { readonly label: string }) {
+export function TeamDetailSkeleton() {
   const { t } = useI18n();
   return (
     <div aria-busy="true">
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
       <div {...applyStyles(detailStyles.body)}>
         <div {...applyStyles(detailStyles.header)}>
           <div {...applyStyles(detailStyles.identity)}>

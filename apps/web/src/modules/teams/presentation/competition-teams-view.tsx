@@ -17,6 +17,7 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  vis,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
@@ -71,6 +72,13 @@ const styles = stylex.create({
   alertDescription: {
     fontSize: "0.875rem",
     fontWeight: 400,
+  },
+  content: {
+    display: "flex",
+    width: "100%",
+    minWidth: 0,
+    flexDirection: "column",
+    gap: "1rem",
   },
   split: {
     display: "grid",
@@ -165,9 +173,20 @@ export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
   const summary = summarizeCompetitionTeams(props.items);
   const showDetailMobile = props.selectedTeamId !== null && props.selectedTeamId !== "";
   const showKpis = Boolean(props.loadingList) || props.items.length > 0;
+  const loadingDetail = props.selectedTeamId
+    ? Boolean(props.loadingDetail) || !props.detail
+    : false;
+  const loadingStatus = props.loadingList
+    ? t("competition.teams.list.loading")
+    : loadingDetail
+      ? t("competition.teams.detail.loading")
+      : "";
 
   return (
-    <main aria-busy={props.loadingList || undefined} {...applyStyles(styles.main)}>
+    <main {...applyStyles(styles.main)}>
+      <span aria-atomic="true" role="status" {...applyStyles(vis.srOnly)}>
+        {loadingStatus}
+      </span>
       <PageHeader className={styles.header}>
         <PageHeaderTitle>{t("competition.teams.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("competition.teams.description")}</PageHeaderDescription>
@@ -195,33 +214,35 @@ export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
         </div>
       ) : null}
 
-      {showKpis ? (
-        <CompetitionTeamsKpis
-          loading={props.loadingList}
-          partial={props.hasMoreTeams}
-          summary={summary}
-        />
-      ) : null}
-
-      <div data-selected={showDetailMobile ? "true" : undefined} {...applyStyles(styles.split)}>
-        <Card className={showDetailMobile ? styles.panelHiddenOnMobile : styles.panelVisible}>
-          <TeamList
-            {...props}
-            filter={filter}
-            onFilterChange={setFilter}
-            onQueryChange={setQuery}
-            query={query}
+      <div aria-busy={props.loadingList || undefined} {...applyStyles(styles.content)}>
+        {showKpis ? (
+          <CompetitionTeamsKpis
+            loading={props.loadingList}
+            partial={props.hasMoreTeams}
             summary={summary}
           />
-        </Card>
-        <Card
-          className={[
-            styles.detailPanel,
-            showDetailMobile ? styles.detailPanelVisible : styles.detailPanelHiddenOnMobile,
-          ]}
-        >
-          <TeamDetail {...props} />
-        </Card>
+        ) : null}
+
+        <div data-selected={showDetailMobile ? "true" : undefined} {...applyStyles(styles.split)}>
+          <Card className={showDetailMobile ? styles.panelHiddenOnMobile : styles.panelVisible}>
+            <TeamList
+              {...props}
+              filter={filter}
+              onFilterChange={setFilter}
+              onQueryChange={setQuery}
+              query={query}
+              summary={summary}
+            />
+          </Card>
+          <Card
+            className={[
+              styles.detailPanel,
+              showDetailMobile ? styles.detailPanelVisible : styles.detailPanelHiddenOnMobile,
+            ]}
+          >
+            <TeamDetail {...props} />
+          </Card>
+        </div>
       </div>
     </main>
   );

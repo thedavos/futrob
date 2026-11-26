@@ -61,7 +61,7 @@ export function TeamList({
   const { t } = useI18n();
 
   if (loadingList) {
-    return <TeamListSkeleton label={t("competition.teams.list.loading")} />;
+    return <TeamListSkeleton />;
   }
 
   if (items.length === 0) {

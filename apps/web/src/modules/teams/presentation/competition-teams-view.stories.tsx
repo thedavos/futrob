@@ -204,16 +204,33 @@ export const LoadingList: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const page = canvas.getByRole("main");
-    await expect(page).toHaveAttribute("aria-busy", "true");
-    await expect(canvas.getByRole("status", { name: "Cargando equipos" })).toBeInTheDocument();
-    await expect(
-      canvas.getByRole("status", { name: "Cargando detalle del equipo" }),
-    ).toBeInTheDocument();
+    await expect(page).not.toHaveAttribute("aria-busy", "true");
+    const status = canvas.getByText("Cargando equipos");
+    await expect(status).toHaveAttribute("role", "status");
+    await expect(status.closest('[aria-busy="true"]')).toBeNull();
     await expect(canvas.getByRole("columnheader", { name: "Jugador" })).toBeVisible();
     await expect(canvas.getByRole("columnheader", { name: "Cuenta EA" })).toBeVisible();
     await expect(canvas.getByRole("columnheader", { name: "Rol" })).toBeVisible();
     const teamsTable = canvasElement.querySelector("[data-slot='table-container']");
     await expect(teamsTable).toHaveAttribute("tabindex", "-1");
+    await expect(teamsTable?.closest('[aria-busy="true"]')).not.toBeNull();
+    const skeletonItem = canvasElement.querySelector<HTMLElement>(
+      "[data-slot='team-list-skeleton-item']",
+    );
+    await expect(skeletonItem).not.toBeNull();
+    const skeletonRow = skeletonItem?.firstElementChild as HTMLElement | null;
+    const skeletonBadge = skeletonRow?.lastElementChild as HTMLElement | null;
+    await expect(skeletonRow).not.toBeNull();
+    await expect(skeletonBadge).not.toBeNull();
+    if (skeletonItem && skeletonRow && skeletonBadge) {
+      const itemRect = skeletonItem.getBoundingClientRect();
+      const paddingRight = Number.parseFloat(getComputedStyle(skeletonItem).paddingRight);
+      const expectedRight = itemRect.right - paddingRight;
+      const rowRect = skeletonRow.getBoundingClientRect();
+      const badgeRect = skeletonBadge.getBoundingClientRect();
+      await expect(Math.abs(rowRect.right - expectedRight)).toBeLessThanOrEqual(1);
+      await expect(Math.abs(badgeRect.right - expectedRight)).toBeLessThanOrEqual(1);
+    }
     await userEvent.tab();
     await expect(teamsTable).not.toHaveFocus();
     await expect(canvas.queryByText("Selecciona un equipo")).toBeNull();

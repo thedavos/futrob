@@ -85,6 +85,9 @@ export const styles = stylex.create({
   },
   row: {
     display: "flex",
+    width: "100%",
+    flexGrow: 1,
+    minWidth: 0,
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: "0.75rem",

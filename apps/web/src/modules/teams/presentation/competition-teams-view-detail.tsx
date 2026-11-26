@@ -60,7 +60,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
 
   if (!props.selectedTeamId) {
     if (props.loadingList) {
-      return <TeamDetailSkeleton label={t("competition.teams.detail.loading")} />;
+      return <TeamDetailSkeleton />;
     }
     return (
       <div {...applyStyles(styles.emptyWrap)}>
@@ -78,7 +78,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
   }
 
   if (props.loadingDetail || !props.detail) {
-    return <TeamDetailSkeleton label={t("competition.teams.detail.loading")} />;
+    return <TeamDetailSkeleton />;
   }
 
   const { detail, capabilities } = props;
