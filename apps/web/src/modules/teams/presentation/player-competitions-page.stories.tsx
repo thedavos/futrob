@@ -151,6 +151,30 @@ export const EmptyMultipleClubs: Story = {
   },
 };
 
+function hoverSelectorsMatching(element: Element): string[] {
+  const matches: string[] = [];
+  const visit = (rules: CSSRuleList) => {
+    for (const rule of Array.from(rules)) {
+      if (rule instanceof CSSStyleRule) {
+        for (const selector of rule.selectorText.split(",")) {
+          if (!selector.includes(":hover")) continue;
+          if (element.matches(selector.replaceAll(":hover", ""))) matches.push(selector.trim());
+        }
+      } else if ("cssRules" in rule) {
+        visit((rule as CSSGroupingRule).cssRules);
+      }
+    }
+  };
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      visit(sheet.cssRules);
+    } catch {
+      // Cross-origin stylesheets cannot be read; product styles are same-origin.
+    }
+  }
+  return matches;
+}
+
 export const Loading: Story = {
   name: "Loading",
   args: { scenario: "loading" },
@@ -202,10 +226,10 @@ export const Loading: Story = {
     };
 
     await assertBarsDistinctFromRow();
-    await userEvent.hover(skeletonRow);
-    await assertBarsDistinctFromRow();
-    await userEvent.unhover(skeletonRow);
-    await assertBarsDistinctFromRow();
+    // Synthetic hover events never activate `:hover`, so assert on the stylesheet:
+    // no `:hover` rule may target the decorative row or its list item.
+    await expect(hoverSelectorsMatching(skeletonRow)).toEqual([]);
+    await expect(hoverSelectorsMatching(skeletonRow.parentElement!)).toEqual([]);
   },
 };
 
