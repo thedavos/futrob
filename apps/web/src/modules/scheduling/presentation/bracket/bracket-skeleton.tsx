@@ -190,7 +190,7 @@ export function BracketPageSkeleton({ view }: { readonly view: BracketViewMode }
         <div {...applyStyles(styles.filterSummary)}>
           <Skeleton {...applyStyles(styles.timezone)} />
         </div>
-        <div {...applyStyles(styles.panel)}>
+        <div {...applyStyles(styles.panel, styles.skeletonPanel)}>
           <section {...applyStyles(styles.stage)}>
             <div {...applyStyles(styles.stageHeader)}>
               <Skeleton {...applyStyles(styles.stageTitle)} />

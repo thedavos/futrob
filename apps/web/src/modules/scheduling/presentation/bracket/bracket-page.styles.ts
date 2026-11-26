@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { colors, space } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 
 /** Height of the round headings above the cards, inside the scrollable canvas. */
@@ -61,6 +61,10 @@ export const styles = stylex.create({
     flexDirection: "column",
     gap: "2rem",
     minWidth: 0,
+  },
+  /** `TabsContent` pads the loaded panel; the skeleton reserves the same gap. */
+  skeletonPanel: {
+    paddingTop: space.s4,
   },
   stage: {
     display: "flex",
