@@ -5,6 +5,7 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 export const styles = stylex.create({
   main: {
     width: "100%",
+    minWidth: 0,
   },
   body: {
     marginTop: "1rem",
@@ -63,14 +64,24 @@ export const styles = stylex.create({
   meta: {
     color: colors.mutedForeground,
   },
+  nameLine: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    height: "calc(var(--typo-body-size) * var(--typo-body-leading))",
+  },
+  metaLine: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    height: "calc(var(--typo-caption-size) * var(--typo-caption-leading))",
+  },
   nameBone: {
-    width: "14rem",
-    maxWidth: "100%",
+    width: "min(14rem, 100%)",
     height: "1.25rem",
   },
   metaBone: {
-    width: "5rem",
-    maxWidth: "70%",
+    width: "min(5rem, 70%)",
     height: "0.75rem",
   },
   badgeBone: {

@@ -59,13 +59,69 @@ describe("OrganizationCompetitionsPage", () => {
     const { container } = renderPage();
 
     await expect(screen.findByRole("heading", { name: "Competiciones" })).resolves.toBeTruthy();
-    const status = screen.getByRole("status", { name: "Cargando competiciones…" });
-    expect(status.parentElement?.getAttribute("aria-busy")).toBe("true");
-    expect(container.querySelectorAll("[data-slot='skeleton']")).toHaveLength(
+    const status = await screen.findByRole("status", { name: "Cargando competiciones…" });
+    expect(status.textContent).toBe("Cargando competiciones…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    const busyRegion = container.querySelector("[aria-busy='true']");
+    expect(busyRegion).not.toBeNull();
+    expect(busyRegion?.contains(status)).toBe(false);
+    expect(busyRegion?.querySelectorAll("[data-slot='skeleton']")).toHaveLength(
       ORGANIZATION_COMPETITIONS_SKELETON_ROWS * 3,
     );
-    expect(container.querySelector("ul")?.getAttribute("aria-hidden")).toBe("true");
+    expect(busyRegion?.querySelector("ul")?.getAttribute("aria-hidden")).toBe("true");
     expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("announces loading outside the busy container and clears it when competitions arrive", async () => {
+    let resolveCompetitions: (value: ListOrganizationCompetitionsResponse) => void = () => {};
+    listOrganizationCompetitions.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCompetitions = resolve;
+        }),
+    );
+
+    const { container } = renderPage();
+    const activeBefore = document.activeElement;
+
+    const status = await screen.findByRole("status", { name: "Cargando competiciones…" });
+    expect(status.textContent).toBe("Cargando competiciones…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    const busyRegion = container.querySelector("[aria-busy='true']");
+    expect(busyRegion).not.toBeNull();
+    expect(busyRegion?.contains(status)).toBe(false);
+
+    resolveCompetitions({
+      competitions: [
+        {
+          id: "league",
+          organizationId: "org-1",
+          name: "Liga Metropolitana",
+          status: "published",
+          modality: "fc-clubs",
+          exploreListing: "listed",
+          gameEdition: "FC 26",
+          platform: "playstation",
+          region: "south-america",
+          timeZone: "America/Lima",
+          format: "league",
+          teams: { min: 2, max: null },
+          schedule: { startsOn: null, endsOn: null },
+          cover: { kind: "preset", preset: "league" },
+          createdAt: "2026-08-01T00:00:00.000Z",
+          updatedAt: "2026-10-05T12:00:00.000Z",
+        },
+      ],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: /Liga Metropolitana/ })).toBeTruthy();
+    });
+    expect(status.isConnected).toBe(true);
+    expect(status.textContent).toBe("");
+    expect(screen.queryByRole("status", { name: "Cargando competiciones…" })).toBeNull();
+    expect(container.querySelector("[aria-busy='true']")).toBeNull();
+    expect(document.activeElement).toBe(activeBefore);
   });
 
   it("lists competitions when the organization query resolves", async () => {

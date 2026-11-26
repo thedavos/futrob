@@ -23,7 +23,10 @@ import noCompetitionsUrl from "@/assets/illustration-no-matches.png";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { useOrganizationCompetitionsQuery } from "./competition-queries.ts";
 import { styles } from "./organization-competitions-page.styles.ts";
-import { OrganizationCompetitionsSkeleton } from "./organization-competitions-skeleton.tsx";
+import {
+  OrganizationCompetitionsLoadingStatus,
+  OrganizationCompetitionsSkeleton,
+} from "./organization-competitions-skeleton.tsx";
 
 const row = applyStyles(styles.row);
 
@@ -39,6 +42,8 @@ export function OrganizationCompetitionsPage({
 
   return (
     <main {...applyStyles(styles.main)}>
+      <OrganizationCompetitionsLoadingStatus active={competitionsQuery.isPending} />
+
       <PageHeader>
         <PageHeaderTitle>Competiciones</PageHeaderTitle>
         <PageHeaderDescription>
@@ -55,37 +60,39 @@ export function OrganizationCompetitionsPage({
           </Alert>
         ) : null}
 
-        {competitionsQuery.isPending ? (
-          <OrganizationCompetitionsSkeleton />
-        ) : competitions.length === 0 ? (
-          <EmptyState>
-            <EmptyStateIcon>
-              <img alt="" data-outline="none" src={noCompetitionsUrl} />
-            </EmptyStateIcon>
-            <EmptyStateTitle>Sin competiciones todavía</EmptyStateTitle>
-            <EmptyStateDescription>
-              Crea un borrador para definir edición, plataforma, región y formato. Después podrás
-              completar el setup operativo.
-            </EmptyStateDescription>
-            {canCreate ? (
-              <EmptyStateActions>
-                <Button
-                  render={
-                    <Link params={{ orgId: organizationId }} to="/orgs/$orgId/competitions/new" />
-                  }
-                >
-                  Nueva competición
-                </Button>
-              </EmptyStateActions>
-            ) : null}
-          </EmptyState>
-        ) : (
-          <ul {...applyStyles(styles.list)}>
-            {competitions.map((competition) => (
-              <CompetitionRow competition={competition} key={competition.id} />
-            ))}
-          </ul>
-        )}
+        <div aria-busy={competitionsQuery.isPending || undefined}>
+          {competitionsQuery.isPending ? (
+            <OrganizationCompetitionsSkeleton />
+          ) : competitions.length === 0 ? (
+            <EmptyState>
+              <EmptyStateIcon>
+                <img alt="" data-outline="none" src={noCompetitionsUrl} />
+              </EmptyStateIcon>
+              <EmptyStateTitle>Sin competiciones todavía</EmptyStateTitle>
+              <EmptyStateDescription>
+                Crea un borrador para definir edición, plataforma, región y formato. Después podrás
+                completar el setup operativo.
+              </EmptyStateDescription>
+              {canCreate ? (
+                <EmptyStateActions>
+                  <Button
+                    render={
+                      <Link params={{ orgId: organizationId }} to="/orgs/$orgId/competitions/new" />
+                    }
+                  >
+                    Nueva competición
+                  </Button>
+                </EmptyStateActions>
+              ) : null}
+            </EmptyState>
+          ) : (
+            <ul {...applyStyles(styles.list)}>
+              {competitions.map((competition) => (
+                <CompetitionRow competition={competition} key={competition.id} />
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </main>
   );
@@ -107,7 +114,7 @@ function CompetitionRow({ competition }: { readonly competition: CompetitionDto 
     <li {...applyStyles(styles.item)}>
       <Link className={row.className} params={href.params} style={row.style} to={href.to}>
         <span {...applyStyles(styles.copy)}>
-          <span {...applyStyles(styles.name)}>{competition.name}</span>
+          <span {...applyStyles(typography.body, styles.name)}>{competition.name}</span>
           <span {...applyStyles(typography.caption, styles.meta)}>{competition.gameEdition}</span>
         </span>
         <Badge variant="neutral">{statusLabel(competition.status)}</Badge>
