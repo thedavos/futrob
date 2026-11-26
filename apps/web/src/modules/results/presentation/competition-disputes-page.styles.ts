@@ -66,9 +66,42 @@ export const styles = stylex.create({
     color: colors.mutedForeground,
     fontWeight: 700,
   },
-  skeleton: {
-    minHeight: "7.5rem",
-    width: "100%",
-    borderRadius: "var(--corner-xl)",
+  captionBone: {
+    width: "11rem",
+    maxWidth: "70%",
+    height: "1rem",
+  },
+  badgeBone: {
+    width: "6.5rem",
+    height: "1.5rem",
+    flexShrink: 0,
+    borderRadius: "var(--corner-full)",
+  },
+  waitBone: {
+    // Yield width to the badge (6.5rem) and the row gap (0.75rem) so the bones
+    // share one line at 360 px, as the loaded badge and caption do.
+    width: "min(12rem, calc(100% - 7.25rem))",
+    minWidth: "3rem",
+    height: "1rem",
+  },
+  homeBone: {
+    width: "8rem",
+    maxWidth: "100%",
+    height: "1.125rem",
+    justifySelf: "end",
+  },
+  vsBone: {
+    width: "1.5rem",
+    height: "1rem",
+  },
+  awayBone: {
+    width: "8rem",
+    maxWidth: "100%",
+    height: "1.125rem",
+  },
+  kickoffBone: {
+    width: "11rem",
+    maxWidth: "100%",
+    height: "1.125rem",
   },
 });
