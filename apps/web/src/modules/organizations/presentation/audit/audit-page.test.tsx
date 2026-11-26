@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vite-plus/test";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -142,18 +142,20 @@ it("distinguishes permission denial from an empty history", () => {
   expect(screen.getByText("Auditoría no disponible")).toBeTruthy();
   expect(screen.queryByRole("form", { name: "Filtrar auditoría" })).toBeNull();
 });
-it("mirrors the audit table while loading without putting the scroller in the tab order", () => {
+it("mirrors the audit table while loading without exposing fake rows or putting the scroller in the tab order", () => {
   show({ kind: "loading" });
   const status = screen.getByRole("status", { name: "Cargando auditoría" });
   expect(status.closest("[aria-busy='true']")).toBeNull();
-  expect(document.querySelector("[aria-busy='true']")?.getAttribute("aria-label")).toBe(
-    "Cargando auditoría",
-  );
-  expect(screen.getByRole("columnheader", { name: "Fecha" })).toBeTruthy();
-  expect(screen.getByRole("columnheader", { name: "Actor" })).toBeTruthy();
-  expect(screen.getByRole("columnheader", { name: "Acción" })).toBeTruthy();
-  expect(screen.getByRole("columnheader", { name: "Motivo" })).toBeTruthy();
-  expect(screen.getByRole("columnheader", { name: "Objeto afectado" })).toBeTruthy();
+  const busy = document.querySelector<HTMLElement>("[aria-busy='true']");
+  expect(busy?.getAttribute("aria-label")).toBe("Cargando auditoría");
+  expect(screen.queryByRole("table", { name: "Historial de auditoría" })).toBeNull();
+  expect(screen.queryByRole("table")).toBeNull();
+  const skeleton = within(busy!);
+  expect(skeleton.getByText("Fecha")).toBeTruthy();
+  expect(skeleton.getByText("Actor")).toBeTruthy();
+  expect(skeleton.getByText("Acción")).toBeTruthy();
+  expect(skeleton.getByText("Motivo")).toBeTruthy();
+  expect(skeleton.getByText("Objeto afectado")).toBeTruthy();
   expect(screen.getByRole("form", { name: "Filtrar auditoría" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Anterior" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Siguiente" })).toBeNull();
@@ -171,8 +173,10 @@ it("announces a filter refetch on the same live region outside the busy skeleton
   expect(status.getAttribute("aria-label")).toBe("Cargando auditoría");
   expect(status.closest("[aria-busy='true']")).toBeNull();
   expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
+  expect(screen.queryByRole("table", { name: "Historial de auditoría" })).toBeNull();
   renderState(ready);
   expect(status.getAttribute("aria-label")).toBeNull();
+  expect(screen.getByRole("table", { name: "Historial de auditoría" })).toBeTruthy();
   expect(screen.getByText("María Torres")).toBeTruthy();
 });
 

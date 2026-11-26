@@ -256,15 +256,16 @@ export const Loading: Story = {
     const canvas = within(canvasElement);
     const status = canvas.getByRole("status", { name: "Cargando auditoría" });
     await expect(status.closest("[aria-busy='true']")).toBeNull();
-    await expect(canvasElement.querySelector("[aria-busy='true']")).toHaveAttribute(
-      "aria-busy",
-      "true",
-    );
-    await expect(canvas.getByRole("columnheader", { name: "Fecha" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Actor" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Acción" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Motivo" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Objeto afectado" })).toBeVisible();
+    const busy = canvasElement.querySelector<HTMLElement>("[aria-busy='true']");
+    await expect(busy).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.queryByRole("table", { name: "Historial de auditoría" })).toBeNull();
+    await expect(canvas.queryByRole("table")).toBeNull();
+    const skeleton = within(busy!);
+    await expect(skeleton.getByText("Fecha")).toBeVisible();
+    await expect(skeleton.getByText("Actor")).toBeVisible();
+    await expect(skeleton.getByText("Acción")).toBeVisible();
+    await expect(skeleton.getByText("Motivo")).toBeVisible();
+    await expect(skeleton.getByText("Objeto afectado")).toBeVisible();
     await expect(canvas.getByRole("form", { name: "Filtrar auditoría" })).toBeVisible();
     await expect(canvas.queryByRole("button", { name: "Anterior" })).toBeNull();
     await expect(canvas.queryByRole("button", { name: "Siguiente" })).toBeNull();

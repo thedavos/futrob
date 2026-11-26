@@ -22,49 +22,46 @@ export function AuditLoadingSkeleton() {
   return (
     <div aria-busy="true" aria-label={label}>
       <div {...applyStyles(styles.body)}>
-        <Table
-          aria-label={t("audit.table.label")}
-          className={styles.table}
-          containerTabIndex={-1}
-          dense
-        >
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("audit.column.date")}</TableHead>
-              <TableHead>{t("audit.column.actor")}</TableHead>
-              <TableHead>{t("audit.column.action")}</TableHead>
-              <TableHead>{t("audit.column.reason")}</TableHead>
-              <TableHead>{t("audit.column.object")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {ROWS.map((row) => (
-              <TableRow key={row}>
-                <TableCell>
-                  <Skeleton {...applyStyles(styles.skeletonDate)} />
-                </TableCell>
-                <TableCell>
-                  <div {...applyStyles(styles.stack)}>
-                    <Skeleton {...applyStyles(styles.skeletonActor)} />
-                    <Skeleton {...applyStyles(styles.skeletonActorId)} />
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Skeleton {...applyStyles(styles.skeletonAction)} />
-                </TableCell>
-                <TableCell>
-                  <Skeleton {...applyStyles(styles.skeletonReason)} />
-                </TableCell>
-                <TableCell>
-                  <div {...applyStyles(styles.stack)}>
-                    <Skeleton {...applyStyles(styles.skeletonObject)} />
-                    <Skeleton {...applyStyles(styles.skeletonRequest)} />
-                  </div>
-                </TableCell>
+        <div aria-hidden="true">
+          <Table className={styles.table} containerTabIndex={-1} dense>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("audit.column.date")}</TableHead>
+                <TableHead>{t("audit.column.actor")}</TableHead>
+                <TableHead>{t("audit.column.action")}</TableHead>
+                <TableHead>{t("audit.column.reason")}</TableHead>
+                <TableHead>{t("audit.column.object")}</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {ROWS.map((row) => (
+                <TableRow key={row}>
+                  <TableCell>
+                    <Skeleton {...applyStyles(styles.skeletonDate)} />
+                  </TableCell>
+                  <TableCell>
+                    <div {...applyStyles(styles.stack)}>
+                      <Skeleton {...applyStyles(styles.skeletonActor)} />
+                      <Skeleton {...applyStyles(styles.skeletonActorId)} />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton {...applyStyles(styles.skeletonAction)} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton {...applyStyles(styles.skeletonReason)} />
+                  </TableCell>
+                  <TableCell>
+                    <div {...applyStyles(styles.stack)}>
+                      <Skeleton {...applyStyles(styles.skeletonObject)} />
+                      <Skeleton {...applyStyles(styles.skeletonRequest)} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
         <div aria-hidden="true" {...applyStyles(styles.pagination)}>
           <Caption>{t("audit.order")}</Caption>
           <div {...applyStyles(styles.paginationActions)}>
