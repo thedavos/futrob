@@ -167,7 +167,7 @@ export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
   const showKpis = Boolean(props.loadingList) || props.items.length > 0;
 
   return (
-    <main {...applyStyles(styles.main)}>
+    <main aria-busy={props.loadingList || undefined} {...applyStyles(styles.main)}>
       <PageHeader className={styles.header}>
         <PageHeaderTitle>{t("competition.teams.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("competition.teams.description")}</PageHeaderDescription>

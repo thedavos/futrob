@@ -14,7 +14,6 @@ import {
   EmptyStateIcon,
   EmptyStateTitle,
   SectionTitle,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -47,14 +46,12 @@ import {
 import type { CompetitionTeamsViewProps } from "./competition-teams-view.tsx";
 import { EntryBadge } from "./competition-teams-view-entry.tsx";
 import { styles } from "./competition-teams-view-detail.styles.ts";
+import { TeamDetailSkeleton } from "./competition-teams-view-skeleton.tsx";
 import { TeamDetailStats } from "./competition-teams-view-stats.tsx";
 import { platformLabel } from "./platform-label.ts";
 import { RosterPlayerCell } from "./roster-player-cell.tsx";
 import { useRoleLabels } from "./roster-role-labels.ts";
 
-const skeletonTitle = applyStyles(styles.skeletonTitle);
-const skeletonStats = applyStyles(styles.skeletonStats);
-const skeletonTable = applyStyles(styles.skeletonTable);
 const back = applyStyles(styles.back);
 
 export function TeamDetail(props: CompetitionTeamsViewProps) {
@@ -62,6 +59,9 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
   const roleLabel = useRoleLabels();
 
   if (!props.selectedTeamId) {
+    if (props.loadingList) {
+      return <TeamDetailSkeleton label={t("competition.teams.detail.loading")} />;
+    }
     return (
       <div {...applyStyles(styles.emptyWrap)}>
         <EmptyState className={styles.empty}>
@@ -78,17 +78,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
   }
 
   if (props.loadingDetail || !props.detail) {
-    return (
-      <div
-        aria-label={t("competition.teams.detail.loading")}
-        role="status"
-        {...applyStyles(styles.loading)}
-      >
-        <Skeleton className={skeletonTitle.className} style={skeletonTitle.style} />
-        <Skeleton className={skeletonStats.className} style={skeletonStats.style} />
-        <Skeleton className={skeletonTable.className} style={skeletonTable.style} />
-      </div>
-    );
+    return <TeamDetailSkeleton label={t("competition.teams.detail.loading")} />;
   }
 
   const { detail, capabilities } = props;

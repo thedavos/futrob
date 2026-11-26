@@ -17,21 +17,73 @@ export const styles = stylex.create({
     minWidth: 0,
     borderWidth: 0,
   },
-  loading: {
-    display: "grid",
-    gap: "1rem",
-    padding: "1.25rem",
+  skeletonBack: {
+    width: "8.5rem",
+    height: "2.25rem",
+    alignSelf: "flex-start",
+    display: {
+      default: null,
+      [media.md]: "none",
+    },
   },
   skeletonTitle: {
-    height: "2.25rem",
+    width: "12rem",
+    maxWidth: "100%",
+    height: "1.75rem",
+  },
+  skeletonBadge: {
+    width: "5.5rem",
+    height: "1.5rem",
+    flexShrink: 0,
+    borderRadius: "var(--corner-full)",
+  },
+  skeletonClub: {
     width: "16rem",
     maxWidth: "100%",
+    height: "1rem",
   },
-  skeletonStats: {
-    height: "5.5rem",
+  skeletonStatIcon: {
+    width: "1.25rem",
+    height: "1.25rem",
+    marginTop: "0.125rem",
+    flexShrink: 0,
+    borderRadius: "var(--corner-full)",
   },
-  skeletonTable: {
-    height: "14rem",
+  skeletonStatLabel: {
+    width: "4.5rem",
+    height: "0.75rem",
+  },
+  skeletonStatValue: {
+    width: "3.5rem",
+    height: "1.5rem",
+  },
+  skeletonStatHint: {
+    width: "6.5rem",
+    maxWidth: "100%",
+    height: "0.75rem",
+  },
+  skeletonRosterHeading: {
+    width: "8rem",
+    height: "1.5rem",
+  },
+  skeletonTableCell: {
+    height: "auto",
+    paddingBlock: "0.75rem",
+  },
+  skeletonPlayer: {
+    width: "8rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  skeletonAccount: {
+    width: "7rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  skeletonRole: {
+    width: "5.5rem",
+    height: "2.25rem",
+    borderRadius: "var(--corner-md)",
   },
   decisionStrip: {
     display: "flex",

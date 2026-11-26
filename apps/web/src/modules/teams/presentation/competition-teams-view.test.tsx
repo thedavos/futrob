@@ -63,6 +63,38 @@ describe("CompetitionTeamsView", () => {
     expect(screen.getByText("Selecciona un equipo")).toBeTruthy();
   });
 
+  it("mirrors the console layout while teams load and does not flash empty states", () => {
+    renderView({
+      items: [],
+      detail: null,
+      selectedTeamId: null,
+      loadingList: true,
+      loadingDetail: true,
+    });
+
+    expect(screen.getByRole("main").getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByRole("status", { name: "Cargando equipos" })).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Cargando detalle del equipo" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Jugador" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Cuenta EA" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Rol" })).toBeTruthy();
+    expect(screen.getByRole("table").parentElement?.getAttribute("tabindex")).toBe("-1");
+    expect(screen.queryByText("Selecciona un equipo")).toBeNull();
+    expect(screen.queryByText("Sin equipos todavía")).toBeNull();
+    expect(screen.queryByRole("searchbox")).toBeNull();
+    expect(screen.queryByRole("radio")).toBeNull();
+  });
+
+  it("keeps the team list usable while a selected team's detail loads", () => {
+    renderView({ loadingDetail: true, detail: null });
+
+    expect(screen.getByRole("button", { name: /Cuervos FC/ })).toBeTruthy();
+    expect(screen.getByRole("searchbox", { name: "Buscar equipo o club…" })).toBeTruthy();
+    expect(screen.queryByText("Selecciona un equipo")).toBeNull();
+    expect(screen.getByRole("columnheader", { name: "Jugador" })).toBeTruthy();
+    expect(screen.getByRole("main").getAttribute("aria-busy")).toBeNull();
+  });
+
   it("exposes management controls only when effective capabilities allow them", () => {
     renderView({
       capabilities: {

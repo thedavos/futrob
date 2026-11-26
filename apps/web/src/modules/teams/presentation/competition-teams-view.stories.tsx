@@ -201,6 +201,26 @@ export const LoadingList: Story = {
     loadingList: true,
     loadingDetail: true,
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = canvas.getByRole("main");
+    await expect(page).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("status", { name: "Cargando equipos" })).toBeInTheDocument();
+    await expect(
+      canvas.getByRole("status", { name: "Cargando detalle del equipo" }),
+    ).toBeInTheDocument();
+    await expect(canvas.getByRole("columnheader", { name: "Jugador" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Cuenta EA" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Rol" })).toBeVisible();
+    const teamsTable = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(teamsTable).toHaveAttribute("tabindex", "-1");
+    await userEvent.tab();
+    await expect(teamsTable).not.toHaveFocus();
+    await expect(canvas.queryByText("Selecciona un equipo")).toBeNull();
+    await expect(canvas.queryByText("Sin equipos todavía")).toBeNull();
+    await expect(canvas.queryByRole("searchbox")).toBeNull();
+    await expect(canvas.queryByRole("radio")).toBeNull();
+  },
 };
 
 export const PermissionUnavailable: Story = {
