@@ -341,9 +341,62 @@ export const styles = stylex.create({
     alignItems: "center",
     gap: "0.25rem 0.75rem",
   },
-  skeleton: {
-    minHeight: "20rem",
+  timezone: {
+    width: "16rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  filterLabel: {
+    width: "5.5rem",
+    height: "0.875rem",
+  },
+  filterControl: {
     width: "100%",
-    borderRadius: "var(--corner-xl)",
+    height: "var(--control-height)",
+  },
+  stageTitle: {
+    width: "11rem",
+    maxWidth: "100%",
+    height: "1.75rem",
+  },
+  fact: {
+    width: "6.5rem",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
+  hint: {
+    width: "22rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  columnTitle: {
+    width: "8.5rem",
+    maxWidth: "100%",
+    height: "1.25rem",
+  },
+  columnMeta: {
+    width: "4.5rem",
+    height: "0.75rem",
+  },
+  cardNumber: {
+    width: "1.5rem",
+    height: "0.75rem",
+  },
+  cardWhen: {
+    width: "4rem",
+    height: "0.75rem",
+  },
+  cardSide: {
+    width: "80%",
+    height: "1rem",
+  },
+  cardStatus: {
+    width: "7rem",
+    height: "0.75rem",
+  },
+  listToggle: {
+    width: "100%",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-lg)",
   },
 });
