@@ -21,7 +21,14 @@ import {
   competitionFixturePageState,
   type CompetitionFixturePageState,
 } from "./competition-fixture-state.ts";
-import { FIXTURE_CALENDAR_NOW, leagueFixture } from "./fixture-calendar.fixtures.ts";
+import {
+  FIXTURE_CALENDAR_NOW,
+  LEAGUE_PLAYOFFS_NOW,
+  LONG_LEAGUE_NOW,
+  leagueFixture,
+  leaguePlayoffsFixture,
+  longLeagueFixture,
+} from "./fixture-calendar.fixtures.ts";
 import type { FixtureCalendarViewKind } from "./fixture-calendar.tsx";
 import type { SwissFixtureCommands } from "./swiss-fixture-commands.ts";
 import { fixtureCalendarSearchSchema } from "./fixture-calendar-search.ts";
@@ -33,12 +40,39 @@ const styles = stylex.create({
     paddingInline: { default: "1rem", [media.lg]: "2.5rem" },
     paddingBlock: "1.5rem",
   },
+  // Mirrors the authenticated shell: a fixed-height frame whose #app-main scrolls below a
+  // 3.5rem command bar and is a size container (see authenticated-shell.tsx).
+  shell: {
+    display: "flex",
+    flexDirection: "column",
+    height: "100svh",
+    overflow: "hidden",
+    backgroundColor: colors.background,
+  },
+  shellBar: {
+    height: "3.5rem",
+    flexShrink: 0,
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.border,
+  },
+  shellMain: {
+    minHeight: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    overflowY: "auto",
+    containerType: "size",
+    padding: "1.5rem",
+  },
 });
 
 const retry = () => undefined;
 
 type Scenario =
   | "league"
+  | "leaguePlayoffs"
+  | "longLeague"
   | "knockout"
   | "stale"
   | "empty"
@@ -72,6 +106,18 @@ const STATES: Record<Scenario, CompetitionFixturePageState> = {
     refused: false,
     retry,
   }),
+  leaguePlayoffs: competitionFixturePageState({
+    data: leaguePlayoffsFixture,
+    failed: false,
+    refused: false,
+    retry,
+  }),
+  longLeague: competitionFixturePageState({
+    data: longLeagueFixture,
+    failed: false,
+    refused: false,
+    retry,
+  }),
   knockout: competitionFixturePageState({
     data: groupsKnockoutFixture,
     failed: false,
@@ -100,13 +146,20 @@ const STATES: Record<Scenario, CompetitionFixturePageState> = {
   swissNeedsTeams: generateState(1),
 };
 
+const NOW: Partial<Record<Scenario, Date>> = {
+  leaguePlayoffs: LEAGUE_PLAYOFFS_NOW,
+  longLeague: LONG_LEAGUE_NOW,
+};
+
 type StoryArgs = {
   readonly scenario: Scenario;
   readonly locale: Locale;
   readonly initialView: FixtureCalendarViewKind;
+  /** Render inside a frame shaped like the authenticated shell. */
+  readonly inShell?: boolean;
 };
 
-function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
+function FixtureStory({ initialView, inShell = false, locale, scenario }: StoryArgs) {
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
     const fixtureRoute = createRoute({
@@ -118,7 +171,7 @@ function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
           commands={swissCommands}
           competitionId="competition-1"
           initialView={initialView}
-          now={FIXTURE_CALENDAR_NOW}
+          now={NOW[scenario] ?? FIXTURE_CALENDAR_NOW}
           organizationId="org-1"
           state={STATES[scenario]}
         />
@@ -138,15 +191,26 @@ function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
   }, [initialView, scenario]);
   return (
     <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
-      <div {...applyProps(undefined, undefined, styles.frame)}>
-        <RouterProvider router={router} />
-      </div>
+      {inShell ? (
+        <div {...applyProps(undefined, undefined, styles.shell)}>
+          <div aria-hidden="true" {...applyProps(undefined, undefined, styles.shellBar)} />
+          <div data-testid="shell-main" {...applyProps(undefined, undefined, styles.shellMain)}>
+            <RouterProvider router={router} />
+          </div>
+        </div>
+      ) : (
+        <div {...applyProps(undefined, undefined, styles.frame)}>
+          <RouterProvider router={router} />
+        </div>
+      )}
     </I18nProvider>
   );
 }
 
 const SCENARIOS = [
   "league",
+  "leaguePlayoffs",
+  "longLeague",
   "knockout",
   "stale",
   "empty",
@@ -177,6 +241,136 @@ export default meta;
 type Story = StoryObj<StoryArgs>;
 
 const narrow = { viewport: { defaultViewport: "mobile1" } };
+
+export const Playground: Story = {
+  args: { scenario: "leaguePlayoffs", locale: "es", initialView: "agenda" },
+};
+
+export const LeaguePlayoffsAgenda: Story = {
+  name: "Liga y Playoffs · Agenda",
+  args: { scenario: "leaguePlayoffs", initialView: "agenda" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("status")).toHaveTextContent(
+      "18 enfrentamientos en 7 fechas",
+    );
+    await expect(canvas.getByText("Horarios en America/Lima")).toBeVisible();
+    // Shared round & match count are lifted to the day heading instead of repeated per row.
+    await expect(
+      canvas.getByText("Liga · Jornada 1 · 3 enfrentamientos · 1 partido"),
+    ).toBeVisible();
+    await expect(canvas.getByText("Playoffs · Final · 1 enfrentamiento · 1 partido")).toBeVisible();
+    const jump = canvas.getByRole("navigation", { name: "Saltar a una fecha del calendario" });
+    await expect(within(jump).getByRole("link", { name: /Jornada 5/ })).toHaveAttribute(
+      "href",
+      "#fixture-day-2026-07-05",
+    );
+    await expect(within(jump).getByRole("link", { name: /Final/ })).toHaveAttribute(
+      "href",
+      "#fixture-day-2026-07-19",
+    );
+  },
+};
+
+/** A laptop-height window: the Agenda index of a 30-date league must scroll on its own. */
+const shortLaptop = {
+  viewport: {
+    options: {
+      shortLaptop: {
+        name: "Portátil bajo (1280 × 720)",
+        styles: { width: "1280px", height: "720px" },
+        type: "desktop",
+      },
+    },
+  },
+};
+
+export const LongLeagueAgendaIndex: Story = {
+  name: "Liga larga · Índice de la Agenda",
+  args: { scenario: "longLeague", initialView: "agenda", inShell: true },
+  parameters: { ...shortLaptop, a11y: { test: "error" } },
+  globals: { viewport: { value: "shortLaptop", isRotated: false } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const jump = await canvas.findByRole("navigation", {
+      name: "Saltar a una fecha del calendario",
+    });
+    const links = within(jump).getAllByRole("link");
+    await expect(links).toHaveLength(30);
+    const last = links.at(-1);
+    if (!last) throw new Error("The jump index has no links");
+    await expect(last).toHaveAttribute("href", "#fixture-day-2027-02-21");
+
+    // Inside the shell the page scrolls in #app-main, below the command bar. A short scroll
+    // there pins the index; from then on, scrolling only the index reaches its last shortcut
+    // while the Agenda still shows its first dates.
+    const main = canvas.getByTestId("shell-main");
+    const aside = jump.closest("aside");
+    if (!aside) throw new Error("The jump index is not inside its aside");
+    const mainBox = main.getBoundingClientRect();
+    main.scrollTop = aside.getBoundingClientRect().top - mainBox.top;
+    // Pinned at #app-main's 1.5rem padding plus the index's 1.25rem sticky offset.
+    await waitFor(() =>
+      expect(aside.getBoundingClientRect().top - mainBox.top).toBeLessThanOrEqual(48),
+    );
+    const mainScroll = main.scrollTop;
+    await expect(mainScroll).toBeLessThan(400);
+    await expect(window.scrollY).toBe(0);
+    await expect(aside.getBoundingClientRect().bottom).toBeLessThanOrEqual(mainBox.bottom);
+    await expect(jump.scrollHeight).toBeGreaterThan(jump.clientHeight);
+    jump.scrollTop = jump.scrollHeight;
+    await waitFor(() => expect(jump.scrollTop).toBeGreaterThan(0));
+    await expect(main.scrollTop).toBe(mainScroll);
+    const linkBox = last.getBoundingClientRect();
+    await expect(linkBox.top).toBeGreaterThanOrEqual(mainBox.top);
+    await expect(linkBox.bottom).toBeLessThanOrEqual(mainBox.bottom);
+
+    // The shortcut is the topmost element at its own centre, so a pointer reaches it.
+    // (Following the hash would navigate the test runner's frame, so it is not clicked.)
+    const hit = document.elementFromPoint(
+      linkBox.left + linkBox.width / 2,
+      linkBox.top + linkBox.height / 2,
+    );
+    await expect(hit && last.contains(hit)).toBe(true);
+    const target = canvas.getByRole("heading", { level: 2, name: "domingo, 21 de febrero" });
+    await expect(target.closest("#fixture-day-2027-02-21")).not.toBeNull();
+  },
+};
+
+export const LeaguePlayoffsMonth: Story = {
+  name: "Liga y Playoffs · Mes",
+  args: { scenario: "leaguePlayoffs", initialView: "month" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { name: "Julio de 2026" })).toBeVisible();
+    await expect(canvas.getByText("3 fechas con partidos")).toBeVisible();
+    const sunday = canvas.getByRole("button", { name: "domingo, 5 de julio: 3 enfrentamientos" });
+    await expect(sunday).toHaveAttribute("aria-pressed", "true");
+    await expect(sunday).toHaveTextContent("+1 más");
+    // Compact day-detail rows preserve the visible "vs" separator between teams.
+    const detail = canvas.getByRole("heading", { level: 3, name: "domingo, 5 de julio" });
+    await expect(detail).toBeVisible();
+    await expect(
+      canvas.getByText("Liga · Jornada 5 · 3 enfrentamientos · 1 partido · America/Lima"),
+    ).toBeVisible();
+  },
+};
+
+export const LeaguePlayoffsRounds: Story = {
+  name: "Liga y Playoffs · Jornadas",
+  args: { scenario: "leaguePlayoffs", initialView: "rounds" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("heading", { level: 2, name: "Liga" })).toBeVisible();
+    await expect(canvas.getByText("5 jornadas")).toBeVisible();
+    await expect(canvas.getByRole("heading", { level: 2, name: "Playoffs" })).toBeVisible();
+    await expect(canvas.getByText("2 jornadas")).toBeVisible();
+    await expect(canvas.getByText("Próxima")).toBeVisible();
+  },
+};
 
 export const Agenda: Story = {
   name: "Agenda",

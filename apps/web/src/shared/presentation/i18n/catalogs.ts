@@ -2234,6 +2234,87 @@ const es = {
   "roster.club.searchFailed":
     "No se pudieron buscar clubes. Revisa tu conexión e inténtalo de nuevo.",
   "roster.club.hint": "Busca por nombre para elegir un club.",
+  "competition.teams.title": "Equipos y plantillas",
+  "competition.teams.description": "Inscripciones, plantillas y clubes EA de la competición.",
+  "competition.teams.kpi.summary": "Resumen de equipos de la competición",
+  "competition.teams.kpi.loading": "Cargando resumen de equipos",
+  "competition.teams.kpi.total": "Equipos inscritos",
+  "competition.teams.kpi.pending": "Pendientes de aprobar",
+  "competition.teams.kpi.noClub": "Sin club EA",
+  "competition.teams.kpi.partialScope":
+    "Los contadores y filtros corresponden a los {count} equipos cargados.",
+  "competition.teams.search": "Buscar equipo o club…",
+  "competition.teams.filter.label": "Filtrar equipos",
+  "competition.teams.filter.all": "Todos {count}",
+  "competition.teams.filter.pending": "Pendientes {count}",
+  "competition.teams.filter.noClub": "Sin club {count}",
+  "competition.teams.list.noMatches": "Sin coincidencias para este filtro.",
+  "competition.teams.list.clearFilters": "Limpiar filtros",
+  "competition.teams.list.noClubBadge": "Sin club EA",
+  "competition.teams.list.rosterMeta": "{count}/{max} jug. · {state}",
+  "competition.teams.list.rosterOpen": "abierta",
+  "competition.teams.list.rosterClosed": "cerrada",
+  "competition.teams.list.emptyTitle": "Sin equipos todavía",
+  "competition.teams.list.emptyDescription": "Aparecerán aquí al inscribirse.",
+  "competition.teams.list.loadMore": "Cargar más equipos",
+  "competition.teams.list.loading": "Cargando equipos",
+  "competition.teams.list.navAria": "Equipos inscritos",
+  "competition.teams.detail.emptyTitle": "Selecciona un equipo",
+  "competition.teams.detail.emptyDescription": "Verás su inscripción, plantilla y club EA.",
+  "competition.teams.detail.loading": "Cargando detalle del equipo",
+  "competition.teams.detail.back": "Volver a equipos",
+  "competition.teams.detail.noClub": "Sin club EA asociado",
+  "competition.teams.detail.decisionTitle": "Inscripción pendiente de decisión",
+  "competition.teams.detail.decisionDescription":
+    "Aprueba o rechaza al equipo. No cambia el club EA.",
+  "competition.teams.detail.approve": "Aprobar",
+  "competition.teams.detail.approveConfirmTitle": "Aprobar inscripción",
+  "competition.teams.detail.approveConfirmDescription":
+    "El equipo podrá participar si cumple el resto de reglas.",
+  "competition.teams.detail.reject": "Rechazar",
+  "competition.teams.detail.rejectConfirmTitle": "Rechazar inscripción",
+  "competition.teams.detail.rejectConfirmDescription":
+    "El equipo quedará rechazado en esta competición.",
+  "competition.teams.detail.stat.spots": "Cupo",
+  "competition.teams.detail.stat.spotsFull": "Plantilla llena",
+  "competition.teams.detail.stat.spotsLeft": "{count} disponibles",
+  "competition.teams.detail.stat.spotsLeftOne": "1 disponible",
+  "competition.teams.detail.stat.roster": "Plantilla",
+  "competition.teams.detail.stat.rosterOpen": "Abierta",
+  "competition.teams.detail.stat.rosterClosed": "Cerrada",
+  "competition.teams.detail.stat.rosterOpenHint": "Admite invitaciones",
+  "competition.teams.detail.stat.rosterClosedHint": "Bloqueada para nuevos ingresos",
+  "competition.teams.detail.stat.captaincy": "Capitanía",
+  "competition.teams.detail.stat.captaincyNone": "Sin asignar",
+  "competition.teams.detail.stat.captaincyNoneHint": "Necesario para confirmar partidos",
+  "competition.teams.detail.stat.captaincyOne": "1 asignado",
+  "competition.teams.detail.stat.captaincyMany": "{count} asignados",
+  "competition.teams.detail.stat.captaincyReadyHint": "Puede confirmar resultados",
+  "competition.teams.detail.rosterHeading": "Plantilla ({count})",
+  "competition.teams.detail.closeRoster": "Cerrar plantilla",
+  "competition.teams.detail.closeRosterDescription":
+    "Los enlaces existentes dejarán de admitir nuevos ingresos mientras esté cerrada.",
+  "competition.teams.detail.openRoster": "Abrir plantilla",
+  "competition.teams.detail.openRosterDescription":
+    "La plantilla volverá a admitir ingresos por invitación si tiene cupo.",
+  "competition.teams.detail.column.player": "Jugador",
+  "competition.teams.detail.column.account": "Cuenta EA",
+  "competition.teams.detail.column.role": "Rol",
+  "competition.teams.detail.accountMissing": "Sin cuenta EA",
+  "competition.teams.detail.emptyRosterTitle": "Sin jugadores registrados",
+  "competition.teams.detail.emptyRosterOpenDescription":
+    "Comparte un enlace de invitación para que capitán y jugadores se unan a la plantilla.",
+  "competition.teams.detail.emptyRosterClosedDescription":
+    "La plantilla está cerrada. Ábrela para admitir nuevos ingresos por invitación.",
+  "competition.teams.detail.emptyRosterInvite": "Invitar jugador",
+  "competition.teams.detail.emptyRosterRejectedDescription":
+    "La inscripción fue rechazada; la plantilla ya no admite nuevos jugadores.",
+  "competition.teams.detail.entryClosedTitle": "Inscripción rechazada",
+  "competition.teams.detail.entryClosedDescription":
+    "Este equipo fue rechazado en la competición. La plantilla, sus roles y las invitaciones ya no admiten cambios.",
+  "competition.teams.permissions.title": "Permisos no confirmados",
+  "competition.teams.permissions.description":
+    "No se pudieron confirmar. Las acciones están deshabilitadas.",
   "errors.teams.roster_full": "La plantilla ya alcanzó su cupo máximo.",
   "errors.teams.roster_entry_inactive":
     "Este equipo ya no está activo en la competición. No se pueden cambiar plantillas.",
@@ -2983,8 +3064,11 @@ const es = {
     "La tabla se calcula solo con resultados oficiales aprobados y aparecerá cuando se apruebe el primero. Los partidos de EA sin aprobar no cuentan.",
   "standings.empty.action": "Ver enfrentamientos",
   "standings.table.label": "Clasificación oficial",
+  "standings.officialBadge": "Oficial",
   "standings.table.updated": ({ time }) => `Actualizada ${time}`,
   "standings.table.formula": ({ version }) => `Fórmula ${version}`,
+  "standings.tiebreak.league": "Desempate: Puntos → DG → GF",
+  "standings.tiebreak.swiss": "Desempate: Puntos → Buchholz → DG → GF",
   "standings.teamNames.error":
     "No pudimos cargar los nombres de los equipos. La tabla muestra las cifras con un nombre genérico.",
   "standings.team.loading": "Cargando nombre del equipo",
@@ -2994,12 +3078,43 @@ const es = {
   "standings.col.team": "Equipo",
   "standings.col.played": "PJ",
   "standings.col.played.full": "Partidos jugados",
+  "standings.col.wins": "G",
+  "standings.col.wins.full": "Ganados",
+  "standings.col.draws": "E",
+  "standings.col.draws.full": "Empatados",
+  "standings.col.losses": "P",
+  "standings.col.losses.full": "Perdidos",
+  "standings.col.goalsFor": "GF",
+  "standings.col.goalsFor.full": "Goles a favor",
+  "standings.col.goalsAgainst": "GC",
+  "standings.col.goalsAgainst.full": "Goles en contra",
   "standings.col.goalDifference": "DG",
   "standings.col.goalDifference.full": "Diferencia de goles",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Puntos",
   "standings.col.buchholz": "Buch.",
   "standings.col.buchholz.full": "Buchholz: suma de los puntos de los rivales",
+  "standings.sanction.deducted": ({ points }) => `−${points} pts`,
+  "standings.sanction.deducted.title": ({ points }) =>
+    `Sanción activa: ${points} puntos descontados`,
+  "standings.legend.leader": "Líder actual",
+  "standings.legend.cut": "Corte de clasificación",
+  "standings.legend.form": "Forma: últimos 5 oficiales (más reciente a la derecha)",
+  "standings.columns.showAll": "Ver todas las columnas",
+  "standings.columns.showFewer": "Ver menos columnas",
+  "standings.summary.label": "Resumen de la clasificación",
+  "standings.summary.unavailable": "Sin datos",
+  "standings.summary.leader": "Líder",
+  "standings.summary.points": ({ points }) => `${points} pts`,
+  "standings.summary.leader.ahead": ({ points }) => `+${points} al 2.º`,
+  "standings.summary.leader.tied": "Empatado en puntos",
+  "standings.summary.bestAttack": "Mejor ataque",
+  "standings.summary.bestDefense": "Mejor defensa",
+  "standings.summary.perMatch": ({ rate }) => `${rate}/PJ`,
+  "standings.summary.tiedTeams": ({ team, count }) => `${team} y ${count} más`,
+  "standings.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "standings.summary.results": "Resultados computados",
+  "standings.summary.results.hint": ({ teams, time }) => `${teams} equipos · ${time}`,
   "standings.swiss.round": ({ current, total }) => `Ronda ${current} de ${total}`,
   "standings.swiss.completed": ({ completed, total }) =>
     `${completed} de ${total} rondas completadas`,
@@ -3197,6 +3312,8 @@ const es = {
     }`,
   "fixture.agenda.label": "Enfrentamientos por fecha",
   "fixture.agenda.nextDate": "Próxima fecha",
+  "fixture.agenda.jumpTo": "Ir a fecha",
+  "fixture.agenda.jumpLabel": "Saltar a una fecha del calendario",
   "fixture.agenda.overview": "Resumen del calendario",
   "fixture.agenda.noNextDate": "Sin fechas pendientes",
   "fixture.agenda.dates": "Fechas",
@@ -3206,6 +3323,8 @@ const es = {
   "fixture.month.previous": "Mes anterior",
   "fixture.month.next": "Mes siguiente",
   "fixture.month.goToNext": "Próxima fecha",
+  "fixture.month.activeDates": ({ count }) =>
+    Number(count) === 1 ? "1 fecha con partidos" : `${count} fechas con partidos`,
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 enfrentamiento" : `${count} enfrentamientos`}`,
   "fixture.month.more": ({ count }) => `+${count} más`,
@@ -3214,6 +3333,7 @@ const es = {
   "fixture.month.emptyMonth": "No hay enfrentamientos este mes.",
   "fixture.month.goTo": ({ month }) => `Ver ${month}`,
   "fixture.rounds.current": "Próxima",
+  "fixture.rounds.count": ({ count }) => (Number(count) === 1 ? "1 jornada" : `${count} jornadas`),
   "fixture.rounds.emptyRound": "Sin enfrentamientos con estos filtros.",
   "fixture.rounds.scroll": ({ stage }) => `Jornadas de ${stage}`,
   "portal.nav.label": "Secciones de la competición",
@@ -3656,6 +3776,14 @@ export interface MessageParamsByKey {
   readonly "competition.teamStats.table.label": { readonly view: string };
   readonly "standings.table.updated": { readonly time: string };
   readonly "standings.table.formula": { readonly version: string };
+  readonly "standings.sanction.deducted": { readonly points: string };
+  readonly "standings.sanction.deducted.title": { readonly points: string };
+  readonly "standings.summary.points": { readonly points: string };
+  readonly "standings.summary.leader.ahead": { readonly points: string };
+  readonly "standings.summary.perMatch": { readonly rate: string };
+  readonly "standings.summary.tiedTeams": { readonly team: string; readonly count: number };
+  readonly "standings.summary.join": { readonly first: string; readonly second: string };
+  readonly "standings.summary.results.hint": { readonly teams: string; readonly time: string };
   readonly "standings.playoffCut": { readonly count: number };
   readonly "standings.swiss.round": { readonly current: number; readonly total: number };
   readonly "standings.swiss.completed": { readonly completed: number; readonly total: number };
@@ -3681,9 +3809,11 @@ export interface MessageParamsByKey {
   readonly "fixture.filters.roundOption": { readonly stage: string; readonly round: string };
   readonly "fixture.encounters": { readonly count: number };
   readonly "fixture.summary": { readonly count: number; readonly dates: number };
+  readonly "fixture.month.activeDates": { readonly count: number };
   readonly "fixture.month.day": { readonly date: string; readonly count: number };
   readonly "fixture.month.more": { readonly count: number };
   readonly "fixture.month.goTo": { readonly month: string };
+  readonly "fixture.rounds.count": { readonly count: number };
   readonly "fixture.rounds.scroll": { readonly stage: string };
   readonly "fixture.round.pending": { readonly number: number };
   readonly "fixture.round.expected": { readonly date: string };
@@ -3723,6 +3853,18 @@ export interface MessageParamsByKey {
   readonly "portal.rules.roster.value": { readonly count: number };
   readonly "portal.rules.rescheduling.limited": { readonly count: number; readonly hours: number };
   readonly "portal.rules.rescheduling.unlimited": { readonly hours: number };
+  readonly "competition.teams.kpi.partialScope": { readonly count: number };
+  readonly "competition.teams.filter.all": { readonly count: number };
+  readonly "competition.teams.filter.pending": { readonly count: number };
+  readonly "competition.teams.filter.noClub": { readonly count: number };
+  readonly "competition.teams.list.rosterMeta": {
+    readonly count: number;
+    readonly max: number;
+    readonly state: string;
+  };
+  readonly "competition.teams.detail.stat.spotsLeft": { readonly count: number };
+  readonly "competition.teams.detail.stat.captaincyMany": { readonly count: number };
+  readonly "competition.teams.detail.rosterHeading": { readonly count: number };
 }
 
 export type ParameterizedMessageKey = keyof MessageParamsByKey;
@@ -5902,6 +6044,86 @@ const en: Catalog = {
   "roster.club.select": "Associate",
   "roster.club.searchFailed": "Unable to search clubs. Check your connection and try again.",
   "roster.club.hint": "Search by name to pick a club.",
+  "competition.teams.title": "Teams and rosters",
+  "competition.teams.description": "Entries, rosters and EA clubs for this competition.",
+  "competition.teams.kpi.summary": "Competition teams summary",
+  "competition.teams.kpi.loading": "Loading teams summary",
+  "competition.teams.kpi.total": "Registered teams",
+  "competition.teams.kpi.pending": "Pending approval",
+  "competition.teams.kpi.noClub": "No EA club",
+  "competition.teams.kpi.partialScope": "Counts and filters cover the {count} loaded teams.",
+  "competition.teams.search": "Search team or club…",
+  "competition.teams.filter.label": "Filter teams",
+  "competition.teams.filter.all": "All {count}",
+  "competition.teams.filter.pending": "Pending {count}",
+  "competition.teams.filter.noClub": "No club {count}",
+  "competition.teams.list.noMatches": "No teams match this filter.",
+  "competition.teams.list.clearFilters": "Clear filters",
+  "competition.teams.list.noClubBadge": "No EA club",
+  "competition.teams.list.rosterMeta": "{count}/{max} players · {state}",
+  "competition.teams.list.rosterOpen": "open",
+  "competition.teams.list.rosterClosed": "closed",
+  "competition.teams.list.emptyTitle": "No teams yet",
+  "competition.teams.list.emptyDescription": "Teams will appear here once registered.",
+  "competition.teams.list.loadMore": "Load more teams",
+  "competition.teams.list.loading": "Loading teams",
+  "competition.teams.list.navAria": "Registered teams",
+  "competition.teams.detail.emptyTitle": "Select a team",
+  "competition.teams.detail.emptyDescription": "View its entry, roster and EA club.",
+  "competition.teams.detail.loading": "Loading team details",
+  "competition.teams.detail.back": "Back to teams",
+  "competition.teams.detail.noClub": "No EA club linked",
+  "competition.teams.detail.decisionTitle": "Entry pending decision",
+  "competition.teams.detail.decisionDescription":
+    "Approve or reject this team. Its EA club link stays unchanged.",
+  "competition.teams.detail.approve": "Approve",
+  "competition.teams.detail.approveConfirmTitle": "Approve entry",
+  "competition.teams.detail.approveConfirmDescription":
+    "The team will be eligible to compete if it meets the remaining rules.",
+  "competition.teams.detail.reject": "Reject",
+  "competition.teams.detail.rejectConfirmTitle": "Reject entry",
+  "competition.teams.detail.rejectConfirmDescription":
+    "The team will be marked rejected in this competition.",
+  "competition.teams.detail.stat.spots": "Spots",
+  "competition.teams.detail.stat.spotsFull": "Roster full",
+  "competition.teams.detail.stat.spotsLeft": "{count} available",
+  "competition.teams.detail.stat.spotsLeftOne": "1 available",
+  "competition.teams.detail.stat.roster": "Roster",
+  "competition.teams.detail.stat.rosterOpen": "Open",
+  "competition.teams.detail.stat.rosterClosed": "Closed",
+  "competition.teams.detail.stat.rosterOpenHint": "Accepts invitations",
+  "competition.teams.detail.stat.rosterClosedHint": "Locked for new joins",
+  "competition.teams.detail.stat.captaincy": "Captaincy",
+  "competition.teams.detail.stat.captaincyNone": "Unassigned",
+  "competition.teams.detail.stat.captaincyNoneHint": "Required to confirm matches",
+  "competition.teams.detail.stat.captaincyOne": "1 assigned",
+  "competition.teams.detail.stat.captaincyMany": "{count} assigned",
+  "competition.teams.detail.stat.captaincyReadyHint": "Can confirm results",
+  "competition.teams.detail.rosterHeading": "Roster ({count})",
+  "competition.teams.detail.closeRoster": "Close roster",
+  "competition.teams.detail.closeRosterDescription":
+    "Existing links will stop accepting new players while the roster is closed.",
+  "competition.teams.detail.openRoster": "Open roster",
+  "competition.teams.detail.openRosterDescription":
+    "The roster will accept new joins by invitation if spots remain.",
+  "competition.teams.detail.column.player": "Player",
+  "competition.teams.detail.column.account": "EA account",
+  "competition.teams.detail.column.role": "Role",
+  "competition.teams.detail.accountMissing": "No EA account",
+  "competition.teams.detail.emptyRosterTitle": "No players registered",
+  "competition.teams.detail.emptyRosterOpenDescription":
+    "Share an invitation link so the captain and players can join the roster.",
+  "competition.teams.detail.emptyRosterClosedDescription":
+    "The roster is closed. Open it to accept new players by invitation.",
+  "competition.teams.detail.emptyRosterInvite": "Invite player",
+  "competition.teams.detail.emptyRosterRejectedDescription":
+    "The entry was rejected; the roster no longer accepts new players.",
+  "competition.teams.detail.entryClosedTitle": "Entry rejected",
+  "competition.teams.detail.entryClosedDescription":
+    "This team was rejected from the competition. Its roster, roles and invitations can no longer be changed.",
+  "competition.teams.permissions.title": "Permissions not confirmed",
+  "competition.teams.permissions.description":
+    "Permissions could not be confirmed. Actions are disabled.",
   "errors.teams.roster_full": "The roster has reached its maximum size.",
   "errors.teams.roster_entry_inactive":
     "This team is no longer active in the competition. Rosters can't be changed.",
@@ -6640,8 +6862,11 @@ const en: Catalog = {
     "The table is built only from approved official results and will appear once the first one is approved. EA matches that aren't approved don't count.",
   "standings.empty.action": "View encounters",
   "standings.table.label": "Official standings",
+  "standings.officialBadge": "Official",
   "standings.table.updated": ({ time }) => `Updated ${time}`,
   "standings.table.formula": ({ version }) => `Formula ${version}`,
+  "standings.tiebreak.league": "Tiebreaker: Points → GD → GF",
+  "standings.tiebreak.swiss": "Tiebreaker: Points → Buchholz → GD → GF",
   "standings.teamNames.error":
     "We couldn't load the team names. The table shows the figures with a generic name.",
   "standings.team.loading": "Loading team name",
@@ -6651,12 +6876,42 @@ const en: Catalog = {
   "standings.col.team": "Team",
   "standings.col.played": "P",
   "standings.col.played.full": "Matches played",
+  "standings.col.wins": "W",
+  "standings.col.wins.full": "Wins",
+  "standings.col.draws": "D",
+  "standings.col.draws.full": "Draws",
+  "standings.col.losses": "L",
+  "standings.col.losses.full": "Losses",
+  "standings.col.goalsFor": "GF",
+  "standings.col.goalsFor.full": "Goals for",
+  "standings.col.goalsAgainst": "GA",
+  "standings.col.goalsAgainst.full": "Goals against",
   "standings.col.goalDifference": "GD",
   "standings.col.goalDifference.full": "Goal difference",
   "standings.col.points": "Pts",
   "standings.col.points.full": "Points",
   "standings.col.buchholz": "Buch.",
   "standings.col.buchholz.full": "Buchholz: sum of the opponents' points",
+  "standings.sanction.deducted": ({ points }) => `−${points} pts`,
+  "standings.sanction.deducted.title": ({ points }) => `Active sanction: ${points} points deducted`,
+  "standings.legend.leader": "Current leader",
+  "standings.legend.cut": "Playoff cut",
+  "standings.legend.form": "Form: last 5 official matches (most recent on the right)",
+  "standings.columns.showAll": "Show all columns",
+  "standings.columns.showFewer": "Show fewer columns",
+  "standings.summary.label": "Standings summary",
+  "standings.summary.unavailable": "No data",
+  "standings.summary.leader": "Leader",
+  "standings.summary.points": ({ points }) => `${points} pts`,
+  "standings.summary.leader.ahead": ({ points }) => `+${points} ahead of 2nd`,
+  "standings.summary.leader.tied": "Level on points",
+  "standings.summary.bestAttack": "Best attack",
+  "standings.summary.bestDefense": "Best defense",
+  "standings.summary.perMatch": ({ rate }) => `${rate}/P`,
+  "standings.summary.tiedTeams": ({ team, count }) => `${team} and ${count} more`,
+  "standings.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "standings.summary.results": "Results counted",
+  "standings.summary.results.hint": ({ teams, time }) => `${teams} teams · ${time}`,
   "standings.swiss.round": ({ current, total }) => `Round ${current} of ${total}`,
   "standings.swiss.completed": ({ completed, total }) =>
     `${completed} of ${total} rounds completed`,
@@ -6848,6 +7103,8 @@ const en: Catalog = {
     }`,
   "fixture.agenda.label": "Encounters by date",
   "fixture.agenda.nextDate": "Next date",
+  "fixture.agenda.jumpTo": "Jump to date",
+  "fixture.agenda.jumpLabel": "Jump to a schedule date",
   "fixture.agenda.overview": "Schedule overview",
   "fixture.agenda.noNextDate": "No dates ahead",
   "fixture.agenda.dates": "Dates",
@@ -6857,6 +7114,8 @@ const en: Catalog = {
   "fixture.month.previous": "Previous month",
   "fixture.month.next": "Next month",
   "fixture.month.goToNext": "Next date",
+  "fixture.month.activeDates": ({ count }) =>
+    Number(count) === 1 ? "1 match date" : `${count} match dates`,
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 encounter" : `${count} encounters`}`,
   "fixture.month.more": ({ count }) => `+${count} more`,
@@ -6865,6 +7124,7 @@ const en: Catalog = {
   "fixture.month.emptyMonth": "No encounters this month.",
   "fixture.month.goTo": ({ month }) => `Go to ${month}`,
   "fixture.rounds.current": "Up next",
+  "fixture.rounds.count": ({ count }) => (Number(count) === 1 ? "1 round" : `${count} rounds`),
   "fixture.rounds.emptyRound": "No encounters match these filters.",
   "fixture.rounds.scroll": ({ stage }) => `${stage} rounds`,
   "portal.nav.label": "Competition sections",

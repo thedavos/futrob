@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { CompetitionStandingSnapshotDto } from "@futrob/api-contracts";
 import {
+  standingsSummary,
   standingsTableRows,
   swissStandingsProgress,
   teamNamesFrom,
 } from "./competition-standings-model.ts";
 
-const row = (position: number, teamId: string) => ({
+const row = (
+  position: number,
+  teamId: string,
+  overrides: Partial<CompetitionStandingSnapshotDto["rows"][number]> = {},
+) => ({
   position,
   teamId,
   played: 1,
@@ -18,6 +23,7 @@ const row = (position: number, teamId: string) => ({
   goalDifference: 1,
   points: 3,
   form: [],
+  ...overrides,
 });
 
 const snapshot: CompetitionStandingSnapshotDto = {
@@ -77,6 +83,74 @@ describe("standings rows", () => {
     expect(standingsTableRows(snapshot, { kind: "loading" })[0]?.team).toEqual({ kind: "loading" });
     expect(standingsTableRows(snapshot, { kind: "unavailable" })[0]?.team).toEqual({
       kind: "unresolved",
+    });
+  });
+
+  it("highlights only the leader without a playoff cut, and the playoff zone when a cut exists", () => {
+    const names = { kind: "unavailable" } as const;
+    expect(standingsTableRows(snapshot, names).map((r) => r.inHighlightedZone)).toEqual([
+      true,
+      false,
+      false,
+    ]);
+    expect(
+      standingsTableRows({ ...snapshot, playoffSpots: 2 }, names).map((r) => [
+        r.inHighlightedZone,
+        r.lastAboveCut,
+      ]),
+    ).toEqual([
+      [true, false],
+      [true, true],
+      [false, false],
+    ]);
+  });
+});
+
+describe("standingsSummary", () => {
+  it("derives leader gap, best attack, best defense and computed result count from rows", () => {
+    const summary = standingsSummary({
+      ...snapshot,
+      rows: [
+        row(1, "rv", { played: 7, goalsFor: 15, goalsAgainst: 7, points: 18 }),
+        row(2, "dl", { played: 7, goalsFor: 12, goalsAgainst: 8, points: 11 }),
+        row(3, "sq", { played: 5, goalsFor: 4, goalsAgainst: 7, points: 3 }),
+      ],
+    });
+    expect(summary).toEqual({
+      leader: { teamId: "rv", points: 18, leadOverSecond: 7 },
+      bestAttack: { value: 15, perMatch: 15 / 7, teamIds: ["rv"] },
+      bestDefense: { value: 7, perMatch: 1, teamIds: ["rv", "sq"] },
+      computedResults: 9,
+      teamCount: 3,
+    });
+  });
+
+  it("counts a two-leg aggregate series as one computed result, not two official matches", () => {
+    // The projection adds `played: 1` per team once both approved slots of the series resolve.
+    const summary = standingsSummary({
+      ...snapshot,
+      rows: [
+        row(1, "home", { played: 1, wins: 1, goalsFor: 4, goalsAgainst: 3, points: 3 }),
+        row(2, "away", { played: 1, wins: 0, losses: 1, goalsFor: 3, goalsAgainst: 4, points: 0 }),
+      ],
+    });
+    expect(summary.computedResults).toBe(1);
+  });
+
+  it("avoids fabricating best attack/defense when no team has played a match", () => {
+    const summary = standingsSummary({
+      ...snapshot,
+      rows: [
+        row(1, "a", { played: 0, wins: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }),
+        row(2, "b", { played: 0, wins: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }),
+      ],
+    });
+    expect(summary).toEqual({
+      leader: { teamId: "a", points: 0, leadOverSecond: 0 },
+      bestAttack: null,
+      bestDefense: null,
+      computedResults: 0,
+      teamCount: 2,
     });
   });
 });
