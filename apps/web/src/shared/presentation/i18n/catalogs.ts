@@ -2133,6 +2133,7 @@ const es = {
   "teamPerformance.table.unranked": "Sin puntuación",
   "teamPerformance.table.scrollHint": "Desliza la tabla para ver todos los componentes.",
   "teamPerformance.evidence.contribution": ({ points }) => `+${points} pts`,
+  "teamPerformance.evidence.contributionApprox": ({ points }) => `≈ +${points} pts`,
   "teamPerformance.evidence.results": ({ points, maximum }) => `${points} / ${maximum} pts`,
   "teamPerformance.evidence.goalDifference": ({ perUnit }) => `${perUnit} gol/unidad`,
   "teamPerformance.evidence.recentForm": ({ points, maximum, encounters }) =>
@@ -2142,7 +2143,7 @@ const es = {
     `${conceded} encaj. / ${shots} tiros riv.`,
   "teamPerformance.evidence.noShots": "Sin registro de tiros",
   "teamPerformance.evidence.formula": ({ terms, score }) =>
-    `Aporte ponderado: ${terms} → ${score} / 100`,
+    `Desglose aproximado (valores mostrados a 1 decimal): ${terms}. Índice oficial calculado sin redondeo intermedio: ${score} / 100.`,
   "teamPerformance.evidence.failClosed": ({ reason }) =>
     `Sin puntuación (${reason}): no se rellena con cero ni se reparten pesos.`,
   "teamPerformance.evidence.sample": ({ encounters, matches }) =>
@@ -3749,6 +3750,7 @@ export interface MessageParamsByKey {
   readonly "teamPerformance.table.expandRow": { readonly team: string };
   readonly "teamPerformance.table.collapseRow": { readonly team: string };
   readonly "teamPerformance.evidence.contribution": { readonly points: string };
+  readonly "teamPerformance.evidence.contributionApprox": { readonly points: string };
   readonly "teamPerformance.evidence.results": {
     readonly points: string;
     readonly maximum: string;
@@ -6132,6 +6134,7 @@ const en: Catalog = {
   "teamPerformance.table.unranked": "No score",
   "teamPerformance.table.scrollHint": "Scroll the table to see every component.",
   "teamPerformance.evidence.contribution": ({ points }) => `+${points} pts`,
+  "teamPerformance.evidence.contributionApprox": ({ points }) => `≈ +${points} pts`,
   "teamPerformance.evidence.results": ({ points, maximum }) => `${points} / ${maximum} pts`,
   "teamPerformance.evidence.goalDifference": ({ perUnit }) => `${perUnit} GD/unit`,
   "teamPerformance.evidence.recentForm": ({ points, maximum, encounters }) =>
@@ -6141,7 +6144,7 @@ const en: Catalog = {
     `${conceded} conceded / ${shots} opp. shots`,
   "teamPerformance.evidence.noShots": "No shot data",
   "teamPerformance.evidence.formula": ({ terms, score }) =>
-    `Weighted sum: ${terms} → ${score} / 100`,
+    `Approximate breakdown (values shown to 1 decimal): ${terms}. Official index computed without intermediate rounding: ${score} / 100.`,
   "teamPerformance.evidence.failClosed": ({ reason }) =>
     `Unranked (${reason}): never zero-filled or reweighted.`,
   "teamPerformance.evidence.sample": ({ encounters, matches }) =>

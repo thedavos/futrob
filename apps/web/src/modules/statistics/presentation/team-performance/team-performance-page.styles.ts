@@ -49,18 +49,26 @@ export const styles = stylex.create({
     cursor: "help",
   },
   expandHead: {
-    width: "2.5rem",
+    width: "3rem",
     paddingRight: 0,
   },
   expandCell: {
-    width: "2.5rem",
+    width: "3rem",
     paddingRight: 0,
   },
   expandButton: {
     display: "inline-grid",
     placeItems: "center",
-    width: "2.25rem",
-    height: "2.25rem",
+    width: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+      "@media (pointer: coarse)": "var(--control-height-touch)",
+    },
+    height: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+      "@media (pointer: coarse)": "var(--control-height-touch)",
+    },
     padding: 0,
     borderWidth: 0,
     borderRadius: corner.md,
@@ -307,7 +315,11 @@ export const styles = stylex.create({
   },
   criteriaTrigger: {
     width: "auto",
-    minHeight: "var(--control-height-dense)",
+    minHeight: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+      "@media (pointer: coarse)": "var(--control-height-touch)",
+    },
     paddingInline: space.s3,
     borderColor: colors.border,
     backgroundColor: {

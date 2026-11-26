@@ -160,6 +160,57 @@ describe("team performance page", () => {
     ).toBe("/orgs/org-1/competitions/competition-1/standings");
   });
 
+  it("marks rounded breakdown terms as approximate when unrounded sum rounds differently", async () => {
+    // 3 encounters (0-0, 0-2, 0-3), 1 shot for, 12 shots against:
+    // unrounded sum is 12.5 -> official server score 13, whereas 1-decimal terms sum to 12.49 -> 12.
+    const boundary = teamPerformanceRankingFixture({
+      rows: [
+        {
+          ...teamPerformanceRankingFixture().rows[0]!,
+          teamId: "team-cuervos",
+          position: 1,
+          status: "scored",
+          score: 13,
+          components: {
+            results: 100 / 9,
+            goalDifference: 0,
+            recentForm: 100 / 9,
+            offensiveEfficiency: 0,
+            defensiveEfficiency: (100 * 7) / 12,
+          },
+          evidence: {
+            resultPoints: 1,
+            resultMaximum: 9,
+            goalDifferencePerUnit: -5 / 3,
+            comparableMinimum: -5 / 3,
+            comparableMaximum: 2,
+            recentPoints: 1,
+            recentMaximum: 9,
+            goalsFor: 0,
+            goalsAgainst: 5,
+            shotsFor: 1,
+            shotsAgainst: 12,
+          },
+        },
+      ],
+    });
+    serve({ ranking: [() => Response.json({ ranking: boundary })] });
+    renderRoute();
+
+    const table = await screen.findByRole("table");
+    expect(within(table).getByText("13")).toBeTruthy();
+
+    await userEvent.click(screen.getByRole("button", { name: "Ver evidencia de Cuervos FC" }));
+    expect(screen.getByText("≈ +4,4 pts")).toBeTruthy();
+    expect(screen.getByText("≈ +2,2 pts")).toBeTruthy();
+    expect(screen.getByText("≈ +5,8 pts")).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Desglose aproximado \(valores mostrados a 1 decimal\): ≈ 11,1×40 % \+ 0×20 % \+ ≈ 11,1×20 % \+ 0×10 % \+ ≈ 58,3×10 %\. Índice oficial calculado sin redondeo intermedio: 13 \/ 100\./,
+      ),
+    ).toBeTruthy();
+  });
+
   it("explains a ranking that has not been built instead of showing an empty table", async () => {
     serve({ ranking: [() => Response.json({ ranking: null })] });
     renderRoute("en");

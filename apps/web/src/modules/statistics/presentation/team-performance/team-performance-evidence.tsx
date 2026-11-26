@@ -30,6 +30,10 @@ export function teamPerformanceCoverageLabel(
     : t(`teamPerformance.reason.${row.reason}`);
 }
 
+function isRoundedAtOneDecimal(value: number): boolean {
+  return Math.abs(value * 10 - Math.round(value * 10)) > 1e-9;
+}
+
 export function EvidencePanel({
   decimal,
   integer,
@@ -46,9 +50,11 @@ export function EvidencePanel({
   readonly t: Translator;
 }) {
   const formulaTerms = row.components
-    .map(({ value, weight }) =>
-      value === null ? "—" : `${decimal.format(value)}×${t("teamPerformance.weight", { weight })}`,
-    )
+    .map(({ value, weight }) => {
+      if (value === null) return "—";
+      const prefix = isRoundedAtOneDecimal(value) ? "≈ " : "";
+      return `${prefix}${decimal.format(value)}×${t("teamPerformance.weight", { weight })}`;
+    })
     .join(" + ");
 
   return (
@@ -66,9 +72,14 @@ export function EvidencePanel({
             <Score as="span" className={styles.evidenceContribution} size="table">
               {contribution === null
                 ? t("teamPerformance.table.noValue")
-                : t("teamPerformance.evidence.contribution", {
-                    points: decimal.format(contribution),
-                  })}
+                : t(
+                    isRoundedAtOneDecimal(contribution)
+                      ? "teamPerformance.evidence.contributionApprox"
+                      : "teamPerformance.evidence.contribution",
+                    {
+                      points: decimal.format(contribution),
+                    },
+                  )}
             </Score>
             <Caption as="span" className={styles.evidenceRaw}>
               {rawEvidenceCopy(metric, row, decimal, integer, signedDecimal, t)}

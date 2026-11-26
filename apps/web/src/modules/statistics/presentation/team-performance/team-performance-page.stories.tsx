@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -177,11 +177,13 @@ export const Ready: Story = {
     await expect(canvas.getByText("6 goles / 12 tiros")).toBeVisible();
 
     await userEvent.click(canvas.getByRole("button", { name: "Fórmula y versiones" }));
-    await expect(
-      canvas.getByText(
-        "Versiones: team-performance-v1 · team-performance-normalization-v1 · competition-all-form-5-min-3-v1",
-      ),
-    ).toBeVisible();
+    await waitFor(async () => {
+      await expect(
+        canvas.getByText(
+          "Versiones: team-performance-v1 · team-performance-normalization-v1 · competition-all-form-5-min-3-v1",
+        ),
+      ).toBeVisible();
+    });
   },
 };
 
@@ -282,4 +284,24 @@ export const NotBuiltRefreshError: Story = {
 export const NarrowSpanish: Story = {
   name: "Con ranking · ES 360",
   args: { narrow: true },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const expandButton = await canvas.findByRole("button", {
+      name: "Ver evidencia de Cuervos FC",
+    });
+    const criteriaButton = canvas.getByRole("button", { name: "Fórmula y versiones" });
+
+    await userEvent.click(expandButton);
+    await expect(canvas.getByText("6 goles / 12 tiros")).toBeVisible();
+
+    await userEvent.click(criteriaButton);
+    await waitFor(async () => {
+      await expect(
+        canvas.getByText(
+          "Versiones: team-performance-v1 · team-performance-normalization-v1 · competition-all-form-5-min-3-v1",
+        ),
+      ).toBeVisible();
+    });
+  },
 };
