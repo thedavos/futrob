@@ -100,6 +100,7 @@ const preview: Preview = {
               ["Mine", "Explore", "Detail"],
               "Invitations",
               "Game accounts",
+              "EA Clubs",
               "Matches",
               ["List", "Detail", "Record"],
               "Statistics",

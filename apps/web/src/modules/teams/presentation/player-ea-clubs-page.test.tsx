@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { GetMyPlayerProfileResponse } from "@futrob/api-contracts";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerEaClubsPage } from "./player-ea-clubs-page.tsx";
 
@@ -76,11 +77,7 @@ describe("PlayerEaClubsPage", () => {
       ],
     });
 
-    render(
-      <QueryTestProvider>
-        <PlayerEaClubsPage />
-      </QueryTestProvider>,
-    );
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Clubes EA" })).toBeTruthy();
@@ -101,15 +98,38 @@ describe("PlayerEaClubsPage", () => {
       externalClubs: [],
     });
 
-    render(
-      <QueryTestProvider>
-        <PlayerEaClubsPage />
-      </QueryTestProvider>,
-    );
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText("Sin clubes asociados")).toBeTruthy();
     });
     expect(screen.getByRole("button", { name: "Ir al espacio personal" })).toBeTruthy();
   });
+
+  it("mirrors associated club cards while the profile is loading", () => {
+    getMyProfile.mockReturnValue(new Promise(() => undefined));
+
+    renderPage();
+
+    const status = screen.getByRole("status", { name: "Cargando clubes…" });
+    expect(status.getAttribute("aria-busy")).toBe("true");
+    const bones = status.querySelectorAll("[data-slot='skeleton']");
+    expect(bones.length).toBeGreaterThan(0);
+    for (const bone of bones) {
+      expect(bone.getAttribute("aria-hidden")).toBe("true");
+    }
+    expect(status.querySelectorAll("a, button, [tabindex]:not([tabindex='-1'])")).toHaveLength(0);
+    expect(screen.queryByRole("heading", { name: "Night Owls" })).toBeNull();
+    expect(screen.queryByText("Sin clubes asociados")).toBeNull();
+  });
 });
+
+function renderPage() {
+  return render(
+    <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+      <QueryTestProvider>
+        <PlayerEaClubsPage />
+      </QueryTestProvider>
+    </I18nProvider>,
+  );
+}

@@ -1727,6 +1727,7 @@ const es = {
   "player.gameData.refresh": "Actualizar datos",
   "player.gameData.refreshing": "Actualizando…",
   "player.gameData.loading": "Cargando datos de juego…",
+  "player.eaClubs.loading": "Cargando clubes…",
   "player.gameData.error": "No se pudieron cargar tus datos de juego.",
   "player.gameData.subtitle.empty":
     "Registra tu identificador para consultar tu actividad de EA Clubs.",
@@ -5819,6 +5820,7 @@ const en: Catalog = {
   "player.gameData.refresh": "Update data",
   "player.gameData.refreshing": "Updating…",
   "player.gameData.loading": "Loading game data…",
+  "player.eaClubs.loading": "Loading clubs…",
   "player.gameData.error": "Unable to load your game data.",
   "player.gameData.subtitle.empty": "Register your identifier to look up your EA Clubs activity.",
   "player.gameData.subtitle.ready":

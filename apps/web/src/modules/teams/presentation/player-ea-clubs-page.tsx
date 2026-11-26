@@ -10,7 +10,6 @@ import {
   AvatarImage,
   Badge,
   Button,
-  Caption,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
@@ -18,6 +17,7 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Skeleton,
   typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -32,6 +32,7 @@ import {
   eaPlatformLabel,
   formatProviderGameEdition,
 } from "@/modules/identity/presentation/onboarding/onboarding-step-meta.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { useMyPlayerProfileQuery } from "./player-queries.ts";
 
 const styles = stylex.create({
@@ -43,9 +44,6 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     gap: "2rem",
-  },
-  status: {
-    color: colors.mutedForeground,
   },
   card: {
     display: "flex",
@@ -75,6 +73,7 @@ const styles = stylex.create({
     width: "5rem",
     height: "5rem",
     flexShrink: 0,
+    borderRadius: "var(--corner-full)",
     outlineWidth: 1,
     outlineStyle: "solid",
     outlineOffset: -1,
@@ -119,6 +118,31 @@ const styles = stylex.create({
     width: "0.875rem",
     height: "0.875rem",
   },
+  stack: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+  },
+  nameBone: {
+    width: "10rem",
+    maxWidth: "100%",
+    height: "1.75rem",
+  },
+  metaBone: {
+    width: "14rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  chipBone: {
+    width: "5.5rem",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
+  chipBoneShort: {
+    width: "4rem",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
 });
 
 const avatar = applyStyles(styles.avatar);
@@ -148,7 +172,7 @@ export function PlayerEaClubsPage() {
         ) : null}
 
         {profileQuery.isPending ? (
-          <Caption {...applyStyles(styles.status)}>Cargando clubes…</Caption>
+          <AssociatedClubsSkeleton />
         ) : clubs.length > 0 ? (
           clubs.map((club) => <AssociatedClub club={club} key={club.externalClubId} />)
         ) : (
@@ -166,6 +190,42 @@ export function PlayerEaClubsPage() {
         )}
       </div>
     </main>
+  );
+}
+
+const SKELETON_CARD_COUNT = 3;
+
+function AssociatedClubsSkeleton() {
+  const { t } = useI18n();
+  return (
+    <div
+      aria-busy="true"
+      aria-label={t("player.eaClubs.loading")}
+      role="status"
+      {...applyStyles(styles.stack)}
+    >
+      {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
+        <AssociatedClubSkeleton key={index} />
+      ))}
+    </div>
+  );
+}
+
+function AssociatedClubSkeleton() {
+  return (
+    <div {...applyStyles(styles.card)}>
+      <Skeleton className={styles.avatar} />
+      <div {...applyStyles(styles.details)}>
+        <div {...applyStyles(styles.identity)}>
+          <Skeleton className={styles.nameBone} />
+          <Skeleton className={styles.metaBone} />
+        </div>
+        <div {...applyStyles(styles.chips)}>
+          <Skeleton className={styles.chipBone} />
+          <Skeleton className={styles.chipBoneShort} />
+        </div>
+      </div>
+    </div>
   );
 }
 
