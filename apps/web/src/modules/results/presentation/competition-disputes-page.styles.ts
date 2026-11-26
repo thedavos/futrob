@@ -78,8 +78,10 @@ export const styles = stylex.create({
     borderRadius: "var(--corner-full)",
   },
   waitBone: {
-    width: "12rem",
-    maxWidth: "100%",
+    // Yield width to the badge (6.5rem) and the row gap (0.75rem) so the bones
+    // share one line at 360 px, as the loaded badge and caption do.
+    width: "min(12rem, calc(100% - 7.25rem))",
+    minWidth: "3rem",
     height: "1rem",
   },
   homeBone: {

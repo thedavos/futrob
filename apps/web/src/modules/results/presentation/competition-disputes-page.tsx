@@ -143,7 +143,7 @@ function DisputeListSkeleton({ t }: { readonly t: Translator }) {
         {SKELETON_ROWS.map((index) => (
           <li key={index}>
             <div {...applyStyles(styles.row)}>
-              <div {...applyStyles(styles.rowMeta)}>
+              <div data-slot="dispute-skeleton-status" {...applyStyles(styles.rowMeta)}>
                 <Skeleton {...applyStyles(styles.badgeBone)} />
                 <Skeleton {...applyStyles(styles.waitBone)} />
               </div>
