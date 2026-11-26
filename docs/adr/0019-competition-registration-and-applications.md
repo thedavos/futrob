@@ -76,7 +76,8 @@ El rechazo toma la misma exclusión por competición que las escrituras de plant
 (`RosterMutationPort`, advisory lock en Postgres) y la mantiene hasta su commit. Una
 escritura que ya leyó `pending` se confirma antes que el rechazo; las posteriores leen
 `rejected`. Solo hace cola una solicitud con `participants.manage` sobre una inscripción
-de esa competición; las demás reciben su error tipado sin esperar el bloqueo. Crear una
+de esa competición; las demás reciben su error tipado sin esperar el bloqueo y sin
+llegar al caso de uso, así que ningún rechazo se confirma fuera de la exclusión. Crear una
 invitación no toma esa exclusión: una creada en paralelo al
 rechazo queda inservible, porque aceptarla vuelve a pasar por el gate bajo el lock.
 

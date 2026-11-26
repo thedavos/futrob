@@ -42,15 +42,20 @@ function signal() {
   return { promise, resolve };
 }
 
-function authorizationAllowing(allowed: boolean): AuthorizationPort {
+/** Answers each `decide` with the next value, repeating the last one. */
+function authorizationAnswering(answers: readonly boolean[]): AuthorizationPort {
+  let calls = 0;
   return {
-    decide: async (request) => ({ ...request, allowed, reason: allowed ? "allowed" : "denied" }),
+    decide: async (request) => {
+      const allowed = answers[Math.min(calls++, answers.length - 1)] ?? false;
+      return { ...request, allowed, reason: allowed ? "allowed" : "denied" };
+    },
     getEffectiveAccess: async (input) => ({ ...input, roles: [], permissions: [] }),
   };
 }
 
 /** Entry commands over in-memory stores, recording when rejection asks for the roster lock. */
-function setup(options: { readonly allowed: boolean }) {
+function setup(options: { readonly allowed: readonly boolean[] }) {
   const order: string[] = [];
   let inTransaction = false;
   const transaction: TransactionPort = {
@@ -75,7 +80,7 @@ function setup(options: { readonly allowed: boolean }) {
   };
   const entries = new InMemoryCompetitionEntryRepository();
   entries.rows.set(entry.id, entry);
-  const authorization = authorizationAllowing(options.allowed);
+  const authorization = authorizationAnswering(options.allowed);
   const reject = new RejectCompetitionEntryUseCase({ entries, authorization });
   const decide = { execute: async () => ok(entry) };
   const commands = createCompetitionEntryCommands({
@@ -127,7 +132,7 @@ function setup(options: { readonly allowed: boolean }) {
 
 describe("competition entry commands", () => {
   it("rejects an entry only after an in-flight roster write commits, inside its transaction", async () => {
-    const { commands, entries, order, lockRequested, holdRosterWrite } = setup({ allowed: true });
+    const { commands, entries, order, lockRequested, holdRosterWrite } = setup({ allowed: [true] });
     const write = await holdRosterWrite();
 
     const rejecting = commands.rejectTeamEntry.execute(rejectInput);
@@ -142,7 +147,9 @@ describe("competition entry commands", () => {
   });
 
   it("answers an actor without participants.manage without queueing behind roster writes", async () => {
-    const { commands, entries, order, lockRequested, holdRosterWrite } = setup({ allowed: false });
+    const { commands, entries, order, lockRequested, holdRosterWrite } = setup({
+      allowed: [false],
+    });
     const write = await holdRosterWrite();
 
     const rejecting = commands.rejectTeamEntry.execute(rejectInput);
@@ -154,8 +161,33 @@ describe("competition entry commands", () => {
     expect(first).toBe("answered");
     const result = await rejecting;
     expect(result.isErr() && result.error.code).toBe("authorization.forbidden");
-    expect(order).toEqual(["reject"]);
+    expect(order).toEqual([]);
     expect((await entries.findById(entry.organizationId, entry.id))?.status).toBe("pending");
     await write.finish();
+  });
+
+  it("answers a denied pre-check without rejecting, even if access is granted right after", async () => {
+    const { commands, entries, order, holdRosterWrite } = setup({ allowed: [false, true] });
+    const write = await holdRosterWrite();
+
+    const result = await commands.rejectTeamEntry.execute(rejectInput);
+
+    expect(result.isErr() && result.error.code).toBe("authorization.forbidden");
+    expect(order).toEqual([]);
+    expect((await entries.findById(entry.organizationId, entry.id))?.status).toBe("pending");
+    await write.finish();
+  });
+
+  it("answers an entry of another competition without rejecting it", async () => {
+    const { commands, entries, order } = setup({ allowed: [true] });
+
+    const result = await commands.rejectTeamEntry.execute({
+      ...rejectInput,
+      competitionId: asCompetitionId("competition-2"),
+    });
+
+    expect(result.isErr() && result.error.code).toBe("competitions.entry_not_found");
+    expect(order).toEqual([]);
+    expect((await entries.findById(entry.organizationId, entry.id))?.status).toBe("pending");
   });
 });
