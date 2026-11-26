@@ -96,8 +96,9 @@ function PlanAdminStory({ locale, narrow = false, scenario }: StoryArgs) {
 
 async function expectLayoutSkeleton(canvasElement: HTMLElement, statusName: string): Promise<void> {
   const canvas = within(canvasElement);
-  const status = await canvas.findByRole("status", { name: statusName });
-  await expect(status).toBeInTheDocument();
+  const status = await canvas.findByRole("status");
+  await expect(status).toHaveTextContent(statusName);
+  await expect(status.closest("[aria-busy='true']")).toBeNull();
   await expect(canvas.getByRole("heading", { name: "Asignar un plan" })).toBeVisible();
   await expect(canvas.getByRole("heading", { name: "Solicitudes pendientes" })).toBeVisible();
   await expect(canvas.getByRole("columnheader", { name: "Organización" })).toBeVisible();
@@ -165,9 +166,7 @@ export const LoadingNarrow: Story = {
   args: { scenario: "loading", narrow: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByRole("status", { name: "Cargando las solicitudes…" }),
-    ).toBeInTheDocument();
+    await expect(await canvas.findByRole("status")).toHaveTextContent("Cargando las solicitudes…");
     await expect(canvas.getByRole("heading", { name: "Asignar un plan" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Solicitudes pendientes" })).toBeVisible();
   },

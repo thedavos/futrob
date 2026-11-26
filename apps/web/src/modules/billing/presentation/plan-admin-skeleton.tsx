@@ -14,7 +14,6 @@ import {
   TableHeader,
   TableRow,
   typography,
-  vis,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { styles } from "./plan-admin.styles.ts";
@@ -26,12 +25,9 @@ const QUEUE_ROWS = [0, 1, 2] as const;
  * Layout-matching bones for the plan queue and assignment form, used while
  * permissions resolve and while the queue is still loading.
  */
-export function PlanAdminSkeleton({ label }: { readonly label: string }) {
+export function PlanAdminSkeleton() {
   return (
     <>
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
       <AssignPlanSkeleton />
       <RequestQueueSkeleton />
     </>

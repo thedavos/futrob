@@ -91,7 +91,10 @@ describe("plan admin page", () => {
     );
     renderRoute();
 
-    expect(screen.getByRole("status", { name: "Comprobando permisos…" })).toBeTruthy();
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Comprobando permisos…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Asignar un plan" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Solicitudes pendientes" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Organización" })).toBeTruthy();
@@ -101,11 +104,16 @@ describe("plan admin page", () => {
     );
   });
 
-  it("mirrors the admin layout while the queue loads", async () => {
+  it("keeps the same status node announcing as the queue starts loading", async () => {
     serve({ superuser: true, queue: () => new Promise<Response>(() => undefined) });
     renderRoute();
 
-    expect(await screen.findByRole("status", { name: "Cargando las solicitudes…" })).toBeTruthy();
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Comprobando permisos…");
+    await waitFor(() => expect(status.textContent).toBe("Cargando las solicitudes…"));
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Asignar un plan" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Solicitudes pendientes" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Plan pedido" })).toBeTruthy();

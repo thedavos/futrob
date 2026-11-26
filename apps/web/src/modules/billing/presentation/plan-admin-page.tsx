@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
   typography,
+  vis,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
@@ -91,16 +92,14 @@ export function PlanAdminRoute() {
 export function PlanAdminPageView({ state }: { readonly state: PlanAdminState }) {
   const { t } = useI18n();
   const pending = state.kind === "checking" || state.kind === "loading";
-  const pendingLabel = pending
+  const statusMessage = pending
     ? t(state.kind === "checking" ? "billing.admin.checkingAccess" : "billing.admin.loading")
-    : undefined;
+    : "";
   let body: ReactNode;
   switch (state.kind) {
     case "checking":
-      body = <PlanAdminSkeleton label={t("billing.admin.checkingAccess")} />;
-      break;
     case "loading":
-      body = <PlanAdminSkeleton label={t("billing.admin.loading")} />;
+      body = <PlanAdminSkeleton />;
       break;
     case "accessError":
       body = (
@@ -132,7 +131,10 @@ export function PlanAdminPageView({ state }: { readonly state: PlanAdminState })
   }
   return (
     <PageScaffold page="admin.billing">
-      <div aria-busy={pending || undefined} aria-label={pendingLabel} {...applyStyles(styles.body)}>
+      <span role="status" {...applyStyles(vis.srOnly)}>
+        {statusMessage}
+      </span>
+      <div aria-busy={pending || undefined} {...applyStyles(styles.body)}>
         {body}
       </div>
     </PageScaffold>
