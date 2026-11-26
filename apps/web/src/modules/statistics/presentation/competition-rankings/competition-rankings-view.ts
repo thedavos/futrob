@@ -147,6 +147,8 @@ export function rankingNamesOf(state: RankingNamesState): RankingNames {
 export type RankingFormatters = {
   readonly integer: Intl.NumberFormat;
   readonly rating: Intl.NumberFormat;
+  /** Per-90 rates. */
+  readonly rate: Intl.NumberFormat;
   readonly percent: Intl.NumberFormat;
   readonly updatedAt: Intl.DateTimeFormat;
 };
@@ -155,6 +157,7 @@ export function rankingFormatters(locale: string): RankingFormatters {
   return {
     integer: new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }),
     rating: new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 2 }),
+    rate: new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 2 }),
     percent: new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 }),
     updatedAt: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }),
   };

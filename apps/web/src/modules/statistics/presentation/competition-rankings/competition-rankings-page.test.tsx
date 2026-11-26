@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { RankingKindDto } from "@futrob/api-contracts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { CompetitionRankingsRoute } from "./competition-rankings-page.tsx";
@@ -23,7 +23,7 @@ const BASE = "/api/v1/organizations/org-1/competitions/competition-1";
 type Serve = {
   readonly allowed?: readonly string[];
   readonly rankings?: () => Response | Promise<Response>;
-  readonly roster?: (teamId: string) => Response;
+  readonly roster?: (teamId: string) => Response | Promise<Response>;
 };
 
 function serve({
@@ -53,6 +53,16 @@ function serve({
   });
   vi.stubGlobal("fetch", fetch);
   return fetch;
+}
+
+/** A viewport `widthRem` wide: `(min-width: Nrem)` queries match up to that width. */
+function stubViewport(widthRem: number) {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: Number(/min-width: ([\d.]+)rem/.exec(query)?.[1] ?? Infinity) <= widthRem,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
 }
 
 const failure = (status: number, code: string) =>
@@ -89,6 +99,9 @@ async function refetchAll(queryClient: QueryClient) {
   });
 }
 
+// Phones by default; tests that need a tablet or a wide desktop widen it.
+beforeEach(() => stubViewport(30));
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -109,9 +122,9 @@ describe("Competition player rankings", () => {
     const status = screen.getByRole("status");
     expect(status.textContent).toBe("Cargando rankings…");
     expect(status.closest("[aria-busy='true']")).toBeNull();
-    expect(screen.getByText("Criterio").closest("[aria-busy='true']")).not.toBeNull();
-    expect(screen.getByText("Elegibilidad")).toBeTruthy();
-    expect(screen.getByText("Actualizado")).toBeTruthy();
+    expect(
+      screen.getByText("Más goles en partidos oficiales aprobados.").closest("[aria-busy='true']"),
+    ).not.toBeNull();
     expect(screen.getByText("Jugador")).toBeTruthy();
     expect(screen.getByText("Goles")).toBeTruthy();
     expect(screen.queryByRole("table")).toBeNull();
@@ -152,6 +165,172 @@ describe("Competition player rankings", () => {
     expect(within(rows[0]!).getAllByRole("cell").at(-1)?.textContent).toBe("9");
     expect(within(rows[2]!).getByText("Sin equipo")).toBeTruthy();
     expect(within(rows[2]!).getByText("Jugador sin nombre visible")).toBeTruthy();
+  });
+
+  it("summarizes the leader, the margin and the field of the open kind", async () => {
+    serve();
+    renderRoute();
+
+    const summary = await screen.findByRole("region", { name: "Resumen del ranking" });
+    // Leader and best per-90 rate (9 goals in 450 minutes = 1,8).
+    await waitFor(() =>
+      expect(within(summary).getAllByText("Lucía Pérez · Cuervos FC")).toHaveLength(2),
+    );
+    expect(within(summary).getByText("+3")).toBeTruthy();
+    expect(
+      within(summary).getByText(
+        "Sobre Mateo Fernández de la Torre · Club Atlético Halcones del Pacífico",
+      ),
+    ).toBeTruthy();
+    // Three ranked players from two named Teams (one row has no Team).
+    expect(within(summary).getByText("De 2 equipos")).toBeTruthy();
+    expect(within(summary).getByText("1,8")).toBeTruthy();
+    expect(screen.getByText("Oficial")).toBeTruthy();
+  });
+
+  it("opens one player's place in every ranking in a bottom sheet on phones", async () => {
+    const user = userEvent.setup();
+    serve();
+    renderRoute();
+
+    await screen.findByText("Lucía Pérez");
+    await user.click(screen.getByText("Lucía Pérez"));
+
+    const sheet = await screen.findByRole("dialog", { name: "Lucía Pérez" });
+    const standings = within(sheet).getAllByRole("listitem");
+    expect(standings.map((item) => item.getAttribute("data-ranking-standing"))).toEqual([
+      "scorer",
+      "assister",
+      "rating",
+      "mvp",
+      "goalkeeper",
+    ]);
+    expect(standings[0]!.getAttribute("aria-current")).toBe("true");
+    expect(within(standings[0]!).getByText("1.º de 3")).toBeTruthy();
+    expect(within(standings[0]!).getByText("1,8 por 90 min")).toBeTruthy();
+    expect(within(standings[1]!).getByText("2.º de 2")).toBeTruthy();
+    expect(within(standings[2]!).queryByText(/por 90 min/)).toBeNull();
+    expect(within(standings[3]!).getByText("No clasifica")).toBeTruthy();
+
+    await user.click(within(sheet).getByRole("button", { name: "Cerrar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    const row = screen.getByText("Lucía Pérez").closest("tr");
+    expect(row?.getAttribute("aria-selected")).toBe("false");
+  });
+
+  it("opens the detail in a dialog on tablets, without a side panel", async () => {
+    const user = userEvent.setup();
+    stubViewport(48);
+    serve();
+    renderRoute();
+
+    await screen.findByText("Mateo Fernández de la Torre");
+    expect(screen.queryByRole("complementary")).toBeNull();
+    await user.click(screen.getByText("Mateo Fernández de la Torre"));
+    const dialog = await screen.findByRole("dialog", { name: "Mateo Fernández de la Torre" });
+    expect(within(dialog).getByText("Club Atlético Halcones del Pacífico")).toBeTruthy();
+    expect(within(dialog).getByText("1.º de 2")).toBeTruthy();
+  });
+
+  it("keeps the detail beside the table on wide screens across kinds, even empty ones", async () => {
+    const user = userEvent.setup();
+    stubViewport(80);
+    // Goalkeepers not computed yet; MVP computed with nobody in it.
+    serve({
+      rankings: () =>
+        Response.json({
+          rankings: rankingsFixture.rankings.filter((snapshot) => snapshot.kind !== "goalkeeper"),
+        }),
+    });
+    renderRoute();
+
+    const prompt = await screen.findByRole("complementary", { name: "Detalle del jugador" });
+    expect(within(prompt).getByText("Selecciona un jugador")).toBeTruthy();
+
+    await screen.findByText("Lucía Pérez");
+    await user.click(screen.getByText("Lucía Pérez"));
+    expect(screen.getByRole("complementary", { name: "Lucía Pérez" })).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    const currentKind = () =>
+      within(screen.getByRole("complementary", { name: "Lucía Pérez" }))
+        .getAllByRole("listitem")
+        .find((item) => item.getAttribute("aria-current") === "true");
+
+    await user.click(screen.getByRole("tab", { name: "Asistencias" }));
+    expect(currentKind()?.getAttribute("data-ranking-standing")).toBe("assister");
+
+    await user.click(screen.getByRole("tab", { name: "MVP" }));
+    expect(screen.getByText("Nadie entra todavía en este ranking")).toBeTruthy();
+    expect(within(currentKind()!).getByText("No clasifica")).toBeTruthy();
+
+    await user.click(screen.getByRole("tab", { name: "Porteros" }));
+    expect(screen.getByText("Aún no hay rankings")).toBeTruthy();
+    expect(within(currentKind()!).getByText("Sin calcular")).toBeTruthy();
+  });
+
+  it("waits for names before searching instead of announcing no matches", async () => {
+    const user = userEvent.setup();
+    let release = () => undefined as void;
+    const rostersReady = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    serve({
+      roster: async (teamId) => {
+        await rostersReady;
+        return Response.json(teamDetailFixture(teamId));
+      },
+    });
+    renderRoute();
+
+    await screen.findByRole("table", { name: "Ranking de goleadores" });
+    await user.type(screen.getByRole("searchbox", { name: "Buscar jugador" }), "mateo");
+    expect(screen.getByText("Cargando nombres para buscar…")).toBeTruthy();
+    expect(screen.queryByText("Ningún jugador coincide")).toBeNull();
+    expect(screen.getByRole("searchbox", { name: "Buscar jugador" })).toHaveProperty(
+      "value",
+      "mateo",
+    );
+
+    release();
+    expect(await screen.findByText("1 de 3 jugadores")).toBeTruthy();
+    const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]!).getAllByRole("cell")[0]?.textContent).toBe("2");
+    expect(within(rows[0]!).getByText("Mateo Fernández de la Torre")).toBeTruthy();
+  });
+
+  it("does not rate goalkeeper saves per 90 minutes", async () => {
+    serve();
+    renderRoute("es", "goalkeeper");
+
+    const summary = await screen.findByRole("region", { name: "Resumen del ranking" });
+    expect(within(summary).getByText("No aplica")).toBeTruthy();
+    expect(
+      within(summary).getByText("Los minutos incluyen partidos fuera de la portería."),
+    ).toBeTruthy();
+  });
+
+  it("filters players by name without renumbering and offers to clear a search with no match", async () => {
+    const user = userEvent.setup();
+    serve();
+    renderRoute();
+
+    await screen.findByText("Lucía Pérez");
+    const search = screen.getByRole("searchbox", { name: "Buscar jugador" });
+    await user.type(search, "mateo");
+    const table = screen.getByRole("table", { name: "Ranking de goleadores" });
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]!).getAllByRole("cell")[0]?.textContent).toBe("2");
+    expect(screen.getByText("1 de 3 jugadores")).toBeTruthy();
+
+    await user.clear(search);
+    await user.type(search, "zzz");
+    expect(screen.getByText("Ningún jugador coincide")).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(4);
   });
 
   it("switches kind from the keyboard and formats the average rating", async () => {

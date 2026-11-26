@@ -67,3 +67,109 @@ export function rankingPlayerName(names: RankingNames, row: RankingRowDto): stri
   }
   return undefined;
 }
+
+/** Teams across every computed kind, without repeats, so any kind's rows can be named. */
+export function competitionRankingTeamIds(response: GetCompetitionRankingsResponse): string[] {
+  return [...new Set(response.rankings.flatMap((snapshot) => rankingTeamIds(snapshot)))];
+}
+
+export type RankingLeader = {
+  readonly row: RankingRowDto;
+  /** Value over the next row; `0` when level on value, `null` when nobody else is ranked. */
+  readonly lead: number | null;
+};
+
+/** First row of a ranking and how far it is ahead; positions come from the API as served. */
+export function rankingLeader(snapshot: RankingSnapshotDto): RankingLeader | null {
+  const [first, second] = snapshot.rows;
+  if (!first) return null;
+  return { row: first, lead: second ? first.value - second.value : null };
+}
+
+/**
+ * Where one player stands in a kind: `ranked` with their row, `unranked` when the kind was
+ * computed without them (not eligible or no contribution), `not_computed` when the
+ * statistics projection has not produced the kind yet.
+ */
+export type RankingPlayerStanding =
+  | {
+      readonly kind: RankingKindDto;
+      readonly status: "ranked";
+      readonly row: RankingRowDto;
+      readonly total: number;
+    }
+  | { readonly kind: RankingKindDto; readonly status: "unranked"; readonly total: number }
+  | { readonly kind: RankingKindDto; readonly status: "not_computed" };
+
+/** One player's place in every ranking kind, in tab order. */
+export function rankingPlayerStandings(
+  response: GetCompetitionRankingsResponse,
+  playerProfileId: string,
+): RankingPlayerStanding[] {
+  return RANKING_KINDS.map((kind): RankingPlayerStanding => {
+    const snapshot = selectRankingSnapshot(response, kind);
+    if (!snapshot) return { kind, status: "not_computed" };
+    const row = snapshot.rows.find((candidate) => candidate.playerProfileId === playerProfileId);
+    const total = snapshot.rows.length;
+    return row ? { kind, status: "ranked", row, total } : { kind, status: "unranked", total };
+  });
+}
+
+/**
+ * Whether a kind's value can be rated per 90 of the row's `minutes`. An average rating has
+ * no per-minute meaning, and goalkeeper saves count only minutes in goal while `minutes`
+ * adds every position, so the DTO cannot give a saves rate over the right sample.
+ */
+export function rankingHasPer90(kind: RankingKindDto): boolean {
+  return kind !== "rating" && kind !== "goalkeeper";
+}
+
+/** Rate per 90 minutes, only for kinds whose value and minutes share a sample. */
+export function rankingPer90(
+  kind: RankingKindDto,
+  row: Pick<RankingRowDto, "value" | "minutes">,
+): number | null {
+  if (!rankingHasPer90(kind) || row.minutes <= 0) return null;
+  return (row.value * 90) / row.minutes;
+}
+
+export type RankingRowFilters = {
+  /** Player name search; blank shows every row. */
+  readonly query: string;
+  /** Only rows of this Team; `null` shows every Team. */
+  readonly teamId: string | null;
+};
+
+const foldForSearch = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase()
+    .trim();
+
+/** Rows matching a name search and a Team, keeping their served positions. */
+export function filterRankingRows(
+  rows: readonly RankingRowDto[],
+  names: RankingNames,
+  filters: RankingRowFilters,
+): RankingRowDto[] {
+  const query = foldForSearch(filters.query);
+  return rows.filter((row) => {
+    if (filters.teamId !== null && row.teamId !== filters.teamId) return false;
+    if (query === "") return true;
+    const name = rankingPlayerName(names, row);
+    return name !== undefined && foldForSearch(name).includes(query);
+  });
+}
+
+/** Highest per-90 rate among the ranked rows; `null` for kinds without one or no minutes. */
+export function rankingBestPer90(
+  snapshot: RankingSnapshotDto,
+): { readonly row: RankingRowDto; readonly rate: number } | null {
+  let best: { readonly row: RankingRowDto; readonly rate: number } | null = null;
+  for (const row of snapshot.rows) {
+    const rate = rankingPer90(snapshot.kind, row);
+    if (rate !== null && (best === null || rate > best.rate)) best = { row, rate };
+  }
+  return best;
+}

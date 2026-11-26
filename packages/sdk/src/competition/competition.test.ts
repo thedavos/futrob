@@ -10,8 +10,14 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   bracketStages,
   competitionFixtureView,
+  competitionRankingTeamIds,
+  filterRankingRows,
   playoffCut,
+  rankingBestPer90,
+  rankingLeader,
   rankingNamesFromTeams,
+  rankingPer90,
+  rankingPlayerStandings,
   rankingPlayerName,
   rankingTeamIds,
   rulesStages,
@@ -265,11 +271,14 @@ describe("standings", () => {
   });
 });
 
-function ranking(rows: RankingSnapshotDto["rows"]): RankingSnapshotDto {
+function ranking(
+  rows: RankingSnapshotDto["rows"],
+  kind: RankingSnapshotDto["kind"] = "scorer",
+): RankingSnapshotDto {
   return {
     competitionId: "comp-1",
     organizationId: "org-1",
-    kind: "scorer",
+    kind,
     formulaVersion: "player-ranking-v1",
     eligibility: { minimumMatches: 1, minimumTeamMinutesRatio: 0.5 },
     rows,
@@ -315,6 +324,81 @@ describe("rankings", () => {
     expect(rankingPlayerName(names, rows[0]!)).toBe("Ana");
     expect(rankingPlayerName(names, rows[1]!)).toBe("Bea");
     expect(rankingPlayerName(names, rows[2]!)).toBeUndefined();
+  });
+
+  it("measures the leader's margin over the next row", () => {
+    expect(rankingLeader(ranking([]))).toBeNull();
+    expect(rankingLeader(ranking(rows))).toEqual({ row: rows[0], lead: 1 });
+    expect(rankingLeader(ranking([rows[0]!]))).toEqual({ row: rows[0], lead: null });
+    const tied = [rows[0]!, { ...rows[1]!, value: 4 }];
+    expect(rankingLeader(ranking(tied))?.lead).toBe(0);
+  });
+
+  it("lists every Team across kinds once", () => {
+    const assister = ranking(
+      [
+        { ...rows[1]!, teamId: "t2" },
+        { ...rows[0]!, playerProfileId: "p9", teamId: "t1" },
+      ],
+      "assister",
+    );
+    expect(competitionRankingTeamIds({ rankings: [ranking(rows), assister] })).toEqual([
+      "t1",
+      "t2",
+    ]);
+  });
+
+  it("places one player in every kind, telling missing projections from not qualifying", () => {
+    const response = {
+      rankings: [ranking(rows), ranking([rows[2]!], "assister"), ranking([], "mvp")],
+    };
+    const standings = rankingPlayerStandings(response, "p1");
+    expect(standings.map((standing) => standing.kind)).toEqual([
+      "scorer",
+      "assister",
+      "rating",
+      "mvp",
+      "goalkeeper",
+    ]);
+    expect(standings[0]).toEqual({ kind: "scorer", status: "ranked", row: rows[0], total: 3 });
+    expect(standings[1]).toEqual({ kind: "assister", status: "unranked", total: 1 });
+    expect(standings[2]).toEqual({ kind: "rating", status: "not_computed" });
+    expect(standings[3]).toEqual({ kind: "mvp", status: "unranked", total: 0 });
+  });
+
+  it("rates counts per 90 minutes but never an average rating", () => {
+    expect(rankingPer90("scorer", { value: 3, minutes: 135 })).toBe(2);
+    expect(rankingPer90("scorer", { value: 3, minutes: 0 })).toBeNull();
+    expect(rankingPer90("rating", { value: 7.5, minutes: 90 })).toBeNull();
+  });
+
+  it("never rates goalkeeper saves over minutes that include outfield play", () => {
+    // 6 saves in 90 minutes in goal plus 90 outfield: the DTO only carries the 180 total.
+    expect(rankingPer90("goalkeeper", { value: 6, minutes: 180 })).toBeNull();
+    expect(
+      rankingBestPer90(ranking([{ ...rows[0]!, value: 6, minutes: 180 }], "goalkeeper")),
+    ).toBeNull();
+  });
+
+  it("finds the best per-90 rate, which need not be the leader's", () => {
+    const fast = { ...rows[2]!, value: 2, minutes: 45 };
+    expect(rankingBestPer90(ranking([rows[0]!, fast]))).toEqual({ row: fast, rate: 4 });
+    expect(rankingBestPer90(ranking(rows, "rating"))).toBeNull();
+    expect(rankingBestPer90(ranking([]))).toBeNull();
+  });
+
+  it("filters rows by accent-insensitive player name and by Team", () => {
+    const names = rankingNamesFromTeams([
+      roster("t1", "Rayo", [
+        ["p1", "Lucía Pérez"],
+        ["p3", "Mateo Ruiz"],
+      ]),
+    ]);
+    expect(filterRankingRows(rows, names, { query: " LUCIA ", teamId: null })).toEqual([rows[0]]);
+    expect(filterRankingRows(rows, names, { query: "", teamId: "t1" })).toEqual([rows[0], rows[2]]);
+    expect(filterRankingRows(rows, names, { query: "", teamId: null })).toEqual(rows);
+    // An unnamed row never matches a name search.
+    expect(filterRankingRows(rows, names, { query: "bea", teamId: null })).toEqual([]);
   });
 });
 
