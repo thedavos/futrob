@@ -2003,9 +2003,9 @@ const es = {
   "competition.rankings.criterion.mvp": "Más premios MVP en partidos oficiales aprobados.",
   "competition.rankings.criterion.goalkeeper":
     "Más paradas jugando de portero; si empatan, menos goles encajados.",
-  "competition.rankings.meta.criterion": "Criterio",
-  "competition.rankings.meta.eligibility": "Elegibilidad",
-  "competition.rankings.meta.updated": "Actualizado",
+  "competition.rankings.meta.label": "Criterio, elegibilidad y actualización",
+  "competition.rankings.meta.updated": ({ time }) => `Actualizado ${time}`,
+  "competition.rankings.officialBadge": "Oficial",
   "competition.rankings.eligibility": ({ matches, percent }) =>
     `Al menos ${matches} ${Number(matches) === 1 ? "partido" : "partidos"} o el ${percent} de los minutos de su equipo.`,
   "competition.rankings.column.position": "Pos.",
@@ -2038,6 +2038,43 @@ const es = {
   "competition.rankings.forbidden.description":
     "Tu rol en esta competición no incluye las estadísticas de jugadores.",
   "competition.rankings.forbidden.back": "Volver a la competición",
+  "competition.rankings.summary.label": "Resumen del ranking",
+  "competition.rankings.summary.unavailable": "Sin datos",
+  "competition.rankings.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "competition.rankings.summary.leader": "Líder",
+  "competition.rankings.summary.lead": "Ventaja del líder",
+  "competition.rankings.summary.leadValue": ({ value }) => `+${value}`,
+  "competition.rankings.summary.leadLevel": "Igualados",
+  "competition.rankings.summary.leadOver": ({ player }) => `Sobre ${player}`,
+  "competition.rankings.summary.leadLevelWith": ({ player }) =>
+    `Mismo valor que ${player}; decide el desempate`,
+  "competition.rankings.summary.leadAlone": "Sin perseguidor",
+  "competition.rankings.summary.players": "Jugadores clasificados",
+  "competition.rankings.summary.teams": ({ count }) =>
+    `De ${count} ${Number(count) === 1 ? "equipo" : "equipos"}`,
+  "competition.rankings.summary.per90": "Mejor ritmo por 90 min",
+  "competition.rankings.summary.per90NotApplicable": "No aplica",
+  "competition.rankings.summary.per90RatingHint": "El rating ya es una media por partido.",
+  "competition.rankings.filters.label": "Filtrar jugadores",
+  "competition.rankings.search": "Buscar jugador",
+  "competition.rankings.teamFilter": "Equipo",
+  "competition.rankings.allTeams": "Todos los equipos",
+  "competition.rankings.filters.count": ({ shown, total }) =>
+    `${shown} de ${total} ${Number(total) === 1 ? "jugador" : "jugadores"}`,
+  "competition.rankings.noMatches.title": "Ningún jugador coincide",
+  "competition.rankings.noMatches.description":
+    "Prueba con otro nombre o equipo. Las posiciones no cambian al filtrar.",
+  "competition.rankings.clearFilters": "Limpiar filtros",
+  "competition.rankings.detail.label": "Detalle del jugador",
+  "competition.rankings.detail.emptyTitle": "Selecciona un jugador",
+  "competition.rankings.detail.emptyDescription":
+    "Verás su posición en cada ranking de la competición.",
+  "competition.rankings.detail.rankings": "Posición en cada ranking",
+  "competition.rankings.detail.position": ({ position, total }) => `${position}.º de ${total}`,
+  "competition.rankings.detail.unranked": "No clasifica",
+  "competition.rankings.detail.notComputed": "Sin calcular",
+  "competition.rankings.detail.per90": ({ rate }) => `${rate} por 90 min`,
+  "competition.rankings.detail.close": "Cerrar",
   "competition.rankings.notFound.title": "Competición no disponible",
   "competition.rankings.notFound.description":
     "No encontramos esta competición o ya no tienes acceso.",
@@ -3575,6 +3612,21 @@ export interface MessageParamsByKey {
     readonly matches: number;
     readonly percent: string;
   };
+  readonly "competition.rankings.meta.updated": { readonly time: string };
+  readonly "competition.rankings.summary.join": { readonly first: string; readonly second: string };
+  readonly "competition.rankings.summary.leadValue": { readonly value: string };
+  readonly "competition.rankings.summary.leadOver": { readonly player: string };
+  readonly "competition.rankings.summary.leadLevelWith": { readonly player: string };
+  readonly "competition.rankings.summary.teams": { readonly count: string };
+  readonly "competition.rankings.filters.count": {
+    readonly shown: string;
+    readonly total: string;
+  };
+  readonly "competition.rankings.detail.position": {
+    readonly position: string;
+    readonly total: string;
+  };
+  readonly "competition.rankings.detail.per90": { readonly rate: string };
   readonly "competitionRules.format.teamsRange": { readonly min: number; readonly max: number };
   readonly "competitionRules.format.teamsAtLeast": { readonly min: number };
   readonly "competitionRules.value.matches": { readonly count: number };
@@ -5915,9 +5967,9 @@ const en: Catalog = {
   "competition.rankings.criterion.mvp": "Most MVP awards in approved official matches.",
   "competition.rankings.criterion.goalkeeper":
     "Most saves playing in goal; ties go to fewer goals conceded.",
-  "competition.rankings.meta.criterion": "Criterion",
-  "competition.rankings.meta.eligibility": "Eligibility",
-  "competition.rankings.meta.updated": "Updated",
+  "competition.rankings.meta.label": "Criterion, eligibility and update",
+  "competition.rankings.meta.updated": ({ time }) => `Updated ${time}`,
+  "competition.rankings.officialBadge": "Official",
   "competition.rankings.eligibility": ({ matches, percent }) =>
     `At least ${matches} ${Number(matches) === 1 ? "match" : "matches"} or ${percent} of their team's minutes.`,
   "competition.rankings.column.position": "Pos.",
@@ -5950,6 +6002,43 @@ const en: Catalog = {
   "competition.rankings.forbidden.description":
     "Your role in this competition doesn't include player statistics.",
   "competition.rankings.forbidden.back": "Back to the competition",
+  "competition.rankings.summary.label": "Ranking summary",
+  "competition.rankings.summary.unavailable": "No data",
+  "competition.rankings.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "competition.rankings.summary.leader": "Leader",
+  "competition.rankings.summary.lead": "Leader's margin",
+  "competition.rankings.summary.leadValue": ({ value }) => `+${value}`,
+  "competition.rankings.summary.leadLevel": "Level",
+  "competition.rankings.summary.leadOver": ({ player }) => `Over ${player}`,
+  "competition.rankings.summary.leadLevelWith": ({ player }) =>
+    `Same value as ${player}; the tiebreak decides`,
+  "competition.rankings.summary.leadAlone": "No runner-up",
+  "competition.rankings.summary.players": "Ranked players",
+  "competition.rankings.summary.teams": ({ count }) =>
+    `From ${count} ${Number(count) === 1 ? "team" : "teams"}`,
+  "competition.rankings.summary.per90": "Best rate per 90 min",
+  "competition.rankings.summary.per90NotApplicable": "Not applicable",
+  "competition.rankings.summary.per90RatingHint": "Rating is already a per-match average.",
+  "competition.rankings.filters.label": "Filter players",
+  "competition.rankings.search": "Search player",
+  "competition.rankings.teamFilter": "Team",
+  "competition.rankings.allTeams": "All teams",
+  "competition.rankings.filters.count": ({ shown, total }) =>
+    `${shown} of ${total} ${Number(total) === 1 ? "player" : "players"}`,
+  "competition.rankings.noMatches.title": "No players match",
+  "competition.rankings.noMatches.description":
+    "Try another name or team. Positions don't change when you filter.",
+  "competition.rankings.clearFilters": "Clear filters",
+  "competition.rankings.detail.label": "Player detail",
+  "competition.rankings.detail.emptyTitle": "Select a player",
+  "competition.rankings.detail.emptyDescription":
+    "See where they stand in every ranking of the competition.",
+  "competition.rankings.detail.rankings": "Place in every ranking",
+  "competition.rankings.detail.position": ({ position, total }) => `#${position} of ${total}`,
+  "competition.rankings.detail.unranked": "Not ranked",
+  "competition.rankings.detail.notComputed": "Not computed",
+  "competition.rankings.detail.per90": ({ rate }) => `${rate} per 90 min`,
+  "competition.rankings.detail.close": "Close",
   "competition.rankings.notFound.title": "Competition unavailable",
   "competition.rankings.notFound.description":
     "We couldn't find this competition, or you no longer have access.",

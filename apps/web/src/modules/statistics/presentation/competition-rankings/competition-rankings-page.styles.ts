@@ -24,27 +24,42 @@ export const styles = stylex.create({
     paddingBlock: 0,
   },
   meta: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.375rem 0.75rem",
+    minWidth: 0,
+  },
+  metaStrong: {
+    color: colors.foreground,
+    fontWeight: 500,
+  },
+  metaSep: {
+    color: colors.textTertiary,
+  },
+  /** Table beside the player detail on wide desktops; the detail moves to an overlay below. */
+  workspace: {
     display: "grid",
     gridTemplateColumns: {
       default: "minmax(0, 1fr)",
-      [media.md]: "repeat(3, minmax(0, 1fr))",
+      [media.xl]: "minmax(0, 1fr) 22rem",
     },
+    alignItems: "start",
     gap: "1rem",
-    margin: 0,
-  },
-  metaItem: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.25rem",
     minWidth: 0,
   },
-  metaTerm: {
-    color: colors.mutedForeground,
+  filters: {
+    display: "grid",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "minmax(0, 1fr) minmax(10rem, 14rem)",
+    },
+    alignItems: "center",
+    gap: "0.75rem 1rem",
   },
-  metaValue: {
+  filterCount: {
+    gridColumn: "1 / -1",
     margin: 0,
-    color: colors.foreground,
-    overflowWrap: "anywhere",
   },
   tableSection: {
     display: "flex",
@@ -57,19 +72,52 @@ export const styles = stylex.create({
   },
   position: {
     width: "3.5rem",
-    textAlign: "end",
     whiteSpace: "nowrap",
+    color: colors.mutedForeground,
   },
-  numeric: {
-    textAlign: "end",
-    whiteSpace: "nowrap",
+  positionCell: {
+    position: "relative",
+    fontWeight: 500,
     fontVariantNumeric: "tabular-nums",
+  },
+  abbr: {
+    textDecorationLine: "none",
+    cursor: "help",
+  },
+  /** Context columns stay quieter than the figure that orders the ranking (design.md §Datos). */
+  secondaryHead: {
+    color: colors.mutedForeground,
+  },
+  secondary: {
+    color: colors.mutedForeground,
+    fontWeight: 500,
+    fontVariantNumeric: "tabular-nums",
+  },
+  metricHead: {
+    color: colors.foreground,
   },
   metric: {
-    textAlign: "end",
-    whiteSpace: "nowrap",
+    color: colors.foreground,
+    fontSize: "1rem",
+    fontWeight: 700,
     fontVariantNumeric: "tabular-nums",
-    fontWeight: 600,
+  },
+  selectableRow: {
+    cursor: "pointer",
+    outlineColor: colors.ring,
+    outlineStyle: { default: "none", ":focus-visible": "solid" },
+    outlineWidth: 2,
+    outlineOffset: -2,
+  },
+  selectionBar: {
+    position: "absolute",
+    insetInlineStart: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+    pointerEvents: "none",
   },
   identity: {
     display: "flex",
@@ -78,6 +126,10 @@ export const styles = stylex.create({
     minWidth: 0,
   },
   playerName: {
+    fontWeight: 500,
+    overflowWrap: "anywhere",
+  },
+  playerNameSelected: {
     fontWeight: 600,
     overflowWrap: "anywhere",
   },
@@ -95,6 +147,11 @@ export const styles = stylex.create({
   },
   skeletonTabs: {
     height: "var(--control-height)",
+    width: "100%",
+    borderRadius: "var(--corner-lg)",
+  },
+  skeletonKpis: {
+    height: "5.75rem",
     width: "100%",
     borderRadius: "var(--corner-lg)",
   },
