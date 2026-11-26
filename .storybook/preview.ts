@@ -61,12 +61,14 @@ const preview: Preview = {
             "Organizer",
             [
               "Home",
+              "Competitions",
               "Organization",
               ["Create", "Settings", "Members and roles"],
               "Teams",
               "Competition setup",
               [
                 "Create",
+                "Page",
                 "Rules step",
                 "Format estimate",
                 "Participants",

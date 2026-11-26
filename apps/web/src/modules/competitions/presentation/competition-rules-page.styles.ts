@@ -18,12 +18,6 @@ export const styles = stylex.create({
       [media.lg]: "minmax(0, 1.5fr) minmax(18rem, 0.85fr)",
     },
   },
-  stack: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-    minWidth: 0,
-  },
   cardBody: {
     display: "flex",
     flexDirection: "column",
@@ -79,9 +73,5 @@ export const styles = stylex.create({
     borderRadius: "var(--corner-lg)",
     backgroundColor: colors.muted,
     padding: "0.75rem 1rem",
-  },
-  skeleton: {
-    height: "8rem",
-    width: "100%",
   },
 });

@@ -2,11 +2,7 @@
 
 import { CalendarBlankIcon, ClockIcon, SealCheckIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import {
-  HomeKpiGroup,
-  HomeKpiSkeletonGroup,
-  HomeKpiStat,
-} from "@/shared/presentation/stats/home-kpi.tsx";
+import { HomeKpiGroup, HomeKpiStat } from "@/shared/presentation/stats/home-kpi.tsx";
 
 /** A KPI value: a real count (zero included), still loading, or unavailable after a failed read. */
 export type OverviewMetric = number | "loading" | "unavailable";
@@ -77,14 +73,11 @@ export function CompetitionOverviewKpis({
     },
   ] as const;
 
-  if (metrics.every((metric) => metric.loading)) {
-    return <HomeKpiSkeletonGroup columns={4} label={t("competition.overview.kpi.label")} />;
-  }
-
   const emptyLabel = t("player.noData");
+  const allLoading = metrics.every((metric) => metric.loading);
 
   return (
-    <section aria-label={t("competition.overview.kpi.label")}>
+    <section aria-busy={allLoading || undefined} aria-label={t("competition.overview.kpi.label")}>
       <HomeKpiGroup columns={4}>
         {metrics.map((metric) => (
           <HomeKpiStat

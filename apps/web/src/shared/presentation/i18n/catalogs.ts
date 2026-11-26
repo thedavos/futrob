@@ -128,7 +128,21 @@ const es = {
   "bracket.byes.one": "1 descanso",
   "bracket.byes.other": ({ count }) => `${count} descansos`,
   "bracket.twoLegs": "Ida y vuelta",
-  "bracket.hint": "De izquierda a derecha. Desliza el cuadro o abre la lista por rondas.",
+  "bracket.hint": "De izquierda a derecha. Desliza el cuadro para ver todas las rondas.",
+  "bracket.resultsError": "No pudimos cargar los marcadores. El cuadro muestra solo el calendario.",
+  "bracket.views.label": "Vista de las eliminatorias",
+  "bracket.views.canvas": "Cuadro",
+  "bracket.views.list": "Lista",
+  "bracket.summary.label": "Estado de los cruces",
+  "bracket.summary.official": ({ count }) => (count === 1 ? "1 oficial" : `${count} oficiales`),
+  "bracket.summary.awaiting": ({ count }) => `${count} por confirmar`,
+  "bracket.summary.upcoming": ({ count }) => (count === 1 ? "1 pendiente" : `${count} pendientes`),
+  "bracket.champion.title": "Campeón",
+  "bracket.champion.pending": "Por definir",
+  "bracket.score": ({ away, home }) => `Marcador oficial ${home} a ${away}`,
+  "bracket.score.aggregate": ({ away, home }) => `Global oficial ${home} a ${away}`,
+  "bracket.score.series": "Dos partidos oficiales",
+  "bracket.legs": ({ first, second }) => `Ida ${first} · Vuelta ${second}`,
   "bracket.canvasLabel": ({ stage }) => `Cuadro desplazable: ${stage}`,
   "bracket.unlinked.one": "1 plaza no indica de qué cruce llega, así que no tiene línea.",
   "bracket.unlinked.other": ({ count }) =>
@@ -140,12 +154,13 @@ const es = {
   "bracket.status.scheduled": "Programado",
   "bracket.status.pending": "Rival por definir",
   "bracket.status.bye": "Sin rival",
+  "bracket.status.awaitingResult": "Por confirmar",
+  "bracket.status.official": "Oficial",
   "bracket.filter.team": "Seguir a un equipo",
   "bracket.filter.allTeams": "Todos los equipos",
   "bracket.filter.summary": ({ shown, total }) =>
     `${shown} de ${total} cruces destacados. El cuadro conserva su estructura.`,
   "bracket.filter.clear": "Quitar filtro",
-  "bracket.list.toggle": "Ver eliminatorias en lista",
   "bracket.list.matchup": ({ away, home }) => `${home} vs ${away}`,
   "bracket.list.noneForTeam": "Este equipo no juega cruces de esta ronda.",
 
@@ -1055,6 +1070,7 @@ const es = {
   "competitions.setup.saveDraft": "Guardar borrador",
   "competitions.setup.saving": "Guardando…",
   "competitions.setup.continue": "Continuar",
+  "competitions.setup.loading": "Cargando competición…",
   "errors.organizations.slug_conflict": "Ese slug ya está en uso. Elige otro.",
   "errors.organizations.invalid_slug": "El slug no es válido. Usa minúsculas, números y guiones.",
   "errors.organizations.invalid_time_zone": "La zona horaria no es válida.",
@@ -1969,6 +1985,7 @@ const es = {
   "org.home.error.competitions":
     "No se pudieron cargar las competiciones. Comprueba la conexión e inténtalo de nuevo.",
   "org.home.error.profile": "No se pudo cargar el nombre de la organización.",
+  "org.competitions.loading": "Cargando competiciones…",
   "pages.competition.fixture.title": "Calendario",
   "pages.competition.fixture.subtitle": "Jornadas y fechas de cada enfrentamiento.",
   "pages.competition.encounters.title": "Enfrentamientos",
@@ -3427,8 +3444,6 @@ const es = {
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 enfrentamiento" : `${count} enfrentamientos`}`,
   "fixture.month.more": ({ count }) => `+${count} más`,
-  "fixture.month.selectedDay": "Día seleccionado",
-  "fixture.month.emptyDay": "No hay enfrentamientos este día.",
   "fixture.month.emptyMonth": "No hay enfrentamientos este mes.",
   "fixture.month.goTo": ({ month }) => `Ver ${month}`,
   "fixture.rounds.current": "Próxima",
@@ -3454,6 +3469,7 @@ const es = {
   "portal.meta.description": ({ name }) =>
     `Calendario, resultados, tabla, bracket y rankings de ${name}, publicados en Futrob.`,
   "portal.loading": "Cargando la sección",
+  "portal.loading.page": "Cargando la competición",
   "portal.error.title": "No pudimos cargar esta sección",
   "portal.error.description":
     "Puede ser un problema temporal. Vuelve a intentarlo en unos segundos.",
@@ -3555,6 +3571,12 @@ export interface MessageParamsByKey {
   readonly "bracket.encounters.other": { readonly count: number };
   readonly "bracket.byes.other": { readonly count: number };
   readonly "bracket.canvasLabel": { readonly stage: string };
+  readonly "bracket.summary.official": { readonly count: number };
+  readonly "bracket.summary.awaiting": { readonly count: number };
+  readonly "bracket.summary.upcoming": { readonly count: number };
+  readonly "bracket.score": { readonly away: string; readonly home: string };
+  readonly "bracket.score.aggregate": { readonly away: string; readonly home: string };
+  readonly "bracket.legs": { readonly first: string; readonly second: string };
   readonly "bracket.unlinked.other": { readonly count: number };
   readonly "bracket.node.number": { readonly number: number };
   readonly "bracket.node.label": {
@@ -4152,7 +4174,21 @@ const en: Catalog = {
   "bracket.byes.one": "1 bye",
   "bracket.byes.other": ({ count }) => `${count} byes`,
   "bracket.twoLegs": "Two legs",
-  "bracket.hint": "Left to right. Swipe the bracket or open the list by round.",
+  "bracket.hint": "Left to right. Swipe the bracket to see every round.",
+  "bracket.resultsError": "We couldn't load the scores. The bracket shows the schedule only.",
+  "bracket.views.label": "Knockout view",
+  "bracket.views.canvas": "Bracket",
+  "bracket.views.list": "List",
+  "bracket.summary.label": "Tie status",
+  "bracket.summary.official": ({ count }) => `${count} official`,
+  "bracket.summary.awaiting": ({ count }) => `${count} to confirm`,
+  "bracket.summary.upcoming": ({ count }) => `${count} upcoming`,
+  "bracket.champion.title": "Champion",
+  "bracket.champion.pending": "To be decided",
+  "bracket.score": ({ away, home }) => `Official score ${home} to ${away}`,
+  "bracket.score.aggregate": ({ away, home }) => `Official aggregate ${home} to ${away}`,
+  "bracket.score.series": "Two official matches",
+  "bracket.legs": ({ first, second }) => `First leg ${first} · Second leg ${second}`,
   "bracket.canvasLabel": ({ stage }) => `Scrollable bracket: ${stage}`,
   "bracket.unlinked.one": "1 place doesn't say which tie it comes from, so it has no line.",
   "bracket.unlinked.other": ({ count }) =>
@@ -4164,12 +4200,13 @@ const en: Catalog = {
   "bracket.status.scheduled": "Scheduled",
   "bracket.status.pending": "Opponent to be decided",
   "bracket.status.bye": "No opponent",
+  "bracket.status.awaitingResult": "To confirm",
+  "bracket.status.official": "Official",
   "bracket.filter.team": "Follow a team",
   "bracket.filter.allTeams": "All teams",
   "bracket.filter.summary": ({ shown, total }) =>
     `${shown} of ${total} ties highlighted. The bracket keeps its shape.`,
   "bracket.filter.clear": "Clear filter",
-  "bracket.list.toggle": "View ties as a list",
   "bracket.list.matchup": ({ away, home }) => `${home} vs ${away}`,
   "bracket.list.noneForTeam": "This team has no ties in this round.",
 
@@ -5076,6 +5113,7 @@ const en: Catalog = {
   "competitions.setup.saveDraft": "Save draft",
   "competitions.setup.saving": "Saving…",
   "competitions.setup.continue": "Continue",
+  "competitions.setup.loading": "Loading competition…",
   "errors.organizations.slug_conflict": "That slug is already in use. Choose another one.",
   "errors.organizations.invalid_slug":
     "The slug isn't valid. Use lowercase letters, numbers and hyphens.",
@@ -5976,6 +6014,7 @@ const en: Catalog = {
   "org.home.error.competitions":
     "Unable to load competitions. Check your connection and try again.",
   "org.home.error.profile": "Unable to load the organization name.",
+  "org.competitions.loading": "Loading competitions…",
   "pages.competition.fixture.title": "Schedule",
   "pages.competition.fixture.subtitle": "Rounds and dates for each encounter.",
   "pages.competition.encounters.title": "Encounters",
@@ -7401,8 +7440,6 @@ const en: Catalog = {
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 encounter" : `${count} encounters`}`,
   "fixture.month.more": ({ count }) => `+${count} more`,
-  "fixture.month.selectedDay": "Selected day",
-  "fixture.month.emptyDay": "No encounters on this day.",
   "fixture.month.emptyMonth": "No encounters this month.",
   "fixture.month.goTo": ({ month }) => `Go to ${month}`,
   "fixture.rounds.current": "Up next",
@@ -7428,6 +7465,7 @@ const en: Catalog = {
   "portal.meta.description": ({ name }) =>
     `Fixtures, results, table, bracket and rankings for ${name}, published on Futrob.`,
   "portal.loading": "Loading the section",
+  "portal.loading.page": "Loading the competition",
   "portal.error.title": "We couldn't load this section",
   "portal.error.description": "It may be a temporary problem. Try again in a few seconds.",
   "portal.error.retry": "Try again",

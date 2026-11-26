@@ -18,7 +18,12 @@ import { useMyPlayerProfileQuery } from "@/modules/teams/presentation/player-que
 import { platformLabel } from "@/modules/teams/presentation/platform-label.ts";
 import { formatProviderGameEdition } from "@/modules/game-data/presentation/ea-club-search-meta.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { useLiveStatus } from "@/shared/presentation/live-status-region.tsx";
 import { ProfileEditor, type ProfileIdentity } from "./profile-editor.tsx";
+import {
+  PlayerProfileAccountsSkeleton,
+  PlayerProfileIdentitySkeleton,
+} from "./player-profile-skeleton.tsx";
 import { styles } from "./account.styles.ts";
 
 export function PlayerProfilePage() {
@@ -73,6 +78,8 @@ export function PlayerProfilePageView({
   readonly accounts: AccountsState;
 }) {
   const { t } = useI18n();
+  const loading = identity.status === "pending" || accounts.status === "pending";
+  useLiveStatus(loading ? t("profile.loading") : "");
   return (
     <div {...applyStyles(styles.page)}>
       <PageHeader>
@@ -80,9 +87,7 @@ export function PlayerProfilePageView({
         <PageHeaderDescription>{t("profile.description")}</PageHeaderDescription>
       </PageHeader>
       {identity.status === "pending" ? (
-        <p role="status">
-          <Caption>{t("profile.loading")}</Caption>
-        </p>
+        <PlayerProfileIdentitySkeleton />
       ) : identity.status === "ready" ? (
         <ProfileEditor identity={identity.user} save={identity.save} />
       ) : (
@@ -93,7 +98,7 @@ export function PlayerProfilePageView({
       <section {...applyStyles(styles.section)} aria-labelledby="profile-games">
         <SectionTitle id="profile-games">{t("profile.games")}</SectionTitle>
         {accounts.status === "pending" ? (
-          <Caption>{t("profile.loading")}</Caption>
+          <PlayerProfileAccountsSkeleton />
         ) : accounts.status === "error" ? (
           <Alert variant="destructive">
             <AlertDescription>{t("profile.gamesError")}</AlertDescription>

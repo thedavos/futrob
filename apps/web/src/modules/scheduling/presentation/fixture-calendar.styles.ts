@@ -32,7 +32,11 @@ export const styles = stylex.create({
   filterSlot: {
     flexGrow: { default: 1, [media.sm]: 0 },
     flexShrink: { default: 1, [media.sm]: 0 },
-    flexBasis: { default: "100%", [media.sm]: "12.5rem" },
+    flexBasis: { default: "100%", [media.sm]: "auto" },
+    // A width, not only a flex-basis: Firefox sizes the filter group from its children's
+    // widths, so a basis alone left the group too narrow and the second filter overflowed
+    // the page horizontally.
+    width: { default: null, [media.sm]: "12.5rem" },
     minWidth: 0,
   },
   filterTrigger: {

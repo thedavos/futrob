@@ -97,6 +97,9 @@ export function CompetitionEncountersStatus({
   const { t } = useI18n();
   return (
     <PageScaffold page={page}>
+      <span aria-atomic="true" role="status" {...applyStyles(vis.srOnly)}>
+        {state.kind === "loading" ? t("encounters.list.loading") : ""}
+      </span>
       <EncountersStatusBody state={state} t={t} />
     </PageScaffold>
   );
@@ -118,12 +121,14 @@ export function CompetitionEncountersPageView({
   const chosenFilters = filters ?? localFilters;
   const setFilters = onFiltersChange ?? setLocalFilters;
 
-  if (state.kind !== "ready") {
-    return <CompetitionEncountersStatus page={page} state={state} />;
-  }
   return (
     <PageScaffold page={page}>
-      {state.data.encounters.length === 0 ? (
+      <span aria-atomic="true" role="status" {...applyStyles(vis.srOnly)}>
+        {state.kind === "loading" ? t("encounters.list.loading") : ""}
+      </span>
+      {state.kind !== "ready" ? (
+        <EncountersStatusBody state={state} t={t} />
+      ) : state.data.encounters.length === 0 ? (
         <EmptyState>
           <EmptyStateIcon>
             <img alt="" data-outline="none" src={emptyFixturesUrl} />
@@ -158,18 +163,7 @@ function EncountersStatusBody({
 }) {
   switch (state.kind) {
     case "loading":
-      return (
-        <div
-          aria-busy="true"
-          aria-label={t("encounters.list.loading")}
-          role="status"
-          {...applyStyles(styles.skeletonStack)}
-        >
-          <Skeleton {...applyStyles(styles.skeletonToolbar)} />
-          <Skeleton {...applyStyles(styles.skeletonGroup)} />
-          <Skeleton {...applyStyles(styles.skeletonGroup)} />
-        </div>
-      );
+      return <EncountersListSkeleton t={t} />;
     case "error":
       return <RetryAlert message={t("encounters.list.error")} retry={state.retry} t={t} />;
     case "not_found":
@@ -191,6 +185,97 @@ function EncountersStatusBody({
       return exhaustive;
     }
   }
+}
+
+const LOADING_ROUNDS = [
+  { key: "round-a", rows: 3 },
+  { key: "round-b", rows: 2 },
+] as const;
+
+function EncountersListSkeleton({ t }: { readonly t: Translator }) {
+  const label = t("encounters.list.loading");
+  return (
+    <section aria-busy="true" aria-label={label} {...applyStyles(styles.section)}>
+      <div aria-hidden="true" {...applyStyles(styles.controls)}>
+        <div {...applyStyles(styles.toolbar)}>
+          <div {...applyStyles(styles.statusGroup)}>
+            <Skeleton {...applyStyles(styles.skeletonPill, styles.skeletonPillAll)} />
+            <Skeleton {...applyStyles(styles.skeletonPill, styles.skeletonPillAwaiting)} />
+            <Skeleton {...applyStyles(styles.skeletonPill, styles.skeletonPillOfficial)} />
+            <Skeleton {...applyStyles(styles.skeletonPill, styles.skeletonPillScheduled)} />
+          </div>
+          <Skeleton {...applyStyles(styles.skeletonZone)} />
+        </div>
+        <div {...applyStyles(styles.filters)}>
+          <div {...applyStyles(styles.filterField)}>
+            <div {...applyStyles(styles.skeletonField)}>
+              <Skeleton {...applyStyles(styles.skeletonFieldLabel)} />
+              <Skeleton {...applyStyles(styles.skeletonSelect)} />
+            </div>
+          </div>
+          <div {...applyStyles(styles.filterField)}>
+            <div {...applyStyles(styles.skeletonField)}>
+              <Skeleton {...applyStyles(styles.skeletonFieldLabel)} />
+              <Skeleton {...applyStyles(styles.skeletonSelect)} />
+            </div>
+          </div>
+          <Skeleton {...applyStyles(styles.skeletonFilterStatus, styles.filterStatus)} />
+        </div>
+      </div>
+      <ol aria-hidden="true" {...applyStyles(styles.rounds)}>
+        {LOADING_ROUNDS.map((round) => (
+          <li key={round.key}>
+            <RoundGroupSkeleton rows={round.rows} />
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function RoundGroupSkeleton({ rows }: { readonly rows: number }) {
+  return (
+    <section {...applyStyles(styles.roundSection)}>
+      <div {...applyStyles(styles.roundHeader)}>
+        <div {...applyStyles(styles.roundHeadingGroup)}>
+          <Skeleton {...applyStyles(styles.skeletonRoundTitle)} />
+          <Skeleton {...applyStyles(styles.skeletonRoundDate)} />
+        </div>
+        <Skeleton {...applyStyles(styles.skeletonRoundProgress)} />
+      </div>
+      <div {...applyStyles(styles.roundCard)}>
+        <ol {...applyStyles(styles.list)}>
+          {Array.from({ length: rows }, (_, index) => (
+            <li key={index} {...applyStyles(styles.listItem)}>
+              <EncounterRowSkeleton />
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+function EncounterRowSkeleton() {
+  return (
+    <div data-slot="encounter-skeleton-row" {...applyStyles(styles.rowLayout)}>
+      <div {...applyStyles(styles.timeCol)}>
+        <Skeleton {...applyStyles(styles.skeletonTime)} />
+        <Skeleton {...applyStyles(styles.skeletonSlots)} />
+      </div>
+      <div {...applyStyles(styles.matchup)}>
+        <Skeleton {...applyStyles(styles.skeletonTeam, styles.skeletonTeamHome, styles.home)} />
+        <div {...applyStyles(styles.scoreCenter)}>
+          <Skeleton {...applyStyles(styles.skeletonScore)} />
+        </div>
+        <Skeleton {...applyStyles(styles.skeletonTeam, styles.away)} />
+      </div>
+      <div {...applyStyles(styles.statusWrap)}>
+        <Skeleton {...applyStyles(styles.skeletonBadge)} />
+      </div>
+      <Skeleton {...applyStyles(styles.chevron)} />
+    </div>
+  );
 }
 
 function EncounterList({

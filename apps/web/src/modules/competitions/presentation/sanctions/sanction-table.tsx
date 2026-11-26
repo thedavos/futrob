@@ -6,6 +6,7 @@ import {
   applyStyles,
   Badge,
   Caption,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -111,6 +112,63 @@ export function SanctionTable({
             </TableRow>
           );
         })}
+      </TableBody>
+    </Table>
+  );
+}
+
+const SKELETON_ROWS = [0, 1, 2, 3, 4, 5] as const;
+
+/** Table-shaped loading bones. The overflow scroller is out of the tab order. */
+export function SanctionTableSkeleton({ showActions = false }: { readonly showActions?: boolean }) {
+  const { t } = useI18n();
+  return (
+    <Table className={styles.table} containerTabIndex={-1} dense>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t("sanctions.column.sanction")}</TableHead>
+          <TableHead>{t("sanctions.column.target")}</TableHead>
+          <TableHead>{t("sanctions.column.reason")}</TableHead>
+          <TableHead>{t("sanctions.column.imposedAt")}</TableHead>
+          <TableHead>{t("sanctions.column.status")}</TableHead>
+          {showActions ? (
+            <TableHead align="end">
+              <span {...applyStyles(styles.muted)}>{t("sanctions.column.actions")}</span>
+            </TableHead>
+          ) : null}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {SKELETON_ROWS.map((index) => (
+          <TableRow key={index}>
+            <TableCell>
+              <div {...applyStyles(styles.stack)}>
+                <Skeleton {...applyStyles(styles.boneType)} />
+                <Skeleton {...applyStyles(styles.boneDetail)} />
+              </div>
+            </TableCell>
+            <TableCell>
+              <div {...applyStyles(styles.stack)}>
+                <Skeleton {...applyStyles(styles.boneTarget)} />
+                <Skeleton {...applyStyles(styles.boneTeam)} />
+              </div>
+            </TableCell>
+            <TableCell>
+              <Skeleton {...applyStyles(styles.boneReason)} />
+            </TableCell>
+            <TableCell>
+              <Skeleton {...applyStyles(styles.boneDate)} />
+            </TableCell>
+            <TableCell>
+              <Skeleton {...applyStyles(styles.boneBadge)} />
+            </TableCell>
+            {showActions ? (
+              <TableCell align="end">
+                <Skeleton {...applyStyles(styles.boneAction)} />
+              </TableCell>
+            ) : null}
+          </TableRow>
+        ))}
       </TableBody>
     </Table>
   );

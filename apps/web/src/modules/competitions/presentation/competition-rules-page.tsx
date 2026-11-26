@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 import type { CompetitionDraftDto } from "@futrob/api-contracts";
@@ -19,7 +20,8 @@ import {
   Heading,
   MetaList,
   Separator,
-  Skeleton,
+  useExternalSync,
+  vis,
 } from "@futrob/ui";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { DEFAULT_MAX_ROSTER_SIZE } from "@futrob/teams";
@@ -38,6 +40,7 @@ import {
 } from "./competition-rules-model.ts";
 import { PlatformRules, Section, Fact } from "./competition-rules-parts.tsx";
 import { styles } from "./competition-rules-page.styles.ts";
+import { CompetitionRulesSkeleton } from "./competition-rules-skeleton.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type CompetitionRulesState =
@@ -101,9 +104,27 @@ export function CompetitionRulesPageView({
     ) : undefined;
   return (
     <PageScaffold actions={edit} page="competition.rules">
+      <LoadingStatus active={state.kind === "loading"} message={t("competitionRules.loading")} />
       <RulesBody state={state} t={t} />
     </PageScaffold>
   );
+}
+
+function LoadingStatus({
+  active,
+  message,
+}: {
+  readonly active: boolean;
+  readonly message: string;
+}) {
+  const statusRef = useRef<HTMLSpanElement>(null);
+  // Mount the live region outside aria-busy and update its DOM text post-commit so initial loads announce too.
+  useExternalSync(() => {
+    const node = statusRef.current;
+    if (!node) return;
+    node.textContent = active ? message : "";
+  }, [active, message]);
+  return <span ref={statusRef} role="status" {...applyStyles(vis.srOnly)} />;
 }
 
 function RulesBody({
@@ -115,17 +136,7 @@ function RulesBody({
 }) {
   switch (state.kind) {
     case "loading":
-      return (
-        <div
-          aria-busy="true"
-          aria-label={t("competitionRules.loading")}
-          role="status"
-          {...applyStyles(styles.stack)}
-        >
-          <Skeleton {...applyStyles(styles.skeleton)} />
-          <Skeleton {...applyStyles(styles.skeleton)} />
-        </div>
-      );
+      return <CompetitionRulesSkeleton t={t} />;
     case "error":
       return <RetryAlert message={t("competitionRules.error")} retry={state.retry} t={t} />;
     case "forbidden":

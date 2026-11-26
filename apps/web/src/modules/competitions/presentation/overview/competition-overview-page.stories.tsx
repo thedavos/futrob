@@ -54,6 +54,8 @@ type Scenario =
   | "finished"
   | "empty"
   | "loading"
+  | "identityLoading"
+  | "identityLoadingNoFixture"
   | "countsLoading"
   | "competitionError"
   | "sectionsError"
@@ -162,6 +164,8 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
   }
 
   const isLoading = scenario === "loading";
+  const identityLoading = scenario === "identityLoading";
+  const identityLoadingNoFixture = scenario === "identityLoadingNoFixture";
   const isFinished = scenario === "finished";
   const countsLoading = scenario === "countsLoading";
   const sectionsFailed = scenario === "sectionsError";
@@ -169,26 +173,27 @@ function OverviewBody({ scenario }: { readonly scenario: Scenario }) {
   const entriesFailed =
     !recovered && (scenario === "entriesError" || scenario === "entriesErrorWithData");
   const encountersFailed = !recovered && scenario === "encountersError";
-  const competition = isLoading
-    ? loading
-    : scenario === "competitionError"
-      ? failed(() => {
-          retryCalls.competition += 1;
-        })
-      : ready(
-          scenario === "draft"
-            ? { ...overviewCompetition, status: "draft" as const }
-            : isFinished
-              ? finishedCompetition
-              : overviewCompetition,
-        );
+  const competition =
+    isLoading || identityLoading || identityLoadingNoFixture
+      ? loading
+      : scenario === "competitionError"
+        ? failed(() => {
+            retryCalls.competition += 1;
+          })
+        : ready(
+            scenario === "draft"
+              ? { ...overviewCompetition, status: "draft" as const }
+              : isFinished
+                ? finishedCompetition
+                : overviewCompetition,
+          );
   const encounters =
     isLoading || countsLoading
       ? loading
       : sectionsFailed || encountersFailed
         ? failed(() => setRecovered(true))
         : ready(
-            isEmpty || scenario === "entriesError"
+            isEmpty || scenario === "entriesError" || identityLoadingNoFixture
               ? { ...overviewEncounters, encounters: [] }
               : isFinished
                 ? finishedEncounters
@@ -275,6 +280,8 @@ const meta = {
         "finished",
         "empty",
         "loading",
+        "identityLoading",
+        "identityLoadingNoFixture",
         "countsLoading",
         "competitionError",
         "sectionsError",
@@ -420,10 +427,76 @@ export const Loading: Story = {
   args: { scenario: "loading" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.findAllByRole("status")).resolves.not.toHaveLength(0);
+    const page = await canvas.findByRole("main", { name: "Cargando la competición" });
+    await expect(page).toHaveAttribute("aria-busy", "true");
+    await expect(
+      canvas.getAllByRole("status", { name: "Cargando la competición" }).length,
+    ).toBeGreaterThan(0);
+    await expect(canvas.findByRole("heading", { name: "Equipos" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Equipo" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Club EA" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Plantilla" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Estado" })).resolves.toBeVisible();
+    const teamsTable = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(teamsTable).toHaveAttribute("tabindex", "-1");
+    await userEvent.tab();
+    await expect(teamsTable).not.toHaveFocus();
+    await expect(
+      canvas.findByRole("heading", { name: "Próximos enfrentamientos" }),
+    ).resolves.toBeVisible();
+    await expect(canvas.findByRole("heading", { name: "Pendientes" })).resolves.toBeVisible();
+    await expect(
+      canvas.findByRole("heading", { name: "Publicación y alcance" }),
+    ).resolves.toBeVisible();
+    await expect(canvas.findByText("Equipos aprobados")).resolves.toBeVisible();
+    await expect(canvas.findByText("Oficializados")).resolves.toBeVisible();
+    await expect(canvas.findAllByText("Próximos enfrentamientos")).resolves.toHaveLength(2);
+    await expect(canvas.findByText("Por resolver")).resolves.toBeVisible();
     await expect(canvas.queryByText("0")).toBeNull();
     await expect(canvas.queryByText("Todo al día")).toBeNull();
     await expect(canvas.queryByText("Liga Nocturna")).toBeNull();
+    await expect(canvas.queryByRole("link", { name: "Ver portal público" })).toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.findByRole("main")).resolves.toHaveAttribute("aria-busy", "true");
+    await expect(canvas.findByRole("heading", { name: "Equipos" })).resolves.toBeVisible();
+    await expect(
+      canvas.findByRole("heading", { name: "Próximos enfrentamientos" }),
+    ).resolves.toBeVisible();
+  },
+};
+
+export const IdentityLoading: Story = {
+  name: "Ficha cargando, equipos listos",
+  args: { scenario: "identityLoading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByRole("heading", { name: "Liga Nocturna" })).toBeNull();
+    await expect(canvas.findByRole("heading", { name: "Equipos" })).resolves.toBeVisible();
+    await expect(canvas.findByText("Cuervos Clubs")).resolves.toBeVisible();
+    await expect(canvas.queryByRole("main")).not.toHaveAttribute("aria-busy");
+    await expect(canvas.queryByRole("link", { name: "Ver portal público" })).toBeNull();
+  },
+};
+
+export const IdentityLoadingNoFixture: Story = {
+  name: "Ficha cargando sin calendario",
+  args: { scenario: "identityLoadingNoFixture" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.findByText("Cuervos Clubs")).resolves.toBeVisible();
+    await expect(
+      canvasElement.querySelector("[data-slot='competition-overview-progress']"),
+    ).not.toBeNull();
+    await expect(canvas.queryByText(/enfrentamientos oficiales/)).toBeNull();
+    await expect(canvas.queryByText(/de 8 equipos/)).toBeNull();
+    await expect(canvas.queryByRole("heading", { name: "Liga Nocturna" })).toBeNull();
   },
 };
 

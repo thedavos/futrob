@@ -359,11 +359,6 @@ export const styles = stylex.create({
   chevronOpen: {
     transform: "rotate(180deg)",
   },
-  skeletonStack: {
-    display: "flex",
-    flexDirection: "column",
-    gap: space.s6,
-  },
   skeletonKpiGrid: {
     display: "grid",
     width: "100%",
@@ -379,14 +374,27 @@ export const styles = stylex.create({
     height: "5.75rem",
     borderRadius: corner.lg,
   },
-  skeletonList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: space.s3,
+  skeletonCaption: {
+    width: "14rem",
+    maxWidth: "100%",
+    height: "1rem",
   },
-  skeletonRow: {
-    width: "100%",
-    height: "3rem",
-    borderRadius: corner.lg,
+  skeletonTableWrap: {
+    minWidth: 0,
+  },
+  skeletonNumeric: {
+    width: "2rem",
+    height: "1rem",
+    marginInlineStart: "auto",
+  },
+  skeletonCriteriaMeta: {
+    width: "24rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  skeletonCriteriaTrigger: {
+    width: "9rem",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-md)",
   },
 });

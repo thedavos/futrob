@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
@@ -68,7 +68,7 @@ function mount(query: string, wide = true) {
 }
 
 describe("calendar return navigation", () => {
-  it("restores team, round, view, month and selected day after opening an Encounter and going Back", async () => {
+  it("restores team, round, view, month and the open day after opening an Encounter and going Back", async () => {
     const { history, router } = mount("");
     const user = userEvent.setup();
     await user.click(await screen.findByRole("combobox", { name: "Equipo" }));
@@ -79,6 +79,8 @@ describe("calendar return navigation", () => {
     await screen.findByRole("tab", { name: "Calendario", selected: true });
     await user.click(screen.getByRole("button", { name: "Mes siguiente" }));
     await user.click(screen.getByRole("button", { name: "Mes anterior" }));
+    expect(screen.getByRole("combobox", { name: "Equipo" }).textContent).toContain("Atlas FC");
+    expect(screen.getByRole("combobox", { name: "Ronda" }).textContent).toContain("Jornada 3");
     await user.click(
       screen.getByRole("button", { name: "lunes, 16 de noviembre: 1 enfrentamiento" }),
     );
@@ -89,22 +91,29 @@ describe("calendar return navigation", () => {
       month: "2026-11",
       day: "2026-11-16",
     });
-    expect(screen.getByRole("combobox", { name: "Equipo" }).textContent).toContain("Atlas FC");
-    expect(screen.getByRole("combobox", { name: "Ronda" }).textContent).toContain("Jornada 3");
-    const selected = await screen.findByRole("button", {
-      name: "lunes, 16 de noviembre: 1 enfrentamiento",
-    });
-    expect(selected.getAttribute("aria-pressed")).toBe("true");
+    const dialog = await screen.findByRole("dialog", { name: "lunes, 16 de noviembre" });
     const before = router.state.location.search;
     fireEvent.click(
-      screen.getByRole("link", {
+      within(dialog).getByRole("link", {
         name: "Abrir Atlas FC vs Eclipse Club, lunes, 16 de noviembre, 20:30",
       }),
     );
     await screen.findByText("Encounter detail");
     history.back();
-    await screen.findByRole("tab", { name: "Calendario", selected: true });
+    // Back reopens the day the reader left from.
+    const reopened = await screen.findByRole("dialog", { name: "lunes, 16 de noviembre" });
     expect(router.state.location.search).toEqual(before);
+    expect(within(reopened).getAllByRole("link", { name: /^Abrir / })).toHaveLength(1);
+    // Reopened from search, no button opened it: closing still returns focus to its day.
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "lunes, 16 de noviembre: 1 enfrentamiento" }),
+      ),
+    );
+    expect(router.state.location.search).not.toHaveProperty("day");
+    expect(router.state.location.search).toMatchObject({ view: "month", month: "2026-11" });
     expect(screen.getByRole("combobox", { name: "Equipo" }).textContent).toContain("Atlas FC");
     expect(screen.getByRole("combobox", { name: "Ronda" }).textContent).toContain("Jornada 3");
     expect(
@@ -112,7 +121,6 @@ describe("calendar return navigation", () => {
         .getByRole("button", { name: "lunes, 16 de noviembre: 1 enfrentamiento" })
         .getAttribute("aria-pressed"),
     ).toBe("true");
-    expect(screen.getAllByRole("link", { name: /^Abrir / })).toHaveLength(1);
   });
 
   it("writes a chosen view to search so it survives a remount", async () => {

@@ -18,12 +18,12 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  Skeleton,
 } from "@futrob/ui";
 import accessUrl from "@/assets/illustration-permissions.png";
 import emptyStandingsUrl from "@/assets/illustration-empty-standings.png";
 import { useOrganizationTeamsQuery } from "@/modules/competitions/presentation/competition-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LoadingStatus } from "@/shared/presentation/loading-status.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
@@ -40,6 +40,7 @@ import { styles } from "./team-performance-page.styles.ts";
 import { useTeamPerformanceRankingQuery } from "./team-performance-queries.ts";
 import { TeamPerformanceSummary } from "./team-performance-summary.tsx";
 import { RankingTable } from "./team-performance-table.tsx";
+import { TeamPerformanceSkeleton } from "./team-performance-skeleton.tsx";
 
 export type { TeamPerformanceNames } from "./team-performance-model.ts";
 
@@ -129,29 +130,11 @@ export function TeamPerformancePageView({
 
   return (
     <PageScaffold actions={headerActions} page="competition.teamPerformance">
+      <LoadingStatus message={state.kind === "loading" ? t("teamPerformance.loading") : ""} />
       {(() => {
         switch (state.kind) {
           case "loading":
-            return (
-              <div
-                aria-busy="true"
-                aria-label={t("teamPerformance.loading")}
-                role="status"
-                {...applyStyles(styles.skeletonStack)}
-              >
-                <div {...applyStyles(styles.skeletonKpiGrid)}>
-                  <Skeleton className={styles.skeletonKpi} />
-                  <Skeleton className={styles.skeletonKpi} />
-                  <Skeleton className={styles.skeletonKpi} />
-                  <Skeleton className={styles.skeletonKpi} />
-                </div>
-                <div {...applyStyles(styles.skeletonList)}>
-                  <Skeleton className={styles.skeletonRow} />
-                  <Skeleton className={styles.skeletonRow} />
-                  <Skeleton className={styles.skeletonRow} />
-                </div>
-              </div>
-            );
+            return <TeamPerformanceSkeleton t={t} />;
           case "error":
             return (
               <RetryAlert

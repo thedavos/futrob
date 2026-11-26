@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import type {
   GetCompetitionRankingsResponse,
@@ -15,13 +16,14 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  Skeleton,
   Tabs,
   TabsContent,
   TabsIndicator,
   TabsList,
   TabsTrigger,
   TextLink,
+  useExternalSync,
+  vis,
 } from "@futrob/ui";
 import emptyRankingsUrl from "@/assets/illustration-empty-standings.png";
 import accessUrl from "@/assets/illustration-permissions.png";
@@ -31,6 +33,7 @@ import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
 import { styles } from "./competition-rankings-page.styles.ts";
 import { useCompetitionRankingsQuery, useRankingNames } from "./competition-rankings-queries.ts";
+import { CompetitionRankingsSkeleton } from "./competition-rankings-skeleton.tsx";
 import { RankingMeta, RankingTable } from "./competition-rankings-table.tsx";
 import {
   RANKING_KIND_COPY,
@@ -107,23 +110,26 @@ export function CompetitionRankingsPageView({
   state,
 }: Scope & KindSelection & { readonly state: CompetitionRankingsState }) {
   const { locale, t } = useI18n();
+  const isLoading = state.kind === "loading";
+  const statusRef = useRef<HTMLSpanElement>(null);
+  const loadingMessage = isLoading ? t("competition.rankings.loading") : "";
+
+  // ARIA22: keep the live region mounted outside aria-busy and populate post-mount so screen
+  // readers announce initial loading as well as clearing once data resolves.
+  useExternalSync(() => {
+    if (statusRef.current) {
+      statusRef.current.textContent = loadingMessage;
+    }
+  }, [loadingMessage]);
+
   return (
     <PageScaffold page="competition.rankings">
-      <div {...applyStyles(styles.content)}>
+      <span ref={statusRef} role="status" {...applyStyles(vis.srOnly)} />
+      <div aria-busy={isLoading || undefined} {...applyStyles(styles.content)}>
         {(() => {
           switch (state.kind) {
             case "loading":
-              return (
-                <div
-                  aria-busy="true"
-                  aria-label={t("competition.rankings.loading")}
-                  role="status"
-                  {...applyStyles(styles.content)}
-                >
-                  <Skeleton {...applyStyles(styles.skeletonTabs)} />
-                  <Skeleton {...applyStyles(styles.skeletonTable)} />
-                </div>
-              );
+              return <CompetitionRankingsSkeleton rankingKind={rankingKind} t={t} />;
             case "error":
               return (
                 <RetryAlert message={t("competition.rankings.error")} retry={state.retry} t={t} />

@@ -110,8 +110,8 @@ export function FixtureCalendar({
   const days = fixtureCalendarDays(filtered);
   const nextDate = nextFixtureDate(filtered, today);
   const month = chosenMonth ?? initialFixtureMonth(filtered, today);
-  const selectedDay =
-    chosenDay && monthOf(chosenDay) === month ? chosenDay : defaultFixtureDay(days, month, today);
+  const openDay = chosenDay && monthOf(chosenDay) === month ? chosenDay : null;
+  const selectedDay = openDay ?? defaultFixtureDay(days, month, today);
 
   // The month and day follow the filters: a new filter reopens on its next date.
   const changeFilters = (next: FixtureCalendarFilters) => {
@@ -187,12 +187,16 @@ export function FixtureCalendar({
             format={format}
             month={month}
             nextDate={nextDate}
+            onCloseDay={() => {
+              changeSelection({ day: undefined });
+            }}
             onMonthChange={(next) => {
               changeSelection({ month: next, day: undefined });
             }}
             onSelectDay={(day) => {
               changeSelection({ month: monthOf(day), day });
             }}
+            openDay={openDay}
             selectedDay={selectedDay}
             timeZone={view.timeZone}
             today={today}

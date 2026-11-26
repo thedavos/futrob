@@ -9,7 +9,6 @@ import {
   Badge,
   Button,
   Score,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -24,6 +23,10 @@ import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 import { OverviewCard, OverviewEmpty, ViewAllChevron } from "./competition-overview-card.tsx";
 import { overviewTeams, type OverviewSlice } from "./competition-overview-model.ts";
+import {
+  OverviewTeamsBodySkeleton,
+  OverviewViewAllSkeleton,
+} from "./competition-overview-skeleton.tsx";
 
 const styles = stylex.create({
   action: {
@@ -33,16 +36,6 @@ const styles = stylex.create({
     gap: "0.25rem",
     textDecorationLine: "none",
     fontWeight: "var(--font-weight-medium)",
-  },
-  stack: {
-    display: "flex",
-    minWidth: 0,
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  skeleton: {
-    height: "2.75rem",
-    width: "100%",
   },
   tableCell: {
     height: "auto",
@@ -90,7 +83,9 @@ export function TeamsSection({
   return (
     <OverviewCard
       action={
-        listed.length > 0 ? (
+        teams.status === "loading" ? (
+          <OverviewViewAllSkeleton />
+        ) : listed.length > 0 ? (
           <TextLink
             className={styles.action}
             render={<Link params={params} to="/orgs/$orgId/competitions/$competitionId/teams" />}
@@ -101,20 +96,13 @@ export function TeamsSection({
           </TextLink>
         ) : null
       }
-      flush={listed.length > 0}
+      flush={listed.length > 0 || teams.status === "loading"}
       title={t("competition.overview.teams.title")}
       titleId={titleId}
     >
       {teams.status === "loading" ? (
-        <div
-          aria-busy="true"
-          aria-label={t("competition.overview.loading")}
-          role="status"
-          {...applyStyles(styles.stack)}
-        >
-          {[0, 1, 2].map((index) => (
-            <Skeleton key={index} {...applyStyles(styles.skeleton)} />
-          ))}
+        <div aria-busy="true" aria-label={t("competition.overview.loading")} role="status">
+          <OverviewTeamsBodySkeleton />
         </div>
       ) : null}
       {teams.status === "error" ? (

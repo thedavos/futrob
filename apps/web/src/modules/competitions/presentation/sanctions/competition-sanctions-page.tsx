@@ -14,6 +14,7 @@ import {
   EmptyStateIcon,
   EmptyStateTitle,
   Skeleton,
+  vis,
 } from "@futrob/ui";
 import accessUrl from "@/assets/illustration-permissions.png";
 import rulesUrl from "@/assets/illustration-rules.png";
@@ -28,7 +29,7 @@ import {
   useCompetitionSanctionsQuery,
   useSanctionCommands,
 } from "./sanction-queries.ts";
-import { SanctionTable } from "./sanction-table.tsx";
+import { SanctionTable, SanctionTableSkeleton } from "./sanction-table.tsx";
 import { sanctionPlayerName, sanctionTeamName, sanctionTypeLabel } from "./sanction-view.ts";
 import { styles } from "./sanctions.styles.ts";
 
@@ -86,11 +87,15 @@ export function CompetitionSanctionsPageView({
   readonly state: CompetitionSanctionsState;
 }) {
   const { t } = useI18n();
+  const isLoading = state.kind === "loading";
   const canImpose = commands !== null && state.kind === "ready";
+  const loadingLabel = t("sanctions.list.loading");
   return (
     <PageScaffold
       actions={
-        canImpose ? (
+        isLoading && commands !== null ? (
+          <Skeleton {...applyStyles(styles.imposeSkeleton)} />
+        ) : canImpose ? (
           <ImposeSanctionDialog
             competitionId={competitionId}
             onImpose={commands.impose}
@@ -100,19 +105,20 @@ export function CompetitionSanctionsPageView({
       }
       page="competition.sanctions"
     >
+      <span
+        aria-label={isLoading ? loadingLabel : undefined}
+        role="status"
+        {...applyStyles(vis.srOnly)}
+      >
+        {isLoading ? loadingLabel : null}
+      </span>
       {(() => {
         switch (state.kind) {
           case "loading":
             return (
-              <div
-                aria-busy="true"
-                aria-label={t("sanctions.list.loading")}
-                role="status"
-                {...applyStyles(styles.loading)}
-              >
-                <Skeleton {...applyStyles(styles.skeleton)} />
-                <Skeleton {...applyStyles(styles.skeleton)} />
-              </div>
+              <section aria-busy="true" aria-label={loadingLabel} {...applyStyles(styles.section)}>
+                <SanctionTableSkeleton showActions={commands !== null} />
+              </section>
             );
           case "error":
             return <RetryAlert message={t("sanctions.list.error")} retry={state.retry} t={t} />;

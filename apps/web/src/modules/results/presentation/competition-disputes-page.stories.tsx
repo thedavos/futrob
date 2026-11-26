@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import type { ListCompetitionDisputesResponse } from "@futrob/api-contracts";
 import { applyProps } from "@futrob/ui";
@@ -132,6 +132,26 @@ const meta = {
 export default meta;
 type Story = StoryObj<StoryArgs>;
 
+/** A real 360 px viewport, so the card gets phone padding rather than a narrowed frame. */
+const phone360 = {
+  globals: { viewport: { value: "phone360" } },
+  parameters: {
+    viewport: {
+      options: { phone360: { name: "Phone 360", styles: { width: "360px", height: "800px" } } },
+    },
+  },
+} as const;
+
+/** True when every child of `row` sits on the same line. */
+function sharesOneLine(row: Element): boolean {
+  const tops = Array.from(row.children, (child) => child.getBoundingClientRect().top);
+  const centers = Array.from(row.children, (child) => {
+    const rect = child.getBoundingClientRect();
+    return rect.top + rect.height / 2;
+  });
+  return tops.length > 1 && centers.every((center) => Math.abs(center - centers[0]!) < 2);
+}
+
 export const Ready: Story = {
   name: "Con disputas",
   parameters: { a11y: { test: "error" } },
@@ -154,9 +174,49 @@ export const ReadyEnglishNarrow: Story = {
   parameters: { a11y: { test: "error" } },
 };
 
+export const ReadyPhone: Story = {
+  name: "Con disputas · 360",
+  ...phone360,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = await canvas.findByRole("link", {
+      name: "Revisar la disputa de Cuervos FC vs Maderas FC",
+    });
+    await expect(sharesOneLine(row.firstElementChild!)).toBe(true);
+  },
+};
+
 export const Empty: Story = { name: "Sin disputas", args: { scenario: "empty" } };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = canvas.getByRole("status", { name: "Cargando disputas" });
+    await expect(status.closest("[aria-busy='true']")).not.toBeNull();
+    await expect(canvas.getByRole("heading", { name: "Disputas" })).toBeVisible();
+    await expect(canvas.queryByRole("link")).toBeNull();
+    await expect(canvasElement.querySelectorAll("[data-slot='skeleton']").length).toBe(13);
+    await userEvent.tab();
+    await expect(document.activeElement?.getAttribute("data-slot")).not.toBe("skeleton");
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading" },
+  ...phone360,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const header = canvasElement.querySelector("[data-slot='dispute-skeleton-status']");
+    await expect(header).not.toBeNull();
+    await expect(sharesOneLine(header!)).toBe(true);
+    await expect(canvas.getByRole("status", { name: "Cargando disputas" })).toBeTruthy();
+    await expect(canvas.getByRole("heading", { name: "Disputas" })).toBeVisible();
+    await expect(canvas.queryByRole("link")).toBeNull();
+  },
+};
 
 export const NotFound: Story = { name: "No disponible", args: { scenario: "notFound" } };
 
