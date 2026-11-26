@@ -17,6 +17,11 @@ export const BRACKET_GEOMETRY = {
   nodeHeight: 136,
   rowGap: 40,
   columnGap: 64,
+  /** Lines enter a card at its home or away row, this far above or below its centre. */
+  sideOffset: 18,
+  /** The champion slot after the final. */
+  championWidth: 168,
+  championGap: 48,
 } as const;
 
 export type BracketSideKey = "home" | "away";
@@ -28,6 +33,11 @@ export type BracketNode = {
   /** 1-based position inside its round, which is the fixture's encounter order. */
   readonly position: number;
   readonly isFinal: boolean;
+  /**
+   * The side whose Team already sits in a later Encounter. The fixture fills a winner place
+   * with the Team once it advances, so this is known even without reading results.
+   */
+  readonly advanced: BracketSideKey | null;
   /** Left edge of the card. */
   readonly x: number;
   /** Vertical centre of the card; wires attach here. */
@@ -39,6 +49,16 @@ export type BracketWire = {
   readonly sourceId: string;
   readonly targetId: string;
   readonly side: BracketSideKey;
+  /** `advanced`: the place already names the Team that came through; `pending`: still a winner place. */
+  readonly state: "advanced" | "pending";
+  readonly path: string;
+};
+
+/** Where the final's winner lands, to the right of the final. */
+export type BracketChampion = {
+  readonly finalId: string;
+  readonly x: number;
+  readonly y: number;
   readonly path: string;
 };
 
@@ -53,6 +73,7 @@ export type BracketStageLayout = {
   readonly columns: readonly BracketColumn[];
   readonly nodes: readonly BracketNode[];
   readonly wires: readonly BracketWire[];
+  readonly champion: BracketChampion | null;
   readonly width: number;
   readonly height: number;
   readonly encounterCount: number;
@@ -82,8 +103,10 @@ export function bracketView(view: CompetitionFixtureView): BracketView | null {
 
 /**
  * Lays rounds out left to right. Each round splits the full height evenly, so in a halving
- * draw every card sits midway between the two cards that feed it. Lines come only from
- * `winner.from`: a place the fixture cannot trace back gets no line.
+ * draw every card sits midway between the two cards that feed it. A winner place draws its
+ * line from `winner.from`; a place the fixture already filled with a Team draws it from the
+ * one earlier Encounter that Team played, so the draw stays connected as Teams advance.
+ * A place neither can trace gets no line.
  */
 export function layoutBracketStage(
   stage: FixtureStageView,
@@ -99,7 +122,7 @@ export function layoutBracketStage(
     round,
     x: columnIndex * (nodeWidth + columnGap),
   }));
-  const nodes: BracketNode[] = columns.flatMap(({ round, x }, columnIndex) => {
+  const placed = columns.flatMap(({ round, x }, columnIndex) => {
     const slot = height / round.encounters.length;
     return round.encounters.map((encounter, index) => ({
       encounter,
@@ -111,13 +134,22 @@ export function layoutBracketStage(
       y: slot * (index + 0.5),
     }));
   });
-  const byId = new Map(nodes.map((node) => [node.encounter.id, node]));
+  const byId = new Map(placed.map((node) => [node.encounter.id, node]));
 
   const wires: BracketWire[] = [];
+  const advanced = new Map<string, BracketSideKey>();
   let unlinkedWinnerCount = 0;
-  for (const target of nodes) {
+  for (const target of placed) {
     for (const side of ["home", "away"] as const) {
       const slot = target.encounter[side];
+      if (slot.kind === "team") {
+        if (target.columnIndex === 0) continue;
+        const source = teamSource(slot.teamId, target.columnIndex, placed);
+        if (!source) continue;
+        advanced.set(source.node.encounter.id, source.side);
+        wires.push(wire(source.node, target, side, "advanced"));
+        continue;
+      }
       if (slot.kind !== "winner") continue;
       const sourceId = slot.from ? uniqueSourceId(slot.from, allStages) : null;
       const source = sourceId ? byId.get(sourceId) : undefined;
@@ -125,15 +157,24 @@ export function layoutBracketStage(
         unlinkedWinnerCount += 1;
         continue;
       }
-      wires.push({
-        id: `${source.encounter.id}->${target.encounter.id}:${side}`,
-        sourceId: source.encounter.id,
-        targetId: target.encounter.id,
-        side,
-        path: elbow(source, target),
-      });
+      wires.push(wire(source, target, side, "pending"));
     }
   }
+
+  const nodes: BracketNode[] = placed.map((node) => ({
+    ...node,
+    advanced: advanced.get(node.encounter.id) ?? null,
+  }));
+  const final = nodes.find((node) => node.isFinal);
+  const drawWidth = columns.length * nodeWidth + (columns.length - 1) * columnGap;
+  const champion: BracketChampion | null = final
+    ? {
+        finalId: final.encounter.id,
+        x: drawWidth + BRACKET_GEOMETRY.championGap,
+        y: final.y,
+        path: `M${drawWidth} ${final.y} H${drawWidth + BRACKET_GEOMETRY.championGap}`,
+      }
+    : null;
 
   const encounters = nodes.map((node) => node.encounter);
   return {
@@ -142,7 +183,8 @@ export function layoutBracketStage(
     columns,
     nodes,
     wires,
-    width: columns.length * nodeWidth + (columns.length - 1) * columnGap,
+    champion,
+    width: champion ? champion.x + BRACKET_GEOMETRY.championWidth : drawWidth,
     height,
     encounterCount: encounters.length,
     byeCount: encounters.filter((e) => isBye(e.home) || isBye(e.away)).length,
@@ -175,12 +217,57 @@ export function sameRoundName(left: FixtureRoundName, right: FixtureRoundName): 
   return true;
 }
 
-/** Out of the source's right edge, down the gap before the target, into its left edge. */
-function elbow(source: BracketNode, target: BracketNode): string {
+type PlacedNode = Omit<BracketNode, "advanced">;
+
+/**
+ * The Encounter a Team came through: the nearest earlier round where the Team plays exactly
+ * once. A Team that plays twice there (or nowhere) cannot be traced.
+ */
+function teamSource(
+  teamId: string,
+  columnIndex: number,
+  nodes: readonly PlacedNode[],
+): { readonly node: PlacedNode; readonly side: BracketSideKey } | null {
+  for (let column = columnIndex - 1; column >= 0; column -= 1) {
+    const found = nodes.flatMap((node) =>
+      node.columnIndex !== column
+        ? []
+        : (["home", "away"] as const)
+            .filter((side) => {
+              const slot = node.encounter[side];
+              return slot.kind === "team" && slot.teamId === teamId;
+            })
+            .map((side) => ({ node, side })),
+    );
+    if (found.length === 1) return found[0] ?? null;
+    if (found.length > 1) return null;
+  }
+  return null;
+}
+
+function wire(
+  source: PlacedNode,
+  target: PlacedNode,
+  side: BracketSideKey,
+  state: BracketWire["state"],
+): BracketWire {
+  return {
+    id: `${source.encounter.id}->${target.encounter.id}:${side}`,
+    sourceId: source.encounter.id,
+    targetId: target.encounter.id,
+    side,
+    state,
+    path: elbow(source, target, side),
+  };
+}
+
+/** Out of the source's right edge, down the gap before the target, into the side's row. */
+function elbow(source: PlacedNode, target: PlacedNode, side: BracketSideKey): string {
   const startX = source.x + BRACKET_GEOMETRY.nodeWidth;
   const endX = target.x;
   const bendX = endX - BRACKET_GEOMETRY.columnGap / 2;
-  return `M${startX} ${source.y} H${bendX} V${target.y} H${endX}`;
+  const endY = target.y + (side === "home" ? -1 : 1) * BRACKET_GEOMETRY.sideOffset;
+  return `M${startX} ${source.y} H${bendX} V${endY} H${endX}`;
 }
 
 const isBye = (side: FixtureSide) => side.kind === "bye";

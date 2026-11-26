@@ -3,11 +3,20 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { I18nProvider, useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import {
+  LiveStatusRegion,
+  resetLiveStatus,
+  useLiveStatus,
+} from "@/shared/presentation/live-status-region.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { ProfileEditor } from "./profile-editor.tsx";
 import { FeedbackDialog } from "./feedback-dialog.tsx";
 import { SettingsDialog } from "./settings-dialog.tsx";
+import {
+  PlayerProfileAccountsSkeleton,
+  PlayerProfileIdentitySkeleton,
+} from "./player-profile-skeleton.tsx";
 import type { AccountAuth } from "./account-auth.ts";
 import { AccountDeletionGate } from "../account-deletion-gate.tsx";
 
@@ -25,6 +34,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  resetLiveStatus();
   vi.unstubAllGlobals();
 });
 function frame(
@@ -571,5 +581,63 @@ describe("account deletion grace period", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancelar eliminación" }));
 
     expect(await screen.findByText("Inicio del jugador")).toBeVisible();
+  });
+});
+
+function expectHiddenBones() {
+  const bones = document.querySelectorAll("[data-slot='skeleton']");
+  expect(bones.length).toBeGreaterThan(0);
+  for (const bone of bones) {
+    expect(bone).toHaveAttribute("aria-hidden", "true");
+  }
+}
+
+function ProfileAnnouncement({ loading }: { readonly loading: boolean }) {
+  const { t } = useI18n();
+  useLiveStatus(loading ? t("profile.loading") : "");
+  return loading ? <PlayerProfileIdentitySkeleton /> : <p>Alex García</p>;
+}
+
+describe("player profile loading skeletons", () => {
+  it("keeps identity bones out of the tab order", async () => {
+    frame(
+      <>
+        <LiveStatusRegion />
+        <ProfileAnnouncement loading />
+      </>,
+    );
+    const status = await screen.findByRole("status", { name: "Cargando tu perfil…" });
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expectHiddenBones();
+    expect(screen.queryByLabelText("Nombre visible")).toBeNull();
+  });
+
+  it("renders game-account bones without a nested status", () => {
+    frame(<PlayerProfileAccountsSkeleton />);
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
+    expect(screen.queryByRole("status", { name: "Cargando tu perfil…" })).toBeNull();
+    expectHiddenBones();
+  });
+
+  it("publishes loading into a live region that was already empty", async () => {
+    const view = frame(
+      <>
+        <LiveStatusRegion />
+        <p>Inicio</p>
+      </>,
+    );
+    expect(screen.queryByRole("status", { name: "Cargando tu perfil…" })).toBeNull();
+
+    view.rerender(
+      <I18nProvider initialLocale="es">
+        <QueryTestProvider>
+          <LiveStatusRegion />
+          <ProfileAnnouncement loading />
+        </QueryTestProvider>
+      </I18nProvider>,
+    );
+
+    const status = await screen.findByRole("status", { name: "Cargando tu perfil…" });
+    expect(status.closest("[aria-busy='true']")).toBeNull();
   });
 });

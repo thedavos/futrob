@@ -10,7 +10,6 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  Skeleton,
 } from "@futrob/ui";
 import accessUrl from "@/assets/illustration-permissions.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -30,6 +29,10 @@ import {
   PlanUsageCard,
   type PlanRequestControls,
 } from "./organization-plan-sections.tsx";
+import {
+  OrganizationPlanLoadingStatus,
+  OrganizationPlanSkeleton,
+} from "./organization-plan-skeleton.tsx";
 import { styles } from "./organization-plan.styles.ts";
 
 export type OrganizationPlanState =
@@ -101,20 +104,11 @@ export function OrganizationPlanPageView({ state }: { readonly state: Organizati
   const { t } = useI18n();
   return (
     <PageScaffold page="organization.plan">
+      <OrganizationPlanLoadingStatus active={state.kind === "loading"} />
       {(() => {
         switch (state.kind) {
           case "loading":
-            return (
-              <div
-                aria-busy="true"
-                aria-label={t("billing.loading")}
-                role="status"
-                {...applyStyles(styles.skeletonStack)}
-              >
-                <Skeleton {...applyStyles(styles.skeletonRow)} />
-                <Skeleton {...applyStyles(styles.skeletonRow)} />
-              </div>
-            );
+            return <OrganizationPlanSkeleton />;
           case "error":
             return (
               <RetryAlert

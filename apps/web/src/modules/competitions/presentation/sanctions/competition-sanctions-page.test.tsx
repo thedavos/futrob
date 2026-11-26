@@ -9,8 +9,11 @@ import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { teamSummaryFixture } from "@/modules/teams/presentation/competition-teams-view.fixtures.ts";
-import { CompetitionSanctionsRoute } from "./competition-sanctions-page.tsx";
-import { TeamSanctionsSection } from "./team-sanctions-section.tsx";
+import {
+  CompetitionSanctionsPageView,
+  CompetitionSanctionsRoute,
+} from "./competition-sanctions-page.tsx";
+import { TeamSanctionsSection, TeamSanctionsSectionView } from "./team-sanctions-section.tsx";
 
 const COMPETITION = "/api/v1/organizations/org-1/competitions/competition-1";
 
@@ -131,6 +134,84 @@ afterEach(() => {
 });
 
 describe("Competition sanctions page", () => {
+  it("reserves the sanctions table while the list loads and skips the empty state", () => {
+    const commands = {
+      impose: async () => undefined,
+      revoke: async () => undefined,
+    };
+    const { rerender } = render(
+      <I18nProvider initialLocale="es">
+        <CompetitionSanctionsPageView
+          commands={commands}
+          competitionId="competition-1"
+          organizationId="org-1"
+          state={{ kind: "loading" }}
+        />
+      </I18nProvider>,
+    );
+
+    const status = screen.getByRole("status", { name: "Cargando sanciones" });
+    expect(status.textContent).toBe("Cargando sanciones");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
+    expect(screen.getByRole("columnheader", { name: "Sanción" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Sancionado" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Motivo" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Impuesta" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Estado" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Acciones" })).toBeTruthy();
+    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+      "-1",
+    );
+    expect(screen.queryByText("Sin sanciones")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sancionar" })).toBeNull();
+
+    rerender(
+      <I18nProvider initialLocale="es">
+        <CompetitionSanctionsPageView
+          commands={commands}
+          competitionId="competition-1"
+          organizationId="org-1"
+          state={{ kind: "ready", data: { sanctions: [active] } }}
+        />
+      </I18nProvider>,
+    );
+
+    expect(document.contains(status)).toBe(true);
+    expect(status.textContent).toBe("");
+    expect(status.getAttribute("aria-label")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeNull();
+  });
+
+  it("keeps the team loading status outside the busy table wrapper and clears it when ready", () => {
+    const { rerender } = render(
+      <I18nProvider initialLocale="es">
+        <TeamSanctionsSectionView state={{ kind: "loading" }} />
+      </I18nProvider>,
+    );
+
+    const status = screen.getByRole("status", { name: "Cargando las sanciones del equipo" });
+    expect(status.textContent).toBe("Cargando las sanciones del equipo");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
+    expect(screen.getByRole("columnheader", { name: "Sanción" })).toBeTruthy();
+    expect(screen.queryByRole("columnheader", { name: "Acciones" })).toBeNull();
+    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+      "-1",
+    );
+
+    rerender(
+      <I18nProvider initialLocale="es">
+        <TeamSanctionsSectionView state={{ kind: "ready", data: { sanctions: [active] } }} />
+      </I18nProvider>,
+    );
+
+    expect(document.contains(status)).toBe(true);
+    expect(status.textContent).toBe("");
+    expect(status.getAttribute("aria-label")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeNull();
+  });
+
   it("lets an actor with sanctions.manage revoke with a reason and keeps the row as revoked", async () => {
     const user = userEvent.setup();
     const sent = serve({ canManage: true, list: () => Response.json({}) });

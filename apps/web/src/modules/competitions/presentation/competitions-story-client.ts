@@ -3,6 +3,7 @@ import type {
   CreateCompetitionDraftResponse,
   ApplyToCompetitionRequest,
   ApplyToCompetitionResponse,
+  CompetitionDraftDto,
   GetMyCompetitionApplicationResponse,
   ExploreCompetitionsQueryInput,
   ExploreCompetitionsResponse,
@@ -80,6 +81,8 @@ let organizationParticipants: Record<
   CompetitionsStoryQueryState<ListCompetitionParticipantsResponse>
 > = {};
 
+let competitionDraft: CompetitionsStoryQueryState<CompetitionDraftDto> | "not-found" = "not-found";
+
 export function configureCompetitionsStory(next: {
   readonly application?: CompetitionsStoryQueryState<GetMyCompetitionApplicationResponse>;
   readonly competitions?: CompetitionsStoryQueryState<ListAccessibleCompetitionsResponse>;
@@ -92,6 +95,7 @@ export function configureCompetitionsStory(next: {
     string,
     CompetitionsStoryQueryState<ListCompetitionParticipantsResponse>
   >;
+  readonly competitionDraft?: CompetitionsStoryQueryState<CompetitionDraftDto> | "not-found";
 }): void {
   if (next.competitions !== undefined) competitions = next.competitions;
   if (next.explore !== undefined) {
@@ -108,6 +112,7 @@ export function configureCompetitionsStory(next: {
   if (next.organizationParticipants !== undefined) {
     organizationParticipants = next.organizationParticipants;
   }
+  if (next.competitionDraft !== undefined) competitionDraft = next.competitionDraft;
 }
 
 export function getMyCompetitionApplication(): Promise<GetMyCompetitionApplicationResponse> {
@@ -168,8 +173,11 @@ export function listOrganizationCompetitions(): Promise<ListOrganizationCompetit
   return resolveQuery(organizationCompetitions);
 }
 
-export async function getCompetitionDraft() {
-  throw new CompetitionsClientError(404, "competitions.not_found");
+export async function getCompetitionDraft(): Promise<CompetitionDraftDto> {
+  if (competitionDraft === "not-found") {
+    throw new CompetitionsClientError(404, "competitions.not_found");
+  }
+  return resolveQuery(competitionDraft);
 }
 
 let lastCreateInput: CreateCompetitionDraftRequest | null = null;

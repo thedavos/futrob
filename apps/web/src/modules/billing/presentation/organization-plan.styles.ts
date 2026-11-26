@@ -57,6 +57,66 @@ export const styles = stylex.create({
   included: { color: colors.primary },
   excluded: { color: colors.mutedForeground },
   excludedText: { color: colors.mutedForeground },
-  skeletonStack: { display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" },
-  skeletonRow: { height: "6rem", width: "100%" },
+  boneValue: {
+    width: "4.5rem",
+    height: "1rem",
+    flexShrink: 0,
+  },
+  boneTrack: {
+    width: "100%",
+    height: "0.375rem",
+    borderRadius: "var(--corner-full)",
+  },
+  boneCaption: {
+    width: "11rem",
+    maxWidth: "100%",
+    height: "0.75rem",
+  },
+  bonePlanName: {
+    width: "7rem",
+    maxWidth: "100%",
+    height: "2rem",
+  },
+  boneBadge: {
+    width: "8rem",
+    height: "1.5rem",
+    flexShrink: 0,
+    borderRadius: "var(--corner-full)",
+  },
+  boneAction: {
+    width: "8.5rem",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-md)",
+  },
+  boneHint: {
+    width: "100%",
+    maxWidth: "22rem",
+    height: "0.75rem",
+  },
+  boneFeatureIcon: {
+    width: "1.25rem",
+    height: "1.25rem",
+    flexShrink: 0,
+    borderRadius: "var(--corner-full)",
+    marginTop: "0.0625rem",
+  },
+  boneFeatureLabel: {
+    width: "100%",
+    maxWidth: "18rem",
+    height: "1rem",
+  },
+  boneChangeCell: {
+    width: "6rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  boneChangeWide: {
+    width: "12rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  skeletonTable: {
+    width: "100%",
+    minWidth: 0,
+  },
 });

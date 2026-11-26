@@ -249,7 +249,52 @@ export const FilteredEmpty: Story = {
     await expect(canvas.getByRole("table", { name: "Historial de auditoría" })).toBeVisible();
   },
 };
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = canvas.getByRole("status", { name: "Cargando auditoría" });
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    const busy = canvasElement.querySelector<HTMLElement>("[aria-busy='true']");
+    await expect(busy).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.queryByRole("table", { name: "Historial de auditoría" })).toBeNull();
+    await expect(canvas.queryByRole("table")).toBeNull();
+    const skeleton = within(busy!);
+    await expect(skeleton.getByText("Fecha")).toBeVisible();
+    await expect(skeleton.getByText("Actor")).toBeVisible();
+    await expect(skeleton.getByText("Acción")).toBeVisible();
+    await expect(skeleton.getByText("Motivo")).toBeVisible();
+    await expect(skeleton.getByText("Objeto afectado")).toBeVisible();
+    await expect(canvas.getByRole("form", { name: "Filtrar auditoría" })).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Anterior" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Siguiente" })).toBeNull();
+    const table = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(table).toHaveAttribute("tabindex", "-1");
+    canvas.getByRole("button", { name: "Quitar filtros" }).focus();
+    await userEvent.tab();
+    await expect(table).not.toHaveFocus();
+  },
+};
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const frame = canvasElement.querySelector<HTMLElement>("[data-slot='audit-skeleton-table']");
+    await expect(frame).not.toBeNull();
+    const scroller = frame!.querySelector<HTMLElement>("[data-slot='table-container']");
+    await expect(scroller).not.toBeNull();
+    // The 54rem table scrolls inside its container instead of widening the page.
+    const available = frame!.parentElement!.clientWidth;
+    await expect(frame!.getBoundingClientRect().width).toBeLessThanOrEqual(available);
+    await expect(scroller!.scrollWidth).toBeGreaterThan(scroller!.clientWidth);
+    // Clicking the decorative header must not focus the scroller and re-expose the table.
+    await userEvent.click(within(frame!).getAllByText(/.+/)[0]!, { pointerEventsCheck: 0 });
+    await expect(scroller).not.toHaveFocus();
+    scroller!.focus();
+    await expect(scroller).not.toHaveFocus();
+  },
+};
 export const Denied: Story = { name: "Sin permiso", args: { scenario: "denied" } };
 export const Error: Story = {
   name: "Error con recuperación",

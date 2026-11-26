@@ -40,7 +40,7 @@ vi.mock("@tanstack/react-router", () => ({
 
 const DRAFT_PATH = "/api/v1/organizations/org-1/competitions/competition-1";
 
-function serve(...responses: Array<() => Response>) {
+function serve(...responses: Array<() => Response | Promise<Response>>) {
   const fetch = vi.fn(async (input: RequestInfo | URL) => {
     const url = new URL(String(input), "https://web.test");
     if (url.pathname !== DRAFT_PATH) return failure(404, "api.not_found");
@@ -77,6 +77,38 @@ afterEach(() => {
 });
 
 describe("Competition rules page", () => {
+  it("reserves the two-column rules layout while loading and clears the live status once resolved", async () => {
+    let resolveFetch!: (response: Response) => void;
+    const pending = new Promise<Response>((resolve) => {
+      resolveFetch = resolve;
+    });
+    serve(() => pending);
+    renderRoute();
+
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Cargando el reglamento…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Formato" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Reglas de la plataforma" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Plantilla" })).toBeTruthy();
+    expect(screen.getAllByRole("heading", { name: "Puntuación" })).toHaveLength(2);
+    expect(screen.getByText("Tipo de competición")).toBeTruthy();
+    expect(screen.getByText("Gol de visitante")).toBeTruthy();
+    expect(screen.queryByText("Aviso mínimo")).toBeNull();
+    expect(screen.queryByText("Liga + playoffs")).toBeNull();
+    expect(screen.queryByText("Borrador")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Editar reglas" })).toBeNull();
+    expect(document.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(0);
+
+    resolveFetch(Response.json(leaguePlayoffsDraft));
+
+    expect(await screen.findByText("Liga + playoffs")).toBeTruthy();
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.textContent).toBe("");
+    expect(document.querySelector("[aria-busy='true']")).toBeNull();
+  });
+
   it("reads the persisted draft rules per stage and links a draft to its setup", async () => {
     serve(draft(leaguePlayoffsDraft));
     renderRoute();

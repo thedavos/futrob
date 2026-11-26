@@ -9,6 +9,7 @@ import { applyStyles, Caption, Switch, Text, TextLink } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { OverviewCard, ViewAllChevron } from "./competition-overview-card.tsx";
+import { OverviewPublishingBodySkeleton } from "./competition-overview-skeleton.tsx";
 
 const styles = stylex.create({
   row: {
@@ -79,12 +80,15 @@ export function CompetitionExploreListingCard({
   competitionId,
   control,
   organizationId,
+  pending = false,
   portalHref = null,
   timeZone = null,
 }: {
   readonly competitionId?: string;
   readonly control: ExploreListingControl | null;
   readonly organizationId?: string;
+  /** Identity is still loading; keep the publishing card's layout reserved. */
+  readonly pending?: boolean;
   readonly portalHref?: string | null;
   readonly timeZone?: string | null;
 }) {
@@ -95,6 +99,14 @@ export function CompetitionExploreListingCard({
   const listed = control?.value === "listed";
   const hasRulesLink = Boolean(organizationId && competitionId);
   const hasMeta = portalHref !== null || timeZone !== null || hasRulesLink;
+
+  if (pending) {
+    return (
+      <OverviewCard title={t("competition.overview.publishing.title")} titleId={titleId}>
+        <OverviewPublishingBodySkeleton />
+      </OverviewCard>
+    );
+  }
 
   if (!control && !hasMeta) return null;
 

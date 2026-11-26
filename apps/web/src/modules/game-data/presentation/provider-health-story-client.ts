@@ -12,7 +12,13 @@ export class ProviderHealthClientError extends TaggedError("ProviderHealthClient
   status: number;
 }> {}
 
-export type ProviderHealthStoryScenario = "ready" | "empty" | "loading" | "error" | "denied";
+export type ProviderHealthStoryScenario =
+  | "ready"
+  | "empty"
+  | "loading"
+  | "accessLoading"
+  | "error"
+  | "denied";
 
 const ready: ProviderHealthResponse = {
   providerKey: "ea-clubs",
@@ -48,15 +54,8 @@ export function setProviderHealthStoryScenario(next: ProviderHealthStoryScenario
   scenario = next;
 }
 
-function hang(signal: AbortSignal | undefined): Promise<never> {
-  return new Promise((_resolve, reject) => {
-    const abort = () => reject(signal?.reason ?? new DOMException("Aborted", "AbortError"));
-    if (signal?.aborted) {
-      abort();
-      return;
-    }
-    signal?.addEventListener("abort", abort, { once: true });
-  });
+export function hangQuery(_signal: AbortSignal | undefined): Promise<never> {
+  return new Promise(() => undefined);
 }
 
 export const providerHealthBrowserClient = {
@@ -66,7 +65,8 @@ export const providerHealthBrowserClient = {
   ): Promise<Result<ProviderHealthResponse, ProviderHealthClientError>> {
     switch (scenario) {
       case "loading":
-        return hang(options.signal);
+      case "accessLoading":
+        return hangQuery(options.signal);
       case "denied":
         return err(
           new ProviderHealthClientError({

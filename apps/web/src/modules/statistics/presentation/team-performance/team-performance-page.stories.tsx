@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -164,6 +164,7 @@ export const Ready: Story = {
     await expect(within(table).getByText("Cuervos FC")).toBeVisible();
     await expect(within(table).getByText("Falta: Eficiencia defensiva")).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Criterio" })).toBeVisible();
+    await expect(canvas.getByRole("status")).toBeEmptyDOMElement();
   },
 };
 
@@ -173,7 +174,45 @@ export const ReadyEnglishNarrow: Story = {
   parameters: { a11y: { test: "error" } },
 };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status");
+    await waitFor(() => expect(status).toHaveTextContent("Cargando ranking de rendimiento"));
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).not.toBeNull();
+    await expect(canvas.getByRole("heading", { name: "Ranking" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Criterio" })).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
+    await expect(canvas.queryByRole("row")).toBeNull();
+    await expect(canvas.queryByRole("columnheader")).toBeNull();
+    const table = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(table).toHaveAttribute("tabindex", "-1");
+    await expect(table?.closest("[aria-hidden='true']")).not.toBeNull();
+    await userEvent.tab();
+    await expect(table).not.toHaveFocus();
+    await expect(canvas.queryByRole("link", { name: /clasificación oficial/i })).toBeNull();
+    await expect(canvas.queryByText("Cuervos FC")).toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status");
+    await waitFor(() => expect(status).toHaveTextContent("Cargando ranking de rendimiento"));
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvas.queryByRole("table")).toBeNull();
+    await expect(canvas.getByRole("heading", { name: "Ranking" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Criterio" })).toBeVisible();
+  },
+};
 
 export const NamesLoading: Story = {
   name: "Nombres cargando",

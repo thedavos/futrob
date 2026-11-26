@@ -48,16 +48,27 @@ function serve(...responses: Array<() => Response | Promise<Response>>) {
   return fetch;
 }
 
-function renderPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+function renderPage(
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
+  const view = render(
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale="es">
         <ProviderHealthPage />
       </I18nProvider>
     </QueryClientProvider>,
   );
-  return queryClient;
+  return {
+    queryClient,
+    rerenderPage: () =>
+      view.rerender(
+        <QueryClientProvider client={queryClient}>
+          <I18nProvider initialLocale="es">
+            <ProviderHealthPage />
+          </I18nProvider>
+        </QueryClientProvider>,
+      ),
+  };
 }
 
 beforeEach(() => {
@@ -108,13 +119,36 @@ describe("Provider health page", () => {
           release = resolve;
         }),
     );
-    renderPage();
+    access.state = { allowed: false, loading: true, unavailable: false };
+    const { rerenderPage } = renderPage();
 
-    expect(
-      await screen.findByRole("status", { name: "Cargando la salud del proveedor…" }),
-    ).toBeTruthy();
+    const status = screen.getByRole("status");
+    const main = screen.getByRole("main");
+    expect(status).toHaveTextContent("Comprobando permisos…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(main).not.toHaveAttribute("aria-busy");
+    expect(main.querySelector("[aria-busy='true']")).not.toBeNull();
+
+    access.state = { allowed: true, loading: false, unavailable: false };
+    rerenderPage();
+
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("Cargando la salud del proveedor…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(main).not.toHaveAttribute("aria-busy");
+    expect(main.querySelector("[aria-busy='true']")).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Llamadas al proveedor" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Caché" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Fallos recientes" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Ventana de observación" })).toBeTruthy();
+    expect(document.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(10);
+    expect(screen.queryByText("Estado: Degradado")).toBeNull();
+
     release?.(Response.json(health));
     expect(await screen.findByText("Estado: Degradado")).toBeTruthy();
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("");
+    expect(main.querySelector("[aria-busy='true']")).toBeNull();
   });
 
   it("keeps the snapshot when a refresh fails", async () => {
@@ -165,7 +199,7 @@ describe("Provider health page", () => {
         },
         () => Response.json(health),
       );
-      const client = renderPage();
+      const { queryClient: client } = renderPage();
       const key = queryKeys.gameData.providerHealth("ea-clubs");
       expect(await screen.findByText("Estado: Degradado")).toBeTruthy();
       await userEvent.click(screen.getByRole("button", { name: "Actualizar" }));
@@ -195,16 +229,54 @@ describe("Provider health page", () => {
     await waitFor(() => expect(fetch).not.toHaveBeenCalled());
   });
 
-  it("fails closed while access is loading or unavailable", () => {
+  it("fails closed while access is loading or unavailable", async () => {
     const fetch = serve(() => Response.json(health));
+    const preloadedClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    preloadedClient.setQueryData(queryKeys.gameData.providerHealth("ea-clubs"), health);
+
     access.state = { allowed: false, loading: true, unavailable: false };
-    renderPage();
-    expect(screen.getByText("Comprobando permisos…")).toBeTruthy();
+    const { rerenderPage } = renderPage(preloadedClient);
+    const status = screen.getByRole("status");
+    const main = screen.getByRole("main");
+    expect(status).toHaveTextContent("Comprobando permisos…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(main).not.toHaveAttribute("aria-busy");
+    expect(main.querySelector("[aria-busy='true']")).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Llamadas al proveedor" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Caché" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Actualizar" })).toBeNull();
+    expect(screen.queryByText("Estado: Degradado")).toBeNull();
+    expect(screen.queryByText("80 %")).toBeNull();
+    expect(document.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(10);
+    expect(fetch).not.toHaveBeenCalled();
+
+    access.state = { allowed: true, loading: false, unavailable: false };
+    rerenderPage();
+    expect(await screen.findByText("Estado: Degradado")).toBeTruthy();
+    expect(screen.getByText("80 %")).toBeTruthy();
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("");
+    expect(main.querySelector("[aria-busy='true']")).toBeNull();
     cleanup();
 
+    const failingFetch = serve(() => failure(500, "api.internal_error"));
+    access.state = { allowed: true, loading: false, unavailable: false };
+    const { rerenderPage: rerenderErrored } = renderPage();
+    expect(await screen.findByText("No pudimos cargar la salud del proveedor.")).toBeTruthy();
+    expect(failingFetch).toHaveBeenCalledTimes(1);
+
+    access.state = { allowed: false, loading: true, unavailable: false };
+    rerenderErrored();
+    expect(screen.getByRole("status")).toHaveTextContent("Comprobando permisos…");
+    expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull();
+    expect(document.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(10);
+    cleanup();
+
+    const unavailableFetch = serve(() => Response.json(health));
     access.state = { allowed: false, loading: false, unavailable: true };
     renderPage();
     expect(screen.getByText("No pudimos comprobar tus permisos para ver este panel.")).toBeTruthy();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: "Llamadas al proveedor" })).toBeNull();
+    expect(unavailableFetch).not.toHaveBeenCalled();
   });
 });

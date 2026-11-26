@@ -162,9 +162,4 @@ export const styles = stylex.create({
     overflowWrap: "anywhere",
     minWidth: 0,
   },
-  skeleton: {
-    minHeight: "7.5rem",
-    width: "100%",
-    borderRadius: "var(--corner-xl)",
-  },
 });

@@ -71,17 +71,7 @@ export function CompetitionDisputesPageView({
       {(() => {
         switch (state.kind) {
           case "loading":
-            return (
-              <div
-                aria-busy="true"
-                aria-label={t("disputes.list.loading")}
-                role="status"
-                {...applyStyles(styles.list)}
-              >
-                <Skeleton {...applyStyles(styles.skeleton)} />
-                <Skeleton {...applyStyles(styles.skeleton)} />
-              </div>
-            );
+            return <DisputeListSkeleton t={t} />;
           case "error":
             return <RetryAlert message={t("disputes.list.error")} retry={state.retry} t={t} />;
           case "not_found":
@@ -127,6 +117,49 @@ export function CompetitionDisputesPageView({
         }
       })()}
     </PageScaffold>
+  );
+}
+
+const SKELETON_ROWS = [0, 1] as const;
+
+function DisputeListSkeleton({ t }: { readonly t: Translator }) {
+  const label = t("disputes.list.loading");
+  return (
+    <section
+      aria-busy="true"
+      aria-labelledby="competition-disputes"
+      {...applyStyles(styles.section)}
+    >
+      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
+        {label}
+      </span>
+      <div {...applyStyles(styles.sectionHead)}>
+        <h2 id="competition-disputes" {...applyStyles(vis.srOnly)}>
+          {t("disputes.list.label")}
+        </h2>
+        <Skeleton {...applyStyles(styles.captionBone)} />
+      </div>
+      <ol aria-hidden="true" {...applyStyles(styles.list)}>
+        {SKELETON_ROWS.map((index) => (
+          <li key={index}>
+            <div {...applyStyles(styles.row)}>
+              <div data-slot="dispute-skeleton-status" {...applyStyles(styles.rowMeta)}>
+                <Skeleton {...applyStyles(styles.badgeBone)} />
+                <Skeleton {...applyStyles(styles.waitBone)} />
+              </div>
+              <div {...applyStyles(styles.matchup)}>
+                <Skeleton {...applyStyles(styles.homeBone)} />
+                <Skeleton {...applyStyles(styles.vsBone)} />
+                <Skeleton {...applyStyles(styles.awayBone)} />
+              </div>
+              <div {...applyStyles(styles.rowMeta)}>
+                <Skeleton {...applyStyles(styles.kickoffBone)} />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

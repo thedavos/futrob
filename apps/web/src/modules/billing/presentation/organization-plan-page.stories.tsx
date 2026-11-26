@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -189,10 +189,20 @@ export const FreeAtLimit: Story = {
 export const Pro: Story = {
   name: "Pro con historial",
   args: { scenario: "pro" },
+  parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Acuerdo comercial")).toBeVisible();
     await expect(canvas.getByText("Activo")).toBeVisible();
+    const table = canvas.getByRole("table");
+    await expect(table).toBeVisible();
+    await expect(within(table).getByRole("columnheader", { name: "Cambio" })).toBeVisible();
+    await expect(within(table).getByRole("columnheader", { name: "Motivo" })).toBeVisible();
+    await expect(within(table).getByRole("columnheader", { name: "Fecha" })).toBeVisible();
+    await expect(canvasElement.querySelector("[data-slot='table-container']")).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
   },
 };
 
@@ -202,7 +212,49 @@ export const ProEnglishNarrow: Story = {
   parameters: { a11y: { test: "error" } },
 };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status", { name: "Cargando el plan…" });
+    await expect(status).toHaveTextContent("Cargando el plan…");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    const busyGrid = canvasElement.querySelector("[aria-busy='true']");
+    await expect(busyGrid).not.toBeNull();
+    await expect(busyGrid?.contains(status)).toBe(false);
+    await expect(canvas.getByRole("heading", { name: "Uso" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Plan actual" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Incluido en tu plan" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Cambios de plan" })).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
+    await expect(canvas.queryByRole("columnheader")).toBeNull();
+    const changesTable = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(changesTable).toHaveAttribute("tabindex", "-1");
+    await expect(changesTable?.closest("[aria-hidden='true']")).not.toBeNull();
+    await userEvent.tab();
+    await expect(changesTable).not.toHaveFocus();
+    await expect(canvas.queryByRole("button", { name: /Solicitar/ })).toBeNull();
+    await expect(canvas.queryByText("Todavía no hubo cambios de plan.")).toBeNull();
+    await expect(canvas.queryByText("Gratis")).toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status", { name: "Cargando el plan…" });
+    await expect(status).toHaveTextContent("Cargando el plan…");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvas.getByRole("heading", { name: "Uso" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Cambios de plan" })).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
+  },
+};
 
 export const Forbidden: Story = {
   name: "Sin permiso",

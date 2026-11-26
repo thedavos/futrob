@@ -4,12 +4,13 @@ import { useId } from "react";
 import { Link } from "@tanstack/react-router";
 import { CheckIcon, ClipboardTextIcon, ClockIcon } from "@phosphor-icons/react";
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Badge, Skeleton, Text } from "@futrob/ui";
+import { applyStyles, Badge, Text } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { ActivityFeedList } from "@/modules/notifications/presentation/activity-feed-list.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 import { OverviewCard, OverviewEmpty, ViewAllChevron } from "./competition-overview-card.tsx";
+import { OverviewPendingBodySkeleton } from "./competition-overview-skeleton.tsx";
 import {
   OVERVIEW_PENDING_LIMIT,
   type OverviewSlice,
@@ -68,16 +69,6 @@ const styles = stylex.create({
     flexGrow: 1,
     flexDirection: "column",
     gap: "0.125rem",
-  },
-  stack: {
-    display: "flex",
-    minWidth: 0,
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  skeleton: {
-    height: "2.75rem",
-    width: "100%",
   },
   okIsland: {
     display: "flex",
@@ -200,15 +191,8 @@ export function PendingSection({
         />
       ) : null}
       {showSkeleton ? (
-        <div
-          aria-busy="true"
-          aria-label={t("shell.queue.loading")}
-          role="status"
-          {...applyStyles(styles.stack)}
-        >
-          {[0, 1].map((index) => (
-            <Skeleton key={index} {...applyStyles(styles.skeleton)} />
-          ))}
+        <div aria-busy="true" aria-label={t("shell.queue.loading")} role="status">
+          <OverviewPendingBodySkeleton />
         </div>
       ) : null}
       {nothingPending ? (

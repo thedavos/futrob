@@ -331,4 +331,43 @@ describe("Encounter page", () => {
     await waitFor(() => expect(kickoff("Partido 2")).toBe("2026-09-18T01:30:00.000Z"));
     expect(kickoff("Partido 1")).toBe("2026-09-15T01:00:00.000Z");
   });
+
+  it("keeps loading status outside aria-busy and avoids unconfirmed slot labels before data resolves", async () => {
+    let resolveView: (response: Response) => void = () => undefined;
+    serve({
+      [VIEW_PATH]: () =>
+        new Promise<Response>((resolve) => {
+          resolveView = resolve;
+        }),
+      [CANDIDATES_PATH]: () => Response.json(ready([])),
+    });
+    renderEncounter();
+
+    // The region mounts empty and receives the message afterwards, so it is announced.
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("");
+    await waitFor(() => expect(status.textContent).toBe("Cargando enfrentamiento"));
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+    expect(screen.getByRole("heading", { name: "Partidos oficiales" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Vista previa" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Partido 2" })).toBeNull();
+    expect(screen.queryByText("Sin partido EA asignado")).toBeNull();
+
+    resolveView(
+      Response.json(
+        encounterView({
+          officialMatchCount: 1,
+          resolutionMode: "independent_matches",
+          officialMatches: [{ officialSlot: 1, scheduledStartAt: "2026-09-15T01:00:00.000Z" }],
+        }),
+      ),
+    );
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Cuervos FC vs Maderas FC" }),
+    ).toBeTruthy();
+    expect(status.textContent).toBe("");
+    expect(screen.getByRole("heading", { name: "Partido 1" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Partido 2" })).toBeNull();
+  });
 });

@@ -121,6 +121,26 @@ afterEach(() => {
 });
 
 describe("Competition encounters list", () => {
+  it("reserves the list layout while encounters are loading", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    renderRoute();
+
+    expect(screen.getByRole("heading", { name: "Enfrentamientos" })).toBeTruthy();
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Cargando enfrentamientos");
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+    const region = screen.getByRole("region", { name: "Cargando enfrentamientos" });
+    expect(region.getAttribute("aria-busy")).toBe("true");
+    expect(region.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(8);
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("radio")).toBeNull();
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.queryByText("Aún no hay enfrentamientos")).toBeNull();
+  });
+
   it("groups Encounters by round, shows official aggregate scores and links each to its Match Center", async () => {
     serve(() => Response.json(fixtureEncounters));
     renderRoute();

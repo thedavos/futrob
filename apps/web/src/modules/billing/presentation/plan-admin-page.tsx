@@ -23,7 +23,6 @@ import {
   FieldLabel,
   Heading,
   Input,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -31,6 +30,7 @@ import {
   TableHeader,
   TableRow,
   typography,
+  vis,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
@@ -38,6 +38,7 @@ import { useIsSuperuser } from "@/shared/presentation/permissions/index.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 import { BillingClientError } from "./billing-browser-client.ts";
 import { useAssignPlanMutation, usePlanRequestsQuery } from "./billing-queries.ts";
+import { PlanAdminSkeleton } from "./plan-admin-skeleton.tsx";
 import { styles } from "./plan-admin.styles.ts";
 import { formatPlanDate, isOrganizationPlanKey, planNameKey } from "./plan-copy.ts";
 
@@ -90,14 +91,15 @@ export function PlanAdminRoute() {
 
 export function PlanAdminPageView({ state }: { readonly state: PlanAdminState }) {
   const { t } = useI18n();
+  const pending = state.kind === "checking" || state.kind === "loading";
+  const statusMessage = pending
+    ? t(state.kind === "checking" ? "billing.admin.checkingAccess" : "billing.admin.loading")
+    : "";
   let body: ReactNode;
   switch (state.kind) {
     case "checking":
-      body = (
-        <p role="status" {...applyStyles(styles.pending)}>
-          {t("billing.admin.checkingAccess")}
-        </p>
-      );
+    case "loading":
+      body = <PlanAdminSkeleton />;
       break;
     case "accessError":
       body = (
@@ -116,29 +118,25 @@ export function PlanAdminPageView({ state }: { readonly state: PlanAdminState })
         </EmptyState>
       );
       break;
-    case "loading":
-      body = (
-        <div
-          aria-busy="true"
-          aria-label={t("billing.admin.loading")}
-          role="status"
-          {...applyStyles(styles.skeletonStack)}
-        >
-          <Skeleton {...applyStyles(styles.skeletonRow)} />
-          <Skeleton {...applyStyles(styles.skeletonRow)} />
-        </div>
-      );
-      break;
     case "error":
       body = <RetryAlert message={t("billing.admin.error")} retry={state.retry} t={t} />;
       break;
     case "ready":
       body = <PlanAdminContent refreshRetry={state.refreshRetry} requests={state.requests} />;
       break;
+    default: {
+      const _exhaustive: never = state;
+      body = _exhaustive;
+    }
   }
   return (
     <PageScaffold page="admin.billing">
-      <div {...applyStyles(styles.body)}>{body}</div>
+      <span role="status" {...applyStyles(vis.srOnly)}>
+        {statusMessage}
+      </span>
+      <div aria-busy={pending || undefined} {...applyStyles(styles.body)}>
+        {body}
+      </div>
     </PageScaffold>
   );
 }

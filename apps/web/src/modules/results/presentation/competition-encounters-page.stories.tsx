@@ -261,7 +261,58 @@ export const PlayerMatches: Story = {
 
 export const Empty: Story = { name: "Sin calendario", args: { scenario: "empty" } };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+function hoverSelectorsMatching(element: Element): string[] {
+  const matches: string[] = [];
+  const visit = (rules: CSSRuleList) => {
+    for (const rule of Array.from(rules)) {
+      if (rule instanceof CSSStyleRule) {
+        for (const selector of rule.selectorText.split(",")) {
+          if (!selector.includes(":hover")) continue;
+          if (element.matches(selector.replaceAll(":hover", ""))) matches.push(selector.trim());
+        }
+      } else if ("cssRules" in rule) {
+        visit((rule as CSSGroupingRule).cssRules);
+      }
+    }
+  };
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      visit(sheet.cssRules);
+    } catch {
+      // Cross-origin stylesheets cannot be read; product styles are same-origin.
+    }
+  }
+  return matches;
+}
+
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = canvas.getByRole("status");
+    await expect(status).toHaveTextContent("Cargando enfrentamientos");
+    await expect(status.closest('[aria-busy="true"]')).toBeNull();
+    const region = canvas.getByRole("region", { name: "Cargando enfrentamientos" });
+    await expect(region).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("heading", { name: "Enfrentamientos" })).toBeVisible();
+    await expect(region.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(8);
+    const skeletonRow = region.querySelector<HTMLElement>("[data-slot='encounter-skeleton-row']");
+    await expect(skeletonRow).not.toBeNull();
+    // Synthetic hover events do not activate `:hover`, so assert on the
+    // stylesheet instead: no `:hover` rule may target a decorative row.
+    await expect(hoverSelectorsMatching(skeletonRow!)).toEqual([]);
+    const bone = skeletonRow!.querySelector<HTMLElement>("[data-slot='skeleton']");
+    await expect(bone).not.toBeNull();
+    await expect(getComputedStyle(bone!).backgroundColor).not.toBe(
+      getComputedStyle(skeletonRow!).backgroundColor,
+    );
+    await expect(canvas.queryByRole("link")).toBeNull();
+    await expect(canvas.queryByRole("radio")).toBeNull();
+    await expect(canvas.queryByRole("combobox")).toBeNull();
+    await expect(canvas.queryByText("Aún no hay enfrentamientos")).toBeNull();
+  },
+};
 
 export const NotFound: Story = { name: "No disponible", args: { scenario: "notFound" } };
 

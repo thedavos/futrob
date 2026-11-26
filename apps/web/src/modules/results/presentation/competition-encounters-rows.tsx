@@ -172,7 +172,7 @@ function EncounterRow({
       params={{ orgId: organizationId, competitionId, encounterId: encounter.encounterId }}
       search={returnSearch}
       to="/orgs/$orgId/competitions/$competitionId/encounters/$encounterId"
-      {...applyStyles(styles.row)}
+      {...applyStyles(styles.rowLayout, styles.rowInteractive)}
     >
       <div id={`${detailsId}-meta`} {...applyStyles(styles.timeCol)}>
         <span {...applyStyles(vis.srOnly)}>{roundLabel}</span>
