@@ -1,4 +1,5 @@
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
+import { useRef } from "react";
 import {
   applyStyles,
   Button,
@@ -74,6 +75,7 @@ export function FixtureCalendarMonth({
 }) {
   const { locale, t } = format;
   const byDate = new Map(days.map((day) => [day.date, day]));
+  const grid = useRef<HTMLOListElement>(null);
   const opened = openDay ? byDate.get(openDay) : undefined;
   const openedUniform = opened ? fixtureDayUniformContext(opened.entries) : undefined;
   const titleId = "fixture-month-title";
@@ -130,7 +132,11 @@ export function FixtureCalendarMonth({
             </Caption>
           ))}
         </div>
-        <ol aria-label={t("fixture.month.label")} {...applyStyles(monthStyles.monthGrid)}>
+        <ol
+          aria-label={t("fixture.month.label")}
+          ref={grid}
+          {...applyStyles(monthStyles.monthGrid)}
+        >
           {weeks.flatMap((week, weekIndex) => {
             const isLastRow = weekIndex === weeks.length - 1;
             return week.map((date, dayIndex) => {
@@ -183,6 +189,7 @@ export function FixtureCalendarMonth({
                     })}
                     aria-haspopup="dialog"
                     aria-pressed={isSelected}
+                    data-fixture-day={date}
                     onClick={() => onSelectDay(date)}
                     type="button"
                     {...applyStyles(monthStyles.day, isSelected && monthStyles.daySelected)}
@@ -246,7 +253,16 @@ export function FixtureCalendarMonth({
         open={opened !== undefined}
       >
         {opened && openedUniform ? (
-          <DialogContent className={monthStyles.dayDialog} closeLabel={t("common.close")}>
+          <DialogContent
+            className={monthStyles.dayDialog}
+            closeLabel={t("common.close")}
+            // A day reopened from search (a link, or Back from an Encounter) has no trigger
+            // to return to, so closing focuses that day's button in the grid.
+            finalFocus={() =>
+              grid.current?.querySelector<HTMLElement>(`[data-fixture-day="${opened.date}"]`) ??
+              true
+            }
+          >
             <DialogHeader>
               <DialogTitle>{format.longDate(opened.date)}</DialogTitle>
               <DialogDescription>

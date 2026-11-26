@@ -104,8 +104,14 @@ describe("calendar return navigation", () => {
     const reopened = await screen.findByRole("dialog", { name: "lunes, 16 de noviembre" });
     expect(router.state.location.search).toEqual(before);
     expect(within(reopened).getAllByRole("link", { name: /^Abrir / })).toHaveLength(1);
-    await user.click(within(reopened).getByRole("button", { name: "Cerrar" }));
+    // Reopened from search, no button opened it: closing still returns focus to its day.
+    await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "lunes, 16 de noviembre: 1 enfrentamiento" }),
+      ),
+    );
     expect(router.state.location.search).not.toHaveProperty("day");
     expect(router.state.location.search).toMatchObject({ view: "month", month: "2026-11" });
     expect(screen.getByRole("combobox", { name: "Equipo" }).textContent).toContain("Atlas FC");
