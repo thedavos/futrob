@@ -1,6 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { applyStyles, Skeleton, vis } from "@futrob/ui";
-import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { applyStyles, Skeleton } from "@futrob/ui";
 import { styles } from "./account.styles.ts";
 
 const ACCOUNT_ROWS = [0, 1] as const;
@@ -82,22 +81,6 @@ const bones = stylex.create({
     gap: "0.25rem",
   },
 });
-
-export function PlayerProfileLoadingStatus({ loading }: { readonly loading: boolean }) {
-  const { t } = useI18n();
-  const label = loading ? t("profile.loading") : "";
-  return (
-    <span
-      aria-atomic="true"
-      aria-label={label || undefined}
-      aria-live="polite"
-      role="status"
-      {...applyStyles(vis.srOnly)}
-    >
-      {label}
-    </span>
-  );
-}
 
 export function PlayerProfileIdentitySkeleton() {
   return (

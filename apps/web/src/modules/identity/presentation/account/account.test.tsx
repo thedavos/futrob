@@ -3,7 +3,12 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { I18nProvider, useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import {
+  LiveStatusRegion,
+  resetLiveStatus,
+  useLiveStatus,
+} from "@/shared/presentation/live-status-region.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { ProfileEditor } from "./profile-editor.tsx";
 import { FeedbackDialog } from "./feedback-dialog.tsx";
@@ -11,7 +16,6 @@ import { SettingsDialog } from "./settings-dialog.tsx";
 import {
   PlayerProfileAccountsSkeleton,
   PlayerProfileIdentitySkeleton,
-  PlayerProfileLoadingStatus,
 } from "./player-profile-skeleton.tsx";
 import type { AccountAuth } from "./account-auth.ts";
 import { AccountDeletionGate } from "../account-deletion-gate.tsx";
@@ -30,6 +34,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  resetLiveStatus();
   vi.unstubAllGlobals();
 });
 function frame(
@@ -587,15 +592,21 @@ function expectHiddenBones() {
   }
 }
 
+function ProfileAnnouncement({ loading }: { readonly loading: boolean }) {
+  const { t } = useI18n();
+  useLiveStatus(loading ? t("profile.loading") : "");
+  return loading ? <PlayerProfileIdentitySkeleton /> : <p>Alex García</p>;
+}
+
 describe("player profile loading skeletons", () => {
-  it("keeps identity bones out of the tab order", () => {
+  it("keeps identity bones out of the tab order", async () => {
     frame(
       <>
-        <PlayerProfileLoadingStatus loading />
-        <PlayerProfileIdentitySkeleton />
+        <LiveStatusRegion />
+        <ProfileAnnouncement loading />
       </>,
     );
-    const status = screen.getByRole("status", { name: "Cargando tu perfil…" });
+    const status = await screen.findByRole("status", { name: "Cargando tu perfil…" });
     expect(status.closest("[aria-busy='true']")).toBeNull();
     expectHiddenBones();
     expect(screen.queryByLabelText("Nombre visible")).toBeNull();
@@ -608,21 +619,20 @@ describe("player profile loading skeletons", () => {
     expectHiddenBones();
   });
 
-  it("updates the live region when loading becomes pending", async () => {
+  it("publishes loading into a live region that was already empty", async () => {
     const view = frame(
       <>
-        <PlayerProfileLoadingStatus loading={false} />
-        <PlayerProfileIdentitySkeleton />
+        <LiveStatusRegion />
+        <p>Inicio</p>
       </>,
     );
     expect(screen.queryByRole("status", { name: "Cargando tu perfil…" })).toBeNull();
-    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
 
     view.rerender(
       <I18nProvider initialLocale="es">
         <QueryTestProvider>
-          <PlayerProfileLoadingStatus loading />
-          <PlayerProfileIdentitySkeleton />
+          <LiveStatusRegion />
+          <ProfileAnnouncement loading />
         </QueryTestProvider>
       </I18nProvider>,
     );

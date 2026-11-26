@@ -18,11 +18,11 @@ import { useMyPlayerProfileQuery } from "@/modules/teams/presentation/player-que
 import { platformLabel } from "@/modules/teams/presentation/platform-label.ts";
 import { formatProviderGameEdition } from "@/modules/game-data/presentation/ea-club-search-meta.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { useLiveStatus } from "@/shared/presentation/live-status-region.tsx";
 import { ProfileEditor, type ProfileIdentity } from "./profile-editor.tsx";
 import {
   PlayerProfileAccountsSkeleton,
   PlayerProfileIdentitySkeleton,
-  PlayerProfileLoadingStatus,
 } from "./player-profile-skeleton.tsx";
 import { styles } from "./account.styles.ts";
 
@@ -79,9 +79,9 @@ export function PlayerProfilePageView({
 }) {
   const { t } = useI18n();
   const loading = identity.status === "pending" || accounts.status === "pending";
+  useLiveStatus(loading ? t("profile.loading") : "");
   return (
     <div {...applyStyles(styles.page)}>
-      <PlayerProfileLoadingStatus loading={loading} />
       <PageHeader>
         <PageHeaderTitle>{t("profile.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("profile.description")}</PageHeaderDescription>

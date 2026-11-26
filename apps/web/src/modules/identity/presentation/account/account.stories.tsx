@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { expect, userEvent, within } from "storybook/test";
 import { Button, applyStyles } from "@futrob/ui";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LiveStatusRegion } from "@/shared/presentation/live-status-region.tsx";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { ProfileEditor } from "./profile-editor.tsx";
 import { FeedbackDialog } from "./feedback-dialog.tsx";
@@ -202,18 +203,21 @@ function ProfilePageExample({
   accounts: ComponentProps<typeof PlayerProfilePageView>["accounts"];
 }) {
   return (
-    <PlayerStoryShell
-      initialPath="/player/profile"
-      routes={[
-        {
-          path: "/player/profile",
-          component: () => <PlayerProfilePageView accounts={accounts} identity={identity} />,
-        },
-        { path: "/player/game-accounts", component: () => <p>Datos de juego</p> },
-        { path: "/player/statistics", component: () => <p>Mis estadísticas</p> },
-      ]}
-      state={PROFILE_STORY_STATE}
-    />
+    <>
+      <LiveStatusRegion />
+      <PlayerStoryShell
+        initialPath="/player/profile"
+        routes={[
+          {
+            path: "/player/profile",
+            component: () => <PlayerProfilePageView accounts={accounts} identity={identity} />,
+          },
+          { path: "/player/game-accounts", component: () => <p>Datos de juego</p> },
+          { path: "/player/statistics", component: () => <p>Mis estadísticas</p> },
+        ]}
+        state={PROFILE_STORY_STATE}
+      />
+    </>
   );
 }
 
