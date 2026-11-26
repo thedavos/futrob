@@ -62,12 +62,12 @@ export const styles = stylex.create({
     width: {
       default: "var(--control-height-dense)",
       [media.maxSm]: "var(--control-height-touch)",
-      "@media (pointer: coarse)": "var(--control-height-touch)",
+      "@media (any-pointer: coarse)": "var(--control-height-touch)",
     },
     height: {
       default: "var(--control-height-dense)",
       [media.maxSm]: "var(--control-height-touch)",
-      "@media (pointer: coarse)": "var(--control-height-touch)",
+      "@media (any-pointer: coarse)": "var(--control-height-touch)",
     },
     padding: 0,
     borderWidth: 0,
@@ -318,7 +318,7 @@ export const styles = stylex.create({
     minHeight: {
       default: "var(--control-height-dense)",
       [media.maxSm]: "var(--control-height-touch)",
-      "@media (pointer: coarse)": "var(--control-height-touch)",
+      "@media (any-pointer: coarse)": "var(--control-height-touch)",
     },
     paddingInline: space.s3,
     borderColor: colors.border,
