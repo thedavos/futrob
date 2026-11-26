@@ -166,6 +166,8 @@ export const RejectedEntryWithRoster: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Inscripción rechazada")).toBeVisible();
+    await expect(canvas.queryByText("Admite invitaciones")).not.toBeInTheDocument();
+    await expect(canvas.getByText("Solo lectura por inscripción rechazada")).toBeVisible();
     await expect(
       canvas.queryByRole("combobox", { name: "Rol de Dani Capitán" }),
     ).not.toBeInTheDocument();

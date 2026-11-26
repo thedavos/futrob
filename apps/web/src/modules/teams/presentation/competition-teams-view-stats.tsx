@@ -1,6 +1,7 @@
 "use client";
 
 import type { CompetitionTeamManagementDetailResponse } from "@futrob/api-contracts";
+import { isRosterWritable } from "@futrob/sdk";
 import {
   applyStyles,
   Progress,
@@ -26,6 +27,8 @@ export function TeamDetailStats({
 }: Readonly<{ detail: CompetitionTeamManagementDetailResponse }>) {
   const { t } = useI18n();
   const rosterOpen = detail.roster.state === "open";
+  // A rejected entry keeps its last open/closed state, but nothing can join it (ADR-0019).
+  const rosterWritable = isRosterWritable(detail.entry.status);
   const spotsLeft = Math.max(detail.roster.maxSize - detail.roster.memberCount, 0);
   const captainsCount = countTeamCaptains(detail.members);
 
@@ -72,9 +75,11 @@ export function TeamDetailStats({
               : t("competition.teams.detail.stat.rosterClosed")}
           </StatValue>
           <StatHint>
-            {rosterOpen
-              ? t("competition.teams.detail.stat.rosterOpenHint")
-              : t("competition.teams.detail.stat.rosterClosedHint")}
+            {!rosterWritable
+              ? t("competition.teams.detail.stat.rosterReadOnlyHint")
+              : rosterOpen
+                ? t("competition.teams.detail.stat.rosterOpenHint")
+                : t("competition.teams.detail.stat.rosterClosedHint")}
           </StatHint>
         </Stat>
       </div>
