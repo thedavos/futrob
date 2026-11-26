@@ -271,8 +271,10 @@ export const styles = stylex.create({
     gap: "0.75rem",
     position: "sticky",
     top: "1.25rem",
-    // Long leagues (30 dates) outgrow the viewport: the index scrolls on its own.
-    maxHeight: "calc(100dvh - 2.5rem)",
+    // Long leagues (30 dates) outgrow the window: the index scrolls on its own. `cqb` is the
+    // height of the shell's scroll container (#app-main, below the command bar); outside
+    // the shell it falls back to the viewport.
+    maxHeight: "calc(100cqb - 2.5rem)",
     minHeight: 0,
     padding: "1rem",
     borderWidth: 1,

@@ -40,6 +40,31 @@ const styles = stylex.create({
     paddingInline: { default: "1rem", [media.lg]: "2.5rem" },
     paddingBlock: "1.5rem",
   },
+  // Mirrors the authenticated shell: a fixed-height frame whose #app-main scrolls below a
+  // 3.5rem command bar and is a size container (see authenticated-shell.tsx).
+  shell: {
+    display: "flex",
+    flexDirection: "column",
+    height: "100svh",
+    overflow: "hidden",
+    backgroundColor: colors.background,
+  },
+  shellBar: {
+    height: "3.5rem",
+    flexShrink: 0,
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: colors.border,
+  },
+  shellMain: {
+    minHeight: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    overflowY: "auto",
+    containerType: "size",
+    padding: "1.5rem",
+  },
 });
 
 const retry = () => undefined;
@@ -130,9 +155,11 @@ type StoryArgs = {
   readonly scenario: Scenario;
   readonly locale: Locale;
   readonly initialView: FixtureCalendarViewKind;
+  /** Render inside a frame shaped like the authenticated shell. */
+  readonly inShell?: boolean;
 };
 
-function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
+function FixtureStory({ initialView, inShell = false, locale, scenario }: StoryArgs) {
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
     const fixtureRoute = createRoute({
@@ -164,9 +191,18 @@ function FixtureStory({ initialView, locale, scenario }: StoryArgs) {
   }, [initialView, scenario]);
   return (
     <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
-      <div {...applyProps(undefined, undefined, styles.frame)}>
-        <RouterProvider router={router} />
-      </div>
+      {inShell ? (
+        <div {...applyProps(undefined, undefined, styles.shell)}>
+          <div aria-hidden="true" {...applyProps(undefined, undefined, styles.shellBar)} />
+          <div data-testid="shell-main" {...applyProps(undefined, undefined, styles.shellMain)}>
+            <RouterProvider router={router} />
+          </div>
+        </div>
+      ) : (
+        <div {...applyProps(undefined, undefined, styles.frame)}>
+          <RouterProvider router={router} />
+        </div>
+      )}
     </I18nProvider>
   );
 }
@@ -252,7 +288,7 @@ const shortLaptop = {
 
 export const LongLeagueAgendaIndex: Story = {
   name: "Liga larga · Índice de la Agenda",
-  args: { scenario: "longLeague", initialView: "agenda" },
+  args: { scenario: "longLeague", initialView: "agenda", inShell: true },
   parameters: { ...shortLaptop, a11y: { test: "error" } },
   globals: { viewport: { value: "shortLaptop", isRotated: false } },
   play: async ({ canvasElement }) => {
@@ -266,22 +302,29 @@ export const LongLeagueAgendaIndex: Story = {
     if (!last) throw new Error("The jump index has no links");
     await expect(last).toHaveAttribute("href", "#fixture-day-2027-02-21");
 
-    // A short page scroll pins the index under the header; from there, scrolling only the
-    // index reaches its last shortcut while the Agenda still shows its first dates.
+    // Inside the shell the page scrolls in #app-main, below the command bar. A short scroll
+    // there pins the index; from then on, scrolling only the index reaches its last shortcut
+    // while the Agenda still shows its first dates.
+    const main = canvas.getByTestId("shell-main");
     const aside = jump.closest("aside");
     if (!aside) throw new Error("The jump index is not inside its aside");
-    window.scrollBy(0, aside.getBoundingClientRect().top);
-    await waitFor(() => expect(aside.getBoundingClientRect().top).toBeLessThanOrEqual(24));
-    const pageScroll = window.scrollY;
-    await expect(pageScroll).toBeLessThan(400);
-    await expect(aside.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight);
+    const mainBox = main.getBoundingClientRect();
+    main.scrollTop = aside.getBoundingClientRect().top - mainBox.top;
+    // Pinned at #app-main's 1.5rem padding plus the index's 1.25rem sticky offset.
+    await waitFor(() =>
+      expect(aside.getBoundingClientRect().top - mainBox.top).toBeLessThanOrEqual(48),
+    );
+    const mainScroll = main.scrollTop;
+    await expect(mainScroll).toBeLessThan(400);
+    await expect(window.scrollY).toBe(0);
+    await expect(aside.getBoundingClientRect().bottom).toBeLessThanOrEqual(mainBox.bottom);
     await expect(jump.scrollHeight).toBeGreaterThan(jump.clientHeight);
     jump.scrollTop = jump.scrollHeight;
     await waitFor(() => expect(jump.scrollTop).toBeGreaterThan(0));
-    await expect(window.scrollY).toBe(pageScroll);
+    await expect(main.scrollTop).toBe(mainScroll);
     const linkBox = last.getBoundingClientRect();
-    await expect(linkBox.top).toBeGreaterThanOrEqual(0);
-    await expect(linkBox.bottom).toBeLessThanOrEqual(window.innerHeight);
+    await expect(linkBox.top).toBeGreaterThanOrEqual(mainBox.top);
+    await expect(linkBox.bottom).toBeLessThanOrEqual(mainBox.bottom);
 
     // The shortcut is the topmost element at its own centre, so a pointer reaches it.
     // (Following the hash would navigate the test runner's frame, so it is not clicked.)
