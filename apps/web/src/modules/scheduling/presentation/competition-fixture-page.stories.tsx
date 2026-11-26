@@ -549,7 +549,46 @@ export const Empty: Story = {
   },
 };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status", { name: "Cargando el calendario" });
+    await expect(status).toHaveTextContent("Cargando el calendario");
+    await expect(status.closest("[aria-busy='true']")).not.toBeNull();
+    await expect(canvas.getByText("Agenda")).toBeVisible();
+    await expect(canvas.getByText("Jornadas")).toBeVisible();
+    await expect(canvas.queryByRole("tab")).toBeNull();
+    await expect(canvas.queryByRole("tablist")).toBeNull();
+    await expect(canvas.queryByRole("combobox")).toBeNull();
+    await expect(canvas.queryByRole("link")).toBeNull();
+    await expect(canvas.queryByRole("button")).toBeNull();
+    await expect(canvasElement.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(
+      10,
+    );
+    await userEvent.tab();
+    await expect(canvasElement.ownerDocument.activeElement?.closest("[data-slot='skeleton']")).toBe(
+      null,
+    );
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 320",
+  args: { scenario: "loading" },
+  parameters: narrow,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("status", { name: "Cargando el calendario" }),
+    ).toHaveTextContent("Cargando el calendario");
+    await expect(canvas.getByText("Agenda")).toBeVisible();
+    await expect(canvas.getByText("Jornadas")).toBeVisible();
+    await expect(canvas.queryByRole("tab")).toBeNull();
+    await expect(canvas.queryByRole("combobox")).toBeNull();
+  },
+};
 
 export const NotFound: Story = { name: "No disponible", args: { scenario: "notFound" } };
 
