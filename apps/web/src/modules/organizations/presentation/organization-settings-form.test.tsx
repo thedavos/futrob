@@ -291,7 +291,7 @@ function createPageQueryClient(organizationId: string, canEdit = true) {
 }
 
 describe("OrganizationSettingsPage", () => {
-  it("keeps the loading status mounted outside aria-busy and clears it when the profile loads", async () => {
+  it("mounts the loading status empty outside aria-busy, publishes the message on the same node, and clears it when the profile loads", async () => {
     let resolveProfile!: (value: OrganizationProfileDto) => void;
     mocks.getProfile.mockImplementationOnce(
       () =>
@@ -311,13 +311,17 @@ describe("OrganizationSettingsPage", () => {
 
     const status = screen.getByRole("status");
     const profileContainer = container.querySelector("[data-slot='organization-settings-profile']");
-    expect(status).toHaveTextContent("Cargando perfil…");
+    expect(status).toHaveTextContent("");
     expect(status.closest("[aria-busy='true']")).toBeNull();
     expect(screen.getByRole("main")).not.toHaveAttribute("aria-busy", "true");
     expect(profileContainer).toHaveAttribute("aria-busy", "true");
     expect(
       container.querySelector("[data-slot='organization-settings-form-skeleton']"),
     ).not.toBeNull();
+
+    await waitFor(() => expect(status).toHaveTextContent("Cargando perfil…"));
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.closest("[aria-busy='true']")).toBeNull();
 
     resolveProfile(profile);
 

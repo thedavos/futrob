@@ -204,7 +204,7 @@ async function expectLoadingSkeleton(canvasElement: HTMLElement, label: string) 
   const profile = canvasElement.querySelector("[data-slot='organization-settings-profile']");
   await expect(profile).toHaveAttribute("aria-busy", "true");
   const status = canvas.getByRole("status");
-  await expect(status).toHaveTextContent(label);
+  await waitFor(() => expect(status).toHaveTextContent(label));
   await expect(status.closest("[aria-busy='true']")).toBeNull();
   await expect(
     canvasElement.querySelector("[data-slot='organization-settings-form-skeleton']"),

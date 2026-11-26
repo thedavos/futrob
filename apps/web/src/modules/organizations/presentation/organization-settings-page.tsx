@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
@@ -10,6 +11,7 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
   TextLink,
+  useExternalSync,
   vis,
 } from "@futrob/ui";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
@@ -46,12 +48,28 @@ export function OrganizationSettingsPage({ organizationId }: { readonly organiza
   const readOnly = !update.loading && !update.allowed;
   const loading = profileQuery.isPending;
   const loadingLabel = t("organizations.settings.loading");
+  const statusRef = useRef<HTMLSpanElement>(null);
+
+  useExternalSync(() => {
+    const status = statusRef.current;
+    if (!status) return;
+    if (!loading) {
+      status.textContent = "";
+      return;
+    }
+    // Publish after the empty live region is mounted so assistive technologies
+    // announce an uncached first load as a live-region update (ARIA22).
+    const frame = requestAnimationFrame(() => {
+      status.textContent = loadingLabel;
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [loading, loadingLabel]);
 
   return (
     <main {...applyStyles(styles.main)}>
-      <span role="status" {...applyStyles(vis.srOnly)}>
-        {loading ? loadingLabel : ""}
-      </span>
+      <span ref={statusRef} role="status" {...applyStyles(vis.srOnly)} />
       <PageHeader>
         <PageHeaderTitle>{t("organizations.settings.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("organizations.settings.description")}</PageHeaderDescription>
