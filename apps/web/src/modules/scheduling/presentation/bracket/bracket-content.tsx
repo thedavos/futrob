@@ -1,16 +1,27 @@
 import { useId } from "react";
 import {
+  ClockIcon,
+  ListBulletsIcon,
+  SealCheckIcon,
+  CalendarBlankIcon,
+  TreeStructureIcon,
+} from "@phosphor-icons/react";
+import {
   applyStyles,
   Badge,
   Button,
   Caption,
   Heading,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Text,
+  vis,
 } from "@futrob/ui";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
@@ -20,32 +31,54 @@ import { BracketList } from "./bracket-list.tsx";
 import {
   bracketTeamOptions,
   matchesTeam,
+  type BracketStageLayout,
   type BracketTeamOption,
   type BracketView,
 } from "./bracket-model.ts";
-import type { Formatters, Scope, StageProps, TeamFilter } from "./bracket-page-shared.ts";
+import type {
+  Formatters,
+  Scope,
+  StageProps,
+  TeamFilter,
+  ViewModeControl,
+} from "./bracket-page-shared.ts";
+import {
+  bracketChampionName,
+  bracketStatusCounts,
+  type BracketResults,
+} from "./bracket-results.ts";
 import { styles } from "./bracket-page.styles.ts";
 
 const ALL_TEAMS = "all";
 
-type ContentProps = TeamFilter & {
-  readonly bracket: BracketView;
-  readonly locale: string;
-  readonly refreshFailed: boolean;
-  readonly retry: () => void;
-  readonly scope: Scope;
-  readonly t: Translator;
-};
+type ContentProps = TeamFilter &
+  ViewModeControl & {
+    readonly bracket: BracketView;
+    readonly locale: string;
+    readonly refreshFailed: boolean;
+    readonly retry: () => void;
+    readonly results: BracketResults;
+    /** The Encounter list failed for a reason a retry may fix; the draw still shows. */
+    readonly resultsFailed: boolean;
+    readonly retryResults: () => void;
+    readonly scope: Scope;
+    readonly t: Translator;
+  };
 
 export function BracketContent({
   bracket,
   locale,
   onTeamChange,
+  onViewChange,
   refreshFailed,
+  results,
+  resultsFailed,
   retry,
+  retryResults,
   scope,
   t,
   teamId,
+  view,
 }: ContentProps) {
   const options = bracketTeamOptions(bracket, locale);
   // A Team from an old link that the draw no longer places highlights nothing; ignore it.
@@ -69,39 +102,111 @@ export function BracketContent({
   const highlighted = nodes.filter((node) =>
     matchesTeam(node.encounter, activeTeam?.teamId ?? null),
   ).length;
+  const stageProps = {
+    formatters,
+    results,
+    scope,
+    t,
+    teamId: activeTeam?.teamId ?? null,
+  };
 
   return (
     <div {...applyStyles(styles.stack)}>
       {refreshFailed ? (
         <RetryAlert message={t("bracket.refreshError")} retry={retry} t={t} />
       ) : null}
-      <div {...applyStyles(styles.toolbar)}>
-        <Caption as="p">{t("fixture.timeZone", { zone: bracket.timeZone })}</Caption>
-        {options.length > 1 ? (
-          <TeamSelect active={activeTeam} onTeamChange={onTeamChange} options={options} t={t} />
-        ) : null}
-      </div>
-      {activeTeam ? (
-        <div {...applyStyles(styles.filterSummary)}>
-          <Text aria-live="polite" as="p" look="caption" tone="muted">
-            {t("bracket.filter.summary", { shown: highlighted, total: nodes.length })}
-          </Text>
-          <Button onClick={() => onTeamChange(null)} variant="ghost">
-            {t("bracket.filter.clear")}
-          </Button>
-        </div>
+      {resultsFailed ? (
+        <RetryAlert message={t("bracket.resultsError")} retry={retryResults} t={t} />
       ) : null}
-      {bracket.stages.map((stage) => (
-        <BracketStage
-          key={stage.id}
-          formatters={formatters}
-          scope={scope}
-          stage={stage}
-          t={t}
-          teamId={activeTeam?.teamId ?? null}
-        />
-      ))}
+      <Tabs
+        className={styles.tabs}
+        onValueChange={(value) => {
+          if (value === "canvas" || value === "list") onViewChange(value);
+        }}
+        value={view}
+        variant="pills"
+      >
+        <div {...applyStyles(styles.toolbar)}>
+          <div {...applyStyles(styles.toolbarStart)}>
+            <TabsList aria-label={t("bracket.views.label")}>
+              <TabsTrigger value="canvas">
+                <TreeStructureIcon aria-hidden="true" />
+                {t("bracket.views.canvas")}
+              </TabsTrigger>
+              <TabsTrigger value="list">
+                <ListBulletsIcon aria-hidden="true" />
+                {t("bracket.views.list")}
+              </TabsTrigger>
+            </TabsList>
+            {results ? <StatusSummary bracket={bracket} results={results} t={t} /> : null}
+          </div>
+          {options.length > 1 ? (
+            <TeamSelect active={activeTeam} onTeamChange={onTeamChange} options={options} t={t} />
+          ) : null}
+        </div>
+        <div {...applyStyles(styles.filterSummary)}>
+          <Caption as="p">{t("fixture.timeZone", { zone: bracket.timeZone })}</Caption>
+          {activeTeam ? (
+            <>
+              <Text aria-live="polite" as="p" look="caption" tone="muted">
+                {t("bracket.filter.summary", { shown: highlighted, total: nodes.length })}
+              </Text>
+              <Button onClick={() => onTeamChange(null)} variant="ghost">
+                {t("bracket.filter.clear")}
+              </Button>
+            </>
+          ) : null}
+        </div>
+        <TabsContent value="canvas" {...applyStyles(styles.panel)}>
+          {bracket.stages.map((stage) => (
+            <BracketStage key={stage.id} mode="canvas" stage={stage} {...stageProps} />
+          ))}
+        </TabsContent>
+        <TabsContent value="list" {...applyStyles(styles.panel)}>
+          {bracket.stages.map((stage) => (
+            <BracketStage key={stage.id} mode="list" stage={stage} {...stageProps} />
+          ))}
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+function StatusSummary({
+  bracket,
+  results,
+  t,
+}: {
+  readonly bracket: BracketView;
+  readonly results: BracketResults;
+  readonly t: Translator;
+}) {
+  const counts = bracketStatusCounts(bracket, results);
+  return (
+    <ul aria-label={t("bracket.summary.label")} {...applyStyles(styles.summary)}>
+      <li>
+        <Badge variant="approved">
+          <SealCheckIcon aria-hidden="true" />
+          {t("bracket.summary.official", { count: counts.official })}
+        </Badge>
+      </li>
+      {counts.awaiting_result > 0 ? (
+        <li>
+          <Badge variant="warning">
+            <ClockIcon aria-hidden="true" />
+            {t("bracket.summary.awaiting", { count: counts.awaiting_result })}
+          </Badge>
+        </li>
+      ) : null}
+      {counts.upcoming > 0 ? (
+        <li>
+          <Badge variant="neutral">
+            <CalendarBlankIcon aria-hidden="true" />
+            {t("bracket.summary.upcoming", { count: counts.upcoming })}
+          </Badge>
+        </li>
+      ) : null}
+    </ul>
   );
 }
 
@@ -120,7 +225,9 @@ function TeamSelect({
   const allLabel = t("bracket.filter.allTeams");
   return (
     <div {...applyStyles(styles.filter)}>
-      <Label htmlFor={id}>{t("bracket.filter.team")}</Label>
+      <label htmlFor={id} {...applyStyles(vis.srOnly)}>
+        {t("bracket.filter.team")}
+      </label>
       <Select
         items={[
           { label: allLabel, value: ALL_TEAMS },
@@ -145,7 +252,14 @@ function TeamSelect({
   );
 }
 
-function BracketStage({ formatters, scope, stage, t, teamId }: StageProps) {
+function BracketStage({
+  mode,
+  ...props
+}: Omit<StageProps, "stage"> & {
+  readonly mode: "canvas" | "list";
+  readonly stage: BracketStageLayout;
+}) {
+  const { stage, t } = props;
   const headingId = useId();
   const hintId = useId();
   const stageLabel = fixtureStageLabel(stage.kind, t);
@@ -187,27 +301,32 @@ function BracketStage({ formatters, scope, stage, t, teamId }: StageProps) {
           ) : null}
         </ul>
       </div>
-      <Caption as="p" id={hintId}>
-        {t("bracket.hint")}
-      </Caption>
-      {stage.unlinkedWinnerCount > 0 ? (
-        <Caption as="p">
-          {stage.unlinkedWinnerCount === 1
-            ? t("bracket.unlinked.one")
-            : t("bracket.unlinked.other", { count: stage.unlinkedWinnerCount })}
-        </Caption>
-      ) : null}
-      {/* Keyboard users scroll the draw by focusing it; every card inside is a link too. */}
-      <div
-        aria-describedby={hintId}
-        aria-label={t("bracket.canvasLabel", { stage: stageLabel })}
-        role="region"
-        tabIndex={0}
-        {...applyStyles(styles.scroller)}
-      >
-        <BracketCanvas formatters={formatters} scope={scope} stage={stage} t={t} teamId={teamId} />
-      </div>
-      <BracketList formatters={formatters} scope={scope} stage={stage} t={t} teamId={teamId} />
+      {mode === "list" ? (
+        <BracketList championName={bracketChampionName(stage, props.results)} {...props} />
+      ) : (
+        <>
+          <Caption as="p" id={hintId}>
+            {t("bracket.hint")}
+          </Caption>
+          {stage.unlinkedWinnerCount > 0 ? (
+            <Caption as="p">
+              {stage.unlinkedWinnerCount === 1
+                ? t("bracket.unlinked.one")
+                : t("bracket.unlinked.other", { count: stage.unlinkedWinnerCount })}
+            </Caption>
+          ) : null}
+          {/* Keyboard users scroll the draw by focusing it; every card inside is a link too. */}
+          <div
+            aria-describedby={hintId}
+            aria-label={t("bracket.canvasLabel", { stage: stageLabel })}
+            role="region"
+            tabIndex={0}
+            {...applyStyles(styles.scroller)}
+          >
+            <BracketCanvas championName={bracketChampionName(stage, props.results)} {...props} />
+          </div>
+        </>
+      )}
     </section>
   );
 }

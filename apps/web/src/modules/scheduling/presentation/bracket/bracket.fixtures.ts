@@ -1,4 +1,5 @@
 import type {
+  CompetitionEncounterDto,
   FixtureEncounterDto,
   FixtureParticipantSlotDto,
   FixtureStageDto,
@@ -323,3 +324,131 @@ export const leagueThenPlayoffs = response(
 export const leagueOnly = response([leagueStage], "league", 2);
 
 export const noFixture: GetCurrentCompetitionFixtureResponse = { fixture: null, teams: [] };
+
+/**
+ * Four Teams after the semifinals: both winners already fill the final, so the fixture no
+ * longer names a winner place there. Results come from the Encounter list.
+ */
+export const fourTeamAdvanced = response(
+  [
+    knockoutStage({
+      stageId: KO,
+      stageOrder: 1,
+      kind: "playoffs",
+      opening: pairsOf(4),
+      override: (round, order, side) =>
+        round === 2 && order === 1 ? (side === "home" ? team(0) : team(3)) : undefined,
+    }),
+  ],
+  "knockout",
+  4,
+);
+
+type ResultSeed = {
+  readonly status: CompetitionEncounterDto["status"];
+  readonly score?: CompetitionEncounterDto["score"];
+  readonly resolutionMode?: CompetitionEncounterDto["resolutionMode"];
+};
+
+/**
+ * The competition's Encounter list for a fixture, as the API sends it: only Encounters
+ * with both Teams named. Seeds set status and score by Encounter id; the rest are scheduled.
+ */
+export function encountersFor(
+  data: GetCurrentCompetitionFixtureResponse,
+  seeds: Readonly<Record<string, ResultSeed>> = {},
+): readonly CompetitionEncounterDto[] {
+  const names = new Map(data.teams.map((entry) => [entry.teamId, entry.name]));
+  return (data.fixture?.stages ?? []).flatMap((stage) =>
+    stage.rounds.flatMap((round) =>
+      round.encounters.flatMap((encounter): CompetitionEncounterDto[] => {
+        const { home, away } = encounter;
+        if (home.kind !== "team" || away.kind !== "team") return [];
+        const seed = seeds[encounter.id];
+        return [
+          {
+            encounterId: encounter.id,
+            round: {
+              id: round.id,
+              number: round.number,
+              total: stage.rounds.length,
+              stage: { id: stage.id, kind: stage.kind, order: stage.order },
+            },
+            scheduledStartAt: encounter.scheduledStartAt,
+            officialMatchCount: encounter.officialMatchCount,
+            resolutionMode: seed?.resolutionMode ?? null,
+            home: { teamId: home.teamId, name: names.get(home.teamId) ?? home.teamId },
+            away: { teamId: away.teamId, name: names.get(away.teamId) ?? away.teamId },
+            status: seed?.status ?? "scheduled",
+            score: seed?.score ?? null,
+          },
+        ];
+      }),
+    ),
+  );
+}
+
+/** Semifinals official (home wins the first, away the second); the final not played yet. */
+export const fourTeamAdvancedEncounters = encountersFor(fourTeamAdvanced, {
+  [encounterId(KO, 1, 1)]: { status: "official", score: [{ homeGoals: 3, awayGoals: 1 }] },
+  [encounterId(KO, 1, 2)]: { status: "official", score: [{ homeGoals: 0, awayGoals: 2 }] },
+});
+
+/** The final played too: the champion is known. */
+export const fourTeamChampionEncounters = encountersFor(fourTeamAdvanced, {
+  [encounterId(KO, 1, 1)]: { status: "official", score: [{ homeGoals: 3, awayGoals: 1 }] },
+  [encounterId(KO, 1, 2)]: { status: "official", score: [{ homeGoals: 0, awayGoals: 2 }] },
+  [encounterId(KO, 2, 1)]: { status: "official", score: [{ homeGoals: 2, awayGoals: 1 }] },
+});
+
+/** First legs settled on aggregate, one tie waiting for its result. */
+export const eightTeamTwoLegsEncounters = encountersFor(eightTeamTwoLegs, {
+  [encounterId(KO, 1, 1)]: {
+    status: "official",
+    resolutionMode: "aggregate_score",
+    score: [
+      { homeGoals: 1, awayGoals: 0 },
+      { homeGoals: 1, awayGoals: 1 },
+    ],
+  },
+  [encounterId(KO, 1, 2)]: { status: "awaiting_result" },
+});
+
+/** Two Teams playing the final over two matches. */
+export const twoLegFinal: GetCurrentCompetitionFixtureResponse = {
+  ...twoTeamFinal,
+  fixture: twoTeamFinal.fixture && {
+    ...twoTeamFinal.fixture,
+    stages: twoTeamFinal.fixture.stages.map((stage) => ({
+      ...stage,
+      rounds: stage.rounds.map((round) => ({
+        ...round,
+        encounters: round.encounters.map((encounter) => ({ ...encounter, officialMatchCount: 2 })),
+      })),
+    })),
+  },
+};
+
+/** The two-leg final settled on aggregate: 2–1 over 1–0 and 1–1. */
+export const twoLegFinalAggregateEncounters = encountersFor(twoLegFinal, {
+  [encounterId(KO, 1, 1)]: {
+    status: "official",
+    resolutionMode: "aggregate_score",
+    score: [
+      { homeGoals: 1, awayGoals: 0 },
+      { homeGoals: 1, awayGoals: 1 },
+    ],
+  },
+});
+
+/** The two-leg final as independent matches: a home win and a draw. */
+export const twoLegFinalIndependentEncounters = encountersFor(twoLegFinal, {
+  [encounterId(KO, 1, 1)]: {
+    status: "official",
+    resolutionMode: "independent_matches",
+    score: [
+      { homeGoals: 1, awayGoals: 0 },
+      { homeGoals: 0, awayGoals: 0 },
+    ],
+  },
+});
