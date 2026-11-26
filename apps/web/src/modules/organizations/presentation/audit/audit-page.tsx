@@ -12,7 +12,6 @@ import {
   EmptyStateCopy,
   EmptyStateDescription,
   EmptyStateTitle,
-  Skeleton,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
@@ -20,6 +19,7 @@ import { useCan } from "@/shared/presentation/permissions/use-can.ts";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 import { AuditFilterForm, hasAuditFilters, type AuditFilters } from "./audit-filters.tsx";
+import { AuditLoadingSkeleton } from "./audit-loading.tsx";
 import { AuditTable } from "./audit-table.tsx";
 import { CompetitionAuditTabs } from "./competition-audit-tabs.tsx";
 import { isAuditRefusal, useOrganizationAuditQuery } from "./audit-queries.ts";
@@ -124,13 +124,7 @@ export function AuditPageView({
             onApply={onFilter}
           />
         ) : null}
-        {state.kind === "loading" ? (
-          <div aria-label={t("audit.loading")} aria-busy="true">
-            {[0, 1, 2].map((item) => (
-              <Skeleton key={item} {...applyStyles(styles.loading)} />
-            ))}
-          </div>
-        ) : null}
+        {state.kind === "loading" ? <AuditLoadingSkeleton /> : null}
         {state.kind === "error" ? (
           <RetryAlert message={t("audit.loadError")} retry={state.retry} t={t} />
         ) : null}

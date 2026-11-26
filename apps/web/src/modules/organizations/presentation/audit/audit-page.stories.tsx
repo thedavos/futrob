@@ -249,7 +249,32 @@ export const FilteredEmpty: Story = {
     await expect(canvas.getByRole("table", { name: "Historial de auditoría" })).toBeVisible();
   },
 };
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = canvas.getByRole("status", { name: "Cargando auditoría" });
+    await expect(status.closest("[aria-busy='true']")).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("columnheader", { name: "Fecha" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Actor" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Acción" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Motivo" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Objeto afectado" })).toBeVisible();
+    await expect(canvas.getByRole("form", { name: "Filtrar auditoría" })).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Anterior" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Siguiente" })).toBeNull();
+    const table = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(table).toHaveAttribute("tabindex", "-1");
+    canvas.getByRole("button", { name: "Quitar filtros" }).focus();
+    await userEvent.tab();
+    await expect(table).not.toHaveFocus();
+  },
+};
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+};
 export const Denied: Story = { name: "Sin permiso", args: { scenario: "denied" } };
 export const Error: Story = {
   name: "Error con recuperación",

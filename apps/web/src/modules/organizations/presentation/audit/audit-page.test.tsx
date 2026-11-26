@@ -133,6 +133,25 @@ it("distinguishes permission denial from an empty history", () => {
   expect(screen.getByText("Auditoría no disponible")).toBeTruthy();
   expect(screen.queryByRole("form", { name: "Filtrar auditoría" })).toBeNull();
 });
+it("mirrors the audit table while loading without putting the scroller in the tab order", () => {
+  show({ kind: "loading" });
+  const status = screen.getByRole("status", { name: "Cargando auditoría" });
+  expect(status).toBeTruthy();
+  expect(status.closest("[aria-busy='true']")?.getAttribute("aria-label")).toBe(
+    "Cargando auditoría",
+  );
+  expect(screen.getByRole("columnheader", { name: "Fecha" })).toBeTruthy();
+  expect(screen.getByRole("columnheader", { name: "Actor" })).toBeTruthy();
+  expect(screen.getByRole("columnheader", { name: "Acción" })).toBeTruthy();
+  expect(screen.getByRole("columnheader", { name: "Motivo" })).toBeTruthy();
+  expect(screen.getByRole("columnheader", { name: "Objeto afectado" })).toBeTruthy();
+  expect(screen.getByRole("form", { name: "Filtrar auditoría" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Anterior" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Siguiente" })).toBeNull();
+  expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+    "-1",
+  );
+});
 
 function serveAudit() {
   const calls: URL[] = [];
