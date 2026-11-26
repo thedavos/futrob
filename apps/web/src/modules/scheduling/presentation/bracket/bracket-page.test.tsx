@@ -14,21 +14,35 @@ import type { GetCurrentCompetitionFixtureResponse } from "@futrob/api-contracts
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { competitionFixturePageState } from "../competition-fixture-state.ts";
 import {
+  fourTeamAdvanced,
+  fourTeamAdvancedEncounters,
+  fourTeamChampionEncounters,
   leagueOnly,
   sixTeamsWithByes,
   sixteenTeamKnockout,
   uncertainSources,
 } from "./bracket.fixtures.ts";
-import { CompetitionBracketPageView } from "./bracket-page.tsx";
+import type { BracketViewMode } from "./bracket-page-shared.ts";
+import { CompetitionBracketPageView, type BracketResultsState } from "./bracket-page.tsx";
+import { bracketResults } from "./bracket-results.ts";
 import { bracketPageState } from "./bracket-state.ts";
 
 afterEach(cleanup);
 
 function mount(
   data: GetCurrentCompetitionFixtureResponse,
-  { teamId = null, onTeamChange = () => undefined } = {} as {
+  {
+    teamId = null,
+    onTeamChange = () => undefined,
+    view = "canvas",
+    onViewChange = () => undefined,
+    results,
+  } = {} as {
     teamId?: string | null;
     onTeamChange?: (teamId: string | null) => void;
+    view?: BracketViewMode;
+    onViewChange?: (view: BracketViewMode) => void;
+    results?: BracketResultsState;
   },
 ) {
   const state = bracketPageState(
@@ -43,9 +57,12 @@ function mount(
         <CompetitionBracketPageView
           competitionId="competition-1"
           onTeamChange={onTeamChange}
+          onViewChange={onViewChange}
           organizationId="org-1"
+          results={results}
           state={state}
           teamId={teamId}
+          view={view}
         />
       ),
     }),
@@ -98,7 +115,7 @@ describe("CompetitionBracketPageView", () => {
     ).toBeTruthy();
   });
 
-  it("shows no score: the fixture does not carry results", async () => {
+  it("shows no score without the Encounter list: the fixture does not carry results", async () => {
     mount(sixteenTeamKnockout);
     const region = await screen.findByRole("region", { name: /Cuadro desplazable/ });
     for (const link of within(region).getAllByRole("link")) {
@@ -136,14 +153,68 @@ describe("CompetitionBracketPageView", () => {
     expect(
       await screen.findByText("1 plaza no indica de qué cruce llega, así que no tiene línea."),
     ).toBeTruthy();
-    expect(container.querySelectorAll("[data-slot=bracket-wire]")).toHaveLength(4);
+    expect(container.querySelectorAll("[data-slot=bracket-wire]")).toHaveLength(5);
+  });
+
+  it("keeps the lines into a final the winners already fill and shows official scores", async () => {
+    const results = {
+      results: bracketResults(fourTeamAdvancedEncounters),
+      failed: false,
+      retry: () => undefined,
+    };
+    const { container } = mount(fourTeamAdvanced, { results });
+    const region = await screen.findByRole("region", { name: /Cuadro desplazable/ });
+    expect(
+      container.querySelectorAll("[data-slot=bracket-wire][data-state=advanced]"),
+    ).toHaveLength(2);
+    expect(
+      within(region).getByRole("link", {
+        name: /^Semifinales, cruce 1: Cuervos FC contra Maderas FC\..*Oficial\. Marcador oficial 3 a 1\.$/,
+      }),
+    ).toBeTruthy();
+    expect(
+      within(region).getByRole("link", {
+        name: /^Final, cruce 1: Cuervos FC contra Lobos del Norte\..*Programado\.$/,
+      }),
+    ).toBeTruthy();
+    const summary = screen.getByRole("list", { name: "Estado de los cruces" });
+    expect(within(summary).getByText("2 oficiales")).toBeTruthy();
+    expect(within(summary).getByText("1 pendiente")).toBeTruthy();
+    expect(within(region).getByText("Por definir")).toBeTruthy();
+  });
+
+  it("names the champion once the final is official", async () => {
+    const results = {
+      results: bracketResults(fourTeamChampionEncounters),
+      failed: false,
+      retry: () => undefined,
+    };
+    mount(fourTeamAdvanced, { results });
+    const region = await screen.findByRole("region", { name: /Cuadro desplazable/ });
+    expect(within(region).getByText("Campeón").nextElementSibling?.textContent).toBe("Cuervos FC");
+  });
+
+  it("keeps the draw when the scores cannot load and offers a retry", async () => {
+    const retry = vi.fn();
+    mount(fourTeamAdvanced, { results: { results: null, failed: true, retry } });
+    expect(
+      await screen.findByText(
+        "No pudimos cargar los marcadores. El cuadro muestra solo el calendario.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("region", { name: /Cuadro desplazable/ })).toBeTruthy();
+    expect(screen.queryByRole("list", { name: "Estado de los cruces" })).toBeNull();
+  });
+
+  it("switches to the list view through the Cuadro / Lista tabs", async () => {
+    const onViewChange = vi.fn();
+    mount(sixteenTeamKnockout, { onViewChange });
+    await userEvent.click(await screen.findByRole("tab", { name: "Lista" }));
+    expect(onViewChange).toHaveBeenCalledWith("list");
   });
 
   it("offers the same Encounters as a list by round", async () => {
-    mount(sixteenTeamKnockout);
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Ver eliminatorias en lista" }),
-    );
+    mount(sixteenTeamKnockout, { view: "list" });
     const row = await screen.findByRole("link", { name: /^Cuervos FC vs Maderas FC/ });
     expect(decodeURIComponent(row.getAttribute("href") ?? "")).toContain(
       "encounters/fixture-cup:stage:1:round:1:encounter:1",

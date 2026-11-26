@@ -9,9 +9,18 @@ import {
   matchesTeam,
   type BracketStageLayout,
 } from "./bracket-model.ts";
+import {
+  bracketNodeStatus,
+  bracketResults,
+  bracketSideScore,
+  bracketStatusCounts,
+  bracketWinner,
+} from "./bracket-results.ts";
 import { bracketPageState } from "./bracket-state.ts";
 import {
   eightTeamTwoLegs,
+  eightTeamTwoLegsEncounters,
+  fourTeamAdvanced,
   fourTeamKnockout,
   groupsThenKnockout,
   knockoutStage,
@@ -42,7 +51,8 @@ const node = (stage: BracketStageLayout, column: number, position: number) => {
   return found;
 };
 
-const { nodeWidth, nodeHeight, rowGap, columnGap } = BRACKET_GEOMETRY;
+const { nodeWidth, nodeHeight, rowGap, columnGap, sideOffset, championGap, championWidth } =
+  BRACKET_GEOMETRY;
 
 describe("bracketView stage selection", () => {
   it("leaves a pure league without a bracket", () => {
@@ -73,7 +83,20 @@ describe("layoutBracketStage geometry", () => {
       sizes.map((_, index) => index * (nodeWidth + columnGap)),
     );
     expect(stage.height).toBe((sizes[0] ?? 0) * (nodeHeight + rowGap));
-    expect(stage.width).toBe(sizes.length * nodeWidth + (sizes.length - 1) * columnGap);
+    expect(stage.width).toBe(
+      sizes.length * nodeWidth + (sizes.length - 1) * columnGap + championGap + championWidth,
+    );
+  });
+
+  it("places the champion after the final, level with it", () => {
+    const stage = onlyStage(fourTeamKnockout);
+    const final = node(stage, 1, 1);
+    expect(stage.champion).toEqual({
+      finalId: final.encounter.id,
+      x: final.x + nodeWidth + championGap,
+      y: final.y,
+      path: `M${final.x + nodeWidth} ${final.y} H${final.x + nodeWidth + championGap}`,
+    });
   });
 
   it("centres each later Encounter between the two that feed it", () => {
@@ -84,6 +107,11 @@ describe("layoutBracketStage geometry", () => {
         .map((wire) => stage.nodes.find((n) => n.encounter.id === wire.sourceId)?.y ?? Number.NaN);
       expect(feeders).toHaveLength(2);
       expect(target.y).toBeCloseTo(((feeders[0] ?? 0) + (feeders[1] ?? 0)) / 2);
+      // Lines enter at the home and away rows, the same distance either side of the centre.
+      const ends = stage.wires
+        .filter((wire) => wire.targetId === target.encounter.id)
+        .map((wire) => Number(/V(-?[\d.]+) H/.exec(wire.path)?.[1]));
+      expect(ends).toEqual([target.y - sideOffset, target.y + sideOffset]);
     }
   });
 
@@ -100,15 +128,31 @@ describe("layoutBracketStage connectors", () => {
     expect(stage.unlinkedWinnerCount).toBe(0);
   });
 
-  it("joins the source's right edge to the target's left edge through the column gap", () => {
+  it("joins the source's right edge to the target's side row through the column gap", () => {
     const stage = onlyStage(fourTeamKnockout);
     const semifinal = node(stage, 0, 2);
     const final = node(stage, 1, 1);
     const wire = stage.wires.find((w) => w.sourceId === semifinal.encounter.id);
-    expect(wire).toMatchObject({ targetId: final.encounter.id, side: "away" });
+    expect(wire).toMatchObject({ targetId: final.encounter.id, side: "away", state: "pending" });
     expect(wire?.path).toBe(
-      `M${nodeWidth} ${semifinal.y} H${final.x - columnGap / 2} V${final.y} H${final.x}`,
+      `M${nodeWidth} ${semifinal.y} H${final.x - columnGap / 2} V${final.y + sideOffset} H${final.x}`,
     );
+  });
+
+  it("keeps the lines once the winners fill the final, and knows who advanced", () => {
+    const stage = onlyStage(fourTeamAdvanced);
+    const final = node(stage, 1, 1);
+    expect(stage.wires.map((w) => [w.sourceId, w.side, w.state])).toEqual([
+      [node(stage, 0, 1).encounter.id, "home", "advanced"],
+      [node(stage, 0, 2).encounter.id, "away", "advanced"],
+    ]);
+    expect(stage.wires.every((w) => w.targetId === final.encounter.id)).toBe(true);
+    expect([node(stage, 0, 1).advanced, node(stage, 0, 2).advanced, final.advanced]).toEqual([
+      "home",
+      "away",
+      null,
+    ]);
+    expect(stage.unlinkedWinnerCount).toBe(0);
   });
 
   it("follows the fixture's sources even when they are not the adjacent pair", () => {
@@ -148,19 +192,20 @@ describe("layoutBracketStage connectors", () => {
     ]);
   });
 
-  it("draws no line for an advanced Team or a source outside the fixture", () => {
+  it("traces an advanced Team to the Encounter it played but not a source outside the fixture", () => {
     const stage = onlyStage(uncertainSources);
     const semifinal1 = node(stage, 1, 1);
     const semifinal2 = node(stage, 1, 2);
     expect(stage.wires.filter((w) => w.targetId === semifinal1.encounter.id)).toEqual([
-      expect.objectContaining({ side: "away" }),
+      expect.objectContaining({ side: "home", state: "advanced" }),
+      expect.objectContaining({ side: "away", state: "pending" }),
     ]);
     expect(stage.wires.filter((w) => w.targetId === semifinal2.encounter.id)).toEqual([
       expect.objectContaining({ side: "home" }),
     ]);
     expect(semifinal2.encounter.away).toEqual({ kind: "winner", from: null });
     expect(stage.unlinkedWinnerCount).toBe(1);
-    expect(stage.wires).toHaveLength(4);
+    expect(stage.wires).toHaveLength(5);
   });
 
   it("draws nothing into a draw that starts from group places", () => {
@@ -233,5 +278,41 @@ describe("bracketPageState", () => {
         competitionFixturePageState({ data: undefined, failed: true, refused: true, retry }),
       ).kind,
     ).toBe("not_found");
+  });
+});
+
+describe("bracket results", () => {
+  const stage = onlyStage(eightTeamTwoLegs);
+  const results = bracketResults(eightTeamTwoLegsEncounters);
+
+  it("reads aggregate scores with their legs and leaves unplayed Encounters scoreless", () => {
+    const first = node(stage, 0, 1);
+    const result = results?.get(first.encounter.id);
+    expect(bracketSideScore(result?.score ?? null, "home")).toEqual({ goals: "2", legs: "1·1" });
+    expect(bracketSideScore(result?.score ?? null, "away")).toEqual({ goals: "1", legs: "0·1" });
+    expect(bracketWinner(first, result)).toBe("home");
+    expect(
+      bracketNodeStatus(node(stage, 0, 2).encounter, results?.get(node(stage, 0, 2).encounter.id)),
+    ).toBe("awaiting_result");
+    expect(bracketSideScore(null, "home")).toBeNull();
+  });
+
+  it("names no winner for a level score that moved nobody on", () => {
+    const level = {
+      status: "official",
+      score: { kind: "single", homeGoals: 1, awayGoals: 1, leader: "draw" },
+    } as const;
+    expect(bracketWinner({ advanced: null }, level)).toBeNull();
+    expect(bracketWinner({ advanced: "away" }, level)).toBe("away");
+  });
+
+  it("never counts a bye as played or pending", () => {
+    const byes = stagesOf(sixTeamsWithByes);
+    const bracket = { timeZone: "Europe/Madrid", stages: byes };
+    expect(bracketStatusCounts(bracket, null)).toEqual({
+      official: 0,
+      awaiting_result: 0,
+      upcoming: 5,
+    });
   });
 });

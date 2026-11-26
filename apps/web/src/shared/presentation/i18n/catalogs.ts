@@ -128,7 +128,18 @@ const es = {
   "bracket.byes.one": "1 descanso",
   "bracket.byes.other": ({ count }) => `${count} descansos`,
   "bracket.twoLegs": "Ida y vuelta",
-  "bracket.hint": "De izquierda a derecha. Desliza el cuadro o abre la lista por rondas.",
+  "bracket.hint": "De izquierda a derecha. Desliza el cuadro para ver todas las rondas.",
+  "bracket.resultsError": "No pudimos cargar los marcadores. El cuadro muestra solo el calendario.",
+  "bracket.views.label": "Vista de las eliminatorias",
+  "bracket.views.canvas": "Cuadro",
+  "bracket.views.list": "Lista",
+  "bracket.summary.label": "Estado de los cruces",
+  "bracket.summary.official": ({ count }) => (count === 1 ? "1 oficial" : `${count} oficiales`),
+  "bracket.summary.awaiting": ({ count }) => `${count} por confirmar`,
+  "bracket.summary.upcoming": ({ count }) => (count === 1 ? "1 pendiente" : `${count} pendientes`),
+  "bracket.champion.title": "Campeón",
+  "bracket.champion.pending": "Por definir",
+  "bracket.score": ({ away, home }) => `Marcador oficial ${home} a ${away}`,
   "bracket.canvasLabel": ({ stage }) => `Cuadro desplazable: ${stage}`,
   "bracket.unlinked.one": "1 plaza no indica de qué cruce llega, así que no tiene línea.",
   "bracket.unlinked.other": ({ count }) =>
@@ -140,12 +151,13 @@ const es = {
   "bracket.status.scheduled": "Programado",
   "bracket.status.pending": "Rival por definir",
   "bracket.status.bye": "Sin rival",
+  "bracket.status.awaitingResult": "Por confirmar",
+  "bracket.status.official": "Oficial",
   "bracket.filter.team": "Seguir a un equipo",
   "bracket.filter.allTeams": "Todos los equipos",
   "bracket.filter.summary": ({ shown, total }) =>
     `${shown} de ${total} cruces destacados. El cuadro conserva su estructura.`,
   "bracket.filter.clear": "Quitar filtro",
-  "bracket.list.toggle": "Ver eliminatorias en lista",
   "bracket.list.matchup": ({ away, home }) => `${home} vs ${away}`,
   "bracket.list.noneForTeam": "Este equipo no juega cruces de esta ronda.",
 
@@ -3511,6 +3523,10 @@ export interface MessageParamsByKey {
   readonly "bracket.encounters.other": { readonly count: number };
   readonly "bracket.byes.other": { readonly count: number };
   readonly "bracket.canvasLabel": { readonly stage: string };
+  readonly "bracket.summary.official": { readonly count: number };
+  readonly "bracket.summary.awaiting": { readonly count: number };
+  readonly "bracket.summary.upcoming": { readonly count: number };
+  readonly "bracket.score": { readonly away: string; readonly home: string };
   readonly "bracket.unlinked.other": { readonly count: number };
   readonly "bracket.node.number": { readonly number: number };
   readonly "bracket.node.label": {
@@ -4058,7 +4074,18 @@ const en: Catalog = {
   "bracket.byes.one": "1 bye",
   "bracket.byes.other": ({ count }) => `${count} byes`,
   "bracket.twoLegs": "Two legs",
-  "bracket.hint": "Left to right. Swipe the bracket or open the list by round.",
+  "bracket.hint": "Left to right. Swipe the bracket to see every round.",
+  "bracket.resultsError": "We couldn't load the scores. The bracket shows the schedule only.",
+  "bracket.views.label": "Knockout view",
+  "bracket.views.canvas": "Bracket",
+  "bracket.views.list": "List",
+  "bracket.summary.label": "Tie status",
+  "bracket.summary.official": ({ count }) => `${count} official`,
+  "bracket.summary.awaiting": ({ count }) => `${count} to confirm`,
+  "bracket.summary.upcoming": ({ count }) => `${count} upcoming`,
+  "bracket.champion.title": "Champion",
+  "bracket.champion.pending": "To be decided",
+  "bracket.score": ({ away, home }) => `Official score ${home} to ${away}`,
   "bracket.canvasLabel": ({ stage }) => `Scrollable bracket: ${stage}`,
   "bracket.unlinked.one": "1 place doesn't say which tie it comes from, so it has no line.",
   "bracket.unlinked.other": ({ count }) =>
@@ -4070,12 +4097,13 @@ const en: Catalog = {
   "bracket.status.scheduled": "Scheduled",
   "bracket.status.pending": "Opponent to be decided",
   "bracket.status.bye": "No opponent",
+  "bracket.status.awaitingResult": "To confirm",
+  "bracket.status.official": "Official",
   "bracket.filter.team": "Follow a team",
   "bracket.filter.allTeams": "All teams",
   "bracket.filter.summary": ({ shown, total }) =>
     `${shown} of ${total} ties highlighted. The bracket keeps its shape.`,
   "bracket.filter.clear": "Clear filter",
-  "bracket.list.toggle": "View ties as a list",
   "bracket.list.matchup": ({ away, home }) => `${home} vs ${away}`,
   "bracket.list.noneForTeam": "This team has no ties in this round.",
 
