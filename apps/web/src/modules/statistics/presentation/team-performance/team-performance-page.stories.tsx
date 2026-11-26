@@ -164,6 +164,7 @@ export const Ready: Story = {
     await expect(within(table).getByText("Cuervos FC")).toBeVisible();
     await expect(within(table).getByText("Falta: Eficiencia defensiva")).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Criterio" })).toBeVisible();
+    await expect(canvas.getByRole("status")).toBeEmptyDOMElement();
   },
 };
 
@@ -176,19 +177,21 @@ export const ReadyEnglishNarrow: Story = {
 export const Loading: Story = {
   name: "Cargando",
   args: { scenario: "loading" },
+  parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const status = await canvas.findByRole("status", { name: "Cargando ranking de rendimiento" });
-    await expect(status).toBeVisible();
-    await expect(status.closest("[aria-busy='true']")).not.toBeNull();
+    const status = await canvas.findByRole("status");
+    await expect(status).toHaveTextContent("Cargando ranking de rendimiento");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).not.toBeNull();
     await expect(canvas.getByRole("heading", { name: "Ranking" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Criterio" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Equipo" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Pos." })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Puntuación" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Cobertura" })).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
+    await expect(canvas.queryByRole("row")).toBeNull();
+    await expect(canvas.queryByRole("columnheader")).toBeNull();
     const table = canvasElement.querySelector("[data-slot='table-container']");
     await expect(table).toHaveAttribute("tabindex", "-1");
+    await expect(table?.closest("[aria-hidden='true']")).not.toBeNull();
     await userEvent.tab();
     await expect(table).not.toHaveFocus();
     await expect(canvas.queryByRole("link", { name: /clasificación oficial/i })).toBeNull();
@@ -199,13 +202,15 @@ export const Loading: Story = {
 export const LoadingNarrow: Story = {
   name: "Cargando · 360",
   args: { scenario: "loading", narrow: true },
+  parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      canvas.findByRole("status", { name: "Cargando ranking de rendimiento" }),
-    ).resolves.toBeVisible();
-    await expect(canvas.findByRole("heading", { name: "Ranking" })).resolves.toBeVisible();
-    await expect(canvas.findByRole("heading", { name: "Criterio" })).resolves.toBeVisible();
+    const status = await canvas.findByRole("status");
+    await expect(status).toHaveTextContent("Cargando ranking de rendimiento");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvas.queryByRole("table")).toBeNull();
+    await expect(canvas.getByRole("heading", { name: "Ranking" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Criterio" })).toBeVisible();
   },
 };
 

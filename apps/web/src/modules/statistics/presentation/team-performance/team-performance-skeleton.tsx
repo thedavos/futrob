@@ -16,7 +16,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  vis,
 } from "@futrob/ui";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { TEAM_PERFORMANCE_METRICS, teamPerformanceWeight } from "./team-performance-model.ts";
@@ -35,12 +34,8 @@ const CRITERIA_FIELDS = ["window", "eligibility", "period", "sources", "updated"
  * reserved so the ready page does not jump.
  */
 export function TeamPerformanceSkeleton({ t }: { readonly t: Translator }) {
-  const label = t("teamPerformance.loading");
   return (
     <div aria-busy="true" {...applyStyles(styles.content)}>
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
       <RankingTableSkeleton t={t} />
       <CriteriaSkeleton t={t} />
     </div>
@@ -59,59 +54,61 @@ function RankingTableSkeleton({ t }: { readonly t: Translator }) {
           {t("teamPerformance.table.scrollHint")}
         </Caption>
       </div>
-      <Table containerTabIndex={-1} {...applyStyles(styles.table)}>
-        <TableHeader>
-          <TableRow>
-            <TableHead scope="col" style={END}>
-              {t("teamPerformance.table.position")}
-            </TableHead>
-            <TableHead scope="col">{t("teamPerformance.table.team")}</TableHead>
-            <TableHead scope="col" style={END}>
-              {t("teamPerformance.table.score")}
-            </TableHead>
-            {TEAM_PERFORMANCE_METRICS.map((metric) => (
-              <TableHead key={metric} scope="col" style={END}>
-                <span {...applyStyles(styles.headStack)}>
-                  <span>{t(`teamPerformance.metric.${metric}`)}</span>
-                  <span {...applyStyles(styles.weight)}>
-                    {t("teamPerformance.weight", { weight: teamPerformanceWeight(metric) })}
-                  </span>
-                </span>
+      <div aria-hidden="true" {...applyStyles(styles.skeletonTableWrap)}>
+        <Table aria-hidden="true" containerTabIndex={-1} {...applyStyles(styles.table)}>
+          <TableHeader>
+            <TableRow>
+              <TableHead scope="col" style={END}>
+                {t("teamPerformance.table.position")}
               </TableHead>
-            ))}
-            <TableHead scope="col" style={END}>
-              {t("teamPerformance.table.encounters")}
-            </TableHead>
-            <TableHead scope="col">{t("teamPerformance.table.coverage")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {SKELETON_ROWS.map((index) => (
-            <TableRow key={index}>
-              <TableCell {...numeric}>
-                <Skeleton {...applyStyles(styles.skeletonNumeric)} />
-              </TableCell>
-              <TableCell>
-                <Skeleton {...applyStyles(styles.teamSkeleton)} />
-              </TableCell>
-              <TableCell {...numeric}>
-                <Skeleton {...applyStyles(styles.skeletonNumeric)} />
-              </TableCell>
+              <TableHead scope="col">{t("teamPerformance.table.team")}</TableHead>
+              <TableHead scope="col" style={END}>
+                {t("teamPerformance.table.score")}
+              </TableHead>
               {TEAM_PERFORMANCE_METRICS.map((metric) => (
-                <TableCell key={metric} {...numeric}>
+                <TableHead key={metric} scope="col" style={END}>
+                  <span {...applyStyles(styles.headStack)}>
+                    <span>{t(`teamPerformance.metric.${metric}`)}</span>
+                    <span {...applyStyles(styles.weight)}>
+                      {t("teamPerformance.weight", { weight: teamPerformanceWeight(metric) })}
+                    </span>
+                  </span>
+                </TableHead>
+              ))}
+              <TableHead scope="col" style={END}>
+                {t("teamPerformance.table.encounters")}
+              </TableHead>
+              <TableHead scope="col">{t("teamPerformance.table.coverage")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {SKELETON_ROWS.map((index) => (
+              <TableRow key={index}>
+                <TableCell {...numeric}>
                   <Skeleton {...applyStyles(styles.skeletonNumeric)} />
                 </TableCell>
-              ))}
-              <TableCell {...numeric}>
-                <Skeleton {...applyStyles(styles.skeletonNumeric)} />
-              </TableCell>
-              <TableCell>
-                <Skeleton {...applyStyles(styles.skeletonCoverage)} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                <TableCell>
+                  <Skeleton {...applyStyles(styles.teamSkeleton)} />
+                </TableCell>
+                <TableCell {...numeric}>
+                  <Skeleton {...applyStyles(styles.skeletonNumeric)} />
+                </TableCell>
+                {TEAM_PERFORMANCE_METRICS.map((metric) => (
+                  <TableCell key={metric} {...numeric}>
+                    <Skeleton {...applyStyles(styles.skeletonNumeric)} />
+                  </TableCell>
+                ))}
+                <TableCell {...numeric}>
+                  <Skeleton {...applyStyles(styles.skeletonNumeric)} />
+                </TableCell>
+                <TableCell>
+                  <Skeleton {...applyStyles(styles.skeletonCoverage)} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </section>
   );
 }

@@ -17,6 +17,7 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
+  vis,
 } from "@futrob/ui";
 import accessUrl from "@/assets/illustration-permissions.png";
 import emptyStandingsUrl from "@/assets/illustration-empty-standings.png";
@@ -108,6 +109,9 @@ export function TeamPerformancePageView({
   const { t } = useI18n();
   return (
     <PageScaffold page="competition.teamPerformance">
+      <span role="status" {...applyStyles(vis.srOnly)}>
+        {state.kind === "loading" ? t("teamPerformance.loading") : ""}
+      </span>
       {(() => {
         switch (state.kind) {
           case "loading":

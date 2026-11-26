@@ -110,6 +110,9 @@ export const styles = stylex.create({
     maxWidth: "100%",
     height: "1rem",
   },
+  skeletonTableWrap: {
+    minWidth: 0,
+  },
   skeletonNumeric: {
     width: "2rem",
     height: "1rem",

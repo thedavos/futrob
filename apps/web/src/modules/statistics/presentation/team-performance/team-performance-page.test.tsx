@@ -105,30 +105,49 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-/** The loading skeleton also renders a table; wait for snapshot copy before reading rows. */
-const rankingTable = async () => {
-  await screen.findByText("3 con puntuación · 3 sin puntuación");
-  return screen.getByRole("table");
-};
+const rankingTable = () => screen.findByRole("table");
 
 describe("team performance page", () => {
-  it("reserves the ranking table and criteria while the snapshot loads", async () => {
-    serve({ ranking: [() => new Promise<Response>(() => undefined)] });
+  it("announces loading outside aria-busy, hides placeholder rows, and reveals the real table once resolved", async () => {
+    let resolveRanking!: (response: Response) => void;
+    const pendingRanking = new Promise<Response>((resolve) => {
+      resolveRanking = resolve;
+    });
+    const fetch = serve({ ranking: [() => pendingRanking] });
     renderRoute();
 
-    expect(
-      await screen.findByRole("status", { name: "Cargando ranking de rendimiento" }),
-    ).toBeTruthy();
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Cargando ranking de rendimiento");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("row")).toBeNull();
+
+    await waitFor(() => expect(rankingCalls(fetch)).toHaveLength(1));
+
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.textContent).toBe("Cargando ranking de rendimiento");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("row")).toBeNull();
     expect(screen.getByRole("heading", { name: "Ranking" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Criterio" })).toBeTruthy();
-    expect(screen.getByRole("columnheader", { name: "Equipo" })).toBeTruthy();
     expect(screen.getByText("Ventana")).toBeTruthy();
     expect(screen.getByText("Elegibilidad")).toBeTruthy();
     expect(screen.queryByText("Cuervos FC")).toBeNull();
     expect(screen.queryByRole("link", { name: /clasificación oficial/i })).toBeNull();
-    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
-      "-1",
-    );
+    const tableContainer = document.querySelector("[data-slot='table-container']");
+    expect(tableContainer?.getAttribute("tabindex")).toBe("-1");
+    expect(tableContainer?.closest("[aria-hidden='true']")).toBeTruthy();
+
+    resolveRanking(Response.json({ ranking: teamPerformanceRankingFixture() }));
+
+    const table = await rankingTable();
+    expect(within(table).getByText("Cuervos FC")).toBeTruthy();
+    expect(within(table).getAllByRole("row").slice(1)).toHaveLength(6);
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.textContent).toBe("");
+    expect(document.querySelector("[aria-busy='true']")).toBeNull();
   });
 
   it("explains that the plan does not include the ranking on a 402", async () => {
