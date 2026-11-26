@@ -19,6 +19,7 @@ import {
   type BracketWire,
 } from "./bracket-model.ts";
 import {
+  bracketScoreSpoken,
   bracketStatusLabel,
   px,
   type Formatters,
@@ -200,10 +201,8 @@ function BracketCard({
   const score = result?.score ?? null;
   const homeScore = bracketSideScore(score, "home");
   const awayScore = bracketSideScore(score, "away");
-  const spokenStatus =
-    homeScore && awayScore
-      ? `${statusLabel}. ${t("bracket.score", { home: homeScore.goals, away: awayScore.goals })}`
-      : statusLabel;
+  const spokenScore = bracketScoreSpoken(score, t);
+  const spokenStatus = spokenScore ? `${statusLabel}. ${spokenScore}` : statusLabel;
   const label = t("bracket.node.label", {
     round: fixtureRoundLabel(node.round.name, t),
     number: node.position,

@@ -50,8 +50,9 @@ export function bracketNodeStatus(
 }
 
 /**
- * The side that won: the Team the fixture already moved on, else the official score's leader.
- * A level official score with no Team moved on names nobody rather than guessing.
+ * The side that won: the Team the fixture already moved on, else the official result read the
+ * way scheduling advances Teams: goals for a single match or an aggregate series, matches won
+ * for independent matches. A level result with no Team moved on names nobody.
  */
 export function bracketWinner(
   node: Pick<BracketNode, "advanced">,
@@ -61,6 +62,15 @@ export function bracketWinner(
   const score = result?.score;
   if (score?.kind === "single" || score?.kind === "aggregate") {
     return score.leader === "draw" ? null : score.leader;
+  }
+  if (score?.kind === "independent") {
+    let home = 0;
+    let away = 0;
+    for (const leg of score.legs) {
+      home += Number(leg.homeGoals > leg.awayGoals);
+      away += Number(leg.awayGoals > leg.homeGoals);
+    }
+    return home === away ? null : home > away ? "home" : "away";
   }
   return null;
 }

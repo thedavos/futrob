@@ -18,6 +18,9 @@ import {
   fourTeamAdvancedEncounters,
   fourTeamChampionEncounters,
   leagueOnly,
+  twoLegFinal,
+  twoLegFinalAggregateEncounters,
+  twoLegFinalIndependentEncounters,
   sixTeamsWithByes,
   sixteenTeamKnockout,
   uncertainSources,
@@ -204,6 +207,45 @@ describe("CompetitionBracketPageView", () => {
     ).toBeTruthy();
     expect(screen.getByRole("region", { name: /Cuadro desplazable/ })).toBeTruthy();
     expect(screen.queryByRole("list", { name: "Estado de los cruces" })).toBeNull();
+  });
+
+  it("names the champion of a two-match final won on matches, not goals", async () => {
+    const results = {
+      results: bracketResults(twoLegFinalIndependentEncounters),
+      failed: false,
+      retry: () => undefined,
+    };
+    mount(twoLegFinal, { results });
+    const region = await screen.findByRole("region", { name: /Cuadro desplazable/ });
+    expect(within(region).getByText("Campeón").nextElementSibling?.textContent).toBe("Cuervos FC");
+  });
+
+  it("gives the list the champion and both legs of an aggregate final", async () => {
+    const results = {
+      results: bracketResults(twoLegFinalAggregateEncounters),
+      failed: false,
+      retry: () => undefined,
+    };
+    mount(twoLegFinal, { results, view: "list" });
+    const row = await screen.findByRole("link", { name: /^Cuervos FC vs Maderas FC/ });
+    expect(row.textContent).toContain("Global oficial 2 a 1. Ida 1–0 · Vuelta 1–1");
+    const champion = screen.getByRole("heading", { level: 3, name: "Campeón" });
+    expect(champion.nextElementSibling?.textContent).toBe("Cuervos FC");
+  });
+
+  it("speaks both legs in the canvas card's name", async () => {
+    const results = {
+      results: bracketResults(twoLegFinalAggregateEncounters),
+      failed: false,
+      retry: () => undefined,
+    };
+    mount(twoLegFinal, { results });
+    const region = await screen.findByRole("region", { name: /Cuadro desplazable/ });
+    expect(
+      within(region).getByRole("link", {
+        name: /Oficial\. Global oficial 2 a 1\. Ida 1–0 · Vuelta 1–1\.$/,
+      }),
+    ).toBeTruthy();
   });
 
   it("switches to the list view through the Cuadro / Lista tabs", async () => {

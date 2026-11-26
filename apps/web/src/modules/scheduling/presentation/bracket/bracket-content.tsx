@@ -302,7 +302,7 @@ function BracketStage({
         </ul>
       </div>
       {mode === "list" ? (
-        <BracketList {...props} />
+        <BracketList championName={bracketChampionName(stage, props.results)} {...props} />
       ) : (
         <>
           <Caption as="p" id={hintId}>

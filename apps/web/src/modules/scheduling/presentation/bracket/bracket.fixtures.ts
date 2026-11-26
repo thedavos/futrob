@@ -413,3 +413,42 @@ export const eightTeamTwoLegsEncounters = encountersFor(eightTeamTwoLegs, {
   },
   [encounterId(KO, 1, 2)]: { status: "awaiting_result" },
 });
+
+/** Two Teams playing the final over two matches. */
+export const twoLegFinal: GetCurrentCompetitionFixtureResponse = {
+  ...twoTeamFinal,
+  fixture: twoTeamFinal.fixture && {
+    ...twoTeamFinal.fixture,
+    stages: twoTeamFinal.fixture.stages.map((stage) => ({
+      ...stage,
+      rounds: stage.rounds.map((round) => ({
+        ...round,
+        encounters: round.encounters.map((encounter) => ({ ...encounter, officialMatchCount: 2 })),
+      })),
+    })),
+  },
+};
+
+/** The two-leg final settled on aggregate: 2–1 over 1–0 and 1–1. */
+export const twoLegFinalAggregateEncounters = encountersFor(twoLegFinal, {
+  [encounterId(KO, 1, 1)]: {
+    status: "official",
+    resolutionMode: "aggregate_score",
+    score: [
+      { homeGoals: 1, awayGoals: 0 },
+      { homeGoals: 1, awayGoals: 1 },
+    ],
+  },
+});
+
+/** The two-leg final as independent matches: a home win and a draw. */
+export const twoLegFinalIndependentEncounters = encountersFor(twoLegFinal, {
+  [encounterId(KO, 1, 1)]: {
+    status: "official",
+    resolutionMode: "independent_matches",
+    score: [
+      { homeGoals: 1, awayGoals: 0 },
+      { homeGoals: 0, awayGoals: 0 },
+    ],
+  },
+});

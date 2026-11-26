@@ -5,6 +5,8 @@ import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { fixtureRoundLabel, fixtureSideLabel } from "../competition-fixture-labels.ts";
 import { matchesTeam, type BracketNode } from "./bracket-model.ts";
 import {
+  bracketLegsLabel,
+  bracketScoreSpoken,
   bracketStatusLabel,
   type Formatters,
   type Scope,
@@ -28,7 +30,16 @@ const STATUS_BADGE = {
 } as const satisfies Record<BracketNodeStatus, ComponentProps<typeof Badge>["variant"]>;
 
 /** The accessible alternative to the canvas (UX-BRK-001): the same Encounters, round by round. */
-export function BracketList({ formatters, results, scope, stage, t, teamId }: StageProps) {
+export function BracketList({
+  championName,
+  formatters,
+  results,
+  scope,
+  stage,
+  t,
+  teamId,
+}: StageProps & { readonly championName: string | null }) {
+  const championHeadingId = `${stage.id}:list:champion`;
   return (
     <div {...applyStyles(styles.list)}>
       {stage.columns.map((column, columnIndex) => {
@@ -65,6 +76,20 @@ export function BracketList({ formatters, results, scope, stage, t, teamId }: St
           </section>
         );
       })}
+      {stage.champion ? (
+        <section aria-labelledby={championHeadingId} {...applyStyles(styles.listRound)}>
+          <Heading as="h3" id={championHeadingId}>
+            {t("bracket.champion.title")}
+          </Heading>
+          <Text
+            as="p"
+            tone={championName ? "default" : "muted"}
+            weight={championName ? "semibold" : "medium"}
+          >
+            {championName ?? t("bracket.champion.pending")}
+          </Text>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -87,8 +112,11 @@ function BracketListRow({
   const away = fixtureSideLabel(encounter.away, t);
   const status = bracketNodeStatus(encounter, result);
   const winner = bracketWinner(node, result);
-  const homeScore = bracketSideScore(result?.score ?? null, "home");
-  const awayScore = bracketSideScore(result?.score ?? null, "away");
+  const score = result?.score ?? null;
+  const homeScore = bracketSideScore(score, "home");
+  const awayScore = bracketSideScore(score, "away");
+  const legs = bracketLegsLabel(score, t);
+  const spokenScore = bracketScoreSpoken(score, t);
   const details = [
     t("bracket.node.number", { number: node.position }),
     formatters.kickoff.format(new Date(encounter.scheduledStartAt)),
@@ -119,12 +147,15 @@ function BracketListRow({
                 {awayScore.goals}
               </span>
             </span>
-            <span {...applyStyles(vis.srOnly)}>
-              {t("bracket.score", { home: homeScore.goals, away: awayScore.goals })}
-            </span>
+            {spokenScore ? <span {...applyStyles(vis.srOnly)}>{spokenScore}</span> : null}
           </>
         ) : null}
       </span>
+      {legs ? (
+        <Caption aria-hidden="true" as="span">
+          {legs}
+        </Caption>
+      ) : null}
       <span {...applyStyles(styles.listRowMeta)}>
         <Badge variant={STATUS_BADGE[status]}>{bracketStatusLabel(status, t)}</Badge>
         <Caption as="span">{details}</Caption>

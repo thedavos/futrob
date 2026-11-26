@@ -140,6 +140,9 @@ const es = {
   "bracket.champion.title": "Campeón",
   "bracket.champion.pending": "Por definir",
   "bracket.score": ({ away, home }) => `Marcador oficial ${home} a ${away}`,
+  "bracket.score.aggregate": ({ away, home }) => `Global oficial ${home} a ${away}`,
+  "bracket.score.series": "Dos partidos oficiales",
+  "bracket.legs": ({ first, second }) => `Ida ${first} · Vuelta ${second}`,
   "bracket.canvasLabel": ({ stage }) => `Cuadro desplazable: ${stage}`,
   "bracket.unlinked.one": "1 plaza no indica de qué cruce llega, así que no tiene línea.",
   "bracket.unlinked.other": ({ count }) =>
@@ -3527,6 +3530,8 @@ export interface MessageParamsByKey {
   readonly "bracket.summary.awaiting": { readonly count: number };
   readonly "bracket.summary.upcoming": { readonly count: number };
   readonly "bracket.score": { readonly away: string; readonly home: string };
+  readonly "bracket.score.aggregate": { readonly away: string; readonly home: string };
+  readonly "bracket.legs": { readonly first: string; readonly second: string };
   readonly "bracket.unlinked.other": { readonly count: number };
   readonly "bracket.node.number": { readonly number: number };
   readonly "bracket.node.label": {
@@ -4086,6 +4091,9 @@ const en: Catalog = {
   "bracket.champion.title": "Champion",
   "bracket.champion.pending": "To be decided",
   "bracket.score": ({ away, home }) => `Official score ${home} to ${away}`,
+  "bracket.score.aggregate": ({ away, home }) => `Official aggregate ${home} to ${away}`,
+  "bracket.score.series": "Two official matches",
+  "bracket.legs": ({ first, second }) => `First leg ${first} · Second leg ${second}`,
   "bracket.canvasLabel": ({ stage }) => `Scrollable bracket: ${stage}`,
   "bracket.unlinked.one": "1 place doesn't say which tie it comes from, so it has no line.",
   "bracket.unlinked.other": ({ count }) =>

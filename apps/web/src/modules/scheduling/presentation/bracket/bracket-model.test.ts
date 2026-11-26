@@ -306,6 +306,37 @@ describe("bracket results", () => {
     expect(bracketWinner({ advanced: "away" }, level)).toBe("away");
   });
 
+  it("resolves independent series by matches won, like the scheduling advancement rule", () => {
+    const series = (legs: readonly (readonly [number, number])[]) =>
+      ({
+        status: "official",
+        score: {
+          kind: "independent",
+          legs: legs.map(([homeGoals, awayGoals]) => ({ homeGoals, awayGoals })),
+        },
+      }) as const;
+    // A win and a draw names the winner.
+    expect(
+      bracketWinner(
+        { advanced: null },
+        series([
+          [1, 0],
+          [0, 0],
+        ]),
+      ),
+    ).toBe("home");
+    // One win each names nobody, whatever the goal difference.
+    expect(
+      bracketWinner(
+        { advanced: null },
+        series([
+          [1, 0],
+          [0, 3],
+        ]),
+      ),
+    ).toBeNull();
+  });
+
   it("never counts a bye as played or pending", () => {
     const byes = stagesOf(sixTeamsWithByes);
     const bracket = { timeZone: "Europe/Madrid", stages: byes };
