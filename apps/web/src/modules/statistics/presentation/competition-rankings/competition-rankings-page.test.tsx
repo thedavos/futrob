@@ -22,7 +22,7 @@ const BASE = "/api/v1/organizations/org-1/competitions/competition-1";
 
 type Serve = {
   readonly allowed?: readonly string[];
-  readonly rankings?: () => Response;
+  readonly rankings?: () => Response | Promise<Response>;
   readonly roster?: (teamId: string) => Response;
 };
 
@@ -95,6 +95,39 @@ afterEach(() => {
 });
 
 describe("Competition player rankings", () => {
+  it("reserves the rankings layout while the first snapshot is in flight", async () => {
+    let resolveRankings!: (response: Response) => void;
+    const pendingRankings = new Promise<Response>((resolve) => {
+      resolveRankings = resolve;
+    });
+    const fetch = serve({ rankings: () => pendingRankings });
+    renderRoute();
+
+    await waitFor(() =>
+      expect(fetch.mock.calls.some(([input]) => String(input).includes("/rankings"))).toBe(true),
+    );
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Cargando rankings…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(screen.getByText("Criterio").closest("[aria-busy='true']")).not.toBeNull();
+    expect(screen.getByText("Elegibilidad")).toBeTruthy();
+    expect(screen.getByText("Actualizado")).toBeTruthy();
+    expect(screen.getByText("Jugador")).toBeTruthy();
+    expect(screen.getByText("Goles")).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("tab")).toBeNull();
+    expect(screen.queryByText("Aún no hay rankings")).toBeNull();
+    expect(screen.queryByText("Lucía Pérez")).toBeNull();
+
+    resolveRankings(Response.json(rankingsFixture));
+
+    const table = await screen.findByRole("table", { name: "Ranking de goleadores" });
+    expect(within(table).getByText("Lucía Pérez")).toBeTruthy();
+    expect(status.isConnected).toBe(true);
+    expect(status.textContent).toBe("");
+    expect(table.closest("[aria-busy='true']")).toBeNull();
+  });
+
   it("shows the scorer ranking with criterion, eligibility and resolved names", async () => {
     serve();
     renderRoute();
