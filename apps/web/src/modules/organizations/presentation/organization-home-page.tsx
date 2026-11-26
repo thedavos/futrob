@@ -21,6 +21,7 @@ import { OrganizationHomeEmpty, OrganizationHomeLoadError } from "./organization
 import { OrganizationHomeKpis, type OrganizationHomeMetric } from "./organization-home-kpis.tsx";
 import { countActiveCompetitions, countDraftCompetitions } from "./organization-home-model.ts";
 import { OrganizationHomeSections } from "./organization-home-sections.tsx";
+import { OrganizationHomeSectionsSkeleton } from "./organization-home-skeleton.tsx";
 import { useOrganizationProfileQuery } from "./organization-queries.ts";
 
 const styles = stylex.create({
@@ -104,7 +105,9 @@ export function OrganizationHomePage({ organizationId }: { readonly organization
             void competitionsQuery.refetch();
           }}
         />
-      ) : competitionsQuery.isPending ? null : competitions.length === 0 ? (
+      ) : competitionsQuery.isPending ? (
+        <OrganizationHomeSectionsSkeleton />
+      ) : competitions.length === 0 ? (
         <OrganizationHomeEmpty canCreate={create.allowed} organizationId={organizationId} />
       ) : (
         <OrganizationHomeSections competitions={competitions} organizationId={organizationId} />

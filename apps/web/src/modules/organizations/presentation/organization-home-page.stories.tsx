@@ -293,6 +293,21 @@ export const Loading = story("Cargando", "loading", async ({ canvasElement }) =>
   await expect(canvas.queryByRole("heading", { name: "Tu organización empieza aquí" })).toBeNull();
   await expect(canvas.queryByRole("button", { name: "Crear competición" })).toBeNull();
   await expect(canvas.getByLabelText("Resumen")).toHaveAttribute("aria-busy", "true");
+  const competitionsStatus = canvas.getByRole("status", { name: "Cargando competiciones" });
+  await expect(competitionsStatus.parentElement).toHaveAttribute("aria-busy", "true");
+  await expect(canvas.getByRole("heading", { name: "Competiciones" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Nombre" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Estado" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Equipos" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Inicio" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Acciones" })).toBeVisible();
+  const competitionsTable = canvasElement.querySelector("[data-slot='table-container']");
+  await expect(competitionsTable).toHaveAttribute("tabindex", "-1");
+  await userEvent.tab();
+  await expect(competitionsTable).not.toHaveFocus();
+  await expect(canvas.getByRole("heading", { name: "Actividad reciente" })).toBeVisible();
+  await expect(canvas.queryByRole("link", { name: "Ver todas" })).toBeNull();
+  await expect(canvas.queryByRole("row", { name: /Liga Metropolitana/ })).toBeNull();
 });
 
 export const CompetitionsError = story(
@@ -342,4 +357,19 @@ export const Mobile: Story = {
   args: { scenario: "ready" },
   parameters: { viewport: { defaultViewport: "mobile1" } },
   render: (args) => <OrganizationHomeStoryShell key={args.scenario} scenario={args.scenario} />,
+};
+
+export const LoadingMobile: Story = {
+  name: "Cargando · mobile",
+  args: { scenario: "loading" },
+  parameters: { viewport: { defaultViewport: "mobile1" } },
+  render: (args) => <OrganizationHomeStoryShell key={args.scenario} scenario={args.scenario} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("status", { name: "Cargando competiciones" }),
+    ).toBeInTheDocument();
+    await expect(canvas.getByRole("heading", { name: "Competiciones" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Actividad reciente" })).toBeVisible();
+  },
 };
