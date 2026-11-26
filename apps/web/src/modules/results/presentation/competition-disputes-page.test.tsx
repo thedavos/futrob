@@ -133,6 +133,21 @@ describe("Competition disputes list", () => {
     expect(within(row).getByText(/Waiting since/)).toBeTruthy();
   });
 
+  it("reserves the dispute card layout while the queue loads", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    renderRoute();
+
+    expect(screen.getByRole("heading", { name: "Disputas" })).toBeTruthy();
+    const status = screen.getByRole("status", { name: "Cargando disputas" });
+    expect(status.closest("[aria-busy='true']")).toBeTruthy();
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(document.querySelectorAll("[data-slot='skeleton']").length).toBe(13);
+    expect(document.activeElement?.getAttribute("data-slot")).not.toBe("skeleton");
+  });
+
   it("explains a clear queue instead of showing rows", async () => {
     serve(() => Response.json({ ...queue, disputes: [] }));
     renderRoute();

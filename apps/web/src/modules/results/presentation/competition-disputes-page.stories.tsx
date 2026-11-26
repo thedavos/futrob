@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import type { ListCompetitionDisputesResponse } from "@futrob/api-contracts";
 import { applyProps } from "@futrob/ui";
@@ -156,7 +156,31 @@ export const ReadyEnglishNarrow: Story = {
 
 export const Empty: Story = { name: "Sin disputas", args: { scenario: "empty" } };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = canvas.getByRole("status", { name: "Cargando disputas" });
+    await expect(status.closest("[aria-busy='true']")).not.toBeNull();
+    await expect(canvas.getByRole("heading", { name: "Disputas" })).toBeVisible();
+    await expect(canvas.queryByRole("link")).toBeNull();
+    await expect(canvasElement.querySelectorAll("[data-slot='skeleton']").length).toBe(13);
+    await userEvent.tab();
+    await expect(document.activeElement?.getAttribute("data-slot")).not.toBe("skeleton");
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("status", { name: "Cargando disputas" })).toBeTruthy();
+    await expect(canvas.getByRole("heading", { name: "Disputas" })).toBeVisible();
+    await expect(canvas.queryByRole("link")).toBeNull();
+  },
+};
 
 export const NotFound: Story = { name: "No disponible", args: { scenario: "notFound" } };
 

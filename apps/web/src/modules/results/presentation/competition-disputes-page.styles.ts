@@ -66,9 +66,40 @@ export const styles = stylex.create({
     color: colors.mutedForeground,
     fontWeight: 700,
   },
-  skeleton: {
-    minHeight: "7.5rem",
-    width: "100%",
-    borderRadius: "var(--corner-xl)",
+  captionBone: {
+    width: "11rem",
+    maxWidth: "70%",
+    height: "1rem",
+  },
+  badgeBone: {
+    width: "6.5rem",
+    height: "1.5rem",
+    flexShrink: 0,
+    borderRadius: "var(--corner-full)",
+  },
+  waitBone: {
+    width: "12rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  homeBone: {
+    width: "8rem",
+    maxWidth: "100%",
+    height: "1.125rem",
+    justifySelf: "end",
+  },
+  vsBone: {
+    width: "1.5rem",
+    height: "1rem",
+  },
+  awayBone: {
+    width: "8rem",
+    maxWidth: "100%",
+    height: "1.125rem",
+  },
+  kickoffBone: {
+    width: "11rem",
+    maxWidth: "100%",
+    height: "1.125rem",
   },
 });
