@@ -46,7 +46,7 @@ const subscription = {
 
 function serve(input: {
   readonly superuser: boolean;
-  readonly queue?: () => Response;
+  readonly queue?: () => Response | Promise<Response>;
   readonly assign?: (body: unknown) => Response;
 }) {
   const fetch = vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
@@ -84,6 +84,34 @@ afterEach(() => {
 });
 
 describe("plan admin page", () => {
+  it("mirrors the admin layout while permissions load", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+    renderRoute();
+
+    expect(screen.getByRole("status", { name: "Comprobando permisos…" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Asignar un plan" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Solicitudes pendientes" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Organización" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Asignar plan" })).toBeNull();
+    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+      "-1",
+    );
+  });
+
+  it("mirrors the admin layout while the queue loads", async () => {
+    serve({ superuser: true, queue: () => new Promise<Response>(() => undefined) });
+    renderRoute();
+
+    expect(await screen.findByRole("status", { name: "Cargando las solicitudes…" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Asignar un plan" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Solicitudes pendientes" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Plan pedido" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Asignar plan" })).toBeNull();
+  });
+
   it("lists pending requests and assigns the requested plan with a reason", async () => {
     const assign = vi.fn(() => Response.json({ organizationId: "org-9", subscription }));
     serve({ superuser: true, queue: () => Response.json(queued), assign });

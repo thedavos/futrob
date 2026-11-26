@@ -9,7 +9,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -24,6 +24,10 @@ const styles = stylex.create({
     backgroundColor: colors.background,
     paddingInline: { default: "1rem", [media.lg]: "2.5rem" },
     paddingBlock: "1.5rem",
+  },
+  narrow: {
+    width: 390,
+    paddingInline: "1rem",
   },
 });
 
@@ -48,14 +52,19 @@ const STATES = {
     ],
   },
   empty: { kind: "ready", requests: [] },
+  checking: { kind: "checking" },
   loading: { kind: "loading" },
   denied: { kind: "denied" },
   error: { kind: "error", retry: noop },
 } satisfies Record<string, PlanAdminState>;
 
-type StoryArgs = { readonly scenario: keyof typeof STATES; readonly locale: Locale };
+type StoryArgs = {
+  readonly scenario: keyof typeof STATES;
+  readonly locale: Locale;
+  readonly narrow?: boolean;
+};
 
-function PlanAdminStory({ locale, scenario }: StoryArgs) {
+function PlanAdminStory({ locale, narrow = false, scenario }: StoryArgs) {
   const queryClient = useMemo(() => new QueryClient(), []);
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
@@ -77,12 +86,29 @@ function PlanAdminStory({ locale, scenario }: StoryArgs) {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
-        <div {...applyProps(undefined, undefined, styles.frame)}>
+        <div {...applyProps(undefined, undefined, styles.frame, narrow && styles.narrow)}>
           <RouterProvider router={router} />
         </div>
       </I18nProvider>
     </QueryClientProvider>
   );
+}
+
+async function expectLayoutSkeleton(canvasElement: HTMLElement, statusName: string): Promise<void> {
+  const canvas = within(canvasElement);
+  const status = await canvas.findByRole("status", { name: statusName });
+  await expect(status).toBeInTheDocument();
+  await expect(canvas.getByRole("heading", { name: "Asignar un plan" })).toBeVisible();
+  await expect(canvas.getByRole("heading", { name: "Solicitudes pendientes" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Organización" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Plan pedido" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Pedida el" })).toBeVisible();
+  await expect(canvas.getByRole("columnheader", { name: "Acción" })).toBeVisible();
+  await expect(canvas.queryByRole("button", { name: "Asignar plan" })).toBeNull();
+  const queueTable = canvasElement.querySelector("[data-slot='table-container']");
+  await expect(queueTable).toHaveAttribute("tabindex", "-1");
+  await userEvent.tab();
+  await expect(queueTable).not.toHaveFocus();
 }
 
 const meta = {
@@ -93,7 +119,9 @@ const meta = {
     scenario: { control: "select", options: Object.keys(STATES) },
     locale: { control: "inline-radio", options: ["es", "en"] },
   },
-  render: (args) => <PlanAdminStory key={`${args.scenario}-${args.locale}`} {...args} />,
+  render: (args) => (
+    <PlanAdminStory key={`${args.scenario}-${args.locale}-${String(args.narrow)}`} {...args} />
+  ),
 } satisfies Meta<StoryArgs>;
 
 export default meta;
@@ -115,6 +143,35 @@ export const QueueEnglish: Story = {
 };
 
 export const Empty: Story = { name: "Sin solicitudes", args: { scenario: "empty" } };
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+
+export const Checking: Story = {
+  name: "Comprobando permisos",
+  args: { scenario: "checking" },
+  play: async ({ canvasElement }) => {
+    await expectLayoutSkeleton(canvasElement, "Comprobando permisos…");
+  },
+};
+
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    await expectLayoutSkeleton(canvasElement, "Cargando las solicitudes…");
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 390",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("status", { name: "Cargando las solicitudes…" }),
+    ).toBeInTheDocument();
+    await expect(canvas.getByRole("heading", { name: "Asignar un plan" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Solicitudes pendientes" })).toBeVisible();
+  },
+};
+
 export const Denied: Story = { name: "Sin permiso", args: { scenario: "denied" } };
 export const LoadError: Story = { name: "Error", args: { scenario: "error" } };
