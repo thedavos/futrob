@@ -78,7 +78,7 @@ export function TeamDetail(props: CompetitionTeamsViewProps) {
   }
 
   if (props.loadingDetail || !props.detail) {
-    return <TeamDetailSkeleton />;
+    return <TeamDetailSkeleton busy={Boolean(props.loadingDetail)} />;
   }
 
   const { detail, capabilities } = props;

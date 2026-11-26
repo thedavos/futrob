@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type {
   CompetitionTeamManagementDetailResponse,
   CompetitionTeamManagementSummaryDto,
@@ -17,6 +17,7 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  useExternalSync,
   vis,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -173,20 +174,32 @@ export function CompetitionTeamsView(props: CompetitionTeamsViewProps) {
   const summary = summarizeCompetitionTeams(props.items);
   const showDetailMobile = props.selectedTeamId !== null && props.selectedTeamId !== "";
   const showKpis = Boolean(props.loadingList) || props.items.length > 0;
-  const loadingDetail = props.selectedTeamId
-    ? Boolean(props.loadingDetail) || !props.detail
-    : false;
+  const loadingDetail = Boolean(props.selectedTeamId) && Boolean(props.loadingDetail);
   const loadingStatus = props.loadingList
     ? t("competition.teams.list.loading")
     : loadingDetail
       ? t("competition.teams.detail.loading")
       : "";
+  const statusRef = useRef<HTMLSpanElement>(null);
+
+  useExternalSync(() => {
+    const node = statusRef.current;
+    if (!node) return;
+    if (!loadingStatus) {
+      node.textContent = "";
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      node.textContent = loadingStatus;
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [loadingStatus]);
 
   return (
     <main {...applyStyles(styles.main)}>
-      <span aria-atomic="true" role="status" {...applyStyles(vis.srOnly)}>
-        {loadingStatus}
-      </span>
+      <span aria-atomic="true" ref={statusRef} role="status" {...applyStyles(vis.srOnly)} />
       <PageHeader className={styles.header}>
         <PageHeaderTitle>{t("competition.teams.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("competition.teams.description")}</PageHeaderDescription>

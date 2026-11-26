@@ -205,7 +205,7 @@ export const LoadingList: Story = {
     const canvas = within(canvasElement);
     const page = canvas.getByRole("main");
     await expect(page).not.toHaveAttribute("aria-busy", "true");
-    const status = canvas.getByText("Cargando equipos");
+    const status = await canvas.findByText("Cargando equipos");
     await expect(status).toHaveAttribute("role", "status");
     await expect(status.closest('[aria-busy="true"]')).toBeNull();
     await expect(canvas.getByRole("columnheader", { name: "Jugador" })).toBeVisible();

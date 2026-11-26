@@ -95,10 +95,10 @@ export function TeamListSkeleton() {
   );
 }
 
-export function TeamDetailSkeleton() {
+export function TeamDetailSkeleton({ busy = true }: { readonly busy?: boolean } = {}) {
   const { t } = useI18n();
   return (
-    <div aria-busy="true">
+    <div aria-busy={busy || undefined}>
       <div {...applyStyles(detailStyles.body)}>
         <div {...applyStyles(detailStyles.header)}>
           <div {...applyStyles(detailStyles.identity)}>

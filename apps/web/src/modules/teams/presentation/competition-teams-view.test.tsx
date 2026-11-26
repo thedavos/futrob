@@ -77,7 +77,7 @@ describe("CompetitionTeamsView", () => {
     expect(screen.getByText("Selecciona un equipo")).toBeTruthy();
   });
 
-  it("mirrors the console layout while teams load and does not flash empty states", () => {
+  it("mirrors the console layout while teams load and publishes the announcement after mounting empty", async () => {
     renderView({
       items: [],
       detail: null,
@@ -87,9 +87,15 @@ describe("CompetitionTeamsView", () => {
     });
 
     expect(screen.getByRole("main").getAttribute("aria-busy")).toBeNull();
-    const status = screen.getByText("Cargando equipos");
-    expect(status.getAttribute("role")).toBe("status");
-    expect(status.closest('[aria-busy="true"]')).toBeNull();
+    const status = screen
+      .getAllByRole("status")
+      .find((node) => node.closest('[aria-busy="true"]') === null);
+    expect(status).toBeTruthy();
+    expect(status?.textContent).toBe("");
+
+    expect(await screen.findByText("Cargando equipos")).toBe(status);
+    expect(status?.isConnected).toBe(true);
+    expect(status?.closest('[aria-busy="true"]')).toBeNull();
     expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Jugador" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Cuenta EA" })).toBeTruthy();
@@ -101,7 +107,7 @@ describe("CompetitionTeamsView", () => {
     expect(screen.queryByRole("radio")).toBeNull();
   });
 
-  it("keeps the team list usable while a selected team's detail loads", () => {
+  it("keeps the team list usable while a selected team's detail loads", async () => {
     renderView({ loadingDetail: true, detail: null });
 
     expect(screen.getByRole("button", { name: /Cuervos FC/ })).toBeTruthy();
@@ -109,7 +115,7 @@ describe("CompetitionTeamsView", () => {
     expect(screen.queryByText("Selecciona un equipo")).toBeNull();
     expect(screen.getByRole("columnheader", { name: "Jugador" })).toBeTruthy();
     expect(screen.getByRole("main").getAttribute("aria-busy")).toBeNull();
-    const status = screen.getByText("Cargando detalle del equipo");
+    const status = await screen.findByText("Cargando detalle del equipo");
     expect(status.getAttribute("role")).toBe("status");
     expect(status.closest('[aria-busy="true"]')).toBeNull();
     expect(
@@ -118,7 +124,7 @@ describe("CompetitionTeamsView", () => {
     expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeTruthy();
   });
 
-  it("keeps a live status region mounted outside busy subtrees across list and detail transitions", () => {
+  it("keeps a live status region mounted outside busy subtrees across list and detail transitions", async () => {
     const detail = teamManagementFixture();
     const { rerenderView } = renderView({
       items: [],
@@ -141,7 +147,7 @@ describe("CompetitionTeamsView", () => {
     });
 
     expect(status.isConnected).toBe(true);
-    expect(screen.getByText("Cargando equipos")).toBe(status);
+    expect(await screen.findByText("Cargando equipos")).toBe(status);
     expect(status.closest('[aria-busy="true"]')).toBeNull();
     expect(screen.getByRole("main").getAttribute("aria-busy")).toBeNull();
     expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeTruthy();
@@ -155,7 +161,7 @@ describe("CompetitionTeamsView", () => {
     });
 
     expect(status.isConnected).toBe(true);
-    expect(screen.getByText("Cargando detalle del equipo")).toBe(status);
+    expect(await screen.findByText("Cargando detalle del equipo")).toBe(status);
     expect(status.closest('[aria-busy="true"]')).toBeNull();
     expect(
       screen.getByRole("button", { name: /Cuervos FC/ }).closest('[aria-busy="true"]'),
@@ -174,6 +180,40 @@ describe("CompetitionTeamsView", () => {
     expect(status.textContent).toBe("");
     expect(status.closest('[aria-busy="true"]')).toBeNull();
     expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeNull();
+  });
+
+  it("clears the loading announcement and leaves the error accessible when detail loading fails without data", async () => {
+    const detail = teamManagementFixture();
+    const { rerenderView } = renderView({
+      items: [teamSummaryFixture(detail)],
+      detail: null,
+      selectedTeamId: detail.team.id,
+      loadingList: false,
+      loadingDetail: true,
+      error: null,
+    });
+
+    const status = await screen.findByText("Cargando detalle del equipo");
+    expect(status.getAttribute("role")).toBe("status");
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+
+    rerenderView({
+      items: [teamSummaryFixture(detail)],
+      detail: null,
+      selectedTeamId: detail.team.id,
+      loadingList: false,
+      loadingDetail: false,
+      error: {
+        message: "No pudimos cargar el equipo. Inténtalo nuevamente.",
+      },
+    });
+
+    expect(status.isConnected).toBe(true);
+    expect(status.textContent).toBe("");
+    expect(screen.queryByText("Cargando detalle del equipo")).toBeNull();
+    expect(screen.getByRole("table").closest('[aria-busy="true"]')).toBeNull();
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("No pudimos cargar el equipo. Inténtalo nuevamente.");
   });
 
   it("exposes management controls only when effective capabilities allow them", () => {
