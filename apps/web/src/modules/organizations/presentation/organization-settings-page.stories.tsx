@@ -5,6 +5,7 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
@@ -22,8 +23,12 @@ const styles = stylex.create({
   frame: {
     minHeight: "100svh",
     backgroundColor: colors.background,
-    paddingInline: "1.5rem",
+    paddingInline: { default: "1rem", [media.lg]: "1.5rem" },
     paddingBlock: "1.5rem",
+  },
+  narrow: {
+    width: 390,
+    paddingInline: "1rem",
   },
 });
 
@@ -37,6 +42,7 @@ type StoryArgs = {
   readonly slugCheck: OrganizationsSlugStoryState;
   readonly logo: OrganizationsLogoStoryState;
   readonly storedLogo: boolean;
+  readonly narrow: boolean;
 };
 
 function SettingsStoryShell(args: StoryArgs) {
@@ -89,7 +95,7 @@ function SettingsStoryShell(args: StoryArgs) {
   return (
     <QueryClientProvider client={client}>
       <I18nProvider initialLocale={args.locale} persistLocale={async () => undefined}>
-        <div {...applyProps(undefined, undefined, styles.frame)}>
+        <div {...applyProps(undefined, undefined, styles.frame, args.narrow && styles.narrow)}>
           <OrganizationSettingsPage organizationId={ORG} />
         </div>
       </I18nProvider>
@@ -108,10 +114,12 @@ const meta = {
     slugCheck: "free",
     logo: "success",
     storedLogo: false,
+    narrow: false,
   },
   argTypes: {
     locale: { control: "inline-radio", options: ["es", "en"] },
     canEdit: { control: "boolean" },
+    narrow: { control: "boolean" },
     profileLoad: { control: "select", options: ["success", "pending", "error"] },
     profileSave: {
       control: "select",
@@ -143,15 +151,27 @@ function fileInput(canvasElement: HTMLElement): HTMLInputElement {
 
 export const Playground: Story = {};
 
+async function expectReadySpanishForm(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement);
+  await expect(
+    await canvas.findByRole("heading", { name: "Ajustes de la organización" }),
+  ).toBeVisible();
+  await expect(await canvas.findByLabelText("Slug")).toHaveValue("liga-story");
+  await expect(canvas.getByLabelText("Nombre de la organización")).toHaveValue("Liga Story");
+  await expect(canvas.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+}
+
 export const Default: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByRole("heading", { name: "Ajustes de la organización" }),
-    ).toBeVisible();
-    await expect(await canvas.findByLabelText("Slug")).toHaveValue("liga-story");
-    await expect(canvas.getByLabelText("Nombre de la organización")).toHaveValue("Liga Story");
-    await expect(canvas.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+    await expectReadySpanishForm(canvasElement);
+  },
+};
+
+export const DefaultNarrow: Story = {
+  name: "Con datos · 390",
+  args: { narrow: true },
+  play: async ({ canvasElement }) => {
+    await expectReadySpanishForm(canvasElement);
   },
 };
 
@@ -166,10 +186,51 @@ export const English: Story = {
   },
 };
 
+async function expectLoadingSkeleton(canvasElement: HTMLElement, label: string) {
+  const canvas = within(canvasElement);
+  const page = await canvas.findByRole("main", { name: label });
+  await expect(page).toHaveAttribute("aria-busy", "true");
+  await expect(canvas.getAllByRole("status", { name: label }).length).toBeGreaterThan(0);
+  await expect(
+    canvasElement.querySelector("[data-slot='organization-settings-form-skeleton']"),
+  ).not.toBeNull();
+  await expect(canvasElement.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(0);
+  await expect(canvas.queryByLabelText("Nombre de la organización")).toBeNull();
+  await expect(canvas.queryByLabelText("Organization name")).toBeNull();
+  await expect(canvas.queryByLabelText("Slug")).toBeNull();
+  await expect(canvas.queryByRole("button", { name: "Guardar cambios" })).toBeNull();
+  await expect(canvas.queryByRole("button", { name: "Save changes" })).toBeNull();
+  await userEvent.tab();
+  await expect(canvasElement.querySelector("[data-slot='skeleton']:focus")).toBeNull();
+}
+
 export const Loading: Story = {
+  name: "Cargando",
   args: { profileLoad: "pending" },
   play: async ({ canvasElement }) => {
-    await expect(await within(canvasElement).findByText("Cargando perfil…")).toBeVisible();
+    await expect(
+      await within(canvasElement).findByRole("heading", { name: "Ajustes de la organización" }),
+    ).toBeVisible();
+    await expectLoadingSkeleton(canvasElement, "Cargando perfil…");
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 390",
+  args: { profileLoad: "pending", narrow: true },
+  play: async ({ canvasElement }) => {
+    await expectLoadingSkeleton(canvasElement, "Cargando perfil…");
+  },
+};
+
+export const LoadingEnglish: Story = {
+  name: "Loading · EN",
+  args: { locale: "en", profileLoad: "pending" },
+  play: async ({ canvasElement }) => {
+    await expect(
+      await within(canvasElement).findByRole("heading", { name: "Organization settings" }),
+    ).toBeVisible();
+    await expectLoadingSkeleton(canvasElement, "Loading profile…");
   },
 };
 

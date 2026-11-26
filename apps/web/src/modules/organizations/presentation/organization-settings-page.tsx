@@ -6,18 +6,18 @@ import {
   AlertDescription,
   applyStyles,
   Button,
-  Caption,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
   TextLink,
+  vis,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { OrganizationSettingsForm } from "./organization-settings-form.tsx";
 import { useOrganizationProfileQuery } from "./organization-queries.ts";
+import { OrganizationSettingsFormSkeleton } from "./organization-settings-skeleton.tsx";
 
 const styles = stylex.create({
   main: {
@@ -31,9 +31,6 @@ const styles = stylex.create({
     flexDirection: "column",
     gap: "1.5rem",
   },
-  status: {
-    color: colors.mutedForeground,
-  },
 });
 
 export function OrganizationSettingsPage({ organizationId }: { readonly organizationId: string }) {
@@ -42,9 +39,20 @@ export function OrganizationSettingsPage({ organizationId }: { readonly organiza
   const audit = useCan({ organizationId }, ORGANIZATION_PERMISSION.auditTrailRead);
   const update = useCan({ organizationId }, ORGANIZATION_PERMISSION.update);
   const readOnly = !update.loading && !update.allowed;
+  const loading = profileQuery.isPending;
+  const loadingLabel = t("organizations.settings.loading");
 
   return (
-    <main {...applyStyles(styles.main)}>
+    <main
+      aria-busy={loading || undefined}
+      aria-label={loading ? loadingLabel : undefined}
+      {...applyStyles(styles.main)}
+    >
+      {loading ? (
+        <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
+          {loadingLabel}
+        </span>
+      ) : null}
       <PageHeader>
         <PageHeaderTitle>{t("organizations.settings.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("organizations.settings.description")}</PageHeaderDescription>
@@ -65,9 +73,7 @@ export function OrganizationSettingsPage({ organizationId }: { readonly organiza
           </Alert>
         ) : null}
 
-        {profileQuery.isPending ? (
-          <Caption {...applyStyles(styles.status)}>{t("organizations.settings.loading")}</Caption>
-        ) : null}
+        {loading ? <OrganizationSettingsFormSkeleton showSubmit={!readOnly} /> : null}
 
         {readOnly ? (
           <Alert variant="info">
