@@ -24,13 +24,15 @@ export const styles = stylex.create({
     borderRadius: "var(--corner-lg)",
   },
   badgeSkeleton: {
-    width: "8.75rem",
+    width: "7.5rem",
+    maxWidth: "100%",
     height: "1.5rem",
     flexShrink: 0,
     borderRadius: "var(--corner-full)",
   },
   badgeSkeletonWide: {
-    width: "10.5rem",
+    width: "8.75rem",
+    maxWidth: "100%",
     height: "1.5rem",
     flexShrink: 0,
     borderRadius: "var(--corner-full)",

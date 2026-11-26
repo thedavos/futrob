@@ -61,10 +61,15 @@ export function ProviderHealthPage() {
   };
   const denied = query.data === null;
   const pageLoading =
-    access.loading || (access.allowed && !denied && query.data === undefined && !query.isError);
-  const loadingLabel = access.loading
-    ? t("providerHealth.checkingAccess")
-    : t("providerHealth.loading");
+    !access.unavailable &&
+    (access.loading || (access.allowed && !denied && query.data === undefined && !query.isError));
+  const statusAnnouncement = access.unavailable
+    ? ""
+    : access.loading
+      ? t("providerHealth.checkingAccess")
+      : pageLoading
+        ? t("providerHealth.loading")
+        : "";
 
   let body: ReactNode;
   if (access.unavailable) {
@@ -73,7 +78,9 @@ export function ProviderHealthPage() {
         <AlertDescription>{t("providerHealth.accessUnavailable")}</AlertDescription>
       </Alert>
     );
-  } else if (!access.loading && (!access.allowed || denied)) {
+  } else if (access.loading) {
+    body = <ProviderHealthSkeleton />;
+  } else if (!access.allowed || denied) {
     body = <DeniedState />;
   } else if (query.data) {
     body = (
@@ -96,33 +103,29 @@ export function ProviderHealthPage() {
   }
 
   return (
-    <main
-      aria-busy={pageLoading || undefined}
-      aria-label={pageLoading ? loadingLabel : undefined}
-      {...applyStyles(styles.main)}
-    >
-      {pageLoading ? (
-        <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
-          {loadingLabel}
-        </span>
-      ) : null}
+    <main {...applyStyles(styles.main)}>
+      <span aria-atomic="true" role="status" {...applyStyles(vis.srOnly)}>
+        {statusAnnouncement}
+      </span>
       <PageHeader>
         <PageHeaderTitle>{t("providerHealth.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("providerHealth.subtitle")}</PageHeaderDescription>
-        {access.allowed ? (
+        {access.unavailable ? null : access.loading ? (
+          <PageHeaderActions>
+            <ProviderHealthRefreshSkeleton />
+          </PageHeaderActions>
+        ) : access.allowed ? (
           <PageHeaderActions>
             <Button disabled={query.isFetching} onClick={retry} type="button" variant="outline">
               <ArrowsClockwiseIcon aria-hidden />
               {t("providerHealth.refresh")}
             </Button>
           </PageHeaderActions>
-        ) : access.loading ? (
-          <PageHeaderActions>
-            <ProviderHealthRefreshSkeleton />
-          </PageHeaderActions>
         ) : null}
       </PageHeader>
-      <div {...applyStyles(styles.body)}>{body}</div>
+      <div aria-busy={pageLoading || undefined} {...applyStyles(styles.body)}>
+        {body}
+      </div>
     </main>
   );
 }
