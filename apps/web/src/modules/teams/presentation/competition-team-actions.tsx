@@ -16,8 +16,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
   Button,
+  type ButtonProps,
   Dialog,
   DialogClose,
   DialogContent,
@@ -57,17 +57,23 @@ export type CreateInvitationInput = {
 
 export function InvitationDialog({
   busy,
+  dense,
   disabled,
   allowedRoles = ROSTER_ROLES,
   invitationUrl,
   onCreateInvitation,
+  triggerLabel,
+  variant = "outline",
 }: Readonly<{
   busy?: boolean;
+  dense?: boolean;
   disabled?: boolean;
   /** Roles the actor may hand out; anything above player needs role-management rights. */
   allowedRoles?: readonly RosterMembershipRoleDto[];
   invitationUrl?: string | null;
   onCreateInvitation: (input: CreateInvitationInput) => Promise<void>;
+  triggerLabel?: string;
+  variant?: ButtonProps["variant"];
 }>) {
   const { t } = useI18n();
   const roleLabel = useRoleLabels();
@@ -85,8 +91,9 @@ export function InvitationDialog({
   const rolePolicy = role === "player" ? policy : "single";
   return (
     <Dialog>
-      <DialogTrigger disabled={disabled} render={<Button variant="outline" />}>
-        <PlusIcon aria-hidden="true" /> {t("roster.invite.trigger")}
+      <DialogTrigger disabled={disabled} render={<Button dense={dense} variant={variant} />}>
+        <PlusIcon aria-hidden="true" data-icon="inline-start" />{" "}
+        {triggerLabel ?? t("roster.invite.trigger")}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -188,11 +195,17 @@ export function InvitationDialog({
 }
 
 export function ExternalClubDialog({
+  dense,
   onConnectClub,
   onSearchClubs,
+  triggerLabel,
+  variant = "outline",
 }: Readonly<{
+  dense?: boolean;
   onSearchClubs: (query: string) => Promise<readonly ExternalClubDto[]>;
   onConnectClub: (club: ExternalClubDto) => Promise<void>;
+  triggerLabel?: string;
+  variant?: ButtonProps["variant"];
 }>) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
@@ -214,8 +227,9 @@ export function ExternalClubDialog({
   }
   return (
     <Dialog>
-      <DialogTrigger render={<Button variant="outline" />}>
-        <LinkIcon aria-hidden="true" /> {t("roster.club.trigger")}
+      <DialogTrigger render={<Button dense={dense} variant={variant} />}>
+        <LinkIcon aria-hidden="true" data-icon="inline-start" />{" "}
+        {triggerLabel ?? t("roster.club.trigger")}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -347,44 +361,4 @@ export function RosterRoleEditor({
   );
 }
 
-export function ConfirmAction({
-  triggerLabel,
-  confirmLabel,
-  description,
-  disabled,
-  onConfirm,
-  variant = "outline",
-}: Readonly<{
-  triggerLabel: string;
-  confirmLabel: string;
-  description: string;
-  disabled?: boolean;
-  onConfirm: () => Promise<void>;
-  variant?: "outline" | "destructive";
-}>) {
-  const { t } = useI18n();
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger disabled={disabled} render={<Button variant={variant} />}>
-        {triggerLabel}
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{confirmLabel}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="ghost" />}>
-            {t("common.cancel")}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            render={<Button variant={variant} />}
-            onClick={() => runAction(onConfirm)}
-          >
-            {confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
+export { ConfirmAction } from "./competition-team-confirm-action.tsx";

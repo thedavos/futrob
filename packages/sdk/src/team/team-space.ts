@@ -48,7 +48,10 @@ export function teamScopeOf(membership: PlayerTeamMembershipDto): TeamScope {
   };
 }
 
-/** The API only accepts roster changes while the entry is pending or approved. */
+/**
+ * The API only accepts roster invitations and joins while the entry is pending or approved.
+ * Staff can still open/close the roster and change roles on a rejected entry.
+ */
 export function isRosterWritable(status: CompetitionEntryStatusDto): boolean {
   return status === "pending" || status === "approved";
 }
