@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import {
@@ -13,6 +14,7 @@ import {
   PageHeaderTitle,
   Skeleton,
   typography,
+  useExternalSync,
   vis,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -53,6 +55,8 @@ const styles = stylex.create({
     gap: "1rem",
     paddingInline: "1rem",
     paddingBlock: "0.75rem",
+  },
+  itemLink: {
     color: "inherit",
     textDecoration: "none",
     backgroundColor: { default: null, ":hover": colors.muted },
@@ -72,6 +76,7 @@ const styles = stylex.create({
   copy: {
     display: "grid",
     minWidth: 0,
+    flexGrow: 1,
     gap: "0.25rem",
   },
   name: {
@@ -117,11 +122,7 @@ export function PlayerCompetitionsPage() {
 
   return (
     <main {...applyStyles(styles.main)}>
-      {loading ? (
-        <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
-          {loadingLabel}
-        </span>
-      ) : null}
+      <LoadingStatusRegion message={loading ? loadingLabel : ""} />
       <PageHeader>
         <PageHeaderTitle>{t("player.competitions.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("player.competitions.description")}</PageHeaderDescription>
@@ -155,7 +156,7 @@ export function PlayerCompetitionsPage() {
                     competitionId: competition.competitionId,
                   }}
                   to="/orgs/$orgId/competitions/$competitionId/matches"
-                  {...applyStyles(styles.item)}
+                  {...applyStyles(styles.item, styles.itemLink)}
                 >
                   <span {...applyStyles(styles.copy)}>
                     <span {...applyStyles(typography.body, styles.name)}>
@@ -175,6 +176,43 @@ export function PlayerCompetitionsPage() {
   );
 }
 
+/** Keeps an empty polite live region mounted through a paint before writing the loading copy. */
+function LoadingStatusRegion({ message }: { readonly message: string }) {
+  const statusRef = useRef<HTMLSpanElement>(null);
+
+  useExternalSync(() => {
+    const node = statusRef.current;
+    if (node == null) return;
+    if (message === "") {
+      node.textContent = "";
+      return;
+    }
+    let innerFrameId: number | null = null;
+    const outerFrameId = requestAnimationFrame(() => {
+      innerFrameId = requestAnimationFrame(() => {
+        node.textContent = message;
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outerFrameId);
+      if (innerFrameId !== null) {
+        cancelAnimationFrame(innerFrameId);
+      }
+      node.textContent = "";
+    };
+  }, [message]);
+
+  return (
+    <span
+      ref={statusRef}
+      aria-atomic="true"
+      aria-live="polite"
+      role="status"
+      {...applyStyles(vis.srOnly)}
+    />
+  );
+}
+
 function PlayerCompetitionsListSkeleton() {
   return (
     <ul aria-hidden="true" {...applyStyles(styles.list)}>
@@ -182,10 +220,10 @@ function PlayerCompetitionsListSkeleton() {
         <li key={index} {...applyStyles(styles.row)}>
           <div {...applyStyles(styles.item)}>
             <span {...applyStyles(styles.copy)}>
-              <span {...applyStyles(typography.body, styles.name, styles.line)}>
+              <span {...applyStyles(typography.body, styles.line)}>
                 <Skeleton {...applyStyles(styles.nameBone)} />
               </span>
-              <span {...applyStyles(typography.caption, styles.meta, styles.line)}>
+              <span {...applyStyles(typography.caption, styles.line)}>
                 <Skeleton {...applyStyles(styles.metaBone)} />
               </span>
             </span>

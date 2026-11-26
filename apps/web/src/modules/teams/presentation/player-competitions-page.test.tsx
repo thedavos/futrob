@@ -130,17 +130,24 @@ describe("PlayerCompetitionsPage", () => {
     expect(screen.getByText("¿Buscas otro club?", { exact: false })).toBeTruthy();
   });
 
-  it("reserves the competition list layout while teams are loading", () => {
-    getMyTeams.mockReturnValue(new Promise(() => undefined));
+  it("reserves the competition list layout and announces loading after mounting the status region", async () => {
+    let resolveTeams: (value: GetMyTeamsResponse) => void = () => undefined;
+    getMyTeams.mockReturnValue(
+      new Promise((resolve) => {
+        resolveTeams = resolve;
+      }),
+    );
     getMyProfile.mockReturnValue(new Promise(() => undefined));
 
     renderPage();
 
-    const status = screen.getByRole("status", { name: "Cargando competiciones…" });
+    const status = screen.getByRole("status");
+    expect(status).toBeEmptyDOMElement();
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveAttribute("aria-atomic", "true");
     expect(screen.getByRole("main").getAttribute("aria-busy")).toBeNull();
     expect(status.closest("[aria-busy='true']")).toBeNull();
     expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
-    expect(status).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Mis competiciones" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
       "href",
@@ -151,6 +158,43 @@ describe("PlayerCompetitionsPage", () => {
     expect(
       screen.queryByRole("heading", { name: "Tu club aún no participa en competiciones" }),
     ).toBeNull();
+
+    await waitFor(() => {
+      expect(status).toHaveTextContent("Cargando competiciones…");
+    });
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.activeElement).toBe(document.body);
+
+    resolveTeams({
+      activeRosterMembershipId: "m1",
+      teams: [
+        {
+          active: true,
+          team: {
+            id: "t1",
+            organizationId: "o1",
+            name: "Alpha FC",
+            createdAt: "2026-08-01T00:00:00.000Z",
+          },
+          membership: {
+            id: "m1",
+            organizationId: "o1",
+            competitionId: "c1",
+            teamId: "t1",
+            playerProfileId: "p1",
+            gameAccountId: null,
+            role: "player",
+            createdAt: "2026-08-01T00:00:00.000Z",
+          },
+        },
+      ],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Competición c1")).toBeTruthy();
+    });
+    expect(status).toBeEmptyDOMElement();
+    expect(document.querySelector("[aria-busy='true']")).toBeNull();
   });
 
   it("lists competitions derived from team memberships", async () => {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { PlayerCompetitionsExplorePage } from "@/modules/competitions/presentation/explore/explore-competitions-page.tsx";
 import type { ExploreCompetitionsSearch } from "@/modules/competitions/presentation/explore/explore-search.ts";
 import type { PlayerStoryState } from "./player-story-client.ts";
@@ -157,11 +157,13 @@ export const Loading: Story = {
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const status = canvas.getByRole("status", { name: "Cargando competiciones…" });
+    const status = canvas.getByRole("status");
     await expect(canvas.getByRole("main")).not.toHaveAttribute("aria-busy");
     await expect(status.closest("[aria-busy='true']")).toBeNull();
     await expect(canvasElement.querySelector("[aria-busy='true']")).not.toBeNull();
-    await expect(status).toHaveAttribute("aria-label", "Cargando competiciones…");
+    await waitFor(() => {
+      expect(status).toHaveTextContent("Cargando competiciones…");
+    });
     await expect(canvas.getByRole("heading", { name: "Mis competiciones" })).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
       "href",
@@ -175,6 +177,35 @@ export const Loading: Story = {
     await userEvent.tab();
     await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).not.toHaveFocus();
     await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toHaveFocus();
+
+    const skeletonList = canvasElement.querySelector("[aria-busy='true'] ul");
+    const skeletonRow = skeletonList?.querySelector("li > div") ?? null;
+    const rowBars = skeletonRow?.querySelectorAll("[data-slot='skeleton']") ?? [];
+    const view = canvasElement.ownerDocument.defaultView;
+    await expect(skeletonList).not.toBeNull();
+    await expect(skeletonRow).not.toBeNull();
+    await expect(view).not.toBeNull();
+    await expect(rowBars.length).toBe(2);
+    if (skeletonList == null || skeletonRow == null || view == null) return;
+
+    const listBg = view.getComputedStyle(skeletonList).backgroundColor;
+    const rowBgBefore = view.getComputedStyle(skeletonRow).backgroundColor;
+
+    const assertBarsDistinctFromRow = async () => {
+      const rowBg = view.getComputedStyle(skeletonRow).backgroundColor;
+      await expect(rowBg).toBe(rowBgBefore);
+      for (const bar of rowBars) {
+        const barBg = view.getComputedStyle(bar).backgroundColor;
+        await expect(barBg).not.toBe(rowBg);
+        await expect(barBg).not.toBe(listBg);
+      }
+    };
+
+    await assertBarsDistinctFromRow();
+    await userEvent.hover(skeletonRow);
+    await assertBarsDistinctFromRow();
+    await userEvent.unhover(skeletonRow);
+    await assertBarsDistinctFromRow();
   },
 };
 
@@ -185,10 +216,12 @@ export const LoadingMobile: Story = {
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const status = canvas.getByRole("status", { name: "Cargando competiciones…" });
+    const status = canvas.getByRole("status");
     await expect(canvas.getByRole("main")).not.toHaveAttribute("aria-busy");
     await expect(status.closest("[aria-busy='true']")).toBeNull();
-    await expect(status).toHaveAttribute("aria-label", "Cargando competiciones…");
+    await waitFor(() => {
+      expect(status).toHaveTextContent("Cargando competiciones…");
+    });
     await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toBeVisible();
     await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toBeNull();
     await expect(canvasElement.ownerDocument.defaultView?.innerWidth).toBe(320);
