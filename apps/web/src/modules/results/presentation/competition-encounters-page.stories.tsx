@@ -261,6 +261,30 @@ export const PlayerMatches: Story = {
 
 export const Empty: Story = { name: "Sin calendario", args: { scenario: "empty" } };
 
+function hoverSelectorsMatching(element: Element): string[] {
+  const matches: string[] = [];
+  const visit = (rules: CSSRuleList) => {
+    for (const rule of Array.from(rules)) {
+      if (rule instanceof CSSStyleRule) {
+        for (const selector of rule.selectorText.split(",")) {
+          if (!selector.includes(":hover")) continue;
+          if (element.matches(selector.replaceAll(":hover", ""))) matches.push(selector.trim());
+        }
+      } else if ("cssRules" in rule) {
+        visit((rule as CSSGroupingRule).cssRules);
+      }
+    }
+  };
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      visit(sheet.cssRules);
+    } catch {
+      // Cross-origin stylesheets cannot be read; product styles are same-origin.
+    }
+  }
+  return matches;
+}
+
 export const Loading: Story = {
   name: "Cargando",
   args: { scenario: "loading" },
@@ -275,9 +299,9 @@ export const Loading: Story = {
     await expect(region.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(8);
     const skeletonRow = region.querySelector<HTMLElement>("[data-slot='encounter-skeleton-row']");
     await expect(skeletonRow).not.toBeNull();
-    const bgBefore = getComputedStyle(skeletonRow!).backgroundColor;
-    await userEvent.hover(skeletonRow!);
-    await expect(getComputedStyle(skeletonRow!).backgroundColor).toBe(bgBefore);
+    // Synthetic hover events do not activate `:hover`, so assert on the
+    // stylesheet instead: no `:hover` rule may target a decorative row.
+    await expect(hoverSelectorsMatching(skeletonRow!)).toEqual([]);
     const bone = skeletonRow!.querySelector<HTMLElement>("[data-slot='skeleton']");
     await expect(bone).not.toBeNull();
     await expect(getComputedStyle(bone!).backgroundColor).not.toBe(
