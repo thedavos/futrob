@@ -11,8 +11,8 @@ import {
   MetaValue,
   Separator,
   Skeleton,
-  vis,
 } from "@futrob/ui";
+import { media } from "@futrob/ui/styles/media.stylex";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { styles } from "./competition-rules-page.styles.ts";
@@ -27,7 +27,7 @@ const bones = stylex.create({
   },
   notice: {
     width: "100%",
-    height: "3.25rem",
+    height: { default: "4.75rem", [media.sm]: "3.25rem" },
     borderRadius: "var(--corner-lg)",
     borderWidth: 1,
     borderStyle: "solid",
@@ -37,6 +37,11 @@ const bones = stylex.create({
     width: "7.5rem",
     maxWidth: "70%",
     height: "1.5rem",
+  },
+  term: {
+    width: "6.5rem",
+    maxWidth: "70%",
+    height: "1rem",
   },
   value: {
     width: "5rem",
@@ -69,15 +74,12 @@ const bones = stylex.create({
 });
 
 const STAGE_KEYS = [0, 1] as const;
+const RESCHEDULE_KEYS = [0, 1] as const;
 const TIEBREAK_KEYS = [0, 1, 2] as const;
 
 export function CompetitionRulesSkeleton({ t }: { readonly t: Translator }) {
-  const label = t("competitionRules.loading");
   return (
     <div aria-busy="true" {...applyStyles(styles.page)}>
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
       <div aria-hidden="true" {...applyStyles(styles.statusRow)}>
         <Skeleton {...applyStyles(bones.badge)} />
       </div>
@@ -140,16 +142,18 @@ function StageBones({ t }: { readonly t: Translator }) {
         <Heading as="h3" {...applyStyles(styles.heading)}>
           {t("competitionRules.reschedule.title")}
         </Heading>
-        <FactBones
-          columns={2}
-          labels={[
-            t("competitionRules.reschedule.max"),
-            t("competitionRules.reschedule.notice"),
-            t("competitionRules.reschedule.expiry"),
-            t("competitionRules.reschedule.opponent"),
-            t("competitionRules.reschedule.organizer"),
-          ]}
-        />
+        <MetaList aria-hidden="true" columns={2}>
+          {RESCHEDULE_KEYS.map((key) => (
+            <MetaItem key={key}>
+              <MetaTerm>
+                <Skeleton {...applyStyles(bones.term)} />
+              </MetaTerm>
+              <MetaValue>
+                <Skeleton {...applyStyles(bones.value)} />
+              </MetaValue>
+            </MetaItem>
+          ))}
+        </MetaList>
       </section>
     </>
   );

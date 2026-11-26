@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 import type { CompetitionDraftDto } from "@futrob/api-contracts";
@@ -19,6 +20,8 @@ import {
   Heading,
   MetaList,
   Separator,
+  useExternalSync,
+  vis,
 } from "@futrob/ui";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { DEFAULT_MAX_ROSTER_SIZE } from "@futrob/teams";
@@ -101,9 +104,27 @@ export function CompetitionRulesPageView({
     ) : undefined;
   return (
     <PageScaffold actions={edit} page="competition.rules">
+      <LoadingStatus active={state.kind === "loading"} message={t("competitionRules.loading")} />
       <RulesBody state={state} t={t} />
     </PageScaffold>
   );
+}
+
+function LoadingStatus({
+  active,
+  message,
+}: {
+  readonly active: boolean;
+  readonly message: string;
+}) {
+  const statusRef = useRef<HTMLSpanElement>(null);
+  // Mount the live region outside aria-busy and update its DOM text post-commit so initial loads announce too.
+  useExternalSync(() => {
+    const node = statusRef.current;
+    if (!node) return;
+    node.textContent = active ? message : "";
+  }, [active, message]);
+  return <span ref={statusRef} role="status" {...applyStyles(vis.srOnly)} />;
 }
 
 function RulesBody({
