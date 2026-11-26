@@ -139,7 +139,7 @@ export const styles = stylex.create({
       borderBottomWidth: 0,
     },
   },
-  row: {
+  rowLayout: {
     display: "grid",
     gridTemplateColumns: {
       default: "minmax(0, 1fr) auto",
@@ -150,13 +150,15 @@ export const styles = stylex.create({
     minHeight: "var(--control-height)",
     paddingBlock: { default: "0.875rem", [media.md]: "0.75rem" },
     paddingInline: { default: "1rem", [media.sm]: "1.25rem" },
+    minWidth: 0,
+  },
+  rowInteractive: {
     backgroundColor: {
       default: "transparent",
       ":hover": colors.surfaceRaised,
     },
     color: "inherit",
     textDecoration: "none",
-    minWidth: 0,
     outlineColor: colors.ring,
     outlineStyle: { default: "none", ":focus-visible": "solid" },
     outlineWidth: 2,

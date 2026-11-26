@@ -97,6 +97,9 @@ export function CompetitionEncountersStatus({
   const { t } = useI18n();
   return (
     <PageScaffold page={page}>
+      <span aria-atomic="true" role="status" {...applyStyles(vis.srOnly)}>
+        {state.kind === "loading" ? t("encounters.list.loading") : ""}
+      </span>
       <EncountersStatusBody state={state} t={t} />
     </PageScaffold>
   );
@@ -118,12 +121,14 @@ export function CompetitionEncountersPageView({
   const chosenFilters = filters ?? localFilters;
   const setFilters = onFiltersChange ?? setLocalFilters;
 
-  if (state.kind !== "ready") {
-    return <CompetitionEncountersStatus page={page} state={state} />;
-  }
   return (
     <PageScaffold page={page}>
-      {state.data.encounters.length === 0 ? (
+      <span aria-atomic="true" role="status" {...applyStyles(vis.srOnly)}>
+        {state.kind === "loading" ? t("encounters.list.loading") : ""}
+      </span>
+      {state.kind !== "ready" ? (
+        <EncountersStatusBody state={state} t={t} />
+      ) : state.data.encounters.length === 0 ? (
         <EmptyState>
           <EmptyStateIcon>
             <img alt="" data-outline="none" src={emptyFixturesUrl} />
@@ -190,7 +195,7 @@ const LOADING_ROUNDS = [
 function EncountersListSkeleton({ t }: { readonly t: Translator }) {
   const label = t("encounters.list.loading");
   return (
-    <section aria-busy="true" aria-label={label} role="status" {...applyStyles(styles.section)}>
+    <section aria-busy="true" aria-label={label} {...applyStyles(styles.section)}>
       <div aria-hidden="true" {...applyStyles(styles.controls)}>
         <div {...applyStyles(styles.toolbar)}>
           <div {...applyStyles(styles.statusGroup)}>
@@ -253,7 +258,7 @@ function RoundGroupSkeleton({ rows }: { readonly rows: number }) {
 
 function EncounterRowSkeleton() {
   return (
-    <div {...applyStyles(styles.row)}>
+    <div data-slot="encounter-skeleton-row" {...applyStyles(styles.rowLayout)}>
       <div {...applyStyles(styles.timeCol)}>
         <Skeleton {...applyStyles(styles.skeletonTime)} />
         <Skeleton {...applyStyles(styles.skeletonSlots)} />

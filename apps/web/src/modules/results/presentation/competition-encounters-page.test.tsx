@@ -129,9 +129,12 @@ describe("Competition encounters list", () => {
     renderRoute();
 
     expect(screen.getByRole("heading", { name: "Enfrentamientos" })).toBeTruthy();
-    const status = screen.getByRole("status", { name: "Cargando enfrentamientos" });
-    expect(status.getAttribute("aria-busy")).toBe("true");
-    expect(status.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(8);
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Cargando enfrentamientos");
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
+    const region = screen.getByRole("region", { name: "Cargando enfrentamientos" });
+    expect(region.getAttribute("aria-busy")).toBe("true");
+    expect(region.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(8);
     expect(screen.queryByRole("link")).toBeNull();
     expect(screen.queryByRole("radio")).toBeNull();
     expect(screen.queryByRole("combobox")).toBeNull();

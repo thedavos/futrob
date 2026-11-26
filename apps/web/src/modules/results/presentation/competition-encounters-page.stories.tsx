@@ -266,10 +266,23 @@ export const Loading: Story = {
   args: { scenario: "loading" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const status = canvas.getByRole("status", { name: "Cargando enfrentamientos" });
-    await expect(status).toHaveAttribute("aria-busy", "true");
+    const status = canvas.getByRole("status");
+    await expect(status).toHaveTextContent("Cargando enfrentamientos");
+    await expect(status.closest('[aria-busy="true"]')).toBeNull();
+    const region = canvas.getByRole("region", { name: "Cargando enfrentamientos" });
+    await expect(region).toHaveAttribute("aria-busy", "true");
     await expect(canvas.getByRole("heading", { name: "Enfrentamientos" })).toBeVisible();
-    await expect(status.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(8);
+    await expect(region.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(8);
+    const skeletonRow = region.querySelector<HTMLElement>("[data-slot='encounter-skeleton-row']");
+    await expect(skeletonRow).not.toBeNull();
+    const bgBefore = getComputedStyle(skeletonRow!).backgroundColor;
+    await userEvent.hover(skeletonRow!);
+    await expect(getComputedStyle(skeletonRow!).backgroundColor).toBe(bgBefore);
+    const bone = skeletonRow!.querySelector<HTMLElement>("[data-slot='skeleton']");
+    await expect(bone).not.toBeNull();
+    await expect(getComputedStyle(bone!).backgroundColor).not.toBe(
+      getComputedStyle(skeletonRow!).backgroundColor,
+    );
     await expect(canvas.queryByRole("link")).toBeNull();
     await expect(canvas.queryByRole("radio")).toBeNull();
     await expect(canvas.queryByRole("combobox")).toBeNull();
