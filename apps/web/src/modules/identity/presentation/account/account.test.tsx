@@ -8,6 +8,10 @@ import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.
 import { ProfileEditor } from "./profile-editor.tsx";
 import { FeedbackDialog } from "./feedback-dialog.tsx";
 import { SettingsDialog } from "./settings-dialog.tsx";
+import {
+  PlayerProfileAccountsSkeleton,
+  PlayerProfileIdentitySkeleton,
+} from "./player-profile-skeleton.tsx";
 import type { AccountAuth } from "./account-auth.ts";
 import { AccountDeletionGate } from "../account-deletion-gate.tsx";
 
@@ -571,5 +575,29 @@ describe("account deletion grace period", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancelar eliminación" }));
 
     expect(await screen.findByText("Inicio del jugador")).toBeVisible();
+  });
+});
+
+function expectHiddenBones() {
+  const bones = document.querySelectorAll("[data-slot='skeleton']");
+  expect(bones.length).toBeGreaterThan(0);
+  for (const bone of bones) {
+    expect(bone).toHaveAttribute("aria-hidden", "true");
+  }
+}
+
+describe("player profile loading skeletons", () => {
+  it("announces identity loading with bones that stay out of the tab order", () => {
+    frame(<PlayerProfileIdentitySkeleton />);
+    const status = screen.getByRole("status", { name: "Cargando tu perfil…" });
+    expect(status.closest("[aria-busy='true']")).toHaveAttribute("aria-busy", "true");
+    expectHiddenBones();
+    expect(screen.queryByLabelText("Nombre visible")).toBeNull();
+  });
+
+  it("announces game-account loading with a list of bones", () => {
+    frame(<PlayerProfileAccountsSkeleton />);
+    expect(screen.getByRole("status", { name: "Cargando tu perfil…" })).toBeTruthy();
+    expectHiddenBones();
   });
 });

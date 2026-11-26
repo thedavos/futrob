@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { expect, userEvent, within } from "storybook/test";
 import { Button, applyStyles } from "@futrob/ui";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
@@ -172,36 +173,161 @@ export const SettingsDeletionBlocked: Story = {
   render: () => <SettingsExample deletion={BLOCKED_DELETION} initialSection="delete" />,
 };
 
-export const ProfilePage: Story = {
-  render: () => (
+const PROFILE_STORY_STATE = {
+  profile: readyPlayerProfileFixture(),
+  teams: { teams: [], activeRosterMembershipId: null },
+  rosterInvitations: { invitations: [] },
+  addGameAccount: "success" as const,
+  setActiveTeam: "success" as const,
+  acceptRosterInvitation: "success" as const,
+  respondToRosterInvitation: "success" as const,
+};
+
+const readyIdentity = {
+  status: "ready" as const,
+  user: { name: "Alex García", email: "alex@example.test" },
+  save: async () => undefined,
+};
+
+const readyAccounts = {
+  status: "ready" as const,
+  items: readyPlayerProfileFixture().gameAccounts,
+};
+
+function ProfilePageExample({
+  identity,
+  accounts,
+}: {
+  identity: ComponentProps<typeof PlayerProfilePageView>["identity"];
+  accounts: ComponentProps<typeof PlayerProfilePageView>["accounts"];
+}) {
+  return (
     <PlayerStoryShell
       initialPath="/player/profile"
-      state={{
-        profile: readyPlayerProfileFixture(),
-        teams: { teams: [], activeRosterMembershipId: null },
-        rosterInvitations: { invitations: [] },
-        addGameAccount: "success",
-        setActiveTeam: "success",
-        acceptRosterInvitation: "success",
-        respondToRosterInvitation: "success",
-      }}
       routes={[
         {
           path: "/player/profile",
-          component: () => (
-            <PlayerProfilePageView
-              identity={{
-                status: "ready",
-                user: { name: "Alex García", email: "alex@example.test" },
-                save: async () => undefined,
-              }}
-              accounts={{ status: "ready", items: readyPlayerProfileFixture().gameAccounts }}
-            />
-          ),
+          component: () => <PlayerProfilePageView accounts={accounts} identity={identity} />,
         },
         { path: "/player/game-accounts", component: () => <p>Datos de juego</p> },
         { path: "/player/statistics", component: () => <p>Mis estadísticas</p> },
       ]}
+      state={PROFILE_STORY_STATE}
     />
+  );
+}
+
+async function expectProfileChrome(canvas: ReturnType<typeof within>) {
+  await expect(canvas.findByRole("heading", { name: "Mi perfil" })).resolves.toBeVisible();
+  await expect(canvas.findByRole("heading", { name: "Cuentas de juego" })).resolves.toBeVisible();
+  await expect(canvas.getByRole("link", { name: "Gestionar datos de juego" })).toBeVisible();
+  await expect(canvas.getByRole("link", { name: "Ver mis estadísticas" })).toBeVisible();
+}
+
+async function expectLoadingStatus(canvas: ReturnType<typeof within>, count: number) {
+  const statuses = await canvas.findAllByRole("status", { name: "Cargando tu perfil…" });
+  await expect(statuses).toHaveLength(count);
+  for (const status of statuses) {
+    await expect(status.closest("[aria-busy='true']")).toHaveAttribute("aria-busy", "true");
+  }
+}
+
+function expectSkeletonBones(canvasElement: HTMLElement) {
+  const bones = canvasElement.querySelectorAll("[data-slot='skeleton']");
+  expect(bones.length).toBeGreaterThan(0);
+  for (const bone of bones) {
+    expect(bone).toHaveAttribute("aria-hidden", "true");
+  }
+}
+
+export const ProfilePage: Story = {
+  name: "Profile",
+  parameters: { layout: "fullscreen" },
+  render: () => <ProfilePageExample accounts={readyAccounts} identity={readyIdentity} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expectProfileChrome(canvas);
+    await expect(canvas.findByLabelText("Nombre visible")).resolves.toHaveValue("Alex García");
+    await expect(canvas.getByLabelText("Correo de la cuenta")).toHaveValue("alex@example.test");
+    await expect(canvas.getByText("davos282")).toBeVisible();
+    await expect(canvas.getByText("davos.pc")).toBeVisible();
+    await expect(canvas.queryByRole("status", { name: "Cargando tu perfil…" })).toBeNull();
+  },
+};
+
+export const ProfilePageMobile: Story = {
+  name: "Profile · 390",
+  parameters: { layout: "fullscreen", viewport: { defaultViewport: "mobile1" } },
+  render: () => <ProfilePageExample accounts={readyAccounts} identity={readyIdentity} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expectProfileChrome(canvas);
+    await expect(canvas.findByLabelText("Nombre visible")).resolves.toBeVisible();
+    await expect(canvas.getByText("davos282")).toBeVisible();
+  },
+};
+
+export const Loading: Story = {
+  name: "Cargando",
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <ProfilePageExample accounts={{ status: "pending" }} identity={{ status: "pending" }} />
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expectProfileChrome(canvas);
+    await expectLoadingStatus(canvas, 2);
+    expectSkeletonBones(canvasElement);
+    await expect(canvas.queryByLabelText("Nombre visible")).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Guardar perfil" })).toBeNull();
+    await expect(canvas.queryByText("davos282")).toBeNull();
+    await userEvent.tab();
+    await expect(canvasElement.ownerDocument.activeElement).not.toHaveAttribute(
+      "data-slot",
+      "skeleton",
+    );
+  },
+};
+
+export const LoadingMobile: Story = {
+  name: "Cargando · 390",
+  parameters: { layout: "fullscreen", viewport: { defaultViewport: "mobile1" } },
+  render: () => (
+    <ProfilePageExample accounts={{ status: "pending" }} identity={{ status: "pending" }} />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expectProfileChrome(canvas);
+    await expectLoadingStatus(canvas, 2);
+    expectSkeletonBones(canvasElement);
+  },
+};
+
+export const IdentityLoading: Story = {
+  name: "Identidad cargando, cuentas listas",
+  parameters: { layout: "fullscreen" },
+  render: () => <ProfilePageExample accounts={readyAccounts} identity={{ status: "pending" }} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expectProfileChrome(canvas);
+    await expectLoadingStatus(canvas, 1);
+    expectSkeletonBones(canvasElement);
+    await expect(canvas.queryByLabelText("Nombre visible")).toBeNull();
+    await expect(canvas.findByText("davos282")).resolves.toBeVisible();
+    await expect(canvas.getByText("davos.pc")).toBeVisible();
+  },
+};
+
+export const AccountsLoading: Story = {
+  name: "Cuentas cargando, identidad lista",
+  parameters: { layout: "fullscreen" },
+  render: () => <ProfilePageExample accounts={{ status: "pending" }} identity={readyIdentity} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expectProfileChrome(canvas);
+    await expectLoadingStatus(canvas, 1);
+    expectSkeletonBones(canvasElement);
+    await expect(canvas.findByLabelText("Nombre visible")).resolves.toHaveValue("Alex García");
+    await expect(canvas.queryByText("davos282")).toBeNull();
+  },
 };
