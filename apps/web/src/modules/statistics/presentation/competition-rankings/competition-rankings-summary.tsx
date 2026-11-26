@@ -1,5 +1,5 @@
 import type { RankingRowDto, RankingSnapshotDto } from "@futrob/api-contracts";
-import { rankingBestPer90, rankingLeader } from "@futrob/sdk";
+import { rankingBestPer90, rankingHasPer90, rankingLeader } from "@futrob/sdk";
 import { CrownSimpleIcon, GaugeIcon, TrendUpIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { StatHint } from "@futrob/ui";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
@@ -84,14 +84,18 @@ export function RankingSummary({
         />
         <ProfileKpiStat
           emptyLabel={
-            kind === "rating" ? t("competition.rankings.summary.per90NotApplicable") : unavailable
+            rankingHasPer90(kind)
+              ? unavailable
+              : t("competition.rankings.summary.per90NotApplicable")
           }
           hint={hint(
             kind === "rating"
               ? t("competition.rankings.summary.per90RatingHint")
-              : best
-                ? playerLabel(best.row)
-                : null,
+              : kind === "goalkeeper"
+                ? t("competition.rankings.summary.per90GoalkeeperHint")
+                : best
+                  ? playerLabel(best.row)
+                  : null,
           )}
           icon={GaugeIcon}
           label={t("competition.rankings.summary.per90")}

@@ -129,7 +129,15 @@ export function RankingTable({
   const headingId = useId();
   const resolved = rankingNamesOf(names);
   const { filters, onFiltersChange } = filterControls;
-  const rows = filterRankingRows(snapshot.rows, resolved, filters);
+  // Names resolve only once every roster read settles: until then a name search cannot tell
+  // a missing player from a pending one, so it keeps the text and waits instead of
+  // announcing no matches. The Team filter needs no names and still applies.
+  const searchPending = names.status === "loading" && filters.query.trim() !== "";
+  const rows = filterRankingRows(
+    snapshot.rows,
+    resolved,
+    searchPending ? { query: "", teamId: filters.teamId } : filters,
+  );
   const filtered = filters.query.trim() !== "" || filters.teamId !== null;
   return (
     <section aria-labelledby={headingId} {...applyStyles(styles.tableSection)}>
@@ -139,6 +147,7 @@ export function RankingTable({
       <NamesNotice names={names} t={t} />
       <RankingFilters
         controls={filterControls}
+        searchPending={searchPending}
         shown={rows.length}
         t={t}
         total={snapshot.rows.length}
@@ -229,11 +238,13 @@ export function RankingTable({
 
 function RankingFilters({
   controls,
+  searchPending,
   shown,
   t,
   total,
 }: {
   readonly controls: RankingFilterControls;
+  readonly searchPending: boolean;
   readonly shown: number;
   readonly t: Translator;
   readonly total: number;
@@ -288,10 +299,12 @@ function RankingFilters({
         </Field>
       ) : null}
       <Caption aria-live="polite" as="p" className={styles.filterCount}>
-        {t("competition.rankings.filters.count", {
-          shown: integer.format(shown),
-          total: integer.format(total),
-        })}
+        {searchPending
+          ? t("competition.rankings.names.searchPending")
+          : t("competition.rankings.filters.count", {
+              shown: integer.format(shown),
+              total: integer.format(total),
+            })}
       </Caption>
     </div>
   );

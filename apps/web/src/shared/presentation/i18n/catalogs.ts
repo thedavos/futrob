@@ -2055,6 +2055,9 @@ const es = {
   "competition.rankings.summary.per90": "Mejor ritmo por 90 min",
   "competition.rankings.summary.per90NotApplicable": "No aplica",
   "competition.rankings.summary.per90RatingHint": "El rating ya es una media por partido.",
+  "competition.rankings.summary.per90GoalkeeperHint":
+    "Los minutos incluyen partidos fuera de la portería.",
+  "competition.rankings.names.searchPending": "Cargando nombres para buscar…",
   "competition.rankings.filters.label": "Filtrar jugadores",
   "competition.rankings.search": "Buscar jugador",
   "competition.rankings.teamFilter": "Equipo",
@@ -6019,6 +6022,8 @@ const en: Catalog = {
   "competition.rankings.summary.per90": "Best rate per 90 min",
   "competition.rankings.summary.per90NotApplicable": "Not applicable",
   "competition.rankings.summary.per90RatingHint": "Rating is already a per-match average.",
+  "competition.rankings.summary.per90GoalkeeperHint": "Minutes include play outside goal.",
+  "competition.rankings.names.searchPending": "Loading names to search…",
   "competition.rankings.filters.label": "Filter players",
   "competition.rankings.search": "Search player",
   "competition.rankings.teamFilter": "Team",

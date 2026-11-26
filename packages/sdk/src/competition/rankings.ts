@@ -115,12 +115,21 @@ export function rankingPlayerStandings(
   });
 }
 
-/** Rate per 90 minutes for count kinds; an average rating has no per-minute meaning. */
+/**
+ * Whether a kind's value can be rated per 90 of the row's `minutes`. An average rating has
+ * no per-minute meaning, and goalkeeper saves count only minutes in goal while `minutes`
+ * adds every position, so the DTO cannot give a saves rate over the right sample.
+ */
+export function rankingHasPer90(kind: RankingKindDto): boolean {
+  return kind !== "rating" && kind !== "goalkeeper";
+}
+
+/** Rate per 90 minutes, only for kinds whose value and minutes share a sample. */
 export function rankingPer90(
   kind: RankingKindDto,
   row: Pick<RankingRowDto, "value" | "minutes">,
 ): number | null {
-  if (kind === "rating" || row.minutes <= 0) return null;
+  if (!rankingHasPer90(kind) || row.minutes <= 0) return null;
   return (row.value * 90) / row.minutes;
 }
 
@@ -153,7 +162,7 @@ export function filterRankingRows(
   });
 }
 
-/** Highest per-90 rate among the ranked rows; `null` for rating or when nobody has minutes. */
+/** Highest per-90 rate among the ranked rows; `null` for kinds without one or no minutes. */
 export function rankingBestPer90(
   snapshot: RankingSnapshotDto,
 ): { readonly row: RankingRowDto; readonly rate: number } | null {

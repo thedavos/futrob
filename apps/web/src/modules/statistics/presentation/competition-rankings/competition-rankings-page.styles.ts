@@ -48,6 +48,11 @@ export const styles = stylex.create({
     gap: "1rem",
     minWidth: 0,
   },
+  workspaceMain: {
+    display: "flex",
+    flexDirection: "column",
+    minWidth: 0,
+  },
   filters: {
     display: "grid",
     gridTemplateColumns: {

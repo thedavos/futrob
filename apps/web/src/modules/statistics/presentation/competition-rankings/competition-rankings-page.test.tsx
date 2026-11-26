@@ -23,7 +23,7 @@ const BASE = "/api/v1/organizations/org-1/competitions/competition-1";
 type Serve = {
   readonly allowed?: readonly string[];
   readonly rankings?: () => Response;
-  readonly roster?: (teamId: string) => Response;
+  readonly roster?: (teamId: string) => Response | Promise<Response>;
 };
 
 function serve({
@@ -199,10 +199,16 @@ describe("Competition player rankings", () => {
     expect(within(dialog).getByText("1.º de 2")).toBeTruthy();
   });
 
-  it("keeps the detail beside the table on wide screens across kinds", async () => {
+  it("keeps the detail beside the table on wide screens across kinds, even empty ones", async () => {
     const user = userEvent.setup();
     stubViewport(80);
-    serve();
+    // Goalkeepers not computed yet; MVP computed with nobody in it.
+    serve({
+      rankings: () =>
+        Response.json({
+          rankings: rankingsFixture.rankings.filter((snapshot) => snapshot.kind !== "goalkeeper"),
+        }),
+    });
     renderRoute();
 
     const prompt = await screen.findByRole("complementary", { name: "Detalle del jugador" });
@@ -210,15 +216,66 @@ describe("Competition player rankings", () => {
 
     await screen.findByText("Lucía Pérez");
     await user.click(screen.getByText("Lucía Pérez"));
-    const aside = screen.getByRole("complementary", { name: "Lucía Pérez" });
+    expect(screen.getByRole("complementary", { name: "Lucía Pérez" })).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
 
+    const currentKind = () =>
+      within(screen.getByRole("complementary", { name: "Lucía Pérez" }))
+        .getAllByRole("listitem")
+        .find((item) => item.getAttribute("aria-current") === "true");
+
     await user.click(screen.getByRole("tab", { name: "Asistencias" }));
-    const current = within(screen.getByRole("complementary", { name: "Lucía Pérez" }))
-      .getAllByRole("listitem")
-      .find((item) => item.getAttribute("aria-current") === "true");
-    expect(current?.getAttribute("data-ranking-standing")).toBe("assister");
-    expect(aside).toBeTruthy();
+    expect(currentKind()?.getAttribute("data-ranking-standing")).toBe("assister");
+
+    await user.click(screen.getByRole("tab", { name: "MVP" }));
+    expect(screen.getByText("Nadie entra todavía en este ranking")).toBeTruthy();
+    expect(within(currentKind()!).getByText("No clasifica")).toBeTruthy();
+
+    await user.click(screen.getByRole("tab", { name: "Porteros" }));
+    expect(screen.getByText("Aún no hay rankings")).toBeTruthy();
+    expect(within(currentKind()!).getByText("Sin calcular")).toBeTruthy();
+  });
+
+  it("waits for names before searching instead of announcing no matches", async () => {
+    const user = userEvent.setup();
+    let release = () => undefined as void;
+    const rostersReady = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    serve({
+      roster: async (teamId) => {
+        await rostersReady;
+        return Response.json(teamDetailFixture(teamId));
+      },
+    });
+    renderRoute();
+
+    await screen.findByRole("table", { name: "Ranking de goleadores" });
+    await user.type(screen.getByRole("searchbox", { name: "Buscar jugador" }), "mateo");
+    expect(screen.getByText("Cargando nombres para buscar…")).toBeTruthy();
+    expect(screen.queryByText("Ningún jugador coincide")).toBeNull();
+    expect(screen.getByRole("searchbox", { name: "Buscar jugador" })).toHaveProperty(
+      "value",
+      "mateo",
+    );
+
+    release();
+    expect(await screen.findByText("1 de 3 jugadores")).toBeTruthy();
+    const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]!).getAllByRole("cell")[0]?.textContent).toBe("2");
+    expect(within(rows[0]!).getByText("Mateo Fernández de la Torre")).toBeTruthy();
+  });
+
+  it("does not rate goalkeeper saves per 90 minutes", async () => {
+    serve();
+    renderRoute("es", "goalkeeper");
+
+    const summary = await screen.findByRole("region", { name: "Resumen del ranking" });
+    expect(within(summary).getByText("No aplica")).toBeTruthy();
+    expect(
+      within(summary).getByText("Los minutos incluyen partidos fuera de la portería."),
+    ).toBeTruthy();
   });
 
   it("filters players by name without renumbering and offers to clear a search with no match", async () => {

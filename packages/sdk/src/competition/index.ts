@@ -23,6 +23,7 @@ export {
   filterRankingRows,
   RANKING_KINDS,
   rankingBestPer90,
+  rankingHasPer90,
   rankingLeader,
   rankingNamesFromTeams,
   rankingPer90,

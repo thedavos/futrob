@@ -372,6 +372,14 @@ describe("rankings", () => {
     expect(rankingPer90("rating", { value: 7.5, minutes: 90 })).toBeNull();
   });
 
+  it("never rates goalkeeper saves over minutes that include outfield play", () => {
+    // 6 saves in 90 minutes in goal plus 90 outfield: the DTO only carries the 180 total.
+    expect(rankingPer90("goalkeeper", { value: 6, minutes: 180 })).toBeNull();
+    expect(
+      rankingBestPer90(ranking([{ ...rows[0]!, value: 6, minutes: 180 }], "goalkeeper")),
+    ).toBeNull();
+  });
+
   it("finds the best per-90 rate, which need not be the leader's", () => {
     const fast = { ...rows[2]!, value: 2, minutes: 45 };
     expect(rankingBestPer90(ranking([rows[0]!, fast]))).toEqual({ row: fast, rate: 4 });

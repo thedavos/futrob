@@ -313,14 +313,26 @@ function KindPanel({
   readonly snapshot: RankingSnapshotDto | null;
   readonly t: Translator;
 }) {
-  if (!snapshot) return <NotComputed t={t} />;
-  return (
-    <>
-      {snapshot.rows.length === 0 ? null : (
-        <RankingSummary formatters={formatters} names={names} snapshot={snapshot} t={t} />
-      )}
-      <RankingMeta formatters={formatters} kind={kind} snapshot={snapshot} t={t} />
-      {snapshot.rows.length === 0 ? (
+  const rows = snapshot?.rows.length ?? 0;
+  // On wide screens the detail stays beside any kind while a player is selected: an empty or
+  // not yet computed kind still shows where the player stands in the others.
+  const aside =
+    host === "aside" && (rows > 0 || selection.selectedId !== null) ? (
+      <RankingPlayerDetail
+        data={data}
+        formatters={formatters}
+        host="aside"
+        kind={kind}
+        names={names}
+        onClose={() => undefined}
+        selectedId={selection.selectedId}
+        t={t}
+      />
+    ) : null;
+  const main = (() => {
+    if (!snapshot) return <NotComputed t={t} />;
+    if (rows === 0) {
+      return (
         <EmptyState>
           <EmptyStateIcon>
             <img alt="" data-outline="none" src={emptyRankingsUrl} />
@@ -332,30 +344,35 @@ function KindPanel({
             </EmptyStateDescription>
           </EmptyStateCopy>
         </EmptyState>
-      ) : (
+      );
+    }
+    return (
+      <RankingTable
+        filterControls={filterControls}
+        formatters={formatters}
+        kind={kind}
+        names={names}
+        selection={selection}
+        snapshot={snapshot}
+        t={t}
+      />
+    );
+  })();
+  return (
+    <>
+      {snapshot && rows > 0 ? (
+        <RankingSummary formatters={formatters} names={names} snapshot={snapshot} t={t} />
+      ) : null}
+      {snapshot ? (
+        <RankingMeta formatters={formatters} kind={kind} snapshot={snapshot} t={t} />
+      ) : null}
+      {aside ? (
         <div {...applyStyles(styles.workspace)}>
-          <RankingTable
-            filterControls={filterControls}
-            formatters={formatters}
-            kind={kind}
-            names={names}
-            selection={selection}
-            snapshot={snapshot}
-            t={t}
-          />
-          {host === "aside" ? (
-            <RankingPlayerDetail
-              data={data}
-              formatters={formatters}
-              host="aside"
-              kind={kind}
-              names={names}
-              onClose={() => undefined}
-              selectedId={selection.selectedId}
-              t={t}
-            />
-          ) : null}
+          <div {...applyStyles(styles.workspaceMain)}>{main}</div>
+          {aside}
         </div>
+      ) : (
+        main
       )}
     </>
   );
