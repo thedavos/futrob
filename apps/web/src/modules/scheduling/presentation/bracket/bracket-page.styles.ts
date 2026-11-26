@@ -346,9 +346,17 @@ export const styles = stylex.create({
     maxWidth: "100%",
     height: "0.875rem",
   },
-  filterLabel: {
-    width: "5.5rem",
-    height: "0.875rem",
+  skeletonTabs: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+    minWidth: 0,
+  },
+  tabsBone: {
+    width: "13rem",
+    maxWidth: "100%",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-full)",
   },
   filterControl: {
     width: "100%",
@@ -393,10 +401,5 @@ export const styles = stylex.create({
   cardStatus: {
     width: "7rem",
     height: "0.75rem",
-  },
-  listToggle: {
-    width: "100%",
-    height: "var(--control-height)",
-    borderRadius: "var(--corner-lg)",
   },
 });

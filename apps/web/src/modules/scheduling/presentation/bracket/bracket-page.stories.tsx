@@ -109,6 +109,8 @@ type StoryArgs = {
   readonly locale: Locale;
   readonly narrow?: boolean;
   readonly team?: string;
+  /** View the link opens with (`?view=`); the tabs change it afterwards. */
+  readonly initialView?: BracketViewMode;
 };
 
 type Harness = {
@@ -121,9 +123,15 @@ type Harness = {
 /** Story state reaches the route through context, so the router is built once per scenario. */
 const HarnessContext = createContext<Harness | null>(null);
 
-function BracketStory({ locale, narrow = false, scenario, team }: StoryArgs) {
+function BracketStory({
+  initialView = "canvas",
+  locale,
+  narrow = false,
+  scenario,
+  team,
+}: StoryArgs) {
   const [teamId, setTeamId] = useState<string | null>(team ?? null);
-  const [view, setView] = useState<BracketViewMode>("canvas");
+  const [view, setView] = useState<BracketViewMode>(initialView);
   const harness = useMemo(() => ({ teamId, setTeamId, view, setView }), [teamId, view]);
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
@@ -362,6 +370,17 @@ export const Empty: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: "Aún no hay cuadro" })).toBeVisible();
     await expect(canvas.queryByRole("link")).toBeNull();
+  },
+};
+
+export const LoadingList: Story = {
+  name: "Cargando · lista",
+  args: { scenario: "loading", initialView: "list" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("status")).toHaveTextContent("Cargando el cuadro");
+    await expect(canvasElement.querySelector("[data-slot='bracket-skeleton-list']")).not.toBeNull();
+    await expect(canvasElement.querySelector("[data-slot='bracket-skeleton-scroller']")).toBeNull();
   },
 };
 

@@ -97,7 +97,7 @@ export function CompetitionBracketPageView({
       {(() => {
         switch (state.kind) {
           case "loading":
-            return <BracketPageSkeleton />;
+            return <BracketPageSkeleton view={view} />;
           case "error":
             return <RetryAlert message={t("bracket.error")} retry={state.retry} t={t} />;
           case "not_found":

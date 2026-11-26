@@ -1,7 +1,7 @@
 import { applyStyles, Skeleton } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { BRACKET_GEOMETRY } from "./bracket-model.ts";
-import { px } from "./bracket-page-shared.ts";
+import { px, type BracketViewMode } from "./bracket-page-shared.ts";
 import { BRACKET_HEADINGS_HEIGHT, styles } from "./bracket-page.styles.ts";
 
 /** Representative knockout: quarters, semis, final. Unknown draws still get a tree, not a blank slab. */
@@ -143,33 +143,75 @@ function BracketCanvasSkeleton() {
   );
 }
 
-/** Knockout loading layout. Live status stays outside `aria-busy`; decorative tree is `inert`. */
-export function BracketPageSkeleton() {
+function BracketListSkeleton() {
+  return (
+    <div data-slot="bracket-skeleton-list" {...applyStyles(styles.list)}>
+      {COLUMN_COUNTS.map((count, roundIndex) => (
+        <div key={roundIndex} {...applyStyles(styles.listRound)}>
+          <Skeleton {...applyStyles(styles.columnTitle)} />
+          <ol {...applyStyles(styles.listItems)}>
+            {Array.from({ length: count }, (_, index) => (
+              <li key={index}>
+                <div {...applyStyles(styles.listRow)}>
+                  <Skeleton {...applyStyles(styles.cardSide)} />
+                  <span {...applyStyles(styles.listRowMeta)}>
+                    <Skeleton {...applyStyles(styles.fact)} />
+                    <Skeleton {...applyStyles(styles.cardWhen)} />
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Knockout loading layout for the selected view (UX-BRK-001): tabs on top,
+ * then the canvas or the list by round. The live status stays outside
+ * `aria-busy`; the decorative tree is `inert`.
+ */
+export function BracketPageSkeleton({ view }: { readonly view: BracketViewMode }) {
   const { t } = useI18n();
   const label = t("bracket.loading");
   return (
     <div aria-busy="true" aria-label={label} inert {...applyStyles(styles.stack)}>
-      <div aria-hidden="true" {...applyStyles(styles.toolbar)}>
-        <Skeleton {...applyStyles(styles.timezone)} />
-        <div {...applyStyles(styles.filter)}>
-          <Skeleton {...applyStyles(styles.filterLabel)} />
-          <Skeleton {...applyStyles(styles.filterControl)} />
-        </div>
-      </div>
-      <section aria-hidden="true" {...applyStyles(styles.stage)}>
-        <div {...applyStyles(styles.stageHeader)}>
-          <Skeleton {...applyStyles(styles.stageTitle)} />
-          <div {...applyStyles(styles.facts)}>
-            <Skeleton {...applyStyles(styles.fact)} />
-            <Skeleton {...applyStyles(styles.fact)} />
+      <div aria-hidden="true" {...applyStyles(styles.skeletonTabs)}>
+        <div {...applyStyles(styles.toolbar)}>
+          <div {...applyStyles(styles.toolbarStart)}>
+            <Skeleton {...applyStyles(styles.tabsBone)} />
+          </div>
+          <div {...applyStyles(styles.filter)}>
+            <Skeleton {...applyStyles(styles.filterControl)} />
           </div>
         </div>
-        <Skeleton {...applyStyles(styles.hint)} />
-        <div data-slot="bracket-skeleton-scroller" {...applyStyles(styles.scroller)}>
-          <BracketCanvasSkeleton />
+        <div {...applyStyles(styles.filterSummary)}>
+          <Skeleton {...applyStyles(styles.timezone)} />
         </div>
-        <Skeleton {...applyStyles(styles.listToggle)} />
-      </section>
+        <div {...applyStyles(styles.panel)}>
+          <section {...applyStyles(styles.stage)}>
+            <div {...applyStyles(styles.stageHeader)}>
+              <Skeleton {...applyStyles(styles.stageTitle)} />
+              <div {...applyStyles(styles.facts)}>
+                <Skeleton {...applyStyles(styles.fact)} />
+                <Skeleton {...applyStyles(styles.fact)} />
+              </div>
+            </div>
+            {view === "list" ? (
+              <BracketListSkeleton />
+            ) : (
+              <>
+                <Skeleton {...applyStyles(styles.hint)} />
+                <div data-slot="bracket-skeleton-scroller" {...applyStyles(styles.scroller)}>
+                  <BracketCanvasSkeleton />
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

@@ -127,6 +127,14 @@ describe("CompetitionBracketPageView", () => {
     expect(scroller?.closest("[inert]")).toBeTruthy();
   });
 
+  it("mirrors the list view while loading a link opened with view=list", async () => {
+    const { container } = mountState({ kind: "loading" }, { view: "list" });
+    expect(await screen.findByRole("heading", { name: "Bracket" })).toBeTruthy();
+    expect(container.querySelector("[data-slot='bracket-skeleton-list']")).toBeTruthy();
+    expect(container.querySelector("[data-slot='bracket-skeleton-scroller']")).toBeNull();
+    expect(container.querySelector("[aria-busy='true']")?.hasAttribute("inert")).toBe(true);
+  });
+
   it("draws every Encounter as a link to its page, with one line per traced source", async () => {
     const { container } = mount(sixteenTeamKnockout);
     const region = await screen.findByRole("region", { name: "Cuadro desplazable: Eliminación" });
