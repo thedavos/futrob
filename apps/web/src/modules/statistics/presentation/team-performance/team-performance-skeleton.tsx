@@ -4,10 +4,6 @@ import { useId } from "react";
 import {
   applyStyles,
   Caption,
-  MetaItem,
-  MetaList,
-  MetaTerm,
-  MetaValue,
   SectionTitle,
   Skeleton,
   Table,
@@ -21,21 +17,22 @@ import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { TEAM_PERFORMANCE_METRICS, teamPerformanceWeight } from "./team-performance-model.ts";
 import { styles } from "./team-performance-page.styles.ts";
 
-/** `TableHead` owns `text-align: left`; inline wins without racing its atomic class. */
-const END = { textAlign: "end" } as const;
-
+const SKELETON_KPIS = Array.from({ length: 4 }, (_, index) => index);
 const SKELETON_ROWS = Array.from({ length: 6 }, (_, index) => index);
 
-const CRITERIA_FIELDS = ["window", "eligibility", "period", "sources", "updated"] as const;
-
 /**
- * Layout-matched loading bones for the ranking table and criteria card. Column
- * headers and section titles are catalog copy; cells and snapshot values stay
- * reserved so the ready page does not jump.
+ * Layout-matched loading bones for the KPI summary, ranking table and collapsed
+ * criteria card. Column headers and section titles are catalog copy; cells and
+ * snapshot values stay reserved so the ready page does not jump.
  */
 export function TeamPerformanceSkeleton({ t }: { readonly t: Translator }) {
   return (
     <div aria-busy="true" {...applyStyles(styles.content)}>
+      <div aria-hidden="true" {...applyStyles(styles.skeletonKpiGrid)}>
+        {SKELETON_KPIS.map((index) => (
+          <Skeleton key={index} {...applyStyles(styles.skeletonKpi)} />
+        ))}
+      </div>
       <RankingTableSkeleton t={t} />
       <CriteriaSkeleton t={t} />
     </div>
@@ -44,7 +41,6 @@ export function TeamPerformanceSkeleton({ t }: { readonly t: Translator }) {
 
 function RankingTableSkeleton({ t }: { readonly t: Translator }) {
   const titleId = useId();
-  const numeric = applyStyles(styles.numeric);
   return (
     <section aria-labelledby={titleId} {...applyStyles(styles.section)}>
       <div {...applyStyles(styles.sectionHead)}>
@@ -58,15 +54,16 @@ function RankingTableSkeleton({ t }: { readonly t: Translator }) {
         <Table aria-hidden="true" containerTabIndex={-1} {...applyStyles(styles.table)}>
           <TableHeader>
             <TableRow>
-              <TableHead scope="col" style={END}>
+              <TableHead className={styles.expandHead} scope="col" />
+              <TableHead align="end" scope="col">
                 {t("teamPerformance.table.position")}
               </TableHead>
               <TableHead scope="col">{t("teamPerformance.table.team")}</TableHead>
-              <TableHead scope="col" style={END}>
+              <TableHead align="end" scope="col">
                 {t("teamPerformance.table.score")}
               </TableHead>
               {TEAM_PERFORMANCE_METRICS.map((metric) => (
-                <TableHead key={metric} scope="col" style={END}>
+                <TableHead align="end" key={metric} scope="col">
                   <span {...applyStyles(styles.headStack)}>
                     <span>{t(`teamPerformance.metric.${metric}`)}</span>
                     <span {...applyStyles(styles.weight)}>
@@ -75,34 +72,31 @@ function RankingTableSkeleton({ t }: { readonly t: Translator }) {
                   </span>
                 </TableHead>
               ))}
-              <TableHead scope="col" style={END}>
-                {t("teamPerformance.table.encounters")}
+              <TableHead align="end" scope="col">
+                {t("teamPerformance.table.encountersShort")}
               </TableHead>
-              <TableHead scope="col">{t("teamPerformance.table.coverage")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {SKELETON_ROWS.map((index) => (
               <TableRow key={index}>
-                <TableCell {...numeric}>
+                <TableCell className={styles.expandCell} />
+                <TableCell align="end">
                   <Skeleton {...applyStyles(styles.skeletonNumeric)} />
                 </TableCell>
                 <TableCell>
                   <Skeleton {...applyStyles(styles.teamSkeleton)} />
                 </TableCell>
-                <TableCell {...numeric}>
+                <TableCell align="end">
                   <Skeleton {...applyStyles(styles.skeletonNumeric)} />
                 </TableCell>
                 {TEAM_PERFORMANCE_METRICS.map((metric) => (
-                  <TableCell key={metric} {...numeric}>
+                  <TableCell align="end" key={metric}>
                     <Skeleton {...applyStyles(styles.skeletonNumeric)} />
                   </TableCell>
                 ))}
-                <TableCell {...numeric}>
+                <TableCell align="end">
                   <Skeleton {...applyStyles(styles.skeletonNumeric)} />
-                </TableCell>
-                <TableCell>
-                  <Skeleton {...applyStyles(styles.skeletonCoverage)} />
                 </TableCell>
               </TableRow>
             ))}
@@ -117,33 +111,13 @@ function CriteriaSkeleton({ t }: { readonly t: Translator }) {
   const titleId = useId();
   return (
     <section aria-labelledby={titleId} {...applyStyles(styles.criteria)}>
-      <div {...applyStyles(styles.sectionHead)}>
-        <SectionTitle id={titleId}>{t("teamPerformance.criteria.title")}</SectionTitle>
-        <Skeleton {...applyStyles(styles.skeletonDescription)} />
+      <div {...applyStyles(styles.criteriaTop)}>
+        <div {...applyStyles(styles.criteriaHeaderCopy)}>
+          <SectionTitle id={titleId}>{t("teamPerformance.criteria.title")}</SectionTitle>
+          <Skeleton {...applyStyles(styles.skeletonCriteriaMeta)} />
+        </div>
+        <Skeleton {...applyStyles(styles.skeletonCriteriaTrigger)} />
       </div>
-      <ul aria-hidden="true" {...applyStyles(styles.weights)}>
-        {TEAM_PERFORMANCE_METRICS.map((metric) => (
-          <li key={metric}>
-            <Skeleton {...applyStyles(styles.skeletonWeight)} />
-          </li>
-        ))}
-      </ul>
-      <MetaList columns={2}>
-        {CRITERIA_FIELDS.map((field, index) => (
-          <MetaItem key={field}>
-            <MetaTerm>{t(`teamPerformance.criteria.${field}`)}</MetaTerm>
-            <MetaValue>
-              <Skeleton
-                {...applyStyles(
-                  index % 2 === 0 ? styles.skeletonMetaValueWide : styles.skeletonMetaValue,
-                )}
-              />
-            </MetaValue>
-          </MetaItem>
-        ))}
-      </MetaList>
-      <Skeleton {...applyStyles(styles.skeletonVersions)} />
-      <Skeleton {...applyStyles(styles.skeletonLink)} />
     </section>
   );
 }

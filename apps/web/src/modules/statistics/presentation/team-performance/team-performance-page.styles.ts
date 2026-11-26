@@ -1,27 +1,36 @@
 import * as stylex from "@stylexjs/stylex";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
+import { colors, corner, space, timing } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 
 export const styles = stylex.create({
   content: {
     display: "flex",
     flexDirection: "column",
-    gap: "1.5rem",
+    gap: space.s6,
     minWidth: 0,
   },
   section: {
     display: "flex",
     flexDirection: "column",
-    gap: "1rem",
+    gap: space.s4,
     minWidth: 0,
   },
   sectionHead: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.25rem",
+    gap: space.s1,
+  },
+  sectionMetaRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.25rem 0.5rem",
+  },
+  metaDot: {
+    color: colors.textDisabled,
   },
   table: {
-    minWidth: "56rem",
+    minWidth: "46rem",
   },
   headStack: {
     display: "flex",
@@ -30,80 +39,340 @@ export const styles = stylex.create({
     gap: "0.125rem",
   },
   weight: {
+    color: colors.textTertiary,
+    fontWeight: "var(--font-weight-regular)",
+    textTransform: "none",
+    letterSpacing: "var(--tracking-normal)",
+  },
+  abbr: {
+    textDecorationLine: "none",
+    cursor: "help",
+  },
+  expandHead: {
+    width: "3rem",
+    paddingRight: 0,
+  },
+  expandCell: {
+    width: "3rem",
+    paddingRight: 0,
+  },
+  expandButton: {
+    display: "inline-grid",
+    placeItems: "center",
+    width: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+      "@media (any-pointer: coarse)": "var(--control-height-touch)",
+    },
+    height: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+      "@media (any-pointer: coarse)": "var(--control-height-touch)",
+    },
+    padding: 0,
+    borderWidth: 0,
+    borderRadius: corner.md,
+    backgroundColor: {
+      default: "transparent",
+      ":hover": colors.muted,
+    },
+    color: {
+      default: colors.mutedForeground,
+      ":hover": colors.foreground,
+      ":focus-visible": colors.foreground,
+    },
+    cursor: "pointer",
+    outlineWidth: 0,
+    outlineStyle: "none",
+    boxShadow: {
+      default: null,
+      ":focus-visible": "0 0 0 2px var(--ring)",
+    },
+    transitionProperty: "background-color, color",
+    transitionDuration: timing.fast,
+    transitionTimingFunction: timing.easeEmphasized,
+  },
+  rowExpanded: {
+    backgroundColor: "color-mix(in oklab, var(--muted) 45%, transparent)",
+  },
+  positionValue: {
     color: colors.mutedForeground,
-    fontWeight: 400,
   },
-  numeric: {
-    textAlign: "right",
-    whiteSpace: "nowrap",
+  positionLeader: {
+    color: colors.primary,
+    fontWeight: "var(--font-weight-bold)",
   },
-  scoreValue: {
+  teamWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: space.s3,
+    minWidth: "10rem",
+    maxWidth: "17rem",
+  },
+  teamCopy: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: space.s1,
+    minWidth: 0,
+  },
+  crest: {
+    width: "1.75rem",
+    height: "1.75rem",
+    flexShrink: 0,
+  },
+  crestPlaceholder: {
+    display: "inline-block",
+    borderRadius: corner.full,
+    backgroundColor: colors.surfaceRaised,
+  },
+  teamName: {
     color: colors.foreground,
-    fontWeight: 600,
-  },
-  team: {
-    display: "block",
-    minWidth: "11rem",
-    maxWidth: "16rem",
+    fontWeight: "var(--font-weight-semibold)",
     overflowWrap: "anywhere",
-    fontWeight: 600,
   },
   teamUnknown: {
     color: colors.mutedForeground,
-    fontWeight: 500,
+    fontWeight: "var(--font-weight-medium)",
   },
   teamSkeleton: {
     width: "8rem",
     height: "1rem",
   },
+  scoreCell: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: space.s2,
+  },
+  scoreTrack: {
+    display: "block",
+    width: "3.25rem",
+    height: "0.375rem",
+    borderRadius: corner.full,
+    backgroundColor: colors.surfaceRaised,
+    overflow: "hidden",
+    flexShrink: 0,
+  },
+  scoreFill: {
+    display: "block",
+    height: "100%",
+    borderRadius: corner.full,
+    backgroundColor: colors.foreground,
+  },
+  scoreFillLeader: {
+    backgroundColor: colors.primary,
+  },
+  /** Index score ranks the table, so it is the only bold figure in the row (design.md). */
+  scoreValue: {
+    color: colors.foreground,
+    fontSize: "var(--text-base)",
+    lineHeight: "1.25rem",
+    fontWeight: "var(--font-weight-bold)",
+    minWidth: "1.75rem",
+  },
+  componentValue: {
+    color: colors.mutedForeground,
+  },
+  componentBest: {
+    color: colors.foreground,
+    fontWeight: "var(--font-weight-semibold)",
+  },
   muted: {
     color: colors.mutedForeground,
   },
-  coverage: {
+  coverageInline: {
     display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: "0.25rem",
-    minWidth: "11rem",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.25rem 0.5rem",
   },
   badge: {
     display: "inline-flex",
     alignItems: "center",
     gap: "0.375rem",
   },
+  evidenceRow: {
+    backgroundColor: {
+      default: colors.surface,
+      ":hover": colors.surface,
+    },
+  },
+  evidenceCell: {
+    height: "auto",
+    paddingBlock: space.s4,
+    paddingLeft: { default: space.s4, [media.md]: "3.25rem" },
+    paddingRight: space.s4,
+  },
+  evidencePanel: {
+    display: "flex",
+    flexDirection: "column",
+    gap: space.s3,
+  },
+  evidenceGrid: {
+    display: "grid",
+    gridTemplateColumns: {
+      default: "repeat(2, minmax(0, 1fr))",
+      [media.md]: "repeat(5, minmax(0, 1fr))",
+    },
+    gap: space.s3,
+  },
+  evidenceItem: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.1875rem",
+    paddingLeft: space.s3,
+    borderLeftWidth: 2,
+    borderLeftStyle: "solid",
+    borderLeftColor: colors.border,
+    minWidth: 0,
+  },
+  evidenceChart1: { borderLeftColor: colors.chart1 },
+  evidenceChart2: { borderLeftColor: colors.chart2 },
+  evidenceChart3: { borderLeftColor: colors.chart3 },
+  evidenceChart4: { borderLeftColor: colors.chart4 },
+  evidenceChart5: { borderLeftColor: colors.chart5 },
+  evidenceHead: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: space.s2,
+    color: colors.mutedForeground,
+  },
+  evidenceContribution: {
+    color: colors.foreground,
+    fontSize: "var(--text-sm)",
+    lineHeight: "1.25rem",
+    fontWeight: "var(--font-weight-bold)",
+  },
+  evidenceRaw: {
+    color: colors.textTertiary,
+  },
+  evidenceBarTrack: {
+    display: "block",
+    height: "0.25rem",
+    marginTop: space.s1,
+    borderRadius: corner.full,
+    backgroundColor: colors.surfaceRaised,
+    overflow: "hidden",
+  },
+  evidenceBarFill: {
+    display: "block",
+    height: "100%",
+    borderRadius: corner.full,
+  },
+  evidenceFillChart1: { backgroundColor: colors.chart1 },
+  evidenceFillChart2: { backgroundColor: colors.chart2 },
+  evidenceFillChart3: { backgroundColor: colors.chart3 },
+  evidenceFillChart4: { backgroundColor: colors.chart4 },
+  evidenceFillChart5: { backgroundColor: colors.chart5 },
+  evidenceFooter: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.375rem 1rem",
+    paddingTop: space.s3,
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
+  },
   scrollHint: {
     display: { default: "block", [media.lg]: "none" },
   },
   criteria: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-    padding: { default: "1rem", [media.sm]: "1.5rem" },
+    padding: space.s4,
     borderWidth: 1,
     borderStyle: "solid",
     borderColor: colors.border,
-    borderRadius: "var(--corner-lg)",
+    borderRadius: corner.lg,
     backgroundColor: colors.surface,
     minWidth: 0,
+  },
+  criteriaTop: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.75rem 1rem",
+  },
+  criteriaHeaderCopy: {
+    display: "flex",
+    flexDirection: "column",
+    gap: space.s1,
+    minWidth: 0,
+    flexGrow: 1,
+  },
+  criteriaInlineMeta: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "0.25rem 0.625rem",
+  },
+  criteriaTerm: {
+    color: colors.foreground,
+    fontWeight: "var(--font-weight-semibold)",
+  },
+  criteriaTrigger: {
+    width: "auto",
+    minHeight: {
+      default: "var(--control-height-dense)",
+      [media.maxSm]: "var(--control-height-touch)",
+      "@media (any-pointer: coarse)": "var(--control-height-touch)",
+    },
+    paddingInline: space.s3,
+    borderColor: colors.border,
+    backgroundColor: {
+      default: colors.background,
+      ":hover": colors.muted,
+    },
+    fontSize: "var(--text-xs)",
+    fontWeight: "var(--font-weight-medium)",
+    color: colors.foreground,
+    flexShrink: 0,
+  },
+  criteriaBody: {
+    display: "flex",
+    flexDirection: "column",
+    gap: space.s4,
+    marginTop: space.s4,
+    paddingTop: space.s4,
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: colors.borderSubtle,
   },
   weights: {
     display: "flex",
     flexWrap: "wrap",
-    gap: "0.5rem",
+    gap: space.s2,
     margin: 0,
     padding: 0,
     listStyle: "none",
   },
-  link: {
-    display: "inline-flex",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: "0.25rem",
-    minHeight: "var(--control-height)",
-  },
   chevron: {
     width: "1rem",
     height: "1rem",
+    transitionProperty: "transform",
+    transitionDuration: timing.fast,
+    transitionTimingFunction: timing.easeEmphasized,
+  },
+  chevronOpen: {
+    transform: "rotate(180deg)",
+  },
+  skeletonKpiGrid: {
+    display: "grid",
+    width: "100%",
+    gridTemplateColumns: {
+      default: "minmax(0, 1fr)",
+      [media.sm]: "repeat(2, minmax(0, 1fr))",
+      [media.lg]: "repeat(4, minmax(0, 1fr))",
+    },
+    gap: space.s4,
+  },
+  skeletonKpi: {
+    width: "100%",
+    height: "5.75rem",
+    borderRadius: corner.lg,
   },
   skeletonCaption: {
     width: "14rem",
@@ -118,39 +387,13 @@ export const styles = stylex.create({
     height: "1rem",
     marginInlineStart: "auto",
   },
-  skeletonCoverage: {
-    width: "7rem",
+  skeletonCriteriaMeta: {
+    width: "24rem",
     maxWidth: "100%",
-    height: "1.5rem",
-    borderRadius: "var(--corner-full)",
+    height: "0.875rem",
   },
-  skeletonDescription: {
-    width: "100%",
-    height: "2.5rem",
-  },
-  skeletonWeight: {
-    width: "7.5rem",
-    height: "1.5rem",
-    borderRadius: "var(--corner-full)",
-  },
-  skeletonMetaValue: {
+  skeletonCriteriaTrigger: {
     width: "9rem",
-    maxWidth: "100%",
-    height: "0.875rem",
-  },
-  skeletonMetaValueWide: {
-    width: "16rem",
-    maxWidth: "100%",
-    height: "0.875rem",
-  },
-  skeletonVersions: {
-    width: "28rem",
-    maxWidth: "100%",
-    height: "0.875rem",
-  },
-  skeletonLink: {
-    width: "12rem",
-    maxWidth: "100%",
     height: "var(--control-height)",
     borderRadius: "var(--corner-md)",
   },

@@ -16,6 +16,7 @@ import { media } from "@futrob/ui/styles/media.stylex";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
+  TEAM_PERFORMANCE_ROWS,
   TEAM_PERFORMANCE_TEAMS,
   projectionIncompleteFixture,
   teamPerformanceRankingFixture,
@@ -41,6 +42,7 @@ const styles = stylex.create({
 
 type Scenario =
   | "ready"
+  | "allScored"
   | "loading"
   | "notBuilt"
   | "empty"
@@ -57,6 +59,12 @@ const ready = teamPerformanceRankingFixture();
 
 const STATES: Record<Scenario, TeamPerformanceState> = {
   ready: { kind: "ready", ranking: ready },
+  allScored: {
+    kind: "ready",
+    ranking: teamPerformanceRankingFixture({
+      rows: TEAM_PERFORMANCE_ROWS.filter((row) => row.status === "scored"),
+    }),
+  },
   loading: { kind: "loading" },
   notBuilt: { kind: "ready", ranking: null },
   empty: {
@@ -165,7 +173,25 @@ export const Ready: Story = {
     await expect(within(table).getByText("Falta: Eficiencia defensiva")).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Criterio" })).toBeVisible();
     await expect(canvas.getByRole("status")).toBeEmptyDOMElement();
+
+    await userEvent.click(canvas.getByRole("button", { name: "Ver evidencia de Cuervos FC" }));
+    await expect(canvas.getByText("6 goles / 12 tiros")).toBeVisible();
+
+    await userEvent.click(canvas.getByRole("button", { name: "Fórmula y versiones" }));
+    await waitFor(async () => {
+      await expect(
+        canvas.getByText(
+          "Versiones: team-performance-v1 · team-performance-normalization-v1 · competition-all-form-5-min-3-v1",
+        ),
+      ).toBeVisible();
+    });
   },
+};
+
+export const AllScored: Story = {
+  name: "Todos puntuados",
+  args: { scenario: "allScored" },
+  parameters: { a11y: { test: "error" } },
 };
 
 export const ReadyEnglishNarrow: Story = {
@@ -297,4 +323,24 @@ export const NotBuiltRefreshError: Story = {
 export const NarrowSpanish: Story = {
   name: "Con ranking · ES 360",
   args: { narrow: true },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const expandButton = await canvas.findByRole("button", {
+      name: "Ver evidencia de Cuervos FC",
+    });
+    const criteriaButton = canvas.getByRole("button", { name: "Fórmula y versiones" });
+
+    await userEvent.click(expandButton);
+    await expect(canvas.getByText("6 goles / 12 tiros")).toBeVisible();
+
+    await userEvent.click(criteriaButton);
+    await waitFor(async () => {
+      await expect(
+        canvas.getByText(
+          "Versiones: team-performance-v1 · team-performance-normalization-v1 · competition-all-form-5-min-3-v1",
+        ),
+      ).toBeVisible();
+    });
+  },
 };
