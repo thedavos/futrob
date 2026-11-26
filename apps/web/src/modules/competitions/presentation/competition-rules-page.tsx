@@ -19,7 +19,6 @@ import {
   Heading,
   MetaList,
   Separator,
-  Skeleton,
 } from "@futrob/ui";
 import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { DEFAULT_MAX_ROSTER_SIZE } from "@futrob/teams";
@@ -38,6 +37,7 @@ import {
 } from "./competition-rules-model.ts";
 import { PlatformRules, Section, Fact } from "./competition-rules-parts.tsx";
 import { styles } from "./competition-rules-page.styles.ts";
+import { CompetitionRulesSkeleton } from "./competition-rules-skeleton.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type CompetitionRulesState =
@@ -115,17 +115,7 @@ function RulesBody({
 }) {
   switch (state.kind) {
     case "loading":
-      return (
-        <div
-          aria-busy="true"
-          aria-label={t("competitionRules.loading")}
-          role="status"
-          {...applyStyles(styles.stack)}
-        >
-          <Skeleton {...applyStyles(styles.skeleton)} />
-          <Skeleton {...applyStyles(styles.skeleton)} />
-        </div>
-      );
+      return <CompetitionRulesSkeleton t={t} />;
     case "error":
       return <RetryAlert message={t("competitionRules.error")} retry={state.retry} t={t} />;
     case "forbidden":

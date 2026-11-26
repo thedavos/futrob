@@ -173,7 +173,35 @@ export const LeagueWithoutRescheduling: Story = {
   args: { scenario: "league" },
 };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = canvas.getByRole("status", { name: "Cargando el reglamento…" });
+    await expect(status.closest("[aria-busy='true']")).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("heading", { name: "Formato" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Reglas de la plataforma" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Plantilla" })).toBeVisible();
+    await expect(canvas.getAllByRole("heading", { name: "Puntuación" })).toHaveLength(2);
+    await expect(canvas.queryByText("Liga + playoffs")).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Editar reglas" })).toBeNull();
+    await expect(canvasElement.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(
+      0,
+    );
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("status", { name: "Cargando el reglamento…" })).toBeTruthy();
+    await expect(canvas.getByRole("heading", { name: "Formato" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Reglas de la plataforma" })).toBeVisible();
+  },
+};
 export const Forbidden: Story = { name: "Sin acceso", args: { scenario: "forbidden" } };
 export const NotFound: Story = { name: "No encontrada", args: { scenario: "notFound" } };
 export const LoadError: Story = {
