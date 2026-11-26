@@ -13,7 +13,7 @@ import {
   CompetitionSanctionsPageView,
   CompetitionSanctionsRoute,
 } from "./competition-sanctions-page.tsx";
-import { TeamSanctionsSection } from "./team-sanctions-section.tsx";
+import { TeamSanctionsSection, TeamSanctionsSectionView } from "./team-sanctions-section.tsx";
 
 const COMPETITION = "/api/v1/organizations/org-1/competitions/competition-1";
 
@@ -135,13 +135,14 @@ afterEach(() => {
 
 describe("Competition sanctions page", () => {
   it("reserves the sanctions table while the list loads and skips the empty state", () => {
-    render(
+    const commands = {
+      impose: async () => undefined,
+      revoke: async () => undefined,
+    };
+    const { rerender } = render(
       <I18nProvider initialLocale="es">
         <CompetitionSanctionsPageView
-          commands={{
-            impose: async () => undefined,
-            revoke: async () => undefined,
-          }}
+          commands={commands}
           competitionId="competition-1"
           organizationId="org-1"
           state={{ kind: "loading" }}
@@ -149,7 +150,10 @@ describe("Competition sanctions page", () => {
       </I18nProvider>,
     );
 
-    expect(screen.getByRole("status", { name: "Cargando sanciones" })).toBeTruthy();
+    const status = screen.getByRole("status", { name: "Cargando sanciones" });
+    expect(status.textContent).toBe("Cargando sanciones");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
     expect(screen.getByRole("columnheader", { name: "Sanción" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Sancionado" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Motivo" })).toBeTruthy();
@@ -161,6 +165,51 @@ describe("Competition sanctions page", () => {
     );
     expect(screen.queryByText("Sin sanciones")).toBeNull();
     expect(screen.queryByRole("button", { name: "Sancionar" })).toBeNull();
+
+    rerender(
+      <I18nProvider initialLocale="es">
+        <CompetitionSanctionsPageView
+          commands={commands}
+          competitionId="competition-1"
+          organizationId="org-1"
+          state={{ kind: "ready", data: { sanctions: [active] } }}
+        />
+      </I18nProvider>,
+    );
+
+    expect(document.contains(status)).toBe(true);
+    expect(status.textContent).toBe("");
+    expect(status.getAttribute("aria-label")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeNull();
+  });
+
+  it("keeps the team loading status outside the busy table wrapper and clears it when ready", () => {
+    const { rerender } = render(
+      <I18nProvider initialLocale="es">
+        <TeamSanctionsSectionView state={{ kind: "loading" }} />
+      </I18nProvider>,
+    );
+
+    const status = screen.getByRole("status", { name: "Cargando las sanciones del equipo" });
+    expect(status.textContent).toBe("Cargando las sanciones del equipo");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
+    expect(screen.getByRole("columnheader", { name: "Sanción" })).toBeTruthy();
+    expect(screen.queryByRole("columnheader", { name: "Acciones" })).toBeNull();
+    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+      "-1",
+    );
+
+    rerender(
+      <I18nProvider initialLocale="es">
+        <TeamSanctionsSectionView state={{ kind: "ready", data: { sanctions: [active] } }} />
+      </I18nProvider>,
+    );
+
+    expect(document.contains(status)).toBe(true);
+    expect(status.textContent).toBe("");
+    expect(status.getAttribute("aria-label")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeNull();
   });
 
   it("lets an actor with sanctions.manage revoke with a reason and keeps the row as revoked", async () => {

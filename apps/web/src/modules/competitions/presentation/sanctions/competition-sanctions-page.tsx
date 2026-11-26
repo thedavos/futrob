@@ -87,12 +87,13 @@ export function CompetitionSanctionsPageView({
   readonly state: CompetitionSanctionsState;
 }) {
   const { t } = useI18n();
+  const isLoading = state.kind === "loading";
   const canImpose = commands !== null && state.kind === "ready";
   const loadingLabel = t("sanctions.list.loading");
   return (
     <PageScaffold
       actions={
-        state.kind === "loading" && commands !== null ? (
+        isLoading && commands !== null ? (
           <Skeleton {...applyStyles(styles.imposeSkeleton)} />
         ) : canImpose ? (
           <ImposeSanctionDialog
@@ -104,14 +105,18 @@ export function CompetitionSanctionsPageView({
       }
       page="competition.sanctions"
     >
+      <span
+        aria-label={isLoading ? loadingLabel : undefined}
+        role="status"
+        {...applyStyles(vis.srOnly)}
+      >
+        {isLoading ? loadingLabel : null}
+      </span>
       {(() => {
         switch (state.kind) {
           case "loading":
             return (
               <section aria-busy="true" aria-label={loadingLabel} {...applyStyles(styles.section)}>
-                <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
-                  {loadingLabel}
-                </span>
                 <SanctionTableSkeleton showActions={commands !== null} />
               </section>
             );

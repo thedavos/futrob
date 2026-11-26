@@ -36,20 +36,25 @@ export function TeamSanctionsSection(scope: TeamScope) {
 
 export function TeamSanctionsSectionView({ state }: { readonly state: TeamSanctionsState }) {
   const { t } = useI18n();
+  const isLoading = state.kind === "loading";
   const loadingLabel = t("sanctions.team.loading");
   return (
     <section aria-label={t("sanctions.team.label")} {...applyStyles(styles.section)}>
       <div {...applyStyles(styles.sectionHeader)}>
         <SectionTitle>{t("sanctions.team.title")}</SectionTitle>
       </div>
+      <span
+        aria-label={isLoading ? loadingLabel : undefined}
+        role="status"
+        {...applyStyles(vis.srOnly)}
+      >
+        {isLoading ? loadingLabel : null}
+      </span>
       {(() => {
         switch (state.kind) {
           case "loading":
             return (
-              <div aria-busy="true" aria-label={loadingLabel}>
-                <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
-                  {loadingLabel}
-                </span>
+              <div aria-busy="true" {...applyStyles(styles.loadingRegion)}>
                 <SanctionTableSkeleton />
               </div>
             );

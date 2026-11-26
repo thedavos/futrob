@@ -203,6 +203,7 @@ export const Loading: Story = {
     const canvas = within(canvasElement);
     const status = await canvas.findByRole("status", { name: "Cargando sanciones" });
     await expect(status).toHaveTextContent("Cargando sanciones");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
     await expect(canvas.findByRole("columnheader", { name: "Sanción" })).resolves.toBeVisible();
     await expect(canvas.findByRole("columnheader", { name: "Sancionado" })).resolves.toBeVisible();
     await expect(canvas.findByRole("columnheader", { name: "Motivo" })).resolves.toBeVisible();
@@ -226,7 +227,8 @@ export const LoadingNarrow: Story = {
   args: { scenario: "loading", narrow: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.findByRole("status", { name: "Cargando sanciones" })).resolves.toBeTruthy();
+    const status = await canvas.findByRole("status", { name: "Cargando sanciones" });
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
     await expect(canvas.findByRole("columnheader", { name: "Sanción" })).resolves.toBeVisible();
   },
 };
@@ -281,13 +283,45 @@ export const TeamViewLoading: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      canvas.findByRole("status", { name: "Cargando las sanciones del equipo" }),
-    ).resolves.toBeTruthy();
+    const status = await canvas.findByRole("status", {
+      name: "Cargando las sanciones del equipo",
+    });
+    await expect(status).toHaveTextContent("Cargando las sanciones del equipo");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).not.toBeNull();
     await expect(canvas.findByRole("columnheader", { name: "Sanción" })).resolves.toBeVisible();
     await expect(canvas.queryByRole("columnheader", { name: "Acciones" })).toBeNull();
     const table = canvasElement.querySelector("[data-slot='table-container']");
     await expect(table).toHaveAttribute("tabindex", "-1");
+  },
+};
+
+export const TeamViewLoadingNarrow: Story = {
+  name: "Mi equipo · cargando · 390",
+  globals: { viewport: { value: "phone390" } },
+  parameters: {
+    viewport: {
+      options: { phone390: { name: "Phone 390", styles: { width: "390px", height: "800px" } } },
+    },
+  },
+  render: ({ locale }) => (
+    <Frame locale={locale} narrow={false}>
+      <TeamSanctionsSectionView state={TEAM_STATES.loading} />
+    </Frame>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status", {
+      name: "Cargando las sanciones del equipo",
+    });
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).not.toBeNull();
+    const tableContainer = canvasElement.querySelector<HTMLElement>(
+      "[data-slot='table-container']",
+    );
+    await expect(tableContainer).not.toBeNull();
+    await expect(tableContainer!.scrollWidth).toBeGreaterThan(tableContainer!.clientWidth);
+    await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   },
 };
 

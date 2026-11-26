@@ -8,6 +8,9 @@ export const styles = stylex.create({
     minWidth: 0,
     gap: "0.75rem",
   },
+  loadingRegion: {
+    minWidth: 0,
+  },
   sectionHeader: {
     display: "flex",
     flexWrap: "wrap",
