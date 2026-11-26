@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
-import { applyProps } from "@futrob/ui";
+import { applyStyles } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
@@ -26,11 +26,19 @@ const styles = stylex.create({
     paddingInline: { default: "1rem", [media.lg]: "1.5rem" },
     paddingBlock: "1.5rem",
   },
-  narrow: {
-    width: 390,
-    paddingInline: "1rem",
-  },
 });
+
+const mobileViewport = {
+  viewport: {
+    options: {
+      phone390: {
+        name: "Phone 390",
+        styles: { width: "390px", height: "844px" },
+        type: "mobile",
+      },
+    },
+  },
+};
 
 const ORG = "org-story";
 
@@ -42,7 +50,6 @@ type StoryArgs = {
   readonly slugCheck: OrganizationsSlugStoryState;
   readonly logo: OrganizationsLogoStoryState;
   readonly storedLogo: boolean;
-  readonly narrow: boolean;
 };
 
 function SettingsStoryShell(args: StoryArgs) {
@@ -95,7 +102,7 @@ function SettingsStoryShell(args: StoryArgs) {
   return (
     <QueryClientProvider client={client}>
       <I18nProvider initialLocale={args.locale} persistLocale={async () => undefined}>
-        <div {...applyProps(undefined, undefined, styles.frame, args.narrow && styles.narrow)}>
+        <div {...applyStyles(styles.frame)}>
           <OrganizationSettingsPage organizationId={ORG} />
         </div>
       </I18nProvider>
@@ -114,12 +121,10 @@ const meta = {
     slugCheck: "free",
     logo: "success",
     storedLogo: false,
-    narrow: false,
   },
   argTypes: {
     locale: { control: "inline-radio", options: ["es", "en"] },
     canEdit: { control: "boolean" },
-    narrow: { control: "boolean" },
     profileLoad: { control: "select", options: ["success", "pending", "error"] },
     profileSave: {
       control: "select",
@@ -159,6 +164,10 @@ async function expectReadySpanishForm(canvasElement: HTMLElement) {
   await expect(await canvas.findByLabelText("Slug")).toHaveValue("liga-story");
   await expect(canvas.getByLabelText("Nombre de la organización")).toHaveValue("Liga Story");
   await expect(canvas.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+  await expect(canvas.getByRole("status")).toHaveTextContent("");
+  await expect(
+    canvasElement.querySelector("[data-slot='organization-settings-profile']"),
+  ).not.toHaveAttribute("aria-busy", "true");
 }
 
 export const Default: Story = {
@@ -169,8 +178,10 @@ export const Default: Story = {
 
 export const DefaultNarrow: Story = {
   name: "Con datos · 390",
-  args: { narrow: true },
+  globals: { viewport: { value: "phone390", isRotated: false } },
+  parameters: mobileViewport,
   play: async ({ canvasElement }) => {
+    await expect(window.matchMedia("(min-width: 40rem)").matches).toBe(false);
     await expectReadySpanishForm(canvasElement);
   },
 };
@@ -183,14 +194,18 @@ export const English: Story = {
       await canvas.findByRole("heading", { name: "Organization settings" }),
     ).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Save changes" })).toBeDisabled();
+    await expect(canvas.getByRole("status")).toHaveTextContent("");
   },
 };
 
 async function expectLoadingSkeleton(canvasElement: HTMLElement, label: string) {
   const canvas = within(canvasElement);
-  const page = await canvas.findByRole("main", { name: label });
-  await expect(page).toHaveAttribute("aria-busy", "true");
-  await expect(canvas.getAllByRole("status", { name: label }).length).toBeGreaterThan(0);
+  await expect(canvas.getByRole("main")).not.toHaveAttribute("aria-busy", "true");
+  const profile = canvasElement.querySelector("[data-slot='organization-settings-profile']");
+  await expect(profile).toHaveAttribute("aria-busy", "true");
+  const status = canvas.getByRole("status");
+  await expect(status).toHaveTextContent(label);
+  await expect(status.closest("[aria-busy='true']")).toBeNull();
   await expect(
     canvasElement.querySelector("[data-slot='organization-settings-form-skeleton']"),
   ).not.toBeNull();
@@ -217,8 +232,11 @@ export const Loading: Story = {
 
 export const LoadingNarrow: Story = {
   name: "Cargando · 390",
-  args: { profileLoad: "pending", narrow: true },
+  args: { profileLoad: "pending" },
+  globals: { viewport: { value: "phone390", isRotated: false } },
+  parameters: mobileViewport,
   play: async ({ canvasElement }) => {
+    await expect(window.matchMedia("(min-width: 40rem)").matches).toBe(false);
     await expectLoadingSkeleton(canvasElement, "Cargando perfil…");
   },
 };
@@ -242,6 +260,10 @@ export const LoadFailed: Story = {
       await canvas.findByText("No pudimos cargar el perfil de la organización."),
     ).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Reintentar" })).toBeVisible();
+    await expect(canvas.getByRole("status")).toHaveTextContent("");
+    await expect(
+      canvasElement.querySelector("[data-slot='organization-settings-profile']"),
+    ).not.toHaveAttribute("aria-busy", "true");
   },
 };
 

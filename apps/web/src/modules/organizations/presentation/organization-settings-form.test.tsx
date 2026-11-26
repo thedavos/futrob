@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { QueryClient } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type {
@@ -9,12 +10,17 @@ import type {
   SetOrganizationLogoRequest,
   UpdateOrganizationProfileRequest,
 } from "@futrob/api-contracts";
+import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
+import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { OrganizationsClientError } from "./organizations-browser-client.ts";
 import { OrganizationSettingsForm } from "./organization-settings-form.tsx";
+import { OrganizationSettingsPage } from "./organization-settings-page.tsx";
 
 const mocks = vi.hoisted(() => ({
+  getProfile: vi.fn<(organizationId: string) => Promise<OrganizationProfileDto>>(),
   checkSlug:
     vi.fn<
       (input: OrganizationSlugAvailabilityRequest) => Promise<OrganizationSlugAvailabilityResponse>
@@ -40,6 +46,7 @@ vi.mock("./organizations-browser-client.ts", async (importOriginal) => {
     ...actual,
     organizationsBrowserClient: {
       ...actual.organizationsBrowserClient,
+      getProfile: (organizationId: string) => mocks.getProfile(organizationId),
       checkSlugAvailability: (input: OrganizationSlugAvailabilityRequest) => mocks.checkSlug(input),
       updateProfile: (organizationId: string, input: UpdateOrganizationProfileRequest) =>
         mocks.updateProfile(organizationId, input),
@@ -259,5 +266,130 @@ describe("OrganizationSettingsForm", () => {
     expect(slugField()).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Guardar cambios" })).toBeNull();
     expect(screen.getByRole("button", { name: "Subir escudo" })).toBeDisabled();
+  });
+});
+
+function createPageQueryClient(organizationId: string, canEdit = true) {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, staleTime: Infinity, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+  for (const [permission, allowed] of [
+    [ORGANIZATION_PERMISSION.update, canEdit],
+    [ORGANIZATION_PERMISSION.auditTrailRead, false],
+  ] as const) {
+    client.setQueryData(queryKeys.authorization.effectiveAccess({ organizationId }, [permission]), {
+      actorId: "actor-1",
+      scope: { organizationId },
+      roles: [],
+      permissions: [{ permission, allowed, decidedAt: "organization" }],
+    });
+  }
+  return client;
+}
+
+describe("OrganizationSettingsPage", () => {
+  it("keeps the loading status mounted outside aria-busy and clears it when the profile loads", async () => {
+    let resolveProfile!: (value: OrganizationProfileDto) => void;
+    mocks.getProfile.mockImplementationOnce(
+      () =>
+        new Promise<OrganizationProfileDto>((resolve) => {
+          resolveProfile = resolve;
+        }),
+    );
+
+    const client = createPageQueryClient(profile.organizationId);
+    const { container } = render(
+      <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+        <QueryTestProvider client={client}>
+          <OrganizationSettingsPage organizationId={profile.organizationId} />
+        </QueryTestProvider>
+      </I18nProvider>,
+    );
+
+    const status = screen.getByRole("status");
+    const profileContainer = container.querySelector("[data-slot='organization-settings-profile']");
+    expect(status).toHaveTextContent("Cargando perfil…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(screen.getByRole("main")).not.toHaveAttribute("aria-busy", "true");
+    expect(profileContainer).toHaveAttribute("aria-busy", "true");
+    expect(
+      container.querySelector("[data-slot='organization-settings-form-skeleton']"),
+    ).not.toBeNull();
+
+    resolveProfile(profile);
+
+    expect(await screen.findByRole("textbox", { name: "Nombre de la organización" })).toHaveValue(
+      "Liga Norte",
+    );
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("");
+    expect(profileContainer).not.toHaveAttribute("aria-busy", "true");
+    expect(container.querySelector("[data-slot='organization-settings-form-skeleton']")).toBeNull();
+  });
+
+  it("updates the mounted status text when entering loading again in English", async () => {
+    mocks.getProfile.mockResolvedValueOnce(profile);
+    mocks.getProfile.mockImplementationOnce(() => new Promise(() => undefined));
+
+    const client = createPageQueryClient(profile.organizationId);
+    client.setQueryData(
+      queryKeys.authorization.effectiveAccess({ organizationId: "org-2" }, [
+        ORGANIZATION_PERMISSION.update,
+      ]),
+      {
+        actorId: "actor-1",
+        scope: { organizationId: "org-2" },
+        roles: [],
+        permissions: [
+          { permission: ORGANIZATION_PERMISSION.update, allowed: true, decidedAt: "organization" },
+        ],
+      },
+    );
+    client.setQueryData(
+      queryKeys.authorization.effectiveAccess({ organizationId: "org-2" }, [
+        ORGANIZATION_PERMISSION.auditTrailRead,
+      ]),
+      {
+        actorId: "actor-1",
+        scope: { organizationId: "org-2" },
+        roles: [],
+        permissions: [
+          {
+            permission: ORGANIZATION_PERMISSION.auditTrailRead,
+            allowed: false,
+            decidedAt: "organization",
+          },
+        ],
+      },
+    );
+
+    const renderPage = (organizationId: string, locale: Locale = "en") => (
+      <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
+        <QueryTestProvider client={client}>
+          <OrganizationSettingsPage organizationId={organizationId} />
+        </QueryTestProvider>
+      </I18nProvider>
+    );
+
+    const { container, rerender } = render(renderPage(profile.organizationId));
+
+    expect(await screen.findByRole("textbox", { name: "Organization name" })).toHaveValue(
+      "Liga Norte",
+    );
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("");
+
+    rerender(renderPage("org-2"));
+
+    await waitFor(() => expect(status).toHaveTextContent("Loading profile…"));
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(container.querySelector("[data-slot='organization-settings-profile']")).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
   });
 });

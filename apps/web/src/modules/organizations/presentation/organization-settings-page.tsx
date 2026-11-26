@@ -31,6 +31,11 @@ const styles = stylex.create({
     flexDirection: "column",
     gap: "1.5rem",
   },
+  profile: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+  },
 });
 
 export function OrganizationSettingsPage({ organizationId }: { readonly organizationId: string }) {
@@ -43,16 +48,10 @@ export function OrganizationSettingsPage({ organizationId }: { readonly organiza
   const loadingLabel = t("organizations.settings.loading");
 
   return (
-    <main
-      aria-busy={loading || undefined}
-      aria-label={loading ? loadingLabel : undefined}
-      {...applyStyles(styles.main)}
-    >
-      {loading ? (
-        <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
-          {loadingLabel}
-        </span>
-      ) : null}
+    <main {...applyStyles(styles.main)}>
+      <span role="status" {...applyStyles(vis.srOnly)}>
+        {loading ? loadingLabel : ""}
+      </span>
       <PageHeader>
         <PageHeaderTitle>{t("organizations.settings.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("organizations.settings.description")}</PageHeaderDescription>
@@ -64,30 +63,36 @@ export function OrganizationSettingsPage({ organizationId }: { readonly organiza
             {t("audit.title")}
           </TextLink>
         ) : null}
-        {profileQuery.isError ? (
-          <Alert variant="destructive">
-            <AlertDescription>{t("organizations.settings.loadFailed")}</AlertDescription>
-            <Button onClick={() => void profileQuery.refetch()} type="button" variant="outline">
-              {t("common.retry")}
-            </Button>
-          </Alert>
-        ) : null}
-
-        {loading ? <OrganizationSettingsFormSkeleton showSubmit={!readOnly} /> : null}
-
         {readOnly ? (
           <Alert variant="info">
             <AlertDescription>{t("organizations.settings.readOnly")}</AlertDescription>
           </Alert>
         ) : null}
 
-        {profileQuery.data ? (
-          <OrganizationSettingsForm
-            canEdit={update.allowed}
-            key={profileQuery.data.organizationId}
-            profile={profileQuery.data}
-          />
-        ) : null}
+        <div
+          aria-busy={loading || undefined}
+          data-slot="organization-settings-profile"
+          {...applyStyles(styles.profile)}
+        >
+          {profileQuery.isError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{t("organizations.settings.loadFailed")}</AlertDescription>
+              <Button onClick={() => void profileQuery.refetch()} type="button" variant="outline">
+                {t("common.retry")}
+              </Button>
+            </Alert>
+          ) : null}
+
+          {loading ? <OrganizationSettingsFormSkeleton showSubmit={!readOnly} /> : null}
+
+          {profileQuery.data ? (
+            <OrganizationSettingsForm
+              canEdit={update.allowed}
+              key={profileQuery.data.organizationId}
+              profile={profileQuery.data}
+            />
+          ) : null}
+        </div>
       </div>
     </main>
   );
