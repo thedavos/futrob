@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import type {
   GetCompetitionRankingsResponse,
@@ -21,6 +22,8 @@ import {
   TabsList,
   TabsTrigger,
   TextLink,
+  useExternalSync,
+  vis,
 } from "@futrob/ui";
 import emptyRankingsUrl from "@/assets/illustration-empty-standings.png";
 import accessUrl from "@/assets/illustration-permissions.png";
@@ -107,9 +110,22 @@ export function CompetitionRankingsPageView({
   state,
 }: Scope & KindSelection & { readonly state: CompetitionRankingsState }) {
   const { locale, t } = useI18n();
+  const isLoading = state.kind === "loading";
+  const statusRef = useRef<HTMLSpanElement>(null);
+  const loadingMessage = isLoading ? t("competition.rankings.loading") : "";
+
+  // ARIA22: keep the live region mounted outside aria-busy and populate post-mount so screen
+  // readers announce initial loading as well as clearing once data resolves.
+  useExternalSync(() => {
+    if (statusRef.current) {
+      statusRef.current.textContent = loadingMessage;
+    }
+  }, [loadingMessage]);
+
   return (
     <PageScaffold page="competition.rankings">
-      <div {...applyStyles(styles.content)}>
+      <span ref={statusRef} role="status" {...applyStyles(vis.srOnly)} />
+      <div aria-busy={isLoading || undefined} {...applyStyles(styles.content)}>
         {(() => {
           switch (state.kind) {
             case "loading":

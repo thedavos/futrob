@@ -1,4 +1,3 @@
-import { useId } from "react";
 import type { RankingKindDto } from "@futrob/api-contracts";
 import {
   applyStyles,
@@ -10,7 +9,6 @@ import {
   TableHeader,
   TableRow,
   typography,
-  vis,
 } from "@futrob/ui";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { styles } from "./competition-rankings-page.styles.ts";
@@ -32,14 +30,9 @@ export function CompetitionRankingsSkeleton({
   readonly rankingKind: RankingKindDto;
   readonly t: Translator;
 }) {
-  const headingId = useId();
-  const label = t("competition.rankings.loading");
   return (
-    <div aria-busy="true" aria-label={label} {...applyStyles(styles.content)}>
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
-      <div aria-hidden="true" {...applyStyles(styles.tabListSkeleton)}>
+    <div aria-hidden="true" {...applyStyles(styles.content)}>
+      <div {...applyStyles(styles.tabListSkeleton)}>
         {RANKING_KINDS.map((kind) => (
           <span key={kind} {...applyStyles(typography.label, styles.skeletonTabLabel)}>
             {t(RANKING_KIND_COPY[kind].tab)}
@@ -47,7 +40,7 @@ export function CompetitionRankingsSkeleton({
         ))}
       </div>
       <div {...applyStyles(styles.panel)}>
-        <dl aria-hidden="true" {...applyStyles(styles.meta)}>
+        <dl {...applyStyles(styles.meta)}>
           {META_TERMS.map((term) => (
             <div key={term} {...applyStyles(styles.metaItem)}>
               <dt {...applyStyles(typography.label, styles.metaTerm)}>{t(term)}</dt>
@@ -57,17 +50,8 @@ export function CompetitionRankingsSkeleton({
             </div>
           ))}
         </dl>
-        <section aria-labelledby={headingId} {...applyStyles(styles.tableSection)}>
-          <h2 id={headingId} {...applyStyles(vis.srOnly)}>
-            {t(RANKING_KIND_COPY[rankingKind].table)}
-          </h2>
-          <Table
-            aria-labelledby={headingId}
-            containerLabelledBy={headingId}
-            containerTabIndex={-1}
-            dense
-            {...applyStyles(styles.table)}
-          >
+        <div {...applyStyles(styles.tableSection)}>
+          <Table containerTabIndex={-1} dense {...applyStyles(styles.table)}>
             <TableHeader>
               <TableRow>
                 <TableHead scope="col" {...applyStyles(styles.position)}>
@@ -116,7 +100,7 @@ export function CompetitionRankingsSkeleton({
               ))}
             </TableBody>
           </Table>
-        </section>
+        </div>
       </div>
     </div>
   );

@@ -236,15 +236,21 @@ export const NamesFailed: Story = { name: "Nombres con error", args: { scenario:
 export const Loading: Story = {
   name: "Cargando",
   args: { scenario: "loading" },
+  parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const status = await canvas.findByRole("status", { name: "Cargando rankings…" });
-    await expect(status.closest("[aria-busy='true']")).not.toBeNull();
+    const status = await canvas.findByRole("status");
+    await waitFor(async () => {
+      await expect(status).toHaveTextContent("Cargando rankings…");
+    });
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
     await expect(canvas.getByText("Criterio")).toBeVisible();
+    await expect(canvas.getByText("Criterio").closest("[aria-busy='true']")).not.toBeNull();
     await expect(canvas.getByText("Elegibilidad")).toBeVisible();
     await expect(canvas.getByText("Actualizado")).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Jugador" })).toBeVisible();
-    await expect(canvas.getByRole("columnheader", { name: "Goles" })).toBeVisible();
+    await expect(canvas.getByText("Jugador")).toBeVisible();
+    await expect(canvas.getByText("Goles")).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
     const table = canvasElement.querySelector("[data-slot='table-container']");
     await expect(table).toHaveAttribute("tabindex", "-1");
     await userEvent.tab();
@@ -258,10 +264,16 @@ export const Loading: Story = {
 export const LoadingNarrow: Story = {
   name: "Cargando · 360",
   args: { scenario: "loading", narrow: true },
+  parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole("status", { name: "Cargando rankings…" });
-    await expect(canvas.getByRole("columnheader", { name: "Jugador" })).toBeVisible();
+    const status = await canvas.findByRole("status");
+    await waitFor(async () => {
+      await expect(status).toHaveTextContent("Cargando rankings…");
+    });
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvas.getByText("Jugador")).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
   },
 };
 
