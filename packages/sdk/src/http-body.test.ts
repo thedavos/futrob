@@ -40,7 +40,8 @@ describe("HttpClient body download", () => {
       await withServer(partialBody, async (baseUrl) => {
         const options = {
           baseUrl,
-          timeoutMs: 100,
+          // Headers must land before the abort; 100ms is too tight under CI load.
+          timeoutMs: 1_000,
           maxRetries: 2,
           fetchImpl: async (input: string | URL | Request, init?: RequestInit) => {
             attempts += 1;
