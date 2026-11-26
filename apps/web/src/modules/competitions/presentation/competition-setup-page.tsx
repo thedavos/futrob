@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
@@ -11,9 +10,7 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
   Stepper,
-  Subtitle,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
 import type {
   CompetitionDraftDto,
   CompetitionFormatDto,
@@ -35,6 +32,8 @@ import { competitionPlatformLabel } from "./competition-draft-meta.ts";
 import { PlanUpsellAlert } from "@/modules/billing/presentation/plan-upsell-alert.tsx";
 import { CompetitionsClientError } from "./competitions-browser-client.ts";
 import { PageAlert } from "./competition-setup-fields.tsx";
+import { CompetitionSetupSkeleton } from "./competition-setup-skeleton.tsx";
+import { styles } from "./competition-setup-page.styles.ts";
 import { useCompetitionEntryInvitations } from "./entry-invitations/use-competition-entry-invitations.tsx";
 import {
   profileFieldsFromCompetition,
@@ -53,34 +52,6 @@ import {
   useRemoveCompetitionParticipantMutation,
   useUpdateCompetitionDraftMutation,
 } from "./competition-queries.ts";
-
-const styles = stylex.create({
-  loading: {
-    color: colors.mutedForeground,
-  },
-  main: {
-    width: "100%",
-  },
-  titleRow: {
-    display: "flex",
-    minWidth: 0,
-    alignItems: "center",
-    gap: "0.5rem",
-  },
-  title: {
-    width: "fit-content",
-    minWidth: 0,
-    maxWidth: "100%",
-    flexShrink: 1,
-  },
-  stepper: {
-    marginBottom: "2.5rem",
-  },
-  body: {
-    display: "grid",
-    gap: "1rem",
-  },
-});
 
 const stepper = applyStyles(styles.stepper);
 const setupTitle = applyStyles(styles.title);
@@ -200,12 +171,7 @@ export function CompetitionSetupPage({
 
   if (draftQuery.isError)
     return <PageAlert> No se pudo cargar el borrador de la competición. </PageAlert>;
-  if (!draft || !form)
-    return (
-      <main>
-        <Subtitle {...applyStyles(styles.loading)}>Cargando competición…</Subtitle>
-      </main>
-    );
+  if (!draft || !form) return <CompetitionSetupSkeleton />;
 
   return (
     <main {...applyStyles(styles.main)}>

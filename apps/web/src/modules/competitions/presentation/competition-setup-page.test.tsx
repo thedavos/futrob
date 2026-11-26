@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { CompetitionDraftDto, UpdateCompetitionDraftRequest } from "@futrob/api-contracts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
@@ -14,14 +14,21 @@ import { leagueDraft } from "./competition-rules-fixtures.ts";
 import { CompetitionSetupPage, type CompetitionSetupStep } from "./competition-setup-page.tsx";
 import { CompetitionsClientError } from "./competitions-browser-client.ts";
 
-const updateCompetitionDraft =
-  vi.fn<
-    (org: string, id: string, input: UpdateCompetitionDraftRequest) => Promise<CompetitionDraftDto>
-  >();
+const { getCompetitionDraft, updateCompetitionDraft } = vi.hoisted(() => ({
+  getCompetitionDraft: vi.fn(),
+  updateCompetitionDraft:
+    vi.fn<
+      (
+        org: string,
+        id: string,
+        input: UpdateCompetitionDraftRequest,
+      ) => Promise<CompetitionDraftDto>
+    >(),
+}));
 
 vi.mock("./competitions-browser-client.ts", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./competitions-browser-client.ts")>()),
-  getCompetitionDraft: async () => leagueDraft,
+  getCompetitionDraft: () => getCompetitionDraft(),
   listCompetitionParticipants: async () => ({ participants: [] }),
   listOrganizationTeams: async () => ({ teams: [] }),
   updateCompetitionDraft: (org: string, id: string, input: UpdateCompetitionDraftRequest) =>
@@ -95,9 +102,44 @@ function deferredSave() {
   return () => settle;
 }
 
+beforeEach(() => {
+  getCompetitionDraft.mockReset();
+  getCompetitionDraft.mockResolvedValue(leagueDraft);
+  updateCompetitionDraft.mockReset();
+});
+
 afterEach(() => {
   cleanup();
-  vi.clearAllMocks();
+});
+
+describe("loading the competition setup", () => {
+  it("mirrors the wizard layout with a skeleton instead of a plain loading line", async () => {
+    getCompetitionDraft.mockReturnValue(new Promise(() => undefined));
+    renderSetup("information");
+
+    const status = await screen.findByRole("status", { name: "Cargando competición…" });
+    const main = status.closest("main");
+    expect(main?.getAttribute("aria-busy")).toBe("true");
+    expect(screen.queryByRole("heading", { name: "Configurar competición" })).toBeNull();
+    expect(screen.queryByLabelText("Nombre de la competición")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(main?.querySelector("[data-slot='skeleton']")).not.toBeNull();
+    expect(
+      main?.querySelectorAll("a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])"),
+    ).toHaveLength(0);
+  });
+
+  it("shows a load error instead of the skeleton", async () => {
+    getCompetitionDraft.mockRejectedValue(
+      new CompetitionsClientError(404, "competitions.not_found"),
+    );
+    renderSetup("information");
+
+    expect(
+      await screen.findByText("No se pudo cargar el borrador de la competición."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("status", { name: "Cargando competición…" })).toBeNull();
+  });
 });
 
 describe("continuing through the competition setup", () => {

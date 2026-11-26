@@ -67,6 +67,7 @@ const preview: Preview = {
               "Competition setup",
               [
                 "Create",
+                "Page",
                 "Rules step",
                 "Format estimate",
                 "Participants",
