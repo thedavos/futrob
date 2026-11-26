@@ -1,11 +1,11 @@
 "use client";
 
 import type { ListCompetitionSanctionsResponse } from "@futrob/api-contracts";
-import { applyStyles, Caption, SectionTitle, Skeleton } from "@futrob/ui";
+import { applyStyles, Caption, SectionTitle, vis } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 import { sanctionRefusal, useTeamSanctionsQuery } from "./sanction-queries.ts";
-import { SanctionTable } from "./sanction-table.tsx";
+import { SanctionTable, SanctionTableSkeleton } from "./sanction-table.tsx";
 import { styles } from "./sanctions.styles.ts";
 
 export type TeamSanctionsState =
@@ -36,6 +36,7 @@ export function TeamSanctionsSection(scope: TeamScope) {
 
 export function TeamSanctionsSectionView({ state }: { readonly state: TeamSanctionsState }) {
   const { t } = useI18n();
+  const loadingLabel = t("sanctions.team.loading");
   return (
     <section aria-label={t("sanctions.team.label")} {...applyStyles(styles.section)}>
       <div {...applyStyles(styles.sectionHeader)}>
@@ -45,13 +46,11 @@ export function TeamSanctionsSectionView({ state }: { readonly state: TeamSancti
         switch (state.kind) {
           case "loading":
             return (
-              <div
-                aria-busy="true"
-                aria-label={t("sanctions.team.loading")}
-                role="status"
-                {...applyStyles(styles.loading)}
-              >
-                <Skeleton {...applyStyles(styles.skeleton)} />
+              <div aria-busy="true" aria-label={loadingLabel}>
+                <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
+                  {loadingLabel}
+                </span>
+                <SanctionTableSkeleton />
               </div>
             );
           case "forbidden":

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import type { CompetitionSanctionDto } from "@futrob/api-contracts";
 import { applyProps } from "@futrob/ui";
@@ -196,7 +196,40 @@ export const ReadOnly: Story = {
 
 export const Empty: Story = { name: "Sin sanciones", args: { scenario: "empty" } };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status", { name: "Cargando sanciones" });
+    await expect(status).toHaveTextContent("Cargando sanciones");
+    await expect(canvas.findByRole("columnheader", { name: "Sanción" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Sancionado" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Motivo" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Impuesta" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Estado" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("columnheader", { name: "Acciones" })).resolves.toBeVisible();
+    const table = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(table).toHaveAttribute("tabindex", "-1");
+    await userEvent.tab();
+    await expect(table).not.toHaveFocus();
+    await expect(canvas.queryByText("Sin sanciones")).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Sancionar" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Revocar" })).toBeNull();
+    const busy = canvasElement.querySelector("[aria-busy='true']");
+    await expect(busy).not.toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.findByRole("status", { name: "Cargando sanciones" })).resolves.toBeTruthy();
+    await expect(canvas.findByRole("columnheader", { name: "Sanción" })).resolves.toBeVisible();
+  },
+};
 
 export const NotFound: Story = { name: "Sin permiso", args: { scenario: "notFound" } };
 
@@ -246,6 +279,16 @@ export const TeamViewLoading: Story = {
       <TeamSanctionsSectionView state={TEAM_STATES.loading} />
     </Frame>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.findByRole("status", { name: "Cargando las sanciones del equipo" }),
+    ).resolves.toBeTruthy();
+    await expect(canvas.findByRole("columnheader", { name: "Sanción" })).resolves.toBeVisible();
+    await expect(canvas.queryByRole("columnheader", { name: "Acciones" })).toBeNull();
+    const table = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(table).toHaveAttribute("tabindex", "-1");
+  },
 };
 
 export const TeamViewError: Story = {

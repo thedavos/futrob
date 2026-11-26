@@ -9,7 +9,10 @@ import { COMPETITION_PERMISSION } from "@futrob/competitions";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { teamSummaryFixture } from "@/modules/teams/presentation/competition-teams-view.fixtures.ts";
-import { CompetitionSanctionsRoute } from "./competition-sanctions-page.tsx";
+import {
+  CompetitionSanctionsPageView,
+  CompetitionSanctionsRoute,
+} from "./competition-sanctions-page.tsx";
 import { TeamSanctionsSection } from "./team-sanctions-section.tsx";
 
 const COMPETITION = "/api/v1/organizations/org-1/competitions/competition-1";
@@ -131,6 +134,35 @@ afterEach(() => {
 });
 
 describe("Competition sanctions page", () => {
+  it("reserves the sanctions table while the list loads and skips the empty state", () => {
+    render(
+      <I18nProvider initialLocale="es">
+        <CompetitionSanctionsPageView
+          commands={{
+            impose: async () => undefined,
+            revoke: async () => undefined,
+          }}
+          competitionId="competition-1"
+          organizationId="org-1"
+          state={{ kind: "loading" }}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByRole("status", { name: "Cargando sanciones" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Sanción" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Sancionado" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Motivo" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Impuesta" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Estado" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Acciones" })).toBeTruthy();
+    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+      "-1",
+    );
+    expect(screen.queryByText("Sin sanciones")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sancionar" })).toBeNull();
+  });
+
   it("lets an actor with sanctions.manage revoke with a reason and keeps the row as revoked", async () => {
     const user = userEvent.setup();
     const sent = serve({ canManage: true, list: () => Response.json({}) });
