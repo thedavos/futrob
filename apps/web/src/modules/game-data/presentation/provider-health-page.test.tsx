@@ -113,8 +113,16 @@ describe("Provider health page", () => {
     expect(
       await screen.findByRole("status", { name: "Cargando la salud del proveedor…" }),
     ).toBeTruthy();
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("heading", { name: "Llamadas al proveedor" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Caché" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Fallos recientes" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Ventana de observación" })).toBeTruthy();
+    expect(document.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(10);
+    expect(screen.queryByText("Estado: Degradado")).toBeNull();
     release?.(Response.json(health));
     expect(await screen.findByText("Estado: Degradado")).toBeTruthy();
+    expect(screen.getByRole("main")).not.toHaveAttribute("aria-busy");
   });
 
   it("keeps the snapshot when a refresh fails", async () => {
@@ -199,12 +207,19 @@ describe("Provider health page", () => {
     const fetch = serve(() => Response.json(health));
     access.state = { allowed: false, loading: true, unavailable: false };
     renderPage();
-    expect(screen.getByText("Comprobando permisos…")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Comprobando permisos…" })).toBeTruthy();
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("heading", { name: "Llamadas al proveedor" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Caché" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Actualizar" })).toBeNull();
+    expect(document.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(10);
+    expect(fetch).not.toHaveBeenCalled();
     cleanup();
 
     access.state = { allowed: false, loading: false, unavailable: true };
     renderPage();
     expect(screen.getByText("No pudimos comprobar tus permisos para ver este panel.")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Llamadas al proveedor" })).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
   });
 });

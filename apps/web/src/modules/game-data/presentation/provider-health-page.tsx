@@ -6,7 +6,6 @@ import {
   ListNumbersIcon,
   PulseIcon,
 } from "@phosphor-icons/react";
-import * as stylex from "@stylexjs/stylex";
 import {
   Alert,
   AlertDescription,
@@ -26,14 +25,12 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
   SectionTitle,
-  Skeleton,
   Stat,
   StatGroup,
   StatLabel,
+  vis,
   type Icon,
 } from "@futrob/ui";
-import { colors } from "@futrob/ui/styles/tokens.stylex";
-import { media } from "@futrob/ui/styles/media.stylex";
 import type { GameDataProviderKeyQuery } from "@futrob/api-contracts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { useIsSuperuser } from "@/shared/presentation/permissions/index.ts";
@@ -45,80 +42,15 @@ import {
   providerStatusBadgeVariant,
   type ProviderHealthView,
 } from "./provider-health-model.ts";
+import { styles } from "./provider-health-page.styles.ts";
 import { useProviderHealthQuery } from "./provider-health-queries.ts";
+import {
+  ProviderHealthRefreshSkeleton,
+  ProviderHealthSkeleton,
+} from "./provider-health-skeleton.tsx";
 
 const PROVIDER_KEY: GameDataProviderKeyQuery = "ea-clubs";
 const KPI_ICON_SIZE = 32;
-
-const styles = stylex.create({
-  main: { width: "100%", minWidth: 0 },
-  body: { display: "flex", flexDirection: "column", gap: "1.5rem", marginTop: "1rem" },
-  statusRow: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" },
-  kpis: {
-    display: "grid",
-    width: "100%",
-    gap: "1rem",
-    gridTemplateColumns: {
-      default: "repeat(2, minmax(0, 1fr))",
-      [media.lg]: "repeat(4, minmax(0, 1fr))",
-    },
-  },
-  kpiSkeleton: { height: "5.625rem", width: "100%", borderRadius: "var(--corner-lg)" },
-  panel: {
-    height: "100%",
-    minWidth: 0,
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    borderRadius: "var(--corner-lg)",
-    backgroundColor: colors.surface,
-    padding: "1rem",
-    gap: "0.5rem",
-  },
-  stack: {
-    display: "grid",
-    gridTemplateColumns: "auto minmax(0, 1fr)",
-    alignItems: "center",
-    minWidth: 0,
-    columnGap: "0.75rem",
-  },
-  iconCell: {
-    gridColumn: "1",
-    gridRow: "1 / -1",
-    alignSelf: "center",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    padding: "0.75rem",
-    borderRadius: "var(--corner-full)",
-    backgroundColor: "color-mix(in oklab, var(--primary) 20%, transparent)",
-    color: colors.primary,
-  },
-  icon: { display: "block", width: "2rem", height: "2rem" },
-  textCol: {
-    gridColumn: "2",
-    display: "flex",
-    flexDirection: "column",
-    minWidth: 0,
-    gap: "0.25rem",
-  },
-  pending: {
-    fontSize: "0.875rem",
-    lineHeight: "1.25rem",
-    color: colors.mutedForeground,
-  },
-  sections: {
-    display: "grid",
-    gap: "1.5rem",
-    gridTemplateColumns: {
-      default: "minmax(0, 1fr)",
-      [media.lg]: "repeat(2, minmax(0, 1fr))",
-    },
-  },
-  section: { display: "flex", flexDirection: "column", gap: "0.75rem", minWidth: 0 },
-  muted: { color: colors.mutedForeground, fontSize: "0.875rem", lineHeight: "1.25rem" },
-});
 
 export function ProviderHealthPage() {
   const { t } = useI18n();
@@ -128,21 +60,20 @@ export function ProviderHealthPage() {
     void query.refetch();
   };
   const denied = query.data === null;
+  const pageLoading =
+    access.loading || (access.allowed && !denied && query.data === undefined && !query.isError);
+  const loadingLabel = access.loading
+    ? t("providerHealth.checkingAccess")
+    : t("providerHealth.loading");
 
   let body: ReactNode;
-  if (access.loading) {
-    body = (
-      <p role="status" {...applyStyles(styles.pending)}>
-        {t("providerHealth.checkingAccess")}
-      </p>
-    );
-  } else if (access.unavailable) {
+  if (access.unavailable) {
     body = (
       <Alert variant="destructive">
         <AlertDescription>{t("providerHealth.accessUnavailable")}</AlertDescription>
       </Alert>
     );
-  } else if (!access.allowed || denied) {
+  } else if (!access.loading && (!access.allowed || denied)) {
     body = <DeniedState />;
   } else if (query.data) {
     body = (
@@ -161,11 +92,20 @@ export function ProviderHealthPage() {
   } else if (query.isError) {
     body = <RetryAlert message={t("providerHealth.error")} retry={retry} t={t} />;
   } else {
-    body = <ProviderHealthSkeleton label={t("providerHealth.loading")} />;
+    body = <ProviderHealthSkeleton />;
   }
 
   return (
-    <main {...applyStyles(styles.main)}>
+    <main
+      aria-busy={pageLoading || undefined}
+      aria-label={pageLoading ? loadingLabel : undefined}
+      {...applyStyles(styles.main)}
+    >
+      {pageLoading ? (
+        <span aria-label={loadingLabel} role="status" {...applyStyles(vis.srOnly)}>
+          {loadingLabel}
+        </span>
+      ) : null}
       <PageHeader>
         <PageHeaderTitle>{t("providerHealth.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("providerHealth.subtitle")}</PageHeaderDescription>
@@ -175,6 +115,10 @@ export function ProviderHealthPage() {
               <ArrowsClockwiseIcon aria-hidden />
               {t("providerHealth.refresh")}
             </Button>
+          </PageHeaderActions>
+        ) : access.loading ? (
+          <PageHeaderActions>
+            <ProviderHealthRefreshSkeleton />
           </PageHeaderActions>
         ) : null}
       </PageHeader>
@@ -192,17 +136,6 @@ function DeniedState() {
         <EmptyStateDescription>{t("providerHealth.denied.description")}</EmptyStateDescription>
       </EmptyStateCopy>
     </EmptyState>
-  );
-}
-
-function ProviderHealthSkeleton({ label }: { readonly label: string }) {
-  return (
-    <div aria-busy="true" aria-label={label} role="status" {...applyStyles(styles.kpis)}>
-      <Skeleton {...applyStyles(styles.kpiSkeleton)} />
-      <Skeleton {...applyStyles(styles.kpiSkeleton)} />
-      <Skeleton {...applyStyles(styles.kpiSkeleton)} />
-      <Skeleton {...applyStyles(styles.kpiSkeleton)} />
-    </div>
   );
 }
 

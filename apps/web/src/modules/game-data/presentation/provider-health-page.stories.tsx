@@ -9,9 +9,9 @@ import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { queryKeys } from "@/shared/presentation/query/query-keys.ts";
 import { ProviderHealthPage } from "./provider-health-page.tsx";
-import { setProviderHealthStoryScenario } from "./provider-health-story-client.ts";
+import { hangQuery, setProviderHealthStoryScenario } from "./provider-health-story-client.ts";
 
-const SCENARIO_IDS = ["ready", "empty", "loading", "error", "denied"] as const;
+const SCENARIO_IDS = ["ready", "empty", "loading", "accessLoading", "error", "denied"] as const;
 
 type ScenarioId = (typeof SCENARIO_IDS)[number];
 
@@ -54,10 +54,19 @@ function ProviderHealthStory({ scenario, narrow = false }: StoryArgs) {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
-    queryClient.setQueryData(
-      queryKeys.authorization.effectiveAccess({}, [ORGANIZATION_PERMISSION.superusersManage]),
-      access(scenario !== "denied"),
-    );
+    const accessKey = queryKeys.authorization.effectiveAccess({}, [
+      ORGANIZATION_PERMISSION.superusersManage,
+    ]);
+    if (scenario === "accessLoading") {
+      void queryClient
+        .fetchQuery({
+          queryFn: ({ signal }) => hangQuery(signal),
+          queryKey: accessKey,
+        })
+        .catch(() => undefined);
+    } else {
+      queryClient.setQueryData(accessKey, access(scenario !== "denied"));
+    }
     return queryClient;
   }, [scenario]);
 
@@ -117,9 +126,45 @@ export const Loading: Story = {
   render: (args) => <ProviderHealthStory key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const page = await canvas.findByRole("main", { name: "Cargando la salud del proveedor…" });
+    await expect(page).toHaveAttribute("aria-busy", "true");
     await expect(
-      await canvas.findByRole("status", { name: "Cargando la salud del proveedor…" }),
+      canvas.getByRole("status", { name: "Cargando la salud del proveedor…" }),
     ).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Llamadas al proveedor" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Caché" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Fallos recientes" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Ventana de observación" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Actualizar" })).toBeVisible();
+    await expect(canvas.queryByText("Estado: Degradado")).toBeNull();
+    await expect(canvas.queryByText("Circuito: Semiabierto")).toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  render: (args) => <ProviderHealthStory key={`${args.scenario}-narrow`} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.findByRole("main")).resolves.toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("heading", { name: "Llamadas al proveedor" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Caché" })).toBeVisible();
+  },
+};
+
+export const AccessLoading: Story = {
+  name: "Comprobando permisos",
+  args: { scenario: "accessLoading" },
+  render: (args) => <ProviderHealthStory key={args.scenario} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = await canvas.findByRole("main", { name: "Comprobando permisos…" });
+    await expect(page).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("status", { name: "Comprobando permisos…" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Llamadas al proveedor" })).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Actualizar" })).toBeNull();
+    await expect(canvas.queryByText("Estado: Degradado")).toBeNull();
   },
 };
 
