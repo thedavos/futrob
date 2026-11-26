@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import { applyProps } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -173,7 +173,41 @@ export const ReadyEnglishNarrow: Story = {
   parameters: { a11y: { test: "error" } },
 };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status", { name: "Cargando ranking de rendimiento" });
+    await expect(status).toBeVisible();
+    await expect(status.closest("[aria-busy='true']")).not.toBeNull();
+    await expect(canvas.getByRole("heading", { name: "Ranking" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Criterio" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Equipo" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Pos." })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Puntuación" })).toBeVisible();
+    await expect(canvas.getByRole("columnheader", { name: "Cobertura" })).toBeVisible();
+    const table = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(table).toHaveAttribute("tabindex", "-1");
+    await userEvent.tab();
+    await expect(table).not.toHaveFocus();
+    await expect(canvas.queryByRole("link", { name: /clasificación oficial/i })).toBeNull();
+    await expect(canvas.queryByText("Cuervos FC")).toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.findByRole("status", { name: "Cargando ranking de rendimiento" }),
+    ).resolves.toBeVisible();
+    await expect(canvas.findByRole("heading", { name: "Ranking" })).resolves.toBeVisible();
+    await expect(canvas.findByRole("heading", { name: "Criterio" })).resolves.toBeVisible();
+  },
+};
 
 export const NamesLoading: Story = {
   name: "Nombres cargando",

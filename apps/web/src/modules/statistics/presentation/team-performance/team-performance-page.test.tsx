@@ -51,7 +51,7 @@ const failure = (status: number, code: string) =>
 
 function serve(input: {
   readonly allowed?: boolean;
-  readonly ranking?: Array<() => Response>;
+  readonly ranking?: Array<() => Response | Promise<Response>>;
   readonly teams?: () => Response;
 }) {
   const ranking = [...(input.ranking ?? [])];
@@ -105,7 +105,32 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** The loading skeleton also renders a table; wait for snapshot copy before reading rows. */
+const rankingTable = async () => {
+  await screen.findByText("3 con puntuación · 3 sin puntuación");
+  return screen.getByRole("table");
+};
+
 describe("team performance page", () => {
+  it("reserves the ranking table and criteria while the snapshot loads", async () => {
+    serve({ ranking: [() => new Promise<Response>(() => undefined)] });
+    renderRoute();
+
+    expect(
+      await screen.findByRole("status", { name: "Cargando ranking de rendimiento" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Ranking" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Criterio" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Equipo" })).toBeTruthy();
+    expect(screen.getByText("Ventana")).toBeTruthy();
+    expect(screen.getByText("Elegibilidad")).toBeTruthy();
+    expect(screen.queryByText("Cuervos FC")).toBeNull();
+    expect(screen.queryByRole("link", { name: /clasificación oficial/i })).toBeNull();
+    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+      "-1",
+    );
+  });
+
   it("explains that the plan does not include the ranking on a 402", async () => {
     renderWith({
       ranking: [() => failure(402, "statistics.performance_ranking_not_in_plan")],
@@ -123,7 +148,7 @@ describe("team performance page", () => {
     serve({ ranking: [() => Response.json(body)] });
     renderRoute();
 
-    const table = await screen.findByRole("table");
+    const table = await rankingTable();
     const rows = within(table).getAllByRole("row").slice(1);
     expect(rows.map((row) => within(row).getAllByRole("cell")[1]?.textContent)).toEqual([
       "Cuervos FC",
@@ -193,7 +218,7 @@ describe("team performance page", () => {
     expect(rankingCalls(fetch)).toHaveLength(3);
     await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
 
-    expect(await screen.findByRole("table")).toBeTruthy();
+    expect(await rankingTable()).toBeTruthy();
     expect(rankingCalls(fetch)).toHaveLength(4);
   }, 15_000);
 
@@ -204,7 +229,7 @@ describe("team performance page", () => {
     });
     renderRoute();
 
-    expect(await screen.findByRole("table")).toBeTruthy();
+    expect(await rankingTable()).toBeTruthy();
     expect(
       await screen.findByText(
         "No pudimos cargar los nombres de los equipos. El ranking sigue siendo válido.",
@@ -220,7 +245,7 @@ describe("team performance page", () => {
         () => failure(500, "api.unexpected"),
       ],
     });
-    expect(await screen.findByRole("table")).toBeTruthy();
+    expect(await rankingTable()).toBeTruthy();
 
     await refetch(queryClient, "team-performance");
     expect(
@@ -240,7 +265,7 @@ describe("team performance page", () => {
         () => failure(503, "api.unavailable"),
       ],
     });
-    expect(await screen.findByRole("table")).toBeTruthy();
+    expect(await rankingTable()).toBeTruthy();
 
     await refetch(queryClient, "team-performance");
     expect(

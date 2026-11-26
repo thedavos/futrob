@@ -13,6 +13,11 @@ type TableProps = Omit<React.ComponentProps<"table">, "className"> & {
   /** Accessible name for the horizontally scrollable container. */
   containerLabelledBy?: string;
   /**
+   * Keyboard stop for the horizontally scrollable container. Keep the default so overflow
+   * tables stay reachable; pass `-1` for decorative skeletons that must not take Tab.
+   */
+  containerTabIndex?: 0 | -1;
+  /**
    * Keeps the header row visible while the rows scroll. The container becomes the vertical
    * scroller, so give it a height limit through `containerClassName` (for example `maxHeight`).
    */
@@ -111,6 +116,7 @@ function Table({
   style,
   containerClassName,
   containerLabelledBy,
+  containerTabIndex = 0,
   dense = false,
   stickyHeader = false,
   ...props
@@ -119,7 +125,7 @@ function Table({
     <div
       data-slot="table-container"
       role={containerLabelledBy ? "group" : undefined}
-      tabIndex={0}
+      tabIndex={containerTabIndex}
       aria-labelledby={containerLabelledBy}
       {...applyProps(
         containerClassName,

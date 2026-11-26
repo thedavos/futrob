@@ -105,14 +105,50 @@ export const styles = stylex.create({
     width: "1rem",
     height: "1rem",
   },
-  skeletonStack: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
+  skeletonCaption: {
+    width: "14rem",
+    maxWidth: "100%",
+    height: "1rem",
   },
-  skeletonRow: {
+  skeletonNumeric: {
+    width: "2rem",
+    height: "1rem",
+    marginInlineStart: "auto",
+  },
+  skeletonCoverage: {
+    width: "7rem",
+    maxWidth: "100%",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
+  skeletonDescription: {
     width: "100%",
-    height: "3rem",
-    borderRadius: "var(--corner-lg)",
+    height: "2.5rem",
+  },
+  skeletonWeight: {
+    width: "7.5rem",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
+  skeletonMetaValue: {
+    width: "9rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  skeletonMetaValueWide: {
+    width: "16rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  skeletonVersions: {
+    width: "28rem",
+    maxWidth: "100%",
+    height: "0.875rem",
+  },
+  skeletonLink: {
+    width: "12rem",
+    maxWidth: "100%",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-md)",
   },
 });

@@ -17,7 +17,6 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  Skeleton,
 } from "@futrob/ui";
 import accessUrl from "@/assets/illustration-permissions.png";
 import emptyStandingsUrl from "@/assets/illustration-empty-standings.png";
@@ -36,6 +35,7 @@ import { useTeamPerformanceRankingQuery } from "./team-performance-queries.ts";
 import { styles } from "./team-performance-page.styles.ts";
 import { Criteria } from "./team-performance-criteria.tsx";
 import { RankingTable } from "./team-performance-table.tsx";
+import { TeamPerformanceSkeleton } from "./team-performance-skeleton.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type { TeamPerformanceNames } from "./team-performance-model.ts";
@@ -111,18 +111,7 @@ export function TeamPerformancePageView({
       {(() => {
         switch (state.kind) {
           case "loading":
-            return (
-              <div
-                aria-busy="true"
-                aria-label={t("teamPerformance.loading")}
-                role="status"
-                {...applyStyles(styles.skeletonStack)}
-              >
-                <Skeleton {...applyStyles(styles.skeletonRow)} />
-                <Skeleton {...applyStyles(styles.skeletonRow)} />
-                <Skeleton {...applyStyles(styles.skeletonRow)} />
-              </div>
-            );
+            return <TeamPerformanceSkeleton t={t} />;
           case "error":
             return (
               <RetryAlert
