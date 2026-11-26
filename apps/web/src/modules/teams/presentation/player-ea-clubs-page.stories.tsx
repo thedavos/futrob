@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 import type { PlayerStoryState } from "./player-story-client.ts";
 import {
   playerProfileFixture,
@@ -101,7 +101,7 @@ export const Loading: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("heading", { name: "Clubes EA" })).toBeVisible();
     const status = canvas.getByRole("status");
-    await expect(status).toHaveTextContent("Cargando clubes…");
+    await waitFor(() => expect(status).toHaveTextContent("Cargando clubes…"));
     await expect(status.closest("[aria-busy='true']")).toBeNull();
     const busyList = canvasElement.querySelector("[aria-busy='true']");
     await expect(busyList).not.toBeNull();

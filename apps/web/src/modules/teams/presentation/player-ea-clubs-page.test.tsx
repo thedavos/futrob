@@ -115,8 +115,10 @@ describe("PlayerEaClubsPage", () => {
 
     renderPage();
 
+    // The region mounts empty and receives the message afterwards, so it is announced.
     const status = screen.getByRole("status");
-    expect(status.textContent).toBe("Cargando clubes…");
+    expect(status.textContent).toBe("");
+    await waitFor(() => expect(status.textContent).toBe("Cargando clubes…"));
     expect(status.closest("[aria-busy='true']")).toBeNull();
 
     const busyList = document.querySelector("[aria-busy='true']");

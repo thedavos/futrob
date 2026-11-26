@@ -19,7 +19,6 @@ import {
   PageHeaderTitle,
   Skeleton,
   typography,
-  vis,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
@@ -34,6 +33,7 @@ import {
   formatProviderGameEdition,
 } from "@/modules/identity/presentation/onboarding/onboarding-step-meta.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LoadingStatus } from "@/shared/presentation/loading-status.tsx";
 import { useMyPlayerProfileQuery } from "./player-queries.ts";
 
 const styles = stylex.create({
@@ -164,9 +164,7 @@ export function PlayerEaClubsPage() {
         </PageHeaderDescription>
       </PageHeader>
 
-      <span role="status" {...applyStyles(vis.srOnly)}>
-        {profileQuery.isPending ? t("player.eaClubs.loading") : ""}
-      </span>
+      <LoadingStatus message={profileQuery.isPending ? t("player.eaClubs.loading") : ""} />
 
       <div {...applyStyles(styles.body)}>
         {profileQuery.isError ? (
