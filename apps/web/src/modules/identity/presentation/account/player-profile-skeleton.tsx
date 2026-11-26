@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { applyStyles, Skeleton, vis } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
@@ -13,15 +12,22 @@ const bones = stylex.create({
   },
   hintCopy: {
     display: "flex",
+    minWidth: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "8rem",
     flexDirection: "column",
     gap: "0.25rem",
+    maxWidth: "100%",
   },
   hintLine: {
     width: "22rem",
+    maxWidth: "100%",
     height: "0.75rem",
   },
   hintLineShort: {
     width: "14rem",
+    maxWidth: "100%",
     height: "0.75rem",
   },
   avatar: {
@@ -77,22 +83,25 @@ const bones = stylex.create({
   },
 });
 
-function LoadingStatus({ children }: { readonly children: ReactNode }) {
+export function PlayerProfileLoadingStatus({ loading }: { readonly loading: boolean }) {
   const { t } = useI18n();
-  const label = t("profile.loading");
+  const label = loading ? t("profile.loading") : "";
   return (
-    <div aria-busy="true" aria-label={label} {...applyStyles(bones.region)}>
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
-      {children}
-    </div>
+    <span
+      aria-atomic="true"
+      aria-label={label || undefined}
+      aria-live="polite"
+      role="status"
+      {...applyStyles(vis.srOnly)}
+    >
+      {label}
+    </span>
   );
 }
 
 export function PlayerProfileIdentitySkeleton() {
   return (
-    <LoadingStatus>
+    <div aria-busy="true" {...applyStyles(bones.region)}>
       <div aria-hidden="true" {...applyStyles(styles.stack)}>
         <div {...applyStyles(styles.row)}>
           <Skeleton {...applyStyles(bones.avatar)} />
@@ -114,13 +123,13 @@ export function PlayerProfileIdentitySkeleton() {
           <Skeleton {...applyStyles(bones.save)} />
         </div>
       </div>
-    </LoadingStatus>
+    </div>
   );
 }
 
 export function PlayerProfileAccountsSkeleton() {
   return (
-    <LoadingStatus>
+    <div aria-busy="true" {...applyStyles(bones.region)}>
       <ul aria-hidden="true" {...applyStyles(styles.section)}>
         {ACCOUNT_ROWS.map((index) => (
           <li key={index} {...applyStyles(bones.accountItem)}>
@@ -129,6 +138,6 @@ export function PlayerProfileAccountsSkeleton() {
           </li>
         ))}
       </ul>
-    </LoadingStatus>
+    </div>
   );
 }

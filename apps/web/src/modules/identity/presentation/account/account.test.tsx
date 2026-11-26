@@ -11,6 +11,7 @@ import { SettingsDialog } from "./settings-dialog.tsx";
 import {
   PlayerProfileAccountsSkeleton,
   PlayerProfileIdentitySkeleton,
+  PlayerProfileLoadingStatus,
 } from "./player-profile-skeleton.tsx";
 import type { AccountAuth } from "./account-auth.ts";
 import { AccountDeletionGate } from "../account-deletion-gate.tsx";
@@ -587,17 +588,46 @@ function expectHiddenBones() {
 }
 
 describe("player profile loading skeletons", () => {
-  it("announces identity loading with bones that stay out of the tab order", () => {
-    frame(<PlayerProfileIdentitySkeleton />);
+  it("keeps identity bones out of the tab order", () => {
+    frame(
+      <>
+        <PlayerProfileLoadingStatus loading />
+        <PlayerProfileIdentitySkeleton />
+      </>,
+    );
     const status = screen.getByRole("status", { name: "Cargando tu perfil…" });
-    expect(status.closest("[aria-busy='true']")).toHaveAttribute("aria-busy", "true");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
     expectHiddenBones();
     expect(screen.queryByLabelText("Nombre visible")).toBeNull();
   });
 
-  it("announces game-account loading with a list of bones", () => {
+  it("renders game-account bones without a nested status", () => {
     frame(<PlayerProfileAccountsSkeleton />);
-    expect(screen.getByRole("status", { name: "Cargando tu perfil…" })).toBeTruthy();
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
+    expect(screen.queryByRole("status", { name: "Cargando tu perfil…" })).toBeNull();
     expectHiddenBones();
+  });
+
+  it("updates the live region when loading becomes pending", async () => {
+    const view = frame(
+      <>
+        <PlayerProfileLoadingStatus loading={false} />
+        <PlayerProfileIdentitySkeleton />
+      </>,
+    );
+    expect(screen.queryByRole("status", { name: "Cargando tu perfil…" })).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
+
+    view.rerender(
+      <I18nProvider initialLocale="es">
+        <QueryTestProvider>
+          <PlayerProfileLoadingStatus loading />
+          <PlayerProfileIdentitySkeleton />
+        </QueryTestProvider>
+      </I18nProvider>,
+    );
+
+    const status = await screen.findByRole("status", { name: "Cargando tu perfil…" });
+    expect(status.closest("[aria-busy='true']")).toBeNull();
   });
 });

@@ -224,13 +224,48 @@ async function expectProfileChrome(canvas: ReturnType<typeof within>) {
   await expect(canvas.getByRole("link", { name: "Ver mis estadísticas" })).toBeVisible();
 }
 
-async function expectLoadingStatus(canvas: ReturnType<typeof within>, count: number) {
-  const statuses = await canvas.findAllByRole("status", { name: "Cargando tu perfil…" });
-  await expect(statuses).toHaveLength(count);
-  for (const status of statuses) {
-    await expect(status.closest("[aria-busy='true']")).toHaveAttribute("aria-busy", "true");
-  }
+async function expectLoadingAnnouncement(
+  canvas: ReturnType<typeof within>,
+  canvasElement: HTMLElement,
+  busyCount: number,
+) {
+  const status = await canvas.findByRole("status", { name: "Cargando tu perfil…" });
+  await expect(status.closest("[aria-busy='true']")).toBeNull();
+  await expect(canvasElement.querySelectorAll("[aria-busy='true']")).toHaveLength(busyCount);
 }
+
+function expectNoHorizontalOverflow(canvasElement: HTMLElement) {
+  const { documentElement } = canvasElement.ownerDocument;
+  expect(documentElement.scrollWidth).toBeLessThanOrEqual(documentElement.clientWidth);
+}
+
+function expectViewportWidth(canvasElement: HTMLElement, width: number) {
+  expect(canvasElement.ownerDocument.defaultView?.innerWidth).toBe(width);
+}
+
+const phone390 = {
+  viewport: {
+    options: {
+      iphone12: {
+        name: "iPhone 12",
+        styles: { width: "390px", height: "844px" },
+        type: "mobile",
+      },
+    },
+  },
+};
+
+const phone320 = {
+  viewport: {
+    options: {
+      iphone5: {
+        name: "iPhone 5/SE",
+        styles: { width: "320px", height: "568px" },
+        type: "mobile",
+      },
+    },
+  },
+};
 
 function expectSkeletonBones(canvasElement: HTMLElement) {
   const bones = canvasElement.querySelectorAll("[data-slot='skeleton']");
@@ -257,13 +292,16 @@ export const ProfilePage: Story = {
 
 export const ProfilePageMobile: Story = {
   name: "Profile · 390",
-  parameters: { layout: "fullscreen", viewport: { defaultViewport: "mobile1" } },
+  parameters: { layout: "fullscreen", ...phone390 },
+  globals: { viewport: { value: "iphone12", isRotated: false } },
   render: () => <ProfilePageExample accounts={readyAccounts} identity={readyIdentity} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    expectViewportWidth(canvasElement, 390);
     await expectProfileChrome(canvas);
     await expect(canvas.findByLabelText("Nombre visible")).resolves.toBeVisible();
     await expect(canvas.getByText("davos282")).toBeVisible();
+    expectNoHorizontalOverflow(canvasElement);
   },
 };
 
@@ -276,7 +314,7 @@ export const Loading: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expectProfileChrome(canvas);
-    await expectLoadingStatus(canvas, 2);
+    await expectLoadingAnnouncement(canvas, canvasElement, 2);
     expectSkeletonBones(canvasElement);
     await expect(canvas.queryByLabelText("Nombre visible")).toBeNull();
     await expect(canvas.queryByRole("button", { name: "Guardar perfil" })).toBeNull();
@@ -291,15 +329,35 @@ export const Loading: Story = {
 
 export const LoadingMobile: Story = {
   name: "Cargando · 390",
-  parameters: { layout: "fullscreen", viewport: { defaultViewport: "mobile1" } },
+  parameters: { layout: "fullscreen", ...phone390 },
+  globals: { viewport: { value: "iphone12", isRotated: false } },
   render: () => (
     <ProfilePageExample accounts={{ status: "pending" }} identity={{ status: "pending" }} />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    expectViewportWidth(canvasElement, 390);
     await expectProfileChrome(canvas);
-    await expectLoadingStatus(canvas, 2);
+    await expectLoadingAnnouncement(canvas, canvasElement, 2);
     expectSkeletonBones(canvasElement);
+    expectNoHorizontalOverflow(canvasElement);
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 320",
+  parameters: { layout: "fullscreen", ...phone320 },
+  globals: { viewport: { value: "iphone5", isRotated: false } },
+  render: () => (
+    <ProfilePageExample accounts={{ status: "pending" }} identity={{ status: "pending" }} />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expectViewportWidth(canvasElement, 320);
+    await expectProfileChrome(canvas);
+    await expectLoadingAnnouncement(canvas, canvasElement, 2);
+    expectSkeletonBones(canvasElement);
+    expectNoHorizontalOverflow(canvasElement);
   },
 };
 
@@ -310,7 +368,7 @@ export const IdentityLoading: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expectProfileChrome(canvas);
-    await expectLoadingStatus(canvas, 1);
+    await expectLoadingAnnouncement(canvas, canvasElement, 1);
     expectSkeletonBones(canvasElement);
     await expect(canvas.queryByLabelText("Nombre visible")).toBeNull();
     await expect(canvas.findByText("davos282")).resolves.toBeVisible();
@@ -325,7 +383,7 @@ export const AccountsLoading: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expectProfileChrome(canvas);
-    await expectLoadingStatus(canvas, 1);
+    await expectLoadingAnnouncement(canvas, canvasElement, 1);
     expectSkeletonBones(canvasElement);
     await expect(canvas.findByLabelText("Nombre visible")).resolves.toHaveValue("Alex García");
     await expect(canvas.queryByText("davos282")).toBeNull();

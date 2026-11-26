@@ -22,6 +22,7 @@ import { ProfileEditor, type ProfileIdentity } from "./profile-editor.tsx";
 import {
   PlayerProfileAccountsSkeleton,
   PlayerProfileIdentitySkeleton,
+  PlayerProfileLoadingStatus,
 } from "./player-profile-skeleton.tsx";
 import { styles } from "./account.styles.ts";
 
@@ -77,8 +78,10 @@ export function PlayerProfilePageView({
   readonly accounts: AccountsState;
 }) {
   const { t } = useI18n();
+  const loading = identity.status === "pending" || accounts.status === "pending";
   return (
     <div {...applyStyles(styles.page)}>
+      <PlayerProfileLoadingStatus loading={loading} />
       <PageHeader>
         <PageHeaderTitle>{t("profile.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("profile.description")}</PageHeaderDescription>
