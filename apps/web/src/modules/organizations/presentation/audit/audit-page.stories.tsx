@@ -255,7 +255,11 @@ export const Loading: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const status = canvas.getByRole("status", { name: "Cargando auditoría" });
-    await expect(status.closest("[aria-busy='true']")).toHaveAttribute("aria-busy", "true");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
     await expect(canvas.getByRole("columnheader", { name: "Fecha" })).toBeVisible();
     await expect(canvas.getByRole("columnheader", { name: "Actor" })).toBeVisible();
     await expect(canvas.getByRole("columnheader", { name: "Acción" })).toBeVisible();

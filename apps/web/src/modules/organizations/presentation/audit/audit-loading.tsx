@@ -10,7 +10,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  vis,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { styles } from "./audit.styles.ts";
@@ -22,9 +21,6 @@ export function AuditLoadingSkeleton() {
   const label = t("audit.loading");
   return (
     <div aria-busy="true" aria-label={label}>
-      <span aria-label={label} role="status" {...applyStyles(vis.srOnly)}>
-        {label}
-      </span>
       <div {...applyStyles(styles.body)}>
         <Table
           aria-label={t("audit.table.label")}

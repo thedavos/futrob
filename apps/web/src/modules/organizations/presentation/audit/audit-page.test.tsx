@@ -26,24 +26,33 @@ const entry = {
   },
 };
 
-function show(state: Parameters<typeof AuditPageView>[0]["state"], filtered = false) {
+type ViewState = Parameters<typeof AuditPageView>[0]["state"];
+
+function show(state: ViewState, filtered = false) {
   const onFilter = vi.fn();
   const onNext = vi.fn();
   const onPrevious = vi.fn();
-  render(
-    <I18nProvider initialLocale="es">
-      <AuditPageView
-        organizationId="org-1"
-        state={state}
-        filters={filtered ? { actorId: "actor-organizer" } : {}}
-        onFilter={onFilter}
-        onNext={onNext}
-        onPrevious={onPrevious}
-        canPrevious={false}
-      />
-    </I18nProvider>,
+  const view = (next: ViewState, nextFiltered = filtered) => (
+    <AuditPageView
+      organizationId="org-1"
+      state={next}
+      filters={nextFiltered ? { actorId: "actor-organizer" } : {}}
+      onFilter={onFilter}
+      onNext={onNext}
+      onPrevious={onPrevious}
+      canPrevious={false}
+    />
   );
-  return { onFilter, onNext, onPrevious };
+  const result = render(view(state), {
+    wrapper: ({ children }) => <I18nProvider initialLocale="es">{children}</I18nProvider>,
+  });
+  return {
+    onFilter,
+    onNext,
+    onPrevious,
+    renderState: (next: ViewState, nextFiltered = filtered) =>
+      result.rerender(view(next, nextFiltered)),
+  };
 }
 
 afterEach(() => {
@@ -136,8 +145,8 @@ it("distinguishes permission denial from an empty history", () => {
 it("mirrors the audit table while loading without putting the scroller in the tab order", () => {
   show({ kind: "loading" });
   const status = screen.getByRole("status", { name: "Cargando auditoría" });
-  expect(status).toBeTruthy();
-  expect(status.closest("[aria-busy='true']")?.getAttribute("aria-label")).toBe(
+  expect(status.closest("[aria-busy='true']")).toBeNull();
+  expect(document.querySelector("[aria-busy='true']")?.getAttribute("aria-label")).toBe(
     "Cargando auditoría",
   );
   expect(screen.getByRole("columnheader", { name: "Fecha" })).toBeTruthy();
@@ -151,6 +160,20 @@ it("mirrors the audit table while loading without putting the scroller in the ta
   expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
     "-1",
   );
+});
+it("announces a filter refetch on the same live region outside the busy skeleton", () => {
+  const ready = { kind: "ready" as const, data: { entries: [entry], nextCursor: null } };
+  const { renderState } = show(ready);
+  const status = screen.getByRole("status");
+  expect(status.getAttribute("aria-label")).toBeNull();
+  expect(status.closest("[aria-busy='true']")).toBeNull();
+  renderState({ kind: "loading" });
+  expect(status.getAttribute("aria-label")).toBe("Cargando auditoría");
+  expect(status.closest("[aria-busy='true']")).toBeNull();
+  expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
+  renderState(ready);
+  expect(status.getAttribute("aria-label")).toBeNull();
+  expect(screen.getByText("María Torres")).toBeTruthy();
 });
 
 function serveAudit() {
