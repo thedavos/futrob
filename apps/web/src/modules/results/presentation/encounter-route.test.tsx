@@ -343,8 +343,10 @@ describe("Encounter page", () => {
     });
     renderEncounter();
 
+    // The region mounts empty and receives the message afterwards, so it is announced.
     const status = screen.getByRole("status");
-    expect(status.textContent).toBe("Cargando enfrentamiento");
+    expect(status.textContent).toBe("");
+    await waitFor(() => expect(status.textContent).toBe("Cargando enfrentamiento"));
     expect(status.closest('[aria-busy="true"]')).toBeNull();
     expect(screen.getByRole("heading", { name: "Partidos oficiales" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Vista previa" })).toBeTruthy();

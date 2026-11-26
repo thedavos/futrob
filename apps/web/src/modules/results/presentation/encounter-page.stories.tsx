@@ -294,7 +294,7 @@ export const Loading: Story = {
       await canvas.findByRole("heading", { level: 1, name: "Cargando enfrentamiento" }),
     ).toBeInTheDocument();
     const status = canvas.getByRole("status");
-    await expect(status).toHaveTextContent("Cargando enfrentamiento");
+    await waitFor(() => expect(status).toHaveTextContent("Cargando enfrentamiento"));
     await expect(status.closest('[aria-busy="true"]')).toBeNull();
     await expect(canvas.getByRole("heading", { name: "Partidos oficiales" })).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Vista previa" })).toBeVisible();

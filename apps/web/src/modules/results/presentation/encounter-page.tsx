@@ -20,6 +20,7 @@ import {
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { MatchPitchSurface } from "@/shared/presentation/match-pitch-surface.tsx";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LoadingStatus } from "@/shared/presentation/loading-status.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
   ScheduleChangesSection,
@@ -87,9 +88,7 @@ export function EncounterPageView({
 
   return (
     <>
-      <span role="status" {...applyStyles(vis.srOnly)}>
-        {encounter.kind === "loading" ? t("encounter.loading") : ""}
-      </span>
+      <LoadingStatus message={encounter.kind === "loading" ? t("encounter.loading") : ""} />
       <EncounterContent
         candidates={candidates}
         disputeReview={disputeReview}
