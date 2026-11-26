@@ -25,7 +25,7 @@ import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
-import { styles } from "./competition-encounters-page.styles.ts";
+import { styles } from "./competition-disputes-page.styles.ts";
 import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
 import { isRefusal, useCompetitionDisputesQuery } from "./encounter-queries.ts";
 

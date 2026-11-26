@@ -20,7 +20,7 @@ import {
   generateCompetitionFixtureRequestSchema,
   getCurrentCompetitionFixtureResponseSchema,
   type GetCurrentCompetitionFixtureResponse,
-  listCompetitionEncountersResponseSchema,
+  listCompetitionEncountersReadSchema,
   type ListCompetitionEncountersResponse,
   type GenerateCompetitionFixtureRequest,
   listScheduleChangeRequestsResponseSchema,
@@ -62,7 +62,7 @@ export function createEncountersResource(http: HttpClient) {
         path: apiPath("organizations", organizationId, "competitions", competitionId, "encounters"),
         method: "GET",
         options,
-        parse: (data) => listCompetitionEncountersResponseSchema.parse(data),
+        parse: (data) => listCompetitionEncountersReadSchema.parse(data),
       });
     },
     async getScheduleSnapshot(

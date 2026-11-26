@@ -1,51 +1,49 @@
 "use client";
 
-import { useId, type ComponentProps } from "react";
-import { Link } from "@tanstack/react-router";
-import { CalendarBlankIcon, ClockIcon, SealCheckIcon } from "@phosphor-icons/react";
-import type {
-  CompetitionEncounterDto,
-  CompetitionEncounterStatusDto,
-  ListCompetitionEncountersResponse,
-} from "@futrob/api-contracts";
+import { useRef, useState } from "react";
+import type { ListCompetitionEncountersResponse } from "@futrob/api-contracts";
 import {
   applyStyles,
-  Badge,
-  Caption,
+  Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateCopy,
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
   Skeleton,
-  Text,
   vis,
-  type Icon,
 } from "@futrob/ui";
 import emptyFixturesUrl from "@/assets/illustration-pending-fixtures.png";
 import accessUrl from "@/assets/illustration-permissions.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { PageScaffold, type ScaffoldPageId } from "@/shared/presentation/page-scaffold.tsx";
-
-import { styles } from "./competition-encounters-page.styles.ts";
-import { isRefusal, useCompetitionEncountersQuery } from "./encounter-queries.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
+
+import { EncounterFiltersToolbar } from "./competition-encounters-filters.tsx";
+import {
+  encounterFilterRounds,
+  encounterFilterTeams,
+  encounterStatusCounts,
+  filterEncounters,
+  groupEncountersByRound,
+  NO_ENCOUNTER_FILTERS,
+  roundsSpanStages,
+  searchFromFilters,
+  validEncounterFilters,
+  type CompetitionEncountersFilters,
+} from "./competition-encounters-model.ts";
+import { styles } from "./competition-encounters-page.styles.ts";
+import { RoundGroupSection } from "./competition-encounters-rows.tsx";
+import type { EncounterDetailSearch, EncounterListOrigin } from "./encounter-list-return.ts";
+import { isRefusal, useCompetitionEncountersQuery } from "./encounter-queries.ts";
 
 export type CompetitionEncountersState =
   | { readonly kind: "loading" }
   | { readonly kind: "not_found" }
   | { readonly kind: "error"; readonly retry: () => void }
   | { readonly kind: "ready"; readonly data: ListCompetitionEncountersResponse };
-
-const STATUS = {
-  scheduled: { variant: "neutral", icon: CalendarBlankIcon },
-  awaiting_result: { variant: "warning", icon: ClockIcon },
-  official: { variant: "approved", icon: SealCheckIcon },
-} as const satisfies Record<
-  CompetitionEncounterStatusDto,
-  { readonly variant: ComponentProps<typeof Badge>["variant"]; readonly icon: Icon }
->;
 
 type Scope = { readonly organizationId: string; readonly competitionId: string };
 
@@ -55,9 +53,19 @@ type Scope = { readonly organizationId: string; readonly competitionId: string }
  */
 type ListPage = {
   readonly page?: Extract<ScaffoldPageId, "competition.encounters" | "competitionPlayer.matches">;
+  readonly filters?: CompetitionEncountersFilters;
+  readonly onFiltersChange?: (next: CompetitionEncountersFilters) => void;
+  /** The route showing this list, so a Match Center opened from it can return to it. */
+  readonly origin?: EncounterListOrigin;
 };
 
-export function CompetitionEncountersRoute({ page, ...scope }: Scope & ListPage) {
+export function CompetitionEncountersRoute({
+  filters,
+  onFiltersChange,
+  origin,
+  page,
+  ...scope
+}: Scope & ListPage) {
   const query = useCompetitionEncountersQuery(scope.organizationId, scope.competitionId);
   const state: CompetitionEncountersState = (() => {
     if (query.data) return { kind: "ready", data: query.data };
@@ -68,7 +76,16 @@ export function CompetitionEncountersRoute({ page, ...scope }: Scope & ListPage)
     }
     return { kind: "loading" };
   })();
-  return <CompetitionEncountersPageView {...scope} page={page} state={state} />;
+  return (
+    <CompetitionEncountersPageView
+      {...scope}
+      filters={filters}
+      onFiltersChange={onFiltersChange}
+      origin={origin}
+      page={page}
+      state={state}
+    />
+  );
 }
 
 type UnresolvedEncountersState = Exclude<CompetitionEncountersState, { kind: "ready" }>;
@@ -76,7 +93,7 @@ type UnresolvedEncountersState = Exclude<CompetitionEncountersState, { kind: "re
 export function CompetitionEncountersStatus({
   page = "competition.encounters",
   state,
-}: ListPage & { readonly state: UnresolvedEncountersState }) {
+}: Pick<ListPage, "page"> & { readonly state: UnresolvedEncountersState }) {
   const { t } = useI18n();
   return (
     <PageScaffold page={page}>
@@ -87,11 +104,20 @@ export function CompetitionEncountersStatus({
 
 export function CompetitionEncountersPageView({
   competitionId,
+  filters,
+  onFiltersChange,
   organizationId,
+  origin = "encounters",
   page = "competition.encounters",
   state,
 }: Scope & ListPage & { readonly state: CompetitionEncountersState }) {
   const { locale, t } = useI18n();
+  const [localFilters, setLocalFilters] = useState<CompetitionEncountersFilters>(
+    filters ?? NO_ENCOUNTER_FILTERS,
+  );
+  const chosenFilters = filters ?? localFilters;
+  const setFilters = onFiltersChange ?? setLocalFilters;
+
   if (state.kind !== "ready") {
     return <CompetitionEncountersStatus page={page} state={state} />;
   }
@@ -111,8 +137,11 @@ export function CompetitionEncountersPageView({
         <EncounterList
           competitionId={competitionId}
           data={state.data}
+          filters={chosenFilters}
           locale={locale}
+          onFiltersChange={setFilters}
           organizationId={organizationId}
+          origin={origin}
           t={t}
         />
       )}
@@ -134,10 +163,11 @@ function EncountersStatusBody({
           aria-busy="true"
           aria-label={t("encounters.list.loading")}
           role="status"
-          {...applyStyles(styles.list)}
+          {...applyStyles(styles.skeletonStack)}
         >
-          <Skeleton {...applyStyles(styles.skeleton)} />
-          <Skeleton {...applyStyles(styles.skeleton)} />
+          <Skeleton {...applyStyles(styles.skeletonToolbar)} />
+          <Skeleton {...applyStyles(styles.skeletonGroup)} />
+          <Skeleton {...applyStyles(styles.skeletonGroup)} />
         </div>
       );
     case "error":
@@ -166,104 +196,116 @@ function EncountersStatusBody({
 function EncounterList({
   competitionId,
   data,
+  filters: chosenFilters,
   locale,
+  onFiltersChange,
   organizationId,
+  origin,
   t,
 }: Scope & {
   readonly data: ListCompetitionEncountersResponse;
+  readonly filters: CompetitionEncountersFilters;
   readonly locale: string;
+  readonly onFiltersChange: (next: CompetitionEncountersFilters) => void;
+  readonly origin: EncounterListOrigin;
   readonly t: Translator;
 }) {
-  const kickoff = new Intl.DateTimeFormat(locale, {
-    timeZone: data.competition.timeZone,
+  const statusGroupRef = useRef<HTMLDivElement>(null);
+  const timeZone = data.competition.timeZone;
+  const teams = encounterFilterTeams(data.encounters, locale);
+  const rounds = encounterFilterRounds(data.encounters);
+  const filters = validEncounterFilters(chosenFilters, teams, rounds);
+  const counts = encounterStatusCounts(data.encounters, filters);
+  const filtered = filterEncounters(data.encounters, filters);
+  const groups = groupEncountersByRound(filtered, timeZone);
+  const withStage = roundsSpanStages(rounds);
+  const returnSearch: EncounterDetailSearch = { ...searchFromFilters(filters), from: origin };
+
+  const timeFormat = new Intl.DateTimeFormat(locale, {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const shortDateFormat = new Intl.DateTimeFormat(locale, {
+    timeZone,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  const shortDateTimeFormat = new Intl.DateTimeFormat(locale, {
+    timeZone,
     weekday: "short",
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
   });
+  const rangeDateFormat = new Intl.DateTimeFormat(locale, {
+    timeZone,
+    day: "numeric",
+    month: "short",
+  });
+
+  const resetFilters = () => {
+    onFiltersChange(NO_ENCOUNTER_FILTERS);
+    const firstRadio = statusGroupRef.current?.querySelector<HTMLElement>('[role="radio"]');
+    firstRadio?.focus();
+  };
+
   return (
     <section aria-labelledby="competition-encounters" {...applyStyles(styles.section)}>
-      <div {...applyStyles(styles.sectionHead)}>
-        <h2 id="competition-encounters" {...applyStyles(vis.srOnly)}>
-          {t("encounters.list.label")}
-        </h2>
-        <Caption as="p">
-          {t("encounters.list.timeZone", { zone: data.competition.timeZone })}
-        </Caption>
-      </div>
-      <ol {...applyStyles(styles.list)}>
-        {data.encounters.map((encounter) => (
-          <li key={encounter.encounterId}>
-            <EncounterRow
-              competitionId={competitionId}
-              encounter={encounter}
-              kickoff={kickoff}
-              organizationId={organizationId}
-              t={t}
-            />
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
+      <h2 id="competition-encounters" {...applyStyles(vis.srOnly)}>
+        {t("encounters.list.label")}
+      </h2>
 
-function EncounterRow({
-  competitionId,
-  encounter,
-  kickoff,
-  organizationId,
-  t,
-}: Scope & {
-  readonly encounter: CompetitionEncounterDto;
-  readonly kickoff: Intl.DateTimeFormat;
-  readonly t: Translator;
-}) {
-  const { variant, icon: StatusIcon } = STATUS[encounter.status];
-  const detailsId = useId();
-  const round = encounter.round.total
-    ? t("encounter.roundOf", { number: encounter.round.number, total: encounter.round.total })
-    : t("encounter.round", { number: encounter.round.number });
-  return (
-    <Link
-      aria-describedby={`${detailsId}-status ${detailsId}-time`}
-      aria-label={t("encounters.list.open", {
-        home: encounter.home.name,
-        away: encounter.away.name,
-      })}
-      params={{ orgId: organizationId, competitionId, encounterId: encounter.encounterId }}
-      to="/orgs/$orgId/competitions/$competitionId/encounters/$encounterId"
-      {...applyStyles(styles.row)}
-    >
-      <div id={`${detailsId}-status`} {...applyStyles(styles.rowMeta)}>
-        <Caption as="span">{round}</Caption>
-        <Badge variant={variant}>
-          <StatusIcon aria-hidden="true" />
-          {t(`encounters.list.status.${encounter.status}`)}
-        </Badge>
-      </div>
-      <div {...applyStyles(styles.matchup)}>
-        <Text tone="default" weight="semibold" className={styles.home}>
-          {encounter.home.name}
-        </Text>
-        <span aria-hidden="true" {...applyStyles(styles.vs)}>
-          {t("encounter.vs")}
-        </span>
-        <Text tone="default" weight="semibold" className={styles.away}>
-          {encounter.away.name}
-        </Text>
-      </div>
-      <div id={`${detailsId}-time`} {...applyStyles(styles.rowMeta)}>
-        <Text tone="default" weight="medium">
-          <time dateTime={encounter.scheduledStartAt}>
-            {kickoff.format(new Date(encounter.scheduledStartAt))}
-          </time>
-        </Text>
-        <Caption as="span">
-          {t("encounters.list.slots", { count: encounter.officialMatchCount })}
-        </Caption>
-      </div>
-    </Link>
+      <EncounterFiltersToolbar
+        counts={counts}
+        filteredCount={filtered.length}
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        onReset={resetFilters}
+        roundCount={groups.length}
+        rounds={rounds}
+        statusGroupRef={statusGroupRef}
+        t={t}
+        teams={teams}
+        timeZone={timeZone}
+      />
+
+      {filtered.length === 0 ? (
+        <EmptyState>
+          <EmptyStateCopy>
+            <EmptyStateTitle>{t("encounters.list.filtered.title")}</EmptyStateTitle>
+            <EmptyStateDescription>
+              {t("encounters.list.filtered.description")}
+            </EmptyStateDescription>
+          </EmptyStateCopy>
+          <EmptyStateActions>
+            <Button onClick={resetFilters} variant="outline">
+              {t("encounters.list.filters.reset")}
+            </Button>
+          </EmptyStateActions>
+        </EmptyState>
+      ) : (
+        <ol {...applyStyles(styles.rounds)}>
+          {groups.map((group) => (
+            <li key={group.round.key}>
+              <RoundGroupSection
+                competitionId={competitionId}
+                group={group}
+                organizationId={organizationId}
+                rangeDateFormat={rangeDateFormat}
+                returnSearch={returnSearch}
+                shortDateFormat={shortDateFormat}
+                shortDateTimeFormat={shortDateTimeFormat}
+                t={t}
+                timeFormat={timeFormat}
+                withStage={withStage}
+              />
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }

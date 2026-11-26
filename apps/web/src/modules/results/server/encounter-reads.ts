@@ -1,7 +1,7 @@
 import {
   encounterViewSchema,
   listCompetitionDisputesResponseSchema,
-  listCompetitionEncountersResponseSchema,
+  listCompetitionEncountersReadSchema,
   listEncounterCandidatesResponseSchema,
 } from "@futrob/api-contracts";
 import type { FutrobClient } from "@futrob/sdk";
@@ -38,7 +38,7 @@ export function handleListCompetitionEncounters(
 ): Promise<Response> {
   return respond(async () => {
     const { client } = await connect(request);
-    return listCompetitionEncountersResponseSchema.parse(
+    return listCompetitionEncountersReadSchema.parse(
       await client.encounters.listByCompetition(scope.organizationId, scope.competitionId),
     );
   });

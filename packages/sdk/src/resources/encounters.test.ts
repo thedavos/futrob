@@ -269,6 +269,41 @@ describe("createFutrobClient encounters view", () => {
     await expect(client.encounters.getView("org-1", "encounter-1")).resolves.toEqual(view);
   });
 
+  it("reads a competition's Encounters from an API that predates round identity, series mode and score", async () => {
+    const legacyEncounter = {
+      encounterId: "encounter-1",
+      round: { number: 1, total: 3 },
+      scheduledStartAt: "2026-09-14T20:00:00.000Z",
+      officialMatchCount: 1,
+      home: { teamId: "team-home", name: "Cuervos FC" },
+      away: { teamId: "team-away", name: "Maderas FC" },
+      status: "official",
+    };
+    const client = createFutrobClient({
+      baseUrl: "https://api.example.com/api/v1",
+      fetchImpl: mockFetch(async (input) => {
+        expect(requestUrl(input)).toBe(
+          "https://api.example.com/api/v1/organizations/org-1/competitions/competition-1/encounters",
+        );
+        return Response.json({
+          competition: { id: "competition-1", name: "Liga Futrob", timeZone: "America/Lima" },
+          encounters: [legacyEncounter],
+        });
+      }),
+    });
+
+    const list = await client.encounters.listByCompetition("org-1", "competition-1");
+
+    expect(list.encounters).toEqual([
+      {
+        ...legacyEncounter,
+        round: { id: null, number: 1, total: 3, stage: null },
+        resolutionMode: null,
+        score: null,
+      },
+    ]);
+  });
+
   it("reads the competition's current fixture with its Team names", async () => {
     const current = {
       fixture: {

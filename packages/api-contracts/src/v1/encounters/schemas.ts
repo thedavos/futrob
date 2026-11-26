@@ -100,9 +100,11 @@ export const fixtureRoundSchema = z.object({
   encounters: z.array(fixtureEncounterSchema),
 });
 
+const fixtureStageKindSchema = z.enum(["league", "groups", "knockout", "playoffs", "swiss"]);
+
 export const fixtureStageSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(["league", "groups", "knockout", "playoffs", "swiss"]),
+  kind: fixtureStageKindSchema,
   order: z.number().int().positive(),
   rounds: z.array(fixtureRoundSchema),
 });
@@ -268,20 +270,50 @@ export const competitionEncounterStatusSchema = z.enum([
 
 export type CompetitionEncounterStatusDto = z.infer<typeof competitionEncounterStatusSchema>;
 
+/** Goals of one approved official match, oriented to the Encounter's home and away Teams. */
+export const encounterMatchScoreSchema = z.object({
+  homeGoals: z.number().int().nonnegative(),
+  awayGoals: z.number().int().nonnegative(),
+});
+
+export type EncounterMatchScoreDto = z.infer<typeof encounterMatchScoreSchema>;
+
+/** Stage a round belongs to; multi-stage formats restart round numbers in every stage. */
+export const competitionEncounterStageSchema = z.object({
+  id: z.string().min(1),
+  kind: fixtureStageKindSchema,
+  order: z.number().int().positive(),
+});
+
+export type CompetitionEncounterStageDto = z.infer<typeof competitionEncounterStageSchema>;
+
+const fixtureRoundIdSchema = z.string().min(1);
+
+/** Approved official match scores in slot order, home-oriented. */
+const encounterScoreSchema = z.array(encounterMatchScoreSchema).min(1).max(2);
+
+const competitionEncounterRoundSchema = z.object({
+  /** Fixture round, unique across stages. */
+  id: fixtureRoundIdSchema,
+  number: z.number().int().positive(),
+  /** Rounds in the round's stage. */
+  total: z.number().int().positive().nullable(),
+  stage: competitionEncounterStageSchema,
+});
+
+/** One Encounter as the API sends it: every field is present, even when null. */
 export const competitionEncounterSchema = z.object({
   encounterId: z.string().min(1),
-  round: z.object({
-    number: z.number().int().positive(),
-    total: z.number().int().positive().nullable(),
-  }),
+  round: competitionEncounterRoundSchema,
   scheduledStartAt: z.string().datetime(),
   officialMatchCount: z.union([z.literal(1), z.literal(2)]),
+  resolutionMode: seriesResolutionModeSchema.nullable(),
   home: z.object({ teamId: z.string().min(1), name: z.string().min(1) }),
   away: z.object({ teamId: z.string().min(1), name: z.string().min(1) }),
   status: competitionEncounterStatusSchema,
+  /** Null until official or unattributable. */
+  score: encounterScoreSchema.nullable(),
 });
-
-export type CompetitionEncounterDto = z.infer<typeof competitionEncounterSchema>;
 
 /** Encounters of the competition's active fixture the actor may read, earliest first. */
 export const listCompetitionEncountersResponseSchema = z.object({
@@ -293,8 +325,27 @@ export const listCompetitionEncountersResponseSchema = z.object({
   encounters: z.array(competitionEncounterSchema),
 });
 
-export type ListCompetitionEncountersResponse = z.infer<
-  typeof listCompetitionEncountersResponseSchema
+/**
+ * What a client reads: the same response, also from a product API that predates round
+ * identity, series mode or score. The web Worker can deploy before the API, so each of those
+ * fields reads as null when missing. Use it to parse; the API parses with the strict schema.
+ */
+export const competitionEncounterReadSchema = competitionEncounterSchema.extend({
+  round: competitionEncounterRoundSchema.extend({
+    id: fixtureRoundIdSchema.nullable().default(null),
+    stage: competitionEncounterStageSchema.nullable().default(null),
+  }),
+  resolutionMode: seriesResolutionModeSchema.nullable().default(null),
+  score: encounterScoreSchema.nullable().default(null),
+});
+
+export const listCompetitionEncountersReadSchema = listCompetitionEncountersResponseSchema.extend({
+  encounters: z.array(competitionEncounterReadSchema),
+});
+
+export type CompetitionEncounterDto = z.output<typeof competitionEncounterReadSchema>;
+export type ListCompetitionEncountersResponse = z.output<
+  typeof listCompetitionEncountersReadSchema
 >;
 
 export const encounterCandidateTeamSchema = z.object({

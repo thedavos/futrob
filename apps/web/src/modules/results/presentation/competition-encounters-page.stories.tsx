@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import type { ListCompetitionEncountersResponse } from "@futrob/api-contracts";
 import { applyProps } from "@futrob/ui";
@@ -16,6 +16,7 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { CompetitionEncountersFilters } from "./competition-encounters-model.ts";
 import {
   CompetitionEncountersPageView,
   type CompetitionEncountersState,
@@ -39,30 +40,89 @@ const list: ListCompetitionEncountersResponse = {
   encounters: [
     {
       encounterId: "encounter-1",
-      round: { number: 1, total: 3 },
+      round: {
+        id: "stage-1:round:1",
+        number: 1,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-12T01:00:00.000Z",
-      officialMatchCount: 2,
+      officialMatchCount: 1,
+      resolutionMode: null,
       home: { teamId: "team-1", name: "Cuervos FC" },
       away: { teamId: "team-2", name: "Maderas FC" },
       status: "official",
+      score: [{ homeGoals: 3, awayGoals: 1 }],
+    },
+    {
+      encounterId: "encounter-1b",
+      round: {
+        id: "stage-1:round:1",
+        number: 1,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
+      scheduledStartAt: "2026-10-12T01:00:00.000Z",
+      officialMatchCount: 2,
+      resolutionMode: "aggregate_score",
+      home: { teamId: "team-4", name: "Inti United" },
+      away: { teamId: "team-3", name: "Club Atlético Halcones del Pacífico" },
+      status: "official",
+      score: [
+        { homeGoals: 2, awayGoals: 1 },
+        { homeGoals: 2, awayGoals: 0 },
+      ],
     },
     {
       encounterId: "encounter-2",
-      round: { number: 2, total: 3 },
+      round: {
+        id: "stage-1:round:2",
+        number: 2,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-19T01:00:00.000Z",
       officialMatchCount: 2,
+      resolutionMode: "independent_matches",
       home: { teamId: "team-3", name: "Club Atlético Halcones del Pacífico" },
       away: { teamId: "team-1", name: "Cuervos FC" },
       status: "awaiting_result",
+      score: null,
+    },
+    {
+      encounterId: "encounter-2b",
+      round: {
+        id: "stage-1:round:2",
+        number: 2,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
+      scheduledStartAt: "2026-10-19T02:00:00.000Z",
+      officialMatchCount: 2,
+      resolutionMode: "independent_matches",
+      home: { teamId: "team-2", name: "Maderas FC" },
+      away: { teamId: "team-4", name: "Inti United" },
+      status: "official",
+      score: [
+        { homeGoals: 1, awayGoals: 1 },
+        { homeGoals: 0, awayGoals: 2 },
+      ],
     },
     {
       encounterId: "encounter-3",
-      round: { number: 3, total: 3 },
+      round: {
+        id: "stage-1:round:3",
+        number: 3,
+        total: 3,
+        stage: { id: "stage-1", kind: "league", order: 1 },
+      },
       scheduledStartAt: "2026-10-26T01:00:00.000Z",
       officialMatchCount: 1,
+      resolutionMode: null,
       home: { teamId: "team-2", name: "Maderas FC" },
       away: { teamId: "team-3", name: "Club Atlético Halcones del Pacífico" },
       status: "scheduled",
+      score: null,
     },
   ],
 };
@@ -82,9 +142,11 @@ type StoryArgs = {
   readonly locale: Locale;
   readonly narrow?: boolean;
   readonly page?: "competition.encounters" | "competitionPlayer.matches";
+  readonly initialFilters?: CompetitionEncountersFilters;
 };
 
 function ListStory({
+  initialFilters,
   locale,
   narrow = false,
   page = "competition.encounters",
@@ -98,6 +160,7 @@ function ListStory({
       component: () => (
         <CompetitionEncountersPageView
           competitionId="competition-1"
+          filters={initialFilters}
           organizationId="org-1"
           page={page}
           state={STATES[scenario]}
@@ -115,7 +178,7 @@ function ListStory({
         initialEntries: ["/orgs/org-1/competitions/competition-1/encounters"],
       }),
     });
-  }, [page, scenario]);
+  }, [initialFilters, page, scenario]);
   return (
     <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
       <div {...applyProps(undefined, undefined, styles.frame, narrow && styles.narrow)}>
@@ -154,13 +217,32 @@ export const Ready: Story = {
     const canvas = within(canvasElement);
     const row = await canvas.findByRole("link", { name: "Abrir Cuervos FC vs Maderas FC" });
     await expect(within(row).getByText("Resultado oficial")).toBeVisible();
+    await expect(row).toHaveAccessibleDescription(/Marcador oficial 3 a 1/);
     await expect(canvas.getByText("Horarios en America/Lima")).toBeVisible();
+
+    await userEvent.click(canvas.getByRole("radio", { name: /Pendientes/i }));
+    await expect(
+      canvas.getByRole("link", {
+        name: "Abrir Club Atlético Halcones del Pacífico vs Cuervos FC",
+      }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole("link", { name: "Abrir Cuervos FC vs Maderas FC" }),
+    ).not.toBeInTheDocument();
   },
 };
 
 export const ReadyEnglishNarrow: Story = {
   name: "Con enfrentamientos · EN 360",
   args: { locale: "en", narrow: true },
+  parameters: { a11y: { test: "error" } },
+};
+
+export const FilteredEmpty: Story = {
+  name: "Sin coincidencias al filtrar",
+  args: {
+    initialFilters: { status: "scheduled", roundKey: "stage-1:round:1", teamId: null },
+  },
   parameters: { a11y: { test: "error" } },
 };
 

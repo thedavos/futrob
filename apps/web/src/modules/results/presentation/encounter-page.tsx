@@ -34,6 +34,7 @@ import {
 } from "@/modules/scheduling/presentation/schedule-changes-section.tsx";
 import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
 import { CandidatesSection } from "./encounter-candidates.tsx";
+import type { EncounterListReturn } from "./encounter-list-return.ts";
 import { previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 import { type Formats } from "./encounter-parts.tsx";
@@ -67,6 +68,7 @@ export function EncounterPageView({
   competitionId,
   disputeReview,
   encounter,
+  listReturn = null,
   organizationId,
   scheduleChanges,
   teamSelection,
@@ -78,15 +80,12 @@ export function EncounterPageView({
   readonly candidates: CandidatesState;
   readonly competitionId: string;
   readonly encounter: EncounterState;
+  /** The list the Match Center was opened from; null for a direct visit. */
+  readonly listReturn?: EncounterListReturn | null;
   readonly organizationId: string;
 }) {
   const { t } = useI18n();
-  const encountersLink = (
-    <Link
-      params={{ orgId: organizationId, competitionId }}
-      to="/orgs/$orgId/competitions/$competitionId/encounters"
-    />
-  );
+  const encountersLink = listLink({ competitionId, listReturn, organizationId, t });
 
   switch (encounter.kind) {
     case "not_found":
@@ -105,8 +104,8 @@ export function EncounterPageView({
                 : t("encounter.notFound.description")}
             </PageHeaderDescription>
             <PageHeaderActions>
-              <Button render={encountersLink} role="link" variant="secondary">
-                {t("encounter.backToEncounters")}
+              <Button render={encountersLink.element} role="link" variant="secondary">
+                {encountersLink.back}
               </Button>
             </PageHeaderActions>
           </PageHeader>
@@ -157,7 +156,7 @@ function EncounterReady({
 }: {
   readonly candidates: CandidatesState;
   readonly disputeReview?: DisputeReviewState;
-  readonly encountersLink: ReactElement;
+  readonly encountersLink: ListLink;
   readonly scheduleChanges?: ScheduleChangesState;
   readonly teamSelection?: TeamSelectionState;
   readonly view: EncounterViewDto;
@@ -235,20 +234,90 @@ function EncounterReady({
   );
 }
 
+/** Where the Match Center goes back to, with the list's own name. */
+interface ListLink {
+  readonly element: ReactElement;
+  readonly label: string;
+  readonly back: string;
+}
+
+/**
+ * Back to the list the user came from, with its filters; a direct visit goes to the staff list.
+ * Each origin maps to a fixed route, so the search cannot point anywhere else.
+ */
+function listLink({
+  competitionId,
+  listReturn,
+  organizationId,
+  t,
+}: {
+  readonly competitionId: string;
+  readonly listReturn: EncounterListReturn | null;
+  readonly organizationId: string;
+  readonly t: Translator;
+}): ListLink {
+  const matches = {
+    label: t("pages.competitionPlayer.matches.title"),
+    back: t("encounter.backToMatches"),
+  };
+  const search = listReturn?.search ?? {};
+  const from = listReturn?.from ?? "encounters";
+  switch (from) {
+    case "matches":
+      return {
+        ...matches,
+        element: (
+          <Link
+            params={{ orgId: organizationId, competitionId }}
+            search={search}
+            to="/orgs/$orgId/competitions/$competitionId/matches"
+          />
+        ),
+      };
+    case "player-matches":
+      return {
+        ...matches,
+        element: (
+          <Link
+            params={{ competitionId }}
+            search={search}
+            to="/player/competitions/$competitionId/matches"
+          />
+        ),
+      };
+    case "encounters":
+      return {
+        label: t("pages.competition.encounters.title"),
+        back: t("encounter.backToEncounters"),
+        element: (
+          <Link
+            params={{ orgId: organizationId, competitionId }}
+            search={search}
+            to="/orgs/$orgId/competitions/$competitionId/encounters"
+          />
+        ),
+      };
+    default: {
+      const exhaustive: never = from;
+      return exhaustive;
+    }
+  }
+}
+
 function EncounterBreadcrumb({
   current,
   link,
   t,
 }: {
   readonly current?: string;
-  readonly link: ReactElement;
+  readonly link: ListLink;
   readonly t: Translator;
 }) {
   return (
     <Breadcrumb aria-label={t("encounter.breadcrumb")}>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink render={link}>{t("pages.competition.encounters.title")}</BreadcrumbLink>
+          <BreadcrumbLink render={link.element}>{link.label}</BreadcrumbLink>
         </BreadcrumbItem>
         {current ? (
           <>
