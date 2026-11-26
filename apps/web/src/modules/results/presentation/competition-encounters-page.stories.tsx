@@ -261,7 +261,21 @@ export const PlayerMatches: Story = {
 
 export const Empty: Story = { name: "Sin calendario", args: { scenario: "empty" } };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = canvas.getByRole("status", { name: "Cargando enfrentamientos" });
+    await expect(status).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getByRole("heading", { name: "Enfrentamientos" })).toBeVisible();
+    await expect(status.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(8);
+    await expect(canvas.queryByRole("link")).toBeNull();
+    await expect(canvas.queryByRole("radio")).toBeNull();
+    await expect(canvas.queryByRole("combobox")).toBeNull();
+    await expect(canvas.queryByText("Aún no hay enfrentamientos")).toBeNull();
+  },
+};
 
 export const NotFound: Story = { name: "No disponible", args: { scenario: "notFound" } };
 

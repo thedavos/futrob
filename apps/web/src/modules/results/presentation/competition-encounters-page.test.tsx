@@ -121,6 +121,23 @@ afterEach(() => {
 });
 
 describe("Competition encounters list", () => {
+  it("reserves the list layout while encounters are loading", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    renderRoute();
+
+    expect(screen.getByRole("heading", { name: "Enfrentamientos" })).toBeTruthy();
+    const status = screen.getByRole("status", { name: "Cargando enfrentamientos" });
+    expect(status.getAttribute("aria-busy")).toBe("true");
+    expect(status.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(8);
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("radio")).toBeNull();
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.queryByText("Aún no hay enfrentamientos")).toBeNull();
+  });
+
   it("groups Encounters by round, shows official aggregate scores and links each to its Match Center", async () => {
     serve(() => Response.json(fixtureEncounters));
     renderRoute();
