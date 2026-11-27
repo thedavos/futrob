@@ -1,18 +1,17 @@
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps } from "react";
 import { Link } from "@tanstack/react-router";
 import type { EncounterViewDto, OfficialSelectionViewDto } from "@futrob/api-contracts";
 import {
   applyStyles,
   Badge,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+  Button,
   Caption,
   Card,
   elevation,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderDescription,
+  PageHeaderTitle,
   Score,
   Text,
   vis,
@@ -29,16 +28,52 @@ import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { MatchPitchSurface } from "@/shared/presentation/match-pitch-surface.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import type { EncounterListReturn } from "./encounter-list-return.ts";
+import { EncounterBreadcrumb, type ListLink } from "./encounter-page-skeleton.tsx";
+import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
+
+export function EncounterUnavailable({
+  kind,
+  link,
+  retry,
+  t,
+}: {
+  readonly kind: "forbidden" | "not_found" | "error";
+  readonly link: ListLink;
+  readonly retry?: () => void;
+  readonly t: Translator;
+}) {
+  if (kind === "error" && retry) {
+    return (
+      <main {...applyStyles(styles.main)}>
+        <h1 {...applyStyles(vis.srOnly)}>{t("encounter.error")}</h1>
+        <EncounterBreadcrumb link={link} t={t} />
+        <RetryAlert message={t("encounter.error")} retry={retry} t={t} />
+      </main>
+    );
+  }
+  return (
+    <main {...applyStyles(styles.main)}>
+      <PageHeader>
+        <PageHeaderTitle>
+          {kind === "forbidden" ? t("encounter.forbidden.title") : t("encounter.notFound.title")}
+        </PageHeaderTitle>
+        <PageHeaderDescription>
+          {kind === "forbidden"
+            ? t("encounter.forbidden.description")
+            : t("encounter.notFound.description")}
+        </PageHeaderDescription>
+        <PageHeaderActions>
+          <Button render={link.element} role="link" variant="secondary">
+            {link.back}
+          </Button>
+        </PageHeaderActions>
+      </PageHeader>
+    </main>
+  );
+}
 import type { EncounterPreview, ScoreOutcome, TeamScore } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 import type { Formats } from "./encounter-parts.tsx";
-
-/** Where the Match Center goes back to, with the list's own name. */
-export interface ListLink {
-  readonly element: ReactElement;
-  readonly label: string;
-  readonly back: string;
-}
 
 export function listLink({
   competitionId,
@@ -97,34 +132,6 @@ export function listLink({
       return exhaustive;
     }
   }
-}
-
-export function EncounterBreadcrumb({
-  current,
-  link,
-  t,
-}: {
-  readonly current?: string;
-  readonly link: ListLink;
-  readonly t: Translator;
-}) {
-  return (
-    <Breadcrumb aria-label={t("encounter.breadcrumb")}>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink render={link.element}>{link.label}</BreadcrumbLink>
-        </BreadcrumbItem>
-        {current ? (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{current}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </>
-        ) : null}
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
 }
 
 type HeroStatus = {

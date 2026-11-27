@@ -349,11 +349,15 @@ export const LeaguePlayoffsMonth: Story = {
     const sunday = canvas.getByRole("button", { name: "domingo, 5 de julio: 3 enfrentamientos" });
     await expect(sunday).toHaveAttribute("aria-pressed", "true");
     await expect(sunday).toHaveTextContent("+1 más");
-    // Compact day-detail rows preserve the visible "vs" separator between teams.
-    const detail = canvas.getByRole("heading", { level: 3, name: "domingo, 5 de julio" });
-    await expect(detail).toBeVisible();
+    // The day opens in a dialog (portalled to the body), with the shared context lifted
+    // into its description.
+    await userEvent.click(sunday);
+    const dialog = await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+      name: "domingo, 5 de julio",
+    });
+    await waitFor(() => expect(dialog).toBeVisible());
     await expect(
-      canvas.getByText("Liga · Jornada 5 · 3 enfrentamientos · 1 partido · America/Lima"),
+      within(dialog).getByText("Liga · Jornada 5 · 3 enfrentamientos · 1 partido · America/Lima"),
     ).toBeVisible();
   },
 };
@@ -412,21 +416,25 @@ export const Month: Story = {
     ).toHaveAttribute("aria-pressed", "true");
     const busy = canvas.getByRole("button", { name: "lunes, 16 de noviembre: 3 enfrentamientos" });
     await expect(busy).toHaveTextContent("+1 más");
+    // A day opens its Encounters in a dialog; closing it keeps the reader on the month.
     await userEvent.click(busy);
-    await expect(busy).toHaveAttribute("aria-pressed", "true");
+    const body = within(canvasElement.ownerDocument.body);
+    const dialog = await body.findByRole("dialog", { name: "lunes, 16 de noviembre" });
+    await waitFor(() => expect(dialog).toBeVisible());
     await expect(
-      canvas.getByRole("heading", { level: 3, name: "lunes, 16 de noviembre" }),
-    ).toBeVisible();
-    await expect(
-      canvas.getByRole("link", {
+      within(dialog).getByRole("link", {
         name: "Abrir Rayo Esports vs Unión Club, lunes, 16 de noviembre, 21:30",
       }),
     ).toBeVisible();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cerrar" }));
+    await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+    await expect(canvas.getByRole("heading", { name: "Noviembre de 2026" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Mes siguiente" }));
     await expect(canvas.getByRole("heading", { name: "Diciembre de 2026" })).toBeVisible();
-    await expect(
-      canvas.getByRole("heading", { level: 3, name: "martes, 1 de diciembre" }),
-    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: /^martes, 1 de diciembre:/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await userEvent.click(canvas.getByRole("button", { name: "Mes siguiente" }));
     await expect(canvas.getByText("No hay enfrentamientos este mes.")).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Ver Diciembre de 2026" }));
@@ -549,7 +557,55 @@ export const Empty: Story = {
   },
 };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status", { name: "Cargando el calendario" });
+    await expect(status).toHaveTextContent("Cargando el calendario");
+    await expect(status.closest("[aria-busy='true']")).not.toBeNull();
+    await expect(canvas.getByText("Agenda")).toBeVisible();
+    await expect(canvas.getByText("Jornadas")).toBeVisible();
+    await expect(canvas.queryByRole("tab")).toBeNull();
+    await expect(canvas.queryByRole("tablist")).toBeNull();
+    await expect(canvas.queryByRole("combobox")).toBeNull();
+    await expect(canvas.queryByRole("link")).toBeNull();
+    await expect(canvas.queryByRole("button")).toBeNull();
+    await expect(canvasElement.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(
+      10,
+    );
+    await userEvent.tab();
+    await expect(canvasElement.ownerDocument.activeElement?.closest("[data-slot='skeleton']")).toBe(
+      null,
+    );
+    // Chromium makes overflowing scrollers keyboard-focusable. Force the decorative
+    // index to overflow and confirm it still cannot take focus while loading.
+    const index = canvasElement.querySelector<HTMLElement>("[data-slot='fixture-index-skeleton']");
+    await expect(index).not.toBeNull();
+    index!.style.maxHeight = "2rem";
+    index!.style.overflowY = "auto";
+    await expect(index!.scrollHeight).toBeGreaterThan(index!.clientHeight);
+    index!.focus();
+    await expect(canvasElement.ownerDocument.activeElement).not.toBe(index);
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 320",
+  args: { scenario: "loading" },
+  parameters: narrow,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("status", { name: "Cargando el calendario" }),
+    ).toHaveTextContent("Cargando el calendario");
+    await expect(canvas.getByText("Agenda")).toBeVisible();
+    await expect(canvas.getByText("Jornadas")).toBeVisible();
+    await expect(canvas.queryByRole("tab")).toBeNull();
+    await expect(canvas.queryByRole("combobox")).toBeNull();
+  },
+};
 
 export const NotFound: Story = { name: "No disponible", args: { scenario: "notFound" } };
 
@@ -600,8 +656,8 @@ export const SwissWithdrawDialog: Story = {
     await userEvent.click(await body.findByRole("option", { name: "Sur United" }));
     await userEvent.type(dialog.getByRole("textbox", { name: "Motivo" }), "Abandona el torneo");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar retirada" }));
-    await waitFor(() => expect(body.queryByRole("alertdialog")).toBeNull());
     await waitFor(() => expect(canvas.getByText("Sur United queda retirado.")).toBeVisible());
+    await waitFor(() => expect(body.queryByRole("alertdialog")).toBeNull(), { timeout: 5_000 });
   },
 };
 

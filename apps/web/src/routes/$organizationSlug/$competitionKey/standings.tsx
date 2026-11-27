@@ -3,13 +3,13 @@ import {
   PortalSectionRead,
   sectionRead,
 } from "@/modules/public-portal/presentation/public-portal-route.tsx";
-import { PortalLoading } from "@/modules/public-portal/presentation/public-portal-states.tsx";
+import { PortalStandingsLoading } from "@/modules/public-portal/presentation/public-portal-skeleton.tsx";
 import { PortalStandingsView } from "@/modules/public-portal/presentation/public-portal-tables.tsx";
 import { getPublicPortalStandings } from "@/modules/public-portal/server/public-portal.functions.ts";
 
 export const Route = createFileRoute("/$organizationSlug/$competitionKey/standings")({
   loader: async ({ params }) => sectionRead(await getPublicPortalStandings({ data: params })),
-  pendingComponent: PortalLoading,
+  pendingComponent: PortalStandingsLoading,
   component: PortalStandingsRoute,
 });
 

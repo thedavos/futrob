@@ -44,65 +44,12 @@ import {
   organizationCompetitionHref,
   organizationCompetitionStatusLabel,
 } from "./organization-home-copy.ts";
+import { organizationHomeLayout as layout } from "./organization-home.styles.ts";
 
 const styles = stylex.create({
-  card: {
-    display: "flex",
-    minWidth: 0,
-    flexDirection: "column",
-  },
-  header: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.75rem",
-    padding: "1.25rem",
-  },
-  action: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "0.25rem",
-    flexShrink: 0,
-    textDecorationLine: "none",
-    fontWeight: "var(--font-weight-medium)",
-  },
-  chevron: {
-    width: "1rem",
-    height: "1rem",
-  },
-  content: {
-    padding: 0,
-  },
-  bodyCell: {
-    height: "auto",
-    paddingBlock: "1rem",
-  },
-  alignCenter: {
-    textAlign: "center",
-  },
-  identity: {
-    display: "flex",
-    alignItems: "center",
-    minWidth: 0,
-    gap: "0.75rem",
-  },
-  cover: {
-    display: "block",
-    width: "2.5rem",
-    height: "2.5rem",
-    flexShrink: 0,
-    objectFit: "contain",
-  },
   trophy: {
     flexShrink: 0,
     color: colors.primary,
-  },
-  copy: {
-    display: "flex",
-    minWidth: 0,
-    flexDirection: "column",
-    gap: "0.125rem",
   },
   nameLink: {
     display: "block",
@@ -155,8 +102,8 @@ export function OrganizationHomeCompetitionsTable({
   const { locale, t } = useI18n();
   const titleId = useId();
   const numberFormat = new Intl.NumberFormat(locale);
-  const bodyCell = applyStyles(styles.bodyCell);
-  const actionsCell = applyStyles(styles.bodyCell, styles.alignCenter);
+  const bodyCell = applyStyles(layout.bodyCell);
+  const actionsCell = applyStyles(layout.bodyCell, layout.alignCenter);
   const participantQueries = useQueries({
     queries: competitions.map((competition) => ({
       queryKey: queryKeys.competitions.participants(organizationId, competition.id),
@@ -165,21 +112,21 @@ export function OrganizationHomeCompetitionsTable({
   });
 
   return (
-    <Card className={styles.card}>
-      <CardHeader className={styles.header}>
+    <Card className={layout.card}>
+      <CardHeader className={layout.header}>
         <Heading className={typography.title} id={titleId}>
           {t("org.home.competitions")}
         </Heading>
         <TextLink
-          className={styles.action}
+          className={layout.action}
           render={<Link params={{ orgId: organizationId }} to="/orgs/$orgId/competitions" />}
           text="caption"
         >
           {t("org.home.competitions.viewAll")}
-          <CaretRightIcon aria-hidden {...applyStyles(styles.chevron)} />
+          <CaretRightIcon aria-hidden {...applyStyles(layout.chevron)} />
         </TextLink>
       </CardHeader>
-      <CardContent className={styles.content}>
+      <CardContent className={layout.tableContent}>
         <Table containerLabelledBy={titleId}>
           <TableHeader>
             <TableRow>
@@ -208,9 +155,9 @@ export function OrganizationHomeCompetitionsTable({
               return (
                 <TableRow key={competition.id}>
                   <TableCell className={bodyCell.className} style={bodyCell.style}>
-                    <div {...applyStyles(styles.identity)}>
+                    <div {...applyStyles(layout.identity)}>
                       <CompetitionCover cover={competition.cover} />
-                      <span {...applyStyles(styles.copy)}>
+                      <span {...applyStyles(layout.copy)}>
                         <Link params={href.params} to={href.to} {...applyStyles(styles.nameLink)}>
                           {competition.name}
                         </Link>
@@ -268,7 +215,7 @@ function CompetitionCover({ cover }: { readonly cover: CompetitionCoverDto }) {
       data-outline="none"
       onError={() => setFailed(true)}
       src={competitionCoverSrc(cover)}
-      {...applyStyles(styles.cover)}
+      {...applyStyles(layout.cover)}
     />
   );
 }

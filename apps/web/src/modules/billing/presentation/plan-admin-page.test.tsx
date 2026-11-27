@@ -46,7 +46,7 @@ const subscription = {
 
 function serve(input: {
   readonly superuser: boolean;
-  readonly queue?: () => Response;
+  readonly queue?: () => Response | Promise<Response>;
   readonly assign?: (body: unknown) => Response;
 }) {
   const fetch = vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
@@ -84,6 +84,42 @@ afterEach(() => {
 });
 
 describe("plan admin page", () => {
+  it("mirrors the admin layout while permissions load", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+    renderRoute();
+
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Comprobando permisos…");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Asignar un plan" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Solicitudes pendientes" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Organización" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Asignar plan" })).toBeNull();
+    expect(document.querySelector("[data-slot='table-container']")?.getAttribute("tabindex")).toBe(
+      "-1",
+    );
+  });
+
+  it("keeps the same status node announcing as the queue starts loading", async () => {
+    serve({ superuser: true, queue: () => new Promise<Response>(() => undefined) });
+    renderRoute();
+
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Comprobando permisos…");
+    await waitFor(() => expect(status.textContent).toBe("Cargando las solicitudes…"));
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Asignar un plan" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Solicitudes pendientes" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Plan pedido" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Asignar plan" })).toBeNull();
+  });
+
   it("lists pending requests and assigns the requested plan with a reason", async () => {
     const assign = vi.fn(() => Response.json({ organizationId: "org-9", subscription }));
     serve({ superuser: true, queue: () => Response.json(queued), assign });

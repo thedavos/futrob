@@ -182,6 +182,7 @@ export const AlignedFigures: Story = {
     const container = canvasElement.querySelector("[data-slot='table-container']")!;
     const table = canvasElement.querySelector("[data-slot='table']")!;
     const heads = canvasElement.querySelectorAll("[data-slot='table-head'][data-align='end']");
+    await expect(container).toHaveAttribute("tabindex", "0");
     await expect(getComputedStyle(container).borderTopWidth).toBe("0px");
     await expect(getComputedStyle(table).borderCollapse).toBe("collapse");
     await expect(heads).toHaveLength(3);

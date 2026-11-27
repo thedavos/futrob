@@ -357,14 +357,4 @@ export const styles = stylex.create({
     gap: "0.125rem",
     minWidth: 0,
   },
-  skeletonHero: {
-    minHeight: "12rem",
-    width: "100%",
-    borderRadius: "var(--corner-xl)",
-  },
-  skeletonRow: {
-    minHeight: "6rem",
-    width: "100%",
-    borderRadius: "var(--corner-xl)",
-  },
 });

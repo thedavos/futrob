@@ -233,7 +233,48 @@ export const NamesPartiallyRestricted: Story = {
 
 export const NamesFailed: Story = { name: "Nombres con error", args: { scenario: "namesFailed" } };
 
-export const Loading: Story = { name: "Cargando", args: { scenario: "loading" } };
+export const Loading: Story = {
+  name: "Cargando",
+  args: { scenario: "loading" },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status");
+    await waitFor(async () => {
+      await expect(status).toHaveTextContent("Cargando rankings…");
+    });
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    const criterion = canvas.getByText("Más goles en partidos oficiales aprobados.");
+    await expect(criterion).toBeVisible();
+    await expect(criterion.closest("[aria-busy='true']")).not.toBeNull();
+    await expect(canvas.getByText("Jugador")).toBeVisible();
+    await expect(canvas.getByText("Goles")).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
+    const table = canvasElement.querySelector("[data-slot='table-container']");
+    await expect(table).toHaveAttribute("tabindex", "-1");
+    await userEvent.tab();
+    await expect(table).not.toHaveFocus();
+    await expect(canvas.queryByRole("tab")).toBeNull();
+    await expect(canvas.queryByText("Aún no hay rankings")).toBeNull();
+    await expect(canvas.queryByText("Lucía Pérez")).toBeNull();
+  },
+};
+
+export const LoadingNarrow: Story = {
+  name: "Cargando · 360",
+  args: { scenario: "loading", narrow: true },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = await canvas.findByRole("status");
+    await waitFor(async () => {
+      await expect(status).toHaveTextContent("Cargando rankings…");
+    });
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvas.getByText("Jugador")).toBeVisible();
+    await expect(canvas.queryByRole("table")).toBeNull();
+  },
+};
 
 export const Forbidden: Story = {
   name: "Sin permiso",
@@ -248,4 +289,54 @@ export const LoadError: Story = { name: "Error", args: { scenario: "error" } };
 export const RefreshFailed: Story = {
   name: "Error al actualizar con datos previos",
   args: { scenario: "refreshFailed" },
+};
+
+export const PlayerDetail: Story = {
+  name: "Detalle del jugador en todos los rankings",
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const table = await canvas.findByRole("table", { name: "Ranking de goleadores" });
+    await userEvent.click(within(table).getByText("Mateo Fernández de la Torre"));
+    // Beside the table from `xl`, a dialog on tablets and a bottom sheet on phones: overlays
+    // portal to the body.
+    const page = within(canvasElement.ownerDocument.body);
+    const detail = await waitFor(
+      () =>
+        page.queryByRole("complementary", { name: "Mateo Fernández de la Torre" }) ??
+        page.getByRole("dialog", { name: "Mateo Fernández de la Torre" }),
+    );
+    // Overlays fade in: wait for the enter transition before checking visibility.
+    await waitFor(() => expect(within(detail).getByText("1.º de 2")).toBeVisible());
+    // Outside the empty MVP ranking and the goalkeeper ranking.
+    await expect(within(detail).getAllByText("No clasifica")).toHaveLength(2);
+  },
+};
+
+export const PlayerDetailPhone: Story = {
+  name: "Detalle del jugador · hoja inferior 360",
+  args: { narrow: true },
+  globals: { viewport: { value: "phone360" } },
+  parameters: {
+    viewport: {
+      options: { phone360: { name: "Phone 360", styles: { width: "360px", height: "800px" } } },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByText("Lucía Pérez"));
+    const page = within(canvasElement.ownerDocument.body);
+    const sheet = await page.findByRole("dialog", { name: "Lucía Pérez" });
+    await waitFor(() => expect(within(sheet).getByText("1.º de 3")).toBeVisible());
+  },
+};
+
+export const FilteredEmpty: Story = {
+  name: "Búsqueda sin coincidencias",
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByRole("searchbox", { name: "Buscar jugador" }), "zzz");
+    await expect(canvas.getByText("Ningún jugador coincide")).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Limpiar filtros" })).toBeVisible();
+  },
 };

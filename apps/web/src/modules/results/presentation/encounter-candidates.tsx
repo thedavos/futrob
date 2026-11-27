@@ -12,7 +12,6 @@ import {
   Heading,
   Score,
   SectionTitle,
-  Skeleton,
   Text,
   vis,
 } from "@futrob/ui";
@@ -34,6 +33,7 @@ import {
   type OfficialSlot,
   type SlotAssignments,
 } from "./encounter-preview.ts";
+import { EncounterCandidateRowsSkeleton } from "./encounter-page-skeleton.tsx";
 import { styles } from "./encounter-page.styles.ts";
 import { type Formats } from "./encounter-parts.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
@@ -121,9 +121,8 @@ function CandidatesBody({
   switch (state.kind) {
     case "loading":
       return (
-        <div aria-busy="true" {...applyStyles(styles.column)}>
-          <Skeleton {...applyStyles(styles.skeletonRow)} />
-          <Skeleton {...applyStyles(styles.skeletonRow)} />
+        <div aria-busy="true">
+          <EncounterCandidateRowsSkeleton />
         </div>
       );
     case "forbidden":

@@ -128,7 +128,21 @@ const es = {
   "bracket.byes.one": "1 descanso",
   "bracket.byes.other": ({ count }) => `${count} descansos`,
   "bracket.twoLegs": "Ida y vuelta",
-  "bracket.hint": "De izquierda a derecha. Desliza el cuadro o abre la lista por rondas.",
+  "bracket.hint": "De izquierda a derecha. Desliza el cuadro para ver todas las rondas.",
+  "bracket.resultsError": "No pudimos cargar los marcadores. El cuadro muestra solo el calendario.",
+  "bracket.views.label": "Vista de las eliminatorias",
+  "bracket.views.canvas": "Cuadro",
+  "bracket.views.list": "Lista",
+  "bracket.summary.label": "Estado de los cruces",
+  "bracket.summary.official": ({ count }) => (count === 1 ? "1 oficial" : `${count} oficiales`),
+  "bracket.summary.awaiting": ({ count }) => `${count} por confirmar`,
+  "bracket.summary.upcoming": ({ count }) => (count === 1 ? "1 pendiente" : `${count} pendientes`),
+  "bracket.champion.title": "Campeón",
+  "bracket.champion.pending": "Por definir",
+  "bracket.score": ({ away, home }) => `Marcador oficial ${home} a ${away}`,
+  "bracket.score.aggregate": ({ away, home }) => `Global oficial ${home} a ${away}`,
+  "bracket.score.series": "Dos partidos oficiales",
+  "bracket.legs": ({ first, second }) => `Ida ${first} · Vuelta ${second}`,
   "bracket.canvasLabel": ({ stage }) => `Cuadro desplazable: ${stage}`,
   "bracket.unlinked.one": "1 plaza no indica de qué cruce llega, así que no tiene línea.",
   "bracket.unlinked.other": ({ count }) =>
@@ -140,12 +154,13 @@ const es = {
   "bracket.status.scheduled": "Programado",
   "bracket.status.pending": "Rival por definir",
   "bracket.status.bye": "Sin rival",
+  "bracket.status.awaitingResult": "Por confirmar",
+  "bracket.status.official": "Oficial",
   "bracket.filter.team": "Seguir a un equipo",
   "bracket.filter.allTeams": "Todos los equipos",
   "bracket.filter.summary": ({ shown, total }) =>
     `${shown} de ${total} cruces destacados. El cuadro conserva su estructura.`,
   "bracket.filter.clear": "Quitar filtro",
-  "bracket.list.toggle": "Ver eliminatorias en lista",
   "bracket.list.matchup": ({ away, home }) => `${home} vs ${away}`,
   "bracket.list.noneForTeam": "Este equipo no juega cruces de esta ronda.",
 
@@ -1055,6 +1070,7 @@ const es = {
   "competitions.setup.saveDraft": "Guardar borrador",
   "competitions.setup.saving": "Guardando…",
   "competitions.setup.continue": "Continuar",
+  "competitions.setup.loading": "Cargando competición…",
   "errors.organizations.slug_conflict": "Ese slug ya está en uso. Elige otro.",
   "errors.organizations.invalid_slug": "El slug no es válido. Usa minúsculas, números y guiones.",
   "errors.organizations.invalid_time_zone": "La zona horaria no es válida.",
@@ -1711,6 +1727,7 @@ const es = {
   "player.gameData.refresh": "Actualizar datos",
   "player.gameData.refreshing": "Actualizando…",
   "player.gameData.loading": "Cargando datos de juego…",
+  "player.eaClubs.loading": "Cargando clubes…",
   "player.gameData.error": "No se pudieron cargar tus datos de juego.",
   "player.gameData.subtitle.empty":
     "Registra tu identificador para consultar tu actividad de EA Clubs.",
@@ -1945,6 +1962,7 @@ const es = {
   "org.home.empty.title": "Tu organización empieza aquí",
   "org.home.empty.description": "Crea tu primera competición para organizar equipos y encuentros.",
   "org.home.competitions": "Competiciones",
+  "org.home.competitions.loading": "Cargando competiciones",
   "org.home.competitions.viewAll": "Ver todas",
   "org.home.table.name": "Nombre",
   "org.home.table.status": "Estado",
@@ -1969,6 +1987,7 @@ const es = {
   "org.home.error.competitions":
     "No se pudieron cargar las competiciones. Comprueba la conexión e inténtalo de nuevo.",
   "org.home.error.profile": "No se pudo cargar el nombre de la organización.",
+  "org.competitions.loading": "Cargando competiciones…",
   "pages.competition.fixture.title": "Calendario",
   "pages.competition.fixture.subtitle": "Jornadas y fechas de cada enfrentamiento.",
   "pages.competition.encounters.title": "Enfrentamientos",
@@ -2003,9 +2022,9 @@ const es = {
   "competition.rankings.criterion.mvp": "Más premios MVP en partidos oficiales aprobados.",
   "competition.rankings.criterion.goalkeeper":
     "Más paradas jugando de portero; si empatan, menos goles encajados.",
-  "competition.rankings.meta.criterion": "Criterio",
-  "competition.rankings.meta.eligibility": "Elegibilidad",
-  "competition.rankings.meta.updated": "Actualizado",
+  "competition.rankings.meta.label": "Criterio, elegibilidad y actualización",
+  "competition.rankings.meta.updated": ({ time }) => `Actualizado ${time}`,
+  "competition.rankings.officialBadge": "Oficial",
   "competition.rankings.eligibility": ({ matches, percent }) =>
     `Al menos ${matches} ${Number(matches) === 1 ? "partido" : "partidos"} o el ${percent} de los minutos de su equipo.`,
   "competition.rankings.column.position": "Pos.",
@@ -2038,6 +2057,46 @@ const es = {
   "competition.rankings.forbidden.description":
     "Tu rol en esta competición no incluye las estadísticas de jugadores.",
   "competition.rankings.forbidden.back": "Volver a la competición",
+  "competition.rankings.summary.label": "Resumen del ranking",
+  "competition.rankings.summary.unavailable": "Sin datos",
+  "competition.rankings.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "competition.rankings.summary.leader": "Líder",
+  "competition.rankings.summary.lead": "Ventaja del líder",
+  "competition.rankings.summary.leadValue": ({ value }) => `+${value}`,
+  "competition.rankings.summary.leadLevel": "Igualados",
+  "competition.rankings.summary.leadOver": ({ player }) => `Sobre ${player}`,
+  "competition.rankings.summary.leadLevelWith": ({ player }) =>
+    `Mismo valor que ${player}; decide el desempate`,
+  "competition.rankings.summary.leadAlone": "Sin perseguidor",
+  "competition.rankings.summary.players": "Jugadores clasificados",
+  "competition.rankings.summary.teams": ({ count }) =>
+    `De ${count} ${Number(count) === 1 ? "equipo" : "equipos"}`,
+  "competition.rankings.summary.per90": "Mejor ritmo por 90 min",
+  "competition.rankings.summary.per90NotApplicable": "No aplica",
+  "competition.rankings.summary.per90RatingHint": "El rating ya es una media por partido.",
+  "competition.rankings.summary.per90GoalkeeperHint":
+    "Los minutos incluyen partidos fuera de la portería.",
+  "competition.rankings.names.searchPending": "Cargando nombres para buscar…",
+  "competition.rankings.filters.label": "Filtrar jugadores",
+  "competition.rankings.search": "Buscar jugador",
+  "competition.rankings.teamFilter": "Equipo",
+  "competition.rankings.allTeams": "Todos los equipos",
+  "competition.rankings.filters.count": ({ shown, total }) =>
+    `${shown} de ${total} ${Number(total) === 1 ? "jugador" : "jugadores"}`,
+  "competition.rankings.noMatches.title": "Ningún jugador coincide",
+  "competition.rankings.noMatches.description":
+    "Prueba con otro nombre o equipo. Las posiciones no cambian al filtrar.",
+  "competition.rankings.clearFilters": "Limpiar filtros",
+  "competition.rankings.detail.label": "Detalle del jugador",
+  "competition.rankings.detail.emptyTitle": "Selecciona un jugador",
+  "competition.rankings.detail.emptyDescription":
+    "Verás su posición en cada ranking de la competición.",
+  "competition.rankings.detail.rankings": "Posición en cada ranking",
+  "competition.rankings.detail.position": ({ position, total }) => `${position}.º de ${total}`,
+  "competition.rankings.detail.unranked": "No clasifica",
+  "competition.rankings.detail.notComputed": "Sin calcular",
+  "competition.rankings.detail.per90": ({ rate }) => `${rate} por 90 min`,
+  "competition.rankings.detail.close": "Cerrar",
   "competition.rankings.notFound.title": "Competición no disponible",
   "competition.rankings.notFound.description":
     "No encontramos esta competición o ya no tienes acceso.",
@@ -2091,19 +2150,63 @@ const es = {
       : `${approved} aprobados · ${voided} anulados (no cuentan)`,
   "teamPerformance.criteria.versions": ({ formula, normalization, window }) =>
     `Versiones: ${formula} · ${normalization} · ${window}`,
+  "teamPerformance.criteria.toggleShow": "Fórmula y versiones",
+  "teamPerformance.criteria.toggleHide": "Ocultar criterio",
+  "teamPerformance.criteria.compactWindow": ({ recent }) =>
+    `Toda la competición · últimos ${recent}`,
+  "teamPerformance.criteria.compactEligibility": ({ minimum }) => `≥ ${minimum} enf. y 5 pilares`,
   "teamPerformance.weights.label": "Pesos de la fórmula",
   "teamPerformance.weight": ({ weight }) => `${weight} %`,
+  "teamPerformance.summary.label": "Resumen del rendimiento",
+  "teamPerformance.summary.leader": "Líder del índice",
+  "teamPerformance.summary.leader.ahead": ({ points }) => `+${points} sobre el 2.º`,
+  "teamPerformance.summary.leader.tied": "Empatado en cabeza",
+  "teamPerformance.summary.bestForm": "Mejor forma reciente",
+  "teamPerformance.summary.bestDefense": "Mejor defensa",
+  "teamPerformance.summary.coverage": "Cobertura oficial",
+  "teamPerformance.summary.coverageValue": ({ scored, total }) => `${scored} / ${total}`,
+  "teamPerformance.summary.coverageAll": ({ approved }) =>
+    `Todos puntuados · ${approved} aprobados`,
+  "teamPerformance.summary.coveragePartial": ({ incomplete, approved }) =>
+    `${incomplete} sin puntuación · ${approved} aprobados`,
+  "teamPerformance.summary.unavailable": "Sin datos",
+  "teamPerformance.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "teamPerformance.summary.tiedTeams": ({ team, count }) => `${team} y ${count} más`,
+  "teamPerformance.summary.pointsRatio": ({ points, maximum }) => `${points}/${maximum} pts`,
+  "teamPerformance.summary.defenseRatio": ({ conceded, shots }) =>
+    `${conceded} encaj. / ${shots} tiros`,
   "teamPerformance.table.title": "Ranking",
   "teamPerformance.table.summary": ({ scored, incomplete }) =>
     `${scored} con puntuación · ${incomplete} sin puntuación`,
+  "teamPerformance.table.inspectHint": "Haz clic en un equipo para ver su evidencia",
+  "teamPerformance.table.details": "Detalle",
+  "teamPerformance.table.expandRow": ({ team }) => `Ver evidencia de ${team}`,
+  "teamPerformance.table.collapseRow": ({ team }) => `Ocultar evidencia de ${team}`,
   "teamPerformance.table.position": "Pos.",
   "teamPerformance.table.team": "Equipo",
   "teamPerformance.table.score": "Puntuación",
   "teamPerformance.table.encounters": "Enfrentamientos",
+  "teamPerformance.table.encountersShort": "Enf.",
   "teamPerformance.table.coverage": "Cobertura",
   "teamPerformance.table.noValue": "Sin dato",
   "teamPerformance.table.unranked": "Sin puntuación",
   "teamPerformance.table.scrollHint": "Desliza la tabla para ver todos los componentes.",
+  "teamPerformance.evidence.contribution": ({ points }) => `+${points} pts`,
+  "teamPerformance.evidence.contributionApprox": ({ points }) => `≈ +${points} pts`,
+  "teamPerformance.evidence.results": ({ points, maximum }) => `${points} / ${maximum} pts`,
+  "teamPerformance.evidence.goalDifference": ({ perUnit }) => `${perUnit} gol/unidad`,
+  "teamPerformance.evidence.recentForm": ({ points, maximum, encounters }) =>
+    `${points} / ${maximum} pts (últ. ${encounters})`,
+  "teamPerformance.evidence.offensive": ({ goals, shots }) => `${goals} goles / ${shots} tiros`,
+  "teamPerformance.evidence.defensive": ({ conceded, shots }) =>
+    `${conceded} encaj. / ${shots} tiros riv.`,
+  "teamPerformance.evidence.noShots": "Sin registro de tiros",
+  "teamPerformance.evidence.formula": ({ terms, score }) =>
+    `Desglose aproximado (valores mostrados a 1 decimal): ${terms}. Índice oficial calculado sin redondeo intermedio: ${score} / 100.`,
+  "teamPerformance.evidence.failClosed": ({ reason }) =>
+    `Sin puntuación (${reason}): no se rellena con cero ni se reparten pesos.`,
+  "teamPerformance.evidence.sample": ({ encounters, matches }) =>
+    `${encounters} enf. · ${matches} partidos oficiales`,
   "teamPerformance.team.unknown": "Equipo no disponible",
   "teamPerformance.teamsUnavailable":
     "No pudimos cargar los nombres de los equipos. El ranking sigue siendo válido.",
@@ -3420,8 +3523,6 @@ const es = {
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 enfrentamiento" : `${count} enfrentamientos`}`,
   "fixture.month.more": ({ count }) => `+${count} más`,
-  "fixture.month.selectedDay": "Día seleccionado",
-  "fixture.month.emptyDay": "No hay enfrentamientos este día.",
   "fixture.month.emptyMonth": "No hay enfrentamientos este mes.",
   "fixture.month.goTo": ({ month }) => `Ver ${month}`,
   "fixture.rounds.current": "Próxima",
@@ -3447,6 +3548,7 @@ const es = {
   "portal.meta.description": ({ name }) =>
     `Calendario, resultados, tabla, bracket y rankings de ${name}, publicados en Futrob.`,
   "portal.loading": "Cargando la sección",
+  "portal.loading.page": "Cargando la competición",
   "portal.error.title": "No pudimos cargar esta sección",
   "portal.error.description":
     "Puede ser un problema temporal. Vuelve a intentarlo en unos segundos.",
@@ -3548,6 +3650,12 @@ export interface MessageParamsByKey {
   readonly "bracket.encounters.other": { readonly count: number };
   readonly "bracket.byes.other": { readonly count: number };
   readonly "bracket.canvasLabel": { readonly stage: string };
+  readonly "bracket.summary.official": { readonly count: number };
+  readonly "bracket.summary.awaiting": { readonly count: number };
+  readonly "bracket.summary.upcoming": { readonly count: number };
+  readonly "bracket.score": { readonly away: string; readonly home: string };
+  readonly "bracket.score.aggregate": { readonly away: string; readonly home: string };
+  readonly "bracket.legs": { readonly first: string; readonly second: string };
   readonly "bracket.unlinked.other": { readonly count: number };
   readonly "bracket.node.number": { readonly number: number };
   readonly "bracket.node.label": {
@@ -3612,6 +3720,21 @@ export interface MessageParamsByKey {
     readonly matches: number;
     readonly percent: string;
   };
+  readonly "competition.rankings.meta.updated": { readonly time: string };
+  readonly "competition.rankings.summary.join": { readonly first: string; readonly second: string };
+  readonly "competition.rankings.summary.leadValue": { readonly value: string };
+  readonly "competition.rankings.summary.leadOver": { readonly player: string };
+  readonly "competition.rankings.summary.leadLevelWith": { readonly player: string };
+  readonly "competition.rankings.summary.teams": { readonly count: string };
+  readonly "competition.rankings.filters.count": {
+    readonly shown: string;
+    readonly total: string;
+  };
+  readonly "competition.rankings.detail.position": {
+    readonly position: string;
+    readonly total: string;
+  };
+  readonly "competition.rankings.detail.per90": { readonly rate: string };
   readonly "competitionRules.format.teamsRange": { readonly min: number; readonly max: number };
   readonly "competitionRules.format.teamsAtLeast": { readonly min: number };
   readonly "competitionRules.value.matches": { readonly count: number };
@@ -3713,10 +3836,60 @@ export interface MessageParamsByKey {
     readonly normalization: string;
     readonly window: string;
   };
+  readonly "teamPerformance.criteria.compactWindow": { readonly recent: number };
+  readonly "teamPerformance.criteria.compactEligibility": { readonly minimum: number };
   readonly "teamPerformance.weight": { readonly weight: number };
+  readonly "teamPerformance.summary.leader.ahead": { readonly points: string };
+  readonly "teamPerformance.summary.coverageValue": {
+    readonly scored: string;
+    readonly total: string;
+  };
+  readonly "teamPerformance.summary.coverageAll": { readonly approved: string };
+  readonly "teamPerformance.summary.coveragePartial": {
+    readonly incomplete: string;
+    readonly approved: string;
+  };
+  readonly "teamPerformance.summary.join": { readonly first: string; readonly second: string };
+  readonly "teamPerformance.summary.tiedTeams": { readonly team: string; readonly count: number };
+  readonly "teamPerformance.summary.pointsRatio": {
+    readonly points: string;
+    readonly maximum: string;
+  };
+  readonly "teamPerformance.summary.defenseRatio": {
+    readonly conceded: string;
+    readonly shots: string;
+  };
   readonly "teamPerformance.table.summary": {
     readonly scored: number;
     readonly incomplete: number;
+  };
+  readonly "teamPerformance.table.expandRow": { readonly team: string };
+  readonly "teamPerformance.table.collapseRow": { readonly team: string };
+  readonly "teamPerformance.evidence.contribution": { readonly points: string };
+  readonly "teamPerformance.evidence.contributionApprox": { readonly points: string };
+  readonly "teamPerformance.evidence.results": {
+    readonly points: string;
+    readonly maximum: string;
+  };
+  readonly "teamPerformance.evidence.goalDifference": { readonly perUnit: string };
+  readonly "teamPerformance.evidence.recentForm": {
+    readonly points: string;
+    readonly maximum: string;
+    readonly encounters: number;
+  };
+  readonly "teamPerformance.evidence.offensive": {
+    readonly goals: string;
+    readonly shots: string;
+  };
+  readonly "teamPerformance.evidence.defensive": {
+    readonly conceded: string;
+    readonly shots: string;
+  };
+  readonly "teamPerformance.evidence.formula": { readonly terms: string; readonly score: string };
+  readonly "teamPerformance.evidence.failClosed": { readonly reason: string };
+  readonly "teamPerformance.evidence.sample": {
+    readonly encounters: number;
+    readonly matches: number;
   };
   readonly "teamPerformance.reason.insufficient_sample": {
     readonly count: number;
@@ -4110,7 +4283,21 @@ const en: Catalog = {
   "bracket.byes.one": "1 bye",
   "bracket.byes.other": ({ count }) => `${count} byes`,
   "bracket.twoLegs": "Two legs",
-  "bracket.hint": "Left to right. Swipe the bracket or open the list by round.",
+  "bracket.hint": "Left to right. Swipe the bracket to see every round.",
+  "bracket.resultsError": "We couldn't load the scores. The bracket shows the schedule only.",
+  "bracket.views.label": "Knockout view",
+  "bracket.views.canvas": "Bracket",
+  "bracket.views.list": "List",
+  "bracket.summary.label": "Tie status",
+  "bracket.summary.official": ({ count }) => `${count} official`,
+  "bracket.summary.awaiting": ({ count }) => `${count} to confirm`,
+  "bracket.summary.upcoming": ({ count }) => `${count} upcoming`,
+  "bracket.champion.title": "Champion",
+  "bracket.champion.pending": "To be decided",
+  "bracket.score": ({ away, home }) => `Official score ${home} to ${away}`,
+  "bracket.score.aggregate": ({ away, home }) => `Official aggregate ${home} to ${away}`,
+  "bracket.score.series": "Two official matches",
+  "bracket.legs": ({ first, second }) => `First leg ${first} · Second leg ${second}`,
   "bracket.canvasLabel": ({ stage }) => `Scrollable bracket: ${stage}`,
   "bracket.unlinked.one": "1 place doesn't say which tie it comes from, so it has no line.",
   "bracket.unlinked.other": ({ count }) =>
@@ -4122,12 +4309,13 @@ const en: Catalog = {
   "bracket.status.scheduled": "Scheduled",
   "bracket.status.pending": "Opponent to be decided",
   "bracket.status.bye": "No opponent",
+  "bracket.status.awaitingResult": "To confirm",
+  "bracket.status.official": "Official",
   "bracket.filter.team": "Follow a team",
   "bracket.filter.allTeams": "All teams",
   "bracket.filter.summary": ({ shown, total }) =>
     `${shown} of ${total} ties highlighted. The bracket keeps its shape.`,
   "bracket.filter.clear": "Clear filter",
-  "bracket.list.toggle": "View ties as a list",
   "bracket.list.matchup": ({ away, home }) => `${home} vs ${away}`,
   "bracket.list.noneForTeam": "This team has no ties in this round.",
 
@@ -5034,6 +5222,7 @@ const en: Catalog = {
   "competitions.setup.saveDraft": "Save draft",
   "competitions.setup.saving": "Saving…",
   "competitions.setup.continue": "Continue",
+  "competitions.setup.loading": "Loading competition…",
   "errors.organizations.slug_conflict": "That slug is already in use. Choose another one.",
   "errors.organizations.invalid_slug":
     "The slug isn't valid. Use lowercase letters, numbers and hyphens.",
@@ -5684,6 +5873,7 @@ const en: Catalog = {
   "player.gameData.refresh": "Update data",
   "player.gameData.refreshing": "Updating…",
   "player.gameData.loading": "Loading game data…",
+  "player.eaClubs.loading": "Loading clubs…",
   "player.gameData.error": "Unable to load your game data.",
   "player.gameData.subtitle.empty": "Register your identifier to look up your EA Clubs activity.",
   "player.gameData.subtitle.ready":
@@ -5910,6 +6100,7 @@ const en: Catalog = {
   "org.home.empty.title": "Your organization starts here",
   "org.home.empty.description": "Create your first competition to organize teams and encounters.",
   "org.home.competitions": "Competitions",
+  "org.home.competitions.loading": "Loading competitions",
   "org.home.competitions.viewAll": "View all",
   "org.home.table.name": "Name",
   "org.home.table.status": "Status",
@@ -5934,6 +6125,7 @@ const en: Catalog = {
   "org.home.error.competitions":
     "Unable to load competitions. Check your connection and try again.",
   "org.home.error.profile": "Unable to load the organization name.",
+  "org.competitions.loading": "Loading competitions…",
   "pages.competition.fixture.title": "Schedule",
   "pages.competition.fixture.subtitle": "Rounds and dates for each encounter.",
   "pages.competition.encounters.title": "Encounters",
@@ -5967,9 +6159,9 @@ const en: Catalog = {
   "competition.rankings.criterion.mvp": "Most MVP awards in approved official matches.",
   "competition.rankings.criterion.goalkeeper":
     "Most saves playing in goal; ties go to fewer goals conceded.",
-  "competition.rankings.meta.criterion": "Criterion",
-  "competition.rankings.meta.eligibility": "Eligibility",
-  "competition.rankings.meta.updated": "Updated",
+  "competition.rankings.meta.label": "Criterion, eligibility and update",
+  "competition.rankings.meta.updated": ({ time }) => `Updated ${time}`,
+  "competition.rankings.officialBadge": "Official",
   "competition.rankings.eligibility": ({ matches, percent }) =>
     `At least ${matches} ${Number(matches) === 1 ? "match" : "matches"} or ${percent} of their team's minutes.`,
   "competition.rankings.column.position": "Pos.",
@@ -6002,6 +6194,45 @@ const en: Catalog = {
   "competition.rankings.forbidden.description":
     "Your role in this competition doesn't include player statistics.",
   "competition.rankings.forbidden.back": "Back to the competition",
+  "competition.rankings.summary.label": "Ranking summary",
+  "competition.rankings.summary.unavailable": "No data",
+  "competition.rankings.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "competition.rankings.summary.leader": "Leader",
+  "competition.rankings.summary.lead": "Leader's margin",
+  "competition.rankings.summary.leadValue": ({ value }) => `+${value}`,
+  "competition.rankings.summary.leadLevel": "Level",
+  "competition.rankings.summary.leadOver": ({ player }) => `Over ${player}`,
+  "competition.rankings.summary.leadLevelWith": ({ player }) =>
+    `Same value as ${player}; the tiebreak decides`,
+  "competition.rankings.summary.leadAlone": "No runner-up",
+  "competition.rankings.summary.players": "Ranked players",
+  "competition.rankings.summary.teams": ({ count }) =>
+    `From ${count} ${Number(count) === 1 ? "team" : "teams"}`,
+  "competition.rankings.summary.per90": "Best rate per 90 min",
+  "competition.rankings.summary.per90NotApplicable": "Not applicable",
+  "competition.rankings.summary.per90RatingHint": "Rating is already a per-match average.",
+  "competition.rankings.summary.per90GoalkeeperHint": "Minutes include play outside goal.",
+  "competition.rankings.names.searchPending": "Loading names to search…",
+  "competition.rankings.filters.label": "Filter players",
+  "competition.rankings.search": "Search player",
+  "competition.rankings.teamFilter": "Team",
+  "competition.rankings.allTeams": "All teams",
+  "competition.rankings.filters.count": ({ shown, total }) =>
+    `${shown} of ${total} ${Number(total) === 1 ? "player" : "players"}`,
+  "competition.rankings.noMatches.title": "No players match",
+  "competition.rankings.noMatches.description":
+    "Try another name or team. Positions don't change when you filter.",
+  "competition.rankings.clearFilters": "Clear filters",
+  "competition.rankings.detail.label": "Player detail",
+  "competition.rankings.detail.emptyTitle": "Select a player",
+  "competition.rankings.detail.emptyDescription":
+    "See where they stand in every ranking of the competition.",
+  "competition.rankings.detail.rankings": "Place in every ranking",
+  "competition.rankings.detail.position": ({ position, total }) => `#${position} of ${total}`,
+  "competition.rankings.detail.unranked": "Not ranked",
+  "competition.rankings.detail.notComputed": "Not computed",
+  "competition.rankings.detail.per90": ({ rate }) => `${rate} per 90 min`,
+  "competition.rankings.detail.close": "Close",
   "competition.rankings.notFound.title": "Competition unavailable",
   "competition.rankings.notFound.description":
     "We couldn't find this competition, or you no longer have access.",
@@ -6052,19 +6283,61 @@ const en: Catalog = {
     voided === 0 ? `${approved} approved` : `${approved} approved · ${voided} voided (don't count)`,
   "teamPerformance.criteria.versions": ({ formula, normalization, window }) =>
     `Versions: ${formula} · ${normalization} · ${window}`,
+  "teamPerformance.criteria.toggleShow": "Formula & versions",
+  "teamPerformance.criteria.toggleHide": "Hide criteria",
+  "teamPerformance.criteria.compactWindow": ({ recent }) => `Whole competition · last ${recent}`,
+  "teamPerformance.criteria.compactEligibility": ({ minimum }) => `≥ ${minimum} enc. & 5 pillars`,
   "teamPerformance.weights.label": "Formula weights",
   "teamPerformance.weight": ({ weight }) => `${weight}%`,
+  "teamPerformance.summary.label": "Performance summary",
+  "teamPerformance.summary.leader": "Index leader",
+  "teamPerformance.summary.leader.ahead": ({ points }) => `+${points} ahead of 2nd`,
+  "teamPerformance.summary.leader.tied": "Tied at the top",
+  "teamPerformance.summary.bestForm": "Best recent form",
+  "teamPerformance.summary.bestDefense": "Best defense",
+  "teamPerformance.summary.coverage": "Official coverage",
+  "teamPerformance.summary.coverageValue": ({ scored, total }) => `${scored} / ${total}`,
+  "teamPerformance.summary.coverageAll": ({ approved }) => `All scored · ${approved} approved`,
+  "teamPerformance.summary.coveragePartial": ({ incomplete, approved }) =>
+    `${incomplete} unranked · ${approved} approved`,
+  "teamPerformance.summary.unavailable": "No data",
+  "teamPerformance.summary.join": ({ first, second }) => `${first} · ${second}`,
+  "teamPerformance.summary.tiedTeams": ({ team, count }) => `${team} +${count} more`,
+  "teamPerformance.summary.pointsRatio": ({ points, maximum }) => `${points}/${maximum} pts`,
+  "teamPerformance.summary.defenseRatio": ({ conceded, shots }) =>
+    `${conceded} conceded / ${shots} shots`,
   "teamPerformance.table.title": "Ranking",
   "teamPerformance.table.summary": ({ scored, incomplete }) =>
     `${scored} scored · ${incomplete} without a score`,
+  "teamPerformance.table.inspectHint": "Select a team row to inspect its evidence",
+  "teamPerformance.table.details": "Details",
+  "teamPerformance.table.expandRow": ({ team }) => `Show evidence for ${team}`,
+  "teamPerformance.table.collapseRow": ({ team }) => `Hide evidence for ${team}`,
   "teamPerformance.table.position": "Pos.",
   "teamPerformance.table.team": "Team",
   "teamPerformance.table.score": "Score",
   "teamPerformance.table.encounters": "Encounters",
+  "teamPerformance.table.encountersShort": "Enc.",
   "teamPerformance.table.coverage": "Coverage",
   "teamPerformance.table.noValue": "No data",
   "teamPerformance.table.unranked": "No score",
   "teamPerformance.table.scrollHint": "Scroll the table to see every component.",
+  "teamPerformance.evidence.contribution": ({ points }) => `+${points} pts`,
+  "teamPerformance.evidence.contributionApprox": ({ points }) => `≈ +${points} pts`,
+  "teamPerformance.evidence.results": ({ points, maximum }) => `${points} / ${maximum} pts`,
+  "teamPerformance.evidence.goalDifference": ({ perUnit }) => `${perUnit} GD/unit`,
+  "teamPerformance.evidence.recentForm": ({ points, maximum, encounters }) =>
+    `${points} / ${maximum} pts (last ${encounters})`,
+  "teamPerformance.evidence.offensive": ({ goals, shots }) => `${goals} goals / ${shots} shots`,
+  "teamPerformance.evidence.defensive": ({ conceded, shots }) =>
+    `${conceded} conceded / ${shots} opp. shots`,
+  "teamPerformance.evidence.noShots": "No shot data",
+  "teamPerformance.evidence.formula": ({ terms, score }) =>
+    `Approximate breakdown (values shown to 1 decimal): ${terms}. Official index computed without intermediate rounding: ${score} / 100.`,
+  "teamPerformance.evidence.failClosed": ({ reason }) =>
+    `Unranked (${reason}): never zero-filled or reweighted.`,
+  "teamPerformance.evidence.sample": ({ encounters, matches }) =>
+    `${encounters} enc. · ${matches} official matches`,
   "teamPerformance.team.unknown": "Team unavailable",
   "teamPerformance.teamsUnavailable": "We couldn't load team names. The ranking is still valid.",
   "teamPerformance.metric.results": "Results",
@@ -7353,8 +7626,6 @@ const en: Catalog = {
   "fixture.month.day": ({ date, count }) =>
     `${date}: ${Number(count) === 1 ? "1 encounter" : `${count} encounters`}`,
   "fixture.month.more": ({ count }) => `+${count} more`,
-  "fixture.month.selectedDay": "Selected day",
-  "fixture.month.emptyDay": "No encounters on this day.",
   "fixture.month.emptyMonth": "No encounters this month.",
   "fixture.month.goTo": ({ month }) => `Go to ${month}`,
   "fixture.rounds.current": "Up next",
@@ -7380,6 +7651,7 @@ const en: Catalog = {
   "portal.meta.description": ({ name }) =>
     `Fixtures, results, table, bracket and rankings for ${name}, published on Futrob.`,
   "portal.loading": "Loading the section",
+  "portal.loading.page": "Loading the competition",
   "portal.error.title": "We couldn't load this section",
   "portal.error.description": "It may be a temporary problem. Try again in a few seconds.",
   "portal.error.retry": "Try again",

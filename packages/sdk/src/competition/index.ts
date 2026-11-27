@@ -18,13 +18,23 @@ export {
   type SwissStandingsProgress,
 } from "./standings.ts";
 export {
+  competitionRankingTeamIds,
   DEFAULT_RANKING_KIND,
+  filterRankingRows,
   RANKING_KINDS,
+  rankingBestPer90,
+  rankingHasPer90,
+  rankingLeader,
   rankingNamesFromTeams,
+  rankingPer90,
   rankingPlayerName,
+  rankingPlayerStandings,
   rankingTeamIds,
   selectRankingSnapshot,
+  type RankingLeader,
   type RankingNames,
+  type RankingPlayerStanding,
+  type RankingRowFilters,
 } from "./rankings.ts";
 export {
   rulesStages,

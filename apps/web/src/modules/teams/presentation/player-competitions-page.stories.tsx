@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { PlayerCompetitionsExplorePage } from "@/modules/competitions/presentation/explore/explore-competitions-page.tsx";
 import type { ExploreCompetitionsSearch } from "@/modules/competitions/presentation/explore/explore-search.ts";
 import type { PlayerStoryState } from "./player-story-client.ts";
@@ -151,14 +151,104 @@ export const EmptyMultipleClubs: Story = {
   },
 };
 
+function hoverSelectorsMatching(element: Element): string[] {
+  const matches: string[] = [];
+  const visit = (rules: CSSRuleList) => {
+    for (const rule of Array.from(rules)) {
+      if (rule instanceof CSSStyleRule) {
+        for (const selector of rule.selectorText.split(",")) {
+          if (!selector.includes(":hover")) continue;
+          if (element.matches(selector.replaceAll(":hover", ""))) matches.push(selector.trim());
+        }
+      } else if ("cssRules" in rule) {
+        visit((rule as CSSGroupingRule).cssRules);
+      }
+    }
+  };
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      visit(sheet.cssRules);
+    } catch {
+      // Cross-origin stylesheets cannot be read; product styles are same-origin.
+    }
+  }
+  return matches;
+}
+
 export const Loading: Story = {
   name: "Loading",
   args: { scenario: "loading" },
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Cargando competiciones…")).toBeVisible();
+    const status = canvas.getByRole("status");
+    await expect(canvas.getByRole("main")).not.toHaveAttribute("aria-busy");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await expect(canvasElement.querySelector("[aria-busy='true']")).not.toBeNull();
+    await waitFor(() => {
+      expect(status).toHaveTextContent("Cargando competiciones…");
+    });
     await expect(canvas.getByRole("heading", { name: "Mis competiciones" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toHaveAttribute(
+      "href",
+      "/player/competitions/explore",
+    );
+    await expect(canvasElement.querySelectorAll("[data-slot='skeleton']").length).toBe(6);
+    await expect(canvas.queryByText("Competición copa-invierno")).toBeNull();
+    await expect(canvas.queryByRole("link", { name: /Competición/ })).toBeNull();
+    await userEvent.tab();
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toHaveFocus();
+    await userEvent.tab();
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).not.toHaveFocus();
+    await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toHaveFocus();
+
+    const skeletonList = canvasElement.querySelector("[aria-busy='true'] ul");
+    const skeletonRow = skeletonList?.querySelector("li > div") ?? null;
+    const rowBars = skeletonRow?.querySelectorAll("[data-slot='skeleton']") ?? [];
+    const view = canvasElement.ownerDocument.defaultView;
+    await expect(skeletonList).not.toBeNull();
+    await expect(skeletonRow).not.toBeNull();
+    await expect(view).not.toBeNull();
+    await expect(rowBars.length).toBe(2);
+    if (skeletonList == null || skeletonRow == null || view == null) return;
+
+    const listBg = view.getComputedStyle(skeletonList).backgroundColor;
+    const rowBgBefore = view.getComputedStyle(skeletonRow).backgroundColor;
+
+    const assertBarsDistinctFromRow = async () => {
+      const rowBg = view.getComputedStyle(skeletonRow).backgroundColor;
+      await expect(rowBg).toBe(rowBgBefore);
+      for (const bar of rowBars) {
+        const barBg = view.getComputedStyle(bar).backgroundColor;
+        await expect(barBg).not.toBe(rowBg);
+        await expect(barBg).not.toBe(listBg);
+      }
+    };
+
+    await assertBarsDistinctFromRow();
+    // Synthetic hover events never activate `:hover`, so assert on the stylesheet:
+    // no `:hover` rule may target the decorative row or its list item.
+    await expect(hoverSelectorsMatching(skeletonRow)).toEqual([]);
+    await expect(hoverSelectorsMatching(skeletonRow.parentElement!)).toEqual([]);
+  },
+};
+
+export const LoadingMobile: Story = {
+  name: "Loading mobile",
+  args: { scenario: "loading" },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const status = canvas.getByRole("status");
+    await expect(canvas.getByRole("main")).not.toHaveAttribute("aria-busy");
+    await expect(status.closest("[aria-busy='true']")).toBeNull();
+    await waitFor(() => {
+      expect(status).toHaveTextContent("Cargando competiciones…");
+    });
+    await expect(canvas.getByRole("button", { name: "Explorar competiciones" })).toBeVisible();
+    await expect(canvasElement.querySelector("[data-slot='skeleton']")).not.toBeNull();
+    await expect(canvasElement.ownerDocument.defaultView?.innerWidth).toBe(320);
   },
 };
 
@@ -182,14 +272,14 @@ export const ErrorState: Story = {
 export const Mobile: Story = {
   name: "Mobile",
   args: { scenario: "ready" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
 };
 
 export const EmptyMobile: Story = {
   name: "Empty mobile",
   args: { scenario: "empty" },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   render: (args) => <CompetitionsStoryShell key={args.scenario} {...args} />,
 };
 

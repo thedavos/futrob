@@ -12,11 +12,6 @@ import {
   applyStyles,
   Button,
   Card,
-  PageHeader,
-  PageHeaderActions,
-  PageHeaderDescription,
-  PageHeaderTitle,
-  Skeleton,
   Tabs,
   TabsContent,
   TabsList,
@@ -25,15 +20,22 @@ import {
 } from "@futrob/ui";
 import { ArrowsClockwiseIcon, CalendarBlankIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import { LoadingStatus } from "@/shared/presentation/loading-status.tsx";
 import {
   ScheduleChangesSection,
   type ScheduleChangesState,
 } from "@/modules/scheduling/presentation/schedule-changes-section.tsx";
 import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
 import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
-import { EncounterBreadcrumb, EncounterHero, listLink, type ListLink } from "./encounter-hero.tsx";
+import { EncounterHero, EncounterUnavailable, listLink } from "./encounter-hero.tsx";
 import type { EncounterListReturn } from "./encounter-list-return.ts";
 import { EncounterOverviewTab } from "./encounter-overview.tsx";
+import {
+  EncounterBreadcrumb,
+  EncounterPageSkeleton,
+  type ListLink,
+} from "./encounter-page-skeleton.tsx";
 import { EncounterSelectionWorkspace } from "./encounter-selection-workspace.tsx";
 import { assignmentsOf, previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
@@ -41,7 +43,6 @@ import { type Formats } from "./encounter-parts.tsx";
 import { currentProposalOf } from "./selection-draft.ts";
 import { EMPTY_TEAM_DRAFT, teamDraftReducer } from "./team-selection-draft.ts";
 import type { TeamSelectionState } from "./team-selection-section.tsx";
-import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type EncounterState =
   | { readonly kind: "loading" }
@@ -89,46 +90,48 @@ export function EncounterPageView({
   const { t } = useI18n();
   const encountersLink = listLink({ competitionId, listReturn, organizationId, t });
 
+  return (
+    <>
+      <LoadingStatus message={encounter.kind === "loading" ? t("encounter.loading") : ""} />
+      <EncounterContent
+        candidates={candidates}
+        disputeReview={disputeReview}
+        encounter={encounter}
+        encountersLink={encountersLink}
+        scheduleChanges={scheduleChanges}
+        t={t}
+        teamSelection={teamSelection}
+      />
+    </>
+  );
+}
+
+function EncounterContent({
+  candidates,
+  disputeReview,
+  encounter,
+  encountersLink,
+  scheduleChanges,
+  t,
+  teamSelection,
+}: {
+  readonly candidates: CandidatesState;
+  readonly disputeReview?: DisputeReviewState;
+  readonly encounter: EncounterState;
+  readonly encountersLink: ListLink;
+  readonly scheduleChanges?: ScheduleChangesState;
+  readonly t: Translator;
+  readonly teamSelection?: TeamSelectionState;
+}) {
   switch (encounter.kind) {
     case "not_found":
     case "forbidden":
-      return (
-        <main {...applyStyles(styles.main)}>
-          <PageHeader>
-            <PageHeaderTitle>
-              {encounter.kind === "forbidden"
-                ? t("encounter.forbidden.title")
-                : t("encounter.notFound.title")}
-            </PageHeaderTitle>
-            <PageHeaderDescription>
-              {encounter.kind === "forbidden"
-                ? t("encounter.forbidden.description")
-                : t("encounter.notFound.description")}
-            </PageHeaderDescription>
-            <PageHeaderActions>
-              <Button render={encountersLink.element} role="link" variant="secondary">
-                {encountersLink.back}
-              </Button>
-            </PageHeaderActions>
-          </PageHeader>
-        </main>
-      );
+      return <EncounterUnavailable kind={encounter.kind} link={encountersLink} t={t} />;
     case "loading":
-      return (
-        <main aria-busy="true" {...applyStyles(styles.main)}>
-          <h1 {...applyStyles(vis.srOnly)}>{t("encounter.loading")}</h1>
-          <EncounterBreadcrumb link={encountersLink} t={t} />
-          <Skeleton {...applyStyles(styles.skeletonHero)} />
-          <Skeleton {...applyStyles(styles.skeletonRow)} />
-        </main>
-      );
+      return <EncounterPageSkeleton link={encountersLink} t={t} />;
     case "error":
       return (
-        <main {...applyStyles(styles.main)}>
-          <h1 {...applyStyles(vis.srOnly)}>{t("encounter.error")}</h1>
-          <EncounterBreadcrumb link={encountersLink} t={t} />
-          <RetryAlert message={t("encounter.error")} retry={encounter.retry} t={t} />
-        </main>
+        <EncounterUnavailable kind="error" link={encountersLink} retry={encounter.retry} t={t} />
       );
     case "ready":
       return (

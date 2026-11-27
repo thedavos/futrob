@@ -12,6 +12,8 @@ export const styles = stylex.create({
   },
   filterActions: { display: "flex", alignItems: "end", flexWrap: "wrap", gap: "0.75rem" },
   table: { minWidth: "54rem" },
+  /** Grid child that holds the skeleton table; lets the table scroll inside it. */
+  skeletonTableFrame: { minWidth: 0 },
   text: { maxWidth: "28rem", overflowWrap: "anywhere" },
   stack: { display: "grid", gap: "0.25rem", minWidth: 0, overflowWrap: "anywhere" },
   pagination: {
@@ -22,7 +24,14 @@ export const styles = stylex.create({
     gap: "1rem",
   },
   paginationActions: { display: "flex", gap: "0.75rem" },
-  loading: { height: "3rem" },
+  skeletonDate: { width: "8.5rem", maxWidth: "100%", height: "0.875rem" },
+  skeletonActor: { width: "7.5rem", maxWidth: "100%", height: "0.875rem" },
+  skeletonActorId: { width: "5.5rem", maxWidth: "100%", height: "0.75rem" },
+  skeletonAction: { width: "11rem", maxWidth: "100%", height: "0.875rem" },
+  skeletonReason: { width: "16rem", maxWidth: "100%", height: "0.875rem" },
+  skeletonObject: { width: "12rem", maxWidth: "100%", height: "0.875rem" },
+  skeletonRequest: { width: "9rem", maxWidth: "100%", height: "0.75rem" },
+  skeletonPageButton: { width: "6.5rem", height: "var(--control-height)" },
   tabs: {
     display: "flex",
     gap: "1.5rem",

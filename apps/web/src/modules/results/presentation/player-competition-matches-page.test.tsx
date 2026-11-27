@@ -124,9 +124,10 @@ describe("Player competition matches", () => {
     renderRoute();
 
     expect(screen.getByRole("heading", { name: "Partidos" })).toBeTruthy();
-    expect(screen.getByRole("status", { name: /cargando/i }).getAttribute("aria-busy")).toBe(
-      "true",
-    );
+    const status = screen.getByRole("status");
+    expect(status.textContent).toMatch(/cargando/i);
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[aria-busy='true']")).toBeTruthy();
   });
 
   it("lists the Encounters through the organization of the viewer's competition", async () => {

@@ -61,12 +61,14 @@ const preview: Preview = {
             "Organizer",
             [
               "Home",
+              "Competitions",
               "Organization",
               ["Create", "Settings", "Members and roles"],
               "Teams",
               "Competition setup",
               [
                 "Create",
+                "Page",
                 "Rules step",
                 "Format estimate",
                 "Participants",
@@ -98,6 +100,7 @@ const preview: Preview = {
               ["Mine", "Explore", "Detail"],
               "Invitations",
               "Game accounts",
+              "EA Clubs",
               "Matches",
               ["List", "Detail", "Record"],
               "Statistics",

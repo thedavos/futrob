@@ -9,27 +9,35 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  Skeleton,
   TextLink,
+  vis,
 } from "@futrob/ui";
 import pendingBracketUrl from "@/assets/illustration-pending-bracket.png";
 import accessUrl from "@/assets/illustration-permissions.png";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
+import {
+  isRefusal,
+  useCompetitionEncountersQuery,
+} from "@/modules/results/presentation/encounter-queries.ts";
 import { isFixtureRefusal, useCurrentCompetitionFixture } from "../competition-fixture-queries.ts";
 import { competitionFixturePageState } from "../competition-fixture-state.ts";
 import { BracketContent } from "./bracket-content.tsx";
-import type { Scope, TeamFilter } from "./bracket-page-shared.ts";
+import type { Scope, TeamFilter, ViewModeControl } from "./bracket-page-shared.ts";
 import { styles } from "./bracket-page.styles.ts";
+import { bracketResults, type BracketResults } from "./bracket-results.ts";
+import { BracketPageSkeleton } from "./bracket-skeleton.tsx";
 import { bracketPageState, type BracketPageState } from "./bracket-state.ts";
 
 export function CompetitionBracketRoute({
   competitionId,
   organizationId,
   ...filter
-}: Scope & TeamFilter) {
+}: Scope & TeamFilter & ViewModeControl) {
   const query = useCurrentCompetitionFixture(organizationId, competitionId);
+  // Scores and official status come from the Encounter list; the draw never waits for them.
+  const encounters = useCompetitionEncountersQuery(organizationId, competitionId);
   const retry = () => void query.refetch();
   const state = bracketPageState(
     competitionFixturePageState({
@@ -43,36 +51,53 @@ export function CompetitionBracketRoute({
     <CompetitionBracketPageView
       competitionId={competitionId}
       organizationId={organizationId}
+      results={{
+        results: bracketResults(encounters.data?.encounters),
+        failed: encounters.isError && !isRefusal(encounters.error),
+        retry: () => void encounters.refetch(),
+      }}
       state={state}
       {...filter}
     />
   );
 }
 
+/** What the Encounter list adds to the draw; `failed` only when a retry may help. */
+export type BracketResultsState = {
+  readonly results: BracketResults;
+  readonly failed: boolean;
+  readonly retry: () => void;
+};
+
+const NO_RESULTS: BracketResultsState = { results: null, failed: false, retry: () => undefined };
+
 export function CompetitionBracketPageView({
   competitionId,
   organizationId,
+  results = NO_RESULTS,
   state,
   teamId,
   onTeamChange,
-}: Scope & TeamFilter & { readonly state: BracketPageState }) {
+  view,
+  onViewChange,
+}: Scope &
+  TeamFilter &
+  ViewModeControl & {
+    readonly state: BracketPageState;
+    readonly results?: BracketResultsState;
+  }) {
   const { locale, t } = useI18n();
   const scope = { competitionId, organizationId };
+  const loadingLabel = state.kind === "loading" ? t("bracket.loading") : "";
   return (
     <PageScaffold page="competition.bracket">
+      <span aria-atomic="true" role="status" {...applyStyles(vis.srOnly)}>
+        {loadingLabel}
+      </span>
       {(() => {
         switch (state.kind) {
           case "loading":
-            return (
-              <div
-                aria-busy="true"
-                aria-label={t("bracket.loading")}
-                role="status"
-                {...applyStyles(styles.stack)}
-              >
-                <Skeleton {...applyStyles(styles.skeleton)} />
-              </div>
-            );
+            return <BracketPageSkeleton view={view} />;
           case "error":
             return <RetryAlert message={t("bracket.error")} retry={state.retry} t={t} />;
           case "not_found":
@@ -133,11 +158,16 @@ export function CompetitionBracketPageView({
                 bracket={state.bracket}
                 locale={locale}
                 onTeamChange={onTeamChange}
+                onViewChange={onViewChange}
                 refreshFailed={state.refreshFailed}
+                results={results.results}
+                resultsFailed={results.failed}
                 retry={state.retry}
+                retryResults={results.retry}
                 scope={scope}
                 t={t}
                 teamId={teamId}
+                view={view}
               />
             );
           default: {

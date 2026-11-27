@@ -13,7 +13,6 @@ import {
   EmptyStateIcon,
   EmptyStateTitle,
   Heading,
-  Skeleton,
   Text,
 } from "@futrob/ui";
 import emptyFixturesUrl from "@/assets/illustration-pending-fixtures.png";
@@ -42,6 +41,7 @@ import {
 import type { CompetitionFixtureView } from "./competition-fixture-view.ts";
 import { styles } from "./competition-fixture-page.styles.ts";
 import { FixtureCalendar, type FixtureCalendarViewKind } from "./fixture-calendar.tsx";
+import { FixtureCalendarSkeleton } from "./fixture-calendar-skeleton.tsx";
 import { SwissRoundActions } from "./swiss-fixture-actions.tsx";
 import type { SwissFixtureCommands } from "./swiss-fixture-commands.ts";
 import { SwissFixtureGenerateForm, type FixtureNotice } from "./swiss-fixture-generate-form.tsx";
@@ -123,17 +123,7 @@ export function CompetitionFixturePageView({
       {(() => {
         switch (state.kind) {
           case "loading":
-            return (
-              <div
-                aria-busy="true"
-                aria-label={t("fixture.loading")}
-                role="status"
-                {...applyStyles(styles.list)}
-              >
-                <Skeleton {...applyStyles(styles.skeleton)} />
-                <Skeleton {...applyStyles(styles.skeleton)} />
-              </div>
-            );
+            return <FixtureCalendarSkeleton />;
           case "error":
             return <RetryAlert message={t("fixture.error")} retry={state.retry} t={t} />;
           case "not_found":

@@ -1,11 +1,13 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type {
   GetCompetitionRankingsResponse,
   RankingKindDto,
   RankingSnapshotDto,
 } from "@futrob/api-contracts";
+import { competitionRankingTeamIds, type RankingRowFilters } from "@futrob/sdk";
 import { STATISTICS_PERMISSION } from "@futrob/statistics";
 import {
   applyStyles,
@@ -15,13 +17,14 @@ import {
   EmptyStateDescription,
   EmptyStateIcon,
   EmptyStateTitle,
-  Skeleton,
   Tabs,
   TabsContent,
   TabsIndicator,
   TabsList,
   TabsTrigger,
   TextLink,
+  useExternalSync,
+  vis,
 } from "@futrob/ui";
 import emptyRankingsUrl from "@/assets/illustration-empty-standings.png";
 import accessUrl from "@/assets/illustration-permissions.png";
@@ -31,16 +34,25 @@ import { PageScaffold } from "@/shared/presentation/page-scaffold.tsx";
 import { useEffectivePermissions } from "@/shared/presentation/query/use-effective-permissions.ts";
 import { styles } from "./competition-rankings-page.styles.ts";
 import { useCompetitionRankingsQuery, useRankingNames } from "./competition-rankings-queries.ts";
-import { RankingMeta, RankingTable } from "./competition-rankings-table.tsx";
+import { RankingPlayerDetail } from "./competition-rankings-player-detail.tsx";
+import { RankingSummary } from "./competition-rankings-summary.tsx";
+import {
+  RankingMeta,
+  RankingTable,
+  type RankingFilterControls,
+  type RankingSelection,
+} from "./competition-rankings-table.tsx";
+import { CompetitionRankingsSkeleton } from "./competition-rankings-skeleton.tsx";
 import {
   RANKING_KIND_COPY,
   RANKING_KINDS,
   rankingFormatters,
-  rankingTeamIds,
+  rankingNamesOf,
   selectRankingSnapshot,
   type RankingFormatters,
   type RankingNamesState,
 } from "./competition-rankings-view.ts";
+import { useRankingDetailHost, type RankingDetailHost } from "./competition-rankings-viewport.ts";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 type Scope = { readonly organizationId: string; readonly competitionId: string };
@@ -66,15 +78,16 @@ type KindSelection = {
 };
 
 export function CompetitionRankingsRoute(props: Scope & KindSelection) {
-  const { organizationId, competitionId, rankingKind } = props;
+  const { organizationId, competitionId } = props;
   const access = useEffectivePermissions({ organizationId, competitionId }, RANKINGS_PERMISSIONS);
   const ready = access.capability.status === "ready";
   const canRead = ready && access.allowed.has(STATISTICS_PERMISSION.read);
 
   const query = useCompetitionRankingsQuery(organizationId, competitionId, canRead);
   const loaded = query.data?.kind === "loaded" ? query.data.data : null;
-  const teamIds = loaded ? rankingTeamIds(selectRankingSnapshot(loaded, rankingKind)) : [];
-  // Roster access is decided per Team by the roster endpoint, not at competition scope.
+  // Every kind's Teams: the summary, the Team filter and the cross-ranking detail name rows of
+  // any kind. Roster access is decided per Team by the roster endpoint, not at competition scope.
+  const teamIds = loaded ? competitionRankingTeamIds(loaded) : [];
   const names = useRankingNames(organizationId, competitionId, teamIds, canRead);
 
   const state: CompetitionRankingsState = (() => {
@@ -107,23 +120,26 @@ export function CompetitionRankingsPageView({
   state,
 }: Scope & KindSelection & { readonly state: CompetitionRankingsState }) {
   const { locale, t } = useI18n();
+  const isLoading = state.kind === "loading";
+  const statusRef = useRef<HTMLSpanElement>(null);
+  const loadingMessage = isLoading ? t("competition.rankings.loading") : "";
+
+  // ARIA22: keep the live region mounted outside aria-busy and populate post-mount so screen
+  // readers announce initial loading as well as clearing once data resolves.
+  useExternalSync(() => {
+    if (statusRef.current) {
+      statusRef.current.textContent = loadingMessage;
+    }
+  }, [loadingMessage]);
+
   return (
     <PageScaffold page="competition.rankings">
-      <div {...applyStyles(styles.content)}>
+      <span ref={statusRef} role="status" {...applyStyles(vis.srOnly)} />
+      <div aria-busy={isLoading || undefined} {...applyStyles(styles.content)}>
         {(() => {
           switch (state.kind) {
             case "loading":
-              return (
-                <div
-                  aria-busy="true"
-                  aria-label={t("competition.rankings.loading")}
-                  role="status"
-                  {...applyStyles(styles.content)}
-                >
-                  <Skeleton {...applyStyles(styles.skeletonTabs)} />
-                  <Skeleton {...applyStyles(styles.skeletonTable)} />
-                </div>
-              );
+              return <CompetitionRankingsSkeleton rankingKind={rankingKind} t={t} />;
             case "error":
               return (
                 <RetryAlert message={t("competition.rankings.error")} retry={state.retry} t={t} />
@@ -218,56 +234,109 @@ function RankingTabs({
   readonly names: RankingNamesState;
   readonly t: Translator;
 }) {
+  // Selection and filters outlive a tab change: the detail compares one player across kinds.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<RankingRowFilters>({ query: "", teamId: null });
+  const host = useRankingDetailHost();
+  const selection: RankingSelection = { selectedId, onSelect: setSelectedId };
+  const filterControls: RankingFilterControls = {
+    filters,
+    onFiltersChange: setFilters,
+    teams: [...rankingNamesOf(names).teams]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, t.locale)),
+  };
   return (
-    <Tabs
-      className={styles.tabs}
-      onValueChange={(value) => {
-        const next = RANKING_KINDS.find((kind) => kind === value);
-        if (next) onRankingKindChange(next);
-      }}
-      value={rankingKind}
-    >
-      <TabsList aria-label={t("competition.rankings.kinds")} className={styles.tabList}>
+    <>
+      <Tabs
+        className={styles.tabs}
+        onValueChange={(value) => {
+          const next = RANKING_KINDS.find((kind) => kind === value);
+          if (next) onRankingKindChange(next);
+        }}
+        value={rankingKind}
+      >
+        <TabsList aria-label={t("competition.rankings.kinds")} className={styles.tabList}>
+          {RANKING_KINDS.map((kind) => (
+            <TabsTrigger key={kind} value={kind}>
+              {t(RANKING_KIND_COPY[kind].tab)}
+            </TabsTrigger>
+          ))}
+          <TabsIndicator />
+        </TabsList>
         {RANKING_KINDS.map((kind) => (
-          <TabsTrigger key={kind} value={kind}>
-            {t(RANKING_KIND_COPY[kind].tab)}
-          </TabsTrigger>
+          <TabsContent className={styles.panel} key={kind} value={kind}>
+            <KindPanel
+              data={data}
+              filterControls={filterControls}
+              formatters={formatters}
+              host={host}
+              kind={kind}
+              names={names}
+              selection={selection}
+              snapshot={selectRankingSnapshot(data, kind)}
+              t={t}
+            />
+          </TabsContent>
         ))}
-        <TabsIndicator />
-      </TabsList>
-      {RANKING_KINDS.map((kind) => (
-        <TabsContent className={styles.panel} key={kind} value={kind}>
-          <KindPanel
-            formatters={formatters}
-            kind={kind}
-            names={names}
-            snapshot={selectRankingSnapshot(data, kind)}
-            t={t}
-          />
-        </TabsContent>
-      ))}
-    </Tabs>
+      </Tabs>
+      {host === "aside" ? null : (
+        <RankingPlayerDetail
+          data={data}
+          formatters={formatters}
+          host={host}
+          kind={rankingKind}
+          names={names}
+          onClose={() => setSelectedId(null)}
+          selectedId={selectedId}
+          t={t}
+        />
+      )}
+    </>
   );
 }
 
 function KindPanel({
+  data,
+  filterControls,
   formatters,
+  host,
   kind,
   names,
+  selection,
   snapshot,
   t,
 }: {
+  readonly data: GetCompetitionRankingsResponse;
+  readonly filterControls: RankingFilterControls;
   readonly formatters: RankingFormatters;
+  readonly host: RankingDetailHost;
   readonly kind: RankingKindDto;
   readonly names: RankingNamesState;
+  readonly selection: RankingSelection;
   readonly snapshot: RankingSnapshotDto | null;
   readonly t: Translator;
 }) {
-  if (!snapshot) return <NotComputed t={t} />;
-  return (
-    <>
-      <RankingMeta formatters={formatters} kind={kind} snapshot={snapshot} t={t} />
-      {snapshot.rows.length === 0 ? (
+  const rows = snapshot?.rows.length ?? 0;
+  // On wide screens the detail stays beside any kind while a player is selected: an empty or
+  // not yet computed kind still shows where the player stands in the others.
+  const aside =
+    host === "aside" && (rows > 0 || selection.selectedId !== null) ? (
+      <RankingPlayerDetail
+        data={data}
+        formatters={formatters}
+        host="aside"
+        kind={kind}
+        names={names}
+        onClose={() => undefined}
+        selectedId={selection.selectedId}
+        t={t}
+      />
+    ) : null;
+  const main = (() => {
+    if (!snapshot) return <NotComputed t={t} />;
+    if (rows === 0) {
+      return (
         <EmptyState>
           <EmptyStateIcon>
             <img alt="" data-outline="none" src={emptyRankingsUrl} />
@@ -279,8 +348,35 @@ function KindPanel({
             </EmptyStateDescription>
           </EmptyStateCopy>
         </EmptyState>
+      );
+    }
+    return (
+      <RankingTable
+        filterControls={filterControls}
+        formatters={formatters}
+        kind={kind}
+        names={names}
+        selection={selection}
+        snapshot={snapshot}
+        t={t}
+      />
+    );
+  })();
+  return (
+    <>
+      {snapshot && rows > 0 ? (
+        <RankingSummary formatters={formatters} names={names} snapshot={snapshot} t={t} />
+      ) : null}
+      {snapshot ? (
+        <RankingMeta formatters={formatters} kind={kind} snapshot={snapshot} t={t} />
+      ) : null}
+      {aside ? (
+        <div {...applyStyles(styles.workspace)}>
+          <div {...applyStyles(styles.workspaceMain)}>{main}</div>
+          {aside}
+        </div>
       ) : (
-        <RankingTable formatters={formatters} kind={kind} names={names} snapshot={snapshot} t={t} />
+        main
       )}
     </>
   );

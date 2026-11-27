@@ -15,12 +15,14 @@ import {
   useOrganizationTeamsQuery,
 } from "@/modules/competitions/presentation/competition-queries.ts";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LoadingStatus } from "@/shared/presentation/loading-status.tsx";
 import { useCan } from "@/shared/presentation/permissions/index.ts";
 import { CreateCompetitionButton } from "./create-competition-button.tsx";
 import { OrganizationHomeEmpty, OrganizationHomeLoadError } from "./organization-home-empty.tsx";
 import { OrganizationHomeKpis, type OrganizationHomeMetric } from "./organization-home-kpis.tsx";
 import { countActiveCompetitions, countDraftCompetitions } from "./organization-home-model.ts";
 import { OrganizationHomeSections } from "./organization-home-sections.tsx";
+import { OrganizationHomeSectionsSkeleton } from "./organization-home-skeleton.tsx";
 import { useOrganizationProfileQuery } from "./organization-queries.ts";
 
 const styles = stylex.create({
@@ -66,6 +68,9 @@ export function OrganizationHomePage({ organizationId }: { readonly organization
 
   return (
     <main {...applyStyles(styles.main)}>
+      <LoadingStatus
+        message={competitionsQuery.isPending ? t("org.home.competitions.loading") : ""}
+      />
       <PageHeader className={styles.header}>
         {profileQuery.isPending ? (
           <Skeleton {...applyStyles(styles.titleSkeleton)} />
@@ -104,7 +109,9 @@ export function OrganizationHomePage({ organizationId }: { readonly organization
             void competitionsQuery.refetch();
           }}
         />
-      ) : competitionsQuery.isPending ? null : competitions.length === 0 ? (
+      ) : competitionsQuery.isPending ? (
+        <OrganizationHomeSectionsSkeleton />
+      ) : competitions.length === 0 ? (
         <OrganizationHomeEmpty canCreate={create.allowed} organizationId={organizationId} />
       ) : (
         <OrganizationHomeSections competitions={competitions} organizationId={organizationId} />

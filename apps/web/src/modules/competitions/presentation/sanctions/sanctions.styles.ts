@@ -8,6 +8,9 @@ export const styles = stylex.create({
     minWidth: 0,
     gap: "0.75rem",
   },
+  loadingRegion: {
+    minWidth: 0,
+  },
   sectionHeader: {
     display: "flex",
     flexWrap: "wrap",
@@ -15,12 +18,51 @@ export const styles = stylex.create({
     justifyContent: "space-between",
     gap: "0.75rem",
   },
-  loading: {
-    display: "grid",
-    gap: "0.75rem",
+  imposeSkeleton: {
+    width: "8.5rem",
+    maxWidth: "100%",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-md)",
   },
-  skeleton: {
-    height: "3.5rem",
+  boneType: {
+    width: "8rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  boneDetail: {
+    width: "4.5rem",
+    maxWidth: "70%",
+    height: "0.75rem",
+  },
+  boneTarget: {
+    width: "7.5rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  boneTeam: {
+    width: "10rem",
+    maxWidth: "100%",
+    height: "0.75rem",
+  },
+  boneReason: {
+    width: "16rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  boneDate: {
+    width: "7.5rem",
+    height: "1rem",
+  },
+  boneBadge: {
+    width: "4.5rem",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
+  boneAction: {
+    width: "4.75rem",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-md)",
+    marginInlineStart: "auto",
   },
   stack: {
     display: "grid",

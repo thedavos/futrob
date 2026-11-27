@@ -10,7 +10,6 @@ import {
   AvatarImage,
   Badge,
   Button,
-  Caption,
   EmptyState,
   EmptyStateActions,
   EmptyStateDescription,
@@ -18,6 +17,7 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Skeleton,
   typography,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
@@ -32,6 +32,8 @@ import {
   eaPlatformLabel,
   formatProviderGameEdition,
 } from "@/modules/identity/presentation/onboarding/onboarding-step-meta.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import { LoadingStatus } from "@/shared/presentation/loading-status.tsx";
 import { useMyPlayerProfileQuery } from "./player-queries.ts";
 
 const styles = stylex.create({
@@ -43,9 +45,6 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     gap: "2rem",
-  },
-  status: {
-    color: colors.mutedForeground,
   },
   card: {
     display: "flex",
@@ -75,6 +74,7 @@ const styles = stylex.create({
     width: "5rem",
     height: "5rem",
     flexShrink: 0,
+    borderRadius: "var(--corner-full)",
     outlineWidth: 1,
     outlineStyle: "solid",
     outlineOffset: -1,
@@ -119,6 +119,31 @@ const styles = stylex.create({
     width: "0.875rem",
     height: "0.875rem",
   },
+  stack: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+  },
+  nameBone: {
+    width: "10rem",
+    maxWidth: "100%",
+    height: "1.75rem",
+  },
+  metaBone: {
+    width: "14rem",
+    maxWidth: "100%",
+    height: "1rem",
+  },
+  chipBone: {
+    width: "5.5rem",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
+  chipBoneShort: {
+    width: "4rem",
+    height: "1.5rem",
+    borderRadius: "var(--corner-full)",
+  },
 });
 
 const avatar = applyStyles(styles.avatar);
@@ -126,6 +151,7 @@ const fallback = applyStyles(styles.fallback);
 const chipIcon = applyStyles(styles.chipIcon);
 
 export function PlayerEaClubsPage() {
+  const { t } = useI18n();
   const profileQuery = useMyPlayerProfileQuery();
   const clubs = profileQuery.data?.externalClubs ?? [];
 
@@ -138,6 +164,8 @@ export function PlayerEaClubsPage() {
         </PageHeaderDescription>
       </PageHeader>
 
+      <LoadingStatus message={profileQuery.isPending ? t("player.eaClubs.loading") : ""} />
+
       <div {...applyStyles(styles.body)}>
         {profileQuery.isError ? (
           <Alert variant="destructive">
@@ -147,25 +175,57 @@ export function PlayerEaClubsPage() {
           </Alert>
         ) : null}
 
-        {profileQuery.isPending ? (
-          <Caption {...applyStyles(styles.status)}>Cargando clubes…</Caption>
-        ) : clubs.length > 0 ? (
-          clubs.map((club) => <AssociatedClub club={club} key={club.externalClubId} />)
-        ) : (
-          <EmptyState>
-            <EmptyStateTitle>Sin clubes asociados</EmptyStateTitle>
-            <EmptyStateDescription>
-              Usa Añadir club en el selector de contexto para vincular un club de EA a tu perfil.
-            </EmptyStateDescription>
-            <EmptyStateActions>
-              <Button render={<Link to="/player" />} variant="secondary">
-                Ir al espacio personal
-              </Button>
-            </EmptyStateActions>
-          </EmptyState>
-        )}
+        <div aria-busy={profileQuery.isPending || undefined} {...applyStyles(styles.stack)}>
+          {profileQuery.isPending ? (
+            <AssociatedClubsSkeleton />
+          ) : clubs.length > 0 ? (
+            clubs.map((club) => <AssociatedClub club={club} key={club.externalClubId} />)
+          ) : (
+            <EmptyState>
+              <EmptyStateTitle>Sin clubes asociados</EmptyStateTitle>
+              <EmptyStateDescription>
+                Usa Añadir club en el selector de contexto para vincular un club de EA a tu perfil.
+              </EmptyStateDescription>
+              <EmptyStateActions>
+                <Button render={<Link to="/player" />} variant="secondary">
+                  Ir al espacio personal
+                </Button>
+              </EmptyStateActions>
+            </EmptyState>
+          )}
+        </div>
       </div>
     </main>
+  );
+}
+
+const SKELETON_CARD_COUNT = 3;
+
+function AssociatedClubsSkeleton() {
+  return (
+    <>
+      {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
+        <AssociatedClubSkeleton key={index} />
+      ))}
+    </>
+  );
+}
+
+function AssociatedClubSkeleton() {
+  return (
+    <div {...applyStyles(styles.card)}>
+      <Skeleton className={styles.avatar} />
+      <div {...applyStyles(styles.details)}>
+        <div {...applyStyles(styles.identity)}>
+          <Skeleton className={styles.nameBone} />
+          <Skeleton className={styles.metaBone} />
+        </div>
+        <div {...applyStyles(styles.chips)}>
+          <Skeleton className={styles.chipBone} />
+          <Skeleton className={styles.chipBoneShort} />
+        </div>
+      </div>
+    </div>
   );
 }
 

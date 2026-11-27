@@ -1,9 +1,16 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const styles = stylex.create({
-  page: { width: "100%", maxWidth: "48rem", display: "flex", flexDirection: "column", gap: "2rem" },
+  page: {
+    width: "100%",
+    maxWidth: "48rem",
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+  },
   stack: { display: "flex", flexDirection: "column", gap: "1.5rem", minWidth: 0 },
-  row: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: "1rem" },
+  row: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: "1rem", minWidth: 0 },
   section: { display: "flex", flexDirection: "column", gap: "1rem" },
   actions: { display: "flex", flexWrap: "wrap", gap: "0.75rem" },
   choice: { display: "flex", alignItems: "center", minHeight: 44, gap: "0.75rem" },

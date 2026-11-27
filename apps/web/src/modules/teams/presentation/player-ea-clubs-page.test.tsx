@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { GetMyPlayerProfileResponse } from "@futrob/api-contracts";
+import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { QueryTestProvider } from "@/shared/presentation/query/query-test-utils.tsx";
 import { PlayerEaClubsPage } from "./player-ea-clubs-page.tsx";
 
@@ -76,11 +77,7 @@ describe("PlayerEaClubsPage", () => {
       ],
     });
 
-    render(
-      <QueryTestProvider>
-        <PlayerEaClubsPage />
-      </QueryTestProvider>,
-    );
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Clubes EA" })).toBeTruthy();
@@ -101,15 +98,77 @@ describe("PlayerEaClubsPage", () => {
       externalClubs: [],
     });
 
-    render(
-      <QueryTestProvider>
-        <PlayerEaClubsPage />
-      </QueryTestProvider>,
-    );
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText("Sin clubes asociados")).toBeTruthy();
     });
     expect(screen.getByRole("button", { name: "Ir al espacio personal" })).toBeTruthy();
   });
+
+  it("announces loading outside the busy skeleton list and clears it on resolution", async () => {
+    let resolveProfile!: (value: GetMyPlayerProfileResponse) => void;
+    const deferred = new Promise<GetMyPlayerProfileResponse>((resolve) => {
+      resolveProfile = resolve;
+    });
+    getMyProfile.mockReturnValue(deferred);
+
+    renderPage();
+
+    // The region mounts empty and receives the message afterwards, so it is announced.
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("");
+    await waitFor(() => expect(status.textContent).toBe("Cargando clubes…"));
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+
+    const busyList = document.querySelector("[aria-busy='true']");
+    expect(busyList).not.toBeNull();
+    expect(busyList?.contains(status)).toBe(false);
+
+    const bones = busyList?.querySelectorAll("[data-slot='skeleton']") ?? [];
+    expect(bones.length).toBeGreaterThan(0);
+    for (const bone of bones) {
+      expect(bone.getAttribute("aria-hidden")).toBe("true");
+    }
+    expect(busyList?.querySelectorAll("a, button, [tabindex]:not([tabindex='-1'])")).toHaveLength(
+      0,
+    );
+    expect(screen.queryByRole("heading", { name: "Night Owls" })).toBeNull();
+    expect(screen.queryByText("Sin clubes asociados")).toBeNull();
+
+    resolveProfile({
+      profile: { id: "p1", createdAt: "2026-08-01T00:00:00.000Z" },
+      gameAccounts: [],
+      externalClubs: [
+        {
+          playerProfileId: "p1",
+          providerKey: "ea-clubs",
+          externalClubId: "10754",
+          externalClubName: "Night Owls",
+          platform: "common-gen5",
+          gameEdition: "fc26",
+          imageUrl: null,
+          associatedAt: "2026-08-01T12:00:00.000Z",
+        },
+      ],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Night Owls" })).toBeTruthy();
+    });
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.textContent).toBe("");
+    expect(document.querySelector("[aria-busy='true']")).toBeNull();
+    expect(document.querySelector("[data-slot='skeleton']")).toBeNull();
+  });
 });
+
+function renderPage() {
+  return render(
+    <I18nProvider initialLocale="es" persistLocale={async () => undefined}>
+      <QueryTestProvider>
+        <PlayerEaClubsPage />
+      </QueryTestProvider>
+    </I18nProvider>,
+  );
+}

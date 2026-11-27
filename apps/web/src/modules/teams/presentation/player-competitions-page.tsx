@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import {
@@ -7,17 +8,21 @@ import {
   AlertDescription,
   applyStyles,
   Button,
-  Caption,
   PageHeader,
   PageHeaderActions,
   PageHeaderDescription,
   PageHeaderTitle,
+  Skeleton,
   typography,
+  useExternalSync,
+  vis,
 } from "@futrob/ui";
 import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { PlayerCompetitionsEmptySection } from "./player-competitions-empty-section.tsx";
 import { useMyTeamsQuery } from "./player-queries.ts";
+
+const LIST_SKELETON_ROWS = [0, 1, 2];
 
 const styles = stylex.create({
   main: {
@@ -35,9 +40,6 @@ const styles = stylex.create({
     flexDirection: "column",
     gap: "2rem",
   },
-  status: {
-    color: colors.mutedForeground,
-  },
   list: {
     overflow: "hidden",
     borderRadius: "var(--corner-xl)",
@@ -53,6 +55,8 @@ const styles = stylex.create({
     gap: "1rem",
     paddingInline: "1rem",
     paddingBlock: "0.75rem",
+  },
+  itemLink: {
     color: "inherit",
     textDecoration: "none",
     backgroundColor: { default: null, ":hover": colors.muted },
@@ -72,6 +76,7 @@ const styles = stylex.create({
   copy: {
     display: "grid",
     minWidth: 0,
+    flexGrow: 1,
     gap: "0.25rem",
   },
   name: {
@@ -82,6 +87,22 @@ const styles = stylex.create({
   },
   meta: {
     color: colors.mutedForeground,
+  },
+  line: {
+    display: "flex",
+    minWidth: 0,
+    alignItems: "center",
+    minHeight: "1lh",
+  },
+  nameBone: {
+    width: "12rem",
+    maxWidth: "70%",
+    height: "0.625rem",
+  },
+  metaBone: {
+    width: "8rem",
+    maxWidth: "50%",
+    height: "0.5rem",
   },
 });
 
@@ -95,10 +116,13 @@ export function PlayerCompetitionsPage() {
   const { t } = useI18n();
   const teamsQuery = useMyTeamsQuery();
   const competitions = competitionsFromTeams(teamsQuery.data?.teams ?? []);
-  const showEmpty = !teamsQuery.isPending && competitions.length === 0;
+  const loading = teamsQuery.isPending;
+  const loadingLabel = t("player.competitions.loading");
+  const showEmpty = !loading && competitions.length === 0;
 
   return (
     <main {...applyStyles(styles.main)}>
+      <LoadingStatusRegion message={loading ? loadingLabel : ""} />
       <PageHeader>
         <PageHeaderTitle>{t("player.competitions.title")}</PageHeaderTitle>
         <PageHeaderDescription>{t("player.competitions.description")}</PageHeaderDescription>
@@ -111,15 +135,15 @@ export function PlayerCompetitionsPage() {
         )}
       </PageHeader>
 
-      <div {...applyStyles(styles.body)}>
+      <div aria-busy={loading || undefined} {...applyStyles(styles.body)}>
         {teamsQuery.isError ? (
           <Alert variant="destructive">
             <AlertDescription>{t("player.competitions.error")}</AlertDescription>
           </Alert>
         ) : null}
 
-        {teamsQuery.isPending ? (
-          <Caption {...applyStyles(styles.status)}>{t("player.competitions.loading")}</Caption>
+        {loading ? (
+          <PlayerCompetitionsListSkeleton />
         ) : showEmpty ? (
           <PlayerCompetitionsEmptySection />
         ) : (
@@ -132,10 +156,10 @@ export function PlayerCompetitionsPage() {
                     competitionId: competition.competitionId,
                   }}
                   to="/orgs/$orgId/competitions/$competitionId/matches"
-                  {...applyStyles(styles.item)}
+                  {...applyStyles(styles.item, styles.itemLink)}
                 >
                   <span {...applyStyles(styles.copy)}>
-                    <span {...applyStyles(styles.name)}>
+                    <span {...applyStyles(typography.body, styles.name)}>
                       Competición {competition.competitionId}
                     </span>
                     <span {...applyStyles(typography.caption, styles.meta)}>
@@ -149,6 +173,64 @@ export function PlayerCompetitionsPage() {
         )}
       </div>
     </main>
+  );
+}
+
+/** Keeps an empty polite live region mounted through a paint before writing the loading copy. */
+function LoadingStatusRegion({ message }: { readonly message: string }) {
+  const statusRef = useRef<HTMLSpanElement>(null);
+
+  useExternalSync(() => {
+    const node = statusRef.current;
+    if (node == null) return;
+    if (message === "") {
+      node.textContent = "";
+      return;
+    }
+    let innerFrameId: number | null = null;
+    const outerFrameId = requestAnimationFrame(() => {
+      innerFrameId = requestAnimationFrame(() => {
+        node.textContent = message;
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outerFrameId);
+      if (innerFrameId !== null) {
+        cancelAnimationFrame(innerFrameId);
+      }
+      node.textContent = "";
+    };
+  }, [message]);
+
+  return (
+    <span
+      ref={statusRef}
+      aria-atomic="true"
+      aria-live="polite"
+      role="status"
+      {...applyStyles(vis.srOnly)}
+    />
+  );
+}
+
+function PlayerCompetitionsListSkeleton() {
+  return (
+    <ul aria-hidden="true" {...applyStyles(styles.list)}>
+      {LIST_SKELETON_ROWS.map((index) => (
+        <li key={index} {...applyStyles(styles.row)}>
+          <div {...applyStyles(styles.item)}>
+            <span {...applyStyles(styles.copy)}>
+              <span {...applyStyles(typography.body, styles.line)}>
+                <Skeleton {...applyStyles(styles.nameBone)} />
+              </span>
+              <span {...applyStyles(typography.caption, styles.line)}>
+                <Skeleton {...applyStyles(styles.metaBone)} />
+              </span>
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 
