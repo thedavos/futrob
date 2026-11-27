@@ -38,6 +38,7 @@ export function encounterViewDto(view: EncounterView): EncounterViewDto {
       ? view.score.map(({ homeGoals, awayGoals }) => ({ homeGoals, awayGoals }))
       : null,
     approvedResultId: view.approvedResultId,
+    officialStateAt: view.officialStateAt?.toISOString() ?? null,
   };
 }
 

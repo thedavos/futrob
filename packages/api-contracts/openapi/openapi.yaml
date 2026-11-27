@@ -11999,6 +11999,11 @@ components:
             - string
             - "null"
           minLength: 1
+        officialStateAt:
+          type:
+            - string
+            - "null"
+          format: date-time
       required:
         - encounterId
         - competition
@@ -12011,6 +12016,7 @@ components:
         - officialMatches
         - score
         - approvedResultId
+        - officialStateAt
     EnqueueDueProviderSyncsResponse:
       type: object
       properties:

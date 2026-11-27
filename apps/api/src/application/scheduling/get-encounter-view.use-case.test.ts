@@ -95,6 +95,7 @@ function plan(): FixturePlan {
 function dependencies(
   plans: FixturePlan[],
   approvedResult: ApprovedResultSource | null = null,
+  selectionUpdatedAt: Date | null = null,
 ): GetEncounterViewDependencies {
   const names = new Map<TeamId, string>([
     [homeTeamId, "Cuervos FC"],
@@ -130,6 +131,10 @@ function dependencies(
     officialResults: {
       getApprovedByEncounter: async () => approvedResult,
     },
+    officialSelections: {
+      findLatestByEncounter: async () =>
+        selectionUpdatedAt ? { updatedAt: selectionUpdatedAt } : null,
+    },
   };
 }
 
@@ -143,6 +148,7 @@ describe("GetEncounterViewUseCase", () => {
       officialMatches: view?.officialMatches,
       score: view?.score,
       approvedResultId: view?.approvedResultId,
+      officialStateAt: view?.officialStateAt,
     }).toEqual({
       resolutionMode: "aggregate_score",
       round: { number: 1, total: 1 },
@@ -152,6 +158,7 @@ describe("GetEncounterViewUseCase", () => {
       ],
       score: null,
       approvedResultId: null,
+      officialStateAt: null,
     });
   });
 
@@ -192,15 +199,19 @@ describe("GetEncounterViewUseCase", () => {
         },
       ],
     };
-    const view = await new GetEncounterViewUseCase(dependencies([plan()], approved)).execute(
-      snapshot,
-    );
+    const approvedAt = new Date("2026-09-17T07:30:00.000Z");
+    const view = await new GetEncounterViewUseCase(
+      dependencies([plan()], approved, approvedAt),
+    ).execute(snapshot);
 
     expect(view?.score).toEqual([
       { homeGoals: 1, awayGoals: 0 },
       { homeGoals: 0, awayGoals: 2 },
     ]);
-    expect(view?.approvedResultId).toBe("result-1");
+    expect({ id: view?.approvedResultId, at: view?.officialStateAt }).toEqual({
+      id: "result-1",
+      at: approvedAt,
+    });
 
     const unattributable: ApprovedResultSource = {
       ...approved,

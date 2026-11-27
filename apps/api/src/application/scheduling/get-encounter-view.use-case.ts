@@ -22,6 +22,8 @@ export type EncounterView = EncounterSummary & {
   readonly score: readonly OrientedEncounterScore[] | null;
   /** The active approved OfficialResult, even when its score cannot be attributed. */
   readonly approvedResultId: string | null;
+  /** When the official selection last changed, as persisted; null before the first proposal. */
+  readonly officialStateAt: Date | null;
 };
 
 /** The active approved revision; its id stays readable even when its score is not. */
@@ -36,6 +38,9 @@ export type GetEncounterViewDependencies = EncounterSummaryDependencies & {
   readonly officialResults: {
     getApprovedByEncounter(encounterId: EncounterId): Promise<ApprovedResultSource | null>;
   };
+  readonly officialSelections: {
+    findLatestByEncounter(encounterId: EncounterId): Promise<{ readonly updatedAt: Date } | null>;
+  };
 };
 
 /** Callers authorize `encounters.read` on the snapshot scope before reading the view. */
@@ -43,10 +48,11 @@ export class GetEncounterViewUseCase {
   constructor(private readonly deps: GetEncounterViewDependencies) {}
 
   async execute(snapshot: EncounterScheduleSnapshot): Promise<EncounterView | null> {
-    const [summary, matches, approvedResult] = await Promise.all([
+    const [summary, matches, approvedResult, selection] = await Promise.all([
       summarizeEncounter(this.deps, snapshot),
       this.deps.officialMatches.listByEncounter(snapshot.encounterId),
       this.deps.officialResults.getApprovedByEncounter(snapshot.encounterId),
+      this.deps.officialSelections.findLatestByEncounter(snapshot.encounterId),
     ]);
     if (!summary) return null;
     const officialMatches = officialMatchSchedules(snapshot, matches);
@@ -56,6 +62,7 @@ export class GetEncounterViewUseCase {
       officialMatches,
       score: officialEncounterScore(snapshot, approvedResult),
       approvedResultId: approvedResult?.status === "approved" ? approvedResult.id : null,
+      officialStateAt: selection?.updatedAt ?? null,
     };
   }
 }

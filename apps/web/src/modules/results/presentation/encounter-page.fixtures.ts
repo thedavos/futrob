@@ -42,6 +42,7 @@ export function encounterView(overrides: Partial<EncounterViewDto> = {}): Encoun
     ],
     score: null,
     approvedResultId: null,
+    officialStateAt: null,
     ...overrides,
   };
 }

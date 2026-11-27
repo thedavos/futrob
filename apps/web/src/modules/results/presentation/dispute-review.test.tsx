@@ -756,6 +756,7 @@ describe("Operator dispute review in the Match Center", () => {
                     { homeGoals: 3, awayGoals: 3 },
                   ],
                   approvedResultId: "result-1",
+                  officialStateAt: "2026-09-17T09:00:00.000Z",
                 })
               : encounterView({ score: null }),
           );
@@ -886,6 +887,10 @@ describe("Operator dispute review in the Match Center", () => {
   });
 
   describe("when the detail answers after the dossier in the same Actualizar", () => {
+    /** The selection's persisted `updatedAt` at each step, which both reads carry. */
+    const APPROVED_AT = "2026-09-17T03:10:00.000Z";
+    const VOIDED_AT = "2026-09-17T08:00:00.000Z";
+    const LATER = "2026-09-17T09:00:00.000Z";
     const approvedScore = [
       { homeGoals: 1, awayGoals: 0 },
       { homeGoals: 3, awayGoals: 3 },
@@ -894,7 +899,11 @@ describe("Operator dispute review in the Match Center", () => {
       const approved = resolvedByApproval();
       return {
         ...approved,
-        selection: { ...approved.selection!, status: "voided" as const },
+        selection: {
+          ...approved.selection!,
+          status: "voided" as const,
+          updatedAt: VOIDED_AT,
+        },
         approvedResultId: null,
         allowedActions: [],
       };
@@ -911,9 +920,14 @@ describe("Operator dispute review in the Match Center", () => {
     }) {
       const initial = next.initial ?? {
         dossier: resolvedByApproval(),
-        detail: encounterView({ score: approvedScore, approvedResultId: "result-1" }),
+        detail: encounterView({
+          score: approvedScore,
+          approvedResultId: "result-1",
+          officialStateAt: APPROVED_AT,
+        }),
       };
       let refreshed = false;
+      let down = false;
       let release = () => {};
       const held = new Promise<void>((resolve) => {
         release = resolve;
@@ -933,6 +947,7 @@ describe("Operator dispute review in the Match Center", () => {
           }
           if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
             if (!refreshed) return Response.json(initial.detail);
+            if (down) return failure(503, "api.unavailable");
             await held;
             return Response.json(next.detail);
           }
@@ -949,7 +964,7 @@ describe("Operator dispute review in the Match Center", () => {
           }
           if (url.pathname === DOSSIER) {
             if (!refreshed) return Response.json(initial.dossier);
-            return next.dossier === "unavailable"
+            return down || next.dossier === "unavailable"
               ? failure(503, "api.unavailable")
               : Response.json(next.dossier);
           }
@@ -960,6 +975,10 @@ describe("Operator dispute review in the Match Center", () => {
         refresh: async (user: UserEvent) => {
           refreshed = true;
           await user.click(screen.getByRole("button", { name: "Actualizar" }));
+        },
+        /** Both reads fail from now on. */
+        goDown: () => {
+          down = true;
         },
         release,
       };
@@ -1013,7 +1032,7 @@ describe("Operator dispute review in the Match Center", () => {
       const user = userEvent.setup();
       const server = serveRefresh({
         dossier: "unavailable",
-        detail: encounterView({ score: null, approvedResultId: null }),
+        detail: encounterView({ score: null, approvedResultId: null, officialStateAt: LATER }),
       });
       renderEncounter();
       expect(
@@ -1023,16 +1042,23 @@ describe("Operator dispute review in the Match Center", () => {
       await server.refresh(user);
       server.release();
       await settled();
+      expect(official()).toBeNull();
 
+      server.goDown();
+      await user.click(screen.getByRole("button", { name: "Actualizar" }));
+      await settled();
       expect(official()).toBeNull();
     });
 
-    it("with the dossier down, a new approval after a void shows its score", async () => {
+    async function approveAfterVoid(score: typeof approvedScore | null) {
       const user = userEvent.setup();
       const server = serveRefresh({
-        initial: { dossier: voidedCase(), detail: encounterView() },
+        initial: {
+          dossier: voidedCase(),
+          detail: encounterView({ approvedResultId: null, officialStateAt: VOIDED_AT }),
+        },
         dossier: "unavailable",
-        detail: encounterView({ score: approvedScore, approvedResultId: "result-2" }),
+        detail: encounterView({ score, approvedResultId: "result-2", officialStateAt: LATER }),
       });
       renderEncounter();
       await screen.findByRole("tab", { name: /^Expediente/ });
@@ -1041,10 +1067,41 @@ describe("Operator dispute review in the Match Center", () => {
       await server.refresh(user);
       server.release();
       await settled();
-
+      await user.click(screen.getByRole("tab", { name: /^Resumen/ }));
       expect(
-        await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+        await within(screen.getByRole("banner")).findByText("Resultado oficial aprobado"),
       ).toBeTruthy();
+      return { user, server };
+    }
+
+    /** The voided revision's proposal used m-1 and m-3 for a 1–0, 3–3 series. */
+    const voidedReferences = () => [
+      screen.queryByText("Partido EA m-1"),
+      screen.queryByText("Partido EA m-3"),
+      screen.queryByText("Marcador oficial 1 a 0"),
+    ];
+
+    it("with the dossier down, a new approval after a void shows its own score, not the voided references, and survives a second failure", async () => {
+      const { user, server } = await approveAfterVoid([
+        { homeGoals: 2, awayGoals: 2 },
+        { homeGoals: 0, awayGoals: 1 },
+      ]);
+
+      expect(official()).toBeTruthy();
+      expect(screen.getByText("Marcador oficial 2 a 2")).toBeTruthy();
+      expect(voidedReferences()).toEqual([null, null, null]);
+
+      server.goDown();
+      await user.click(screen.getByRole("button", { name: "Actualizar" }));
+      await settled();
+      expect(official()).toBeTruthy();
+      expect(screen.getByText("Marcador oficial 2 a 2")).toBeTruthy();
+    });
+
+    it("with the dossier down, a new approval without an attributable score is not rebuilt from the voided proposal", async () => {
+      await approveAfterVoid(null);
+
+      expect(voidedReferences()).toEqual([null, null, null]);
     });
   });
 });

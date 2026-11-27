@@ -272,6 +272,12 @@ export const encounterViewSchema = nextEncounterSchema.extend({
    * a slot cannot be attributed, so clients can tell "not official" from "official".
    */
   approvedResultId: z.string().min(1).nullable(),
+  /**
+   * When the official selection last changed, as persisted (its `updatedAt`); null before
+   * the first proposal. Clients compare it with a selection they read separately to tell
+   * which snapshot is newer, never by when the responses arrived.
+   */
+  officialStateAt: z.string().datetime().nullable(),
 });
 
 /**
@@ -284,6 +290,7 @@ export const encounterViewReadSchema = encounterViewSchema.extend({
   score: encounterScoreSchema.nullable().default(null),
   /** Undefined from an API that predates it: the official state is then unknown, not absent. */
   approvedResultId: z.string().min(1).nullable().optional(),
+  officialStateAt: z.string().datetime().nullable().optional(),
 });
 
 export type EncounterViewDto = z.output<typeof encounterViewReadSchema>;

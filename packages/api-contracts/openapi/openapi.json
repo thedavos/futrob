@@ -18020,6 +18020,13 @@
               "null"
             ],
             "minLength": 1
+          },
+          "officialStateAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         },
         "required": [
@@ -18033,7 +18040,8 @@
           "resolutionMode",
           "officialMatches",
           "score",
-          "approvedResultId"
+          "approvedResultId",
+          "officialStateAt"
         ]
       },
       "EnqueueDueProviderSyncsResponse": {

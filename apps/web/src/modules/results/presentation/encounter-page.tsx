@@ -26,7 +26,7 @@ import {
 import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
 import { EMPTY_OPERATOR_DRAFT, operatorDraftReducer } from "./dispute-review-draft.ts";
 import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
-import { encounterStatusOf, loadedSelectionOf } from "./encounter-approval.ts";
+import { approvedSourcesOf, loadedSelectionOf, officialStateOf } from "./encounter-approval.ts";
 import { EncounterHero, EncounterUnavailable, listLink } from "./encounter-hero.tsx";
 import type { EncounterListReturn } from "./encounter-list-return.ts";
 import { EncounterOverviewTab } from "./encounter-overview.tsx";
@@ -36,10 +36,9 @@ import {
   type ListLink,
 } from "./encounter-page-skeleton.tsx";
 import { EncounterSelectionWorkspace } from "./encounter-selection-workspace.tsx";
-import { assignmentsOf, previewApprovedEncounter, previewEncounter } from "./encounter-preview.ts";
+import { previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 import { type Formats } from "./encounter-parts.tsx";
-import { currentProposalOf } from "./selection-draft.ts";
 import { EMPTY_TEAM_DRAFT, teamDraftReducer } from "./team-selection-draft.ts";
 import type { TeamSelectionState } from "./team-selection-section.tsx";
 
@@ -208,13 +207,12 @@ function EncounterReady({
   const loadedSelection = loadedSelectionOf(disputeReview, effectiveTeamSelection);
   const selectionView = loadedSelection?.view ?? null;
 
-  const selectionStatus = encounterStatusOf(view, viewRefresh?.refreshFailed, loadedSelection);
+  const official = officialStateOf(view, loadedSelection);
+  const selectionStatus = official.status;
   const isApproved = selectionStatus === "approved";
-  const approvedProposal = isApproved && selectionView ? currentProposalOf(selectionView) : null;
-  const approvedAssignments = approvedProposal ? assignmentsOf(approvedProposal.slots) : null;
-  const approvedPreview = isApproved
-    ? previewApprovedEncounter(view, candidateList, approvedAssignments)
-    : null;
+  const approved = approvedSourcesOf(view, selectionView, official, candidateList);
+  const { proposal: approvedProposal, assignments: approvedAssignments } = approved;
+  const approvedPreview = approved.preview;
 
   const preview = previewEncounter(view, candidateList, assignments);
   const displayedPreview = isApproved && approvedPreview ? approvedPreview : preview;
