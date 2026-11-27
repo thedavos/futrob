@@ -35,11 +35,12 @@ export type GetEncounterViewDependencies = EncounterSummaryDependencies & {
       encounterId: EncounterId,
     ): Promise<readonly Pick<OfficialMatch, "slot" | "scheduledStartAt">[]>;
   };
-  readonly officialResults: {
-    getApprovedByEncounter(encounterId: EncounterId): Promise<ApprovedResultSource | null>;
-  };
-  readonly officialSelections: {
-    findLatestByEncounter(encounterId: EncounterId): Promise<{ readonly updatedAt: Date } | null>;
+  /** Both on one committed state, so a void never pairs the old result with its own time. */
+  readonly officialState: {
+    readByEncounter(encounterId: EncounterId): Promise<{
+      readonly approvedResult: ApprovedResultSource | null;
+      readonly selectionUpdatedAt: Date | null;
+    }>;
   };
 };
 
@@ -48,11 +49,10 @@ export class GetEncounterViewUseCase {
   constructor(private readonly deps: GetEncounterViewDependencies) {}
 
   async execute(snapshot: EncounterScheduleSnapshot): Promise<EncounterView | null> {
-    const [summary, matches, approvedResult, selection] = await Promise.all([
+    const [summary, matches, { approvedResult, selectionUpdatedAt }] = await Promise.all([
       summarizeEncounter(this.deps, snapshot),
       this.deps.officialMatches.listByEncounter(snapshot.encounterId),
-      this.deps.officialResults.getApprovedByEncounter(snapshot.encounterId),
-      this.deps.officialSelections.findLatestByEncounter(snapshot.encounterId),
+      this.deps.officialState.readByEncounter(snapshot.encounterId),
     ]);
     if (!summary) return null;
     const officialMatches = officialMatchSchedules(snapshot, matches);
@@ -62,7 +62,7 @@ export class GetEncounterViewUseCase {
       officialMatches,
       score: officialEncounterScore(snapshot, approvedResult),
       approvedResultId: approvedResult?.status === "approved" ? approvedResult.id : null,
-      officialStateAt: selection?.updatedAt ?? null,
+      officialStateAt: selectionUpdatedAt,
     };
   }
 }

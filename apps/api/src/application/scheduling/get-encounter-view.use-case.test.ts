@@ -128,12 +128,8 @@ function dependencies(
         { slot: 2, scheduledStartAt: new Date("2026-09-16T22:30:00.000Z") },
       ],
     },
-    officialResults: {
-      getApprovedByEncounter: async () => approvedResult,
-    },
-    officialSelections: {
-      findLatestByEncounter: async () =>
-        selectionUpdatedAt ? { updatedAt: selectionUpdatedAt } : null,
+    officialState: {
+      readByEncounter: async () => ({ approvedResult, selectionUpdatedAt }),
     },
   };
 }
