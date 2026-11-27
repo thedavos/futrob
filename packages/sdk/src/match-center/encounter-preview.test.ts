@@ -4,6 +4,7 @@ import {
   assignCandidate,
   candidateKey,
   NO_ASSIGNMENTS,
+  previewApprovedEncounter,
   previewEncounter,
   selectionsFor,
 } from "./encounter-preview.ts";
@@ -62,5 +63,43 @@ describe("encounter preview", () => {
     expect(previewEncounter(view, [first], one).series).toEqual({ kind: "incomplete" });
     expect(assignCandidate(one, 2, candidateKey(first))).toEqual({ 1: null, 2: "ea-clubs:m-1" });
     expect(assignCandidate(one, 1, candidateKey(first))).toEqual(NO_ASSIGNMENTS);
+  });
+
+  it("uses persisted approved scores even when candidates are absent or clubs changed", () => {
+    const approvedView = {
+      ...view,
+      home: { teamId: "t1", name: "Rayo", externalClub: club("c-rayo-relinked") },
+      score: [
+        { homeGoals: 2, awayGoals: 1 },
+        { homeGoals: 0, awayGoals: 3 },
+      ],
+    } as unknown as EncounterViewDto;
+
+    const preview = previewApprovedEncounter(approvedView, [], {
+      1: candidateKey(first),
+      2: candidateKey(second),
+    });
+
+    expect(preview?.slots).toEqual([
+      {
+        slot: 1,
+        kind: "scored",
+        candidate: null,
+        score: { home: 2, away: 1 },
+        outcome: "home",
+      },
+      {
+        slot: 2,
+        kind: "scored",
+        candidate: null,
+        score: { home: 0, away: 3 },
+        outcome: "away",
+      },
+    ]);
+    expect(preview?.series).toEqual({
+      kind: "aggregate",
+      total: { home: 2, away: 4 },
+      outcome: "away",
+    });
   });
 });

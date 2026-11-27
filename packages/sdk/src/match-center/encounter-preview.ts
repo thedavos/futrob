@@ -27,7 +27,7 @@ export type SlotPreview =
   | {
       readonly slot: OfficialSlot;
       readonly kind: "scored";
-      readonly candidate: EncounterCandidateDto;
+      readonly candidate: EncounterCandidateDto | null;
       readonly score: TeamScore;
       readonly outcome: ScoreOutcome;
     };
@@ -131,6 +131,33 @@ export function previewEncounter(
     return { slot: officialSlot, kind: "scored", candidate, score, outcome: outcomeOf(score) };
   });
   return { slots, series: seriesOf(view.resolutionMode, slots) };
+}
+
+/**
+ * Approved result preview backed by the persisted, Encounter-oriented official score
+ * when the API provides it. Live EA candidates only enrich each slot with played time
+ * and metadata so a re-linked club or unavailable candidates never drop or flip an
+ * approved score. Falls back to candidate orientation only when `view.score` is absent
+ * (deploy skew against an older API).
+ */
+export function previewApprovedEncounter(
+  view: Pick<EncounterViewDto, "home" | "away" | "officialMatches" | "resolutionMode" | "score">,
+  candidates: readonly EncounterCandidateDto[],
+  assignments: SlotAssignments | null,
+): EncounterPreview | null {
+  if (view.score) {
+    const byKey = new Map(candidates.map((candidate) => [candidateKey(candidate), candidate]));
+    const slots = view.officialMatches.map(({ officialSlot }, index): SlotPreview => {
+      const persisted = view.score?.[index];
+      const key = assignments ? assignments[officialSlot] : null;
+      const candidate = key === null ? null : (byKey.get(key) ?? null);
+      if (!persisted) return { slot: officialSlot, kind: "unassigned" };
+      const score: TeamScore = { home: persisted.homeGoals, away: persisted.awayGoals };
+      return { slot: officialSlot, kind: "scored", candidate, score, outcome: outcomeOf(score) };
+    });
+    return { slots, series: seriesOf(view.resolutionMode, slots) };
+  }
+  return assignments ? previewEncounter(view, candidates, assignments) : null;
 }
 
 function seriesOf(

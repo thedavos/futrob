@@ -27,6 +27,7 @@ import {
   type ScheduleChangesState,
 } from "@/modules/scheduling/presentation/schedule-changes-section.tsx";
 import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
+import { EMPTY_OPERATOR_DRAFT, operatorDraftReducer } from "./dispute-review-draft.ts";
 import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
 import { EncounterHero, EncounterUnavailable, listLink } from "./encounter-hero.tsx";
 import type { EncounterListReturn } from "./encounter-list-return.ts";
@@ -37,7 +38,7 @@ import {
   type ListLink,
 } from "./encounter-page-skeleton.tsx";
 import { EncounterSelectionWorkspace } from "./encounter-selection-workspace.tsx";
-import { assignmentsOf, previewEncounter } from "./encounter-preview.ts";
+import { assignmentsOf, previewApprovedEncounter, previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 import { type Formats } from "./encounter-parts.tsx";
 import { currentProposalOf } from "./selection-draft.ts";
@@ -168,6 +169,7 @@ function EncounterReady({
 }) {
   const { locale, t } = useI18n();
   const [draft, dispatch] = useReducer(teamDraftReducer, EMPTY_TEAM_DRAFT);
+  const [operatorDraft, operatorDispatch] = useReducer(operatorDraftReducer, EMPTY_OPERATOR_DRAFT);
   const [selectedTab, setSelectedTab] = useState<EncounterTab | null>(null);
   const { assignments } = draft.input;
   const formats: Formats = {
@@ -209,11 +211,11 @@ function EncounterReady({
         : null;
 
   const selectionStatus = selectionView?.selection?.status ?? null;
-  const isApproved = selectionStatus === "approved";
+  const isApproved = selectionStatus === "approved" || view.score !== null;
   const approvedProposal = isApproved && selectionView ? currentProposalOf(selectionView) : null;
   const approvedAssignments = approvedProposal ? assignmentsOf(approvedProposal.slots) : null;
-  const approvedPreview = approvedAssignments
-    ? previewEncounter(view, candidateList, approvedAssignments)
+  const approvedPreview = isApproved
+    ? previewApprovedEncounter(view, candidateList, approvedAssignments)
     : null;
 
   const preview = previewEncounter(view, candidateList, assignments);
@@ -253,27 +255,19 @@ function EncounterReady({
     if (selectedTab === null) setSelectedTab(tab);
   };
 
-  const refreshers: Array<() => void> = [];
-  let anyRefreshing = false;
-  if (candidates.kind === "ready") {
-    refreshers.push(candidates.refresh);
-    if (candidates.refreshing) anyRefreshing = true;
-  }
-  if (scheduleChanges?.kind === "ready") {
-    refreshers.push(scheduleChanges.refresh);
-    if (scheduleChanges.refreshing) anyRefreshing = true;
-  }
-  if (effectiveTeamSelection?.kind === "visible" && effectiveTeamSelection.read.kind === "ready") {
-    refreshers.push(effectiveTeamSelection.read.refresh);
-    if (effectiveTeamSelection.read.refreshing) anyRefreshing = true;
-  }
-  if (disputeReview?.kind === "visible" && disputeReview.read.kind === "ready") {
-    refreshers.push(disputeReview.read.refresh);
-    if (disputeReview.read.refreshing) anyRefreshing = true;
-  }
-
+  const refreshable = [
+    candidates.kind === "ready" ? candidates : null,
+    scheduleChanges?.kind === "ready" ? scheduleChanges : null,
+    effectiveTeamSelection?.kind === "visible" && effectiveTeamSelection.read.kind === "ready"
+      ? effectiveTeamSelection.read
+      : null,
+    disputeReview?.kind === "visible" && disputeReview.read.kind === "ready"
+      ? disputeReview.read
+      : null,
+  ].filter((entry) => entry !== null);
+  const anyRefreshing = refreshable.some((entry) => entry.refreshing);
   const refreshAll = () => {
-    for (const refresh of refreshers) refresh();
+    for (const entry of refreshable) entry.refresh();
   };
 
   const reviewCount = selectionView ? selectionView.actions.length : null;
@@ -285,7 +279,7 @@ function EncounterReady({
         <h1 {...applyStyles(vis.srOnly)}>{title}</h1>
         <div {...applyStyles(styles.topBar)}>
           <EncounterBreadcrumb current={title} link={encountersLink} t={t} />
-          {refreshers.length > 0 ? (
+          {refreshable.length > 0 ? (
             <Button disabled={anyRefreshing} onClick={refreshAll} variant="ghost">
               <ArrowsClockwiseIcon aria-hidden="true" />
               {t("encounter.refresh")}
@@ -420,6 +414,8 @@ function EncounterReady({
             <div {...applyStyles(styles.tabPanel)}>
               <DisputeReviewSection
                 candidates={candidateList}
+                dispatch={operatorDispatch}
+                draft={operatorDraft}
                 encounter={view}
                 onInteract={() => pinTab("review")}
                 state={disputeReview}

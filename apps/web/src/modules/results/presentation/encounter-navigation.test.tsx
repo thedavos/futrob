@@ -237,4 +237,25 @@ describe("Match Center navigation between Encounters", () => {
     await user.click(await team().findByRole("button", { name: "Rechazar" }));
     expect(reason("Rechazar la propuesta").value).toBe("Motivo de A");
   });
+
+  it("keeps the operator return reason across Expediente -> Selección -> Expediente tab switches", async () => {
+    const user = userEvent.setup();
+    serve();
+    await openAWithBCached(user);
+
+    await openReviewTab(user);
+    await typeAndClose(
+      user,
+      await review().findByRole("button", { name: "Devolver a selección" }),
+      "Devolver el caso a selección",
+      "Devolución tras revisar candidatos",
+    );
+
+    await openSelectionTab(user);
+    expect(await screen.findByRole("list", { name: "Partidos EA candidatos" })).toBeTruthy();
+
+    await openReviewTab(user);
+    await user.click(await review().findByRole("button", { name: "Devolver a selección" }));
+    expect(reason("Devolver el caso a selección").value).toBe("Devolución tras revisar candidatos");
+  });
 });

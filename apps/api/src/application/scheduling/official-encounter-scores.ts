@@ -13,6 +13,30 @@ export type OfficialResultScoreSource = Pick<
 >;
 
 /**
+ * Reduces a single approved OfficialResult to goals per slot oriented to the Encounter's
+ * home/away Teams using the Teams frozen on each slot at approval. Current
+ * ExternalClubConnections are never consulted: a re-link must not reinterpret an approved
+ * result. Returns null when the result is missing, not approved, or has an unattributable slot.
+ */
+export function officialEncounterScore(
+  encounter: { readonly homeTeamId: TeamId; readonly awayTeamId: TeamId },
+  result: OfficialResultScoreSource | null,
+): readonly OrientedEncounterScore[] | null {
+  if (!result || result.status !== "approved" || result.slots.length === 0) return null;
+  const oriented = [...result.slots]
+    .sort((a, b) => a.officialSlot - b.officialSlot)
+    .map((slot) => orientSlot(slot, encounter.homeTeamId, encounter.awayTeamId));
+  if (
+    oriented.length >= 1 &&
+    oriented.length <= 2 &&
+    oriented.every((score): score is OrientedEncounterScore => score !== null)
+  ) {
+    return oriented;
+  }
+  return null;
+}
+
+/**
  * Latest approved revision of each played Encounter's OfficialResult, reduced to goals per slot
  * and oriented to the Encounter. A slot keeps EA's home/away sides, which may be the reverse of
  * the fixture, so each slot is flipped when the Teams frozen on it at approval face the
@@ -33,18 +57,11 @@ export function officialEncounterScores(
   }
   const scores = new Map<EncounterId, readonly OrientedEncounterScore[]>();
   for (const { encounter, homeTeamId, awayTeamId } of paired) {
-    const result = latest.get(encounter.id);
-    if (!result || result.slots.length === 0) continue;
-    const oriented = [...result.slots]
-      .sort((a, b) => a.officialSlot - b.officialSlot)
-      .map((slot) => orientSlot(slot, homeTeamId, awayTeamId));
-    if (
-      oriented.length >= 1 &&
-      oriented.length <= 2 &&
-      oriented.every((score): score is OrientedEncounterScore => score !== null)
-    ) {
-      scores.set(encounter.id, oriented);
-    }
+    const oriented = officialEncounterScore(
+      { homeTeamId, awayTeamId },
+      latest.get(encounter.id) ?? null,
+    );
+    if (oriented) scores.set(encounter.id, oriented);
   }
   return scores;
 }

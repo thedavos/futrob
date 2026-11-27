@@ -248,15 +248,38 @@ export const getMyNextEncounterResponseSchema = z.object({
 
 export type GetMyNextEncounterResponse = z.infer<typeof getMyNextEncounterResponseSchema>;
 
+/** Goals of one approved official match, oriented to the Encounter's home and away Teams. */
+export const encounterMatchScoreSchema = z.object({
+  homeGoals: z.number().int().nonnegative(),
+  awayGoals: z.number().int().nonnegative(),
+});
+
+export type EncounterMatchScoreDto = z.infer<typeof encounterMatchScoreSchema>;
+
+/** Approved official match scores in slot order, home-oriented. */
+const encounterScoreSchema = z.array(encounterMatchScoreSchema).min(1).max(2);
+
 /** One Encounter as both participants and staff read it before acting on it. */
 export const encounterViewSchema = nextEncounterSchema.extend({
   /** Null when the Encounter is not in an active fixture plan. */
   resolutionMode: seriesResolutionModeSchema.nullable(),
   /** Start of every slot the Encounter plays. */
   officialMatches: officialMatchStartsSchema,
+  /** Approved official match scores in slot order, home-oriented; null until official or unattributable. */
+  score: encounterScoreSchema.nullable(),
 });
 
-export type EncounterViewDto = z.infer<typeof encounterViewSchema>;
+/**
+ * What a client reads: the same response, also from a product API that predates
+ * persisted official scores on the Encounter view. The web Worker can deploy before
+ * the API, so `score` reads as null when missing. Use it to parse; the API parses
+ * with the strict schema.
+ */
+export const encounterViewReadSchema = encounterViewSchema.extend({
+  score: encounterScoreSchema.nullable().default(null),
+});
+
+export type EncounterViewDto = z.output<typeof encounterViewReadSchema>;
 
 /**
  * Where an Encounter stands from the competition list: `official` once an approved
@@ -270,14 +293,6 @@ export const competitionEncounterStatusSchema = z.enum([
 
 export type CompetitionEncounterStatusDto = z.infer<typeof competitionEncounterStatusSchema>;
 
-/** Goals of one approved official match, oriented to the Encounter's home and away Teams. */
-export const encounterMatchScoreSchema = z.object({
-  homeGoals: z.number().int().nonnegative(),
-  awayGoals: z.number().int().nonnegative(),
-});
-
-export type EncounterMatchScoreDto = z.infer<typeof encounterMatchScoreSchema>;
-
 /** Stage a round belongs to; multi-stage formats restart round numbers in every stage. */
 export const competitionEncounterStageSchema = z.object({
   id: z.string().min(1),
@@ -288,9 +303,6 @@ export const competitionEncounterStageSchema = z.object({
 export type CompetitionEncounterStageDto = z.infer<typeof competitionEncounterStageSchema>;
 
 const fixtureRoundIdSchema = z.string().min(1);
-
-/** Approved official match scores in slot order, home-oriented. */
-const encounterScoreSchema = z.array(encounterMatchScoreSchema).min(1).max(2);
 
 const competitionEncounterRoundSchema = z.object({
   /** Fixture round, unique across stages. */

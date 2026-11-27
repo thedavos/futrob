@@ -239,7 +239,12 @@ describe("GET /api/v1/organizations/:organizationId/encounters/:encounterId", ()
       internalJobSecret: "test-internal-secret",
       correlationLogger: { info: () => undefined, error: () => undefined },
     });
-    return { app, path: `/api/v1/organizations/${organizationId}/encounters/${encounterId}` };
+    return {
+      app,
+      modules,
+      ids: { encounterId, organizationId, competitionId, homeTeamId, awayTeamId },
+      path: `/api/v1/organizations/${organizationId}/encounters/${encounterId}`,
+    };
   }
 
   it("names both Teams and returns each slot's own start to a reader", async () => {
@@ -254,6 +259,7 @@ describe("GET /api/v1/organizations/:organizationId/encounters/:encounterId", ()
       away: body.away.name,
       slots: body.officialMatches,
       start: body.scheduledStartAt,
+      score: body.score,
     }).toEqual({
       home: "Cuervos FC",
       away: "Maderas FC",
@@ -262,7 +268,70 @@ describe("GET /api/v1/organizations/:organizationId/encounters/:encounterId", ()
         { officialSlot: 2, scheduledStartAt: "2026-09-16T22:30:00.000Z" },
       ],
       start: "2026-09-14T20:00:00.000Z",
+      score: null,
     });
+  });
+
+  it("keeps the approved revision's per-slot scores after a team re-links its EA club", async () => {
+    const { app, modules, ids, path } = await seededApp("actor-reader");
+    await modules.results.results.append({
+      id: "official-result-1",
+      encounterId: ids.encounterId,
+      organizationId: ids.organizationId,
+      competitionId: ids.competitionId,
+      revision: 1,
+      status: "approved",
+      approvedAt: new Date("2026-09-17T00:00:00.000Z"),
+      approvedBy: asActorId("actor-operator"),
+      slots: [
+        {
+          officialSlot: 1,
+          providerMatchRef: { providerKey: "ea-clubs", externalId: "m-1" },
+          homeExternalClubId: "club-cuervos-old",
+          awayExternalClubId: "club-maderas-old",
+          homeGoals: 1,
+          awayGoals: 0,
+          occurredAt: new Date("2026-09-14T20:10:00.000Z"),
+          gameEdition: "FC 26",
+          platform: "common-gen5",
+          players: [],
+          homeTeamId: ids.homeTeamId,
+          awayTeamId: ids.awayTeamId,
+        },
+        {
+          officialSlot: 2,
+          providerMatchRef: { providerKey: "ea-clubs", externalId: "m-2" },
+          homeExternalClubId: "club-maderas-old",
+          awayExternalClubId: "club-cuervos-old",
+          homeGoals: 2,
+          awayGoals: 0,
+          occurredAt: new Date("2026-09-16T22:40:00.000Z"),
+          gameEdition: "FC 26",
+          platform: "common-gen5",
+          players: [],
+          homeTeamId: ids.awayTeamId,
+          awayTeamId: ids.homeTeamId,
+        },
+      ],
+    });
+    // Home re-links to a brand-new EA club; away has no club linked at all.
+    await modules.teams.externalClubConnections.upsert({
+      teamId: ids.homeTeamId,
+      providerKey: "ea-clubs",
+      externalClubId: "club-cuervos-relinked",
+      externalClubName: "Cuervos Nuevo EA",
+      gameEdition: "FC 26",
+      platform: "common-gen5",
+    });
+
+    const response = await app.request(path, { headers: serviceHeaders("actor-reader") });
+    const body = await parseResponse(encounterViewSchema, response);
+
+    expect(response.status).toBe(200);
+    expect(body.score).toEqual([
+      { homeGoals: 1, awayGoals: 0 },
+      { homeGoals: 0, awayGoals: 2 },
+    ]);
   });
 
   it("hides the Encounter from an actor without read access and from another organization", async () => {

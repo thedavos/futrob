@@ -55,11 +55,12 @@ export function EncounterOverviewTab({
 }) {
   const actionsCount = selectionView?.actions.length ?? 0;
 
-  if (approvedProposal && approvedPreview && selectionView) {
-    const resolved = selectionView.disputes
+  if (approvedPreview) {
+    const resolved = selectionView?.disputes
       .filter((dispute) => dispute.status === "resolved")
       .at(-1);
     const byOperator =
+      approvedProposal !== null &&
       resolved?.resolution === "approved_proposal" &&
       resolved.resolutionProposalId === approvedProposal.id;
     const basis = t(
@@ -79,12 +80,14 @@ export function EncounterOverviewTab({
               <Heading as="h2" id="encounter-overview-official">
                 {t("encounter.selection.approved")}
               </Heading>
-              <Caption>
-                {t("encounter.overview.officialSubtitle", {
-                  proposal: proposalLabel(approvedProposal, t),
-                  basis,
-                })}
-              </Caption>
+              {approvedProposal && selectionView ? (
+                <Caption>
+                  {t("encounter.overview.officialSubtitle", {
+                    proposal: proposalLabel(approvedProposal, t),
+                    basis,
+                  })}
+                </Caption>
+              ) : null}
             </div>
             <Badge variant="approved">
               <SealCheckIcon aria-hidden="true" />
@@ -251,7 +254,7 @@ function ApprovedSlotTableRow({
   view,
 }: {
   readonly formats: Formats;
-  readonly proposal: OfficialSelectionProposalDto;
+  readonly proposal: OfficialSelectionProposalDto | null;
   readonly slot: EncounterPreview["slots"][number];
   readonly t: Translator;
   readonly view: EncounterViewDto;
@@ -259,7 +262,7 @@ function ApprovedSlotTableRow({
   const scheduledAt = view.officialMatches.find(
     (match) => match.officialSlot === slot.slot,
   )?.scheduledStartAt;
-  const bound = proposal.slots.find((item) => item.officialSlot === slot.slot);
+  const bound = proposal?.slots.find((item) => item.officialSlot === slot.slot) ?? null;
 
   return (
     <TableRow>
@@ -311,8 +314,9 @@ function SlotEaBacking({
   readonly slot: EncounterPreview["slots"][number];
   readonly t: Translator;
 }) {
-  if (slot.kind === "scored" || slot.kind === "unmatched") {
-    const candidate: EncounterCandidateDto = slot.candidate;
+  const candidate: EncounterCandidateDto | null =
+    slot.kind === "scored" ? slot.candidate : slot.kind === "unmatched" ? slot.candidate : null;
+  if (candidate) {
     return (
       <div {...applyStyles(styles.cellStack)}>
         <Text tone="default" weight="medium">
@@ -326,10 +330,6 @@ function SlotEaBacking({
     );
   }
   return (
-    <Caption>
-      {boundId
-        ? t("encounter.selection.slot.match", { match: boundId })
-        : t("encounter.slot.unassigned")}
-    </Caption>
+    <Caption>{boundId ? t("encounter.selection.slot.match", { match: boundId }) : "—"}</Caption>
   );
 }

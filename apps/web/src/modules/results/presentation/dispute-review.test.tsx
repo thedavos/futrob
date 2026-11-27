@@ -571,4 +571,86 @@ describe("Operator dispute review in the Match Center", () => {
     expect(screen.getByText("Oficial · Partido 1")).toBeTruthy();
     expect(screen.getByText("Oficial · Partido 2")).toBeTruthy();
   });
+
+  it("keeps per-slot and aggregate approved scores when a club is re-linked and candidates are unavailable", async () => {
+    const user = userEvent.setup();
+    const base = encounterView();
+    const relinkedApprovedView = encounterView({
+      home: {
+        ...base.home,
+        externalClub: {
+          ...base.home.externalClub!,
+          externalClubId: "club-cuervos-relinked",
+          name: "Cuervos Nuevo EA",
+        },
+      },
+      away: { ...base.away, externalClub: null },
+      score: [
+        { homeGoals: 1, awayGoals: 0 },
+        { homeGoals: 3, awayGoals: 3 },
+      ],
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          return Response.json(relinkedApprovedView);
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json({ status: "clubs_not_connected", sides: ["away"] });
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          return Response.json(resolvedByApproval());
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+
+    renderEncounter();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+    expect(within(screen.getByRole("banner")).getByText("4–3")).toBeTruthy();
+    const overviewTable = within(screen.getByRole("table"));
+    expect(overviewTable.getByText("Marcador oficial 1 a 0")).toBeTruthy();
+    expect(overviewTable.getByText("Marcador oficial 3 a 3")).toBeTruthy();
+    expect(overviewTable.getByText("Marcador oficial 4 a 3")).toBeTruthy();
+    expect(await overviewTable.findByText("Partido EA m-1")).toBeTruthy();
+    expect(overviewTable.getByText("Partido EA m-3")).toBeTruthy();
+
+    await user.click(screen.getByRole("tab", { name: /^Selección y candidatos EA/ }));
+    expect(
+      within(screen.getByRole("listitem", { name: "Partido 1" })).getByText("1–0"),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole("listitem", { name: "Partido 2" })).getByText("3–3"),
+    ).toBeTruthy();
+    expect(screen.getByText("Maderas FC no tiene un club EA conectado.")).toBeTruthy();
+
+    await user.click(screen.getByRole("tab", { name: /^Expediente/ }));
+    const official = within(
+      await (await findReview()).findByRole("group", { name: "Partidos aprobados" }),
+    );
+    expect(official.getByText("Partido 1: Cuervos FC 1–0 Maderas FC")).toBeTruthy();
+    expect(official.getByText("Partido 2: Cuervos FC 3–3 Maderas FC")).toBeTruthy();
+  });
 });

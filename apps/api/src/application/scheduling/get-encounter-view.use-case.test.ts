@@ -18,6 +18,7 @@ import {
   GetEncounterViewUseCase,
   type GetEncounterViewDependencies,
 } from "./get-encounter-view.use-case.ts";
+import type { OfficialResultScoreSource } from "./official-encounter-scores.ts";
 
 const organizationId = asOrganizationId("org-1");
 const competitionId = asCompetitionId("competition-1");
@@ -91,7 +92,10 @@ function plan(): FixturePlan {
   };
 }
 
-function dependencies(plans: FixturePlan[]): GetEncounterViewDependencies {
+function dependencies(
+  plans: FixturePlan[],
+  approvedResult: OfficialResultScoreSource | null = null,
+): GetEncounterViewDependencies {
   const names = new Map<TeamId, string>([
     [homeTeamId, "Cuervos FC"],
     [awayTeamId, "Maderas FC"],
@@ -123,6 +127,9 @@ function dependencies(plans: FixturePlan[]): GetEncounterViewDependencies {
         { slot: 2, scheduledStartAt: new Date("2026-09-16T22:30:00.000Z") },
       ],
     },
+    officialResults: {
+      getApprovedByEncounter: async () => approvedResult,
+    },
   };
 }
 
@@ -134,6 +141,7 @@ describe("GetEncounterViewUseCase", () => {
       resolutionMode: view?.resolutionMode,
       round: view?.round,
       officialMatches: view?.officialMatches,
+      score: view?.score,
     }).toEqual({
       resolutionMode: "aggregate_score",
       round: { number: 1, total: 1 },
@@ -141,7 +149,54 @@ describe("GetEncounterViewUseCase", () => {
         { slot: 1, scheduledStartAt: new Date("2026-09-14T20:00:00.000Z") },
         { slot: 2, scheduledStartAt: new Date("2026-09-16T22:30:00.000Z") },
       ],
+      score: null,
     });
+  });
+
+  it("projects the approved revision's per-slot scores oriented to the Encounter's Teams", async () => {
+    const approved: OfficialResultScoreSource = {
+      encounterId,
+      revision: 1,
+      status: "approved",
+      slots: [
+        {
+          officialSlot: 2,
+          providerMatchRef: { providerKey: "ea-clubs", externalId: "m-2" },
+          homeExternalClubId: "club-old-away",
+          awayExternalClubId: "club-old-home",
+          homeGoals: 2,
+          awayGoals: 0,
+          occurredAt: new Date("2026-09-16T22:40:00.000Z"),
+          gameEdition: "FC 26",
+          platform: "common-gen5",
+          players: [],
+          homeTeamId: awayTeamId,
+          awayTeamId: homeTeamId,
+        },
+        {
+          officialSlot: 1,
+          providerMatchRef: { providerKey: "ea-clubs", externalId: "m-1" },
+          homeExternalClubId: "club-old-home",
+          awayExternalClubId: "club-old-away",
+          homeGoals: 1,
+          awayGoals: 0,
+          occurredAt: new Date("2026-09-14T20:10:00.000Z"),
+          gameEdition: "FC 26",
+          platform: "common-gen5",
+          players: [],
+          homeTeamId,
+          awayTeamId,
+        },
+      ],
+    };
+    const view = await new GetEncounterViewUseCase(dependencies([plan()], approved)).execute(
+      snapshot,
+    );
+
+    expect(view?.score).toEqual([
+      { homeGoals: 1, awayGoals: 0 },
+      { homeGoals: 0, awayGoals: 2 },
+    ]);
   });
 
   it("leaves the resolution mode unknown when the Encounter is in no active plan", async () => {

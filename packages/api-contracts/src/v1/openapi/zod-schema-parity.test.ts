@@ -5,6 +5,7 @@ import { pingResponseSchema } from "../meta/ping.response.ts";
 import {
   competitionEncounterSchema,
   encounterScheduleSnapshotSchema,
+  encounterViewSchema,
   getCurrentCompetitionFixtureResponseSchema,
   listEncounterCandidatesResponseSchema,
 } from "../encounters/schemas.ts";
@@ -31,6 +32,7 @@ describe("Zod and OpenAPI required/enum parity", () => {
       ["PingResponse", pingResponseSchema, "output"],
       ["ListEncounterCandidatesResponse", listEncounterCandidatesResponseSchema, "output"],
       ["EncounterScheduleSnapshot", encounterScheduleSnapshotSchema, "output"],
+      ["EncounterView", encounterViewSchema, "output"],
       ["CompetitionEncounter", competitionEncounterSchema, "output"],
       [
         "GetCurrentCompetitionFixtureResponse",

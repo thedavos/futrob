@@ -3,6 +3,7 @@ import { applyStyles, Caption, Text } from "@futrob/ui";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
   assignmentsOf,
+  previewApprovedEncounter,
   previewEncounter,
   type OfficialSlot,
   type SlotPreview,
@@ -11,6 +12,7 @@ import {
 import { styles } from "./selection.styles.ts";
 
 type ProposalSlotsProps = {
+  readonly approved?: boolean;
   readonly candidates: readonly EncounterCandidateDto[];
   readonly encounter: EncounterViewDto;
   readonly slots: readonly SlotSelection[];
@@ -27,16 +29,19 @@ export type SlotLine = {
   readonly match: string | null;
 };
 
-/** Each slot resolved to its candidate's score; the provider reference when it is gone. */
+/** Each slot resolved to its persisted official or candidate score; the provider reference when gone. */
 export function proposalSlotLines({
+  approved = false,
   candidates,
   encounter,
   slots,
   t,
 }: ProposalSlotsProps): SlotLine[] {
-  return previewEncounter(encounter, candidates, assignmentsOf(slots)).slots.map((preview) =>
-    slotLine(preview, slots, encounter, t),
-  );
+  const assignments = assignmentsOf(slots);
+  const preview =
+    (approved ? previewApprovedEncounter(encounter, candidates, assignments) : null) ??
+    previewEncounter(encounter, candidates, assignments);
+  return preview.slots.map((slotPreview) => slotLine(slotPreview, slots, encounter, t));
 }
 
 export function ProposalSlots(props: ProposalSlotsProps) {
@@ -77,7 +82,8 @@ function slotLine(
 ): SlotLine {
   const slot = preview.slot;
   switch (preview.kind) {
-    case "scored":
+    case "scored": {
+      const selection = sent.find((row) => row.officialSlot === slot);
       return {
         slot,
         summary: t("encounter.selection.slot.score", {
@@ -87,8 +93,15 @@ function slotLine(
           awayGoals: preview.score.away,
           away: encounter.away.name,
         }),
-        match: playedMatch(preview.candidate, encounter, t),
+        match: preview.candidate
+          ? playedMatch(preview.candidate, encounter, t)
+          : selection
+            ? t("encounter.selection.slot.match", {
+                match: selection.providerMatchRef.externalId,
+              })
+            : null,
       };
+    }
     case "unmatched":
       return {
         slot,

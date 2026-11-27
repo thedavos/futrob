@@ -34,6 +34,9 @@ export function encounterViewDto(view: EncounterView): EncounterViewDto {
       officialSlot: match.slot,
       scheduledStartAt: match.scheduledStartAt.toISOString(),
     })),
+    score: view.score
+      ? view.score.map(({ homeGoals, awayGoals }) => ({ homeGoals, awayGoals }))
+      : null,
   };
 }
 

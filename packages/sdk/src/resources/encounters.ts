@@ -13,7 +13,7 @@ import {
   type EditFixtureEncounterRequest,
   encounterScheduleSnapshotSchema,
   type EncounterScheduleSnapshotDto,
-  encounterViewSchema,
+  encounterViewReadSchema,
   type EncounterViewDto,
   fixturePlanSchema,
   type FixturePlanDto,
@@ -50,7 +50,7 @@ export function createEncountersResource(http: HttpClient) {
         path: apiPath("organizations", organizationId, "encounters", encounterId),
         method: "GET",
         options,
-        parse: (data) => encounterViewSchema.parse(data),
+        parse: (data) => encounterViewReadSchema.parse(data),
       });
     },
     async listByCompetition(

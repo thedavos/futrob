@@ -1,5 +1,5 @@
 import {
-  encounterViewSchema,
+  encounterViewReadSchema,
   listCompetitionDisputesResponseSchema,
   listCompetitionEncountersReadSchema,
   listEncounterCandidatesResponseSchema,
@@ -24,7 +24,7 @@ export function handleGetEncounterView(
 ): Promise<Response> {
   return respond(async () => {
     const { client } = await connect(request);
-    return encounterViewSchema.parse(
+    return encounterViewReadSchema.parse(
       await client.encounters.getView(scope.organizationId, scope.encounterId),
     );
   });

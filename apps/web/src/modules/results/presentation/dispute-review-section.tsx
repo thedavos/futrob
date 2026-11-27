@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useRef, type Dispatch, type RefObject } from "react";
+import { useRef, type Dispatch, type RefObject } from "react";
 import type { EncounterCandidateDto, EncounterViewDto } from "@futrob/api-contracts";
 import {
   applyStyles,
@@ -23,10 +23,8 @@ import { DisputeCommandDialog } from "./dispute-command-dialog.tsx";
 import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
 import {
   buildOperatorIntent,
-  EMPTY_OPERATOR_DRAFT,
   OPERATOR_COMMANDS,
   operatorCommandsFor,
-  operatorDraftReducer,
   type OperatorCommand,
   type OperatorDraft,
   type OperatorDraftEvent,
@@ -55,18 +53,21 @@ export type DisputeReviewState =
  */
 export function DisputeReviewSection({
   candidates,
+  dispatch,
+  draft,
   encounter,
   onInteract,
   state,
 }: {
   readonly candidates: readonly EncounterCandidateDto[];
+  readonly dispatch: Dispatch<OperatorDraftEvent>;
+  readonly draft: OperatorDraft;
   readonly encounter: EncounterViewDto;
   readonly onInteract?: () => void;
   readonly state: DisputeReviewState;
 }) {
   const { locale, t } = useI18n();
   const heading = useRef<HTMLHeadingElement>(null);
-  const [draft, dispatch] = useReducer(operatorDraftReducer, EMPTY_OPERATOR_DRAFT);
   // The section mounts after its reads, too late for the router's hash scroll.
   useExternalSync(() => {
     if (state.kind === "hidden" || window.location.hash !== `#${DISPUTE_REVIEW_ANCHOR}`) return;

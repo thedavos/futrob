@@ -39,6 +39,7 @@ export function createEncounterReads(input: {
     getEncounterView: new GetEncounterViewUseCase({
       ...encounterSummaryDeps,
       officialMatches: scheduling.officialMatches,
+      officialResults: input.results.officialResultReader,
     }),
     listCompetitionEncounters: new ListCompetitionEncountersUseCase({
       authorization: input.authorization,

@@ -140,8 +140,12 @@ type HeroStatus = {
   readonly label: string;
 };
 
-function heroStatusOf(selectionView: OfficialSelectionViewDto | null, t: Translator): HeroStatus {
-  const status = selectionView?.selection?.status ?? null;
+function heroStatusOf(
+  selectionView: OfficialSelectionViewDto | null,
+  view: EncounterViewDto,
+  t: Translator,
+): HeroStatus {
+  const status = selectionView?.selection?.status ?? (view.score ? "approved" : null);
   switch (status) {
     case "approved":
       return { variant: "approved", icon: SealCheckIcon, label: t("encounter.selection.approved") };
@@ -219,7 +223,7 @@ export function EncounterHero({
     imageUrl: side.externalClub?.imageUrl ?? null,
     name: side.name,
   });
-  const status = heroStatusOf(selectionView, t);
+  const status = heroStatusOf(selectionView, view, t);
   const StatusIcon = status.icon;
 
   const approvedSeries = approvedPreview?.series ?? null;
