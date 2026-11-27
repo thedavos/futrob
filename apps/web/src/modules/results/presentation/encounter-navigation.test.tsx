@@ -34,7 +34,7 @@ const ENCOUNTERS: Record<string, EncounterViewDto> = {
  */
 function serve(
   reject: Record<string, () => Response> = {},
-  detail: { fails: boolean } = { fails: false },
+  detail: { fails: false | 401 | 503 } = { fails: false },
 ) {
   vi.stubGlobal(
     "fetch",
@@ -66,7 +66,7 @@ function serve(
       if (!product || !ENCOUNTERS[encounterId]) return failure(404, "api.not_found");
       if (rest === "") {
         return detail.fails
-          ? failure(503, "api.unavailable")
+          ? failure(detail.fails, detail.fails === 401 ? "auth.unauthenticated" : "api.unavailable")
           : Response.json(ENCOUNTERS[encounterId]);
       }
       if (rest === "/official-selection" && method === "GET") {
@@ -270,7 +270,7 @@ describe("Match Center navigation between Encounters", () => {
 
   it("keeps the Encounter and the operator reason when Actualizar fails to re-read the detail", async () => {
     const user = userEvent.setup();
-    const detail = { fails: false };
+    const detail: { fails: false | 401 | 503 } = { fails: false };
     serve({}, detail);
     await openAWithBCached(user);
 
@@ -282,7 +282,7 @@ describe("Match Center navigation between Encounters", () => {
       "Devolución pendiente",
     );
 
-    detail.fails = true;
+    detail.fails = 503;
     await user.click(screen.getByRole("button", { name: "Actualizar" }));
     expect(
       await screen.findByText(
@@ -302,5 +302,19 @@ describe("Match Center navigation between Encounters", () => {
     );
     await user.click(await review().findByRole("button", { name: "Devolver a selección" }));
     expect(reason("Devolver el caso a selección").value).toBe("Devolución pendiente");
+  });
+
+  it("hides the cached Encounter once Actualizar finds the session expired", async () => {
+    const user = userEvent.setup();
+    const detail: { fails: false | 401 | 503 } = { fails: false };
+    serve({}, detail);
+    await openAWithBCached(user);
+
+    detail.fails = 401;
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+
+    expect(await screen.findByText("Sin acceso a este enfrentamiento")).toBeTruthy();
+    expect(screen.queryByRole("heading", { level: 1, name: A })).toBeNull();
+    expect(screen.queryByRole("region", { name: REVIEW })).toBeNull();
   });
 });

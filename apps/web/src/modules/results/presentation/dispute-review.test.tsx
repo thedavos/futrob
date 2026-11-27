@@ -795,4 +795,89 @@ describe("Operator dispute review in the Match Center", () => {
       ),
     ).toBeTruthy();
   });
+
+  it("keeps a void seen in the dossier when later refreshes of both reads fail", async () => {
+    const user = userEvent.setup();
+    const approved = resolvedByApproval();
+    let phase: "approved" | "voided" | "down" = "approved";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          return phase === "approved"
+            ? Response.json(
+                encounterView({
+                  score: [
+                    { homeGoals: 1, awayGoals: 0 },
+                    { homeGoals: 3, awayGoals: 3 },
+                  ],
+                }),
+              )
+            : failure(503, "api.unavailable");
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json(readyCandidates([m1, m2, m3]));
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          if (phase === "down") return failure(503, "api.unavailable");
+          return Response.json(
+            phase === "voided"
+              ? {
+                  ...approved,
+                  selection: { ...approved.selection!, status: "voided" },
+                  approvedResultId: null,
+                  allowedActions: [],
+                }
+              : approved,
+          );
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+    const official = () =>
+      screen.queryByRole("heading", { level: 2, name: "Resultado oficial aprobado" });
+
+    renderEncounter();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+
+    phase = "voided";
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+    expect(
+      await screen.findByText(
+        "No pudimos actualizar el enfrentamiento. Ves los últimos datos cargados.",
+      ),
+    ).toBeTruthy();
+    expect(official()).toBeNull();
+
+    phase = "down";
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+    await user.click(await screen.findByRole("tab", { name: /^Expediente/ }));
+    expect(
+      await screen.findByText(
+        "No pudimos actualizar el expediente. Los datos mostrados pueden haber cambiado.",
+      ),
+    ).toBeTruthy();
+    await user.click(screen.getByRole("tab", { name: /^Resumen/ }));
+    expect(official()).toBeNull();
+  });
 });

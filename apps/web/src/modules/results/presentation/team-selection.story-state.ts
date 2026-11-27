@@ -75,6 +75,7 @@ export function useStoryTeamSelection(
     read: {
       kind: "ready",
       view,
+      updatedAt: 0,
       refreshing: false,
       refreshFailed: false,
       refresh: noop,
