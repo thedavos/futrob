@@ -18013,6 +18013,13 @@
             },
             "minItems": 1,
             "maxItems": 2
+          },
+          "approvedResultId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
           }
         },
         "required": [
@@ -18025,7 +18032,8 @@
           "away",
           "resolutionMode",
           "officialMatches",
-          "score"
+          "score",
+          "approvedResultId"
         ]
       },
       "EnqueueDueProviderSyncsResponse": {

@@ -37,6 +37,7 @@ export function encounterViewDto(view: EncounterView): EncounterViewDto {
     score: view.score
       ? view.score.map(({ homeGoals, awayGoals }) => ({ homeGoals, awayGoals }))
       : null,
+    approvedResultId: view.approvedResultId,
   };
 }
 

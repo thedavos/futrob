@@ -208,7 +208,7 @@ function EncounterReady({
   const loadedSelection = loadedSelectionOf(disputeReview, effectiveTeamSelection);
   const selectionView = loadedSelection?.view ?? null;
 
-  const selectionStatus = encounterStatusOf(view, loadedSelection);
+  const selectionStatus = encounterStatusOf(view, viewRefresh?.refreshFailed, loadedSelection);
   const isApproved = selectionStatus === "approved";
   const approvedProposal = isApproved && selectionView ? currentProposalOf(selectionView) : null;
   const approvedAssignments = approvedProposal ? assignmentsOf(approvedProposal.slots) : null;

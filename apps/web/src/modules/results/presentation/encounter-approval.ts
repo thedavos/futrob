@@ -11,23 +11,29 @@ export type LoadedSelection = {
 };
 
 /**
- * The Encounter's status from the official selection and the detail's `score`, which
- * refresh in parallel, so neither arrival order nor timing may decide (ADR-0016).
- * - A selection whose latest read succeeded states the persisted status explicitly; a
- *   score arriving later, or a `null` from an API that predates `score`, cannot override it.
- * - A void, once observed, stands until the selection is read again: `approved` only moves
- *   to `voided`, so no older score can revive it.
- * - Otherwise a failed selection refresh falls back to the detail: a score means an
- *   approval newer than the selection last read.
+ * The Encounter's status from two reads that refresh in parallel: the official selection
+ * and the detail's persisted `approvedResultId` (ADR-0016). Arrival order never decides.
+ * - A selection whose latest read succeeded states the status explicitly and decides.
+ * - When only the detail's latest read succeeded, its explicit official state decides
+ *   whether the Encounter is approved: a void retires a cached `approved`, and a new
+ *   approval after a void replaces a cached `voided`.
+ * - Otherwise (both stale, or a detail from an API that predates `approvedResultId`) the
+ *   selection last read stands; a missing `score` is never taken as a void.
  */
 export function encounterStatusOf(
   view: EncounterViewDto,
+  viewRefreshFailed: boolean | undefined,
   selection: LoadedSelection | null,
 ): SelectionStatus | null {
+  const official =
+    view.approvedResultId === undefined ? view.score !== null : view.approvedResultId !== null;
   const selectionStatus = selection?.view.selection?.status ?? null;
-  if (!selection || !selectionStatus) return view.score !== null ? "approved" : null;
-  if (!selection.refreshFailed || selectionStatus === "voided") return selectionStatus;
-  return view.score !== null ? "approved" : selectionStatus;
+  if (!selection || !selectionStatus) return official ? "approved" : null;
+  const detailDecides =
+    selection.refreshFailed && !viewRefreshFailed && view.approvedResultId !== undefined;
+  if (!detailDecides) return selectionStatus;
+  if (official) return "approved";
+  return selectionStatus === "approved" ? "voided" : selectionStatus;
 }
 
 /** The operator's dossier when visible, else the acting Team's selection. */

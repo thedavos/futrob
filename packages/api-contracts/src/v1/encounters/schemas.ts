@@ -267,6 +267,11 @@ export const encounterViewSchema = nextEncounterSchema.extend({
   officialMatches: officialMatchStartsSchema,
   /** Approved official match scores in slot order, home-oriented; null until official or unattributable. */
   score: encounterScoreSchema.nullable(),
+  /**
+   * The active approved OfficialResult, null when none. Unlike `score`, it is set even when
+   * a slot cannot be attributed, so clients can tell "not official" from "official".
+   */
+  approvedResultId: z.string().min(1).nullable(),
 });
 
 /**
@@ -277,6 +282,8 @@ export const encounterViewSchema = nextEncounterSchema.extend({
  */
 export const encounterViewReadSchema = encounterViewSchema.extend({
   score: encounterScoreSchema.nullable().default(null),
+  /** Undefined from an API that predates it: the official state is then unknown, not absent. */
+  approvedResultId: z.string().min(1).nullable().optional(),
 });
 
 export type EncounterViewDto = z.output<typeof encounterViewReadSchema>;

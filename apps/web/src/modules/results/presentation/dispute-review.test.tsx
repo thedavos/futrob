@@ -591,6 +591,7 @@ describe("Operator dispute review in the Match Center", () => {
         { homeGoals: 1, awayGoals: 0 },
         { homeGoals: 3, awayGoals: 3 },
       ],
+      approvedResultId: "result-1",
     });
     vi.stubGlobal(
       "fetch",
@@ -663,6 +664,7 @@ describe("Operator dispute review in the Match Center", () => {
         { homeGoals: 1, awayGoals: 0 },
         { homeGoals: 3, awayGoals: 3 },
       ],
+      approvedResultId: "result-1",
     });
     const approved = resolvedByApproval();
     let voided = false;
@@ -753,6 +755,7 @@ describe("Operator dispute review in the Match Center", () => {
                     { homeGoals: 1, awayGoals: 0 },
                     { homeGoals: 3, awayGoals: 3 },
                   ],
+                  approvedResultId: "result-1",
                 })
               : encounterView({ score: null }),
           );
@@ -821,6 +824,7 @@ describe("Operator dispute review in the Match Center", () => {
                     { homeGoals: 1, awayGoals: 0 },
                     { homeGoals: 3, awayGoals: 3 },
                   ],
+                  approvedResultId: "result-1",
                 }),
               )
             : failure(503, "api.unavailable");
@@ -898,9 +902,17 @@ describe("Operator dispute review in the Match Center", () => {
 
     /** The first reads answer at once; on refresh the detail waits for `release`. */
     function serveRefresh(next: {
-      readonly dossier: OfficialSelectionViewDto;
+      readonly dossier: OfficialSelectionViewDto | "unavailable";
       readonly detail: Record<string, unknown>;
+      readonly initial?: {
+        readonly dossier: OfficialSelectionViewDto;
+        readonly detail: Record<string, unknown>;
+      };
     }) {
+      const initial = next.initial ?? {
+        dossier: resolvedByApproval(),
+        detail: encounterView({ score: approvedScore, approvedResultId: "result-1" }),
+      };
       let refreshed = false;
       let release = () => {};
       const held = new Promise<void>((resolve) => {
@@ -920,7 +932,7 @@ describe("Operator dispute review in the Match Center", () => {
             });
           }
           if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
-            if (!refreshed) return Response.json(encounterView({ score: approvedScore }));
+            if (!refreshed) return Response.json(initial.detail);
             await held;
             return Response.json(next.detail);
           }
@@ -936,7 +948,10 @@ describe("Operator dispute review in the Match Center", () => {
             return failure(403, "results.official_selection_forbidden");
           }
           if (url.pathname === DOSSIER) {
-            return Response.json(refreshed ? next.dossier : resolvedByApproval());
+            if (!refreshed) return Response.json(initial.dossier);
+            return next.dossier === "unavailable"
+              ? failure(503, "api.unavailable")
+              : Response.json(next.dossier);
           }
           return failure(404, "api.not_found");
         }),
@@ -963,7 +978,7 @@ describe("Operator dispute review in the Match Center", () => {
       const user = userEvent.setup();
       const server = serveRefresh({
         dossier: voidedCase(),
-        detail: encounterView({ score: approvedScore }),
+        detail: encounterView({ score: approvedScore, approvedResultId: "result-1" }),
       });
       renderEncounter();
       expect(
@@ -980,7 +995,7 @@ describe("Operator dispute review in the Match Center", () => {
 
     it("a detail from an API that predates score keeps an approved dossier official", async () => {
       const user = userEvent.setup();
-      const { score: _omitted, ...legacyDetail } = encounterView();
+      const { score: _score, approvedResultId: _id, ...legacyDetail } = encounterView();
       const server = serveRefresh({ dossier: resolvedByApproval(), detail: legacyDetail });
       renderEncounter();
       expect(
@@ -992,6 +1007,44 @@ describe("Operator dispute review in the Match Center", () => {
       await settled();
 
       expect(official()).toBeTruthy();
+    });
+
+    it("with the dossier down, a void persisted in the detail retires the official result", async () => {
+      const user = userEvent.setup();
+      const server = serveRefresh({
+        dossier: "unavailable",
+        detail: encounterView({ score: null, approvedResultId: null }),
+      });
+      renderEncounter();
+      expect(
+        await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+      ).toBeTruthy();
+
+      await server.refresh(user);
+      server.release();
+      await settled();
+
+      expect(official()).toBeNull();
+    });
+
+    it("with the dossier down, a new approval after a void shows its score", async () => {
+      const user = userEvent.setup();
+      const server = serveRefresh({
+        initial: { dossier: voidedCase(), detail: encounterView() },
+        dossier: "unavailable",
+        detail: encounterView({ score: approvedScore, approvedResultId: "result-2" }),
+      });
+      renderEncounter();
+      await screen.findByRole("tab", { name: /^Expediente/ });
+      expect(official()).toBeNull();
+
+      await server.refresh(user);
+      server.release();
+      await settled();
+
+      expect(
+        await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+      ).toBeTruthy();
     });
   });
 });

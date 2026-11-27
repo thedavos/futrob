@@ -20,7 +20,12 @@ import {
 export type EncounterView = EncounterSummary & {
   readonly officialMatches: readonly OfficialMatchSchedule[];
   readonly score: readonly OrientedEncounterScore[] | null;
+  /** The active approved OfficialResult, even when its score cannot be attributed. */
+  readonly approvedResultId: string | null;
 };
+
+/** The active approved revision; its id stays readable even when its score is not. */
+export type ApprovedResultSource = OfficialResultScoreSource & { readonly id: string };
 
 export type GetEncounterViewDependencies = EncounterSummaryDependencies & {
   readonly officialMatches: {
@@ -29,7 +34,7 @@ export type GetEncounterViewDependencies = EncounterSummaryDependencies & {
     ): Promise<readonly Pick<OfficialMatch, "slot" | "scheduledStartAt">[]>;
   };
   readonly officialResults: {
-    getApprovedByEncounter(encounterId: EncounterId): Promise<OfficialResultScoreSource | null>;
+    getApprovedByEncounter(encounterId: EncounterId): Promise<ApprovedResultSource | null>;
   };
 };
 
@@ -50,6 +55,7 @@ export class GetEncounterViewUseCase {
       scheduledStartAt: encounterStartOf(officialMatches) ?? snapshot.scheduledStartAt,
       officialMatches,
       score: officialEncounterScore(snapshot, approvedResult),
+      approvedResultId: approvedResult?.status === "approved" ? approvedResult.id : null,
     };
   }
 }

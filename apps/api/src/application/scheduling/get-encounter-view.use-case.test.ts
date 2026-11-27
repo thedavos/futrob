@@ -18,7 +18,7 @@ import {
   GetEncounterViewUseCase,
   type GetEncounterViewDependencies,
 } from "./get-encounter-view.use-case.ts";
-import type { OfficialResultScoreSource } from "./official-encounter-scores.ts";
+import type { ApprovedResultSource } from "./get-encounter-view.use-case.ts";
 
 const organizationId = asOrganizationId("org-1");
 const competitionId = asCompetitionId("competition-1");
@@ -94,7 +94,7 @@ function plan(): FixturePlan {
 
 function dependencies(
   plans: FixturePlan[],
-  approvedResult: OfficialResultScoreSource | null = null,
+  approvedResult: ApprovedResultSource | null = null,
 ): GetEncounterViewDependencies {
   const names = new Map<TeamId, string>([
     [homeTeamId, "Cuervos FC"],
@@ -142,6 +142,7 @@ describe("GetEncounterViewUseCase", () => {
       round: view?.round,
       officialMatches: view?.officialMatches,
       score: view?.score,
+      approvedResultId: view?.approvedResultId,
     }).toEqual({
       resolutionMode: "aggregate_score",
       round: { number: 1, total: 1 },
@@ -150,11 +151,13 @@ describe("GetEncounterViewUseCase", () => {
         { slot: 2, scheduledStartAt: new Date("2026-09-16T22:30:00.000Z") },
       ],
       score: null,
+      approvedResultId: null,
     });
   });
 
   it("projects the approved revision's per-slot scores oriented to the Encounter's Teams", async () => {
-    const approved: OfficialResultScoreSource = {
+    const approved: ApprovedResultSource = {
+      id: "result-1",
       encounterId,
       revision: 1,
       status: "approved",
@@ -197,6 +200,24 @@ describe("GetEncounterViewUseCase", () => {
       { homeGoals: 1, awayGoals: 0 },
       { homeGoals: 0, awayGoals: 2 },
     ]);
+    expect(view?.approvedResultId).toBe("result-1");
+
+    const unattributable: ApprovedResultSource = {
+      ...approved,
+      slots: approved.slots.map((slot) => ({
+        ...slot,
+        homeTeamId: asTeamId("team-other"),
+        awayTeamId: asTeamId("team-another"),
+      })),
+    };
+    const official = await new GetEncounterViewUseCase(
+      dependencies([plan()], unattributable),
+    ).execute(snapshot);
+
+    expect({ score: official?.score, approvedResultId: official?.approvedResultId }).toEqual({
+      score: null,
+      approvedResultId: "result-1",
+    });
   });
 
   it("leaves the resolution mode unknown when the Encounter is in no active plan", async () => {

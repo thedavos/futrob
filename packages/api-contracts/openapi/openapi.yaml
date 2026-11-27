@@ -11994,6 +11994,11 @@ components:
               - awayGoals
           minItems: 1
           maxItems: 2
+        approvedResultId:
+          type:
+            - string
+            - "null"
+          minLength: 1
       required:
         - encounterId
         - competition
@@ -12005,6 +12010,7 @@ components:
         - resolutionMode
         - officialMatches
         - score
+        - approvedResultId
     EnqueueDueProviderSyncsResponse:
       type: object
       properties:
