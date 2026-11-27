@@ -68,7 +68,6 @@ function EncounterBody({
       refresh: {
         refreshing: viewQuery.isFetching,
         refreshFailed: viewQuery.isRefetchError,
-        updatedAt: viewQuery.dataUpdatedAt,
         refresh: () => void viewQuery.refetch(),
       },
     };

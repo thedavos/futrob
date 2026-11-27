@@ -62,7 +62,6 @@ export function useSelectionRead<Intent>({
     return {
       kind: "ready",
       view: query.data,
-      updatedAt: query.dataUpdatedAt,
       refreshing: query.isFetching,
       refreshFailed: query.isRefetchError,
       refresh,

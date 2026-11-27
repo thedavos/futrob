@@ -51,7 +51,7 @@ export type EncounterState =
   | { readonly kind: "ready"; readonly view: EncounterViewDto; readonly refresh?: ViewRefresh };
 
 type Refreshable = { readonly refreshing: boolean; readonly refresh: () => void };
-type ViewRefresh = Refreshable & { readonly refreshFailed: boolean; readonly updatedAt: number };
+type ViewRefresh = Refreshable & { readonly refreshFailed: boolean };
 
 export type CandidatesState =
   | { readonly kind: "loading" }
@@ -208,7 +208,7 @@ function EncounterReady({
   const loadedSelection = loadedSelectionOf(disputeReview, effectiveTeamSelection);
   const selectionView = loadedSelection?.view ?? null;
 
-  const selectionStatus = encounterStatusOf(view, viewRefresh?.updatedAt ?? 0, loadedSelection);
+  const selectionStatus = encounterStatusOf(view, loadedSelection);
   const isApproved = selectionStatus === "approved";
   const approvedProposal = isApproved && selectionView ? currentProposalOf(selectionView) : null;
   const approvedAssignments = approvedProposal ? assignmentsOf(approvedProposal.slots) : null;

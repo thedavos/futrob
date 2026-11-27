@@ -82,7 +82,6 @@ export function useStoryDisputeReview(
     read: {
       kind: "ready",
       view: view ?? FIRST_VIEW[scenario],
-      updatedAt: 0,
       refreshing: false,
       refreshFailed: false,
       refresh: noop,

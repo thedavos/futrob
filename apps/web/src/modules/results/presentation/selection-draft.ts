@@ -166,8 +166,6 @@ export type SelectionRead<Intent> =
   | {
       readonly kind: "ready";
       readonly view: OfficialSelectionViewDto;
-      /** When `view` was last read successfully. */
-      readonly updatedAt: number;
       readonly refreshing: boolean;
       readonly refreshFailed: boolean;
       readonly refresh: () => void;
