@@ -653,4 +653,77 @@ describe("Operator dispute review in the Match Center", () => {
     expect(official.getByText("Partido 1: Cuervos FC 1–0 Maderas FC")).toBeTruthy();
     expect(official.getByText("Partido 2: Cuervos FC 3–3 Maderas FC")).toBeTruthy();
   });
+
+  it("Actualizar re-reads the official score: an Encounter voided elsewhere stops showing as approved", async () => {
+    const user = userEvent.setup();
+    const approvedView = encounterView({
+      score: [
+        { homeGoals: 1, awayGoals: 0 },
+        { homeGoals: 3, awayGoals: 3 },
+      ],
+    });
+    const approved = resolvedByApproval();
+    let voided = false;
+    let viewReads = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          viewReads += 1;
+          return Response.json(voided ? encounterView({ score: null }) : approvedView);
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json(readyCandidates([m1, m2, m3]));
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          return Response.json(
+            voided
+              ? {
+                  ...approved,
+                  selection: { ...approved.selection!, status: "voided" },
+                  approvedResultId: null,
+                  allowedActions: [],
+                }
+              : approved,
+          );
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+
+    renderEncounter();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+    const readsBeforeRefresh = viewReads;
+
+    voided = true;
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+      ).toBeNull(),
+    );
+    expect(viewReads).toBeGreaterThan(readsBeforeRefresh);
+  });
 });

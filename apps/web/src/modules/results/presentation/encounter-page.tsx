@@ -50,20 +50,20 @@ export type EncounterState =
   | { readonly kind: "not_found" }
   | { readonly kind: "forbidden" }
   | { readonly kind: "error"; readonly retry: () => void }
-  | { readonly kind: "ready"; readonly view: EncounterViewDto };
+  | { readonly kind: "ready"; readonly view: EncounterViewDto; readonly refresh?: Refreshable };
+
+type Refreshable = { readonly refreshing: boolean; readonly refresh: () => void };
 
 export type CandidatesState =
   | { readonly kind: "loading" }
   | { readonly kind: "forbidden" }
   | { readonly kind: "error"; readonly retry: () => void }
-  | {
+  | (Refreshable & {
       readonly kind: "ready";
       readonly data: ListEncounterCandidatesResponse;
       readonly updatedAt: number;
-      readonly refreshing: boolean;
       readonly refreshFailed: boolean;
-      readonly refresh: () => void;
-    };
+    });
 
 type EncounterTab = "overview" | "selection" | "schedule" | "review";
 
@@ -143,6 +143,7 @@ function EncounterContent({
           encountersLink={encountersLink}
           teamSelection={teamSelection}
           view={encounter.view}
+          viewRefresh={encounter.refresh}
         />
       );
     default: {
@@ -159,6 +160,7 @@ function EncounterReady({
   scheduleChanges,
   teamSelection,
   view,
+  viewRefresh,
 }: {
   readonly candidates: CandidatesState;
   readonly disputeReview?: DisputeReviewState;
@@ -166,6 +168,7 @@ function EncounterReady({
   readonly scheduleChanges?: ScheduleChangesState;
   readonly teamSelection?: TeamSelectionState;
   readonly view: EncounterViewDto;
+  readonly viewRefresh?: Refreshable;
 }) {
   const { locale, t } = useI18n();
   const [draft, dispatch] = useReducer(teamDraftReducer, EMPTY_TEAM_DRAFT);
@@ -211,7 +214,8 @@ function EncounterReady({
         : null;
 
   const selectionStatus = selectionView?.selection?.status ?? null;
-  const isApproved = selectionStatus === "approved" || view.score !== null;
+  // A loaded selection outranks a cached `score`: a voided one is no longer official.
+  const isApproved = selectionStatus ? selectionStatus === "approved" : view.score !== null;
   const approvedProposal = isApproved && selectionView ? currentProposalOf(selectionView) : null;
   const approvedAssignments = approvedProposal ? assignmentsOf(approvedProposal.slots) : null;
   const approvedPreview = isApproved
@@ -256,6 +260,7 @@ function EncounterReady({
   };
 
   const refreshable = [
+    viewRefresh ?? null,
     candidates.kind === "ready" ? candidates : null,
     scheduleChanges?.kind === "ready" ? scheduleChanges : null,
     effectiveTeamSelection?.kind === "visible" && effectiveTeamSelection.read.kind === "ready"

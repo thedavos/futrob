@@ -59,7 +59,11 @@ function EncounterBody({
     }
     if (!view) return { kind: "loading" };
     if (!belongsHere) return { kind: "not_found" };
-    return { kind: "ready", view };
+    return {
+      kind: "ready",
+      view,
+      refresh: { refreshing: viewQuery.isFetching, refresh: () => void viewQuery.refetch() },
+    };
   })();
 
   const candidates: CandidatesState = (() => {
