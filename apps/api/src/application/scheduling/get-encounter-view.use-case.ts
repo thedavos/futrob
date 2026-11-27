@@ -11,16 +11,36 @@ import {
   type EncounterSummary,
   type EncounterSummaryDependencies,
 } from "./encounter-summary.ts";
+import {
+  officialEncounterScore,
+  type OfficialResultScoreSource,
+  type OrientedEncounterScore,
+} from "./official-encounter-scores.ts";
 
 export type EncounterView = EncounterSummary & {
   readonly officialMatches: readonly OfficialMatchSchedule[];
+  readonly score: readonly OrientedEncounterScore[] | null;
+  /** The active approved OfficialResult, even when its score cannot be attributed. */
+  readonly approvedResultId: string | null;
+  /** When the official selection last changed, as persisted; null before the first proposal. */
+  readonly officialStateAt: Date | null;
 };
+
+/** The active approved revision; its id stays readable even when its score is not. */
+export type ApprovedResultSource = OfficialResultScoreSource & { readonly id: string };
 
 export type GetEncounterViewDependencies = EncounterSummaryDependencies & {
   readonly officialMatches: {
     listByEncounter(
       encounterId: EncounterId,
     ): Promise<readonly Pick<OfficialMatch, "slot" | "scheduledStartAt">[]>;
+  };
+  /** Both on one committed state, so a void never pairs the old result with its own time. */
+  readonly officialState: {
+    readByEncounter(encounterId: EncounterId): Promise<{
+      readonly approvedResult: ApprovedResultSource | null;
+      readonly selectionUpdatedAt: Date | null;
+    }>;
   };
 };
 
@@ -29,9 +49,10 @@ export class GetEncounterViewUseCase {
   constructor(private readonly deps: GetEncounterViewDependencies) {}
 
   async execute(snapshot: EncounterScheduleSnapshot): Promise<EncounterView | null> {
-    const [summary, matches] = await Promise.all([
+    const [summary, matches, { approvedResult, selectionUpdatedAt }] = await Promise.all([
       summarizeEncounter(this.deps, snapshot),
       this.deps.officialMatches.listByEncounter(snapshot.encounterId),
+      this.deps.officialState.readByEncounter(snapshot.encounterId),
     ]);
     if (!summary) return null;
     const officialMatches = officialMatchSchedules(snapshot, matches);
@@ -39,6 +60,9 @@ export class GetEncounterViewUseCase {
       ...summary,
       scheduledStartAt: encounterStartOf(officialMatches) ?? snapshot.scheduledStartAt,
       officialMatches,
+      score: officialEncounterScore(snapshot, approvedResult),
+      approvedResultId: approvedResult?.status === "approved" ? approvedResult.id : null,
+      officialStateAt: selectionUpdatedAt,
     };
   }
 }

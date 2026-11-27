@@ -17988,6 +17988,45 @@
             },
             "minItems": 1,
             "maxItems": 2
+          },
+          "score": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "homeGoals": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "awayGoals": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "homeGoals",
+                "awayGoals"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 2
+          },
+          "approvedResultId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "officialStateAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         },
         "required": [
@@ -17999,7 +18038,10 @@
           "home",
           "away",
           "resolutionMode",
-          "officialMatches"
+          "officialMatches",
+          "score",
+          "approvedResultId",
+          "officialStateAt"
         ]
       },
       "EnqueueDueProviderSyncsResponse": {

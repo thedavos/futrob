@@ -6,6 +6,7 @@ import {
   applyStyles,
   Button,
   Caption,
+  Card,
   ChoiceGroup,
   ChoiceGroupItem,
   Collapsible,
@@ -15,6 +16,7 @@ import {
   Skeleton,
   Text,
 } from "@futrob/ui";
+import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { selectionsFor, type EncounterPreview } from "./encounter-preview.ts";
 
@@ -62,6 +64,7 @@ export function TeamSelectionSection({
   dispatch,
   draft,
   encounter,
+  onInteract,
   preview,
   state,
 }: {
@@ -69,6 +72,7 @@ export function TeamSelectionSection({
   readonly dispatch: Dispatch<TeamDraftEvent>;
   readonly draft: TeamDraft;
   readonly encounter: EncounterViewDto;
+  readonly onInteract?: () => void;
   readonly preview: EncounterPreview;
   readonly state: TeamSelectionState;
 }) {
@@ -84,7 +88,7 @@ export function TeamSelectionSection({
   });
 
   return (
-    <section aria-labelledby="encounter-selection" {...applyStyles(styles.section)}>
+    <Card aria-labelledby="encounter-selection" className={styles.card}>
       <div {...applyStyles(styles.header)}>
         <div {...applyStyles(styles.copy)}>
           <SectionTitle id="encounter-selection" ref={heading} tabIndex={-1}>
@@ -96,7 +100,8 @@ export function TeamSelectionSection({
           </Text>
         </div>
         {read.kind === "ready" ? (
-          <Button variant="outline" disabled={read.refreshing} onClick={read.refresh}>
+          <Button variant="ghost" disabled={read.refreshing} onClick={read.refresh}>
+            <ArrowsClockwiseIcon aria-hidden="true" />
             {t("encounter.selection.refresh")}
           </Button>
         ) : null}
@@ -120,12 +125,13 @@ export function TeamSelectionSection({
           encounter={encounter}
           format={format}
           heading={heading}
+          onInteract={onInteract}
           preview={preview}
           read={read}
           actingTeamId={encounter[acting.side].teamId}
         />
       ) : null}
-    </section>
+    </Card>
   );
 }
 
@@ -171,6 +177,7 @@ function SelectionReady({
   encounter,
   format,
   heading,
+  onInteract,
   preview,
   read,
 }: {
@@ -180,6 +187,7 @@ function SelectionReady({
   readonly encounter: EncounterViewDto;
   readonly format: Intl.DateTimeFormat;
   readonly heading: RefObject<HTMLHeadingElement | null>;
+  readonly onInteract?: () => void;
   readonly preview: EncounterPreview;
   readonly read: Extract<SelectionRead<TeamIntent>, { kind: "ready" }>;
   readonly actingTeamId: string;
@@ -229,7 +237,10 @@ function SelectionReady({
                 triggers.current[command] = node;
               }}
               variant={command === "confirm" || command === "propose" ? "default" : "outline"}
-              onClick={() => dispatch({ type: "open", command })}
+              onClick={() => {
+                onInteract?.();
+                dispatch({ type: "open", command });
+              }}
             >
               {t(`encounter.selection.command.${command}.trigger`)}
             </Button>

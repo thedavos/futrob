@@ -40,6 +40,9 @@ export function encounterView(overrides: Partial<EncounterViewDto> = {}): Encoun
       { officialSlot: 1, scheduledStartAt: "2026-09-15T01:00:00.000Z" },
       { officialSlot: 2, scheduledStartAt: "2026-09-17T01:30:00.000Z" },
     ],
+    score: null,
+    approvedResultId: null,
+    officialStateAt: null,
     ...overrides,
   };
 }

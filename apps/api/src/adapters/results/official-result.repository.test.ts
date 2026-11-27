@@ -19,11 +19,14 @@ import {
   PostgresOfficialMatchSelectionRepository,
   PostgresOfficialResultRepository,
 } from "./official-result.repository.ts";
+import { EncounterOfficialStateReader } from "./encounter-official-state.reader.ts";
 import { defineOfficialResultContract } from "./official-result.contract.ts";
 import { defineOfficialSelectionAuditContract } from "./official-selection-audit.contract.ts";
 import { defineOfficialSelectionContract } from "./official-selection.contract.ts";
 import {
+  at,
   buildAction,
+  buildResult,
   createTransition,
   newActorId,
   newEncounterId,
@@ -324,5 +327,83 @@ postgresSuite("postgres official selection repositories", () => {
     const loserRefs = loser.proposal.slots.map((slot) => slot.providerMatchRef);
     const loserClaims = await harness().claims(loserRefs);
     expect(loserClaims.map((claim) => claim.selectionId)).toEqual([winner.selection.id]);
+  });
+
+  it("never pairs the result read before a void with the void's timestamp", async () => {
+    const encounterId = newEncounterId();
+    const actorId = newActorId();
+    await seedActors(pool, actorId);
+    const selections = new PostgresOfficialMatchSelectionRepository(pool);
+    const results = new PostgresOfficialResultRepository(pool);
+    const transition = createTransition(tenants[0], encounterId, actorId, [newRef()]);
+    await selections.commitTransition(transition);
+    const approved = buildResult(tenants[0], encounterId, actorId, {
+      selectionId: transition.selection.id,
+    });
+    await results.append(approved);
+    const voidedAt = at(30);
+
+    /** Commits a void on another connection right after the result is read. */
+    const voidBetweenReads = {
+      findApprovedByEncounter: async (id: typeof encounterId) => {
+        const read = await results.findApprovedByEncounter(id);
+        const other = await pool.connect();
+        try {
+          await other.query("BEGIN");
+          await other.query("UPDATE official_results SET status = 'voided' WHERE id = $1", [
+            approved.id,
+          ]);
+          await other.query("UPDATE official_match_selections SET updated_at = $2 WHERE id = $1", [
+            transition.selection.id,
+            voidedAt,
+          ]);
+          await other.query("COMMIT");
+        } finally {
+          other.release();
+        }
+        return read;
+      },
+    };
+    const reader = new EncounterOfficialStateReader({
+      pool,
+      results: voidBetweenReads,
+      selections,
+    });
+
+    await expect(reader.readByEncounter(encounterId)).resolves.toEqual({
+      approvedResult: approved,
+      selectionUpdatedAt: transition.selection.updatedAt,
+    });
+    await expect(
+      new EncounterOfficialStateReader({ pool, results, selections }).readByEncounter(encounterId),
+    ).resolves.toEqual({ approvedResult: null, selectionUpdatedAt: voidedAt });
+  });
+});
+
+describe("EncounterOfficialStateReader", () => {
+  it("pairs the approved result with the selection's updatedAt", async () => {
+    const tenant: ContractTenant = {
+      organizationId: asOrganizationId("org-a"),
+      competitionId: asCompetitionId("comp-a"),
+    };
+    const encounterId = newEncounterId();
+    const actorId = newActorId();
+    const selections = new InMemoryOfficialMatchSelectionRepository();
+    const results = new InMemoryOfficialResultRepository();
+    const transition = createTransition(tenant, encounterId, actorId, [newRef()]);
+    await selections.commitTransition(transition);
+    const approved = buildResult(tenant, encounterId, actorId);
+    await results.append(approved);
+
+    const reader = new EncounterOfficialStateReader({ pool: undefined, results, selections });
+
+    await expect(reader.readByEncounter(encounterId)).resolves.toEqual({
+      approvedResult: approved,
+      selectionUpdatedAt: transition.selection.updatedAt,
+    });
+    await expect(reader.readByEncounter(newEncounterId())).resolves.toEqual({
+      approvedResult: null,
+      selectionUpdatedAt: null,
+    });
   });
 });

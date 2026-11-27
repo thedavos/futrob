@@ -101,7 +101,9 @@ const failure = (status: number, code: string) =>
   Response.json({ code, messageKey: `errors.${code}` }, { status });
 
 function renderEncounter() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryDelay: 0 } },
+  });
   return render(
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale="es">
@@ -514,5 +516,592 @@ describe("Operator dispute review in the Match Center", () => {
     expect(await screen.findByText("Propuesta aprobada. El resultado ya es oficial.")).toBeTruthy();
     expect(posts.map((post) => post.body.expectedVersion)).toEqual([4, 5]);
     expect(posts[1]?.body.commandKey).not.toBe(posts[0]?.body.commandKey);
+  });
+
+  it("opens an approved encounter on Overview, suppresses forbidden team selection noise, and locks candidate draft buttons", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          return Response.json(encounterView());
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json(readyCandidates([m1, m2, m3]));
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          return Response.json(resolvedByApproval());
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+
+    renderEncounter();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("radiogroup", { name: "Actúas por" })).toBeNull();
+    expect(
+      screen.queryByText("No puedes ver ni operar la selección oficial de este enfrentamiento."),
+    ).toBeNull();
+
+    await user.click(screen.getByRole("tab", { name: /^Selección y candidatos EA/ }));
+    expect(screen.queryByRole("radiogroup", { name: "Actúas por" })).toBeNull();
+    expect(
+      screen.queryByText("No puedes ver ni operar la selección oficial de este enfrentamiento."),
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Usar en partido 1" })).toBeNull();
+    expect(screen.getByText("Oficial · Partido 1")).toBeTruthy();
+    expect(screen.getByText("Oficial · Partido 2")).toBeTruthy();
+  });
+
+  it("keeps per-slot and aggregate approved scores when a club is re-linked and candidates are unavailable", async () => {
+    const user = userEvent.setup();
+    const base = encounterView();
+    const relinkedApprovedView = encounterView({
+      home: {
+        ...base.home,
+        externalClub: {
+          ...base.home.externalClub!,
+          externalClubId: "club-cuervos-relinked",
+          name: "Cuervos Nuevo EA",
+        },
+      },
+      away: { ...base.away, externalClub: null },
+      score: [
+        { homeGoals: 1, awayGoals: 0 },
+        { homeGoals: 3, awayGoals: 3 },
+      ],
+      approvedResultId: "result-1",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          return Response.json(relinkedApprovedView);
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json({ status: "clubs_not_connected", sides: ["away"] });
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          return Response.json(resolvedByApproval());
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+
+    renderEncounter();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+    expect(within(screen.getByRole("banner")).getByText("4–3")).toBeTruthy();
+    const overviewTable = within(screen.getByRole("table"));
+    expect(overviewTable.getByText("Marcador oficial 1 a 0")).toBeTruthy();
+    expect(overviewTable.getByText("Marcador oficial 3 a 3")).toBeTruthy();
+    expect(overviewTable.getByText("Marcador oficial 4 a 3")).toBeTruthy();
+    expect(await overviewTable.findByText("Partido EA m-1")).toBeTruthy();
+    expect(overviewTable.getByText("Partido EA m-3")).toBeTruthy();
+
+    await user.click(screen.getByRole("tab", { name: /^Selección y candidatos EA/ }));
+    expect(
+      within(screen.getByRole("listitem", { name: "Partido 1" })).getByText("1–0"),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole("listitem", { name: "Partido 2" })).getByText("3–3"),
+    ).toBeTruthy();
+    expect(screen.getByText("Maderas FC no tiene un club EA conectado.")).toBeTruthy();
+
+    await user.click(screen.getByRole("tab", { name: /^Expediente/ }));
+    const official = within(
+      await (await findReview()).findByRole("group", { name: "Partidos aprobados" }),
+    );
+    expect(official.getByText("Partido 1: Cuervos FC 1–0 Maderas FC")).toBeTruthy();
+    expect(official.getByText("Partido 2: Cuervos FC 3–3 Maderas FC")).toBeTruthy();
+  });
+
+  it("Actualizar re-reads the official score: an Encounter voided elsewhere stops showing as approved", async () => {
+    const user = userEvent.setup();
+    const approvedView = encounterView({
+      score: [
+        { homeGoals: 1, awayGoals: 0 },
+        { homeGoals: 3, awayGoals: 3 },
+      ],
+      approvedResultId: "result-1",
+    });
+    const approved = resolvedByApproval();
+    let voided = false;
+    let viewReads = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          viewReads += 1;
+          return Response.json(voided ? encounterView({ score: null }) : approvedView);
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json(readyCandidates([m1, m2, m3]));
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          return Response.json(
+            voided
+              ? {
+                  ...approved,
+                  selection: { ...approved.selection!, status: "voided" },
+                  approvedResultId: null,
+                  allowedActions: [],
+                }
+              : approved,
+          );
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+
+    renderEncounter();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+    const readsBeforeRefresh = viewReads;
+
+    voided = true;
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+      ).toBeNull(),
+    );
+    expect(viewReads).toBeGreaterThan(readsBeforeRefresh);
+  });
+
+  it("Actualizar shows an Encounter approved elsewhere even when the dossier refresh fails", async () => {
+    const user = userEvent.setup();
+    let approvedElsewhere = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          return Response.json(
+            approvedElsewhere
+              ? encounterView({
+                  score: [
+                    { homeGoals: 1, awayGoals: 0 },
+                    { homeGoals: 3, awayGoals: 3 },
+                  ],
+                  approvedResultId: "result-1",
+                  officialStateAt: "2026-09-17T09:00:00.000Z",
+                })
+              : encounterView({ score: null }),
+          );
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json(readyCandidates([m1, m2, m3]));
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          return approvedElsewhere ? failure(503, "api.unavailable") : Response.json(reviewCase());
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+
+    renderEncounter();
+
+    await (await findReview()).findByRole("button", { name: "Aprobar una propuesta" });
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeNull();
+
+    approvedElsewhere = true;
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole("tab", { name: /^Expediente/ }));
+    expect(
+      await screen.findByText(
+        "No pudimos actualizar el expediente. Los datos mostrados pueden haber cambiado.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("keeps a void seen in the dossier when later refreshes of both reads fail", async () => {
+    const user = userEvent.setup();
+    const approved = resolvedByApproval();
+    let phase: "approved" | "voided" | "down" = "approved";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          return phase === "approved"
+            ? Response.json(
+                encounterView({
+                  score: [
+                    { homeGoals: 1, awayGoals: 0 },
+                    { homeGoals: 3, awayGoals: 3 },
+                  ],
+                  approvedResultId: "result-1",
+                }),
+              )
+            : failure(503, "api.unavailable");
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json(readyCandidates([m1, m2, m3]));
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          if (phase === "down") return failure(503, "api.unavailable");
+          return Response.json(
+            phase === "voided"
+              ? {
+                  ...approved,
+                  selection: { ...approved.selection!, status: "voided" },
+                  approvedResultId: null,
+                  allowedActions: [],
+                }
+              : approved,
+          );
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+    const official = () =>
+      screen.queryByRole("heading", { level: 2, name: "Resultado oficial aprobado" });
+
+    renderEncounter();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+
+    phase = "voided";
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+    expect(
+      await screen.findByText(
+        "No pudimos actualizar el enfrentamiento. Ves los últimos datos cargados.",
+      ),
+    ).toBeTruthy();
+    expect(official()).toBeNull();
+
+    phase = "down";
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+    await user.click(await screen.findByRole("tab", { name: /^Expediente/ }));
+    expect(
+      await screen.findByText(
+        "No pudimos actualizar el expediente. Los datos mostrados pueden haber cambiado.",
+      ),
+    ).toBeTruthy();
+    await user.click(screen.getByRole("tab", { name: /^Resumen/ }));
+    expect(official()).toBeNull();
+  });
+
+  describe("when the detail answers after the dossier in the same Actualizar", () => {
+    /** The selection's persisted `updatedAt` at each step, which both reads carry. */
+    const APPROVED_AT = "2026-09-17T03:10:00.000Z";
+    const VOIDED_AT = "2026-09-17T08:00:00.000Z";
+    const LATER = "2026-09-17T09:00:00.000Z";
+    const approvedScore = [
+      { homeGoals: 1, awayGoals: 0 },
+      { homeGoals: 3, awayGoals: 3 },
+    ];
+    const voidedCase = () => {
+      const approved = resolvedByApproval();
+      return {
+        ...approved,
+        selection: {
+          ...approved.selection!,
+          status: "voided" as const,
+          updatedAt: VOIDED_AT,
+        },
+        approvedResultId: null,
+        allowedActions: [],
+      };
+    };
+
+    /** The first reads answer at once; on refresh the detail waits for `release`. */
+    function serveRefresh(next: {
+      readonly dossier: OfficialSelectionViewDto | "unavailable";
+      readonly detail: Record<string, unknown>;
+      readonly initial?: {
+        readonly dossier: OfficialSelectionViewDto;
+        readonly detail: Record<string, unknown>;
+      };
+    }) {
+      const initial = next.initial ?? {
+        dossier: resolvedByApproval(),
+        detail: encounterView({
+          score: approvedScore,
+          approvedResultId: "result-1",
+          officialStateAt: APPROVED_AT,
+        }),
+      };
+      let refreshed = false;
+      let down = false;
+      let release = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (input: RequestInfo | URL) => {
+          const url = new URL(String(input), "https://web.test");
+          if (url.pathname === "/api/v1/authorization/effective-access") {
+            const permission = url.searchParams.get("permissions") ?? "";
+            return Response.json({
+              actorId: "actor-operator",
+              scope: { organizationId: "org-1" },
+              roles: [],
+              permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+            });
+          }
+          if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+            if (!refreshed) return Response.json(initial.detail);
+            if (down) return failure(503, "api.unavailable");
+            await held;
+            return Response.json(next.detail);
+          }
+          if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+            return Response.json(readyCandidates([m1, m2, m3]));
+          }
+          if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+            return Response.json({ requests: [], creation: noCreation });
+          }
+          if (
+            url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+          ) {
+            return failure(403, "results.official_selection_forbidden");
+          }
+          if (url.pathname === DOSSIER) {
+            if (!refreshed) return Response.json(initial.dossier);
+            return down || next.dossier === "unavailable"
+              ? failure(503, "api.unavailable")
+              : Response.json(next.dossier);
+          }
+          return failure(404, "api.not_found");
+        }),
+      );
+      return {
+        refresh: async (user: UserEvent) => {
+          refreshed = true;
+          await user.click(screen.getByRole("button", { name: "Actualizar" }));
+        },
+        /** Both reads fail from now on. */
+        goDown: () => {
+          down = true;
+        },
+        release,
+      };
+    }
+
+    const official = () =>
+      screen.queryByRole("heading", { level: 2, name: "Resultado oficial aprobado" });
+    const settled = () =>
+      waitFor(() =>
+        expect(screen.getByRole<HTMLButtonElement>("button", { name: "Actualizar" }).disabled).toBe(
+          false,
+        ),
+      );
+
+    it("a score read just before the void does not revive it", async () => {
+      const user = userEvent.setup();
+      const server = serveRefresh({
+        dossier: voidedCase(),
+        detail: encounterView({ score: approvedScore, approvedResultId: "result-1" }),
+      });
+      renderEncounter();
+      expect(
+        await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+      ).toBeTruthy();
+
+      await server.refresh(user);
+      await waitFor(() => expect(official()).toBeNull());
+      server.release();
+      await settled();
+
+      expect(official()).toBeNull();
+    });
+
+    it("a detail from an API that predates score keeps an approved dossier official", async () => {
+      const user = userEvent.setup();
+      const { score: _score, approvedResultId: _id, ...legacyDetail } = encounterView();
+      const server = serveRefresh({ dossier: resolvedByApproval(), detail: legacyDetail });
+      renderEncounter();
+      expect(
+        await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+      ).toBeTruthy();
+
+      await server.refresh(user);
+      server.release();
+      await settled();
+
+      expect(official()).toBeTruthy();
+    });
+
+    it("with the dossier down, a void persisted in the detail retires the official result", async () => {
+      const user = userEvent.setup();
+      const server = serveRefresh({
+        dossier: "unavailable",
+        detail: encounterView({ score: null, approvedResultId: null, officialStateAt: LATER }),
+      });
+      renderEncounter();
+      expect(
+        await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+      ).toBeTruthy();
+
+      await server.refresh(user);
+      server.release();
+      await settled();
+      expect(official()).toBeNull();
+
+      server.goDown();
+      await user.click(screen.getByRole("button", { name: "Actualizar" }));
+      await settled();
+      expect(official()).toBeNull();
+    });
+
+    async function approveAfterVoid(score: typeof approvedScore | null) {
+      const user = userEvent.setup();
+      const server = serveRefresh({
+        initial: {
+          dossier: voidedCase(),
+          detail: encounterView({ approvedResultId: null, officialStateAt: VOIDED_AT }),
+        },
+        dossier: "unavailable",
+        detail: encounterView({ score, approvedResultId: "result-2", officialStateAt: LATER }),
+      });
+      renderEncounter();
+      await screen.findByRole("tab", { name: /^Expediente/ });
+      expect(official()).toBeNull();
+
+      await server.refresh(user);
+      server.release();
+      await settled();
+      await user.click(screen.getByRole("tab", { name: /^Resumen/ }));
+      expect(
+        await within(screen.getByRole("banner")).findByText("Resultado oficial aprobado"),
+      ).toBeTruthy();
+      return { user, server };
+    }
+
+    /** The voided revision's proposal used m-1 and m-3 for a 1–0, 3–3 series. */
+    const voidedReferences = () => [
+      screen.queryByText("Partido EA m-1"),
+      screen.queryByText("Partido EA m-3"),
+      screen.queryByText("Marcador oficial 1 a 0"),
+    ];
+
+    it("with the dossier down, a new approval after a void shows its own score, not the voided references, and survives a second failure", async () => {
+      const { user, server } = await approveAfterVoid([
+        { homeGoals: 2, awayGoals: 2 },
+        { homeGoals: 0, awayGoals: 1 },
+      ]);
+
+      expect(official()).toBeTruthy();
+      expect(screen.getByText("Marcador oficial 2 a 2")).toBeTruthy();
+      expect(voidedReferences()).toEqual([null, null, null]);
+
+      server.goDown();
+      await user.click(screen.getByRole("button", { name: "Actualizar" }));
+      await settled();
+      expect(official()).toBeTruthy();
+      expect(screen.getByText("Marcador oficial 2 a 2")).toBeTruthy();
+    });
+
+    it("with the dossier down, a new approval without an attributable score is not rebuilt from the voided proposal", async () => {
+      await approveAfterVoid(null);
+
+      expect(voidedReferences()).toEqual([null, null, null]);
+    });
   });
 });

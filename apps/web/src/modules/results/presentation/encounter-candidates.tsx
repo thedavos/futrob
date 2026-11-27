@@ -7,10 +7,13 @@ import {
   Badge,
   Button,
   Caption,
+  Card,
+  elevation,
   Heading,
   Score,
   SectionTitle,
   Text,
+  vis,
 } from "@futrob/ui";
 import {
   ArrowsClockwiseIcon,
@@ -18,6 +21,7 @@ import {
   InfoIcon,
   LinkBreakIcon,
   LockIcon,
+  SealCheckIcon,
   SoccerBallIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
@@ -35,22 +39,26 @@ import { type Formats } from "./encounter-parts.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export function CandidatesSection({
+  approvedAssignments,
   assignments,
   formats,
   onAssign,
+  selectionLocked = false,
   state,
   t,
   view,
 }: {
+  readonly approvedAssignments?: SlotAssignments | null;
   readonly assignments: SlotAssignments;
   readonly formats: Formats;
   readonly onAssign: (slot: OfficialSlot, key: string) => void;
+  readonly selectionLocked?: boolean;
   readonly state: CandidatesState;
   readonly t: Translator;
   readonly view: EncounterViewDto;
 }) {
   return (
-    <section aria-labelledby="encounter-candidates" {...applyStyles(styles.section)}>
+    <Card aria-labelledby="encounter-candidates" className={styles.panelCard}>
       <div {...applyStyles(styles.sectionHead)}>
         <div {...applyStyles(styles.sectionCopy)}>
           <SectionTitle id="encounter-candidates">{t("encounter.candidates.title")}</SectionTitle>
@@ -64,7 +72,7 @@ export function CandidatesSection({
           ) : null}
         </div>
         {state.kind === "ready" ? (
-          <Button disabled={state.refreshing} onClick={state.refresh} variant="outline">
+          <Button disabled={state.refreshing} onClick={state.refresh} variant="ghost">
             <ArrowsClockwiseIcon aria-hidden="true" />
             {state.refreshing
               ? t("encounter.candidates.refreshing")
@@ -78,28 +86,34 @@ export function CandidatesSection({
         </Alert>
       ) : null}
       <CandidatesBody
+        approvedAssignments={approvedAssignments ?? null}
         assignments={assignments}
         formats={formats}
         onAssign={onAssign}
+        selectionLocked={selectionLocked}
         state={state}
         t={t}
         view={view}
       />
-    </section>
+    </Card>
   );
 }
 
 function CandidatesBody({
+  approvedAssignments,
   assignments,
   formats,
   onAssign,
+  selectionLocked,
   state,
   t,
   view,
 }: {
+  readonly approvedAssignments: SlotAssignments | null;
   readonly assignments: SlotAssignments;
   readonly formats: Formats;
   readonly onAssign: (slot: OfficialSlot, key: string) => void;
+  readonly selectionLocked: boolean;
   readonly state: CandidatesState;
   readonly t: Translator;
   readonly view: EncounterViewDto;
@@ -172,17 +186,24 @@ function CandidatesBody({
             })}
           </Caption>
           <ul aria-label={t("encounter.candidates.list")} {...applyStyles(styles.list)}>
-            {data.candidates.map((candidate) => (
-              <CandidateRow
-                assignedSlot={slotOf(assignments, candidateKey(candidate))}
-                candidate={candidate}
-                formats={formats}
-                key={candidateKey(candidate)}
-                onAssign={(slot) => onAssign(slot, candidateKey(candidate))}
-                slots={view.officialMatches.map((match) => match.officialSlot)}
-                t={t}
-              />
-            ))}
+            {data.candidates.map((candidate, index) => {
+              const key = candidateKey(candidate);
+              const approvedSlot = approvedAssignments ? slotOf(approvedAssignments, key) : null;
+              return (
+                <CandidateRow
+                  approvedSlot={approvedSlot}
+                  assignedSlot={slotOf(assignments, key)}
+                  candidate={candidate}
+                  first={index === 0}
+                  formats={formats}
+                  key={key}
+                  onAssign={(slot) => onAssign(slot, key)}
+                  selectionLocked={selectionLocked}
+                  slots={view.officialMatches.map((match) => match.officialSlot)}
+                  t={t}
+                />
+              );
+            })}
           </ul>
         </>
       );
@@ -194,22 +215,30 @@ function CandidatesBody({
 }
 
 function CandidateRow({
+  approvedSlot,
   assignedSlot,
   candidate,
+  first,
   formats,
   onAssign,
+  selectionLocked,
   slots,
   t,
 }: {
+  readonly approvedSlot: OfficialSlot | null;
   readonly assignedSlot: OfficialSlot | null;
   readonly candidate: EncounterCandidateDto;
+  readonly first: boolean;
   readonly formats: Formats;
   readonly onAssign: (slot: OfficialSlot) => void;
+  readonly selectionLocked: boolean;
   readonly slots: readonly OfficialSlot[];
   readonly t: Translator;
 }) {
   const playedAt = formats.kickoff.format(new Date(candidate.occurredAt));
   const { metadata } = candidate;
+  const homeLeads = candidate.home.goals > candidate.away.goals;
+  const awayLeads = candidate.away.goals > candidate.home.goals;
   return (
     <li
       aria-label={t("encounter.candidate.label", {
@@ -217,29 +246,49 @@ function CandidateRow({
         away: candidate.away.name,
         time: playedAt,
       })}
-      {...applyStyles(styles.row, assignedSlot !== null && styles.rowSelected)}
+      {...applyStyles(
+        styles.row,
+        first && styles.rowFirst,
+        !selectionLocked && assignedSlot !== null && styles.rowSelected,
+      )}
     >
       <div {...applyStyles(styles.rowTop)}>
         <Caption as="span">
           <time dateTime={candidate.occurredAt}>{playedAt}</time>
         </Caption>
-        <Text look="caption" weight="semibold" className={styles.status}>
-          {assignedSlot === null ? (
-            t("encounter.candidate.unused")
-          ) : (
-            <>
-              <CheckIcon aria-hidden="true" />
-              {t("encounter.candidate.usedIn", { slot: assignedSlot })}
-            </>
-          )}
-        </Text>
+        {approvedSlot !== null ? (
+          <Badge variant="approved">
+            <SealCheckIcon aria-hidden="true" />
+            {t("encounter.candidate.officialIn", { slot: approvedSlot })}
+          </Badge>
+        ) : (
+          <Text look="caption" weight="semibold" className={styles.status}>
+            {assignedSlot === null ? (
+              t("encounter.candidate.unused")
+            ) : (
+              <>
+                <CheckIcon aria-hidden="true" />
+                {t("encounter.candidate.usedIn", { slot: assignedSlot })}
+              </>
+            )}
+          </Text>
+        )}
       </div>
       <div {...applyStyles(styles.scoreLine)}>
         <Text tone="default" weight="semibold" className={styles.scoreHome}>
           {candidate.home.name}
         </Text>
-        <span {...applyStyles(styles.scorePill)}>
-          <Score as="span">{`${candidate.home.goals}–${candidate.away.goals}`}</Score>
+        <span {...applyStyles(styles.scorePill, elevation.sm)}>
+          <Score as="span">
+            <span {...applyStyles(vis.srOnly)}>
+              {`${candidate.home.goals}–${candidate.away.goals}`}
+            </span>
+            <span aria-hidden="true">
+              <span {...applyStyles(homeLeads && styles.scoreLead)}>{candidate.home.goals}</span>
+              <span {...applyStyles(styles.scoreDash)}>–</span>
+              <span {...applyStyles(awayLeads && styles.scoreLead)}>{candidate.away.goals}</span>
+            </span>
+          </Score>
         </span>
         <Text tone="default" weight="semibold" className={styles.scoreAway}>
           {candidate.away.name}
@@ -277,22 +326,26 @@ function CandidateRow({
           </Badge>
         )}
       </div>
-      <div {...applyStyles(styles.actions)}>
-        {slots.map((slot) => {
-          const pressed = assignedSlot === slot;
-          return (
-            <Button
-              aria-pressed={pressed}
-              key={slot}
-              onClick={() => onAssign(slot)}
-              variant={pressed ? "secondary" : "outline"}
-            >
-              {pressed ? <CheckIcon aria-hidden="true" /> : null}
-              {t("encounter.candidate.useIn", { slot })}
-            </Button>
-          );
-        })}
-      </div>
+      {selectionLocked ? (
+        <Caption>{t("encounter.candidate.selectionClosed")}</Caption>
+      ) : (
+        <div {...applyStyles(styles.actions)}>
+          {slots.map((slot) => {
+            const pressed = assignedSlot === slot;
+            return (
+              <Button
+                aria-pressed={pressed}
+                key={slot}
+                onClick={() => onAssign(slot)}
+                variant={pressed ? "secondary" : "outline"}
+              >
+                {pressed ? <CheckIcon aria-hidden="true" /> : null}
+                {t("encounter.candidate.useIn", { slot })}
+              </Button>
+            );
+          })}
+        </div>
+      )}
     </li>
   );
 }

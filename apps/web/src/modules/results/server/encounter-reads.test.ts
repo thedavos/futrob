@@ -25,6 +25,7 @@ const view = {
   away: { teamId: "team-away", name: "Maderas FC", externalClub: null },
   resolutionMode: null,
   officialMatches: [{ officialSlot: 1, scheduledStartAt: "2026-09-14T20:00:00.000Z" }],
+  score: null,
 };
 
 function sessionOf(actorId: string, respond: (url: string) => Response) {

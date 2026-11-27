@@ -43,6 +43,7 @@ export function useEncounterCandidatesQuery(encounterId: string, enabled: boolea
 export function isRefusal(error: Error | null): "not_found" | "forbidden" | null {
   if (!(error instanceof EncounterClientError)) return null;
   if (error.status === 404) return "not_found";
-  if (error.status === 403) return "forbidden";
+  // A lapsed session refuses as definitively as a 403: cached data must not stay visible.
+  if (error.status === 401 || error.status === 403) return "forbidden";
   return null;
 }

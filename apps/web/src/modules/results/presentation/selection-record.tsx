@@ -307,6 +307,7 @@ export function SelectionOutcome({
             )}
           </Caption>
           <ProposalSlots
+            approved
             candidates={candidates}
             encounter={encounter}
             slots={approved.slots}

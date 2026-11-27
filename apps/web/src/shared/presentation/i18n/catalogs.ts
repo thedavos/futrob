@@ -2707,6 +2707,45 @@ const es = {
     "Tu cuenta no tiene permiso para ver este enfrentamiento. Pide acceso a la organización.",
   "encounter.backToEncounters": "Volver a enfrentamientos",
   "encounter.backToMatches": "Volver a partidos",
+  "encounter.refresh": "Actualizar",
+  "encounter.refreshFailed":
+    "No pudimos actualizar el enfrentamiento. Ves los últimos datos cargados.",
+  "encounter.status.scheduled": "Programado",
+  "encounter.hero.officialMeta": ({ outcome }) => `Oficial · ${outcome}`,
+  "encounter.hero.officialAggregate": ({ outcome }) => `Global oficial · ${outcome}`,
+  "encounter.hero.seriesSingle": "Serie a 1 partido oficial",
+  "encounter.hero.seriesAggregate": ({ count }) => `Serie a ${count} partidos · Global`,
+  "encounter.hero.seriesIndependent": ({ count }) => `${count} partidos independientes`,
+  "encounter.tabs.label": "Secciones del enfrentamiento",
+  "encounter.tabs.overview": "Resumen",
+  "encounter.tabs.selection": "Selección y candidatos EA",
+  "encounter.tabs.schedule": "Reprogramación",
+  "encounter.tabs.review": "Expediente",
+  "encounter.overview.officialSubtitle": ({ proposal, basis }) =>
+    `Validado (${proposal} · ${basis}). Ya cuenta en clasificación y estadísticas oficiales.`,
+  "encounter.overview.table.match": "Partido oficial",
+  "encounter.overview.table.eaMatch": "Respaldo EA",
+  "encounter.overview.table.score": "Marcador oficial",
+  "encounter.overview.table.aggregate": "Marcador global",
+  "encounter.overview.scheduleLocked":
+    "Horario protegido: no se admiten reprogramaciones tras la aprobación.",
+  "encounter.overview.quickTitle": "Resumen operativo",
+  "encounter.overview.quickSummary": ({ candidates, requests, actions }) =>
+    `${candidates === 1 ? "1 candidato EA" : `${candidates} candidatos EA`} · ${requests === 1 ? "1 reprogramación" : `${requests} reprogramaciones`} · ${actions === 1 ? "1 evento en historial" : `${actions} eventos en historial`}`,
+  "encounter.overview.openSelection": "Ver selección y candidatos",
+  "encounter.overview.openReview": "Ver expediente",
+  "encounter.overview.openSchedule": "Ver reprogramación",
+  "encounter.overview.pendingTitle": "Estado del enfrentamiento",
+  "encounter.overview.pendingDescription":
+    "Revisa los partidos programados y continúa en Selección y candidatos EA para proponer o confirmar el resultado oficial.",
+  "encounter.overview.scheduleAlert": ({ count }) =>
+    count === 1
+      ? "Hay 1 solicitud de reprogramación activa en este enfrentamiento."
+      : `Hay ${count} solicitudes de reprogramación activas en este enfrentamiento.`,
+  "encounter.selection.lockedNotice":
+    "La selección oficial ya fue aprobada. Los partidos asignados quedan en solo lectura.",
+  "encounter.candidate.officialIn": ({ slot }) => `Oficial · Partido ${slot}`,
+  "encounter.candidate.selectionClosed": "Selección cerrada",
   "encounters.list.label": "Enfrentamientos de la competición",
   "encounters.list.loading": "Cargando enfrentamientos",
   "encounters.list.error": "No pudimos cargar los enfrentamientos.",
@@ -4094,6 +4133,21 @@ export interface MessageParamsByKey {
   readonly "settings.emailCurrent": { readonly email: string };
   readonly "settings.emailSent": { readonly email: string };
   readonly "settings.sessionActivity": { readonly signedIn: string; readonly lastActive: string };
+  readonly "encounter.hero.officialMeta": { readonly outcome: string };
+  readonly "encounter.hero.officialAggregate": { readonly outcome: string };
+  readonly "encounter.hero.seriesAggregate": { readonly count: number };
+  readonly "encounter.hero.seriesIndependent": { readonly count: number };
+  readonly "encounter.overview.officialSubtitle": {
+    readonly proposal: string;
+    readonly basis: string;
+  };
+  readonly "encounter.overview.quickSummary": {
+    readonly candidates: number;
+    readonly requests: number;
+    readonly actions: number;
+  };
+  readonly "encounter.overview.scheduleAlert": { readonly count: number };
+  readonly "encounter.candidate.officialIn": { readonly slot: number };
   readonly "settings.sessionRevokeLabel": { readonly device: string };
   readonly "settings.deviceOn": { readonly client: string; readonly os: string };
   readonly "settings.deleteBlockerOrganizer": { readonly organization: string };
@@ -6891,6 +6945,44 @@ const en: Catalog = {
   "encounter.candidate.useIn": ({ slot }) => `Use in match ${slot}`,
   "encounter.candidate.usedIn": ({ slot }) => `In match ${slot}`,
   "encounter.candidate.unused": "Unused",
+  "encounter.candidate.officialIn": ({ slot }) => `Official · Match ${slot}`,
+  "encounter.candidate.selectionClosed": "Selection closed",
+  "encounter.refresh": "Refresh",
+  "encounter.refreshFailed":
+    "We couldn't refresh this encounter. You're seeing the last data we loaded.",
+  "encounter.status.scheduled": "Scheduled",
+  "encounter.hero.officialMeta": ({ outcome }) => `Official · ${outcome}`,
+  "encounter.hero.officialAggregate": ({ outcome }) => `Official aggregate · ${outcome}`,
+  "encounter.hero.seriesSingle": "Single official match",
+  "encounter.hero.seriesAggregate": ({ count }) => `${count}-match series · Aggregate`,
+  "encounter.hero.seriesIndependent": ({ count }) => `${count} independent matches`,
+  "encounter.tabs.label": "Encounter sections",
+  "encounter.tabs.overview": "Overview",
+  "encounter.tabs.selection": "Selection & EA candidates",
+  "encounter.tabs.schedule": "Rescheduling",
+  "encounter.tabs.review": "Case file",
+  "encounter.overview.officialSubtitle": ({ proposal, basis }) =>
+    `Validated (${proposal} · ${basis}). Now counts in official standings and stats.`,
+  "encounter.overview.table.match": "Official match",
+  "encounter.overview.table.eaMatch": "EA match",
+  "encounter.overview.table.score": "Official score",
+  "encounter.overview.table.aggregate": "Aggregate score",
+  "encounter.overview.scheduleLocked": "Schedule locked: rescheduling is disabled after approval.",
+  "encounter.overview.quickTitle": "Operational summary",
+  "encounter.overview.quickSummary": ({ candidates, requests, actions }) =>
+    `${candidates === 1 ? "1 EA candidate" : `${candidates} EA candidates`} · ${requests === 1 ? "1 reschedule request" : `${requests} reschedule requests`} · ${actions === 1 ? "1 history event" : `${actions} history events`}`,
+  "encounter.overview.openSelection": "View selection & candidates",
+  "encounter.overview.openReview": "View case file",
+  "encounter.overview.openSchedule": "View rescheduling",
+  "encounter.overview.pendingTitle": "Encounter status",
+  "encounter.overview.pendingDescription":
+    "Review scheduled matches and continue in Selection & EA candidates to propose or confirm the official result.",
+  "encounter.overview.scheduleAlert": ({ count }) =>
+    count === 1
+      ? "There is 1 active rescheduling request on this encounter."
+      : `There are ${count} active rescheduling requests on this encounter.`,
+  "encounter.selection.lockedNotice":
+    "The official selection has been approved. Assigned matches are now read-only.",
   "encounter.selection.title": "Official selection",
   "encounter.selection.description":
     "Propose the EA matches that count, answer the opponent's proposal, or open a dispute. Nothing is official until the opponent confirms.",

@@ -54,12 +54,23 @@ function EncounterBody({
   });
 
   const encounter: EncounterState = (() => {
-    if (viewQuery.isError) {
-      return { kind: isRefusal(viewQuery.error) ?? "error", retry: () => void viewQuery.refetch() };
+    // A failed refresh of a cached Encounter keeps the page (and its drafts) mounted;
+    // only a refusal, or an error with nothing cached, takes the whole page down.
+    const refusal = viewQuery.isError ? isRefusal(viewQuery.error) : null;
+    if (viewQuery.isError && (refusal || !view)) {
+      return { kind: refusal ?? "error", retry: () => void viewQuery.refetch() };
     }
     if (!view) return { kind: "loading" };
     if (!belongsHere) return { kind: "not_found" };
-    return { kind: "ready", view };
+    return {
+      kind: "ready",
+      view,
+      refresh: {
+        refreshing: viewQuery.isFetching,
+        refreshFailed: viewQuery.isRefetchError,
+        refresh: () => void viewQuery.refetch(),
+      },
+    };
   })();
 
   const candidates: CandidatesState = (() => {

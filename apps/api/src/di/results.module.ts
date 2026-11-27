@@ -44,6 +44,7 @@ import {
 } from "@/adapters/results/encounter-candidate-association.repository.ts";
 import { CryptoIdGenerator, SystemClock } from "@/adapters/organizations/crypto-ports.ts";
 import { NodeSelectionCommandDigest } from "@/adapters/results/selection-command-digest.ts";
+import { EncounterOfficialStateReader } from "@/adapters/results/encounter-official-state.reader.ts";
 
 export function createResultsModule(input: {
   readonly pool: Pool | undefined;
@@ -103,6 +104,11 @@ export function createResultsModule(input: {
     results,
     associations,
     officialResultReader,
+    officialStateReader: new EncounterOfficialStateReader({
+      pool: input.pool,
+      results,
+      selections,
+    }),
     expireConfirmationWindow: new ExpireConfirmationWindowUseCase({ selections, clock, ids }),
     listEncounterCandidates: new ListEncounterCandidatesUseCase({
       encounterReader: input.encounterReader,

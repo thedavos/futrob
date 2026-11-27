@@ -235,7 +235,7 @@ describe("createFutrobClient encounters schedule-change-requests", () => {
 });
 
 describe("createFutrobClient encounters view", () => {
-  it("reads one Encounter with both Teams and each slot's start", async () => {
+  it("reads one Encounter with both Teams and each slot's start from an API that predates score", async () => {
     const view = {
       encounterId: "encounter-1",
       competition: {
@@ -266,7 +266,10 @@ describe("createFutrobClient encounters view", () => {
       }),
     });
 
-    await expect(client.encounters.getView("org-1", "encounter-1")).resolves.toEqual(view);
+    await expect(client.encounters.getView("org-1", "encounter-1")).resolves.toEqual({
+      ...view,
+      score: null,
+    });
   });
 
   it("reads a competition's Encounters from an API that predates round identity, series mode and score", async () => {

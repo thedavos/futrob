@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
   applyStyles,
   Breadcrumb,
@@ -19,6 +20,37 @@ import {
 import { MatchPitchSurface } from "@/shared/presentation/match-pitch-surface.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import { styles } from "./encounter-page.styles.ts";
+
+const skeleton = stylex.create({
+  crumb: { width: "11rem", maxWidth: "100%", height: "1rem" },
+  crest: { borderRadius: "var(--corner-full)" },
+  teamName: { width: "7rem", maxWidth: "100%", height: "1.125rem" },
+  sideLabel: { width: "3.25rem", height: "0.75rem" },
+  vs: { width: "1.75rem", height: "1rem", alignSelf: "center" },
+  badge: { width: "11rem", maxWidth: "100%", height: "1.5rem", borderRadius: "var(--corner-full)" },
+  kickoff: { width: "8.5rem", height: "1rem" },
+  zone: { width: "10.5rem", maxWidth: "100%", height: "0.75rem" },
+  slotTitle: { width: "5.5rem", height: "1.125rem" },
+  slotTime: { width: "7rem", height: "0.75rem" },
+  slotStatus: { width: "10.5rem", maxWidth: "100%", height: "0.75rem" },
+  previewCopy: { display: "flex", flexDirection: "column", gap: "0.75rem" },
+  previewSummary: { width: "16rem", maxWidth: "100%", height: "0.875rem" },
+  previewNote: { width: "19rem", maxWidth: "100%", height: "0.875rem" },
+  refresh: {
+    width: "11.5rem",
+    maxWidth: "100%",
+    height: "var(--control-height)",
+    borderRadius: "var(--corner-md)",
+    flexShrink: 0,
+  },
+  candidateTime: { width: "6.5rem", height: "0.75rem" },
+  candidateStatus: { width: "5.5rem", height: "0.75rem" },
+  scoreHome: { width: "7rem", maxWidth: "100%", height: "1.125rem", marginInlineStart: "auto" },
+  scorePill: { width: "3.25rem", height: "2rem", borderRadius: "var(--corner-lg)" },
+  scoreAway: { width: "7rem", maxWidth: "100%", height: "1.125rem" },
+  metaChip: { width: "6rem", height: "0.75rem" },
+  action: { width: "8.25rem", height: "var(--control-height)", borderRadius: "var(--corner-md)" },
+});
 
 /** Where the Match Center goes back to, with the list's own name. */
 export interface ListLink {
@@ -51,7 +83,7 @@ export function EncounterBreadcrumb({
               {current ? (
                 <BreadcrumbPage>{current}</BreadcrumbPage>
               ) : (
-                <Skeleton aria-hidden="true" {...applyStyles(styles.skeletonCrumb)} />
+                <Skeleton aria-hidden="true" {...applyStyles(skeleton.crumb)} />
               )}
             </BreadcrumbItem>
           </>
@@ -86,8 +118,10 @@ export function EncounterPageSkeleton({
         <EncounterBreadcrumb pending link={link} t={t} />
         <EncounterHeroSkeleton />
       </header>
-      <EncounterSlotsSkeleton t={t} />
-      <EncounterCandidatesSkeleton t={t} />
+      <div {...applyStyles(styles.workspace)}>
+        <EncounterSlotsSkeleton t={t} />
+        <EncounterCandidatesSkeleton t={t} />
+      </div>
     </main>
   );
 }
@@ -96,23 +130,23 @@ export function EncounterCandidateRowsSkeleton() {
   return (
     <div aria-hidden="true" {...applyStyles(styles.list)}>
       {CANDIDATE_ROWS.map((index) => (
-        <div key={index} {...applyStyles(styles.row)}>
+        <div key={index} {...applyStyles(styles.row, index === 0 && styles.rowFirst)}>
           <div {...applyStyles(styles.rowTop)}>
-            <Skeleton {...applyStyles(styles.skeletonCandidateTime)} />
-            <Skeleton {...applyStyles(styles.skeletonCandidateStatus)} />
+            <Skeleton {...applyStyles(skeleton.candidateTime)} />
+            <Skeleton {...applyStyles(skeleton.candidateStatus)} />
           </div>
           <div {...applyStyles(styles.scoreLine)}>
-            <Skeleton {...applyStyles(styles.skeletonScoreHome)} />
-            <Skeleton {...applyStyles(styles.skeletonScorePill)} />
-            <Skeleton {...applyStyles(styles.skeletonScoreAway)} />
+            <Skeleton {...applyStyles(skeleton.scoreHome)} />
+            <Skeleton {...applyStyles(skeleton.scorePill)} />
+            <Skeleton {...applyStyles(skeleton.scoreAway)} />
           </div>
           <div {...applyStyles(styles.inline)}>
-            <Skeleton {...applyStyles(styles.skeletonMetaChip)} />
-            <Skeleton {...applyStyles(styles.skeletonMetaChip)} />
+            <Skeleton {...applyStyles(skeleton.metaChip)} />
+            <Skeleton {...applyStyles(skeleton.metaChip)} />
           </div>
           <div {...applyStyles(styles.actions)}>
-            <Skeleton {...applyStyles(styles.skeletonAction)} />
-            <Skeleton {...applyStyles(styles.skeletonAction)} />
+            <Skeleton {...applyStyles(skeleton.action)} />
+            <Skeleton {...applyStyles(skeleton.action)} />
           </div>
         </div>
       ))}
@@ -122,18 +156,22 @@ export function EncounterCandidateRowsSkeleton() {
 
 function EncounterHeroSkeleton() {
   return (
-    <Card {...applyStyles(styles.hero)}>
+    <Card className={styles.hero}>
       <MatchPitchSurface away={EMPTY_CREST} home={EMPTY_CREST}>
+        <div aria-hidden="true" {...applyStyles(styles.heroWash)} />
         <div aria-hidden="true" {...applyStyles(styles.heroBody)}>
-          <div {...applyStyles(styles.matchup, styles.scrim)}>
+          <div {...applyStyles(styles.heroTop)}>
+            <Skeleton {...applyStyles(skeleton.badge)} />
+            <Skeleton {...applyStyles(skeleton.badge)} />
+          </div>
+          <div {...applyStyles(styles.matchup)}>
             <TeamIdentitySkeleton />
-            <Skeleton {...applyStyles(styles.skeletonVs)} />
+            <Skeleton {...applyStyles(skeleton.vs)} />
             <TeamIdentitySkeleton />
           </div>
-          <div {...applyStyles(styles.heroMeta, styles.scrim)}>
-            <Skeleton {...applyStyles(styles.skeletonBadge)} />
-            <Skeleton {...applyStyles(styles.skeletonKickoff)} />
-            <Skeleton {...applyStyles(styles.skeletonZone)} />
+          <div {...applyStyles(styles.heroMeta)}>
+            <Skeleton {...applyStyles(skeleton.kickoff)} />
+            <Skeleton {...applyStyles(skeleton.zone)} />
           </div>
         </div>
       </MatchPitchSurface>
@@ -144,55 +182,55 @@ function EncounterHeroSkeleton() {
 function TeamIdentitySkeleton() {
   return (
     <div {...applyStyles(styles.team)}>
-      <Skeleton {...applyStyles(styles.crest, styles.skeletonCrest)} />
-      <Skeleton {...applyStyles(styles.skeletonTeamName)} />
-      <Skeleton {...applyStyles(styles.skeletonSideLabel)} />
+      <Skeleton {...applyStyles(styles.crest, skeleton.crest)} />
+      <Skeleton {...applyStyles(skeleton.teamName)} />
+      <Skeleton {...applyStyles(skeleton.sideLabel)} />
     </div>
   );
 }
 
 function EncounterSlotsSkeleton({ t }: { readonly t: Translator }) {
   return (
-    <section aria-labelledby="encounter-slots" {...applyStyles(styles.section)}>
+    <Card aria-labelledby="encounter-slots" className={styles.panelCard}>
       <div {...applyStyles(styles.sectionCopy)}>
         <SectionTitle id="encounter-slots">{t("encounter.slots.title")}</SectionTitle>
         <Caption>{t("encounter.slots.description")}</Caption>
       </div>
       <div aria-hidden="true" {...applyStyles(styles.list)}>
-        {SLOT_ROWS.map((slot) => (
-          <div key={slot} {...applyStyles(styles.row)}>
+        {SLOT_ROWS.map((slot, index) => (
+          <div key={slot} {...applyStyles(styles.row, index === 0 && styles.rowFirst)}>
             <div {...applyStyles(styles.rowTop)}>
               <div {...applyStyles(styles.slotHeading)}>
-                <Skeleton {...applyStyles(styles.skeletonSlotTitle)} />
-                <Skeleton {...applyStyles(styles.skeletonSlotTime)} />
+                <Skeleton {...applyStyles(skeleton.slotTitle)} />
+                <Skeleton {...applyStyles(skeleton.slotTime)} />
               </div>
             </div>
-            <Skeleton {...applyStyles(styles.skeletonSlotStatus)} />
+            <Skeleton {...applyStyles(skeleton.slotStatus)} />
           </div>
         ))}
       </div>
       <div {...applyStyles(styles.preview)}>
         <Heading as="h3">{t("encounter.preview.title")}</Heading>
-        <div aria-hidden="true" {...applyStyles(styles.skeletonPreviewCopy)}>
-          <Skeleton {...applyStyles(styles.skeletonPreviewSummary)} />
-          <Skeleton {...applyStyles(styles.skeletonPreviewNote)} />
+        <div aria-hidden="true" {...applyStyles(skeleton.previewCopy)}>
+          <Skeleton {...applyStyles(skeleton.previewSummary)} />
+          <Skeleton {...applyStyles(skeleton.previewNote)} />
         </div>
       </div>
-    </section>
+    </Card>
   );
 }
 
 function EncounterCandidatesSkeleton({ t }: { readonly t: Translator }) {
   return (
-    <section aria-labelledby="encounter-candidates" {...applyStyles(styles.section)}>
+    <Card aria-labelledby="encounter-candidates" className={styles.panelCard}>
       <div {...applyStyles(styles.sectionHead)}>
         <div {...applyStyles(styles.sectionCopy)}>
           <SectionTitle id="encounter-candidates">{t("encounter.candidates.title")}</SectionTitle>
           <Caption>{t("encounter.candidates.description")}</Caption>
         </div>
-        <Skeleton aria-hidden="true" {...applyStyles(styles.skeletonRefresh)} />
+        <Skeleton aria-hidden="true" {...applyStyles(skeleton.refresh)} />
       </div>
       <EncounterCandidateRowsSkeleton />
-    </section>
+    </Card>
   );
 }

@@ -1,5 +1,5 @@
 import {
-  encounterViewSchema,
+  encounterViewReadSchema,
   listCompetitionDisputesResponseSchema,
   listCompetitionEncountersReadSchema,
   listEncounterCandidatesResponseSchema,
@@ -30,7 +30,7 @@ export const encounterBrowserClient = {
     return requestBrowserJson({
       path: `/api/v1/organizations/${encodeURIComponent(organizationId)}/encounters/${encodeURIComponent(encounterId)}`,
       method: "GET",
-      schema: encounterViewSchema,
+      schema: encounterViewReadSchema,
       fallbackCode: "scheduling.encounter_load_failed",
       createError,
     });

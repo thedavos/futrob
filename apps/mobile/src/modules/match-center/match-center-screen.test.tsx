@@ -46,6 +46,7 @@ const view: EncounterViewDto = {
     { officialSlot: 1, scheduledStartAt: "2026-09-17T01:00:00.000Z" },
     { officialSlot: 2, scheduledStartAt: "2026-09-17T01:40:00.000Z" },
   ],
+  score: null,
 };
 
 function candidate(externalId: string, homeGoals: number, awayGoals: number, minute: number) {

@@ -211,7 +211,8 @@ function slotLine(
 ): SlotLine {
   const slot = preview.slot;
   switch (preview.kind) {
-    case "scored":
+    case "scored": {
+      const selection = sent.find((row) => row.officialSlot === slot);
       return {
         summary: copy.slotScore(
           slot,
@@ -220,11 +221,16 @@ function slotLine(
           preview.score.away,
           view.away.name,
         ),
-        match: copy.slotPlayed(
-          preview.candidate.reference.externalId,
-          at(preview.candidate.occurredAt),
-        ),
+        match: preview.candidate
+          ? copy.slotPlayed(
+              preview.candidate.reference.externalId,
+              at(preview.candidate.occurredAt),
+            )
+          : selection
+            ? copy.slotMatch(selection.providerMatchRef.externalId)
+            : null,
       };
+    }
     case "unmatched":
       return {
         summary: copy.slotUnmatchedScore(slot),

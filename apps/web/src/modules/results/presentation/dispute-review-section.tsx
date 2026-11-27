@@ -1,11 +1,12 @@
 "use client";
 
-import { useReducer, useRef, type Dispatch, type RefObject } from "react";
+import { useRef, type Dispatch, type RefObject } from "react";
 import type { EncounterCandidateDto, EncounterViewDto } from "@futrob/api-contracts";
 import {
   applyStyles,
   Button,
   Caption,
+  Card,
   SectionTitle,
   Skeleton,
   Tabs,
@@ -16,15 +17,14 @@ import {
   Text,
   useExternalSync,
 } from "@futrob/ui";
+import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { DisputeCommandDialog } from "./dispute-command-dialog.tsx";
 import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
 import {
   buildOperatorIntent,
-  EMPTY_OPERATOR_DRAFT,
   OPERATOR_COMMANDS,
   operatorCommandsFor,
-  operatorDraftReducer,
   type OperatorCommand,
   type OperatorDraft,
   type OperatorDraftEvent,
@@ -53,16 +53,21 @@ export type DisputeReviewState =
  */
 export function DisputeReviewSection({
   candidates,
+  dispatch,
+  draft,
   encounter,
+  onInteract,
   state,
 }: {
   readonly candidates: readonly EncounterCandidateDto[];
+  readonly dispatch: Dispatch<OperatorDraftEvent>;
+  readonly draft: OperatorDraft;
   readonly encounter: EncounterViewDto;
+  readonly onInteract?: () => void;
   readonly state: DisputeReviewState;
 }) {
   const { locale, t } = useI18n();
   const heading = useRef<HTMLHeadingElement>(null);
-  const [draft, dispatch] = useReducer(operatorDraftReducer, EMPTY_OPERATOR_DRAFT);
   // The section mounts after its reads, too late for the router's hash scroll.
   useExternalSync(() => {
     if (state.kind === "hidden" || window.location.hash !== `#${DISPUTE_REVIEW_ANCHOR}`) return;
@@ -78,7 +83,7 @@ export function DisputeReviewSection({
   });
 
   return (
-    <section aria-labelledby={DISPUTE_REVIEW_ANCHOR} {...applyStyles(styles.section)}>
+    <Card aria-labelledby={DISPUTE_REVIEW_ANCHOR} className={styles.card}>
       <div {...applyStyles(styles.header)}>
         <div {...applyStyles(styles.copy)}>
           <SectionTitle id={DISPUTE_REVIEW_ANCHOR} ref={heading} tabIndex={-1}>
@@ -90,7 +95,8 @@ export function DisputeReviewSection({
           </Text>
         </div>
         {read.kind === "ready" ? (
-          <Button variant="outline" disabled={read.refreshing} onClick={read.refresh}>
+          <Button variant="ghost" disabled={read.refreshing} onClick={read.refresh}>
+            <ArrowsClockwiseIcon aria-hidden="true" />
             {t("encounter.review.refresh")}
           </Button>
         ) : null}
@@ -113,10 +119,11 @@ export function DisputeReviewSection({
           encounter={encounter}
           format={format}
           heading={heading}
+          onInteract={onInteract}
           read={read}
         />
       ) : null}
-    </section>
+    </Card>
   );
 }
 
@@ -127,6 +134,7 @@ function ReviewReady({
   encounter,
   format,
   heading,
+  onInteract,
   read,
 }: {
   readonly candidates: readonly EncounterCandidateDto[];
@@ -135,6 +143,7 @@ function ReviewReady({
   readonly encounter: EncounterViewDto;
   readonly format: Intl.DateTimeFormat;
   readonly heading: RefObject<HTMLHeadingElement | null>;
+  readonly onInteract?: () => void;
   readonly read: Extract<SelectionRead<OperatorIntent>, { kind: "ready" }>;
 }) {
   const { t } = useI18n();
@@ -154,50 +163,55 @@ function ReviewReady({
   return (
     <>
       {read.refreshFailed ? <Text role="status">{t("encounter.review.refreshFailed")}</Text> : null}
-      <Tabs defaultValue="case" {...applyStyles(styles.tabs)}>
+      <Tabs className={styles.tabs} defaultValue="case">
         <TabsList aria-label={t("encounter.review.tabs.label")}>
           <TabsTrigger value="case">{t("encounter.review.tabs.case")}</TabsTrigger>
           <TabsTrigger value="history">{t("encounter.review.tabs.history")}</TabsTrigger>
           <TabsIndicator />
         </TabsList>
-        <TabsContent value="case" {...applyStyles(styles.section)}>
-          <SelectionStatusSummary encounter={encounter} format={format} t={t} view={view} />
-          <SelectionOutcome
-            candidates={candidates}
-            encounter={encounter}
-            format={format}
-            t={t}
-            view={view}
-          />
-          {allowed.length > 0 ? (
-            <div {...applyStyles(styles.actions)}>
-              {allowed.map((command) => (
-                <Button
-                  key={command}
-                  ref={(node) => {
-                    triggers.current[command] = node;
-                  }}
-                  variant={command === "return_to_selection" ? "outline" : "default"}
-                  onClick={() => dispatch({ type: "open", command })}
-                >
-                  {t(`encounter.review.command.${command}.trigger`)}
-                </Button>
-              ))}
-            </div>
-          ) : (
-            <Caption>{t("encounter.review.noCommands")}</Caption>
-          )}
-          {view.proposals.length > 0 ? (
-            <SelectionProposalList
+        <TabsContent value="case">
+          <div {...applyStyles(styles.section)}>
+            <SelectionStatusSummary encounter={encounter} format={format} t={t} view={view} />
+            <SelectionOutcome
               candidates={candidates}
               encounter={encounter}
               format={format}
               t={t}
               view={view}
             />
-          ) : (
-            <Caption>{t("encounter.review.empty")}</Caption>
-          )}
+            {allowed.length > 0 ? (
+              <div {...applyStyles(styles.actions)}>
+                {allowed.map((command) => (
+                  <Button
+                    key={command}
+                    ref={(node) => {
+                      triggers.current[command] = node;
+                    }}
+                    variant={command === "return_to_selection" ? "outline" : "default"}
+                    onClick={() => {
+                      onInteract?.();
+                      dispatch({ type: "open", command });
+                    }}
+                  >
+                    {t(`encounter.review.command.${command}.trigger`)}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <Caption>{t("encounter.review.noCommands")}</Caption>
+            )}
+            {view.proposals.length > 0 ? (
+              <SelectionProposalList
+                candidates={candidates}
+                encounter={encounter}
+                format={format}
+                t={t}
+                view={view}
+              />
+            ) : (
+              <Caption>{t("encounter.review.empty")}</Caption>
+            )}
+          </div>
         </TabsContent>
         <TabsContent value="history">
           {view.actions.length > 0 ? (

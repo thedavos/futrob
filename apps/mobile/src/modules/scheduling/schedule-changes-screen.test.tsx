@@ -29,6 +29,7 @@ const view: EncounterViewDto = {
   away: { teamId: "team-tigres", name: "Tigres FC", externalClub: null },
   resolutionMode: "independent_matches",
   officialMatches: [{ officialSlot: 1, scheduledStartAt: "2026-12-05T01:00:00.000Z" }],
+  score: null,
 };
 
 /** Cuervos proposed a new date; the reader answers for Tigres. */

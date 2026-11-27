@@ -1,20 +1,24 @@
 import { useId } from "react";
 import type { EncounterViewDto } from "@futrob/api-contracts";
-import { applyStyles, Button, Caption, Heading, Text } from "@futrob/ui";
-import { InfoIcon, SoccerBallIcon, WarningIcon, XIcon } from "@phosphor-icons/react";
+import { applyStyles, Badge, Button, Caption, Heading, Text } from "@futrob/ui";
+import { InfoIcon, SealCheckIcon, SoccerBallIcon, WarningIcon, XIcon } from "@phosphor-icons/react";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import type { ScoreOutcome, SeriesPreview, SlotPreview } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 import { TeamScoreLine, type Formats } from "./encounter-parts.tsx";
 
 export function OfficialSlotRow({
+  first = false,
   formats,
+  locked = false,
   onClear,
   preview,
   t,
   view,
 }: {
+  readonly first?: boolean;
   readonly formats: Formats;
+  readonly locked?: boolean;
   readonly onClear: () => void;
   readonly preview: SlotPreview;
   readonly t: Translator;
@@ -27,7 +31,11 @@ export function OfficialSlotRow({
   return (
     <li
       aria-label={label}
-      {...applyStyles(styles.row, preview.kind !== "unassigned" && styles.rowSelected)}
+      {...applyStyles(
+        styles.row,
+        first && styles.rowFirst,
+        !locked && preview.kind !== "unassigned" && styles.rowSelected,
+      )}
     >
       <div {...applyStyles(styles.rowTop)}>
         <div {...applyStyles(styles.slotHeading)}>
@@ -38,7 +46,12 @@ export function OfficialSlotRow({
             </Caption>
           ) : null}
         </div>
-        {preview.kind === "unassigned" ? null : (
+        {locked ? (
+          <Badge variant="approved">
+            <SealCheckIcon aria-hidden="true" />
+            {t("encounter.selection.status.approved")}
+          </Badge>
+        ) : preview.kind === "unassigned" ? null : (
           <Button
             aria-label={t("encounter.slot.clear", { slot: preview.slot })}
             onClick={onClear}
