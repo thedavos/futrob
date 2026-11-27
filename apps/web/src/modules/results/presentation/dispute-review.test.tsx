@@ -515,4 +515,60 @@ describe("Operator dispute review in the Match Center", () => {
     expect(posts.map((post) => post.body.expectedVersion)).toEqual([4, 5]);
     expect(posts[1]?.body.commandKey).not.toBe(posts[0]?.body.commandKey);
   });
+
+  it("opens an approved encounter on Overview, suppresses forbidden team selection noise, and locks candidate draft buttons", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          return Response.json(encounterView());
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json(readyCandidates([m1, m2, m3]));
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          return Response.json(resolvedByApproval());
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+
+    renderEncounter();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("radiogroup", { name: "Actúas por" })).toBeNull();
+    expect(
+      screen.queryByText("No puedes ver ni operar la selección oficial de este enfrentamiento."),
+    ).toBeNull();
+
+    await user.click(screen.getByRole("tab", { name: /^Selección y candidatos EA/ }));
+    expect(screen.queryByRole("radiogroup", { name: "Actúas por" })).toBeNull();
+    expect(
+      screen.queryByText("No puedes ver ni operar la selección oficial de este enfrentamiento."),
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Usar en partido 1" })).toBeNull();
+    expect(screen.getByText("Oficial · Partido 1")).toBeTruthy();
+    expect(screen.getByText("Oficial · Partido 2")).toBeTruthy();
+  });
 });

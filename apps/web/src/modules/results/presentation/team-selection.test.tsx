@@ -490,8 +490,13 @@ describe("Team negotiation in the Match Center", () => {
     expect(reads).toEqual([]);
     spectator.unmount();
 
+    const user = userEvent.setup();
     serve({ speaksFor: ["team-home"], views: { "team-home": approvedSelection() } });
     const reader = renderEncounter();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole("tab", { name: /^Selección y candidatos EA/ }));
     expect(await (await findPanel()).findByText("Resultado oficial aprobado")).toBeTruthy();
     expect(
       panel().getByText("No hay acciones disponibles para tu equipo en este estado."),
@@ -499,6 +504,8 @@ describe("Team negotiation in the Match Center", () => {
     for (const name of ["Proponer selección", "Confirmar propuesta", "Rechazar", "Abrir disputa"]) {
       expect(panel().queryByRole("button", { name })).toBeNull();
     }
+    expect(screen.queryByRole("button", { name: "Usar en partido 1" })).toBeNull();
+    expect(screen.getByText("Oficial · Partido 1")).toBeTruthy();
     reader.unmount();
 
     serve({ speaksFor: ["team-home"], views: { "team-home": noSelection(["propose"]) } });

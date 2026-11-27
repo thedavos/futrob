@@ -15,6 +15,12 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 import type { Locale } from "@/shared/presentation/i18n/catalogs.ts";
 import { I18nProvider } from "@/shared/presentation/i18n/i18n-provider.tsx";
+import type { ScheduleChangesState } from "@/modules/scheduling/presentation/schedule-changes-section.tsx";
+import {
+  captainCreation,
+  noCreation,
+  openScheduleChange,
+} from "@/modules/scheduling/presentation/schedule-changes.fixtures.ts";
 import { encounterView, m1, m2, m3, m4, m5, readyCandidates } from "./encounter-page.fixtures.ts";
 import { EncounterPageView, type CandidatesState, type EncounterState } from "./encounter-page.tsx";
 import {
@@ -63,6 +69,8 @@ type Scenario =
   | "forbidden"
   | "error";
 
+type ScheduleScenario = "empty" | "locked" | "open";
+
 type StoryArgs = {
   readonly scenario: Scenario;
   readonly locale: Locale;
@@ -71,9 +79,66 @@ type StoryArgs = {
   readonly selection?: SelectionScenario;
   /** Organization review panel of a results approver; omitted for everyone else. */
   readonly review?: ReviewScenario;
+  /** Rescheduling tab state; omitted when testing isolated selection/review views. */
+  readonly schedule?: ScheduleScenario;
 };
 
 const noop = () => undefined;
+const asyncNoop = async () => undefined;
+
+function scheduleStateFor(
+  scenario: ScheduleScenario | undefined,
+): ScheduleChangesState | undefined {
+  if (!scenario) return undefined;
+  const commands = {
+    create: asyncNoop,
+    accept: asyncNoop,
+    reject: asyncNoop,
+    counter: asyncNoop,
+    resolve: asyncNoop,
+  };
+  switch (scenario) {
+    case "empty":
+      return {
+        kind: "ready",
+        requests: [],
+        creation: captainCreation(),
+        refreshing: false,
+        refreshFailed: false,
+        refresh: noop,
+        commands,
+      };
+    case "locked": {
+      const base = captainCreation();
+      return {
+        kind: "ready",
+        requests: [],
+        creation: {
+          ...base,
+          scopes: base.scopes.map((option) => ({ ...option, blockedReason: "result_protected" })),
+        },
+        refreshing: false,
+        refreshFailed: false,
+        refresh: noop,
+        commands,
+      };
+    }
+    case "open":
+      return {
+        kind: "ready",
+        requests: [openScheduleChange()],
+        creation: noCreation,
+        refreshing: false,
+        refreshFailed: false,
+        refresh: noop,
+        commands,
+      };
+    default: {
+      const exhaustive: never = scenario;
+      return exhaustive;
+    }
+  }
+}
 const updatedAt = Date.parse("2026-09-17T03:00:00.000Z");
 
 const candidatesReady = (
@@ -151,10 +216,12 @@ function stateFor(scenario: Scenario): {
 function ScenarioPage({
   review,
   scenario,
+  schedule,
   selection,
 }: {
   readonly review?: ReviewScenario;
   readonly scenario: Scenario;
+  readonly schedule?: ScheduleScenario;
   readonly selection?: SelectionScenario;
 }) {
   return (
@@ -162,19 +229,34 @@ function ScenarioPage({
       competitionId="competition-1"
       disputeReview={useStoryDisputeReview(review)}
       organizationId="org-1"
+      scheduleChanges={scheduleStateFor(schedule)}
       teamSelection={useStoryTeamSelection(selection)}
       {...stateFor(scenario)}
     />
   );
 }
 
-function EncounterStory({ locale, narrow = false, review, scenario, selection }: StoryArgs) {
+function EncounterStory({
+  locale,
+  narrow = false,
+  review,
+  scenario,
+  schedule,
+  selection,
+}: StoryArgs) {
   const router = useMemo(() => {
     const rootRoute = createRootRoute({ component: Outlet });
     const encounterRoute = createRoute({
       getParentRoute: () => rootRoute,
       path: "/orgs/$orgId/competitions/$competitionId/encounters/$encounterId",
-      component: () => <ScenarioPage review={review} scenario={scenario} selection={selection} />,
+      component: () => (
+        <ScenarioPage
+          review={review}
+          scenario={scenario}
+          schedule={schedule}
+          selection={selection}
+        />
+      ),
     });
     const listRoute = createRoute({
       getParentRoute: () => rootRoute,
@@ -187,7 +269,7 @@ function EncounterStory({ locale, narrow = false, review, scenario, selection }:
         initialEntries: ["/orgs/org-1/competitions/competition-1/encounters/encounter-1"],
       }),
     });
-  }, [review, scenario, selection]);
+  }, [review, scenario, schedule, selection]);
   return (
     <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
       <div {...applyProps(undefined, undefined, styles.frame, narrow && styles.narrow)}>
@@ -223,10 +305,11 @@ const meta = {
     locale: { control: "inline-radio", options: ["es", "en"] },
     selection: { control: "select", options: [undefined, ...SELECTION_SCENARIOS] },
     review: { control: "select", options: [undefined, ...REVIEW_SCENARIOS] },
+    schedule: { control: "select", options: [undefined, "empty", "locked", "open"] },
   },
   render: (args) => (
     <EncounterStory
-      key={`${args.scenario}-${args.locale}-${args.selection}-${args.review}`}
+      key={`${args.scenario}-${args.locale}-${args.selection}-${args.review}-${args.schedule}`}
       {...args}
     />
   ),
@@ -513,11 +596,68 @@ export const ReviewRematch: Story = {
 export const ReviewApproved: Story = {
   name: "Revisión: aprobada X/Z, con historial",
   args: { review: "approved" },
+  parameters: { a11y: { test: "error" } },
   play: async ({ canvasElement }) => {
-    const panel = within(await within(canvasElement).findByRole("region", { name: REVIEW }));
-    await expect(panel.getByRole("group", { name: "Partidos aprobados" })).toBeVisible();
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole("tab", { name: /^Expediente/ }));
+    const panel = within(await canvas.findByRole("region", { name: REVIEW }));
+    await waitFor(() =>
+      expect(panel.getByRole("group", { name: "Partidos aprobados" })).toBeVisible(),
+    );
     await userEvent.click(panel.getByRole("tab", { name: "Historial" }));
     await waitFor(() => expect(panel.getByText("Disputa resuelta con aprobación")).toBeVisible());
+  },
+};
+
+export const OrganizerApprovedMatchCenter: Story = {
+  name: "Organizador: resultado oficial aprobado",
+  args: {
+    scenario: "aggregate",
+    review: "approved",
+    selection: "forbidden",
+    schedule: "locked",
+  },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeVisible();
+    await expect(canvas.getByText("Marcador global")).toBeVisible();
+    await expect(canvas.queryByRole("radiogroup", { name: "Actúas por" })).toBeNull();
+    await userEvent.click(canvas.getByRole("tab", { name: /^Selección y candidatos EA/ }));
+    await waitFor(() => expect(canvas.getByText("Oficial · Partido 1")).toBeVisible());
+    await expect(
+      canvas.queryByText("No puedes ver ni operar la selección oficial de este enfrentamiento."),
+    ).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Usar en partido 1" })).toBeNull();
+    await userEvent.click(canvas.getByRole("tab", { name: /^Reprogramación/ }));
+    await expect(
+      await canvas.findByText(
+        "Hay una selección de resultados protegida; su horario no se puede mover.",
+      ),
+    ).toBeVisible();
+  },
+};
+
+export const ActiveRescheduleBanner: Story = {
+  name: "Con solicitud de reprogramación activa",
+  args: {
+    scenario: "aggregate",
+    selection: "pendingAsRival",
+    schedule: "open",
+  },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText("Hay 1 solicitud de reprogramación activa en este enfrentamiento."),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Ver reprogramación" }));
+    await expect(await canvas.findByText("Dos titulares viajan el día del partido.")).toBeVisible();
   },
 };
 

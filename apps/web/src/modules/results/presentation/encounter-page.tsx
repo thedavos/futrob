@@ -1,46 +1,46 @@
 "use client";
 
-import { useReducer, type ReactElement } from "react";
-import { Link } from "@tanstack/react-router";
-import type { EncounterViewDto, ListEncounterCandidatesResponse } from "@futrob/api-contracts";
+import { useReducer, useState } from "react";
+import type {
+  EncounterViewDto,
+  ListEncounterCandidatesResponse,
+  OfficialSelectionViewDto,
+} from "@futrob/api-contracts";
 import {
+  Alert,
+  AlertDescription,
   applyStyles,
-  Badge,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
   Button,
-  Caption,
   Card,
   PageHeader,
   PageHeaderActions,
   PageHeaderDescription,
   PageHeaderTitle,
-  SectionTitle,
   Skeleton,
-  Text,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   vis,
 } from "@futrob/ui";
-import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
-import { MatchPitchSurface } from "@/shared/presentation/match-pitch-surface.tsx";
+import { ArrowsClockwiseIcon, CalendarBlankIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import type { Translator } from "@/shared/presentation/i18n/translate.ts";
 import {
   ScheduleChangesSection,
   type ScheduleChangesState,
 } from "@/modules/scheduling/presentation/schedule-changes-section.tsx";
+import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
 import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
-import { CandidatesSection } from "./encounter-candidates.tsx";
+import { EncounterBreadcrumb, EncounterHero, listLink, type ListLink } from "./encounter-hero.tsx";
 import type { EncounterListReturn } from "./encounter-list-return.ts";
-import { previewEncounter } from "./encounter-preview.ts";
+import { EncounterOverviewTab } from "./encounter-overview.tsx";
+import { EncounterSelectionWorkspace } from "./encounter-selection-workspace.tsx";
+import { assignmentsOf, previewEncounter } from "./encounter-preview.ts";
 import { styles } from "./encounter-page.styles.ts";
 import { type Formats } from "./encounter-parts.tsx";
-import { OfficialSlotRow, SeriesPreviewPanel } from "./encounter-slots.tsx";
+import { currentProposalOf } from "./selection-draft.ts";
 import { EMPTY_TEAM_DRAFT, teamDraftReducer } from "./team-selection-draft.ts";
-import { TeamSelectionSection, type TeamSelectionState } from "./team-selection-section.tsx";
+import type { TeamSelectionState } from "./team-selection-section.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
 
 export type EncounterState =
@@ -62,6 +62,8 @@ export type CandidatesState =
       readonly refreshFailed: boolean;
       readonly refresh: () => void;
     };
+
+type EncounterTab = "overview" | "selection" | "schedule" | "review";
 
 export function EncounterPageView({
   candidates,
@@ -163,6 +165,7 @@ function EncounterReady({
 }) {
   const { locale, t } = useI18n();
   const [draft, dispatch] = useReducer(teamDraftReducer, EMPTY_TEAM_DRAFT);
+  const [selectedTab, setSelectedTab] = useState<EncounterTab | null>(null);
   const { assignments } = draft.input;
   const formats: Formats = {
     kickoff: new Intl.DateTimeFormat(locale, {
@@ -175,233 +178,253 @@ function EncounterReady({
     }),
     clock: new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }),
   };
+
   const candidateList =
     candidates.kind === "ready" && candidates.data.status === "ready"
       ? candidates.data.candidates
       : [];
+
+  const hasReviewTab = disputeReview?.kind === "visible";
+
+  // Role hygiene: an organizer who passes org-wide capability checks but does not represent
+  // a Team should not see a broken "Actúas por / No puedes ver" block alongside their dossier.
+  const effectiveTeamSelection: TeamSelectionState | undefined =
+    hasReviewTab &&
+    disputeReview.read.kind !== "forbidden" &&
+    teamSelection?.kind === "visible" &&
+    teamSelection.read.kind === "forbidden"
+      ? { kind: "hidden" }
+      : teamSelection;
+
+  const hasTeamPanel = effectiveTeamSelection?.kind === "visible";
+
+  const selectionView: OfficialSelectionViewDto | null =
+    disputeReview?.kind === "visible" && disputeReview.read.kind === "ready"
+      ? disputeReview.read.view
+      : effectiveTeamSelection?.kind === "visible" && effectiveTeamSelection.read.kind === "ready"
+        ? effectiveTeamSelection.read.view
+        : null;
+
+  const selectionStatus = selectionView?.selection?.status ?? null;
+  const isApproved = selectionStatus === "approved";
+  const approvedProposal = isApproved && selectionView ? currentProposalOf(selectionView) : null;
+  const approvedAssignments = approvedProposal ? assignmentsOf(approvedProposal.slots) : null;
+  const approvedPreview = approvedAssignments
+    ? previewEncounter(view, candidateList, approvedAssignments)
+    : null;
+
   const preview = previewEncounter(view, candidateList, assignments);
+  const displayedPreview = isApproved && approvedPreview ? approvedPreview : preview;
   const title = t("encounter.title", { home: view.home.name, away: view.away.name });
+
+  const openScheduleRequests =
+    scheduleChanges?.kind === "ready"
+      ? scheduleChanges.requests.filter(
+          (request) => request.status === "open" || request.status === "escalated",
+        ).length
+      : 0;
+  const totalScheduleRequests =
+    scheduleChanges?.kind === "ready" ? scheduleChanges.requests.length : 0;
+
+  const prefersReviewHash = globalThis.location?.hash === `#${DISPUTE_REVIEW_ANCHOR}`;
+  const defaultTab: EncounterTab = (() => {
+    if (prefersReviewHash && hasReviewTab) return "review";
+    if (isApproved) return "overview";
+    if (
+      hasReviewTab &&
+      (selectionStatus === "disputed" ||
+        selectionStatus === "organizer_review" ||
+        disputeReview.read.kind === "forbidden" ||
+        disputeReview.read.kind === "error" ||
+        !hasTeamPanel)
+    ) {
+      return "review";
+    }
+    return "selection";
+  })();
+
+  const activeTab: EncounterTab =
+    selectedTab && (selectedTab !== "review" || hasReviewTab) ? selectedTab : defaultTab;
+
+  const pinTab = (tab: EncounterTab) => {
+    if (selectedTab === null) setSelectedTab(tab);
+  };
+
+  const refreshers: Array<() => void> = [];
+  let anyRefreshing = false;
+  if (candidates.kind === "ready") {
+    refreshers.push(candidates.refresh);
+    if (candidates.refreshing) anyRefreshing = true;
+  }
+  if (scheduleChanges?.kind === "ready") {
+    refreshers.push(scheduleChanges.refresh);
+    if (scheduleChanges.refreshing) anyRefreshing = true;
+  }
+  if (effectiveTeamSelection?.kind === "visible" && effectiveTeamSelection.read.kind === "ready") {
+    refreshers.push(effectiveTeamSelection.read.refresh);
+    if (effectiveTeamSelection.read.refreshing) anyRefreshing = true;
+  }
+  if (disputeReview?.kind === "visible" && disputeReview.read.kind === "ready") {
+    refreshers.push(disputeReview.read.refresh);
+    if (disputeReview.read.refreshing) anyRefreshing = true;
+  }
+
+  const refreshAll = () => {
+    for (const refresh of refreshers) refresh();
+  };
+
+  const reviewCount = selectionView ? selectionView.actions.length : null;
+  const reviewAlert = selectionStatus === "disputed" || selectionStatus === "organizer_review";
 
   return (
     <main {...applyStyles(styles.main)}>
       <header {...applyStyles(styles.header)}>
         <h1 {...applyStyles(vis.srOnly)}>{title}</h1>
-        <EncounterBreadcrumb current={title} link={encountersLink} t={t} />
-        <EncounterHero formats={formats} t={t} view={view} />
-      </header>
-      {scheduleChanges ? <ScheduleChangesSection state={scheduleChanges} view={view} /> : null}
-      {teamSelection ? (
-        <TeamSelectionSection
-          candidates={candidateList}
-          dispatch={dispatch}
-          draft={draft}
-          encounter={view}
-          preview={preview}
-          state={teamSelection}
-        />
-      ) : null}
-      {disputeReview ? (
-        <DisputeReviewSection candidates={candidateList} encounter={view} state={disputeReview} />
-      ) : null}
-      <section aria-labelledby="encounter-slots" {...applyStyles(styles.section)}>
-        <div {...applyStyles(styles.sectionCopy)}>
-          <SectionTitle id="encounter-slots">{t("encounter.slots.title")}</SectionTitle>
-          <Caption>{t("encounter.slots.description")}</Caption>
+        <div {...applyStyles(styles.topBar)}>
+          <EncounterBreadcrumb current={title} link={encountersLink} t={t} />
+          {refreshers.length > 0 ? (
+            <Button disabled={anyRefreshing} onClick={refreshAll} variant="ghost">
+              <ArrowsClockwiseIcon aria-hidden="true" />
+              {t("encounter.refresh")}
+            </Button>
+          ) : null}
         </div>
-        <ol {...applyStyles(styles.list)}>
-          {preview.slots.map((slot) => (
-            <OfficialSlotRow
+        <EncounterHero
+          approvedPreview={approvedPreview}
+          formats={formats}
+          selectionView={selectionView}
+          t={t}
+          view={view}
+        />
+      </header>
+
+      {openScheduleRequests > 0 && activeTab !== "schedule" && scheduleChanges ? (
+        <Alert variant="warning">
+          <AlertDescription>
+            <div {...applyStyles(styles.alertRow)}>
+              <span {...applyStyles(styles.status)}>
+                <CalendarBlankIcon aria-hidden="true" />
+                {t("encounter.overview.scheduleAlert", { count: openScheduleRequests })}
+              </span>
+              <Button onClick={() => setSelectedTab("schedule")} variant="outline">
+                {t("encounter.overview.openSchedule")}
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <Tabs
+        className={styles.tabsRoot}
+        onValueChange={(value) => {
+          if (
+            value === "overview" ||
+            value === "selection" ||
+            value === "schedule" ||
+            value === "review"
+          ) {
+            setSelectedTab(value);
+          }
+        }}
+        value={activeTab}
+        variant="pills"
+      >
+        <TabsList aria-label={t("encounter.tabs.label")}>
+          <TabsTrigger value="overview">{t("encounter.tabs.overview")}</TabsTrigger>
+          <TabsTrigger value="selection">
+            {t("encounter.tabs.selection")}
+            {candidates.kind === "ready" && candidates.data.status === "ready" ? (
+              <span {...applyStyles(styles.tabCount)}>{candidateList.length}</span>
+            ) : null}
+          </TabsTrigger>
+          {scheduleChanges ? (
+            <TabsTrigger value="schedule">
+              {t("encounter.tabs.schedule")}
+              {scheduleChanges.kind === "ready" ? (
+                <span
+                  {...applyStyles(
+                    styles.tabCount,
+                    openScheduleRequests > 0 && styles.tabCountAlert,
+                  )}
+                >
+                  {totalScheduleRequests}
+                </span>
+              ) : null}
+            </TabsTrigger>
+          ) : null}
+          {hasReviewTab ? (
+            <TabsTrigger value="review">
+              {t("encounter.tabs.review")}
+              {reviewCount !== null ? (
+                <span {...applyStyles(styles.tabCount, reviewAlert && styles.tabCountAlert)}>
+                  {reviewCount}
+                </span>
+              ) : null}
+            </TabsTrigger>
+          ) : null}
+        </TabsList>
+
+        <TabsContent value="overview">
+          <div {...applyStyles(styles.tabPanel)}>
+            <EncounterOverviewTab
+              approvedPreview={approvedPreview}
+              approvedProposal={approvedProposal}
+              candidatesCount={candidateList.length}
               formats={formats}
-              key={slot.slot}
-              onClear={() => dispatch({ type: "clear_slot", slot: slot.slot })}
-              preview={slot}
+              hasReviewTab={hasReviewTab}
+              onNavigateTab={(tab) => setSelectedTab(tab)}
+              requestsCount={totalScheduleRequests}
+              selectionView={selectionView}
               t={t}
               view={view}
             />
-          ))}
-        </ol>
-        <SeriesPreviewPanel series={preview.series} t={t} view={view} />
-      </section>
-      <CandidatesSection
-        assignments={assignments}
-        formats={formats}
-        onAssign={(slot, key) => dispatch({ type: "assign", slot, key })}
-        state={candidates}
-        t={t}
-        view={view}
-      />
-    </main>
-  );
-}
+          </div>
+        </TabsContent>
 
-/** Where the Match Center goes back to, with the list's own name. */
-interface ListLink {
-  readonly element: ReactElement;
-  readonly label: string;
-  readonly back: string;
-}
+        <TabsContent value="selection">
+          <div {...applyStyles(styles.tabPanel)}>
+            <EncounterSelectionWorkspace
+              approvedAssignments={approvedAssignments}
+              assignments={assignments}
+              candidateList={candidateList}
+              candidates={candidates}
+              dispatch={dispatch}
+              displayedPreview={displayedPreview}
+              draft={draft}
+              formats={formats}
+              isApproved={isApproved}
+              onInteract={() => pinTab("selection")}
+              preview={preview}
+              t={t}
+              teamSelection={effectiveTeamSelection}
+              view={view}
+            />
+          </div>
+        </TabsContent>
 
-/**
- * Back to the list the user came from, with its filters; a direct visit goes to the staff list.
- * Each origin maps to a fixed route, so the search cannot point anywhere else.
- */
-function listLink({
-  competitionId,
-  listReturn,
-  organizationId,
-  t,
-}: {
-  readonly competitionId: string;
-  readonly listReturn: EncounterListReturn | null;
-  readonly organizationId: string;
-  readonly t: Translator;
-}): ListLink {
-  const matches = {
-    label: t("pages.competitionPlayer.matches.title"),
-    back: t("encounter.backToMatches"),
-  };
-  const search = listReturn?.search ?? {};
-  const from = listReturn?.from ?? "encounters";
-  switch (from) {
-    case "matches":
-      return {
-        ...matches,
-        element: (
-          <Link
-            params={{ orgId: organizationId, competitionId }}
-            search={search}
-            to="/orgs/$orgId/competitions/$competitionId/matches"
-          />
-        ),
-      };
-    case "player-matches":
-      return {
-        ...matches,
-        element: (
-          <Link
-            params={{ competitionId }}
-            search={search}
-            to="/player/competitions/$competitionId/matches"
-          />
-        ),
-      };
-    case "encounters":
-      return {
-        label: t("pages.competition.encounters.title"),
-        back: t("encounter.backToEncounters"),
-        element: (
-          <Link
-            params={{ orgId: organizationId, competitionId }}
-            search={search}
-            to="/orgs/$orgId/competitions/$competitionId/encounters"
-          />
-        ),
-      };
-    default: {
-      const exhaustive: never = from;
-      return exhaustive;
-    }
-  }
-}
-
-function EncounterBreadcrumb({
-  current,
-  link,
-  t,
-}: {
-  readonly current?: string;
-  readonly link: ListLink;
-  readonly t: Translator;
-}) {
-  return (
-    <Breadcrumb aria-label={t("encounter.breadcrumb")}>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink render={link.element}>{link.label}</BreadcrumbLink>
-        </BreadcrumbItem>
-        {current ? (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{current}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </>
+        {scheduleChanges ? (
+          <TabsContent value="schedule">
+            <div {...applyStyles(styles.tabPanel)}>
+              <Card className={styles.panelCard}>
+                <ScheduleChangesSection state={scheduleChanges} view={view} />
+              </Card>
+            </div>
+          </TabsContent>
         ) : null}
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
-}
 
-function EncounterHero({
-  formats,
-  t,
-  view,
-}: {
-  readonly formats: Formats;
-  readonly t: Translator;
-  readonly view: EncounterViewDto;
-}) {
-  const crest = (side: EncounterViewDto["home"]) => ({
-    imageUrl: side.externalClub?.imageUrl ?? null,
-    name: side.name,
-  });
-  return (
-    <Card {...applyStyles(styles.hero)}>
-      <MatchPitchSurface away={crest(view.away)} home={crest(view.home)}>
-        <div {...applyStyles(styles.heroBody)}>
-          <div {...applyStyles(styles.matchup, styles.scrim)}>
-            <TeamIdentity label={t("encounter.side.home")} side={view.home} />
-            <span aria-hidden="true" {...applyStyles(styles.vs)}>
-              {t("encounter.vs")}
-            </span>
-            <TeamIdentity label={t("encounter.side.away")} side={view.away} />
-          </div>
-          <div {...applyStyles(styles.heroMeta, styles.scrim)}>
-            <Badge className={styles.roundBadge} variant="neutral">
-              {view.round
-                ? `${view.competition.name} · ${
-                    view.round.total
-                      ? t("encounter.roundOf", {
-                          number: view.round.number,
-                          total: view.round.total,
-                        })
-                      : t("encounter.round", { number: view.round.number })
-                  }`
-                : view.competition.name}
-            </Badge>
-            <Text tone="default" weight="medium">
-              <time dateTime={view.scheduledStartAt}>
-                {formats.kickoff.format(new Date(view.scheduledStartAt))}
-              </time>
-            </Text>
-            <Caption as="span">
-              {t("encounter.timeZone", { zone: view.competition.timeZone })}
-            </Caption>
-          </div>
-        </div>
-      </MatchPitchSurface>
-    </Card>
-  );
-}
-
-function TeamIdentity({
-  label,
-  side,
-}: {
-  readonly label: string;
-  readonly side: EncounterViewDto["home"];
-}) {
-  return (
-    <div {...applyStyles(styles.team)}>
-      <ClubCrestAvatar
-        className={styles.crest}
-        imageUrl={side.externalClub?.imageUrl ?? null}
-        name={side.name}
-      />
-      <Text tone="default" weight="semibold" className={styles.teamName}>
-        {side.name}
-      </Text>
-      <Caption as="span">{label}</Caption>
-    </div>
+        {hasReviewTab && disputeReview ? (
+          <TabsContent value="review">
+            <div {...applyStyles(styles.tabPanel)}>
+              <DisputeReviewSection
+                candidates={candidateList}
+                encounter={view}
+                onInteract={() => pinTab("review")}
+                state={disputeReview}
+              />
+            </div>
+          </TabsContent>
+        ) : null}
+      </Tabs>
+    </main>
   );
 }

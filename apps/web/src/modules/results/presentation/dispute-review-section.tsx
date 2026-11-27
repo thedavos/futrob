@@ -6,6 +6,7 @@ import {
   applyStyles,
   Button,
   Caption,
+  Card,
   SectionTitle,
   Skeleton,
   Tabs,
@@ -16,6 +17,7 @@ import {
   Text,
   useExternalSync,
 } from "@futrob/ui";
+import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import { DisputeCommandDialog } from "./dispute-command-dialog.tsx";
 import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
@@ -54,10 +56,12 @@ export type DisputeReviewState =
 export function DisputeReviewSection({
   candidates,
   encounter,
+  onInteract,
   state,
 }: {
   readonly candidates: readonly EncounterCandidateDto[];
   readonly encounter: EncounterViewDto;
+  readonly onInteract?: () => void;
   readonly state: DisputeReviewState;
 }) {
   const { locale, t } = useI18n();
@@ -78,7 +82,7 @@ export function DisputeReviewSection({
   });
 
   return (
-    <section aria-labelledby={DISPUTE_REVIEW_ANCHOR} {...applyStyles(styles.section)}>
+    <Card aria-labelledby={DISPUTE_REVIEW_ANCHOR} className={styles.card}>
       <div {...applyStyles(styles.header)}>
         <div {...applyStyles(styles.copy)}>
           <SectionTitle id={DISPUTE_REVIEW_ANCHOR} ref={heading} tabIndex={-1}>
@@ -90,7 +94,8 @@ export function DisputeReviewSection({
           </Text>
         </div>
         {read.kind === "ready" ? (
-          <Button variant="outline" disabled={read.refreshing} onClick={read.refresh}>
+          <Button variant="ghost" disabled={read.refreshing} onClick={read.refresh}>
+            <ArrowsClockwiseIcon aria-hidden="true" />
             {t("encounter.review.refresh")}
           </Button>
         ) : null}
@@ -113,10 +118,11 @@ export function DisputeReviewSection({
           encounter={encounter}
           format={format}
           heading={heading}
+          onInteract={onInteract}
           read={read}
         />
       ) : null}
-    </section>
+    </Card>
   );
 }
 
@@ -127,6 +133,7 @@ function ReviewReady({
   encounter,
   format,
   heading,
+  onInteract,
   read,
 }: {
   readonly candidates: readonly EncounterCandidateDto[];
@@ -135,6 +142,7 @@ function ReviewReady({
   readonly encounter: EncounterViewDto;
   readonly format: Intl.DateTimeFormat;
   readonly heading: RefObject<HTMLHeadingElement | null>;
+  readonly onInteract?: () => void;
   readonly read: Extract<SelectionRead<OperatorIntent>, { kind: "ready" }>;
 }) {
   const { t } = useI18n();
@@ -154,50 +162,55 @@ function ReviewReady({
   return (
     <>
       {read.refreshFailed ? <Text role="status">{t("encounter.review.refreshFailed")}</Text> : null}
-      <Tabs defaultValue="case" {...applyStyles(styles.tabs)}>
+      <Tabs className={styles.tabs} defaultValue="case">
         <TabsList aria-label={t("encounter.review.tabs.label")}>
           <TabsTrigger value="case">{t("encounter.review.tabs.case")}</TabsTrigger>
           <TabsTrigger value="history">{t("encounter.review.tabs.history")}</TabsTrigger>
           <TabsIndicator />
         </TabsList>
-        <TabsContent value="case" {...applyStyles(styles.section)}>
-          <SelectionStatusSummary encounter={encounter} format={format} t={t} view={view} />
-          <SelectionOutcome
-            candidates={candidates}
-            encounter={encounter}
-            format={format}
-            t={t}
-            view={view}
-          />
-          {allowed.length > 0 ? (
-            <div {...applyStyles(styles.actions)}>
-              {allowed.map((command) => (
-                <Button
-                  key={command}
-                  ref={(node) => {
-                    triggers.current[command] = node;
-                  }}
-                  variant={command === "return_to_selection" ? "outline" : "default"}
-                  onClick={() => dispatch({ type: "open", command })}
-                >
-                  {t(`encounter.review.command.${command}.trigger`)}
-                </Button>
-              ))}
-            </div>
-          ) : (
-            <Caption>{t("encounter.review.noCommands")}</Caption>
-          )}
-          {view.proposals.length > 0 ? (
-            <SelectionProposalList
+        <TabsContent value="case">
+          <div {...applyStyles(styles.section)}>
+            <SelectionStatusSummary encounter={encounter} format={format} t={t} view={view} />
+            <SelectionOutcome
               candidates={candidates}
               encounter={encounter}
               format={format}
               t={t}
               view={view}
             />
-          ) : (
-            <Caption>{t("encounter.review.empty")}</Caption>
-          )}
+            {allowed.length > 0 ? (
+              <div {...applyStyles(styles.actions)}>
+                {allowed.map((command) => (
+                  <Button
+                    key={command}
+                    ref={(node) => {
+                      triggers.current[command] = node;
+                    }}
+                    variant={command === "return_to_selection" ? "outline" : "default"}
+                    onClick={() => {
+                      onInteract?.();
+                      dispatch({ type: "open", command });
+                    }}
+                  >
+                    {t(`encounter.review.command.${command}.trigger`)}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <Caption>{t("encounter.review.noCommands")}</Caption>
+            )}
+            {view.proposals.length > 0 ? (
+              <SelectionProposalList
+                candidates={candidates}
+                encounter={encounter}
+                format={format}
+                t={t}
+                view={view}
+              />
+            ) : (
+              <Caption>{t("encounter.review.empty")}</Caption>
+            )}
+          </div>
         </TabsContent>
         <TabsContent value="history">
           {view.actions.length > 0 ? (

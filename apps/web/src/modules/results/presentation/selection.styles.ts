@@ -3,13 +3,20 @@ import { colors } from "@futrob/ui/styles/tokens.stylex";
 import { media } from "@futrob/ui/styles/media.stylex";
 
 export const styles = stylex.create({
-  section: { display: "flex", flexDirection: "column", gap: "1.5rem", minWidth: 0 },
+  card: {
+    padding: { default: "1rem", [media.sm]: "1.25rem" },
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.25rem",
+    minWidth: 0,
+  },
+  section: { display: "flex", flexDirection: "column", gap: "1.25rem", minWidth: 0 },
   header: {
     display: "flex",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    alignItems: "end",
-    gap: "1rem",
+    alignItems: "flex-start",
+    gap: "0.75rem",
   },
   copy: {
     display: "flex",

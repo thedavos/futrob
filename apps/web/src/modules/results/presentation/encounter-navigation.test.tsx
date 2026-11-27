@@ -87,6 +87,7 @@ const TEAM = "Selección oficial";
 const REVIEW = "Revisión de la organización";
 const team = () => within(screen.getByRole("region", { name: TEAM }));
 const review = () => within(screen.getByRole("region", { name: REVIEW }));
+const findReview = async () => within(await screen.findByRole("region", { name: REVIEW }));
 
 function renderRoute() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -110,11 +111,12 @@ const B = "Halcones FC vs Maderas FC";
 const heading = (name: string) => screen.findByRole("heading", { level: 1, name });
 
 /** Visits B first so its reads are cached, as after a client-side visit, then opens A. */
-async function openAWithBCached() {
+async function openAWithBCached(user: UserEvent) {
   const route = renderRoute();
   await heading(B);
+  await (await findReview()).findByRole("button", { name: "Devolver a selección" });
+  await user.click(screen.getByRole("tab", { name: /^Selección y candidatos EA/ }));
   await team().findByRole("radiogroup", { name: "Actúas por" });
-  await review().findByRole("button", { name: "Devolver a selección" });
   route.navigate("encounter-1");
   await heading(A);
   return route;
@@ -124,7 +126,16 @@ const dialog = (name: string) => within(screen.getByRole("dialog", { name }));
 const reason = (name: string) =>
   dialog(name).getByRole<HTMLTextAreaElement>("textbox", { name: "Motivo" });
 
+async function openSelectionTab(user: UserEvent) {
+  await user.click(await screen.findByRole("tab", { name: /^Selección y candidatos EA/ }));
+}
+
+async function openReviewTab(user: UserEvent) {
+  await user.click(await screen.findByRole("tab", { name: /^Expediente/ }));
+}
+
 async function actAsAway(user: UserEvent) {
+  await openSelectionTab(user);
   const actingAs = await within(await screen.findByRole("region", { name: TEAM })).findByRole(
     "radiogroup",
     { name: "Actúas por" },
@@ -149,15 +160,9 @@ describe("Match Center navigation between Encounters", () => {
   it("starts Encounter B with clean Team and operator drafts after typing reasons in A", async () => {
     const user = userEvent.setup();
     serve();
-    const { navigate } = await openAWithBCached();
+    const { navigate } = await openAWithBCached(user);
 
     await typeAndClose(user, await actAsAway(user), "Rechazar la propuesta", "Motivo de A");
-    await typeAndClose(
-      user,
-      await review().findByRole("button", { name: "Devolver a selección" }),
-      "Devolver el caso a selección",
-      "Devolución de A",
-    );
     await user.click(
       within(
         await screen.findByRole("listitem", { name: /^Cuervos EA contra Maderas EA/ }),
@@ -166,10 +171,18 @@ describe("Match Center navigation between Encounters", () => {
     expect(
       within(screen.getByRole("listitem", { name: "Partido 1" })).getByText("1–0"),
     ).toBeTruthy();
+    await openReviewTab(user);
+    await typeAndClose(
+      user,
+      await review().findByRole("button", { name: "Devolver a selección" }),
+      "Devolver el caso a selección",
+      "Devolución de A",
+    );
 
     navigate("encounter-2");
 
     expect(await heading(B)).toBeTruthy();
+    await openSelectionTab(user);
     const actingAs = await team().findByRole("radiogroup", { name: "Actúas por" });
     expect(
       within(actingAs).getByRole("radio", { name: "Halcones FC" }).getAttribute("aria-checked"),
@@ -182,6 +195,7 @@ describe("Match Center navigation between Encounters", () => {
     await user.click(await actAsAway(user));
     expect(reason("Rechazar la propuesta").value).toBe("");
     await user.keyboard("{Escape}");
+    await openReviewTab(user);
     await user.click(await review().findByRole("button", { name: "Devolver a selección" }));
     expect(reason("Devolver el caso a selección").value).toBe("");
   });
@@ -189,7 +203,7 @@ describe("Match Center navigation between Encounters", () => {
   it("a command the server refused in Encounter A does not lock Encounter B", async () => {
     const user = userEvent.setup();
     serve({ "encounter-1": () => failure(403, "results.official_selection_forbidden") });
-    const { navigate } = await openAWithBCached();
+    const { navigate } = await openAWithBCached(user);
 
     await user.click(await actAsAway(user));
     await user.type(reason("Rechazar la propuesta"), rejectionReason);
@@ -214,7 +228,7 @@ describe("Match Center navigation between Encounters", () => {
   it("keeps the typed reasons when the same Encounter renders again and refetches", async () => {
     const user = userEvent.setup();
     serve();
-    const { navigate } = await openAWithBCached();
+    const { navigate } = await openAWithBCached(user);
 
     await typeAndClose(user, await actAsAway(user), "Rechazar la propuesta", "Motivo de A");
     navigate("encounter-1");

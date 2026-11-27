@@ -310,6 +310,7 @@ describe("Encounter page", () => {
     });
     renderEncounter();
 
+    await user.click(await screen.findByRole("tab", { name: /^Reprogramación/ }));
     await user.click(await screen.findByRole("button", { name: "Solicitar reprogramación" }));
     await user.click(screen.getByRole("radio", { name: "Partido 2" }));
     await user.type(screen.getByLabelText("Nueva fecha y hora"), "2026-09-17T20:30");
@@ -327,6 +328,7 @@ describe("Encounter page", () => {
         idempotencyKey: expect.any(String),
       },
     ]);
+    await user.click(screen.getByRole("tab", { name: /^Selección y candidatos EA/ }));
     const kickoff = (slot: string) => slotRow(slot).querySelector("time")?.getAttribute("datetime");
     await waitFor(() => expect(kickoff("Partido 2")).toBe("2026-09-18T01:30:00.000Z"));
     expect(kickoff("Partido 1")).toBe("2026-09-15T01:00:00.000Z");
