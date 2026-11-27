@@ -32,7 +32,10 @@ const ENCOUNTERS: Record<string, EncounterViewDto> = {
  * Stands in for the BFF for two Encounters of one competition. The actor speaks for
  * both Teams and approves results; `reject` answers each Encounter's reject command.
  */
-function serve(reject: Record<string, () => Response> = {}) {
+function serve(
+  reject: Record<string, () => Response> = {},
+  detail: { fails: boolean } = { fails: false },
+) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -61,7 +64,11 @@ function serve(reject: Record<string, () => Response> = {}) {
       const encounterId = product?.[1] ?? "";
       const rest = product?.[2] ?? "";
       if (!product || !ENCOUNTERS[encounterId]) return failure(404, "api.not_found");
-      if (rest === "") return Response.json(ENCOUNTERS[encounterId]);
+      if (rest === "") {
+        return detail.fails
+          ? failure(503, "api.unavailable")
+          : Response.json(ENCOUNTERS[encounterId]);
+      }
       if (rest === "/official-selection" && method === "GET") {
         const team = url.searchParams.get("actingTeamId");
         return Response.json(teamView(team));
@@ -90,7 +97,9 @@ const review = () => within(screen.getByRole("region", { name: REVIEW }));
 const findReview = async () => within(await screen.findByRole("region", { name: REVIEW }));
 
 function renderRoute() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryDelay: 0 } },
+  });
   const ui = (encounterId: string) => (
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale="es">
@@ -257,5 +266,41 @@ describe("Match Center navigation between Encounters", () => {
     await openReviewTab(user);
     await user.click(await review().findByRole("button", { name: "Devolver a selección" }));
     expect(reason("Devolver el caso a selección").value).toBe("Devolución tras revisar candidatos");
+  });
+
+  it("keeps the Encounter and the operator reason when Actualizar fails to re-read the detail", async () => {
+    const user = userEvent.setup();
+    const detail = { fails: false };
+    serve({}, detail);
+    await openAWithBCached(user);
+
+    await openReviewTab(user);
+    await typeAndClose(
+      user,
+      await review().findByRole("button", { name: "Devolver a selección" }),
+      "Devolver el caso a selección",
+      "Devolución pendiente",
+    );
+
+    detail.fails = true;
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+    expect(
+      await screen.findByText(
+        "No pudimos actualizar el enfrentamiento. Ves los últimos datos cargados.",
+      ),
+    ).toBeTruthy();
+    expect(await heading(A)).toBeTruthy();
+
+    detail.fails = false;
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+    await waitFor(() =>
+      expect(
+        screen.queryByText(
+          "No pudimos actualizar el enfrentamiento. Ves los últimos datos cargados.",
+        ),
+      ).toBeNull(),
+    );
+    await user.click(await review().findByRole("button", { name: "Devolver a selección" }));
+    expect(reason("Devolver el caso a selección").value).toBe("Devolución pendiente");
   });
 });

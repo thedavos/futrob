@@ -101,7 +101,9 @@ const failure = (status: number, code: string) =>
   Response.json({ code, messageKey: `errors.${code}` }, { status });
 
 function renderEncounter() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryDelay: 0 } },
+  });
   return render(
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale="es">
@@ -725,5 +727,72 @@ describe("Operator dispute review in the Match Center", () => {
       ).toBeNull(),
     );
     expect(viewReads).toBeGreaterThan(readsBeforeRefresh);
+  });
+
+  it("Actualizar shows an Encounter approved elsewhere even when the dossier refresh fails", async () => {
+    const user = userEvent.setup();
+    let approvedElsewhere = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), "https://web.test");
+        if (url.pathname === "/api/v1/authorization/effective-access") {
+          const permission = url.searchParams.get("permissions") ?? "";
+          return Response.json({
+            actorId: "actor-operator",
+            scope: { organizationId: "org-1" },
+            roles: [],
+            permissions: [{ permission, allowed: true, decidedAt: "organization" }],
+          });
+        }
+        if (url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1") {
+          return Response.json(
+            approvedElsewhere
+              ? encounterView({
+                  score: [
+                    { homeGoals: 1, awayGoals: 0 },
+                    { homeGoals: 3, awayGoals: 3 },
+                  ],
+                })
+              : encounterView({ score: null }),
+          );
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/candidates") {
+          return Response.json(readyCandidates([m1, m2, m3]));
+        }
+        if (url.pathname === "/api/v1/encounters/encounter-1/schedule-change-requests") {
+          return Response.json({ requests: [], creation: noCreation });
+        }
+        if (
+          url.pathname === "/api/v1/organizations/org-1/encounters/encounter-1/official-selection"
+        ) {
+          return failure(403, "results.official_selection_forbidden");
+        }
+        if (url.pathname === DOSSIER) {
+          return approvedElsewhere ? failure(503, "api.unavailable") : Response.json(reviewCase());
+        }
+        return failure(404, "api.not_found");
+      }),
+    );
+
+    renderEncounter();
+
+    await (await findReview()).findByRole("button", { name: "Aprobar una propuesta" });
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeNull();
+
+    approvedElsewhere = true;
+    await user.click(screen.getByRole("button", { name: "Actualizar" }));
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Resultado oficial aprobado" }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole("tab", { name: /^Expediente/ }));
+    expect(
+      await screen.findByText(
+        "No pudimos actualizar el expediente. Los datos mostrados pueden haber cambiado.",
+      ),
+    ).toBeTruthy();
   });
 });

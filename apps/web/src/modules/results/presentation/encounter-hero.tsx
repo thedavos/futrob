@@ -27,6 +27,7 @@ import {
 import { ClubCrestAvatar } from "@/shared/presentation/club-crest-avatar.tsx";
 import { MatchPitchSurface } from "@/shared/presentation/match-pitch-surface.tsx";
 import type { Translator } from "@/shared/presentation/i18n/translate.ts";
+import type { SelectionStatus } from "./encounter-approval.ts";
 import type { EncounterListReturn } from "./encounter-list-return.ts";
 import { EncounterBreadcrumb, type ListLink } from "./encounter-page-skeleton.tsx";
 import { RetryAlert } from "@/shared/presentation/retry-alert.tsx";
@@ -140,12 +141,7 @@ type HeroStatus = {
   readonly label: string;
 };
 
-function heroStatusOf(
-  selectionView: OfficialSelectionViewDto | null,
-  view: EncounterViewDto,
-  t: Translator,
-): HeroStatus {
-  const status = selectionView?.selection?.status ?? (view.score ? "approved" : null);
+function heroStatusOf(status: SelectionStatus | null, t: Translator): HeroStatus {
   switch (status) {
     case "approved":
       return { variant: "approved", icon: SealCheckIcon, label: t("encounter.selection.approved") };
@@ -210,12 +206,15 @@ export function EncounterHero({
   approvedPreview,
   formats,
   selectionView,
+  status: encounterStatus,
   t,
   view,
 }: {
   readonly approvedPreview: EncounterPreview | null;
   readonly formats: Formats;
   readonly selectionView: OfficialSelectionViewDto | null;
+  /** Reconciled by `encounterStatusOf`, so the badge matches the rest of the page. */
+  readonly status: SelectionStatus | null;
   readonly t: Translator;
   readonly view: EncounterViewDto;
 }) {
@@ -223,7 +222,7 @@ export function EncounterHero({
     imageUrl: side.externalClub?.imageUrl ?? null,
     name: side.name,
   });
-  const status = heroStatusOf(selectionView, view, t);
+  const status = heroStatusOf(encounterStatus, t);
   const StatusIcon = status.icon;
 
   const approvedSeries = approvedPreview?.series ?? null;

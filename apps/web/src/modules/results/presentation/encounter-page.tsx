@@ -1,11 +1,7 @@
 "use client";
 
 import { useReducer, useState } from "react";
-import type {
-  EncounterViewDto,
-  ListEncounterCandidatesResponse,
-  OfficialSelectionViewDto,
-} from "@futrob/api-contracts";
+import type { EncounterViewDto, ListEncounterCandidatesResponse } from "@futrob/api-contracts";
 import {
   Alert,
   AlertDescription,
@@ -16,6 +12,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Text,
   vis,
 } from "@futrob/ui";
 import { ArrowsClockwiseIcon, CalendarBlankIcon } from "@phosphor-icons/react";
@@ -29,6 +26,7 @@ import {
 import { DISPUTE_REVIEW_ANCHOR } from "./dispute-review-anchor.ts";
 import { EMPTY_OPERATOR_DRAFT, operatorDraftReducer } from "./dispute-review-draft.ts";
 import { DisputeReviewSection, type DisputeReviewState } from "./dispute-review-section.tsx";
+import { encounterStatusOf, loadedSelectionOf } from "./encounter-approval.ts";
 import { EncounterHero, EncounterUnavailable, listLink } from "./encounter-hero.tsx";
 import type { EncounterListReturn } from "./encounter-list-return.ts";
 import { EncounterOverviewTab } from "./encounter-overview.tsx";
@@ -50,9 +48,10 @@ export type EncounterState =
   | { readonly kind: "not_found" }
   | { readonly kind: "forbidden" }
   | { readonly kind: "error"; readonly retry: () => void }
-  | { readonly kind: "ready"; readonly view: EncounterViewDto; readonly refresh?: Refreshable };
+  | { readonly kind: "ready"; readonly view: EncounterViewDto; readonly refresh?: ViewRefresh };
 
 type Refreshable = { readonly refreshing: boolean; readonly refresh: () => void };
+type ViewRefresh = Refreshable & { readonly refreshFailed: boolean };
 
 export type CandidatesState =
   | { readonly kind: "loading" }
@@ -168,7 +167,7 @@ function EncounterReady({
   readonly scheduleChanges?: ScheduleChangesState;
   readonly teamSelection?: TeamSelectionState;
   readonly view: EncounterViewDto;
-  readonly viewRefresh?: Refreshable;
+  readonly viewRefresh?: ViewRefresh;
 }) {
   const { locale, t } = useI18n();
   const [draft, dispatch] = useReducer(teamDraftReducer, EMPTY_TEAM_DRAFT);
@@ -206,16 +205,11 @@ function EncounterReady({
 
   const hasTeamPanel = effectiveTeamSelection?.kind === "visible";
 
-  const selectionView: OfficialSelectionViewDto | null =
-    disputeReview?.kind === "visible" && disputeReview.read.kind === "ready"
-      ? disputeReview.read.view
-      : effectiveTeamSelection?.kind === "visible" && effectiveTeamSelection.read.kind === "ready"
-        ? effectiveTeamSelection.read.view
-        : null;
+  const loadedSelection = loadedSelectionOf(disputeReview, effectiveTeamSelection);
+  const selectionView = loadedSelection?.view ?? null;
 
-  const selectionStatus = selectionView?.selection?.status ?? null;
-  // A loaded selection outranks a cached `score`: a voided one is no longer official.
-  const isApproved = selectionStatus ? selectionStatus === "approved" : view.score !== null;
+  const selectionStatus = encounterStatusOf(view, loadedSelection);
+  const isApproved = selectionStatus === "approved";
   const approvedProposal = isApproved && selectionView ? currentProposalOf(selectionView) : null;
   const approvedAssignments = approvedProposal ? assignmentsOf(approvedProposal.slots) : null;
   const approvedPreview = isApproved
@@ -295,9 +289,13 @@ function EncounterReady({
           approvedPreview={approvedPreview}
           formats={formats}
           selectionView={selectionView}
+          status={selectionStatus}
           t={t}
           view={view}
         />
+        {viewRefresh?.refreshFailed ? (
+          <Text role="status">{t("encounter.refreshFailed")}</Text>
+        ) : null}
       </header>
 
       {openScheduleRequests > 0 && activeTab !== "schedule" && scheduleChanges ? (

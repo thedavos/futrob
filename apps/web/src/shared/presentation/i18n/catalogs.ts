@@ -2708,6 +2708,8 @@ const es = {
   "encounter.backToEncounters": "Volver a enfrentamientos",
   "encounter.backToMatches": "Volver a partidos",
   "encounter.refresh": "Actualizar",
+  "encounter.refreshFailed":
+    "No pudimos actualizar el enfrentamiento. Ves los últimos datos cargados.",
   "encounter.status.scheduled": "Programado",
   "encounter.hero.officialMeta": ({ outcome }) => `Oficial · ${outcome}`,
   "encounter.hero.officialAggregate": ({ outcome }) => `Global oficial · ${outcome}`,
@@ -6946,6 +6948,8 @@ const en: Catalog = {
   "encounter.candidate.officialIn": ({ slot }) => `Official · Match ${slot}`,
   "encounter.candidate.selectionClosed": "Selection closed",
   "encounter.refresh": "Refresh",
+  "encounter.refreshFailed":
+    "We couldn't refresh this encounter. You're seeing the last data we loaded.",
   "encounter.status.scheduled": "Scheduled",
   "encounter.hero.officialMeta": ({ outcome }) => `Official · ${outcome}`,
   "encounter.hero.officialAggregate": ({ outcome }) => `Official aggregate · ${outcome}`,
