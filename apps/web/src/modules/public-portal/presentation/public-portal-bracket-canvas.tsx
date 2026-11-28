@@ -20,7 +20,7 @@ import {
   type PublicBracketStageLayout,
   type PublicBracketWire,
 } from "./public-portal-bracket-model.ts";
-import { bracketSideLabel, kickoffLabel } from "./public-portal-model.ts";
+import { bracketSideLabel, kickoffTimeOnly } from "./public-portal-model.ts";
 import { bracketStyles, PUBLIC_BRACKET_HEADINGS_HEIGHT } from "./public-portal-bracket.styles.ts";
 
 export const BRACKET_STATUS_ICON = {
@@ -249,11 +249,13 @@ export function PublicBracketCanvas({
                             aria-hidden="true"
                             {...applyStyles(bracketStyles.statusIcon)}
                           />
-                          {publicBracketStatusLabel(status, t)}
+                          <span {...applyStyles(bracketStyles.statusLabel)}>
+                            {publicBracketStatusLabel(status, t)}
+                          </span>
                         </span>
-                        <Caption as="span">
+                        <Caption as="span" className={bracketStyles.kickoff}>
                           <time dateTime={node.encounter.scheduledStartAt}>
-                            {kickoffLabel(node.encounter.scheduledStartAt, timeZone, locale)}
+                            {kickoffTimeOnly(node.encounter.scheduledStartAt, timeZone, locale)}
                           </time>
                         </Caption>
                       </span>

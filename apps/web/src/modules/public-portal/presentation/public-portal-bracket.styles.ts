@@ -222,6 +222,17 @@ export const bracketStyles = stylex.create({
     minWidth: 0,
     color: colors.mutedForeground,
   },
+  statusLabel: {
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  kickoff: {
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+    fontVariantNumeric: "tabular-nums",
+  },
   statusOfficial: {
     color: colors.approved,
   },
