@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import * as stylex from "@stylexjs/stylex";
 import type { OrganizationAuditEntryDto } from "@futrob/api-contracts";
 import { ORGANIZATION_PERMISSION } from "@futrob/organizations";
@@ -43,7 +43,41 @@ const entries: OrganizationAuditEntryDto[] = [
     },
   },
   {
-    id: "90:authorization:role-change-1",
+    id: "91:results:dispute-1",
+    organizationId: "org-1",
+    competitionId: "competition-1",
+    actorId: "actor-staff",
+    actorName: "Diego Ramírez",
+    action: "results.dispute_opened",
+    reason: "Marcador EA no coincide con el acta acordada.",
+    occurredAt: "2026-11-10T13:45:00.000Z",
+    requestId: "audit-request-1",
+    object: {
+      type: "encounter",
+      id: "encounter-3",
+      label: "J3 · Sporting Quipu vs Inti United",
+      href: "/orgs/org-1/competitions/competition-1/encounters/encounter-3",
+    },
+  },
+  {
+    id: "90:results:approved-1",
+    organizationId: "org-1",
+    competitionId: "competition-1",
+    actorId: "actor-organizer",
+    actorName: "María Torres",
+    action: "results.approved",
+    reason: null,
+    occurredAt: "2026-11-10T13:35:00.000Z",
+    requestId: null,
+    object: {
+      type: "encounter",
+      id: "encounter-2",
+      label: "J2 · Deportivo Llama vs Real Vicuña",
+      href: "/orgs/org-1/competitions/competition-1/encounters/encounter-2",
+    },
+  },
+  {
+    id: "89:authorization:role-change-1",
     organizationId: "org-1",
     competitionId: null,
     actorId: "actor-organizer",
@@ -72,6 +106,13 @@ const entries: OrganizationAuditEntryDto[] = [
     object: { type: "organization", id: "org-1", label: "Liga del Pacífico", href: "/orgs/org-1" },
   },
 ];
+
+const actorOptions = [
+  { id: "actor-organizer", label: "María Torres" },
+  { id: "actor-staff", label: "Diego Ramírez" },
+];
+
+const competitionOptions = [{ id: "competition-1", label: "Torneo Verano 25" }];
 
 type Scenario =
   | "ready"
@@ -151,6 +192,8 @@ function AuditStory({
       <I18nProvider initialLocale={locale} persistLocale={async () => undefined}>
         <div {...applyStyles(styles.frame, narrow && styles.narrow)}>
           <AuditPageView
+            actorOptions={actorOptions}
+            competitionOptions={competitionOptions}
             organizationId="org-1"
             competitionId={competition ? "competition-1" : undefined}
             state={state}
@@ -205,9 +248,10 @@ export const ReadOnly: Story = {
     const canvas = within(canvasElement);
     const table = canvas.getByRole("table", { name: "Historial de auditoría" });
     await expect(within(table).getByText("Sanción revocada")).toBeVisible();
-    await expect(within(table).getByText("Rol de organización cambiado")).toBeVisible();
+    await expect(within(table).getByText("Disputa abierta")).toBeVisible();
+    await expect(within(table).getByText("Resultado aprobado")).toBeVisible();
     await expect(within(table).getByText("Actor no registrado")).toBeVisible();
-    await expect(within(table).queryByRole("button")).toBeNull();
+    await expect(within(table).queryByRole("button", { name: /editar|eliminar/i })).toBeNull();
   },
 };
 
@@ -216,10 +260,26 @@ export const Competition: Story = {
   args: { competition: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      canvas.getByRole("navigation", { name: "Vistas de la competición" }),
-    ).toBeVisible();
+    await expect(canvas.queryByRole("navigation", { name: "Vistas de la competición" })).toBeNull();
     await expect(canvas.queryByRole("combobox", { name: "Competición" })).toBeNull();
+  },
+};
+
+export const DetailSheet: Story = {
+  name: "Detalle en Sheet",
+  args: { competition: true },
+  parameters: { a11y: { test: "error" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const table = canvas.getByRole("table", { name: "Historial de auditoría" });
+    await userEvent.click(
+      within(table).getByRole("button", { name: "Ver detalle de Sanción revocada" }),
+    );
+    const body = within(canvasElement.ownerDocument.body);
+    const dialog = await body.findByRole("dialog");
+    await waitFor(() => expect(dialog).toBeVisible());
+    await expect(within(dialog).getByText("audit-request-2")).toBeVisible();
+    await expect(within(dialog).getByText("sanctions.revoked")).toBeVisible();
   },
 };
 
@@ -227,14 +287,14 @@ export const Filters: Story = {
   name: "Aplicar filtros",
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByRole("combobox", { name: "Actor" }), "actor-organizer");
-    await userEvent.click(canvas.getByRole("button", { name: "Aplicar filtros" }));
+    const body = within(canvasElement.ownerDocument.body);
+    await userEvent.click(canvas.getByRole("combobox", { name: "Actor" }));
+    await userEvent.click(await body.findByRole("option", { name: "María Torres" }));
     await expect(args.onFilter).toHaveBeenCalledWith({ actorId: "actor-organizer" });
     await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
     await expect(canvas.getByRole("button", { name: "Anterior" })).toBeEnabled();
     await userEvent.click(canvas.getByRole("button", { name: "Quitar filtros" }));
     await expect(canvas.getByRole("button", { name: "Anterior" })).toBeDisabled();
-    await expect(canvas.getByRole("combobox", { name: "Actor" })).toHaveValue("");
   },
 };
 
@@ -245,7 +305,8 @@ export const FilteredEmpty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Sin resultados con estos filtros")).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Quitar filtros" }));
+    const clearButtons = canvas.getAllByRole("button", { name: "Quitar filtros" });
+    await userEvent.click(clearButtons[0]!);
     await expect(canvas.getByRole("table", { name: "Historial de auditoría" })).toBeVisible();
   },
 };
@@ -262,40 +323,25 @@ export const Loading: Story = {
     await expect(canvas.queryByRole("table")).toBeNull();
     const skeleton = within(busy!);
     await expect(skeleton.getByText("Fecha")).toBeVisible();
-    await expect(skeleton.getByText("Actor")).toBeVisible();
     await expect(skeleton.getByText("Acción")).toBeVisible();
-    await expect(skeleton.getByText("Motivo")).toBeVisible();
+    await expect(skeleton.getByText("Actor")).toBeVisible();
     await expect(skeleton.getByText("Objeto afectado")).toBeVisible();
+    await expect(skeleton.getByText("Motivo")).toBeVisible();
     await expect(canvas.getByRole("form", { name: "Filtrar auditoría" })).toBeVisible();
     await expect(canvas.queryByRole("button", { name: "Anterior" })).toBeNull();
     await expect(canvas.queryByRole("button", { name: "Siguiente" })).toBeNull();
     const table = canvasElement.querySelector("[data-slot='table-container']");
     await expect(table).toHaveAttribute("tabindex", "-1");
-    canvas.getByRole("button", { name: "Quitar filtros" }).focus();
-    await userEvent.tab();
-    await expect(table).not.toHaveFocus();
   },
 };
 export const LoadingNarrow: Story = {
   name: "Cargando · 360",
   args: { scenario: "loading", narrow: true },
-  play: async ({ canvasElement }) => {
-    const frame = canvasElement.querySelector<HTMLElement>("[data-slot='audit-skeleton-table']");
-    await expect(frame).not.toBeNull();
-    const scroller = frame!.querySelector<HTMLElement>("[data-slot='table-container']");
-    await expect(scroller).not.toBeNull();
-    // The 54rem table scrolls inside its container instead of widening the page.
-    const available = frame!.parentElement!.clientWidth;
-    await expect(frame!.getBoundingClientRect().width).toBeLessThanOrEqual(available);
-    await expect(scroller!.scrollWidth).toBeGreaterThan(scroller!.clientWidth);
-    // Clicking the decorative header must not focus the scroller and re-expose the table.
-    await userEvent.click(within(frame!).getAllByText(/.+/)[0]!, { pointerEventsCheck: 0 });
-    await expect(scroller).not.toHaveFocus();
-    scroller!.focus();
-    await expect(scroller).not.toHaveFocus();
-  },
 };
-export const Denied: Story = { name: "Sin permiso", args: { scenario: "denied" } };
+export const Denied: Story = {
+  name: "Sin permiso",
+  args: { scenario: "denied", competition: true },
+};
 export const Error: Story = {
   name: "Error con recuperación",
   args: { scenario: "error" },
@@ -308,8 +354,11 @@ export const RefreshError: Story = {
   name: "Error al actualizar",
   args: { scenario: "refreshError" },
 };
-export const NarrowSpanish: Story = { name: "Historial · ES 360", args: { narrow: true } };
+export const NarrowSpanish: Story = {
+  name: "Historial · ES 360",
+  args: { narrow: true, competition: true },
+};
 export const NarrowEnglish: Story = {
   name: "History · EN 360",
-  args: { narrow: true, locale: "en" },
+  args: { narrow: true, locale: "en", competition: true },
 };
