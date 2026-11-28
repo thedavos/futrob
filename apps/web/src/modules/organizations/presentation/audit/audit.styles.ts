@@ -29,6 +29,19 @@ export const styles = stylex.create({
       [media.sm]: "16rem",
     },
   },
+  customActorField: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    width: {
+      default: "100%",
+      [media.sm]: "auto",
+    },
+    minWidth: {
+      default: 0,
+      [media.sm]: "18rem",
+    },
+  },
   selectContent: {
     maxHeight: "20rem",
     overflowY: "auto",

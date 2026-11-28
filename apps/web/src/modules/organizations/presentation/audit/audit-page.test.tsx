@@ -191,6 +191,28 @@ it.each([
   expect(within(table).getByText(label)).toBeTruthy();
 });
 
+it("filters by an exact actor ID that is neither a member nor on the current page", async () => {
+  const user = userEvent.setup();
+  const { onFilter } = show({ kind: "ready", data: { entries: [entry], nextCursor: null } });
+  await user.click(screen.getByRole("combobox", { name: "Actor" }));
+  await user.click(await screen.findByRole("option", { name: "Otro actor por ID…" }));
+  await user.type(screen.getByRole("textbox", { name: "ID del actor" }), " actor-former {Enter}");
+  expect(onFilter).toHaveBeenLastCalledWith({ actorId: "actor-former" });
+});
+
+it("offers competition-scoped permission changes in the competition audit action filter", async () => {
+  const user = userEvent.setup();
+  const { onFilter } = show(
+    { kind: "ready", data: { entries: [entry], nextCursor: null } },
+    { competitionId: "competition-1" },
+  );
+  await user.click(screen.getByRole("combobox", { name: "Acción" }));
+  const granted = await screen.findByRole("option", { name: "Permiso concedido" });
+  expect(screen.queryByRole("option", { name: "Rol de organización cambiado" })).toBeNull();
+  await user.click(granted);
+  expect(onFilter).toHaveBeenLastCalledWith({ action: "authorization.grant.created" });
+});
+
 it("rejects a reversed date range inside the date popover before applying filters", async () => {
   const user = userEvent.setup();
   const { onFilter } = show({ kind: "ready", data: { entries: [entry], nextCursor: null } });
@@ -271,7 +293,10 @@ it("announces a filter refetch on the same live region outside the busy skeleton
   expect(within(table).getByText("María Torres")).toBeTruthy();
 });
 
-function serveAudit() {
+function serveAudit(options?: {
+  readonly deniedCompetitionId?: string;
+  readonly seed?: (client: QueryClient) => void;
+}) {
   const calls: URL[] = [];
   let denied = false;
   vi.stubGlobal(
@@ -293,7 +318,11 @@ function serveAudit() {
         });
       if (url.pathname === "/api/v1/organizations/org-1/audit") {
         calls.push(url);
-        if (denied)
+        if (
+          denied ||
+          (options?.deniedCompetitionId &&
+            url.searchParams.get("competitionId") === options.deniedCompetitionId)
+        )
           return Response.json(
             { code: "authorization.forbidden", messageKey: "errors.authorization.forbidden" },
             { status: 403 },
@@ -309,7 +338,10 @@ function serveAudit() {
       );
     }),
   );
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
+  });
+  options?.seed?.(client);
   render(
     <QueryClientProvider client={client}>
       <I18nProvider initialLocale="es">
@@ -325,6 +357,47 @@ function serveAudit() {
     },
   };
 }
+
+it("lets the reader leave a competition filter whose audit is denied and reloads the global history", async () => {
+  const user = userEvent.setup();
+  const { calls } = serveAudit({
+    deniedCompetitionId: "competition-2",
+    seed: (client) =>
+      client.setQueryData(queryKeys.competitions.byOrganization("org-1"), {
+        competitions: [{ id: "competition-2", name: "Copa Invierno" }],
+      }),
+  });
+  await screen.findByRole("table", { name: "Historial de auditoría" });
+  await user.click(screen.getByRole("combobox", { name: "Competición" }));
+  await user.click(await screen.findByRole("option", { name: "Copa Invierno" }));
+  expect(await screen.findByText("Sin acceso a esta competición")).toBeTruthy();
+  expect(screen.getByRole("form", { name: "Filtrar auditoría" })).toBeTruthy();
+  const deniedCalls = calls.length;
+  await user.click(screen.getByRole("button", { name: "Ver todas las competiciones" }));
+  await screen.findByRole("table", { name: "Historial de auditoría" });
+  expect(screen.getByRole("combobox", { name: "Competición" })).toHaveTextContent(
+    "Todas las competiciones",
+  );
+  expect(screen.getByRole("button", { name: "Anterior" })).toBeDisabled();
+  expect(calls.slice(deniedCalls).some((call) => call.searchParams.has("competitionId"))).toBe(
+    false,
+  );
+});
+
+it("does not offer cached member data once membership read access is gone", async () => {
+  const user = userEvent.setup();
+  serveAudit({
+    seed: (client) =>
+      client.setQueryData(queryKeys.organizations.members("org-1"), {
+        kind: "data",
+        members: [{ actorId: "actor-hidden", displayName: null, email: "ana@club.test" }],
+      }),
+  });
+  await screen.findByRole("table", { name: "Historial de auditoría" });
+  await user.click(screen.getByRole("combobox", { name: "Actor" }));
+  expect(await screen.findByRole("option", { name: "María Torres" })).toBeTruthy();
+  expect(screen.queryByRole("option", { name: "ana@club.test" })).toBeNull();
+});
 
 it("keeps applied filters on the next page and resets pagination when filters change", async () => {
   const user = userEvent.setup();

@@ -43,6 +43,7 @@ import { styles } from "./audit.styles.ts";
 export type AuditPageState =
   | { readonly kind: "loading" }
   | { readonly kind: "denied" }
+  | { readonly kind: "competitionDenied" }
   | { readonly kind: "error"; readonly retry: () => void }
   | {
       readonly kind: "ready";
@@ -80,7 +81,7 @@ export function AuditPageRoute(scope: Scope) {
   );
 
   const actorOptions: readonly AuditFilterOption[] =
-    membersQuery.data?.kind === "data"
+    membershipsAccess.allowed && membersQuery.data?.kind === "data"
       ? membersQuery.data.members.map((member) => ({
           id: member.actorId,
           label: member.displayName ?? member.email ?? member.actorId,
@@ -100,17 +101,21 @@ export function AuditPageRoute(scope: Scope) {
     ? { kind: "loading" }
     : access.unavailable
       ? { kind: "error", retry: retryAccess }
-      : !access.allowed || isAuditRefusal(query.error)
+      : !access.allowed
         ? { kind: "denied" }
-        : query.data
-          ? {
-              kind: "ready",
-              data: query.data,
-              refreshError: query.isError ? () => void query.refetch() : undefined,
-            }
-          : query.isError
-            ? { kind: "error", retry: () => void query.refetch() }
-            : { kind: "loading" };
+        : isAuditRefusal(query.error)
+          ? !scope.competitionId && filters.competitionId
+            ? { kind: "competitionDenied" }
+            : { kind: "denied" }
+          : query.data
+            ? {
+                kind: "ready",
+                data: query.data,
+                refreshError: query.isError ? () => void query.refetch() : undefined,
+              }
+            : query.isError
+              ? { kind: "error", retry: () => void query.refetch() }
+              : { kind: "loading" };
 
   return (
     <AuditPageView
@@ -207,6 +212,28 @@ export function AuditPageView({
                     ? "audit.denied.backToCompetition"
                     : "audit.denied.backToOrganization",
                 )}
+              </Button>
+            </EmptyStateActions>
+          </EmptyState>
+        ) : null}
+        {state.kind === "competitionDenied" ? (
+          <EmptyState>
+            <EmptyStateIcon>
+              <img alt="" data-outline="none" src={accessUrl} />
+            </EmptyStateIcon>
+            <EmptyStateCopy>
+              <EmptyStateTitle>{t("audit.competitionDenied.title")}</EmptyStateTitle>
+              <EmptyStateDescription>
+                {t("audit.competitionDenied.description")}
+              </EmptyStateDescription>
+            </EmptyStateCopy>
+            <EmptyStateActions>
+              <Button
+                onClick={() => onFilter({ ...filters, competitionId: undefined })}
+                type="button"
+                variant="outline"
+              >
+                {t("audit.competitionDenied.showAll")}
               </Button>
             </EmptyStateActions>
           </EmptyState>

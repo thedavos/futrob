@@ -27,6 +27,7 @@ export type AuditActionCategory =
   | "competition"
   | "scheduling"
   | "teams"
+  | "permissions"
   | "organization";
 
 type AuditActionMeta = {
@@ -211,17 +212,17 @@ const ACTION_CATALOG = {
   },
   "authorization.grant.created": {
     labelKey: "audit.action.permissionGranted",
-    category: "organization",
+    category: "permissions",
     variant: "neutral",
   },
   "authorization.grant.updated": {
     labelKey: "audit.action.permissionChanged",
-    category: "organization",
+    category: "permissions",
     variant: "neutral",
   },
   "authorization.grant.deleted": {
     labelKey: "audit.action.permissionRevoked",
-    category: "organization",
+    category: "permissions",
     variant: "destructive",
     icon: WarningCircleIcon,
   },
@@ -264,6 +265,7 @@ const CATEGORY_ORDER: readonly AuditActionCategory[] = [
   "competition",
   "scheduling",
   "teams",
+  "permissions",
   "organization",
 ];
 
@@ -273,6 +275,7 @@ const COMPETITION_CATEGORIES: readonly AuditActionCategory[] = [
   "competition",
   "scheduling",
   "teams",
+  "permissions",
 ];
 
 const CATEGORY_LABEL_KEY = {
@@ -281,6 +284,7 @@ const CATEGORY_LABEL_KEY = {
   competition: "audit.category.competition",
   scheduling: "audit.category.scheduling",
   teams: "audit.category.teams",
+  permissions: "audit.category.permissions",
   organization: "audit.category.organization",
 } as const satisfies Record<AuditActionCategory, ParameterlessMessageKey>;
 
