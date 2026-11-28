@@ -36,7 +36,7 @@ import {
   type AuditFilters,
 } from "./audit-filters.tsx";
 import { AuditLoadingSkeleton } from "./audit-loading.tsx";
-import { isAuditRefusal, useOrganizationAuditQuery } from "./audit-queries.ts";
+import { isAuditForbidden, isAuditRefusal, useOrganizationAuditQuery } from "./audit-queries.ts";
 import { AuditTable } from "./audit-table.tsx";
 import { styles } from "./audit.styles.ts";
 
@@ -104,7 +104,7 @@ export function AuditPageRoute(scope: Scope) {
       : !access.allowed
         ? { kind: "denied" }
         : isAuditRefusal(query.error)
-          ? !scope.competitionId && filters.competitionId
+          ? !scope.competitionId && filters.competitionId && isAuditForbidden(query.error)
             ? { kind: "competitionDenied" }
             : { kind: "denied" }
           : query.data

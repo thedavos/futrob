@@ -200,6 +200,24 @@ it("filters by an exact actor ID that is neither a member nor on the current pag
   expect(onFilter).toHaveBeenLastCalledWith({ actorId: "actor-former" });
 });
 
+it("keeps the actor ID editor open with a field error when the ID exceeds the contract limit", async () => {
+  const user = userEvent.setup();
+  const { onFilter } = show({ kind: "ready", data: { entries: [entry], nextCursor: null } });
+  await user.click(screen.getByRole("combobox", { name: "Actor" }));
+  await user.click(await screen.findByRole("option", { name: "Otro actor por ID…" }));
+  const input = screen.getByRole("textbox", { name: "ID del actor" });
+  await user.click(input);
+  await user.paste("a".repeat(201));
+  await user.keyboard("{Enter}");
+  expect(onFilter).not.toHaveBeenCalled();
+  expect(input).toHaveAttribute("aria-invalid", "true");
+  expect(screen.getByText("El ID del actor admite hasta 200 caracteres.")).toBeTruthy();
+  await user.clear(input);
+  await user.paste("a".repeat(200));
+  await user.keyboard("{Enter}");
+  expect(onFilter).toHaveBeenLastCalledWith({ actorId: "a".repeat(200) });
+});
+
 it("offers competition-scoped permission changes in the competition audit action filter", async () => {
   const user = userEvent.setup();
   const { onFilter } = show(
@@ -295,6 +313,7 @@ it("announces a filter refetch on the same live region outside the busy skeleton
 
 function serveAudit(options?: {
   readonly deniedCompetitionId?: string;
+  readonly deniedStatus?: number;
   readonly seed?: (client: QueryClient) => void;
 }) {
   const calls: URL[] = [];
@@ -325,7 +344,7 @@ function serveAudit(options?: {
         )
           return Response.json(
             { code: "authorization.forbidden", messageKey: "errors.authorization.forbidden" },
-            { status: 403 },
+            { status: denied ? 403 : (options?.deniedStatus ?? 403) },
           );
         return Response.json({
           entries: [{ ...entry, id: url.searchParams.get("cursor") ?? "first" }],
@@ -382,6 +401,23 @@ it("lets the reader leave a competition filter whose audit is denied and reloads
   expect(calls.slice(deniedCalls).some((call) => call.searchParams.has("competitionId"))).toBe(
     false,
   );
+});
+
+it("treats an expired session on a competition filter as a general denial, not a competition one", async () => {
+  const user = userEvent.setup();
+  serveAudit({
+    deniedCompetitionId: "competition-2",
+    deniedStatus: 401,
+    seed: (client) =>
+      client.setQueryData(queryKeys.competitions.byOrganization("org-1"), {
+        competitions: [{ id: "competition-2", name: "Copa Invierno" }],
+      }),
+  });
+  await screen.findByRole("table", { name: "Historial de auditoría" });
+  await user.click(screen.getByRole("combobox", { name: "Competición" }));
+  await user.click(await screen.findByRole("option", { name: "Copa Invierno" }));
+  expect(await screen.findByText("Auditoría no disponible")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Ver todas las competiciones" })).toBeNull();
 });
 
 it("does not offer cached member data once membership read access is gone", async () => {

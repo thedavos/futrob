@@ -92,6 +92,7 @@ const es = {
   "audit.filter.actorIdInput": "ID del actor",
   "audit.filter.actorIdPlaceholder": "Pega el ID del actor",
   "audit.filter.applyActorId": "Filtrar",
+  "audit.filter.actorIdTooLong": ({ max }) => `El ID del actor admite hasta ${max} caracteres.`,
   "audit.filter.dates": "Fechas",
   "audit.filter.presetToday": "Hoy",
   "audit.filter.presetLast7": "Últimos 7 días",
@@ -3763,6 +3764,7 @@ export interface MessageParamsByKey {
   readonly "audit.filter.dateRangeSummary": { readonly from: string; readonly to: string };
   readonly "audit.filter.dateFromSummary": { readonly from: string };
   readonly "audit.filter.dateToSummary": { readonly to: string };
+  readonly "audit.filter.actorIdTooLong": { readonly max: number };
   readonly "bracket.rounds.other": { readonly count: number };
   readonly "bracket.encounters.other": { readonly count: number };
   readonly "bracket.byes.other": { readonly count: number };
@@ -4377,6 +4379,7 @@ const en: Catalog = {
   "audit.filter.actorIdInput": "Actor ID",
   "audit.filter.actorIdPlaceholder": "Paste the actor ID",
   "audit.filter.applyActorId": "Filter",
+  "audit.filter.actorIdTooLong": ({ max }) => `The actor ID can have up to ${max} characters.`,
   "audit.filter.dates": "Dates",
   "audit.filter.presetToday": "Today",
   "audit.filter.presetLast7": "Last 7 days",

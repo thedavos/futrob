@@ -19,6 +19,10 @@ export function isAuditRefusal(error: Error | null): boolean {
   );
 }
 
+export function isAuditForbidden(error: Error | null): boolean {
+  return error instanceof FutrobApiError && error.status === 403;
+}
+
 export function useOrganizationAuditQuery(
   organizationId: string,
   query: ListOrganizationAuditQuery,

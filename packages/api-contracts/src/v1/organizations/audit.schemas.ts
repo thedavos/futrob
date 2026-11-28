@@ -22,10 +22,12 @@ export const organizationAuditEntrySchema = z.object({
 });
 export type OrganizationAuditEntryDto = z.infer<typeof organizationAuditEntrySchema>;
 
+export const AUDIT_ACTOR_ID_MAX_LENGTH = 200;
+
 export const listOrganizationAuditQuerySchema = z
   .object({
     competitionId: z.string().trim().min(1).max(200).optional(),
-    actorId: z.string().trim().min(1).max(200).optional(),
+    actorId: z.string().trim().min(1).max(AUDIT_ACTOR_ID_MAX_LENGTH).optional(),
     action: z.string().trim().min(1).max(100).optional(),
     from: z.string().datetime({ offset: true }).optional(),
     to: z.string().datetime({ offset: true }).optional(),

@@ -2,10 +2,16 @@
 
 import { useState } from "react";
 import { XIcon } from "@phosphor-icons/react";
-import type { ListOrganizationAuditQuery, OrganizationAuditEntryDto } from "@futrob/api-contracts";
+import {
+  AUDIT_ACTOR_ID_MAX_LENGTH,
+  type ListOrganizationAuditQuery,
+  type OrganizationAuditEntryDto,
+} from "@futrob/api-contracts";
 import {
   applyStyles,
   Button,
+  Field,
+  FieldError,
   Input,
   Select,
   SelectContent,
@@ -62,6 +68,7 @@ export function AuditFilterForm({
   const { t } = useI18n();
   const [customActorOpen, setCustomActorOpen] = useState(false);
   const [draftActorId, setDraftActorId] = useState("");
+  const [actorIdTooLong, setActorIdTooLong] = useState(false);
 
   const actorMap = new Map<string, string>();
   for (const option of actorOptions) {
@@ -117,6 +124,11 @@ export function AuditFilterForm({
   function applyCustomActor() {
     const actorId = draftActorId.trim();
     if (!actorId) return;
+    if (actorId.length > AUDIT_ACTOR_ID_MAX_LENGTH) {
+      setActorIdTooLong(true);
+      return;
+    }
+    setActorIdTooLong(false);
     setCustomActorOpen(false);
     setDraftActorId("");
     onApply({ ...filters, actorId });
@@ -189,6 +201,7 @@ export function AuditFilterForm({
           onValueChange={(value) => {
             if (value === CUSTOM_ACTOR_VALUE) {
               setDraftActorId(filters.actorId ?? "");
+              setActorIdTooLong(false);
               setCustomActorOpen(true);
               return;
             }
@@ -213,21 +226,32 @@ export function AuditFilterForm({
 
       {customActorOpen ? (
         <div {...applyStyles(styles.customActorField)}>
-          <Input
-            aria-label={t("audit.filter.actorIdInput")}
-            dense
-            name="actorId"
-            onChange={(event) => setDraftActorId(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                applyCustomActor();
-              }
-              if (event.key === "Escape") setCustomActorOpen(false);
-            }}
-            placeholder={t("audit.filter.actorIdPlaceholder")}
-            value={draftActorId}
-          />
+          <Field invalid={actorIdTooLong}>
+            <Input
+              aria-invalid={actorIdTooLong}
+              aria-label={t("audit.filter.actorIdInput")}
+              dense
+              name="actorId"
+              onChange={(event) => {
+                setDraftActorId(event.target.value);
+                setActorIdTooLong(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  applyCustomActor();
+                }
+                if (event.key === "Escape") setCustomActorOpen(false);
+              }}
+              placeholder={t("audit.filter.actorIdPlaceholder")}
+              value={draftActorId}
+            />
+            {actorIdTooLong ? (
+              <FieldError match>
+                {t("audit.filter.actorIdTooLong", { max: AUDIT_ACTOR_ID_MAX_LENGTH })}
+              </FieldError>
+            ) : null}
+          </Field>
           <Button
             dense
             disabled={!draftActorId.trim()}

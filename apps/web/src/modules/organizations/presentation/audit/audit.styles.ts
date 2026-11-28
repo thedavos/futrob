@@ -31,7 +31,7 @@ export const styles = stylex.create({
   },
   customActorField: {
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: "0.5rem",
     width: {
       default: "100%",
