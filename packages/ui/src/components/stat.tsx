@@ -34,6 +34,9 @@ const styles = stylex.create({
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
+    // Room for descenders (g, p, y) that overflow clips at line-height 1, without changing layout.
+    paddingBlockEnd: "0.125em",
+    marginBlockEnd: "-0.125em",
   },
   sizeCompact: {
     fontSize: "var(--text-xl)",
