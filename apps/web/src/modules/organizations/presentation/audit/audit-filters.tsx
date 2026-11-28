@@ -1,24 +1,44 @@
 "use client";
 
-import { useId, useState } from "react";
-import type { ListOrganizationAuditQuery, OrganizationAuditEntryDto } from "@futrob/api-contracts";
+import { useState } from "react";
+import { XIcon } from "@phosphor-icons/react";
+import {
+  AUDIT_ACTOR_ID_MAX_LENGTH,
+  type ListOrganizationAuditQuery,
+  type OrganizationAuditEntryDto,
+} from "@futrob/api-contracts";
 import {
   applyStyles,
   Button,
   Field,
   FieldError,
-  FieldLabel,
   Input,
-  readFormString,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
 } from "@futrob/ui";
 import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
-import { auditActionLabel } from "./audit-labels.ts";
+import { auditActionGroups, auditActionLabel } from "./audit-labels.ts";
+import { AuditDateFilter } from "./audit-date-filter.tsx";
 import { styles } from "./audit.styles.ts";
 
 export type AuditFilters = Pick<
   ListOrganizationAuditQuery,
   "competitionId" | "actorId" | "action" | "from" | "to"
 >;
+
+export type AuditFilterOption = {
+  readonly id: string;
+  readonly label: string;
+};
+
+const ALL_VALUE = "__all__";
+const CUSTOM_ACTOR_VALUE = "__custom_actor__";
 
 export function hasAuditFilters(filters: AuditFilters, competitionId?: string): boolean {
   return Boolean(
@@ -34,129 +54,232 @@ export function AuditFilterForm({
   filters,
   competitionId,
   entries,
+  actorOptions = [],
+  competitionOptions = [],
   onApply,
 }: {
   readonly filters: AuditFilters;
   readonly competitionId?: string;
   readonly entries: readonly OrganizationAuditEntryDto[];
+  readonly actorOptions?: readonly AuditFilterOption[];
+  readonly competitionOptions?: readonly AuditFilterOption[];
   readonly onApply: (filters: AuditFilters) => void;
 }) {
   const { t } = useI18n();
-  const id = useId();
-  const [error, setError] = useState(false);
-  const actors = new Map(
-    entries.flatMap((entry) =>
-      entry.actorId ? [[entry.actorId, entry.actorName ?? entry.actorId] as const] : [],
-    ),
-  );
-  const competitions = [
-    ...new Set(entries.flatMap((entry) => (entry.competitionId ? [entry.competitionId] : []))),
+  const [customActorOpen, setCustomActorOpen] = useState(false);
+  const [draftActorId, setDraftActorId] = useState("");
+  const [actorIdTooLong, setActorIdTooLong] = useState(false);
+
+  const actorMap = new Map<string, string>();
+  for (const option of actorOptions) {
+    actorMap.set(option.id, option.label);
+  }
+  for (const entry of entries) {
+    if (entry.actorId && !actorMap.has(entry.actorId)) {
+      actorMap.set(entry.actorId, entry.actorName ?? entry.actorId);
+    }
+  }
+  if (filters.actorId && !actorMap.has(filters.actorId)) {
+    actorMap.set(filters.actorId, filters.actorId);
+  }
+
+  const competitionMap = new Map<string, string>();
+  for (const option of competitionOptions) {
+    competitionMap.set(option.id, option.label);
+  }
+  for (const entry of entries) {
+    if (entry.competitionId && !competitionMap.has(entry.competitionId)) {
+      competitionMap.set(entry.competitionId, entry.competitionId);
+    }
+  }
+  if (!competitionId && filters.competitionId && !competitionMap.has(filters.competitionId)) {
+    competitionMap.set(filters.competitionId, filters.competitionId);
+  }
+
+  const extraActions = [
+    ...entries.map((entry) => entry.action),
+    ...(filters.action ? [filters.action] : []),
   ];
-  const actions = [...new Set(entries.map((entry) => entry.action))];
+  const actionGroups = auditActionGroups(t, {
+    competitionScoped: Boolean(competitionId),
+    extraActions,
+  });
+
+  const actionSelectItems = [
+    { value: ALL_VALUE, label: t("audit.filter.allActions") },
+    ...actionGroups.flatMap((group) => group.items),
+  ];
+  const actorSelectItems = [
+    { value: ALL_VALUE, label: t("audit.filter.allActors") },
+    ...[...actorMap].map(([value, label]) => ({ value, label })),
+    { value: CUSTOM_ACTOR_VALUE, label: t("audit.filter.actorById") },
+  ];
+  const competitionSelectItems = [
+    { value: ALL_VALUE, label: t("audit.filter.allCompetitions") },
+    ...[...competitionMap].map(([value, label]) => ({ value, label })),
+  ];
+
+  const active = hasAuditFilters(filters, competitionId);
+
+  function applyCustomActor() {
+    const actorId = draftActorId.trim();
+    if (!actorId) return;
+    if (actorId.length > AUDIT_ACTOR_ID_MAX_LENGTH) {
+      setActorIdTooLong(true);
+      return;
+    }
+    setActorIdTooLong(false);
+    setCustomActorOpen(false);
+    setDraftActorId("");
+    onApply({ ...filters, actorId });
+  }
+
   return (
     <form
       aria-label={t("audit.filter.label")}
-      {...applyStyles(styles.filters)}
-      onSubmit={(event) => {
-        event.preventDefault();
-        const form = new FormData(event.currentTarget);
-        const value = (name: string) => readFormString(form.get(name)).trim();
-        const from = value("from");
-        const to = value("to");
-        if (from && to && from > to) {
-          setError(true);
-          return;
-        }
-        setError(false);
-        onApply({
-          competitionId: competitionId ? undefined : value("competitionId") || undefined,
-          actorId: value("actorId") || undefined,
-          action: value("action") || undefined,
-          from: from ? `${from}T00:00:00.000Z` : undefined,
-          to: to ? `${to}T23:59:59.999Z` : undefined,
-        });
-      }}
+      onSubmit={(event) => event.preventDefault()}
+      {...applyStyles(styles.toolbar)}
     >
       {!competitionId ? (
-        <Field>
-          <FieldLabel htmlFor={`${id}-competition`}>{t("audit.filter.competition")}</FieldLabel>
-          <Input
-            id={`${id}-competition`}
-            name="competitionId"
-            defaultValue={filters.competitionId ?? ""}
-            list={`${id}-competitions`}
-            maxLength={200}
-          />
-          <datalist id={`${id}-competitions`}>
-            {competitions.map((value) => (
-              <option key={value} value={value} />
-            ))}
-          </datalist>
-        </Field>
+        <div {...applyStyles(styles.selectField)}>
+          <Select
+            items={competitionSelectItems}
+            onValueChange={(value) => {
+              const nextCompetition = !value || value === ALL_VALUE ? undefined : value;
+              onApply({ ...filters, competitionId: nextCompetition });
+            }}
+            value={filters.competitionId ?? ALL_VALUE}
+          >
+            <SelectTrigger aria-label={t("audit.filter.competition")} dense>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className={styles.selectContent}>
+              {competitionSelectItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       ) : null}
-      <Field>
-        <FieldLabel htmlFor={`${id}-actor`}>{t("audit.filter.actor")}</FieldLabel>
-        <Input
-          id={`${id}-actor`}
-          name="actorId"
-          defaultValue={filters.actorId ?? ""}
-          list={`${id}-actors`}
-          maxLength={200}
-        />
-        <datalist id={`${id}-actors`}>
-          {[...actors].map(([value, label]) => (
-            <option key={value} value={value} label={label} />
-          ))}
-        </datalist>
-      </Field>
-      <Field>
-        <FieldLabel htmlFor={`${id}-action`}>{t("audit.filter.action")}</FieldLabel>
-        <Input
-          id={`${id}-action`}
-          name="action"
-          defaultValue={filters.action ?? ""}
-          list={`${id}-actions`}
-          maxLength={100}
-        />
-        <datalist id={`${id}-actions`}>
-          {actions.map((value) => (
-            <option key={value} value={value} label={auditActionLabel(value, t)} />
-          ))}
-        </datalist>
-      </Field>
-      <Field>
-        <FieldLabel htmlFor={`${id}-from`}>{t("audit.filter.from")}</FieldLabel>
-        <Input
-          id={`${id}-from`}
-          name="from"
-          type="date"
-          defaultValue={filters.from?.slice(0, 10) ?? ""}
-        />
-      </Field>
-      <Field invalid={error}>
-        <FieldLabel htmlFor={`${id}-to`}>{t("audit.filter.to")}</FieldLabel>
-        <Input
-          id={`${id}-to`}
-          name="to"
-          type="date"
-          defaultValue={filters.to?.slice(0, 10) ?? ""}
-          aria-invalid={error}
-        />
-        {error ? <FieldError match>{t("audit.filter.rangeError")}</FieldError> : null}
-      </Field>
-      <div {...applyStyles(styles.filterActions)}>
-        <Button type="submit">{t("audit.filter.apply")}</Button>
+
+      <div {...applyStyles(styles.selectField)}>
+        <Select
+          items={actionSelectItems}
+          onValueChange={(value) => {
+            const nextAction = !value || value === ALL_VALUE ? undefined : value;
+            onApply({ ...filters, action: nextAction });
+          }}
+          value={filters.action ?? ALL_VALUE}
+        >
+          <SelectTrigger aria-label={t("audit.filter.action")} dense>
+            <SelectValue>
+              {filters.action ? auditActionLabel(filters.action, t) : t("audit.filter.allActions")}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className={styles.selectContent}>
+            <SelectItem value={ALL_VALUE}>{t("audit.filter.allActions")}</SelectItem>
+            {actionGroups.map((group) => (
+              <SelectGroup key={group.category}>
+                <SelectSeparator />
+                <SelectLabel>{group.label}</SelectLabel>
+                {group.items.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div {...applyStyles(styles.selectField)}>
+        <Select
+          items={actorSelectItems}
+          onValueChange={(value) => {
+            if (value === CUSTOM_ACTOR_VALUE) {
+              setDraftActorId(filters.actorId ?? "");
+              setActorIdTooLong(false);
+              setCustomActorOpen(true);
+              return;
+            }
+            setCustomActorOpen(false);
+            const nextActor = !value || value === ALL_VALUE ? undefined : value;
+            onApply({ ...filters, actorId: nextActor });
+          }}
+          value={filters.actorId ?? ALL_VALUE}
+        >
+          <SelectTrigger aria-label={t("audit.filter.actor")} dense>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className={styles.selectContent}>
+            {actorSelectItems.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {customActorOpen ? (
+        <div {...applyStyles(styles.customActorField)}>
+          <Field invalid={actorIdTooLong}>
+            <Input
+              aria-invalid={actorIdTooLong}
+              aria-label={t("audit.filter.actorIdInput")}
+              dense
+              name="actorId"
+              onChange={(event) => {
+                setDraftActorId(event.target.value);
+                setActorIdTooLong(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  applyCustomActor();
+                }
+                if (event.key === "Escape") setCustomActorOpen(false);
+              }}
+              placeholder={t("audit.filter.actorIdPlaceholder")}
+              value={draftActorId}
+            />
+            {actorIdTooLong ? (
+              <FieldError match>
+                {t("audit.filter.actorIdTooLong", { max: AUDIT_ACTOR_ID_MAX_LENGTH })}
+              </FieldError>
+            ) : null}
+          </Field>
+          <Button
+            dense
+            disabled={!draftActorId.trim()}
+            onClick={applyCustomActor}
+            type="button"
+            variant="secondary"
+          >
+            {t("audit.filter.applyActorId")}
+          </Button>
+        </div>
+      ) : null}
+
+      <AuditDateFilter filters={filters} onApply={onApply} />
+
+      {active ? (
         <Button
-          type="reset"
-          variant="outline"
+          dense
           onClick={() => {
-            setError(false);
+            setCustomActorOpen(false);
             onApply({});
           }}
+          type="button"
+          variant="ghost"
         >
+          <XIcon aria-hidden="true" size={14} />
           {t("audit.filter.clear")}
         </Button>
-      </div>
+      ) : null}
     </form>
   );
 }

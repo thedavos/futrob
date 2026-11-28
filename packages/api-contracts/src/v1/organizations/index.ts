@@ -57,6 +57,7 @@ export {
   type RedeemPolicyDto,
 } from "./schemas.ts";
 export {
+  AUDIT_ACTOR_ID_MAX_LENGTH,
   organizationAuditEntrySchema,
   listOrganizationAuditQuerySchema,
   listOrganizationAuditResponseSchema,
