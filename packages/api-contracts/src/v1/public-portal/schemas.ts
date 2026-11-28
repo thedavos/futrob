@@ -79,8 +79,9 @@ export const getPublicStandingsResponseSchema = z.strictObject({
     /**
      * League places that reach the playoffs, from the active fixture. Null when the format has no
      * league-to-playoffs cut (groups are ranked per group) or once a playoffs result is in the table.
+     * Defaults to null so a reader keeps working against an API that predates the field.
      */
-    qualifyingSpots: z.number().int().positive().nullable(),
+    qualifyingSpots: z.number().int().positive().nullable().default(null),
     /** Null until the first approved result is projected. */
     updatedAt: z.string().datetime().nullable(),
   }),
@@ -186,8 +187,11 @@ export const publicBracketEncounterSchema = z.strictObject({
   away: publicBracketSideSchema,
   status: z.enum(["scheduled", "awaiting_result", "official", "closed"]),
   score: publicScoreSchema,
-  /** Side the official result sends through under the series rules; null while pending or tied. */
-  winner: z.enum(["home", "away"]).nullable(),
+  /**
+   * Side the official result sends through under the series rules; null while pending or tied.
+   * Defaults to null so a reader keeps working against an API that predates the field.
+   */
+  winner: z.enum(["home", "away"]).nullable().default(null),
 });
 export type PublicBracketEncounterDto = z.infer<typeof publicBracketEncounterSchema>;
 

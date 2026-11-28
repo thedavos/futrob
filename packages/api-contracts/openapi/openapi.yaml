@@ -17823,6 +17823,7 @@ components:
                                   - home
                                   - away
                                   - null
+                                default: null
                             required:
                               - order
                               - scheduledStartAt
@@ -17831,7 +17832,6 @@ components:
                               - away
                               - status
                               - score
-                              - winner
                             additionalProperties: false
                       required:
                         - number
@@ -18263,6 +18263,7 @@ components:
                 - integer
                 - "null"
               exclusiveMinimum: 0
+              default: null
             updatedAt:
               type:
                 - string
@@ -18271,7 +18272,6 @@ components:
           required:
             - rows
             - swiss
-            - qualifyingSpots
             - updatedAt
           additionalProperties: false
       required:
@@ -24199,6 +24199,7 @@ components:
             - home
             - away
             - null
+          default: null
       required:
         - order
         - scheduledStartAt
@@ -24207,7 +24208,6 @@ components:
         - away
         - status
         - score
-        - winner
       additionalProperties: false
     PublicBracketSide:
       oneOf:
@@ -24518,6 +24518,7 @@ components:
                         - home
                         - away
                         - null
+                      default: null
                   required:
                     - order
                     - scheduledStartAt
@@ -24526,7 +24527,6 @@ components:
                     - away
                     - status
                     - score
-                    - winner
                   additionalProperties: false
             required:
               - number

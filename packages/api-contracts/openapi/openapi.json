@@ -26353,7 +26353,8 @@
                                     "home",
                                     "away",
                                     null
-                                  ]
+                                  ],
+                                  "default": null
                                 }
                               },
                               "required": [
@@ -26363,8 +26364,7 @@
                                 "home",
                                 "away",
                                 "status",
-                                "score",
-                                "winner"
+                                "score"
                               ],
                               "additionalProperties": false
                             }
@@ -26964,7 +26964,8 @@
                   "integer",
                   "null"
                 ],
-                "exclusiveMinimum": 0
+                "exclusiveMinimum": 0,
+                "default": null
               },
               "updatedAt": {
                 "type": [
@@ -26977,7 +26978,6 @@
             "required": [
               "rows",
               "swiss",
-              "qualifyingSpots",
               "updatedAt"
             ],
             "additionalProperties": false
@@ -35249,7 +35249,8 @@
               "home",
               "away",
               null
-            ]
+            ],
+            "default": null
           }
         },
         "required": [
@@ -35259,8 +35260,7 @@
           "home",
           "away",
           "status",
-          "score",
-          "winner"
+          "score"
         ],
         "additionalProperties": false
       },
@@ -35729,7 +35729,8 @@
                           "home",
                           "away",
                           null
-                        ]
+                        ],
+                        "default": null
                       }
                     },
                     "required": [
@@ -35739,8 +35740,7 @@
                       "home",
                       "away",
                       "status",
-                      "score",
-                      "winner"
+                      "score"
                     ],
                     "additionalProperties": false
                   }

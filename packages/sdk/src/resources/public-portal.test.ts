@@ -65,6 +65,60 @@ describe("public portal SDK resource", () => {
     );
   });
 
+  it("reads standings and a bracket from an API with or without the fixture outcome fields", async () => {
+    const encounter = {
+      order: 1,
+      scheduledStartAt: "2026-11-08T20:00:00.000Z",
+      officialMatchCount: 2,
+      home: { kind: "team", name: "Barranco FC" },
+      away: { kind: "team", name: "Surquillo United" },
+      status: "official",
+      score: [
+        { homeGoals: 3, awayGoals: 0 },
+        { homeGoals: 0, awayGoals: 1 },
+      ],
+    };
+    const bracketOf = (value: object) => ({
+      bracket: {
+        timeZone: "UTC",
+        stages: [
+          {
+            kind: "knockout",
+            rounds: [
+              { number: 1, scheduledStartAt: encounter.scheduledStartAt, encounters: [value] },
+            ],
+          },
+        ],
+      },
+    });
+    const clientAnswering = (standings: object, bracket: object) =>
+      createFutrobClient({
+        baseUrl: "https://app.example.com/api/v1",
+        fetchImpl: mockFetch(async (input) =>
+          Response.json(requestUrl(input).endsWith("/bracket") ? bracket : { standings }),
+        ),
+      });
+    const table = { rows: [], swiss: null, updatedAt: null };
+
+    // An API deployed before the fields existed: they read as null.
+    const previous = clientAnswering(table, bracketOf(encounter));
+    expect((await previous.publicPortal.getStandings(REF)).standings.qualifyingSpots).toBeNull();
+    expect(
+      (await previous.publicPortal.getBracket(REF)).bracket?.stages[0]?.rounds[0]?.encounters[0]
+        ?.winner,
+    ).toBeNull();
+
+    const current = clientAnswering(
+      { ...table, qualifyingSpots: 2 },
+      bracketOf({ ...encounter, winner: "home" }),
+    );
+    expect((await current.publicPortal.getStandings(REF)).standings.qualifyingSpots).toBe(2);
+    expect(
+      (await current.publicPortal.getBracket(REF)).bracket?.stages[0]?.rounds[0]?.encounters[0]
+        ?.winner,
+    ).toBe("home");
+  });
+
   it("refuses a body that carries a private key the contract does not allow", async () => {
     const client = createFutrobClient({
       baseUrl: "https://app.example.com/api/v1",
