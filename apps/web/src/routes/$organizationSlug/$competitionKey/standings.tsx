@@ -4,7 +4,7 @@ import {
   sectionRead,
 } from "@/modules/public-portal/presentation/public-portal-route.tsx";
 import { PortalStandingsLoading } from "@/modules/public-portal/presentation/public-portal-skeleton.tsx";
-import { PortalStandingsView } from "@/modules/public-portal/presentation/public-portal-tables.tsx";
+import { PortalStandingsView } from "@/modules/public-portal/presentation/public-portal-standings.tsx";
 import { getPublicPortalStandings } from "@/modules/public-portal/server/public-portal.functions.ts";
 
 export const Route = createFileRoute("/$organizationSlug/$competitionKey/standings")({

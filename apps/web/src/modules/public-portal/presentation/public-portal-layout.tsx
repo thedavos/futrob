@@ -1,33 +1,47 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { CaretRightIcon, CheckIcon, ShareNetworkIcon, TrophyIcon } from "@phosphor-icons/react";
 import type { PublicCompetitionDto, PublicCompetitionStatusDto } from "@futrob/api-contracts";
 import {
   applyStyles,
   Badge,
+  Button,
   Caption,
   Eyebrow,
   Logo,
   PageHeaderTitle,
+  Progress,
+  ProgressIndicator,
+  ProgressLabel,
+  ProgressTrack,
+  ProgressValue,
   Skeleton,
   TextLink,
+  typography,
+  useCopyToClipboard,
   vis,
 } from "@futrob/ui";
+import backgroundMatchUrl from "@/assets/background-match.png";
+import { COMPETITION_COVER_ASSETS } from "@/modules/competitions/presentation/competition-cover-assets.ts";
 import {
   competitionFormatLabel,
+  competitionGameEditionLabel,
   competitionPlatformLabel,
   competitionRegionLabel,
   competitionScheduleLabel,
 } from "@/modules/competitions/presentation/competition-labels.ts";
-import { COMPETITION_COVER_ASSETS } from "@/modules/competitions/presentation/competition-cover-assets.ts";
-import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import type { ParameterlessMessageKey } from "@/shared/presentation/i18n/catalogs.ts";
+import { useI18n } from "@/shared/presentation/i18n/i18n-provider.tsx";
 import {
+  organizationSlugLabel,
   PORTAL_SECTIONS,
+  portalPath,
   portalSections,
+  type PortalProgress,
   type PortalRef,
   type PortalSection,
 } from "./public-portal-model.ts";
-import { styles } from "./public-portal.styles.ts";
+import { layoutStyles } from "./public-portal-layout.styles.ts";
 
 const SECTION_ROUTES = {
   cover: "/$organizationSlug/$competitionKey",
@@ -68,26 +82,53 @@ export function portalSectionRoute<S extends PortalSection>(
   return SECTION_ROUTES[section];
 }
 
+function SharePortalButton({ portalRef }: { readonly portalRef: PortalRef }) {
+  const { t } = useI18n();
+  const { copyToClipboard, isCopied } = useCopyToClipboard();
+
+  const handleShare = () => {
+    const location = globalThis.location;
+    const url = location?.href || `${location?.origin ?? ""}${portalPath(portalRef)}`;
+    void copyToClipboard(url);
+  };
+
+  return (
+    <Button dense onClick={handleShare} type="button" variant="outline">
+      {isCopied ? (
+        <CheckIcon aria-hidden="true" size={16} />
+      ) : (
+        <ShareNetworkIcon aria-hidden="true" size={16} />
+      )}
+      {t(isCopied ? "portal.header.copied" : "portal.header.share")}
+    </Button>
+  );
+}
+
 /**
- * The spectator's frame: competition header and sticky section tabs, no admin sidebar and no
- * operator actions (UX-PUB-001). Everything inside comes from the anonymous public reads.
+ * The spectator's frame: editorial competition hero (Alternative B) and sticky section tabs
+ * (Alternative A), with no admin sidebar and no operator actions (UX-PUB-001).
  */
 export function PublicPortalLayout({
   busyLabel,
+  championName = null,
   children,
   competition,
   portalRef,
+  progress = null,
   section,
 }: {
   readonly busyLabel?: string;
+  readonly championName?: string | null;
   readonly children: ReactNode;
   readonly competition?: PublicCompetitionDto;
   readonly portalRef?: PortalRef;
+  readonly progress?: PortalProgress | null;
   readonly section: PortalSection | null;
 }) {
   const { locale, t } = useI18n();
   const pending = competition === undefined;
   const cover = pending ? null : COMPETITION_COVER_ASSETS[competition.coverPreset ?? "cup"].src;
+  const orgLabel = portalRef ? organizationSlugLabel(portalRef.organizationSlug) : null;
   const schedule = pending
     ? null
     : competitionScheduleLabel(
@@ -99,11 +140,16 @@ export function PublicPortalLayout({
     ? []
     : [
         competitionFormatLabel(competition.format, t),
-        `${competition.gameEdition} · ${competitionPlatformLabel(competition.platform)}`,
         competitionRegionLabel(competition.region, t),
         t("portal.header.teams", { count: competition.approvedTeamCount }),
         schedule,
       ].filter((part): part is string => part !== null);
+  const eyebrowText = pending
+    ? t("portal.header.eyebrow")
+    : [
+        orgLabel ?? t("portal.header.eyebrow"),
+        `${competitionGameEditionLabel(competition.gameEdition)} · ${competitionPlatformLabel(competition.platform)}`,
+      ].join(" · ");
   const tabs = competition ? portalSections(competition.format) : PORTAL_SECTIONS;
 
   return (
@@ -117,89 +163,184 @@ export function PublicPortalLayout({
         aria-busy={busyLabel ? true : undefined}
         aria-label={busyLabel}
         role={busyLabel ? "group" : undefined}
-        {...applyStyles(styles.page)}
+        {...applyStyles(layoutStyles.page)}
       >
-        <header>
-          <div {...applyStyles(styles.container, styles.topBar)}>
-            <Link aria-label="Futrob" to="/" {...applyStyles(styles.brand)}>
-              <Logo {...applyStyles(styles.brandLogo)} />
-            </Link>
-            {pending ? (
-              <Skeleton {...applyStyles(styles.timeZoneBone)} />
-            ) : (
-              <Caption>{t("portal.header.timeZone", { zone: competition.timeZone })}</Caption>
-            )}
-          </div>
-          <div {...applyStyles(styles.container, styles.hero)}>
-            {cover ? (
-              <img
-                alt=""
-                data-outline="none"
-                height={120}
-                src={cover}
-                width={120}
-                {...applyStyles(styles.cover)}
-              />
-            ) : (
-              <Skeleton {...applyStyles(styles.cover)} />
-            )}
-            <div {...applyStyles(styles.heroCopy)}>
-              <Eyebrow>{t("portal.header.eyebrow")}</Eyebrow>
-              {pending ? (
-                <Skeleton {...applyStyles(styles.titleBone)} />
-              ) : (
-                <PageHeaderTitle {...applyStyles(styles.title)}>{competition.name}</PageHeaderTitle>
-              )}
-              <div {...applyStyles(styles.facts)}>
+        <header {...applyStyles(layoutStyles.headerBand)}>
+          <div {...applyStyles(layoutStyles.topBarBorder)}>
+            <div {...applyStyles(layoutStyles.container, layoutStyles.topBar)}>
+              <div {...applyStyles(layoutStyles.brandGroup)}>
+                <Link aria-label="Futrob" to="/" {...applyStyles(layoutStyles.brand)}>
+                  <Logo {...applyStyles(layoutStyles.brandLogo)} />
+                </Link>
+                {orgLabel ? (
+                  <Caption as="span" className={layoutStyles.orgContext}>
+                    {`${orgLabel} · ${t("portal.header.eyebrow")}`}
+                  </Caption>
+                ) : null}
+              </div>
+              <div {...applyStyles(layoutStyles.topBarRight)}>
                 {pending ? (
-                  <>
-                    <Skeleton {...applyStyles(styles.badgeBone)} />
-                    <Skeleton {...applyStyles(styles.factsBone)} />
-                  </>
+                  <Skeleton {...applyStyles(layoutStyles.timeZoneBone)} />
                 ) : (
                   <>
-                    <Badge variant={STATUS_BADGES[competition.status]}>
-                      {t(STATUS_LABELS[competition.status])}
-                    </Badge>
-                    <Caption as="p">{facts.join(" · ")}</Caption>
+                    <Caption className={layoutStyles.timeZoneLabel}>
+                      {t("portal.header.timeZone", { zone: competition.timeZone })}
+                    </Caption>
+                    {portalRef ? <SharePortalButton portalRef={portalRef} /> : null}
                   </>
                 )}
               </div>
             </div>
           </div>
+
+          <div {...applyStyles(layoutStyles.heroSection)}>
+            <img
+              alt=""
+              aria-hidden="true"
+              data-outline="none"
+              src={backgroundMatchUrl}
+              {...applyStyles(layoutStyles.heroBackdrop)}
+            />
+            <div aria-hidden="true" {...applyStyles(layoutStyles.heroWash)} />
+            <div {...applyStyles(layoutStyles.container, layoutStyles.hero)}>
+              <div {...applyStyles(layoutStyles.heroMain)}>
+                <div {...applyStyles(layoutStyles.coverFrame)}>
+                  {cover ? (
+                    <img
+                      alt=""
+                      data-outline="none"
+                      height={92}
+                      src={cover}
+                      width={92}
+                      {...applyStyles(layoutStyles.coverImg)}
+                    />
+                  ) : (
+                    <Skeleton {...applyStyles(layoutStyles.coverImg)} />
+                  )}
+                </div>
+                <div {...applyStyles(layoutStyles.heroCopy)}>
+                  <Eyebrow>{eyebrowText}</Eyebrow>
+                  <div {...applyStyles(layoutStyles.titleRow)}>
+                    {pending ? (
+                      <>
+                        <Skeleton {...applyStyles(layoutStyles.titleBone)} />
+                        <Skeleton {...applyStyles(layoutStyles.badgeBone)} />
+                      </>
+                    ) : (
+                      <>
+                        <PageHeaderTitle {...applyStyles(layoutStyles.title)}>
+                          {competition.name}
+                        </PageHeaderTitle>
+                        <Badge
+                          className={layoutStyles.statusBadge}
+                          variant={STATUS_BADGES[competition.status]}
+                        >
+                          <span aria-hidden="true" {...applyStyles(layoutStyles.statusDot)} />
+                          {t(STATUS_LABELS[competition.status])}
+                        </Badge>
+                        {championName ? (
+                          <Badge className={layoutStyles.statusBadge} variant="emphasis">
+                            <TrophyIcon
+                              aria-hidden="true"
+                              weight="fill"
+                              {...applyStyles(layoutStyles.championIcon)}
+                            />
+                            {t("portal.header.champion", { team: championName })}
+                          </Badge>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                  <div {...applyStyles(layoutStyles.facts)}>
+                    {pending ? (
+                      <Skeleton {...applyStyles(layoutStyles.factsBone)} />
+                    ) : (
+                      <Caption as="p">{facts.join(" · ")}</Caption>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {!pending && progress ? (
+                <div {...applyStyles(layoutStyles.progressWrap)}>
+                  <Progress max={100} value={progress.percent}>
+                    <ProgressLabel>
+                      {t(
+                        progress.completed
+                          ? "portal.header.progressCompleted"
+                          : "portal.header.progress",
+                        { official: progress.official, total: progress.total },
+                      )}
+                    </ProgressLabel>
+                    <ProgressValue className={layoutStyles.progressValue}>
+                      {() => `${progress.percent}%`}
+                    </ProgressValue>
+                    <ProgressTrack>
+                      <ProgressIndicator />
+                    </ProgressTrack>
+                  </Progress>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </header>
-        <nav aria-label={t("portal.nav.label")} {...applyStyles(styles.tabsBar)}>
+
+        <nav aria-label={t("portal.nav.label")} {...applyStyles(layoutStyles.tabsBar)}>
           <ul
             aria-label={portalRef ? undefined : t("portal.nav.label")}
             tabIndex={portalRef ? undefined : 0}
-            {...applyStyles(styles.container, styles.tabs)}
+            {...applyStyles(layoutStyles.container, layoutStyles.tabs)}
           >
-            {tabs.map((item) => (
-              <li key={item}>
-                {portalRef ? (
-                  <Link
-                    aria-current={item === section ? "page" : undefined}
-                    params={portalRef}
-                    to={SECTION_ROUTES[item]}
-                    {...applyStyles(styles.tab, item === section && styles.tabActive)}
-                  >
-                    {t(SECTION_LABELS[item])}
-                  </Link>
-                ) : (
-                  <span {...applyStyles(styles.tab, item === section && styles.tabActive)}>
-                    {t(SECTION_LABELS[item])}
-                  </span>
-                )}
-              </li>
-            ))}
+            {tabs.map((item) => {
+              const count =
+                !pending && item === "teams" && competition.approvedTeamCount > 0
+                  ? competition.approvedTeamCount
+                  : null;
+              return (
+                <li key={item}>
+                  {portalRef ? (
+                    <Link
+                      aria-current={item === section ? "page" : undefined}
+                      params={portalRef}
+                      to={SECTION_ROUTES[item]}
+                      {...applyStyles(
+                        typography.label,
+                        layoutStyles.tab,
+                        item === section && layoutStyles.tabActive,
+                      )}
+                    >
+                      <span>{t(SECTION_LABELS[item])}</span>
+                      {count !== null ? (
+                        <span aria-hidden="true" {...applyStyles(layoutStyles.tabCount)}>
+                          {count}
+                        </span>
+                      ) : null}
+                    </Link>
+                  ) : (
+                    <span
+                      {...applyStyles(
+                        typography.label,
+                        layoutStyles.tab,
+                        item === section && layoutStyles.tabActive,
+                      )}
+                    >
+                      {t(SECTION_LABELS[item])}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </nav>
-        <main {...applyStyles(styles.container, styles.main)}>{children}</main>
-        <footer {...applyStyles(styles.footer)}>
-          <div {...applyStyles(styles.container, styles.footerInner)}>
+
+        <main {...applyStyles(layoutStyles.container, layoutStyles.main)}>{children}</main>
+
+        <footer {...applyStyles(layoutStyles.footer)}>
+          <div {...applyStyles(layoutStyles.container, layoutStyles.footerInner)}>
             <Caption>{t("portal.footer.poweredBy")}</Caption>
-            <TextLink render={<Link to="/" />} text="caption">
+            <TextLink className={layoutStyles.footerLink} render={<Link to="/" />} text="caption">
               {t("portal.footer.home")}
+              <CaretRightIcon aria-hidden="true" size={14} />
             </TextLink>
           </div>
         </footer>

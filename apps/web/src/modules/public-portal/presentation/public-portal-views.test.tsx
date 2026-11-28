@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from "react";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import {
   Outlet,
   RouterProvider,
@@ -21,9 +21,10 @@ import {
   publicRulesFixture,
   publicStandingsFixture,
 } from "./public-portal.fixtures.ts";
-import { PortalCalendarView, PortalCoverView } from "./public-portal-calendar.tsx";
+import { PortalCalendarView } from "./public-portal-calendar.tsx";
+import { coverLeadersFromRankings, PortalCoverView } from "./public-portal-cover.tsx";
 import { PublicPortalLayout } from "./public-portal-layout.tsx";
-import { portalRankingSearchSchema } from "./public-portal-model.ts";
+import { portalCalendarProgress, portalRankingSearchSchema } from "./public-portal-model.ts";
 import { PortalFrameLoading, PortalSectionLoading } from "./public-portal-skeleton.tsx";
 import { PortalNotFound } from "./public-portal-states.tsx";
 import { PortalBracketView, PortalRulesView, PortalTeamsView } from "./public-portal-structure.tsx";
@@ -63,28 +64,33 @@ afterEach(() => {
 });
 
 describe("PublicPortalLayout", () => {
-  it("shows the competition header and one tab per applicable section", async () => {
+  it("shows the editorial competition hero, progress, and one tab per applicable section", async () => {
     await renderEs(
       <PublicPortalLayout
-        competition={{ ...publicCompetitionFixture, format: "league" }}
+        championName="Atlético Norte"
+        competition={{ ...publicCompetitionFixture, format: "league", status: "finished" }}
         portalRef={portalRefFixture}
+        progress={portalCalendarProgress(publicCalendarFixture, "finished")}
         section="standings"
       >
         <p>contenido</p>
       </PublicPortalLayout>,
     );
     expect(screen.getByRole("heading", { level: 1, name: "Liga Norte Apertura" })).toBeTruthy();
+    expect(screen.getByText("Campeón: Atlético Norte")).toBeTruthy();
+    expect(screen.getByText("25%")).toBeTruthy();
     const nav = within(screen.getByRole("navigation", { name: "Secciones de la competición" }));
     expect(nav.queryByRole("link", { name: "Bracket" })).toBeNull();
     expect(nav.getByRole("link", { name: "Tabla" }).getAttribute("aria-current")).toBe("page");
     expect(nav.getByRole("link", { name: "Tabla" }).getAttribute("href")).toBe(
       "/liga-norte/cmp_apertura/standings",
     );
-    // Resolved frame lets keyboard focus go directly to the real tab links.
     expect(nav.getByRole("list").getAttribute("tabindex")).toBeNull();
-    expect(screen.getByText("En juego")).toBeTruthy();
-    // No operator actions on the public frame.
-    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("Finalizada")).toBeTruthy();
+    // Only the spectator Share utility button is present; no operator actions (UX-PUB-001).
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]?.textContent).toContain("Compartir");
   });
 
   it("keeps the chrome layout while the competition identity is still loading", async () => {
@@ -96,6 +102,7 @@ describe("PublicPortalLayout", () => {
     expect(screen.queryByRole("heading", { level: 1, name: "Liga Norte Apertura" })).toBeNull();
     expect(screen.getByRole("link", { name: "Futrob" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Tabla" })).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByText("Tabla")).toBeTruthy();
     const tabList = screen.getByRole("list", { name: "Secciones de la competición" });
     expect(tabList.getAttribute("tabindex")).toBe("0");
@@ -257,7 +264,7 @@ describe("loading skeletons", () => {
 });
 
 describe("calendar and cover", () => {
-  it("lists every round with official scores in place", async () => {
+  it("lists rounds and switches to agenda view with official scores in place", async () => {
     await renderEs(
       <PortalCalendarView
         calendar={{ timeZone: "America/Lima", entries: publicCalendarFixture }}
@@ -270,6 +277,21 @@ describe("calendar and cover", () => {
     );
     expect(official.getByLabelText("Resultado oficial 2–1")).toBeTruthy();
     expect(official.getByText("Oficial")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Agenda" }));
+    expect(screen.getByRole("tab", { name: "Agenda" }).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("applies an initial team filter when navigated from the teams directory", async () => {
+    await renderEs(
+      <PortalCalendarView
+        calendar={{ timeZone: "America/Lima", entries: publicCalendarFixture }}
+        initialTeam="Real Sur"
+      />,
+    );
+    expect(screen.getByText("Mostrando 2 de 4 enfrentamientos")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(screen.getByText("4 enfrentamientos")).toBeTruthy();
   });
 
   it("explains a competition without fixture instead of an empty list", async () => {
@@ -277,36 +299,94 @@ describe("calendar and cover", () => {
     expect(screen.getByText("El calendario aún no está publicado")).toBeTruthy();
   });
 
-  it("puts the latest official result and the next encounters on the cover", async () => {
+  it("puts podium, featured match, official table, leaders, and calendar blocks on the cover", async () => {
     await renderEs(
       <PortalCoverView
         calendar={{ timeZone: "America/Lima", entries: publicCalendarFixture }}
+        leaders={coverLeadersFromRankings([publicRankingFixture])}
         portalRef={portalRefFixture}
+        standings={publicStandingsFixture}
       />,
     );
+    expect(screen.getByRole("region", { name: "Podio oficial" })).toBeTruthy();
+    expect(screen.getByRole("article", { name: "Partido destacado" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Tabla oficial" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Líderes individuales" })).toBeTruthy();
     const results = within(screen.getByRole("region", { name: "Últimos resultados" }));
     expect(results.getByLabelText("Resultado oficial 2–1")).toBeTruthy();
     const upcoming = within(screen.getByRole("region", { name: "Próximos enfrentamientos" }));
     expect(upcoming.getAllByRole("article")).toHaveLength(2);
   });
+
+  it("offers a retry when the calendar read failed instead of calling it unpublished", async () => {
+    const onRetry = vi.fn();
+    const empty = { ...publicStandingsFixture, rows: [] };
+    await renderEs(
+      <PortalCoverView
+        calendar={null}
+        onCalendarRetry={onRetry}
+        portalRef={portalRefFixture}
+        standings={empty}
+      />,
+    );
+    expect(screen.queryByText("El calendario aún no está publicado")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(onRetry).toHaveBeenCalledOnce();
+    cleanup();
+
+    await renderEs(
+      <PortalCoverView
+        calendar={{ timeZone: "America/Lima", entries: [] }}
+        portalRef={portalRefFixture}
+        standings={empty}
+      />,
+    );
+    expect(screen.getByText("El calendario aún no está publicado")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull();
+  });
+
+  it("marks only the places the fixture sends to the playoffs, on the cover and the table", async () => {
+    const [template] = publicStandingsFixture.rows;
+    if (!template) throw new Error("fixture shape");
+    const standings = {
+      ...publicStandingsFixture,
+      qualifyingSpots: 2,
+      rows: Array.from({ length: 6 }, (_, index) => ({
+        ...template,
+        position: index + 1,
+        teamName: `Equipo ${index + 1}`,
+      })),
+    };
+    await renderEs(
+      <PortalCoverView calendar={null} portalRef={portalRefFixture} standings={standings} />,
+    );
+    expect(screen.getByText("Los dos primeros pasan al playoff")).toBeTruthy();
+    cleanup();
+
+    await renderEs(<PortalStandingsView standings={standings} />);
+    expect(screen.getByText("Los dos primeros pasan al playoff")).toBeTruthy();
+  });
 });
 
 describe("tables", () => {
-  it("renders the official table and its empty state", async () => {
+  it("renders the official table with KPI summary, form strip, and its empty state", async () => {
     await renderEs(<PortalStandingsView standings={publicStandingsFixture} />);
-    expect(screen.getByRole("cell", { name: "Atlético Norte" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Resumen de la clasificación" })).toBeTruthy();
+    expect(screen.getByRole("cell", { name: /Atlético Norte/ })).toBeTruthy();
     expect(screen.getByRole("cell", { name: "-1" })).toBeTruthy();
+    expect(screen.getAllByText("Victoria").length).toBeGreaterThan(0);
     cleanup();
     await renderEs(<PortalStandingsView standings={{ ...publicStandingsFixture, rows: [] }} />);
     expect(screen.getByText("Aún no hay tabla")).toBeTruthy();
   });
 
-  it("shows the ranking criterion and links every kind", async () => {
+  it("shows the ranking KPI summary, criterion, search filter, and links every kind", async () => {
     await renderEs(
       <PortalRankingView portalRef={portalRefFixture} ranking={publicRankingFixture} />,
     );
+    expect(screen.getByRole("region", { name: "Resumen del ranking" })).toBeTruthy();
     expect(screen.getByText("Más goles en partidos oficiales aprobados.")).toBeTruthy();
-    expect(screen.getByRole("cell", { name: "Nico_10" })).toBeTruthy();
+    expect(screen.getByRole("cell", { name: /Nico_10/ })).toBeTruthy();
     const kinds = within(screen.getByRole("navigation", { name: "Tipo de ranking" }));
     expect(kinds.getByRole("link", { name: "Goleadores" }).getAttribute("aria-current")).toBe(
       "page",
@@ -314,11 +394,17 @@ describe("tables", () => {
     expect(kinds.getByRole("link", { name: "Asistencias" }).getAttribute("href")).toBe(
       "/liga-norte/cmp_apertura/rankings?kind=assister",
     );
+
+    const search = screen.getByRole("searchbox", { name: "Buscar jugador" });
+    fireEvent.change(search, { target: { value: "nadie" } });
+    expect(screen.getByText("Ningún jugador coincide")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(screen.getByRole("cell", { name: /Nico_10/ })).toBeTruthy();
   });
 });
 
 describe("structure", () => {
-  it("shows bracket sides by name or position and never a score for a bye", async () => {
+  it("shows visual bracket and accessible list with never a score for a bye", async () => {
     const [stage] = publicBracketFixture.stages;
     const [first, second] = stage?.rounds ?? [];
     if (!stage || !first || !second) throw new Error("fixture shape");
@@ -346,8 +432,54 @@ describe("structure", () => {
     expect(screen.getByRole("heading", { name: "Playoffs" })).toBeTruthy();
     expect(screen.getByText("1.º de la fase anterior")).toBeTruthy();
     expect(screen.getByText("Ganador del cruce 1 (ronda 1)")).toBeTruthy();
-    const bye = screen.getByText("Descanso").closest("li");
-    expect(bye?.textContent).toMatch(/Real SurDescanso$/);
+    expect(screen.queryByText("3")).toBeNull();
+
+    // Accessible list view works equivalently (UX-BRK-001).
+    fireEvent.click(screen.getByRole("tab", { name: "Lista" }));
+    expect(screen.getByRole("tab", { name: "Lista" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.queryByText("3")).toBeNull();
+  });
+
+  it("keeps each match of a two-leg tie in both the canvas and the list", async () => {
+    const [stage] = publicBracketFixture.stages;
+    const [first, second] = stage?.rounds ?? [];
+    if (!stage || !first || !second) throw new Error("fixture shape");
+    const twoLegs = {
+      ...publicBracketFixture,
+      stages: [
+        {
+          ...stage,
+          rounds: [
+            {
+              ...first,
+              encounters: first.encounters.map((encounter) =>
+                encounter.order === 1
+                  ? {
+                      ...encounter,
+                      home: { kind: "team" as const, name: "Atlético Norte" },
+                      away: { kind: "team" as const, name: "Unión Oeste" },
+                      status: "official" as const,
+                      score: [
+                        { homeGoals: 3, awayGoals: 0 },
+                        { homeGoals: 0, awayGoals: 1 },
+                      ],
+                      winner: null,
+                    }
+                  : encounter,
+              ),
+            },
+            second,
+          ],
+        },
+      ],
+    };
+    await renderEs(<PortalBracketView bracket={twoLegs} format="league-playoffs" />);
+    expect(screen.getByText("(3 · 0)")).toBeTruthy();
+    expect(screen.getByText("(0 · 1)")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Lista" }));
+    expect(screen.getByText("(3 · 0)")).toBeTruthy();
+    expect(screen.getByText("(0 · 1)")).toBeTruthy();
   });
 
   it("says there is no bracket yet before the fixture exists", async () => {
@@ -360,20 +492,34 @@ describe("structure", () => {
     expect(screen.getByText("Esta competición no tiene eliminatorias")).toBeTruthy();
   });
 
-  it("lists teams by public name and explains an empty list", async () => {
-    await renderEs(<PortalTeamsView teams={[{ name: "Real Sur" }]} />);
+  it("lists teams enriched with standings, supports search, and explains an empty list", async () => {
+    await renderEs(
+      <PortalTeamsView
+        portalRef={portalRefFixture}
+        standings={publicStandingsFixture}
+        teams={["Atlético Norte", "Deportivo Este", "Real Sur", "Unión Oeste"].map((name) => ({
+          name,
+        }))}
+      />,
+    );
     expect(screen.getByText("Real Sur")).toBeTruthy();
+    expect(screen.getByText("#1")).toBeTruthy();
+    const search = screen.getByRole("searchbox", { name: "Buscar equipo" });
+    fireEvent.change(search, { target: { value: "Sur" } });
+    expect(screen.getByText("Real Sur")).toBeTruthy();
+    expect(screen.queryByText("Unión Oeste")).toBeNull();
     cleanup();
     await renderEs(<PortalTeamsView teams={[]} />);
     expect(screen.getByText("Aún no hay equipos confirmados")).toBeTruthy();
   });
 
-  it("spells out the rules of each stage", async () => {
+  it("spells out the competition rules and platform tiebreak rules", async () => {
     await renderEs(<PortalRulesView rules={publicRulesFixture} />);
     expect(screen.getByText("De 4 a 8")).toBeTruthy();
     expect(screen.getByText("Hasta 2 por equipo, con 24 h de aviso")).toBeTruthy();
     expect(screen.getByText("Marcador global")).toBeTruthy();
     expect(screen.getByText("No se permiten")).toBeTruthy();
+    expect(screen.getByText("Reglas de la plataforma")).toBeTruthy();
   });
 });
 

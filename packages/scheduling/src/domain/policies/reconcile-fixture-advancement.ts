@@ -170,11 +170,23 @@ function encounterWinner(
   if (home.kind !== "team" || away.kind !== "team" || !encounter.series) return PENDING;
   const score = scores.get(encounter.id);
   if (!score) return PENDING;
+  const side = seriesWinnerSide(encounter.series.resolutionMode, score.slots);
+  if (side === null) return TIE;
+  return { status: "team", teamId: side === "home" ? home.teamId : away.teamId };
+}
 
+/**
+ * The side that wins a played series under its resolution mode, or null on a tie. Aggregate
+ * mode adds goals; independent mode counts the matches each side won.
+ */
+export function seriesWinnerSide(
+  resolutionMode: SeriesResolutionMode,
+  slots: readonly { readonly homeGoals: number; readonly awayGoals: number }[],
+): "home" | "away" | null {
   let homeValue = 0;
   let awayValue = 0;
-  for (const slot of score.slots) {
-    switch (encounter.series.resolutionMode) {
+  for (const slot of slots) {
+    switch (resolutionMode) {
       case "aggregate_score":
         homeValue += slot.homeGoals;
         awayValue += slot.awayGoals;
@@ -185,8 +197,8 @@ function encounterWinner(
         break;
     }
   }
-  if (homeValue === awayValue) return TIE;
-  return { status: "team", teamId: homeValue > awayValue ? home.teamId : away.teamId };
+  if (homeValue === awayValue) return null;
+  return homeValue > awayValue ? "home" : "away";
 }
 
 interface StandingRow {

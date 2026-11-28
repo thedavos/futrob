@@ -27,6 +27,11 @@ export interface PublicStandingsSourceRow {
 export interface PublicStandingsSource {
   readonly rows: readonly PublicStandingsSourceRow[];
   readonly swiss: PublicSwissProgress | null;
+  /**
+   * League places that reach the playoffs, read from the active fixture. Null when the format has
+   * no league-to-playoffs cut, or once a playoffs result has entered this table.
+   */
+  readonly qualifyingSpots: number | null;
   readonly updatedAt: Date;
 }
 

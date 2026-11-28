@@ -61,10 +61,15 @@ export function registerPublicPortalRoutes(app: Hono, deps: AppDeps): void {
   router.openapi(getPublicStandingsRoute, async (c) => {
     const result = await publicPortal.getStandings.execute({ key: keyOf(c.req.valid("param")) });
     if (!result.isOk()) return failureToHttp(result.error);
-    const { rows, swiss, updatedAt } = result.value;
+    const { rows, swiss, qualifyingSpots, updatedAt } = result.value;
     return publicJsonResponse(
       getPublicStandingsResponseSchema.parse({
-        standings: { rows, swiss, updatedAt: updatedAt ? updatedAt.toISOString() : null },
+        standings: {
+          rows,
+          swiss,
+          qualifyingSpots,
+          updatedAt: updatedAt ? updatedAt.toISOString() : null,
+        },
       }),
     );
   });

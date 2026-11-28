@@ -1,17 +1,37 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createTranslator } from "@/shared/presentation/i18n/translate.ts";
-import { portalRefFixture, publicCalendarFixture } from "./public-portal.fixtures.ts";
+import {
+  portalRefFixture,
+  publicBracketFixture,
+  publicCalendarFixture,
+  publicRankingFixture,
+  publicStandingsFixture,
+} from "./public-portal.fixtures.ts";
+import {
+  layoutPublicBracketStage,
+  publicBracketChampionName,
+  publicBracketSideScore,
+} from "./public-portal-bracket-model.ts";
 import {
   bracketSideLabel,
+  calendarDays,
   calendarRounds,
+  featuredCoverEncounter,
+  filterCalendarEntries,
   kickoffLabel,
   latestResults,
+  organizationSlugLabel,
   parsePortalRef,
+  portalCalendarProgress,
   portalPath,
   portalRankingKindFromSearch,
   portalSectionFromPathname,
   portalSections,
+  publicRankingSummary,
+  publicStandingsCut,
+  publicStandingsSummary,
   scoreLabel,
+  scoreSummary,
   upcomingEntries,
 } from "./public-portal-model.ts";
 
@@ -33,9 +53,10 @@ describe("portal sections", () => {
     ]);
   });
 
-  it("builds the public path under the organization slug", () => {
+  it("builds the public path under the organization slug and formats the slug label", () => {
     expect(portalPath(portalRefFixture)).toBe("/liga-norte/cmp_apertura");
     expect(portalPath(portalRefFixture, "standings")).toBe("/liga-norte/cmp_apertura/standings");
+    expect(organizationSlugLabel("liga-andina")).toBe("Liga Andina");
   });
 
   it("reads the section from the pathname while identity is still loading", () => {
@@ -63,13 +84,32 @@ describe("portal sections", () => {
 });
 
 describe("calendar", () => {
-  it("groups by round in kick-off order", () => {
+  it("groups by round and local competition date in kick-off order", () => {
     const rounds = calendarRounds([...publicCalendarFixture].reverse());
     expect(rounds.map((round) => round.roundNumber)).toEqual([1, 2]);
     expect(rounds[0]?.entries.map((entry) => entry.homeTeamName)).toEqual([
       "Atlético Norte",
       "Deportivo Este",
     ]);
+    const days = calendarDays(publicCalendarFixture, "America/Lima");
+    expect(days.map((day) => day.dateKey)).toEqual(["2026-11-02", "2026-11-09"]);
+  });
+
+  it("filters by team, round, and status and computes progress", () => {
+    expect(
+      filterCalendarEntries(publicCalendarFixture, {
+        team: "Atlético Norte",
+        round: null,
+        status: "official",
+      }),
+    ).toHaveLength(1);
+    expect(portalCalendarProgress(publicCalendarFixture, "published")).toEqual({
+      official: 1,
+      total: 4,
+      percent: 25,
+      completed: false,
+    });
+    expect(featuredCoverEncounter(publicCalendarFixture)?.homeTeamName).toBe("Atlético Norte");
   });
 
   it("picks upcoming by status and latest results among official ones", () => {
@@ -81,8 +121,9 @@ describe("calendar", () => {
     ]);
   });
 
-  it("formats scores per official match and kick-off in the competition time zone", () => {
+  it("formats scores per official match, leader side, and kick-off in the competition time zone", () => {
     expect(scoreLabel([{ homeGoals: 2, awayGoals: 1 }])).toBe("2–1");
+    expect(scoreSummary([{ homeGoals: 2, awayGoals: 1 }])?.leader).toBe("home");
     expect(
       scoreLabel([
         { homeGoals: 2, awayGoals: 1 },
@@ -94,7 +135,28 @@ describe("calendar", () => {
   });
 });
 
-describe("bracket sides", () => {
+describe("standings and rankings summaries", () => {
+  it("computes standings KPI summary", () => {
+    const summary = publicStandingsSummary(publicStandingsFixture);
+    expect(summary.leader).toEqual({ teamName: "Atlético Norte", points: 3, leadOverSecond: 3 });
+    expect(summary.bestAttack?.teamNames).toEqual(["Atlético Norte"]);
+    expect(summary.bestDefense?.teamNames).toEqual(["Atlético Norte"]);
+    expect(summary.officialMatches).toBe(1);
+  });
+
+  it("computes ranking KPI summary", () => {
+    const summary = publicRankingSummary(publicRankingFixture);
+    expect(summary.leader).toEqual({
+      playerName: "Nico_10",
+      teamName: "Atlético Norte",
+      value: 2,
+      lead: 1,
+    });
+    expect(summary.bestPerMatch?.rate).toBe(2);
+  });
+});
+
+describe("bracket sides and layout", () => {
   it("names every side without internal ids", () => {
     expect(bracketSideLabel({ kind: "team", name: "Real Sur" }, t)).toBe("Real Sur");
     expect(bracketSideLabel({ kind: "bye" }, t)).toBe("Descanso");
@@ -105,5 +167,78 @@ describe("bracket sides", () => {
       "1.º del grupo A",
     );
     expect(bracketSideLabel({ kind: "pending" }, t)).toBe("Por definir");
+  });
+
+  it("connects winner and advanced team wires and hides scores on byes", () => {
+    const [stage] = publicBracketFixture.stages;
+    if (!stage) throw new Error("expected stage");
+    const layout = layoutPublicBracketStage(stage);
+    expect(layout.wires).toHaveLength(2);
+    expect(layout.champion).not.toBeNull();
+    expect(publicBracketChampionName(layout)).toBeNull();
+    const byeNode = layout.nodes.find((node) => node.encounter.away.kind === "bye");
+    expect(byeNode).toBeDefined();
+    expect(
+      publicBracketSideScore(
+        { ...byeNode!.encounter, score: [{ homeGoals: 3, awayGoals: 0 }] },
+        "home",
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("public outcomes come from the fixture, not from the visible rows", () => {
+  it("closes the season from the competition status, not from the published encounters", () => {
+    // A knockout with both semifinals official lists 2 of 2 until the final is drawn.
+    const allOfficial = publicCalendarFixture.map((entry) => ({
+      ...entry,
+      status: "official" as const,
+    }));
+    expect(portalCalendarProgress(allOfficial, "published")?.completed).toBe(false);
+    expect(portalCalendarProgress(allOfficial, "finished")?.completed).toBe(true);
+  });
+
+  it("draws the qualifying cut only where the fixture sets one", () => {
+    const [template] = publicStandingsFixture.rows;
+    if (!template) throw new Error("fixture shape");
+    const six = Array.from({ length: 6 }, (_, index) => ({
+      ...template,
+      position: index + 1,
+      teamName: `Equipo ${index + 1}`,
+    }));
+    expect(publicStandingsCut({ rows: six, qualifyingSpots: 2 })).toBe(2);
+    expect(publicStandingsCut({ rows: six, qualifyingSpots: null })).toBeNull();
+    expect(publicStandingsCut({ rows: six.slice(0, 2), qualifyingSpots: 2 })).toBeNull();
+  });
+
+  it("keeps the champion pending on a tied series and crowns the side the API resolved", () => {
+    const final = (winner: "home" | "away" | null) =>
+      layoutPublicBracketStage({
+        kind: "knockout",
+        rounds: [
+          {
+            number: 1,
+            scheduledStartAt: "2026-12-01T01:00:00.000Z",
+            encounters: [
+              {
+                order: 1,
+                scheduledStartAt: "2026-12-01T01:00:00.000Z",
+                officialMatchCount: 2,
+                home: { kind: "team", name: "Atlético Norte" },
+                away: { kind: "team", name: "Real Sur" },
+                status: "official",
+                // 3–0 then 0–1: a tie in independent mode, the home side on aggregate.
+                score: [
+                  { homeGoals: 3, awayGoals: 0 },
+                  { homeGoals: 0, awayGoals: 1 },
+                ],
+                winner,
+              },
+            ],
+          },
+        ],
+      });
+    expect(publicBracketChampionName(final(null))).toBeNull();
+    expect(publicBracketChampionName(final("home"))).toBe("Atlético Norte");
   });
 });

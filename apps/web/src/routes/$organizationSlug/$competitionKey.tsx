@@ -1,7 +1,13 @@
 import { Outlet, createFileRoute, notFound, useLocation, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
 import {
+  layoutPublicBracketStage,
+  publicBracketChampionName,
+} from "@/modules/public-portal/presentation/public-portal-bracket-model.ts";
+import {
+  hasBracket,
   parsePortalRef,
+  portalCalendarProgress,
   portalPath,
 } from "@/modules/public-portal/presentation/public-portal-model.ts";
 import {
@@ -9,12 +15,18 @@ import {
   portalSectionAt,
 } from "@/modules/public-portal/presentation/public-portal-meta.ts";
 import { PublicPortalLayout } from "@/modules/public-portal/presentation/public-portal-layout.tsx";
+import { sectionRead } from "@/modules/public-portal/presentation/public-portal-route.tsx";
 import { PortalFrameLoading } from "@/modules/public-portal/presentation/public-portal-skeleton.tsx";
 import {
   PortalError,
   PortalNotFound,
 } from "@/modules/public-portal/presentation/public-portal-states.tsx";
-import { getPublicPortalCompetition } from "@/modules/public-portal/server/public-portal.functions.ts";
+import {
+  getPublicPortalBracket,
+  getPublicPortalCalendar,
+  getPublicPortalCompetition,
+  getPublicPortalStandings,
+} from "@/modules/public-portal/server/public-portal.functions.ts";
 import { getSiteOrigin } from "@/shared/infrastructure/seo/site-origin.ts";
 import { NOINDEX_META } from "@/shared/infrastructure/seo/crawl-policy.ts";
 import { SUPPORTED_LOCALES } from "@/shared/presentation/i18n/catalogs.ts";
@@ -32,10 +44,40 @@ export const Route = createFileRoute("/$organizationSlug/$competitionKey")({
   loader: async ({ params }) => {
     const ref = parsePortalRef(params);
     if (!ref) throw notFound();
-    const read = await getPublicPortalCompetition({ data: ref });
-    if (read.status === "not_found") throw notFound();
-    if (read.status === "error") throw new Error("public_portal.unavailable");
-    return { ref, competition: read.data.competition, origin: getSiteOrigin() };
+    const [competitionRead, calendarRead] = await Promise.all([
+      getPublicPortalCompetition({ data: ref }),
+      getPublicPortalCalendar({ data: ref }),
+    ]);
+    if (competitionRead.status === "not_found") throw notFound();
+    if (competitionRead.status === "error") throw new Error("public_portal.unavailable");
+
+    const { competition } = competitionRead.data;
+    // Read once here for the hero progress and shared with the Cover and Calendar sections.
+    const calendar = sectionRead(calendarRead);
+    const progress =
+      calendar.status === "ready"
+        ? portalCalendarProgress(calendar.data.calendar.entries, competition.status)
+        : null;
+
+    let championName: string | null = null;
+    if (competition.status === "finished") {
+      if (hasBracket(competition.format)) {
+        const bracketRead = await getPublicPortalBracket({ data: ref });
+        if (bracketRead.status === "ready" && bracketRead.data.bracket) {
+          const lastStage = bracketRead.data.bracket.stages.at(-1);
+          if (lastStage) {
+            championName = publicBracketChampionName(layoutPublicBracketStage(lastStage));
+          }
+        }
+      } else {
+        const standingsRead = await getPublicPortalStandings({ data: ref });
+        if (standingsRead.status === "ready") {
+          championName = standingsRead.data.standings.rows[0]?.teamName ?? null;
+        }
+      }
+    }
+
+    return { ref, competition, calendar, progress, championName, origin: getSiteOrigin() };
   },
   head: ({ loaderData, matches }) => {
     const t = createTranslator(rootLocaleSchema.parse(matches[0]?.loaderData));
@@ -53,11 +95,17 @@ export const Route = createFileRoute("/$organizationSlug/$competitionKey")({
 });
 
 function PortalLayoutRoute() {
-  const { competition, ref } = Route.useLoaderData();
+  const { championName, competition, progress, ref } = Route.useLoaderData();
   const { pathname } = useLocation();
   const section = portalSectionAt(ref, pathname);
   return (
-    <PublicPortalLayout competition={competition} portalRef={ref} section={section}>
+    <PublicPortalLayout
+      championName={championName}
+      competition={competition}
+      portalRef={ref}
+      progress={progress}
+      section={section}
+    >
       <Outlet />
     </PublicPortalLayout>
   );

@@ -3545,6 +3545,13 @@ const es = {
   "portal.header.eyebrow": "Competición pública",
   "portal.header.teams": ({ count }) => (count === 1 ? "1 equipo" : `${count} equipos`),
   "portal.header.timeZone": ({ zone }) => `Horarios en ${zone}`,
+  "portal.header.share": "Compartir",
+  "portal.header.copied": "Enlace copiado",
+  "portal.header.champion": ({ team }) => `Campeón: ${team}`,
+  "portal.header.progress": ({ official, total }) =>
+    `Partidos publicados · ${official} de ${total} oficiales`,
+  "portal.header.progressCompleted": ({ official, total }) =>
+    `Temporada completada · ${official} de ${total} partidos`,
   "portal.footer.poweredBy": "Publicado con Futrob",
   "portal.footer.home": "Conoce Futrob",
   "portal.meta.description": ({ name }) =>
@@ -3559,6 +3566,19 @@ const es = {
   "portal.notFound.description":
     "Revisa el enlace. Si es correcto, la competición todavía no está publicada.",
   "portal.notFound.action": "Ir a Futrob",
+  "portal.cover.podium": "Podio oficial",
+  "portal.cover.podium.points": "pts",
+  "portal.cover.podium.record": ({ wins, draws, losses }) => `${wins}G · ${draws}E · ${losses}P`,
+  "portal.cover.featured.label": "Partido destacado",
+  "portal.cover.featured.official": "Último resultado oficial",
+  "portal.cover.featured.upcoming": "Próximo enfrentamiento",
+  "portal.cover.featured.awaiting": "Pendiente de resultado",
+  "portal.cover.standings": "Tabla oficial",
+  "portal.cover.standingsLink": "Ver tabla completa",
+  "portal.cover.leaders": "Líderes individuales",
+  "portal.cover.rankingsLink": "Ver rankings",
+  "portal.cover.leadersEmpty": "Los líderes aparecen cuando se oficialicen estadísticas.",
+  "portal.cover.matchesPlayed": ({ count }) => `${count} PJ`,
   "portal.cover.upcoming": "Próximos enfrentamientos",
   "portal.cover.upcoming.empty": "No quedan enfrentamientos por jugar.",
   "portal.cover.results": "Últimos resultados",
@@ -3568,6 +3588,26 @@ const es = {
   "portal.noFixture.description":
     "Cuando la organización genere el fixture, verás aquí cada jornada y sus resultados.",
   "portal.calendar.round": ({ round }) => `Jornada ${round}`,
+  "portal.calendar.views.label": "Vista del calendario",
+  "portal.calendar.views.rounds": "Por jornadas",
+  "portal.calendar.views.agenda": "Agenda",
+  "portal.calendar.filter.team": "Filtrar por equipo",
+  "portal.calendar.filter.allTeams": "Todos los equipos",
+  "portal.calendar.filter.round": "Filtrar por jornada",
+  "portal.calendar.filter.allRounds": "Todas las jornadas",
+  "portal.calendar.filter.status": "Filtrar por estado",
+  "portal.calendar.filter.allStatuses": "Todos los estados",
+  "portal.calendar.filter.clear": "Limpiar filtros",
+  "portal.calendar.summary": ({ shown, total }) =>
+    shown === total
+      ? total === 1
+        ? "1 enfrentamiento"
+        : `${total} enfrentamientos`
+      : `Mostrando ${shown} de ${total} enfrentamientos`,
+  "portal.calendar.roundSummary": ({ official, total }) => `${official} de ${total} oficiales`,
+  "portal.calendar.filteredEmpty.title": "No hay enfrentamientos con estos filtros",
+  "portal.calendar.filteredEmpty.description":
+    "Prueba cambiando el equipo, la jornada o el estado seleccionado.",
   "portal.encounter.status.scheduled": "Programado",
   "portal.encounter.status.awaiting_result": "Pendiente de resultado",
   "portal.encounter.status.official": "Oficial",
@@ -3601,14 +3641,26 @@ const es = {
   "portal.teams.empty.title": "Aún no hay equipos confirmados",
   "portal.teams.empty.description":
     "Los equipos aparecen aquí cuando la organización aprueba su inscripción.",
+  "portal.teams.search": "Buscar equipo",
+  "portal.teams.filteredEmpty.title": "Sin equipos coincidentes",
+  "portal.teams.filteredEmpty.description": "No encontramos ningún equipo con ese nombre.",
+  "portal.teams.clearSearch": "Limpiar búsqueda",
+  "portal.teams.viewCalendar": "Ver partidos",
+  "portal.teams.unranked": "Sin partidos oficiales aún",
+  "portal.teams.position": ({ position }) => `#${position}`,
   "portal.rankings.kinds": "Tipo de ranking",
   "portal.rankings.col.player": "Jugador",
   "portal.rankings.col.team": "Equipo",
   "portal.rankings.col.matches": "PJ",
   "portal.rankings.col.matches.full": "Partidos jugados",
+  "portal.rankings.col.perMatch": "Prom/PJ",
+  "portal.rankings.col.perMatch.full": "Promedio por partido jugado",
+  "portal.rankings.summary.perMatch": "Mejor ritmo por PJ",
+  "portal.rankings.summary.perMatchRatingHint": "El rating ya es un promedio por partido.",
   "portal.rankings.empty.title": "Aún no hay datos para este ranking",
   "portal.rankings.empty.description":
     "Los rankings se calculan con las estadísticas de los partidos oficializados.",
+  "portal.rules.competitionTitle": "Reglas de la competición",
   "portal.rules.format": "Formato",
   "portal.rules.teams": "Equipos",
   "portal.rules.teams.range": ({ min, max }) => `De ${min} a ${max}`,
@@ -4158,8 +4210,19 @@ export interface MessageParamsByKey {
   readonly "emailVerification.notice.body": { readonly email: string };
   readonly "portal.header.teams": { readonly count: number };
   readonly "portal.header.timeZone": { readonly zone: string };
+  readonly "portal.header.champion": { readonly team: string };
+  readonly "portal.header.progress": { readonly official: number; readonly total: number };
+  readonly "portal.header.progressCompleted": { readonly official: number; readonly total: number };
   readonly "portal.meta.description": { readonly name: string };
+  readonly "portal.cover.podium.record": {
+    readonly wins: number;
+    readonly draws: number;
+    readonly losses: number;
+  };
+  readonly "portal.cover.matchesPlayed": { readonly count: number };
   readonly "portal.calendar.round": { readonly round: number };
+  readonly "portal.calendar.summary": { readonly shown: number; readonly total: number };
+  readonly "portal.calendar.roundSummary": { readonly official: number; readonly total: number };
   readonly "portal.encounter.label": { readonly home: string; readonly away: string };
   readonly "portal.encounter.score": { readonly score: string };
   readonly "portal.bracket.round": { readonly round: number };
@@ -4167,6 +4230,7 @@ export interface MessageParamsByKey {
   readonly "portal.bracket.side.winner": { readonly round: number; readonly order: number };
   readonly "portal.bracket.side.groupRank": { readonly group: string; readonly rank: number };
   readonly "portal.bracket.side.stageRank": { readonly rank: number };
+  readonly "portal.teams.position": { readonly position: number };
   readonly "portal.rules.teams.range": { readonly min: number; readonly max: number };
   readonly "portal.rules.teams.min": { readonly min: number };
   readonly "portal.rules.roster.value": { readonly count: number };
@@ -7650,6 +7714,13 @@ const en: Catalog = {
   "portal.header.eyebrow": "Public competition",
   "portal.header.teams": ({ count }) => (count === 1 ? "1 team" : `${count} teams`),
   "portal.header.timeZone": ({ zone }) => `Times in ${zone}`,
+  "portal.header.share": "Share",
+  "portal.header.copied": "Link copied",
+  "portal.header.champion": ({ team }) => `Champion: ${team}`,
+  "portal.header.progress": ({ official, total }) =>
+    `Published matches · ${official} of ${total} official`,
+  "portal.header.progressCompleted": ({ official, total }) =>
+    `Season completed · ${official} of ${total} matches`,
   "portal.footer.poweredBy": "Published with Futrob",
   "portal.footer.home": "Discover Futrob",
   "portal.meta.description": ({ name }) =>
@@ -7663,6 +7734,19 @@ const en: Catalog = {
   "portal.notFound.description":
     "Check the link. If it is right, the competition isn't published yet.",
   "portal.notFound.action": "Go to Futrob",
+  "portal.cover.podium": "Official podium",
+  "portal.cover.podium.points": "pts",
+  "portal.cover.podium.record": ({ wins, draws, losses }) => `${wins}W · ${draws}D · ${losses}L`,
+  "portal.cover.featured.label": "Featured match",
+  "portal.cover.featured.official": "Latest official result",
+  "portal.cover.featured.upcoming": "Next encounter",
+  "portal.cover.featured.awaiting": "Awaiting result",
+  "portal.cover.standings": "Official table",
+  "portal.cover.standingsLink": "See full table",
+  "portal.cover.leaders": "Individual leaders",
+  "portal.cover.rankingsLink": "See rankings",
+  "portal.cover.leadersEmpty": "Leaders appear once match stats are officialized.",
+  "portal.cover.matchesPlayed": ({ count }) => `${count} MP`,
   "portal.cover.upcoming": "Upcoming encounters",
   "portal.cover.upcoming.empty": "No encounters left to play.",
   "portal.cover.results": "Latest results",
@@ -7672,6 +7756,25 @@ const en: Catalog = {
   "portal.noFixture.description":
     "Once the organization generates the fixtures, every round and its results show up here.",
   "portal.calendar.round": ({ round }) => `Round ${round}`,
+  "portal.calendar.views.label": "Calendar view",
+  "portal.calendar.views.rounds": "By round",
+  "portal.calendar.views.agenda": "Agenda",
+  "portal.calendar.filter.team": "Filter by team",
+  "portal.calendar.filter.allTeams": "All teams",
+  "portal.calendar.filter.round": "Filter by round",
+  "portal.calendar.filter.allRounds": "All rounds",
+  "portal.calendar.filter.status": "Filter by status",
+  "portal.calendar.filter.allStatuses": "All statuses",
+  "portal.calendar.filter.clear": "Clear filters",
+  "portal.calendar.summary": ({ shown, total }) =>
+    shown === total
+      ? total === 1
+        ? "1 encounter"
+        : `${total} encounters`
+      : `Showing ${shown} of ${total} encounters`,
+  "portal.calendar.roundSummary": ({ official, total }) => `${official} of ${total} official`,
+  "portal.calendar.filteredEmpty.title": "No encounters match these filters",
+  "portal.calendar.filteredEmpty.description": "Try changing the selected team, round, or status.",
   "portal.encounter.status.scheduled": "Scheduled",
   "portal.encounter.status.awaiting_result": "Awaiting result",
   "portal.encounter.status.official": "Official",
@@ -7705,13 +7808,25 @@ const en: Catalog = {
   "portal.teams.empty.title": "No confirmed teams yet",
   "portal.teams.empty.description":
     "Teams show up here once the organization approves their entry.",
+  "portal.teams.search": "Search team",
+  "portal.teams.filteredEmpty.title": "No matching teams",
+  "portal.teams.filteredEmpty.description": "We couldn't find any team with that name.",
+  "portal.teams.clearSearch": "Clear search",
+  "portal.teams.viewCalendar": "See matches",
+  "portal.teams.unranked": "No official matches yet",
+  "portal.teams.position": ({ position }) => `#${position}`,
   "portal.rankings.kinds": "Ranking type",
   "portal.rankings.col.player": "Player",
   "portal.rankings.col.team": "Team",
   "portal.rankings.col.matches": "MP",
   "portal.rankings.col.matches.full": "Matches played",
+  "portal.rankings.col.perMatch": "Avg/MP",
+  "portal.rankings.col.perMatch.full": "Average per match played",
+  "portal.rankings.summary.perMatch": "Best rate per MP",
+  "portal.rankings.summary.perMatchRatingHint": "Rating is already an average per match.",
   "portal.rankings.empty.title": "No data for this ranking yet",
   "portal.rankings.empty.description": "Rankings are built from the stats of officialized matches.",
+  "portal.rules.competitionTitle": "Competition rules",
   "portal.rules.format": "Format",
   "portal.rules.teams": "Teams",
   "portal.rules.teams.range": ({ min, max }) => `${min} to ${max}`,

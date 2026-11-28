@@ -33,14 +33,16 @@ import type {
 } from "@futrob/public-portal";
 import { asPublicCompetitionKey } from "@futrob/public-portal";
 import type { OfficialResultReaderPort } from "@futrob/results";
-import type {
-  FixtureParticipantSlot,
-  FixturePlan,
-  FixturePlanRepository,
+import {
+  seriesWinnerSide,
+  type FixtureParticipantSlot,
+  type FixturePlan,
+  type FixturePlanRepository,
 } from "@futrob/scheduling";
 import { asCompetitionId, type EncounterId, type TeamId } from "@futrob/shared-kernel";
 import {
   applySwissStandings,
+  type CompetitionPlayoffSpotsReaderPort,
   type CompetitionStandingSnapshotRepository,
   type CompetitionSwissStandingReaderPort,
   type RankingSnapshotRepository,
@@ -148,16 +150,21 @@ export class StatisticsPublicStandingsReader implements PublicStandingsReaderPor
   constructor(
     private readonly standings: CompetitionStandingSnapshotRepository,
     private readonly swissStandings: CompetitionSwissStandingReaderPort,
+    private readonly playoffSpots: CompetitionPlayoffSpotsReaderPort,
   ) {}
 
   async read(scope: PublicCompetitionScope): Promise<PublicStandingsSource | null> {
     const snapshot = await this.standings.findByCompetition(scope.competitionId);
     // The snapshot is keyed by competition alone; a mismatched tenant is treated as absent.
     if (!snapshot || snapshot.organizationId !== scope.organizationId) return null;
-    const context = await this.swissStandings.find(scope.organizationId, scope.competitionId);
+    const [context, qualifyingSpots] = await Promise.all([
+      this.swissStandings.find(scope.organizationId, scope.competitionId),
+      this.playoffSpots.find(scope.organizationId, scope.competitionId),
+    ]);
     const applied = context ? applySwissStandings(snapshot, context) : null;
     return {
       swiss: applied?.swiss ?? null,
+      qualifyingSpots,
       rows: (applied ?? snapshot).rows.map((row) => ({
         position: row.position,
         teamId: row.teamId,
@@ -291,15 +298,23 @@ function bracketStages(
     rounds: stage.rounds.map((round) => ({
       number: round.number,
       scheduledStartAt: round.scheduledStartAt,
-      encounters: round.encounters.map((encounter) => ({
-        order: encounter.order,
-        scheduledStartAt: encounter.scheduledStartAt,
-        officialMatchCount: encounter.officialMatchCount,
-        home: side(encounter.home),
-        away: side(encounter.away),
-        closedWithoutResult: encounter.closedWithoutResult === true,
-        officialScore: scores.get(encounter.id) ?? null,
-      })),
+      encounters: round.encounters.map((encounter) => {
+        const officialScore = scores.get(encounter.id) ?? null;
+        return {
+          order: encounter.order,
+          scheduledStartAt: encounter.scheduledStartAt,
+          officialMatchCount: encounter.officialMatchCount,
+          home: side(encounter.home),
+          away: side(encounter.away),
+          closedWithoutResult: encounter.closedWithoutResult === true,
+          officialScore,
+          // The series mode decides, not the goal total: 3-0 then 0-1 is a tie in independent mode.
+          winner:
+            officialScore && encounter.series
+              ? seriesWinnerSide(encounter.series.resolutionMode, officialScore)
+              : null,
+        };
+      }),
     })),
   }));
 }

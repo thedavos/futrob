@@ -127,3 +127,36 @@ describe("public portal official scores", () => {
     expect(scores).toEqual({ calendar: null, bracket: null });
   });
 });
+
+describe("public bracket winner", () => {
+  // Fixture A–B: A 3–0 B, then A 0–1 B. One win each, 3–1 on aggregate.
+  const slots = [slot(1, [teamA, 3], [teamB, 0]), slot(2, [teamA, 0], [teamB, 1])];
+
+  async function winnerUnder(resolutionMode: "independent_matches" | "aggregate_score") {
+    const withSeries = {
+      ...plan,
+      stages: plan.stages.map((stage) => ({
+        ...stage,
+        rounds: stage.rounds.map((round) => ({
+          ...round,
+          encounters: [{ ...encounter, series: { id: "series-a-b", resolutionMode } }],
+        })),
+      })),
+    } as unknown as FixturePlan;
+    const result = buildResult(scope, encounterId, asActorId("actor-1"), { slots });
+    const reader = new SchedulingPublicBracketReader(
+      { listActive: async () => [withSeries] },
+      { listByCompetition: async () => [result] },
+    );
+    const tree = await reader.read(scope);
+    return tree?.stages[0]?.rounds[0]?.encounters[0]?.winner;
+  }
+
+  it("leaves a series tied when each side won one independent match", async () => {
+    expect(await winnerUnder("independent_matches")).toBeNull();
+  });
+
+  it("sends the home side through on aggregate goals", async () => {
+    expect(await winnerUnder("aggregate_score")).toBe("home");
+  });
+});

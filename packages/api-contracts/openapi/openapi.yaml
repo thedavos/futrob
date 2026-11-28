@@ -17815,6 +17815,15 @@ components:
                                   additionalProperties: false
                                 minItems: 1
                                 maxItems: 2
+                              winner:
+                                type:
+                                  - string
+                                  - "null"
+                                enum:
+                                  - home
+                                  - away
+                                  - null
+                                default: null
                             required:
                               - order
                               - scheduledStartAt
@@ -18249,6 +18258,12 @@ components:
                 - currentRound
                 - isFinal
               additionalProperties: false
+            qualifyingSpots:
+              type:
+                - integer
+                - "null"
+              exclusiveMinimum: 0
+              default: null
             updatedAt:
               type:
                 - string
@@ -24176,6 +24191,15 @@ components:
             additionalProperties: false
           minItems: 1
           maxItems: 2
+        winner:
+          type:
+            - string
+            - "null"
+          enum:
+            - home
+            - away
+            - null
+          default: null
       required:
         - order
         - scheduledStartAt
@@ -24486,6 +24510,15 @@ components:
                         additionalProperties: false
                       minItems: 1
                       maxItems: 2
+                    winner:
+                      type:
+                        - string
+                        - "null"
+                      enum:
+                        - home
+                        - away
+                        - null
+                      default: null
                   required:
                     - order
                     - scheduledStartAt
