@@ -21,6 +21,7 @@ const styles = stylex.create({
     rowGap: "1rem",
   },
   panel: {
+    height: "100%",
     minWidth: 0,
     borderWidth: 1,
     borderStyle: "solid",
