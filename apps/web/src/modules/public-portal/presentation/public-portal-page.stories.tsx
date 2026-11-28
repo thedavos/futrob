@@ -20,9 +20,10 @@ import {
   publicRulesFixture,
   publicStandingsFixture,
 } from "./public-portal.fixtures.ts";
-import { PortalCalendarView, PortalCoverView } from "./public-portal-calendar.tsx";
+import { PortalCalendarView } from "./public-portal-calendar.tsx";
+import { coverLeadersFromRankings, PortalCoverView } from "./public-portal-cover.tsx";
 import { PublicPortalLayout } from "./public-portal-layout.tsx";
-import { portalPath, type PortalSection } from "./public-portal-model.ts";
+import { portalCalendarProgress, portalPath, type PortalSection } from "./public-portal-model.ts";
 import { PortalFrameLoading, PortalSectionLoading } from "./public-portal-skeleton.tsx";
 import { PortalError, PortalNotFound } from "./public-portal-states.tsx";
 import { PortalBracketView, PortalRulesView, PortalTeamsView } from "./public-portal-structure.tsx";
@@ -54,6 +55,8 @@ type Scenario =
 
 const CALENDAR = { timeZone: "America/Lima", entries: publicCalendarFixture };
 const NO_CALENDAR = { timeZone: "America/Lima", entries: [] };
+const COVER_LEADERS = coverLeadersFromRankings([publicRankingFixture]);
+const COVER_PROGRESS = portalCalendarProgress(publicCalendarFixture);
 
 const SECTION_OF: Record<Exclude<Scenario, "notFound">, PortalSection> = {
   cover: "cover",
@@ -82,13 +85,26 @@ const SECTION_OF: Record<Exclude<Scenario, "notFound">, PortalSection> = {
 function body(scenario: Exclude<Scenario, "notFound">): ReactNode {
   switch (scenario) {
     case "cover":
-      return <PortalCoverView calendar={CALENDAR} portalRef={portalRefFixture} />;
+      return (
+        <PortalCoverView
+          calendar={CALENDAR}
+          format={publicCompetitionFixture.format}
+          leaders={COVER_LEADERS}
+          portalRef={portalRefFixture}
+          standings={publicStandingsFixture}
+        />
+      );
     case "calendar":
       return <PortalCalendarView calendar={CALENDAR} />;
     case "noFixture":
       return <PortalCalendarView calendar={NO_CALENDAR} />;
     case "standings":
-      return <PortalStandingsView standings={publicStandingsFixture} />;
+      return (
+        <PortalStandingsView
+          format={publicCompetitionFixture.format}
+          standings={publicStandingsFixture}
+        />
+      );
     case "standingsEmpty":
       return <PortalStandingsView standings={{ rows: [], swiss: null, updatedAt: null }} />;
     case "bracket":
@@ -98,6 +114,8 @@ function body(scenario: Exclude<Scenario, "notFound">): ReactNode {
     case "teams":
       return (
         <PortalTeamsView
+          portalRef={portalRefFixture}
+          standings={publicStandingsFixture}
           teams={["Atlético Norte", "Deportivo Este", "Real Sur", "Unión Oeste"].map((name) => ({
             name,
           }))}
@@ -167,6 +185,7 @@ function PortalStory({
           <PublicPortalLayout
             competition={publicCompetitionFixture}
             portalRef={portalRefFixture}
+            progress={COVER_PROGRESS}
             section={SECTION_OF[scenario]}
           >
             {body(scenario)}
@@ -235,8 +254,13 @@ export const Cover: Story = {
     await expect(
       canvas.findByRole("heading", { level: 1, name: "Liga Norte Apertura" }),
     ).resolves.toBeVisible();
-    await expect(canvas.findByLabelText("Resultado oficial 2–1")).resolves.toBeVisible();
-    await expect(canvas.queryByRole("button")).toBeNull();
+    await expect(canvas.findByRole("region", { name: "Podio oficial" })).resolves.toBeVisible();
+    const scores = await canvas.findAllByLabelText("Resultado oficial 2–1");
+    await expect(scores.length).toBeGreaterThan(0);
+    // Only spectator share button; no operator actions (UX-PUB-001).
+    const buttons = canvas.getAllByRole("button");
+    await expect(buttons).toHaveLength(1);
+    await expect(buttons[0]).toHaveAccessibleName("Compartir");
   },
 };
 export const Calendar: Story = { name: "Calendario y resultados", args: { scenario: "calendar" } };
@@ -324,7 +348,6 @@ export const LoadingFrame: Story = {
 export const LoadingFrameNarrow: Story = {
   name: "Cargando competición · 390",
   args: { scenario: "loadingFrame" },
-  // A real 390 px viewport so the pending tab strip overflows horizontally and needs keyboard scroll.
   globals: { viewport: { value: "phone390" } },
   parameters: {
     viewport: {
