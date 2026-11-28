@@ -1,5 +1,9 @@
 import type { TeamId } from "@futrob/shared-kernel";
-import type { PublicBracketStageKind, PublicMatchScore } from "../entities/public-competition.ts";
+import type {
+  PublicBracketStageKind,
+  PublicBracketWinnerSide,
+  PublicMatchScore,
+} from "../entities/public-competition.ts";
 import type { PublicCompetitionScope } from "./published-competition-reader.port.ts";
 
 /** One side as the fixture knows it; the adapter already turned Encounter ids into positions. */
@@ -23,6 +27,8 @@ export interface PublicBracketSourceEncounter {
   readonly closedWithoutResult: boolean;
   /** Approved goals in slot order, home-oriented; null while none is approved. */
   readonly officialScore: readonly PublicMatchScore[] | null;
+  /** Side the official score resolves under the series mode; null while pending or tied. */
+  readonly winner: PublicBracketWinnerSide | null;
 }
 
 export interface PublicBracketSourceRound {

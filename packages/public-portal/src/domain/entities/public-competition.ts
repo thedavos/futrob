@@ -62,6 +62,8 @@ export interface PublicStandings {
   readonly rows: readonly PublicStandingRow[];
   /** Null unless the competition plays a Swiss fixture and has a table. */
   readonly swiss: PublicSwissProgress | null;
+  /** League places that reach the playoffs; null when this table has no qualifying cut. */
+  readonly qualifyingSpots: number | null;
   /** Null until the first approved result is projected. */
   readonly updatedAt: Date | null;
 }
@@ -115,6 +117,8 @@ export type PublicBracketSide =
 /** A bracket Encounter also shows when the organizer closed it without a result. */
 export type PublicBracketEncounterStatus = PublicEncounterStatus | "closed";
 
+export type PublicBracketWinnerSide = "home" | "away";
+
 export interface PublicBracketEncounter {
   readonly order: number;
   readonly scheduledStartAt: Date;
@@ -123,6 +127,8 @@ export interface PublicBracketEncounter {
   readonly away: PublicBracketSide;
   readonly status: PublicBracketEncounterStatus;
   readonly score: readonly PublicMatchScore[] | null;
+  /** The side the official result sends through under the series rules; null while undecided. */
+  readonly winner: PublicBracketWinnerSide | null;
 }
 
 export interface PublicBracketRound {

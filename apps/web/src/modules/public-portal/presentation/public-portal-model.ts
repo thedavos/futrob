@@ -2,6 +2,7 @@ import type {
   CompetitionFormatDto,
   PublicBracketSideDto,
   PublicCalendarEntryDto,
+  PublicCompetitionStatusDto,
   PublicEncounterStatusDto,
   PublicMatchScoreDto,
   PublicRankingKindDto,
@@ -287,9 +288,14 @@ export interface PortalProgress {
   readonly completed: boolean;
 }
 
-/** Officialized encounter progress for the Alternativa B hero banner. */
+/**
+ * Officialized share of the published Encounters for the hero banner. The calendar only lists
+ * pairings with both Teams known (later knockout and Swiss rounds appear as they are drawn), so
+ * the count is not a season total: only the competition status can say the season is over.
+ */
 export function portalCalendarProgress(
   entries: readonly PublicCalendarEntryDto[],
+  status: PublicCompetitionStatusDto,
 ): PortalProgress | null {
   if (entries.length === 0) return null;
   const official = entries.filter((entry) => entry.status === "official").length;
@@ -298,7 +304,7 @@ export function portalCalendarProgress(
     official,
     total,
     percent: Math.round((official / total) * 100),
-    completed: official === total,
+    completed: status === "finished",
   };
 }
 

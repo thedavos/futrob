@@ -38,6 +38,7 @@ import {
   StatisticsPublicStandingsReader,
   TeamsPublicTeamDirectory,
 } from "@/adapters/public-portal/readers.ts";
+import { FixturePlayoffSpotsReader } from "@/adapters/statistics/fixture-playoff-spots-reader.ts";
 
 export function createPublicPortalModule(input: {
   readonly clock: ClockPort;
@@ -69,7 +70,14 @@ export function createPublicPortalModule(input: {
     getCompetition: new GetPublicCompetitionUseCase(competitions),
     getStandings: new GetPublicStandingsUseCase({
       competitions,
-      standings: new StatisticsPublicStandingsReader(input.standings, input.swissStandings),
+      standings: new StatisticsPublicStandingsReader(
+        input.standings,
+        input.swissStandings,
+        new FixturePlayoffSpotsReader({
+          fixturePlans: input.fixturePlans,
+          results: input.officialResults,
+        }),
+      ),
       teams,
     }),
     getCalendar: new GetPublicCalendarUseCase({

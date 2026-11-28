@@ -90,6 +90,11 @@ export function PublicBracketList({
                               winner === "away" && bracketStyles.scoreOut,
                             )}
                           >
+                            {homeScore.legs ? (
+                              <span {...applyStyles(bracketStyles.scoreLegs)}>
+                                ({homeScore.legs})
+                              </span>
+                            ) : null}
                             <span {...applyStyles(winner === "home" && bracketStyles.scoreLeader)}>
                               {homeScore.goals}
                             </span>
@@ -116,6 +121,11 @@ export function PublicBracketList({
                               winner === "home" && bracketStyles.scoreOut,
                             )}
                           >
+                            {awayScore.legs ? (
+                              <span {...applyStyles(bracketStyles.scoreLegs)}>
+                                ({awayScore.legs})
+                              </span>
+                            ) : null}
                             <span {...applyStyles(winner === "away" && bracketStyles.scoreLeader)}>
                               {awayScore.goals}
                             </span>

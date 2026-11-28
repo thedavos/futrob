@@ -56,7 +56,7 @@ type Scenario =
 const CALENDAR = { timeZone: "America/Lima", entries: publicCalendarFixture };
 const NO_CALENDAR = { timeZone: "America/Lima", entries: [] };
 const COVER_LEADERS = coverLeadersFromRankings([publicRankingFixture]);
-const COVER_PROGRESS = portalCalendarProgress(publicCalendarFixture);
+const COVER_PROGRESS = portalCalendarProgress(publicCalendarFixture, "published");
 
 const SECTION_OF: Record<Exclude<Scenario, "notFound">, PortalSection> = {
   cover: "cover",
@@ -88,7 +88,6 @@ function body(scenario: Exclude<Scenario, "notFound">): ReactNode {
       return (
         <PortalCoverView
           calendar={CALENDAR}
-          format={publicCompetitionFixture.format}
           leaders={COVER_LEADERS}
           portalRef={portalRefFixture}
           standings={publicStandingsFixture}
@@ -99,14 +98,13 @@ function body(scenario: Exclude<Scenario, "notFound">): ReactNode {
     case "noFixture":
       return <PortalCalendarView calendar={NO_CALENDAR} />;
     case "standings":
+      return <PortalStandingsView standings={publicStandingsFixture} />;
+    case "standingsEmpty":
       return (
         <PortalStandingsView
-          format={publicCompetitionFixture.format}
-          standings={publicStandingsFixture}
+          standings={{ rows: [], swiss: null, qualifyingSpots: null, updatedAt: null }}
         />
       );
-    case "standingsEmpty":
-      return <PortalStandingsView standings={{ rows: [], swiss: null, updatedAt: null }} />;
     case "bracket":
       return <PortalBracketView bracket={publicBracketFixture} format="league-playoffs" />;
     case "bracketEmpty":

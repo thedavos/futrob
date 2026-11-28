@@ -70,7 +70,7 @@ describe("PublicPortalLayout", () => {
         championName="Atlético Norte"
         competition={{ ...publicCompetitionFixture, format: "league", status: "finished" }}
         portalRef={portalRefFixture}
-        progress={portalCalendarProgress(publicCalendarFixture)}
+        progress={portalCalendarProgress(publicCalendarFixture, "finished")}
         section="standings"
       >
         <p>contenido</p>
@@ -303,7 +303,6 @@ describe("calendar and cover", () => {
     await renderEs(
       <PortalCoverView
         calendar={{ timeZone: "America/Lima", entries: publicCalendarFixture }}
-        format="league-playoffs"
         leaders={coverLeadersFromRankings([publicRankingFixture])}
         portalRef={portalRefFixture}
         standings={publicStandingsFixture}
@@ -318,13 +317,60 @@ describe("calendar and cover", () => {
     const upcoming = within(screen.getByRole("region", { name: "Próximos enfrentamientos" }));
     expect(upcoming.getAllByRole("article")).toHaveLength(2);
   });
+
+  it("offers a retry when the calendar read failed instead of calling it unpublished", async () => {
+    const onRetry = vi.fn();
+    const empty = { ...publicStandingsFixture, rows: [] };
+    await renderEs(
+      <PortalCoverView
+        calendar={null}
+        onCalendarRetry={onRetry}
+        portalRef={portalRefFixture}
+        standings={empty}
+      />,
+    );
+    expect(screen.queryByText("El calendario aún no está publicado")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(onRetry).toHaveBeenCalledOnce();
+    cleanup();
+
+    await renderEs(
+      <PortalCoverView
+        calendar={{ timeZone: "America/Lima", entries: [] }}
+        portalRef={portalRefFixture}
+        standings={empty}
+      />,
+    );
+    expect(screen.getByText("El calendario aún no está publicado")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull();
+  });
+
+  it("marks only the places the fixture sends to the playoffs, on the cover and the table", async () => {
+    const [template] = publicStandingsFixture.rows;
+    if (!template) throw new Error("fixture shape");
+    const standings = {
+      ...publicStandingsFixture,
+      qualifyingSpots: 2,
+      rows: Array.from({ length: 6 }, (_, index) => ({
+        ...template,
+        position: index + 1,
+        teamName: `Equipo ${index + 1}`,
+      })),
+    };
+    await renderEs(
+      <PortalCoverView calendar={null} portalRef={portalRefFixture} standings={standings} />,
+    );
+    expect(screen.getByText("Los dos primeros pasan al playoff")).toBeTruthy();
+    cleanup();
+
+    await renderEs(<PortalStandingsView standings={standings} />);
+    expect(screen.getByText("Los dos primeros pasan al playoff")).toBeTruthy();
+  });
 });
 
 describe("tables", () => {
   it("renders the official table with KPI summary, form strip, and its empty state", async () => {
-    await renderEs(
-      <PortalStandingsView format="league-playoffs" standings={publicStandingsFixture} />,
-    );
+    await renderEs(<PortalStandingsView standings={publicStandingsFixture} />);
     expect(screen.getByRole("region", { name: "Resumen de la clasificación" })).toBeTruthy();
     expect(screen.getByRole("cell", { name: /Atlético Norte/ })).toBeTruthy();
     expect(screen.getByRole("cell", { name: "-1" })).toBeTruthy();
@@ -392,6 +438,48 @@ describe("structure", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Lista" }));
     expect(screen.getByRole("tab", { name: "Lista" }).getAttribute("aria-selected")).toBe("true");
     expect(screen.queryByText("3")).toBeNull();
+  });
+
+  it("keeps each match of a two-leg tie in both the canvas and the list", async () => {
+    const [stage] = publicBracketFixture.stages;
+    const [first, second] = stage?.rounds ?? [];
+    if (!stage || !first || !second) throw new Error("fixture shape");
+    const twoLegs = {
+      ...publicBracketFixture,
+      stages: [
+        {
+          ...stage,
+          rounds: [
+            {
+              ...first,
+              encounters: first.encounters.map((encounter) =>
+                encounter.order === 1
+                  ? {
+                      ...encounter,
+                      home: { kind: "team" as const, name: "Atlético Norte" },
+                      away: { kind: "team" as const, name: "Unión Oeste" },
+                      status: "official" as const,
+                      score: [
+                        { homeGoals: 3, awayGoals: 0 },
+                        { homeGoals: 0, awayGoals: 1 },
+                      ],
+                      winner: null,
+                    }
+                  : encounter,
+              ),
+            },
+            second,
+          ],
+        },
+      ],
+    };
+    await renderEs(<PortalBracketView bracket={twoLegs} format="league-playoffs" />);
+    expect(screen.getByText("(3 · 0)")).toBeTruthy();
+    expect(screen.getByText("(0 · 1)")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Lista" }));
+    expect(screen.getByText("(3 · 0)")).toBeTruthy();
+    expect(screen.getByText("(0 · 1)")).toBeTruthy();
   });
 
   it("says there is no bracket yet before the fixture exists", async () => {

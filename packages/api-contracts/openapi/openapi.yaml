@@ -17815,6 +17815,14 @@ components:
                                   additionalProperties: false
                                 minItems: 1
                                 maxItems: 2
+                              winner:
+                                type:
+                                  - string
+                                  - "null"
+                                enum:
+                                  - home
+                                  - away
+                                  - null
                             required:
                               - order
                               - scheduledStartAt
@@ -17823,6 +17831,7 @@ components:
                               - away
                               - status
                               - score
+                              - winner
                             additionalProperties: false
                       required:
                         - number
@@ -18249,6 +18258,11 @@ components:
                 - currentRound
                 - isFinal
               additionalProperties: false
+            qualifyingSpots:
+              type:
+                - integer
+                - "null"
+              exclusiveMinimum: 0
             updatedAt:
               type:
                 - string
@@ -18257,6 +18271,7 @@ components:
           required:
             - rows
             - swiss
+            - qualifyingSpots
             - updatedAt
           additionalProperties: false
       required:
@@ -24176,6 +24191,14 @@ components:
             additionalProperties: false
           minItems: 1
           maxItems: 2
+        winner:
+          type:
+            - string
+            - "null"
+          enum:
+            - home
+            - away
+            - null
       required:
         - order
         - scheduledStartAt
@@ -24184,6 +24207,7 @@ components:
         - away
         - status
         - score
+        - winner
       additionalProperties: false
     PublicBracketSide:
       oneOf:
@@ -24486,6 +24510,14 @@ components:
                         additionalProperties: false
                       minItems: 1
                       maxItems: 2
+                    winner:
+                      type:
+                        - string
+                        - "null"
+                      enum:
+                        - home
+                        - away
+                        - null
                   required:
                     - order
                     - scheduledStartAt
@@ -24494,6 +24526,7 @@ components:
                     - away
                     - status
                     - score
+                    - winner
                   additionalProperties: false
             required:
               - number

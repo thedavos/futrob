@@ -1,35 +1,30 @@
 import type { GetPublicStandingsResponse } from "@futrob/api-contracts";
-import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi, useRouter } from "@tanstack/react-router";
 import {
   coverLeadersFromRankings,
   PortalCoverView,
   type CoverLeaderItem,
-  type PortalCalendar,
 } from "@/modules/public-portal/presentation/public-portal-cover.tsx";
-import {
-  PortalSectionRead,
-  sectionRead,
-  type SectionRead,
-} from "@/modules/public-portal/presentation/public-portal-route.tsx";
+import { sectionRead } from "@/modules/public-portal/presentation/public-portal-route.tsx";
 import { PortalCoverLoading } from "@/modules/public-portal/presentation/public-portal-skeleton.tsx";
+import { PortalError } from "@/modules/public-portal/presentation/public-portal-states.tsx";
 import {
-  getPublicPortalCalendar,
   getPublicPortalRanking,
   getPublicPortalStandings,
 } from "@/modules/public-portal/server/public-portal.functions.ts";
 
 interface CoverLoaderData {
-  readonly calendar: PortalCalendar | null;
   readonly standings: GetPublicStandingsResponse["standings"] | null;
+  readonly standingsFailed: boolean;
   readonly leaders: readonly CoverLeaderItem[];
 }
 
 const portalRoute = getRouteApi("/$organizationSlug/$competitionKey");
 
 export const Route = createFileRoute("/$organizationSlug/$competitionKey/")({
-  loader: async ({ params }): Promise<SectionRead<CoverLoaderData>> => {
-    const [calendarRead, standingsRead, scorerRead, assisterRead, ratingRead] = await Promise.all([
-      getPublicPortalCalendar({ data: params }),
+  loader: async ({ params }): Promise<CoverLoaderData> => {
+    // The calendar comes from the portal layout loader, which already read it for the hero.
+    const [standingsRead, scorerRead, assisterRead, ratingRead] = await Promise.all([
       getPublicPortalStandings({ data: params }),
       getPublicPortalRanking({ data: { ...params, kind: "scorer" } }),
       getPublicPortalRanking({ data: { ...params, kind: "assister" } }),
@@ -37,13 +32,7 @@ export const Route = createFileRoute("/$organizationSlug/$competitionKey/")({
     ]);
 
     // A 404 on any core slice means the competition is no longer public.
-    const calendar = sectionRead(calendarRead);
     const standings = sectionRead(standingsRead);
-
-    // Only fail the whole Cover when neither calendar nor standings loaded.
-    if (calendar.status === "error" && standings.status === "error") {
-      return { status: "error" as const };
-    }
 
     const leaders = coverLeadersFromRankings([
       scorerRead.status === "ready" ? scorerRead.data.ranking : null,
@@ -52,12 +41,9 @@ export const Route = createFileRoute("/$organizationSlug/$competitionKey/")({
     ]);
 
     return {
-      status: "ready" as const,
-      data: {
-        calendar: calendar.status === "ready" ? calendar.data.calendar : null,
-        standings: standings.status === "ready" ? standings.data.standings : null,
-        leaders,
-      },
+      standings: standings.status === "ready" ? standings.data.standings : null,
+      standingsFailed: standings.status === "error",
+      leaders,
     };
   },
   pendingComponent: CoverPending,
@@ -69,20 +55,20 @@ function CoverPending() {
 }
 
 function PortalCoverRoute() {
-  const read = Route.useLoaderData();
+  const { leaders, standings, standingsFailed } = Route.useLoaderData();
   const portalRef = Route.useParams();
-  const { competition } = portalRoute.useLoaderData();
+  const { calendar } = portalRoute.useLoaderData();
+  const router = useRouter();
+  const retry = () => void router.invalidate();
+  // Only fail the whole Cover when neither the calendar nor the standings loaded.
+  if (calendar.status === "error" && standingsFailed) return <PortalError onRetry={retry} />;
   return (
-    <PortalSectionRead read={read}>
-      {({ calendar, leaders, standings }) => (
-        <PortalCoverView
-          calendar={calendar}
-          format={competition.format}
-          leaders={leaders}
-          portalRef={portalRef}
-          standings={standings}
-        />
-      )}
-    </PortalSectionRead>
+    <PortalCoverView
+      calendar={calendar.status === "ready" ? calendar.data.calendar : null}
+      leaders={leaders}
+      onCalendarRetry={calendar.status === "error" ? retry : undefined}
+      portalRef={portalRef}
+      standings={standings}
+    />
   );
 }

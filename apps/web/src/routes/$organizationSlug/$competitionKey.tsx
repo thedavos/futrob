@@ -15,6 +15,7 @@ import {
   portalSectionAt,
 } from "@/modules/public-portal/presentation/public-portal-meta.ts";
 import { PublicPortalLayout } from "@/modules/public-portal/presentation/public-portal-layout.tsx";
+import { sectionRead } from "@/modules/public-portal/presentation/public-portal-route.tsx";
 import { PortalFrameLoading } from "@/modules/public-portal/presentation/public-portal-skeleton.tsx";
 import {
   PortalError,
@@ -51,9 +52,11 @@ export const Route = createFileRoute("/$organizationSlug/$competitionKey")({
     if (competitionRead.status === "error") throw new Error("public_portal.unavailable");
 
     const { competition } = competitionRead.data;
+    // Read once here for the hero progress and shared with the Cover and Calendar sections.
+    const calendar = sectionRead(calendarRead);
     const progress =
-      calendarRead.status === "ready"
-        ? portalCalendarProgress(calendarRead.data.calendar.entries)
+      calendar.status === "ready"
+        ? portalCalendarProgress(calendar.data.calendar.entries, competition.status)
         : null;
 
     let championName: string | null = null;
@@ -74,7 +77,7 @@ export const Route = createFileRoute("/$organizationSlug/$competitionKey")({
       }
     }
 
-    return { ref, competition, progress, championName, origin: getSiteOrigin() };
+    return { ref, competition, calendar, progress, championName, origin: getSiteOrigin() };
   },
   head: ({ loaderData, matches }) => {
     const t = createTranslator(rootLocaleSchema.parse(matches[0]?.loaderData));

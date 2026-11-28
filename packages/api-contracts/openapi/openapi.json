@@ -26343,6 +26343,17 @@
                                   },
                                   "minItems": 1,
                                   "maxItems": 2
+                                },
+                                "winner": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "home",
+                                    "away",
+                                    null
+                                  ]
                                 }
                               },
                               "required": [
@@ -26352,7 +26363,8 @@
                                 "home",
                                 "away",
                                 "status",
-                                "score"
+                                "score",
+                                "winner"
                               ],
                               "additionalProperties": false
                             }
@@ -26947,6 +26959,13 @@
                 ],
                 "additionalProperties": false
               },
+              "qualifyingSpots": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              },
               "updatedAt": {
                 "type": [
                   "string",
@@ -26958,6 +26977,7 @@
             "required": [
               "rows",
               "swiss",
+              "qualifyingSpots",
               "updatedAt"
             ],
             "additionalProperties": false
@@ -35219,6 +35239,17 @@
             },
             "minItems": 1,
             "maxItems": 2
+          },
+          "winner": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "home",
+              "away",
+              null
+            ]
           }
         },
         "required": [
@@ -35228,7 +35259,8 @@
           "home",
           "away",
           "status",
-          "score"
+          "score",
+          "winner"
         ],
         "additionalProperties": false
       },
@@ -35687,6 +35719,17 @@
                         },
                         "minItems": 1,
                         "maxItems": 2
+                      },
+                      "winner": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "home",
+                          "away",
+                          null
+                        ]
                       }
                     },
                     "required": [
@@ -35696,7 +35739,8 @@
                       "home",
                       "away",
                       "status",
-                      "score"
+                      "score",
+                      "winner"
                     ],
                     "additionalProperties": false
                   }

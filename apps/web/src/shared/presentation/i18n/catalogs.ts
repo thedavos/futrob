@@ -3549,7 +3549,7 @@ const es = {
   "portal.header.copied": "Enlace copiado",
   "portal.header.champion": ({ team }) => `Campeón: ${team}`,
   "portal.header.progress": ({ official, total }) =>
-    `Temporada oficial · ${official} de ${total} partidos`,
+    `Partidos publicados · ${official} de ${total} oficiales`,
   "portal.header.progressCompleted": ({ official, total }) =>
     `Temporada completada · ${official} de ${total} partidos`,
   "portal.footer.poweredBy": "Publicado con Futrob",
@@ -7718,7 +7718,7 @@ const en: Catalog = {
   "portal.header.copied": "Link copied",
   "portal.header.champion": ({ team }) => `Champion: ${team}`,
   "portal.header.progress": ({ official, total }) =>
-    `Official season · ${official} of ${total} matches`,
+    `Published matches · ${official} of ${total} official`,
   "portal.header.progressCompleted": ({ official, total }) =>
     `Season completed · ${official} of ${total} matches`,
   "portal.footer.poweredBy": "Published with Futrob",

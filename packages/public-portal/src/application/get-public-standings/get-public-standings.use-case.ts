@@ -32,7 +32,7 @@ export class GetPublicStandingsUseCase {
     const { scope } = resolved.value;
 
     const snapshot = await this.deps.standings.read(scope);
-    if (!snapshot) return ok({ rows: [], swiss: null, updatedAt: null });
+    if (!snapshot) return ok({ rows: [], swiss: null, qualifyingSpots: null, updatedAt: null });
 
     const names = await this.deps.teams.namesByIds(
       scope,
@@ -67,6 +67,7 @@ export class GetPublicStandingsUseCase {
           : [publicRow];
       }),
       swiss: snapshot.swiss,
+      qualifyingSpots: snapshot.qualifyingSpots,
       updatedAt: snapshot.updatedAt,
     });
   }

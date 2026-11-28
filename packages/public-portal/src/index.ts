@@ -16,6 +16,7 @@ export type {
   PublicBracket,
   PublicBracketEncounter,
   PublicBracketEncounterStatus,
+  PublicBracketWinnerSide,
   PublicBracketRound,
   PublicBracketSide,
   PublicBracketStage,

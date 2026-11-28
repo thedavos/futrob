@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { CheckCircleIcon, FlagCheckeredIcon, TableIcon } from "@phosphor-icons/react";
-import type { CompetitionFormatDto, GetPublicStandingsResponse } from "@futrob/api-contracts";
+import type { GetPublicStandingsResponse } from "@futrob/api-contracts";
 import {
   applyStyles,
   Badge,
@@ -39,13 +39,7 @@ function Abbr({ full, short }: { readonly full: string; readonly short: string }
  * Official public table (Alternative A): 4 ProfileKpiStat summary cards, approved badge,
  * Swiss support, FormStrip from the public contract, playoff cut zone bar, and mobile column toggle.
  */
-export function PortalStandingsView({
-  format,
-  standings,
-}: {
-  readonly format?: CompetitionFormatDto;
-  readonly standings: Standings;
-}) {
+export function PortalStandingsView({ standings }: { readonly standings: Standings }) {
   const { locale, t } = useI18n();
   const headingId = useId();
   const tableId = useId();
@@ -68,7 +62,7 @@ export function PortalStandingsView({
         new Date(standings.updatedAt),
       )
     : null;
-  const cut = publicStandingsCut(format, standings.rows.length);
+  const cut = publicStandingsCut(standings);
   const isSwiss = standings.swiss !== null;
   const tiebreakCopy = isSwiss ? t("standings.tiebreak.swiss") : t("standings.tiebreak.league");
   const crest = applyStyles(standingsStyles.crest);

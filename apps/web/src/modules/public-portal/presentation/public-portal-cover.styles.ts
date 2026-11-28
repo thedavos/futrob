@@ -281,6 +281,13 @@ export const coverStyles = stylex.create({
     borderRadius: "var(--corner-xs)",
     backgroundColor: colors.primary,
   },
+  /** The zone bar reused inline as the legend key of the qualifying note. */
+  zoneKey: {
+    position: "static",
+    display: "inline-block",
+    height: "0.875rem",
+    flexShrink: 0,
+  },
   miniPoints: {
     fontWeight: "var(--font-weight-bold)",
     color: colors.foreground,
@@ -343,5 +350,11 @@ export const coverStyles = stylex.create({
   },
   emptyBody: {
     paddingBlock: space.s4,
+  },
+  cutNote: {
+    display: "flex",
+    alignItems: "center",
+    gap: space.s2,
+    marginTop: space.s3,
   },
 });

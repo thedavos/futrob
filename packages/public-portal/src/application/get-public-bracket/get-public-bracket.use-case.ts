@@ -70,6 +70,7 @@ export class GetPublicBracketUseCase {
                 away: side(encounter.away),
                 status: statusOf(encounter, now),
                 score: encounter.officialScore ? toPublicScore(encounter.officialScore) : null,
+                winner: encounter.officialScore ? encounter.winner : null,
               })),
           })),
       })),

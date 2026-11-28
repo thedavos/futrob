@@ -401,7 +401,9 @@ describe("public portal reads", () => {
     const empty = await anonymous(`/${competitionId}/standings`);
     expect(empty.status).toBe(200);
     await expectMatchesOpenApi(empty, "get", `${PUBLIC_PATH}/standings`);
-    expect(await empty.json()).toEqual({ standings: { rows: [], swiss: null, updatedAt: null } });
+    expect(await empty.json()).toEqual({
+      standings: { rows: [], swiss: null, qualifyingSpots: null, updatedAt: null },
+    });
 
     const plans = await modules.scheduling.fixturePlans.listActive(
       asOrganizationId(organizationId),
@@ -509,7 +511,7 @@ describe("public portal reads", () => {
     const response = await anonymous(`/${competitionId}/standings`);
 
     expect(await response.json()).toEqual({
-      standings: { rows: [], swiss: null, updatedAt: null },
+      standings: { rows: [], swiss: null, qualifyingSpots: null, updatedAt: null },
     });
   });
 

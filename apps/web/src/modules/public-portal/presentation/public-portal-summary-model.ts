@@ -1,20 +1,19 @@
 import type {
-  CompetitionFormatDto,
   GetPublicRankingResponse,
   GetPublicStandingsResponse,
   PublicRankingKindDto,
   PublicStandingRowDto,
 } from "@futrob/api-contracts";
 
-/** Number of top rows highlighted as qualifying zone on the public standings table. */
+/**
+ * Top rows highlighted as the qualifying zone. The places come from the fixture via the API
+ * (FR-16); the table never guesses them. No cut is drawn when every row would qualify.
+ */
 export function publicStandingsCut(
-  format: CompetitionFormatDto | undefined,
-  rowCount: number,
+  standings: Pick<GetPublicStandingsResponse["standings"], "qualifyingSpots" | "rows">,
 ): number | null {
-  if (format !== "league-playoffs" && format !== "groups-knockout") return null;
-  if (rowCount >= 4) return 4;
-  if (rowCount >= 2) return 2;
-  return null;
+  const spots = standings.qualifyingSpots;
+  return spots !== null && spots < standings.rows.length ? spots : null;
 }
 
 export interface PublicStandingsGoalsLeader {

@@ -46,6 +46,7 @@ function encounter(overrides: Partial<PublicBracketSourceEncounter>): PublicBrac
     away: { kind: "team", teamId: SURQUILLO },
     closedWithoutResult: false,
     officialScore: null,
+    winner: null,
     ...overrides,
   };
 }
@@ -95,6 +96,7 @@ describe("GetPublicBracketUseCase", () => {
                     { homeGoals: 1, awayGoals: 0 },
                     { homeGoals: 2, awayGoals: 2 },
                   ],
+                  winner: "home",
                 }),
               ],
             },
@@ -124,6 +126,7 @@ describe("GetPublicBracketUseCase", () => {
                     { homeGoals: 1, awayGoals: 0 },
                     { homeGoals: 2, awayGoals: 2 },
                   ],
+                  winner: "home",
                 },
                 {
                   order: 2,
@@ -133,6 +136,7 @@ describe("GetPublicBracketUseCase", () => {
                   away: { kind: "bye" },
                   status: "closed",
                   score: null,
+                  winner: null,
                 },
               ],
             },
@@ -148,6 +152,7 @@ describe("GetPublicBracketUseCase", () => {
                   away: { kind: "winner", roundNumber: 1, order: 2 },
                   status: "scheduled",
                   score: null,
+                  winner: null,
                 },
               ],
             },

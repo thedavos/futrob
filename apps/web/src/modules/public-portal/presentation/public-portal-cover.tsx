@@ -2,12 +2,10 @@ import { useId } from "react";
 import { Link } from "@tanstack/react-router";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import type {
-  CompetitionFormatDto,
   GetPublicRankingResponse,
   GetPublicStandingsResponse,
   PublicCalendarEntryDto,
   PublicRankingKindDto,
-  PublicStandingRowDto,
 } from "@futrob/api-contracts";
 import {
   applyStyles,
@@ -39,7 +37,7 @@ import {
 } from "./public-portal-model.ts";
 import { CoverFeaturedMatchCard, CoverPodiumBlock } from "./public-portal-cover-hero.tsx";
 import { PortalEncounterList } from "./public-portal-shared.tsx";
-import { PortalEmpty } from "./public-portal-states.tsx";
+import { PortalEmpty, PortalError } from "./public-portal-states.tsx";
 import { coverStyles } from "./public-portal-cover.styles.ts";
 
 const COVER_LIMIT = 3;
@@ -77,20 +75,18 @@ export function coverLeadersFromRankings(
 }
 
 function CoverStandingsCard({
-  format,
   portalRef,
-  rows,
+  standings,
 }: {
-  readonly format?: CompetitionFormatDto;
   readonly portalRef: PortalRef;
-  readonly rows: readonly PublicStandingRowDto[];
+  readonly standings: GetPublicStandingsResponse["standings"];
 }) {
   const { locale, t } = useI18n();
   const headingId = useId();
   const signed = new Intl.NumberFormat(locale, { signDisplay: "exceptZero" });
   const crest = applyStyles(coverStyles.crestMd);
-  const cut = publicStandingsCut(format, rows.length);
-  const visible = rows.slice(0, MINI_STANDINGS_LIMIT);
+  const cut = publicStandingsCut(standings);
+  const visible = standings.rows.slice(0, MINI_STANDINGS_LIMIT);
 
   return (
     <Card className={coverStyles.sectionCard}>
@@ -155,6 +151,12 @@ function CoverStandingsCard({
             ))}
           </TableBody>
         </Table>
+        {cut !== null ? (
+          <Caption as="p" className={coverStyles.cutNote}>
+            <span aria-hidden="true" {...applyStyles(coverStyles.zoneBar, coverStyles.zoneKey)} />
+            {t("standings.playoffCut", { count: cut })}
+          </Caption>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -290,14 +292,18 @@ function CoverCalendarSection({
  */
 export function PortalCoverView({
   calendar,
-  format,
   leaders = [],
+  onCalendarRetry,
   portalRef,
   standings = null,
 }: {
   readonly calendar: PortalCalendar | null;
-  readonly format?: CompetitionFormatDto;
   readonly leaders?: readonly CoverLeaderItem[];
+  /**
+   * Set only when the calendar read failed. The Cover then shows a retry in place of the fixture
+   * blocks instead of claiming the calendar is not published yet (ADR-0024).
+   */
+  readonly onCalendarRetry?: () => void;
   readonly portalRef: PortalRef;
   readonly standings?: GetPublicStandingsResponse["standings"] | null;
 }) {
@@ -308,7 +314,14 @@ export function PortalCoverView({
   const upcoming = upcomingEntries(entries, COVER_LIMIT);
   const results = latestResults(entries, COVER_LIMIT);
 
-  if (entries.length === 0 && standingRows.length === 0 && leaders.length === 0) {
+  const calendarFailed = onCalendarRetry !== undefined;
+
+  if (
+    !calendarFailed &&
+    entries.length === 0 &&
+    standingRows.length === 0 &&
+    leaders.length === 0
+  ) {
     return (
       <PortalEmpty
         description={t("portal.noFixture.description")}
@@ -337,14 +350,16 @@ export function PortalCoverView({
             hasPodium && leaders.length > 0 ? coverStyles.twoCols : coverStyles.stack,
           )}
         >
-          {hasPodium ? (
-            <CoverStandingsCard format={format} portalRef={portalRef} rows={standingRows} />
+          {hasPodium && standings ? (
+            <CoverStandingsCard portalRef={portalRef} standings={standings} />
           ) : null}
           {leaders.length > 0 || hasPodium ? (
             <CoverLeadersCard leaders={leaders} portalRef={portalRef} />
           ) : null}
         </div>
       ) : null}
+
+      {onCalendarRetry ? <PortalError onRetry={onCalendarRetry} /> : null}
 
       {calendar && entries.length > 0 ? (
         <div {...applyStyles(coverStyles.twoCols)}>

@@ -111,14 +111,9 @@ export function publicBracketWinner(node: PublicBracketNode): PublicBracketSideK
   const { encounter } = node;
   if (encounter.home.kind === "team" && encounter.away.kind === "bye") return "home";
   if (encounter.away.kind === "team" && encounter.home.kind === "bye") return "away";
-  if (encounter.status !== "official" || !encounter.score || encounter.score.length === 0) {
-    return null;
-  }
-  const home = encounter.score.reduce((sum, leg) => sum + leg.homeGoals, 0);
-  const away = encounter.score.reduce((sum, leg) => sum + leg.awayGoals, 0);
-  if (home > away) return "home";
-  if (away > home) return "away";
-  return null;
+  // The API resolves the series under its mode (aggregate or independent matches); a goal total
+  // here would crown one side of a 3-0 / 0-1 tie.
+  return encounter.status === "official" ? encounter.winner : null;
 }
 
 export function publicBracketChampionName(stage: PublicBracketStageLayout): string | null {

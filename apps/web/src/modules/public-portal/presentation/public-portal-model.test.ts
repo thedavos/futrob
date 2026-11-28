@@ -28,6 +28,7 @@ import {
   portalSectionFromPathname,
   portalSections,
   publicRankingSummary,
+  publicStandingsCut,
   publicStandingsSummary,
   scoreLabel,
   scoreSummary,
@@ -102,7 +103,7 @@ describe("calendar", () => {
         status: "official",
       }),
     ).toHaveLength(1);
-    expect(portalCalendarProgress(publicCalendarFixture)).toEqual({
+    expect(portalCalendarProgress(publicCalendarFixture, "published")).toEqual({
       official: 1,
       total: 4,
       percent: 25,
@@ -183,5 +184,61 @@ describe("bracket sides and layout", () => {
         "home",
       ),
     ).toBeNull();
+  });
+});
+
+describe("public outcomes come from the fixture, not from the visible rows", () => {
+  it("closes the season from the competition status, not from the published encounters", () => {
+    // A knockout with both semifinals official lists 2 of 2 until the final is drawn.
+    const allOfficial = publicCalendarFixture.map((entry) => ({
+      ...entry,
+      status: "official" as const,
+    }));
+    expect(portalCalendarProgress(allOfficial, "published")?.completed).toBe(false);
+    expect(portalCalendarProgress(allOfficial, "finished")?.completed).toBe(true);
+  });
+
+  it("draws the qualifying cut only where the fixture sets one", () => {
+    const [template] = publicStandingsFixture.rows;
+    if (!template) throw new Error("fixture shape");
+    const six = Array.from({ length: 6 }, (_, index) => ({
+      ...template,
+      position: index + 1,
+      teamName: `Equipo ${index + 1}`,
+    }));
+    expect(publicStandingsCut({ rows: six, qualifyingSpots: 2 })).toBe(2);
+    expect(publicStandingsCut({ rows: six, qualifyingSpots: null })).toBeNull();
+    expect(publicStandingsCut({ rows: six.slice(0, 2), qualifyingSpots: 2 })).toBeNull();
+  });
+
+  it("keeps the champion pending on a tied series and crowns the side the API resolved", () => {
+    const final = (winner: "home" | "away" | null) =>
+      layoutPublicBracketStage({
+        kind: "knockout",
+        rounds: [
+          {
+            number: 1,
+            scheduledStartAt: "2026-12-01T01:00:00.000Z",
+            encounters: [
+              {
+                order: 1,
+                scheduledStartAt: "2026-12-01T01:00:00.000Z",
+                officialMatchCount: 2,
+                home: { kind: "team", name: "Atlético Norte" },
+                away: { kind: "team", name: "Real Sur" },
+                status: "official",
+                // 3–0 then 0–1: a tie in independent mode, the home side on aggregate.
+                score: [
+                  { homeGoals: 3, awayGoals: 0 },
+                  { homeGoals: 0, awayGoals: 1 },
+                ],
+                winner,
+              },
+            ],
+          },
+        ],
+      });
+    expect(publicBracketChampionName(final(null))).toBeNull();
+    expect(publicBracketChampionName(final("home"))).toBe("Atlético Norte");
   });
 });

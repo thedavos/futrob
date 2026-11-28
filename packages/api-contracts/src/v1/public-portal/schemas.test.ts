@@ -63,7 +63,9 @@ describe("public portal wire schemas", () => {
   });
 
   it("rejects private statistics keys on a standings row", () => {
-    const body = (row: object) => ({ standings: { rows: [row], swiss: null, updatedAt: null } });
+    const body = (row: object) => ({
+      standings: { rows: [row], swiss: null, qualifyingSpots: null, updatedAt: null },
+    });
     expect(getPublicStandingsResponseSchema.safeParse(body(standingRow)).success).toBe(true);
     for (const extra of [
       { organizationId: "org-1" },
@@ -81,6 +83,7 @@ describe("public portal wire schemas", () => {
       standings: {
         rows: [{ ...standingRow, buchholz: 6, byes: 1, withdrawn: true }],
         swiss,
+        qualifyingSpots: null,
         updatedAt: null,
       },
     });
@@ -97,6 +100,7 @@ describe("public portal wire schemas", () => {
       standings: {
         rows: [{ ...standingRow, buchholz: -3, byes: 0, withdrawn: false }],
         swiss: null,
+        qualifyingSpots: 2,
         updatedAt: null,
       },
     });
@@ -144,6 +148,7 @@ describe("public portal wire schemas", () => {
       away: { kind: "group_rank", group: "A", rank: 2 },
       status: "scheduled",
       score: null,
+      winner: null,
     };
     const bracket = (value: object) => ({
       bracket: {

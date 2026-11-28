@@ -92,6 +92,7 @@ export const publicStandingsFixture: GetPublicStandingsResponse["standings"] = {
     },
   ],
   swiss: null,
+  qualifyingSpots: null,
   updatedAt: "2026-11-03T03:00:00.000Z",
 };
 
@@ -113,6 +114,7 @@ export const publicBracketFixture: NonNullable<GetPublicBracketResponse["bracket
               away: { kind: "stage_rank", rank: 4 },
               status: "scheduled",
               score: null,
+              winner: null,
             },
             {
               order: 2,
@@ -122,6 +124,7 @@ export const publicBracketFixture: NonNullable<GetPublicBracketResponse["bracket
               away: { kind: "bye" },
               status: "closed",
               score: null,
+              winner: null,
             },
           ],
         },
@@ -137,6 +140,7 @@ export const publicBracketFixture: NonNullable<GetPublicBracketResponse["bracket
               away: { kind: "team", name: "Real Sur" },
               status: "scheduled",
               score: null,
+              winner: null,
             },
           ],
         },
